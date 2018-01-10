@@ -4018,7 +4018,7 @@ tor: openssl zlib libevent-2.0.21 tor/Makefile
 	$(MAKE) -C $@ $(PARALLEL_BUILD)
 
 tor/Makefile:
-	(cd tor ; $(CONFIGURE) --enable-static-libevent --with-libevent-dir=$(STAGEDIR)/usr \
+	(cd tor ; autoreconf -i -f && $(CONFIGURE) --enable-static-libevent --with-libevent-dir=$(STAGEDIR)/usr \
 					--with-openssl-dir=$(TOP)/openssl \
 					--with-zlib-dir=$(TOP)/zlib \
 					--disable-asciidoc --disable-unittests \
