@@ -3036,5 +3036,6 @@ VPN_Fusion_FAQ=<a id="faq1" href="" target="_blank" style="font-weight:bolder;te
 [###MODEL_DEP###][GT-AC5300]VPN_Fusion_FAQ=<a id="faq1" href="" target="_blank" style="font-weight:bolder;text-decoration:underline;">VPN Fusion 疑难解答</a>
 VPN_Fusion_Default_Alert=无法设置为目标策略的默认连接。
 Beta_test_only=Beta test only
+FIRM_fupgrade_desc=或是按下[取消]，系统将于夜间自动更新。
 QIS_internet_success_desc4_1=If you are using cable modem or modem with static IP address, here are suggested approaches you might take.
 qis_summary_description_step2=当新的 SSID 重新连接后，您可以回到 http://router.asus.com 进行更多进阶的设定。

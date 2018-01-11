@@ -32,8 +32,7 @@
 }
 
 .div_img {
-	padding-top: 30px;
-	padding-left:25px;
+	padding: 35px 0px 100px 25px;
 }
 
 .step_1{
@@ -99,9 +98,21 @@
 	position:absolute;
 	background: rgba(0,0,0,0.95);
 	z-index:10;
-	margin-left:100px;
+	margin:-340px;
 	border-radius:10px;
 	padding:10px;
+	display: none;
+}
+
+.alert_ASUS_EULA{
+	width:480px;
+	height:auto;
+	position:absolute;
+	background: rgba(0,0,0,0.9);
+	z-index:10;
+	margin:-340px;
+	border-radius:10px;
+	padding:25px;
 	display: none;
 }
 </style>
@@ -116,6 +127,8 @@ var countdownid;
 var external_ip = -1;
 var MAX_RETRY_NUM = 5;
 var external_ip_retry_cnt = MAX_RETRY_NUM;
+var flag = '<% get_parameter("flag"); %>';
+var AAE_MAX_RETRY_NUM = 3;
 
 function initial(){
 	show_menu();
@@ -127,6 +140,11 @@ function initial(){
 
 	tag_control();
 	get_real_ip();
+
+	if(flag == 'from_endpoint'){
+		AAE_MAX_RETRY_NUM = 10;
+		get_activation_code();
+	}
 }
 
 function tag_control(){
@@ -142,11 +160,6 @@ function tag_control(){
 	document.getElementById("ifttt_asus_channel").style="font-weight:bolder;text-decoration:underline;color:#FFCC00;";
 	document.getElementById("ifttt_asus_channel").href="https://ifttt.com/asusrouter";
 	document.getElementById("ifttt_asus_channel").target="_blank";
-
-	document.getElementById("ifttt_applet_link").style="font-weight:bolder;text-decoration:underline;color:#FFCC00;";
-	document.getElementById("ifttt_applet_link").href="https://ifttt.com/asusrouter";
-	document.getElementById("ifttt_applet_link").target="_blank";
-
 }
 
 function show_remote_control(){
@@ -187,6 +200,62 @@ function hide_remote_control(){
 	setTimeout("location.href=document.form.current_page.value", 5000);
 }
 
+function send_gen_pincode(){
+
+	close_alert('alert_ASUS_EULA');
+
+	if(flag == 'from_endpoint')
+		location.href = "/send_IFTTTPincode.cgi";
+	else
+		gen_new_pincode();
+}
+
+function detcet_aae_state(){
+	$.ajax({
+		url: '/appGet.cgi?hook=nvram_get(aae_enable)',
+		dataType: 'json',
+		error: function(xhr){
+		setTimeout("detcet_aae_state()", 1000);
+		},
+		success: function(response){
+			if(response.aae_enable == '1')
+				send_gen_pincode();
+			else{
+				AAE_MAX_RETRY_NUM--;
+				if(AAE_MAX_RETRY_NUM == 0)
+					send_gen_pincode();
+				else
+					setTimeout("detcet_aae_state()", 1000);
+			}
+		}
+	});
+}
+
+function setting_ASUS_EULA(){
+	if(document.form.ASUS_EULA_enable.checked == true){
+		require(['/require/modules/makeRequest.js'], function(makeRequest){
+			makeRequest.start('/enable_ASUS_EULA.cgi', function(){
+				document.form.ASUS_EULA.value = "1";
+				document.getElementById("eula_agree").style.display = "none";
+				document.getElementById("eula_button").style.display = "none";
+				document.getElementById("eula_loading").style.display = "";
+				detcet_aae_state();},
+				function(){});
+		});
+	}else{
+		document.form.ASUS_EULA_enable.focus();
+	}
+}
+
+function get_activation_code(){
+	if(document.form.ASUS_EULA.value != 1){
+		cal_panel_block("alert_ASUS_EULA");
+		$('#alert_ASUS_EULA').fadeIn(1000);
+	}else{
+		gen_new_pincode();
+	}
+}
+
 function gen_new_pincode(){
 	require(['/require/modules/makeRequest.js'], function(makeRequest){
 		makeRequest.start('/get_IFTTTPincode.cgi', show_alert_pin, function(){});
@@ -207,9 +276,13 @@ function show_alert_pin(xhr){
 	countdownid = window.setInterval(countdownfunc,1000);
 }
 
-function close_alert_pin(){
-	clearInterval(countdownid);
-	$('#alert_pin').fadeOut(100);
+function close_alert(name){
+	if(name == 'alert_pin'){
+		clearInterval(countdownid);
+	}else if(name == 'alert_ASUS_EULA'){
+		document.form.ASUS_EULA_enable.checked = false;
+	}
+	$('#'+name).fadeOut(100);
 }
 
 function checkTime(i){
@@ -239,11 +312,7 @@ function cal_panel_block(obj){
 		blockmarginLeft= (winWidth)*0.2 + document.body.scrollLeft;
 	}
 
-	if(obj == "alert_pin"){
-		document.getElementById(obj).style.marginLeft = (blockmarginLeft - 190)+"px";
-	}
-	else
-		document.getElementById(obj).style.marginLeft = blockmarginLeft+"px";
+	document.getElementById(obj).style.marginLeft = (blockmarginLeft-400)+"px";
 }
 
 function countdownfunc(){
@@ -253,7 +322,7 @@ function countdownfunc(){
 	document.getElementById("rtime").innerHTML = remaining_time_show;
 	if (remaining_time<0){
 		clearInterval(countdownid);
-		setTimeout("close_alert_pin();", 2000);
+		setTimeout("close_alert('alert_pin');", 2000);
 	}
 	remaining_time--;
 }
@@ -266,7 +335,6 @@ function clipboard(ID_value)
 		input.value = document.getElementById(ID_value).innerHTML;
 	else
 		input.value = document.getElementById(ID_value).value;
-	input.focus();
 	input.select();
 	document.execCommand('Copy');
 	input.remove();
@@ -289,6 +357,7 @@ function clipboard(ID_value)
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>" disabled>
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
+<input type="hidden" name="ASUS_EULA" value="<% nvram_get("ASUS_EULA"); %>">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
 		<td width="17">&nbsp;</td>
@@ -362,13 +431,42 @@ function clipboard(ID_value)
 																	<div class="div_td" style="vertical-align:top;">
 																		<div class="step_3"></div>
 																	</div>
-																	<div class="div_td" style="font-size:16px;vertical-align:middle;padding:5px 0px 0px 10px;width:320px;">
-																		<div style="color:#c0c0c0"><#IFTTT_Register0#></div> <!-- id="ifttt_applet_link" -->
+																	<div class="div_td" style="font-size:16px;padding:5px 0px 0px 10px;">
+																		<div><span style="color:#FFCC00;text-decoration:underline;cursor:pointer;" onclick="get_activation_code();">Get Activation Code</span> ,Paste activation code to link IFTTT account and your ASUS Router</div>
 																	</div>
 																</div>
 																<div style="font-weight:bolder;font-size:20px;color:#c0c0c0;padding-top:57px;padding-left:15px;"><#IFTTT_and#></div>
 																<div class="smh_ifttt" style="cursor:pointer;" onclick="window.open('https://ifttt.com/asusrouter');" target="_blank"></div>
 															</div>
+														</table>
+													</div>
+													<div id="alert_ASUS_EULA" class="alert_ASUS_EULA">
+														<table style="width:99%">
+															<tr>
+																<th colspan="2">
+																	<div style="font-size:17px;padding-bottom:8px;">To get activation code for IFTTT acount linking, you have to agree ASUS EULA by pressing below button.</div>
+																</th>
+															</tr>
+															<tr id="eula_agree">
+																<td colspan="2">
+																	<span style="font-size:15px;padding-left:20px; color:#FFCC00"><input type="checkbox" name="ASUS_EULA_enable" value="0"> I agree to the ASUS Terms of service and Privacy Policy</span>
+																</td>
+															</tr>
+															<tr id="eula_button">
+																<td>
+																	<div style="text-align:right;padding:20px 10px 0px 0px;">
+																		<input class="button_gen" type="button" onclick="setting_ASUS_EULA();" value="<#CTL_Agree#>">
+																	</div>
+																</td>
+																<td>
+																	<div style="text-align:left;padding:20px 0px 0px 10px;">
+																		<input class="button_gen" type="button" onclick="close_alert('alert_ASUS_EULA');" value="<#CTL_close#>">
+																	</div>
+																</td>
+															</tr>
+															<tr id="eula_loading" style="display:none">
+																<td width="20%" height="80" align="center"><img src="/images/loading.gif"></td>
+															</tr>
 														</table>
 													</div>
 													<div id="alert_pin" class="alertpin">
@@ -400,16 +498,13 @@ function clipboard(ID_value)
 																</td>
 																<td>
 																	<div style="text-align:left;padding:20px 0px 0px 10px;">
-																		<input class="button_gen" type="button" onclick="close_alert_pin();" value="<#CTL_close#>">
+																		<input class="button_gen" type="button" onclick="close_alert('alert_pin');" value="<#CTL_close#>">
 																	</div>
 																</td>
 															</tr>
 														</table>
 													</div>
 												</div>
-											</div>
-											<div style="padding:102px 19px 0px 0px;text-align:right;">
-												<span style="cursor:pointer;font-family:Arial, Helvetica, sans-serif;font-style:italic;font-weight:lighter;font-size:14px;text-decoration: underline;" onclick="gen_new_pincode();" >Advanced</span>
 											</div>
 									</div>
 								</td>

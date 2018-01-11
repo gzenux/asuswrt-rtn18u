@@ -1975,6 +1975,7 @@ function update_lte_fw(){
 						<td>
 							<select name="modem_lte_band" id="modem_lte_band" class="input_option">
 								<option value="auto" <% nvram_match("modem_lte_band", "auto", "selected"); %>>Auto</option>
+								<option value="B1" <% nvram_match("modem_lte_band", "B1", "selected"); %>>B1</option>
 								<option value="B3" <% nvram_match("modem_lte_band", "B3", "selected"); %>>B3</option>
 								<option value="B7" <% nvram_match("modem_lte_band", "B7", "selected"); %>>B7</option>
 								<option value="B20" <% nvram_match("modem_lte_band", "B20", "selected"); %>>B20</option>

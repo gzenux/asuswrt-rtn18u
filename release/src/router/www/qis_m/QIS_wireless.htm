@@ -1121,9 +1121,11 @@ function change_smart_con(v){
 		document.getElementById("wl_unit_field_1").style.display = "none";
 		document.getElementById("wl_unit_field_2").style.display = "none";
 		document.getElementById("wl_unit_field_3").style.display = "none";
-		document.getElementById("wl_unit_field_4").style.display = "none";
-		document.getElementById("wl_unit_field_5").style.display = "none";
-		document.getElementById("wl_unit_field_6").style.display = "none";
+		if(wl_info.band5g_2_support){
+			document.getElementById("wl_unit_field_4").style.display = "none";
+			document.getElementById("wl_unit_field_5").style.display = "none";
+			document.getElementById("wl_unit_field_6").style.display = "none";
+		}
 		document.getElementById("wl0_desc_name").innerHTML = "Tri-band Smart Connect Security";
 		document.getElementById("wl0_desc_name").style = "padding-bottom:10px";
 		parent.document.getElementById("contentM").height = contentM_height_orig;
@@ -1131,9 +1133,11 @@ function change_smart_con(v){
 		document.getElementById("wl_unit_field_1").style.display = "";
 		document.getElementById("wl_unit_field_2").style.display = "";
 		document.getElementById("wl_unit_field_3").style.display = "";
-		document.getElementById("wl_unit_field_4").style.display = "";
-		document.getElementById("wl_unit_field_5").style.display = "";
-		document.getElementById("wl_unit_field_6").style.display = "";
+		if(wl_info.band5g_2_support){
+			document.getElementById("wl_unit_field_4").style.display = "";
+			document.getElementById("wl_unit_field_5").style.display = "";
+			document.getElementById("wl_unit_field_6").style.display = "";
+		}
 		document.getElementById("wl0_desc_name").innerHTML = "2.4 GHz - <#Security#>";
 		parent.document.getElementById("contentM").height = document.body.scrollHeight + 20;
 	}

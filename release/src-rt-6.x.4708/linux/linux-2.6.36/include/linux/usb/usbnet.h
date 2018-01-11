@@ -22,10 +22,6 @@
 #ifndef	__LINUX_USB_USBNET_H
 #define	__LINUX_USB_USBNET_H
 
-#ifdef HNDCTF
-#include <ctf/hndctf.h>
-#endif /* HNDCTF */
-
 /* interface from usbnet core to each USB networking link we handle */
 struct usbnet {
 	/* housekeeping */
@@ -37,6 +33,7 @@ struct usbnet {
 	wait_queue_head_t	*wait;
 	struct mutex		phy_mutex;
 	unsigned char		suspend_count;
+	unsigned char		pkt_cnt, pkt_err;
 
 	/* i/o info: pipes etc */
 	unsigned		in, out;
@@ -64,20 +61,17 @@ struct usbnet {
 
 	struct work_struct	kevent;
 	unsigned long		flags;
-#define EVENT_TX_HALT	0
-#define EVENT_RX_HALT	1
-#define EVENT_RX_MEMORY	2
-#define EVENT_STS_SPLIT	3
-#define EVENT_LINK_RESET	4
-#define EVENT_RX_PAUSED	5
-#define EVENT_DEV_WAKING 6
-#define EVENT_DEV_ASLEEP 7
-#define EVENT_DEV_OPEN	8
-
-#ifdef HNDCTF
-	void *osh;	/* pointer to os handle */
-	ctf_t *cih;	/* ctf instance handle */
-#endif /* HNDCTF */
+#		define EVENT_TX_HALT	0
+#		define EVENT_RX_HALT	1
+#		define EVENT_RX_MEMORY	2
+#		define EVENT_STS_SPLIT	3
+#		define EVENT_LINK_RESET	4
+#		define EVENT_RX_PAUSED	5
+#		define EVENT_DEV_WAKING 6
+#		define EVENT_DEV_ASLEEP 7
+#		define EVENT_DEV_OPEN	8
+#		define EVENT_RX_KILL	10
+#		define EVENT_SET_RX_MODE	12
 };
 
 static inline struct usb_driver *driver_of(struct usb_interface *intf)
@@ -115,7 +109,7 @@ struct driver_info {
  */
 #define FLAG_MULTI_PACKET	0x2000
 //#define FLAG_RX_ASSEMBLE	0x4000	/* rx packets may span >1 frames */
-#define FLAG_NOARP		0x8000  /* device can't do ARP */
+#define FLAG_NOARP		0x8000	/* device can't do ARP */
 
 	/* init device ... can sleep, or cause probe() failure */
 	int	(*bind)(struct usbnet *, struct usb_interface *);
@@ -156,6 +150,9 @@ struct driver_info {
 	/* called by minidriver when receiving indication */
 	void	(*indication)(struct usbnet *dev, void *ind, int indlen);
 
+	/* rx mode change (device changes address list filtering) */
+	void	(*set_rx_mode)(struct usbnet *dev);
+
 	/* for new devices, use the descriptor-reading code instead */
 	int		in;		/* rx endpoint */
 	int		out;		/* tx endpoint */
@@ -186,6 +183,7 @@ struct cdc_state {
 };
 
 extern int usbnet_generic_cdc_bind(struct usbnet *, struct usb_interface *);
+extern int usbnet_ether_cdc_bind(struct usbnet *dev, struct usb_interface *intf);
 extern int usbnet_cdc_bind(struct usbnet *, struct usb_interface *);
 extern void usbnet_cdc_unbind(struct usbnet *, struct usb_interface *);
 extern void usbnet_cdc_status(struct usbnet *, struct urb *);

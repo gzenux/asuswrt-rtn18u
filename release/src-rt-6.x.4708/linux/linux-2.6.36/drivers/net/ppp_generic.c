@@ -2970,8 +2970,17 @@ ppp_get_conn_pkt_info(void *pppif, struct ctf_ppp *ctfppp){
 	const char *vars;
 
 	ppp = (struct ppp *)netdev_priv((const struct net_device *)pppif);
-	if(ppp) pch = ppp->ctfpch;
+	if (ppp == NULL){
+		return (BCME_ERROR);
+	}
 
+	/* Compressor/Decompressor (MPPE, etc) is running */
+	if ((ppp->flags & SC_CCP_UP) &&
+	    ((ppp->xstate & SC_COMP_RUN) || (ppp->rstate & SC_DECOMP_RUN))) {
+		return (BCME_ERROR);
+	}
+
+	pch = ppp->ctfpch;
 	if (pch == NULL){
 		return (BCME_ERROR);
 	}

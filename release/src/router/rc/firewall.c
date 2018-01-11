@@ -1199,11 +1199,9 @@ void redirect_nat_setting(void)
 		":OUTPUT ACCEPT [0:0]\n");
 #ifdef RTCONFIG_WIFI_SON
 	if(sw_mode() == SW_MODE_AP && nvram_match("cfg_master", "1")){
-		if(nvram_get_int("wl0.1_bss_enabled"))
-			fprintf(fp, "-A PREROUTING -p udp --dport 53 -i %s -j DNAT --to-destination %s:53\n",BR_GUEST, APMODE_BRGUEST_IP);
+		fprintf(fp, "-A PREROUTING -p udp --dport 53 -i %s -j DNAT --to-destination %s:53\n",BR_GUEST, APMODE_BRGUEST_IP);
 		fprintf(fp, "-A PREROUTING -p udp --dport 53 -j DNAT --to-destination %s:53\n", lan_ip);
-		if(nvram_get_int("wl0.1_bss_enabled"))
-			fprintf(fp, "-A POSTROUTING -o %s -j MASQUERADE\n",nvram_safe_get("lan_ifname"));
+		fprintf(fp, "-A POSTROUTING -o %s -j MASQUERADE\n",nvram_safe_get("lan_ifname"));
 	}
 #else
 	fprintf(fp, "-A PREROUTING -p udp --dport 53 -j DNAT --to-destination %s:53\n", lan_ip);
@@ -1552,12 +1550,10 @@ void nat_setting(char *wan_if, char *wan_ip, char *wanx_if, char *wanx_ip, char 
 	char g_lan_ip[20];
 	unsigned int dip;
 	struct in_addr gst;
-	//if(nvram_get_int("wl0.1_bss_enabled"))
-	{
-		dip= ntohl(inet_addr(lan_ip))+0x100;
-		gst.s_addr = htonl(dip);
-		strcpy(g_lan_ip, inet_ntoa(gst));
-	}
+
+	dip = ntohl(inet_addr(lan_ip)) + 0x100;
+	gst.s_addr = htonl(dip);
+	strcpy(g_lan_ip, inet_ntoa(gst));
 #endif
 
 	sprintf(name, "%s_%s_%s", NAT_RULES, wan_if, wanx_if);
@@ -1808,11 +1804,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *wanx_if, char *wanx_ip, char 
 		fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, lan_if, lan_class, lan_class);
 
 #ifdef RTCONFIG_WIFI_SON
-		//if(nvram_get_int("wl0.1_bss_enabled"))
-		{
-			ip2class(g_lan_ip, nvram_safe_get("lan_netmask"), g_lan_class);
-			fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, BR_GUEST, g_lan_class, g_lan_class);
-		}
+		ip2class(g_lan_ip, nvram_safe_get("lan_netmask"), g_lan_class);
+		fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, BR_GUEST, g_lan_class, g_lan_class);
 #endif
 	}
 
@@ -1862,12 +1855,10 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 	char g_lan_ip[20];
 	unsigned int dip;
 	struct in_addr gst;
-	//if(nvram_get_int("wl0.1_bss_enabled"))
-	{
-		dip= ntohl(inet_addr(lan_ip))+0x100;
-		gst.s_addr = htonl(dip);
-		strcpy(g_lan_ip, inet_ntoa(gst));
-	}
+
+	dip = ntohl(inet_addr(lan_ip)) + 0x100;
+	gst.s_addr = htonl(dip);
+	strcpy(g_lan_ip, inet_ntoa(gst));
 #endif
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
@@ -2188,11 +2179,8 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 		fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, lan_if, lan_class, lan_class);
 
 #ifdef RTCONFIG_WIFI_SON
-		//if(nvram_get_int("wl0.1_bss_enabled"))
-		{
-			ip2class(g_lan_ip, nvram_safe_get("lan_netmask"), g_lan_class);
-			fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, BR_GUEST, g_lan_class, g_lan_class);
-		}
+		ip2class(g_lan_ip, nvram_safe_get("lan_netmask"), g_lan_class);
+		fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, BR_GUEST, g_lan_class, g_lan_class);
 #endif
 	}
 #ifdef RTCONFIG_FBWIFI
@@ -2252,7 +2240,7 @@ void redirect_setting(void)
 	}
 	ip2class(lan_ipaddr_t, lan_netmask_t, lan_class);
 
-	if ((redirect_fp = fopen("/tmp/redirect_rules", "w+")) == NULL) {
+	if ((redirect_fp = fopen(REDIRECT_RULES, "w+")) == NULL) {
 		fprintf(stderr, "*** Can't make the file of the redirect rules! ***\n");
 		return;
 	}
@@ -2579,11 +2567,8 @@ start_default_filter(int lanunit)
 	fprintf(fp, "-A FORWARD -i %s -o %s -j ACCEPT\n", "lo", "lo");
 
 #ifdef RTCONFIG_WIFI_SON
-	//if(nvram_get_int("wl0.1_bss_enabled"))
-	{
-		fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", lan_if, BR_GUEST);
-		fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", BR_GUEST, lan_if);
-	}
+	fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", lan_if, BR_GUEST);
+	fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", BR_GUEST, lan_if);
 #endif
 
 	fprintf(fp, "-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" "
@@ -2836,7 +2821,7 @@ void write_UrlFilter(char *chain, char *lan_if, char *lan_ip, char *logdrop, FIL
 		if(nv) free(nv);
 	}
 
-	if (nvram_match("url_mode_x", "1")) {
+	if (nvram_match("url_mode_x", "1") && nvram_match("url_enable_x", "1")) {
 		fprintf(fp, "-A %s -i %s -p udp --dport 53 -m string --string \"asus\" --algo bm -j ACCEPT\n", chain, lan_if);
 		fprintf(fp, "-A %s -i br0 -p udp --dport 53 -j DROP\n", chain);
 #ifdef RTCONFIG_IPV6
@@ -3448,11 +3433,8 @@ TRACE_PT("writing Parental Control\n");
 	fprintf(fp_ipv6, "-A FORWARD -i %s -o %s -j %s\n", lan_if, lan_if, logaccept);
 #endif
 #ifdef RTCONFIG_WIFI_SON
-	//if(nvram_get_int("wl0.1_bss_enabled"))
-	{
-		fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", lan_if, BR_GUEST);
-		fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", BR_GUEST, lan_if);
-	}
+	fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", lan_if, BR_GUEST);
+	fprintf(fp, "-A FORWARD -i %s -o %s -j DROP\n", BR_GUEST, lan_if);
 #endif
 
 #ifdef RTCONFIG_IPV6
@@ -4111,7 +4093,7 @@ TRACE_PT("writing Parental Control\n");
 	//CAP/RE's guest can not access CAP's UI/app.
 	char lan_class[32];
 	ip2class(nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), lan_class);
-	if((sw_mode() == SW_MODE_ROUTER || (sw_mode() == SW_MODE_AP && nvram_match("cfg_master", "1")))/* && nvram_get_int("wl0.1_bss_enabled")*/)
+	if(sw_mode() == SW_MODE_ROUTER || (sw_mode() == SW_MODE_AP && nvram_match("cfg_master", "1")))
 		fprintf(fp, "-A INPUT -i %s -d %s -j DROP\n", BR_GUEST,lan_class);
 #endif
 	if (nvram_match("fw_enable_x", "1")) {

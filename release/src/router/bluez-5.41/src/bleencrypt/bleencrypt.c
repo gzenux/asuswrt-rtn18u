@@ -252,12 +252,17 @@ int ble_encrypt_svr(unsigned char *input, unsigned char *output, size_t input_le
 	}
 
 	if(ret==BLE_RESULT_OK) {
-		for(handler = &cmd_handlers_svr[0]; handler->command; handler++, param_hander++)
-			if(handler->cmdno==cmdno) break;
+		if(cmdno==BLE_COMMAND_GET_NVRAM) {
+			UnPackBLEExceptionGetNvram(cmdno, BLE_RESULT_OK, data, datalen, (unsigned char *)pdu, &pdulen);
+		}
+		else {
+			for(handler = &cmd_handlers_svr[0]; handler->command; handler++, param_hander++)
+				if(handler->cmdno==cmdno) break;
 
-		if(handler->command!=NULL) {
-			handler->unpack(param_hander, data, datalen);
-			handler->pack(cmdno, BLE_RESULT_OK, (unsigned char *)pdu, &pdulen);
+			if(handler->command!=NULL) {
+				handler->unpack(param_hander, data, datalen);
+				handler->pack(cmdno, BLE_RESULT_OK, (unsigned char *)pdu, &pdulen);
+			}
 		}
 	}
 	else { // error

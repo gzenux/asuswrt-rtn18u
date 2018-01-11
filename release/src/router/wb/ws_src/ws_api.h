@@ -203,6 +203,9 @@ int send_getservicearea_req(
 	const char* serviceid, 
 	const char* userid, 
 	const char* passwd,
+	const char* devicetype, 
+	const char* fwver, 
+	const int apilevel,
 	GetServiceArea* pGSA//out put
 	);
 

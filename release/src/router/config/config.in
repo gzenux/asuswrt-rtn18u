@@ -74,6 +74,11 @@ config RTCONFIG_HNDMFG
 	depends on RTCONFIG_HND_ROUTER
 	default n
 
+config RTCONFIG_DFS_US
+	bool "DFS US support"
+	depends on RTCONFIG_HND_ROUTER
+	default n
+
 config RTCONFIG_BCM9
 	bool "Bcm sdk 9_10_162_x"
 	default n
@@ -145,6 +150,11 @@ config RTCONFIG_CIFS
 config RTCONFIG_BRCM_NAND_JFFS2
 	bool "JFFS Support on BRCM Nand Flash Partition"
 	default n
+
+config RTCONFIG_JFFS_NVRAM
+	bool "NVRAM on JFFS support"
+	depends on RTCONFIG_BRCM_NAND_JFFS2
+	default y
 
 config RTCONFIG_JFFS2
 	bool "JFFS Support"
@@ -505,6 +515,11 @@ config RTCONFIG_EXT4FS
 config RTCONFIG_TFAT
 	bool "Tuxera FAT module Support"
 	depends on RTCONFIG_USB
+	default n
+
+config RTCONFIG_OPENPLUS_TFAT
+	bool "Open + Tuxera FAT Support"
+	depends on RTCONFIG_OPEN_NTFS3G
 	default n
 
 config RTCONFIG_NTFS
@@ -1475,8 +1490,8 @@ config RTCONFIG_WLCEVENTD
 	default n
 
 config RTCONFIG_HAPDEVENT
-        bool "Handle event from Wi-Fi driver on bluecave"
-        default n
+	bool "Handle event from Wi-Fi driver on bluecave"
+	default n
 
 config RTCONFIG_6RELAYD
 	bool "IPv6 Relay support"
@@ -1617,6 +1632,11 @@ config RTCONFIG_ETHBACKHAUL
 config RTCONFIG_DUAL_BACKHAUL
 	bool "version csu2.2"
 	default n
+
+config RTCONFIG_AUTHSUPP
+	bool "new auth"
+	default n
+
 config RTCONFIG_FBWIFI
 	bool "enable FBWIFI for FaceBook"
 	default n
@@ -1625,7 +1645,7 @@ config RTCONFIG_ADV_RAST
 	bool "enable advanced roaming assistant"
 	default n
 
-config RTCONFIG_CFGSYNC      
+config RTCONFIG_CFGSYNC
 	bool "Sync config"
 
 config RTCONFIG_WLCSCAN_RSSI
@@ -1650,12 +1670,12 @@ config RTCONFIG_I2CTOOLS
 	default n
 
 config RTCONFIG_MTK_8021X3000
-        bool "The version 3.0.0.0 of 802.1x daemon for MTK."
-        default n
+	bool "The version 3.0.0.0 of 802.1x daemon for MTK."
+	default n
 
 config RTCONFIG_INTEL
 	bool "Intel Chip Support"
-	default n   
+	default n
 
 config RTCONFIG_DBG_BLUECAVE_OBD
 	bool "Debug bluecave onboarding"
@@ -1710,5 +1730,5 @@ config RTCONFIG_SW_HW_AUTH
 	default n
 
 config RTCONFIG_LIBASUSLOG
-  bool "asuslog library for debug"
-  default n
+	bool "asuslog library for debug"
+	default n

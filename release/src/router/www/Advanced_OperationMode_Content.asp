@@ -89,6 +89,14 @@
 }
 </style>
 <script>
+$(function () {
+	if(amesh_support) {
+		$('<script>')
+			.attr('type', 'text/javascript')
+			.attr('src','/require/modules/amesh.js')
+			.appendTo('head');
+	}
+});
 var sw_mode_orig = '<% nvram_get("sw_mode"); %>';
 var wlc_express_orig = '<% nvram_get("wlc_express"); %>';
 var wlc_psta_orig = '<% nvram_get("wlc_psta"); %>';
@@ -357,6 +365,11 @@ function saveMode(){
 				return false;
 			}
 		}
+	}
+
+	if(amesh_support) {
+		if(!AiMesh_confirm_msg("Operation_Mode", document.form.sw_mode.value))
+			return false;
 	}
 
 	if(document.form.sw_mode.value == 2){

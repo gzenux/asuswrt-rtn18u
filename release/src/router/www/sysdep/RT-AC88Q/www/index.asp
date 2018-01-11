@@ -203,7 +203,7 @@ function initial(){
 		document.getElementById("second_wan_title").style.display = "none";
 		document.getElementById("secondary_pap_concurrent").style.display = "";		
 	}
-	
+
 	if(sw_mode == 4){
 		var wlc_auth_mode = '<% nvram_get("wlc_auth_mode"); %>';
 		if(wlc_auth_mode == "") wlc_auth_mode = '<% nvram_get("wlc0_auth_mode"); %>';
@@ -435,7 +435,7 @@ function initial(){
 
 	orig_NM_container_height = parseInt($(".NM_radius_bottom_container").css("height"));
 
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		var html = '<a id="clientStatusLink" href="device-map/amesh.asp" target="statusframe">';
 		html += '<div id="iconAMesh" class="iconAMesh_dis" style="margin-top:20px;" onclick="clickEvent(this);"></div>';
 		html += '</a>';
@@ -754,7 +754,7 @@ function get_clicked_device_order(){
 
 function clickEvent(obj){
 	cookie.unset("wireless_subunit");
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		require(['/require/modules/amesh.js'], function(){
 			initial_amesh_obj();
 		});	
@@ -2095,12 +2095,12 @@ function updateClientsCount() {
 			var re_tune_client_count = function() {
 				var count = 0;
 				var fromNetworkmapd_array = [];
-				for(var i in fromNetworkmapd.maclist){
-					if (fromNetworkmapd.maclist.hasOwnProperty(i)) {
-						fromNetworkmapd_array[fromNetworkmapd.maclist[i]] = 1;
+				for(var i in fromNetworkmapd_maclist[0]){
+					if (fromNetworkmapd_maclist[0].hasOwnProperty(i)) {
+						fromNetworkmapd_array[fromNetworkmapd_maclist[0][i]] = 1;
 					}
 				}
-				count = fromNetworkmapd.maclist.length;
+				count = fromNetworkmapd_maclist[0].length;
 				for(var i in get_cfg_clientlist[0]){
 					if (get_cfg_clientlist[0].hasOwnProperty(i)) {
 						if(fromNetworkmapd_array[get_cfg_clientlist[0][i].mac] != undefined)
@@ -2113,20 +2113,20 @@ function updateClientsCount() {
 			if(lastName != "iconClient") {
 				if(document.getElementById("clientlist_viewlist_content")) {
 					if(document.getElementById("clientlist_viewlist_content").style.display == "none") {
-						if(amesh_support)
+						if(amesh_support && (isSwMode("rt") || isSwMode("ap")))
 							show_client_status(re_tune_client_count());
 						else
-							show_client_status(fromNetworkmapd.maclist.length);
+							show_client_status(fromNetworkmapd_maclist[0].length);
 					}
 				}
 				else {
-					if(amesh_support)
+					if(amesh_support && (isSwMode("rt") || isSwMode("ap")))
 						show_client_status(re_tune_client_count());
 					else
-						show_client_status(fromNetworkmapd.maclist.length);
+						show_client_status(fromNetworkmapd_maclist[0].length);
 				}
 			}
-			setTimeout("updateClientsCount();", 3000);
+			setTimeout("updateClientsCount();", 5000);
 		}
 	});
 }

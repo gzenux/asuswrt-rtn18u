@@ -46,21 +46,83 @@ function initial(){
 		document.getElementById("log_field").style.display = "none";
 	}	
 }
+
+var htmlEnDeCode = (function() {
+    var charToEntityRegex,
+        entityToCharRegex,
+        charToEntity,
+        entityToChar;
+
+    function resetCharacterEntities() {
+        charToEntity = {};
+        entityToChar = {};
+        // add the default set
+        addCharacterEntities({
+            '&amp;'     :   '&',
+            '&gt;'      :   '>',
+            '&lt;'      :   '<',
+            '&quot;'    :   '"',
+            '&#39;'     :   "'"
+        });
+    }
+
+    function addCharacterEntities(newEntities) {
+        var charKeys = [],
+            entityKeys = [],
+            key, echar;
+        for (key in newEntities) {
+            echar = newEntities[key];
+            entityToChar[key] = echar;
+            charToEntity[echar] = key;
+            charKeys.push(echar);
+            entityKeys.push(key);
+        }
+        charToEntityRegex = new RegExp('(' + charKeys.join('|') + ')', 'g');
+        entityToCharRegex = new RegExp('(' + entityKeys.join('|') + '|&#[0-9]{1,5};' + ')', 'g');
+    }
+
+    function htmlEncode(value){
+        var htmlEncodeReplaceFn = function(match, capture) {
+            return charToEntity[capture];
+        };
+
+        return (!value) ? value : String(value).replace(charToEntityRegex, htmlEncodeReplaceFn);
+    }
+
+    function htmlDecode(value) {
+        var htmlDecodeReplaceFn = function(match, capture) {
+            return (capture in entityToChar) ? entityToChar[capture] : String.fromCharCode(parseInt(capture.substr(2), 10));
+        };
+
+        return (!value) ? value : String(value).replace(entityToCharRegex, htmlDecodeReplaceFn);
+    }
+
+    resetCharacterEntities();
+
+    return {
+        htmlEncode: htmlEncode,
+        htmlDecode: htmlDecode
+    };
+})();
+
 var data_array = new Array();
 function parsingAjaxResult(rawData){
 	var match = 0;;
 	for(i=0;i<rawData.length;i++){
+		var thisRawData = rawData[i];
+		thisRawData[2] = htmlEnDeCode.htmlEncode(rawData[i][2]);
+
 		for(j=0;j<data_array.length;j++){
-			if((data_array[j][0] == rawData[i][0])
-			&& (data_array[j][1] == rawData[i][1])
-			&& (data_array[j][2].toUpperCase() == rawData[i][2].toUpperCase())){
+			if((data_array[j][0] == thisRawData[0])
+			&& (data_array[j][1] == thisRawData[1])
+			&& (data_array[j][2].toUpperCase() == thisRawData[2].toUpperCase())){
 				match = 1;				
 				break;
 			}	
 		}
 				
 		if(match == 0)
-			data_array.push(rawData[i]);
+			data_array.push(thisRawData);
 		
 		match = 0;
 	}
@@ -72,16 +134,22 @@ function parsingAjaxResult(rawData){
 	code += "<th style='width:50%;text-align:left'>Domain Name</th>";
 	code += "</tr>";
 	for(var i=0; i<data_array.length; i++){	
+		var thisLog = {
+			macAddr: data_array[i][0],
+			timeStamp: data_array[i][1],
+			hostName: data_array[i][2]
+		}
+
 		code += "<tr style='line-height:15px;'>";
-		code += "<td>" + convertTime(data_array[i][1]) + "</td>";
-		if(clientList[data_array[i][0]] != undefined) {
-			var clientName = (clientList[data_array[i][0]].nickName == "") ? clientList[data_array[i][0]].name : clientList[data_array[i][0]].nickName;
-			code += "<td title="+ data_array[i][0] + ">" + clientName + "</td>";
+		code += "<td>" + convertTime(thisLog.timeStamp) + "</td>";
+		if(clientList[thisLog.macAddr] != undefined) {
+			var clientName = (clientList[thisLog.macAddr].nickName == "") ? clientList[thisLog.macAddr].name : clientList[thisLog.macAddr].nickName;
+			code += "<td title="+ thisLog.macAddr + ">" + clientName + "</td>";
 		}
 		else
-			code += "<td>" + data_array[i][0] + "</td>";
+			code += "<td>" + thisLog.macAddr + "</td>";
 		
-		code += "<td>" + data_array[i][2] + "</td>";	
+		code += "<td>" + thisLog.hostName + "</td>";	
 		code += "</tr>";
 	}
 	

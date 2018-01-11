@@ -217,10 +217,8 @@ LIBS += -L$(TOP)/sqlite/.libs -lsqlite3
 LIBS += -lpthread #Depend on sqlite
 endif
 
-ifeq ($(RTCONFIG_NOTIFICATION_CENTER),y)
-ifeq ($(or $(RTCONFIG_IFTTT),$(RTCONFIG_ALEXA)),y)
+ifeq ($(RTCONFIG_AIHOME_TUNNEL),y)
 CFLAGS  += -I$(TOP)/aaews
-endif
 endif
 
 ifeq ($(RTCONFIG_LETSENCRYPT),y)

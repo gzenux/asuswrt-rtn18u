@@ -133,6 +133,7 @@ static const struct led_btn_table_s {
 #ifdef RTCONFIG_INTERNAL_GOBI
 #if defined(RT4GAC53U)
 	{ "led_lteoff_gpio",	&led_gpio_table[LED_LTE_OFF] },
+	{ "led_pwr_red_gpio",	&led_gpio_table[LED_POWER_RED] },
 #else
 	{ "led_3g_gpio",	&led_gpio_table[LED_3G] },
 	{ "led_lte_gpio",	&led_gpio_table[LED_LTE] },
@@ -300,17 +301,11 @@ int init_gpio(void)
 #ifdef RTCONFIG_INTERNAL_GOBI
 		, "led_3g_gpio", "led_lte_gpio", "led_sig1_gpio", "led_sig2_gpio", "led_sig3_gpio"
 #endif
-#if defined(RTCONFIG_PWRRED_LED)
-		, "led_pwr_red_gpio"
-#endif
 #if defined(RTCONFIG_FAILOVER_LED)
 		, "led_failover_gpio"
 #endif
 #if defined(RTCONFIG_M2_SSD)
 		, "led_sata_gpio"
-#endif
-#if defined(RTCONFIG_PWRRED_LED)
-		, "led_pwr_red_gpio"
 #endif
 #if defined(RTCONFIG_FAILOVER_LED)
 		, "led_failover_gpio"

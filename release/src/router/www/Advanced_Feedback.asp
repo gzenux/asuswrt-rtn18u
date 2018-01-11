@@ -58,6 +58,7 @@ function initial(){
 		document.form.attach_cfgfile_id.checked = true;
 		document.form.attach_iptables.checked = false;
 		document.form.attach_modemlog.checked = true;
+		document.form.attach_wlanlog_id.checked = true;
 		document.getElementById("attach_iptables_span").style.display = "none";		
 		inputCtrl(document.form.dslx_diag_enable[0], 0);
 		inputCtrl(document.form.dslx_diag_enable[1], 0);
@@ -91,6 +92,7 @@ function check_wan_state(){
 		document.form.attach_syslog.disabled = "true";
 		document.form.attach_cfgfile.disabled = "true";
 		document.form.attach_modemlog.disabled = "true";
+		document.form.attach_wlanlog.disabled = "true";
 		document.form.fb_comment.disabled = "true";
 		document.form.btn_send.disabled = "true";
 		if(dsl_support){
@@ -114,6 +116,7 @@ function check_wan_state(){
 		document.form.fb_email.disabled = "";
 		document.form.attach_syslog.disabled = "";
 		document.form.attach_modemlog.disabled = "";
+		document.form.attach_wlanlog.disabled = "";
 		document.form.attach_cfgfile.disabled = "";
 		document.form.fb_comment.disabled = "";
 		document.form.btn_send.disabled = "";
@@ -332,6 +335,10 @@ function applyRule(){
 			document.form.PM_attach_modemlog.value = 1;
 		else
 			document.form.PM_attach_modemlog.value = 0;
+		if(document.form.attach_wlanlog.checked == true)
+			document.form.PM_attach_wlanlog.value = 1;
+		else
+			document.form.PM_attach_wlanlog.value = 0;
 		if(dsl_support){
 			if(document.form.attach_iptables.checked == true)
 				document.form.PM_attach_iptables.value = 1;
@@ -634,7 +641,7 @@ function diag_tune_service_option() {
 
 		return $labelHtml;
 	};
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		if($(".dblog_service_item.AiMesh").length == 0)
 			$(".dblog_service_item.all").after(gen_service_option(8, "AiMesh", "AiMesh"));
 	}
@@ -695,6 +702,7 @@ function dblog_stop() {
 <input type="hidden" name="PM_attach_cfgfile" value="">
 <input type="hidden" name="PM_attach_iptables" value="">	
 <input type="hidden" name="PM_attach_modemlog" value="">
+<input type="hidden" name="PM_attach_wlanlog" value="">
 <input type="hidden" name="feedbackresponse" value="<% nvram_get("feedbackresponse"); %>">
 <input type="hidden" name="fb_experience" value="<% nvram_get("fb_experience"); %>">
 <input type="hidden" name="fb_browserInfo" value="">
@@ -757,6 +765,7 @@ function dblog_stop() {
 	<input type="checkbox" class="input" name="attach_cfgfile" id="attach_cfgfile_id"><label for="attach_cfgfile_id"><#feedback_setting_file#></label>&nbsp;&nbsp;&nbsp;
 	<span id="attach_iptables_span" style="color:#FFFFFF;"><input type="checkbox" class="input" name="attach_iptables" id="attach_iptables_id"><label for="attach_iptables_id"><#feedback_iptable_setting#></label></span>
 	<span id="attach_modem_span" style="color:#FFFFFF;"><input type="checkbox" class="input" name="attach_modemlog" id="attach_modemlog_id"><label for="attach_modemlog_id"><#feedback_3G_log#></label></span>
+	<input type="checkbox" class="input" name="attach_wlanlog" id="attach_wlanlog_id"><label for="attach_wlanlog_id">Wi-Fi log<!--untranslated--></label>
 </td>
 </tr>
 

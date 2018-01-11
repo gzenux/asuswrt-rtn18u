@@ -60,10 +60,10 @@ enum {
 	P6_PORT=5,
 #elif defined(MAPAC1300) || defined(MAPAC2200) || defined(VZWAC1300)
 	CPU_PORT=0,
-	LAN1_PORT=4,
-	LAN2_PORT=3,
-	LAN3_PORT=2,
-	LAN4_PORT=1,
+	LAN1_PORT=1,
+	LAN2_PORT=2,
+	LAN3_PORT=3,
+	LAN4_PORT=4,
 	WAN_PORT=5,
 	P6_PORT=5,
 #else
@@ -129,13 +129,24 @@ const int lan_id_to_port_mapping[NR_WANLAN_PORT] = {
 /* this table is mapping to lan_id_to_port_mapping */
 static const int skip_ports[NR_WANLAN_PORT] = {
 	0,  /* WAN_PORT */
-	0,  /* LAN1_PORT */
 	1,
 	1,
 	1,
+	0,  /* LAN4_PORT */
 };
+
+int is_skip_port(int port)
+{
+	int i;
+	for( i = 0; i < NR_WANLAN_PORT; i++) {
+		if(lan_id_to_port_mapping[i] == port)
+			return skip_ports[i];
+	}
+	return 1;
+}
 #else
 static const int skip_ports[NR_WANLAN_PORT] = { 0 };
+#define is_skip_port(p) (0)
 #endif
 
 void reset_qca_switch(void);
@@ -182,6 +193,23 @@ static unsigned int get_lan_port_mask(void)
 	return m;
 }
 
+int ipq40xx_subvlan_set(int vid, int prio, int mbr)
+{
+	int i;
+	unsigned int m;
+
+	if (vid > 4095 || prio > 7)
+		return -1;
+
+	doSystem("ssdk_sh vlan entry create %d", vid);
+	for (i = 0, m = mbr; i < 6; ++i, m >>= 1) {
+		if (m & 1)
+			doSystem("ssdk_sh vlan member add %d %d unmodified", vid, i);
+	}
+
+	return 0;
+}
+
 /**
  * Set a VLAN
  * @vid:	VLAN ID
@@ -195,7 +223,7 @@ static unsigned int get_lan_port_mask(void)
  */
 int ipq40xx_vlan_set(int vid, int prio, int mbr, int untag)
 {
-	int vlan_idx, i;
+	int i;
 	unsigned int m, u;
 
 	if (vid > 4095 || prio > 7)
@@ -213,7 +241,11 @@ int ipq40xx_vlan_set(int vid, int prio, int mbr, int untag)
 				doSystem("ssdk_sh vlan member add %d %d tagged", vid, i);
 			}
 			doSystem("ssdk_sh portVlan ingress set %d secure", i);
+#ifdef RTCONFIG_WIFI_SON
 			doSystem("ssdk_sh portVlan egress set %d unmodified", i);
+#else
+			doSystem("ssdk_sh portVlan egress set %d untagged", i);
+#endif
 		}
 	}
 
@@ -237,6 +269,9 @@ void ipq40xx_portVlan_accept(int accept, int port)
 	const char *method;
 
 	if(port <0 || port > 5)
+		return;
+
+	if(is_skip_port(port))
 		return;
 
 	if(accept)
@@ -485,18 +520,21 @@ unsigned int isolated_vlan_create(unsigned int mask, char *lan_nic)
 	int i;
 	unsigned int isolated_vlan_id, port_mask, all_mask, inv_mask;
 	unsigned char buf[30];
-	unsigned int group1_tag, group2_tag;
+	unsigned int group1_tag, group2_tag, wan_tag;
 
 	/* keep compatibility with IPTV & Auto WAN/LAN */
 	group1_tag = edma_default_tag(1);  /* eth0 */
 	group2_tag = edma_default_tag(2);  /* eth1 */
-//// TBD. Need to add extra VLAN entry detection here for complex IPTV case
-
-	eval("ssdk_sh", "vlan", "entry", "flush"); // clear
 
 	all_mask = inv_mask = 0;
 	/* create isolated vlan */
 	system("ifconfig eth2 up 0.0.0.0");
+
+	if (!strcmp(lan_nic, "eth1"))
+		wan_tag = group1_tag;
+	else
+		wan_tag = group2_tag;
+
 	for ( i=0; i< NR_WANLAN_PORT; i++ ) {
 		if ( skip_ports[i] ) continue;
 		port_mask = 1 << lan_id_to_port_mapping[i];
@@ -505,10 +543,12 @@ unsigned int isolated_vlan_create(unsigned int mask, char *lan_nic)
 			continue;
 		}
 		isolated_vlan_id = ISOLATED_VLAN_OFFSET + lan_id_to_port_mapping[i]; /* same number as QCA's design */
+		doSystem("ssdk_sh vlan entry del %d", isolated_vlan_id);
 		all_mask |= port_mask;
 		ipq40xx_vlan_set(isolated_vlan_id, 0, port_mask | CPU_PORT_LAN_MASK, port_mask);
 		snprintf(buf, sizeof(buf)-1, "%d", isolated_vlan_id);
 		eval("vconfig", "add", "eth2", buf); /* set all isolated port to lan */
+		doSystem("ssdk_sh vlan member del %d %d", wan_tag, lan_id_to_port_mapping[i]);
 	}
 
 	if (!strcmp(lan_nic, "eth1")) {
@@ -516,15 +556,17 @@ unsigned int isolated_vlan_create(unsigned int mask, char *lan_nic)
 		edma_group_mask_to_bmp(2, CPU_PORT_LAN_MASK);
 		edma_group_mask_to_bmp(3, all_mask | CPU_PORT_LAN_MASK); /* set all isolated port to eth2 */
 		ipq40xx_vlan_set(group2_tag, 0, CPU_PORT_LAN_MASK, 0); /* for eth1 */
-		ipq40xx_vlan_set(group1_tag, 0, inv_mask | CPU_PORT_WAN_MASK, inv_mask); /* for eth0 */
 	} else if (!strcmp(lan_nic, "eth0")) {
 		edma_group_mask_to_bmp(1, CPU_PORT_WAN_MASK);
 		edma_group_mask_to_bmp(2, inv_mask | CPU_PORT_LAN_MASK); 
 		edma_group_mask_to_bmp(3, all_mask | CPU_PORT_LAN_MASK); /* set all isolated port to eth2 */
-		ipq40xx_vlan_set(group2_tag, 0, inv_mask | CPU_PORT_LAN_MASK, inv_mask); /* for eth1 */
 		ipq40xx_vlan_set(group1_tag, 0, CPU_PORT_WAN_MASK, 0); /* for eth0 */
 	} else
 		_dprintf("%s: BUG!!! invalid lan nic name [%s]\n", __func__, lan_nic);
+
+	/* for vlan-based guest network */
+	ipq40xx_subvlan_set(55, 0, all_mask | CPU_PORT_LAN_MASK);
+
 	return all_mask;
 }
 
@@ -677,7 +719,17 @@ static void config_ipq40xx_LANWANPartition(int type)
 	_dprintf("%s: LAN/WAN/WANS_LAN portmask %08x/%08x/%08x\n", __func__, lan_mask, wan_mask, wans_lan_mask);
 	reset_qca_switch();
 
+#ifdef RTCONFIG_DETWAN
+	if(lan_mask == 0 && nvram_match("detwan_phy", "eth1"))
+	{
+		int mask = lan_mask;
+		lan_mask = wan_mask;
+		wan_mask = mask;
+	}
+#endif	/* RTCONFIG_DETWAN */
+
 	// LAN 
+	if(lan_mask)
 	ipq40xx_vlan_set(1, 0, (lan_mask | CPU_PORT_LAN_MASK), lan_mask);
 	edma_group_mask_to_bmp(2, lan_mask);
 
@@ -767,6 +819,10 @@ void set_ipq40xx_broadcast_rate(int bsr)
 
 void reset_qca_switch(void)
 {
+	int i;
+	for(i=0; i<6; i++) {
+		doSystem("ssdk_sh portVlan defaultCVid set %d 0", i);
+	}
 	eval("ssdk_sh", "vlan", "entry", "flush"); // clear
 	nvram_unset("vlan_idx");
 
@@ -849,6 +905,35 @@ static int convert_n56u_to_qca_bitmask(int orig)
 		if (orig & bit)
 			bitmask |= (1 << switch_port_mapping[i]);
 	}
+#if defined(RTCONFIG_DETWAN)
+	if(nvram_safe_get("detwan_phy")[0] != '\0')
+	{
+		int mask = 0;
+		//iptv (VoIP & STB) use LAN3/LAN4 but only LAN1 OR WAN to be real port in LYRA
+		if((bitmask & (1 << LAN4_PORT)) || (bitmask & (1 << LAN3_PORT))) {
+			bitmask &= ~(1 << LAN4_PORT);
+			bitmask &= ~(1 << LAN3_PORT);
+			mask |= nvram_get_int("detwan_lan_mask");
+		}
+		if(bitmask & (1<<WAN_PORT)) {
+			bitmask &= ~(1 << WAN_PORT);
+			mask |= nvram_get_int("detwan_wan_mask");
+		}
+		bitmask |= mask;
+	}
+#elif defined(VZWAC1300)
+	{
+		int mask = 0;
+		//iptv (VoIP & STB) use LAN3/LAN4 but only LAN1 OR WAN to be real port in LYRA
+		if((bitmask & (1 << LAN4_PORT)) || (bitmask & (1 << LAN3_PORT))) {
+			bitmask &= ~(1 << LAN4_PORT);
+			bitmask &= ~(1 << LAN3_PORT);
+			mask |= LAN1_PORT;
+		}
+		bitmask |= mask;
+	}
+#endif
+
 	return bitmask;
 }
 
@@ -874,6 +959,10 @@ static void initialize_Vlan(int stb_bitmask)
 
 	build_wan_lan_mask(0);
 	stb_bitmask = convert_n56u_to_qca_bitmask(stb_bitmask);
+#if defined(RTCONFIG_DETWAN)
+	lan_mask = get_lan_port_mask();
+	wan_mask = get_wan_port_mask(0);
+#endif
 	lan_mask &= ~stb_bitmask;
 	wan_mask |= stb_bitmask;
 	_dprintf("%s: LAN/WAN/WANS_LAN portmask %08x/%08x/%08x\n", __func__, lan_mask, wan_mask, wans_lan_mask);
@@ -892,6 +981,7 @@ static void initialize_Vlan(int stb_bitmask)
 	reset_qca_switch();
 
 	// LAN
+	if(lan_mask)
 	ipq40xx_vlan_set(1, 0, (lan_mask | CPU_PORT_LAN_MASK), lan_mask);
 
 	// DUALWAN
@@ -1279,15 +1369,23 @@ void ATE_port_status(void)
 
 #if defined(RT4GAC53U)
 	sprintf(buf, "L1=%C;L2=%C;",
-		(pS.link[0] == 1) ? (pS.speed[0] == 2) ? 'G' : 'M': 'X',
-		(pS.link[1] == 1) ? (pS.speed[1] == 2) ? 'G' : 'M': 'X');
+		(pS.link[1] == 1) ? (pS.speed[1] == 2) ? 'G' : 'M': 'X',
+		(pS.link[2] == 1) ? (pS.speed[2] == 2) ? 'G' : 'M': 'X');
 #else
 	sprintf(buf, "W0=%C;L1=%C;L2=%C;L3=%C;L4=%C;",
 		(pS.link[0] == 1) ? (pS.speed[0] == 2) ? 'G' : 'M': 'X',
+#if defined(MAPAC1300) || defined(MAPAC2200) || defined(VZWAC1300)
+		(pS.link[4] == 1) ? (pS.speed[4] == 2) ? 'G' : 'M': 'X',
+		'X',
+		'X',
+		'X'
+#else
 		(pS.link[1] == 1) ? (pS.speed[1] == 2) ? 'G' : 'M': 'X',
 		(pS.link[2] == 1) ? (pS.speed[2] == 2) ? 'G' : 'M': 'X',
 		(pS.link[3] == 1) ? (pS.speed[3] == 2) ? 'G' : 'M': 'X',
-		(pS.link[4] == 1) ? (pS.speed[4] == 2) ? 'G' : 'M': 'X');
+		(pS.link[4] == 1) ? (pS.speed[4] == 2) ? 'G' : 'M': 'X'
+#endif	/* MAPAC1300 || MAPAC2200 || VZWAC1300 */
+		);
 #endif
 	puts(buf);
 }
@@ -1325,8 +1423,8 @@ int led_ctrl(void)
 }
 #endif	/* LAN4WAN_LED*/
 
-#if defined(RTCONFIG_DETWAN)
-void detwan_set_def_vid(const char *ifname, int setVid, int needTagged, int avoidVid)
+
+int detwan_set_def_vid(const char *ifname, int setVid, int needTagged, int avoidVid)
 {
 	struct {
 		const char *ifname;
@@ -1350,7 +1448,15 @@ void detwan_set_def_vid(const char *ifname, int setVid, int needTagged, int avoi
 	if(setVid) {
 		for(i = 0; i < ARRAY_SIZE(ipq40xx_net); i++) {
 			if(setVid == ipq40xx_net[i].def_vid && strcmp(ipq40xx_net[i].ifname, ifname)) {
-				detwan_set_def_vid(ipq40xx_net[i].ifname, 0, 0, setVid);
+				int new_vid;
+				new_vid = detwan_set_def_vid(ipq40xx_net[i].ifname, 0, 0, setVid);
+
+#if defined(MAPAC1300) || defined(MAPAC2200) || defined(VZWAC1300)
+				if (IPTV_ports_cnt() >= 2)
+				{
+					doSystem("ssdk_sh vlan entry del %d", new_vid);	/* remove new vid (NOT USED) */
+				}
+#endif	/* MAPAC1300 || MAPAC2200 || VZWAC1300 */
 			}
 		}
 	}
@@ -1374,10 +1480,12 @@ void detwan_set_def_vid(const char *ifname, int setVid, int needTagged, int avoi
 				doSystem("ssdk_sh vlan entry del %d", o_vid);	/* remove old (unrequired) vid */
 		}
 
-		if(vid == avoidVid) {
+		if(setVid == 0 && vid == avoidVid) {
 			while(1) {
 				//vid = (srand ( time(NULL) ) % 4094)+1;
 				vid++;
+				if(vid == nvram_get_int("switch_wan1tagid") || vid == nvram_get_int("switch_wan2tagid"))
+					continue;
 				if(doSystem("ssdk_sh vlan entry find %d | grep -q member", vid))
 					break;	//find an idle vlan id
 			}
@@ -1397,10 +1505,11 @@ void detwan_set_def_vid(const char *ifname, int setVid, int needTagged, int avoi
 	}
 
 	logmessage(__func__, "set ifname(%s) vlan id(%d/%d) type(%s) avoid(%d) %s", ifname, setVid, vid, type, avoidVid, (ret<0)?"fail !!!":"ok");
+
+	return vid;
 }
 
 
-#endif	/* RTCONFIG_DETWAN */
 
 #if 0
 void usage(char *cmd)

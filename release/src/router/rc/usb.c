@@ -339,6 +339,7 @@ void add_usb_modem_modules(void){
 	modprobe("libphy");
 #endif
 	modprobe("asix");
+	modprobe("ax88179_178a");
 	modprobe("cdc_ether");
 	modprobe("rndis_host");
 	modprobe("cdc_ncm");
@@ -371,6 +372,7 @@ void remove_usb_modem_modules(void)
 	modprobe_r("cdc_ncm");
 	modprobe_r("rndis_host");
 	modprobe_r("cdc_ether");
+	modprobe_r("ax88179_178a");
 	modprobe_r("asix");
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(4,1,0)
 	modprobe_r("libphy");
@@ -673,7 +675,14 @@ void start_usb(int orig)
 
 			if (nvram_get_int("usb_fs_fat")) {
 #ifdef RTCONFIG_TFAT
-				modprobe("tfat");
+#ifdef RTCONFIG_OPENPLUS_TFAT
+				if(fs_coexist() == 1){
+					modprobe("fat");
+					modprobe("vfat");
+				}
+				else
+#endif
+					modprobe("tfat");
 #else
 				modprobe("fat");
 				modprobe("vfat");
@@ -771,7 +780,14 @@ void remove_usb_storage_module(void)
 	modprobe_r("mbcache");
 #endif
 #ifdef RTCONFIG_TFAT
-	modprobe_r("tfat");
+#ifdef RTCONFIG_OPENPLUS_TFAT
+	if(fs_coexist() == 1){
+		modprobe_r("vfat");
+		modprobe_r("fat");
+	}
+	else
+#endif
+		modprobe_r("tfat");
 #else
 	modprobe_r("vfat");
 	modprobe_r("fat");
@@ -1169,14 +1185,24 @@ int mount_r(char *mnt_dev, char *mnt_dir, char *_type)
 
 			sprintf(options + strlen(options), ",shortname=winnt" + (options[0] ? 0 : 1));
 #ifdef RTCONFIG_TFAT
-#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_QCA)
-			if(nvram_get_int("stop_iostreaming"))
-				sprintf(options + strlen(options), ",nodev" + (options[0] ? 0 : 1));
-			else
-				sprintf(options + strlen(options), ",nodev,iostreaming" + (options[0] ? 0 : 1));
-#else
-			sprintf(options + strlen(options), ",noatime" + (options[0] ? 0 : 1));
+#ifdef RTCONFIG_OPENPLUS_TFAT
+			if(fs_coexist() == 1){
+#ifdef LINUX26
+				sprintf(options + strlen(options), ",flush" + (options[0] ? 0 : 1));
 #endif
+			}
+			else
+#endif
+			{
+#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_QCA)
+				if(nvram_get_int("stop_iostreaming"))
+					sprintf(options + strlen(options), ",nodev" + (options[0] ? 0 : 1));
+				else
+					sprintf(options + strlen(options), ",nodev,iostreaming" + (options[0] ? 0 : 1));
+#else
+				sprintf(options + strlen(options), ",noatime" + (options[0] ? 0 : 1));
+#endif
+			}
 #else
 #ifdef LINUX26
 			sprintf(options + strlen(options), ",flush" + (options[0] ? 0 : 1));
@@ -1241,17 +1267,23 @@ int mount_r(char *mnt_dev, char *mnt_dir, char *_type)
 				f_write(flagfn, NULL, 0, 0, 0);
 			}
 
-#ifdef RTCONFIG_TFAT
 			if(!strncmp(type, "vfat", 4)){
-				ret = eval("mount", "-t", "tfat", "-o", options, mnt_dev, mnt_dir);
+#ifdef RTCONFIG_TFAT
+#ifdef RTCONFIG_OPENPLUS_TFAT
+				if(fs_coexist() == 1)
+					ret = eval("mount", "-t", "vfat", "-o", options, mnt_dev, mnt_dir);
+				else
+#endif
+					ret = eval("mount", "-t", "tfat", "-o", options, mnt_dev, mnt_dir);
+#else
+				ret = eval("mount", "-t", "vfat", "-o", options, mnt_dev, mnt_dir);
+#endif
 				if(ret != 0){
 					syslog(LOG_INFO, "USB %s(%s) failed to mount at the first try!" , mnt_dev, type);
 					TRACE_PT("USB %s(%s) failed to mount at the first try!\n", mnt_dev, type);
 				}
 			}
-
 			else
-#endif
 			{
 				ret = mount(mnt_dev, mnt_dir, type, flags, options[0] ? options : "");
 				if(ret != 0){
@@ -3707,6 +3739,12 @@ ifdef RTCONFIG_TUNNEL
 
 	/* WebDav SSL support */
 	//write_webdav_server_pem();
+	if(f_size(LIGHTTPD_CERTKEY) != f_size(HTTPD_KEY) + f_size(HTTPD_CERT))
+	{
+		char buf[256];
+		snprintf(buf, sizeof(buf), "cat %s %s > %s", HTTPD_KEY, HTTPD_CERT, LIGHTTPD_CERTKEY);
+		system(buf);
+	}
 
 	/* write WebDav configure file*/
 	system("/sbin/write_webdav_conf");

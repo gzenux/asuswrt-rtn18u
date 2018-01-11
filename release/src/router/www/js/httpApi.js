@@ -238,83 +238,101 @@ var httpApi ={
 	},
 
 	"detwanGetRet": function(){
+		var wanInfo = httpApi.nvramGet(["wan0_state_t", "wan0_sbstate_t", "wan0_auxstate_t", "autodet_state", "autodet_auxstate", "wan0_proto", "link_internet"], true);
+	
+		var wanTypeList = {
+			"dhcp": "DHCP",
+			"static": "Static",
+			"pppoe": "PPPoE",
+			"l2tp": "L2TP",
+			"pptp": "PPTP",
+			"modem": "MODEM",
+			"check": "CHECKING",
+			"resetModem": "RESETMODEM",
+			"connected": "CONNECTED",
+			"noWan": "NOWAN"
+		}
+
 		var retData = {
 			"wanType": "CHECKING",
-			"isIPConflict": false,
+			"isIPConflict": (function(){
+				return (wanInfo.wan0_state_t == "4" && wanInfo.wan0_sbstate_t == "4")
+			})(),
 			"isError": false
 		};
 
-		var getDetWanStatus = function(state){
-			switch(parseInt(state)){
-				case 0:
-					if(hadPlugged("modem"))
-						retData.wanType = "MODEM";
-					else
-						retData.wanType = "NOWAN";
-					break;
-				case 2:
-				case 5:
-					retData.wanType = "DHCP";
-					break;
-				case 3:
-				case 6:
-					retData.wanType = "PPPoE";
-					break;
-				case 4:
-				case "":
-					retData.wanType = "CHECKING";
-					break;
-				case 7:
-					retData.wanType = "DHCP";
-					retData.isIPConflict = true;
-					break;
-				default:
-					if(hadPlugged("modem")){
-						retData.wanType = "MODEM";
-					}
-					else{
-						retData.wanType = "RESETMODEM";
-					}
-					break;
-			}
+		var hadPlugged = function(deviceType){
+			var usbDeviceList = httpApi.hookGet("show_usb_path")["show_usb_path"][0] || [];
+			return (usbDeviceList.join().search(deviceType) != -1)
 		}
 
-		$.ajax({
-			url: '/detwan.cgi?action_mode=GetWanStatus',
-			dataType: 'json',
-			async: false,
-			error: function(xhr){
-				if(asyncData.get.hasOwnProperty("detwanState")){
-					getDetWanStatus(asyncData.get["detwanState"]);
-					retData.isError = false;
-
-					delete asyncData.get["detwanState"];
-				}
-				else{
-					retData = {
-						"wanType": "CHECKING",
-						"isIPConflict": false,
-						"isError": true
-					}
-
-					$.ajax({
-						url: '/detwan.cgi?action_mode=GetWanStatus',
-						dataType: 'json',
-						error: function(xhr){
-							asyncData.get["detwanState"] = "UNKNOWN";
-						},
-						success: function(response){
-							asyncData.get["detwanState"] = response.state;
-						}
-					});
-				}
-			},
-			success: function(response){
-				getDetWanStatus(response.state)
+		if(wanInfo.isError){
+			retData.wanType = wanTypeList.check;
+			retData.isIPConflict = false;
+			retData.isError = true;
+		}
+		else if(
+			wanInfo.link_internet   == "2" &&
+			wanInfo.wan0_state_t    == "2" &&
+			wanInfo.wan0_sbstate_t  == "0" &&
+			wanInfo.wan0_auxstate_t == "0"
+		){
+			retData.wanType = wanTypeList.connected;
+		}
+		else if(
+			wanInfo.autodet_state == "0" ||
+			wanInfo.autodet_state == "1" ||
+			wanInfo.autodet_state == ""
+		){
+			retData.wanType = wanTypeList.check;			
+		}
+		else if(wanInfo.autodet_state == "6" || wanInfo.autodet_auxstate == "6"){
+			retData.wanType = wanTypeList.pppoe;
+		}
+		else if(hadPlugged("modem")){
+			retData.wanType = wanTypeList.modem;
+		}
+		else if(wanInfo.wan0_auxstate_t == "1"){
+			retData.wanType = wanTypeList.noWan;
+		}
+/*
+		else if(wanInfo.autodet_state == "2"){
+			retData.wanType = wanTypeList.dhcp;
+		}
+*/
+		else if(wanInfo.autodet_state == "3" || wanInfo.autodet_state == "5"){
+			retData.wanType = wanTypeList.resetModem;
+		}
+		else if(wanInfo.autodet_state == "4"){
+			if(wanInfo.wan0_auxstate_t != "1"){
+				httpApi.startAutoDet();
+				retData.wanType = wanTypeList.check;
+				retData.isIPConflict = false;
+				retData.isError = false;
 			}
-		});
+			else if(wanInfo.wan0_state_t == "4" && wanInfo.wan0_sbstate_t == "4"){
+				retData.wanType = wanTypeList.dhcp;
+				retData.isIPConflict = true;
+			}
+			else{
+				retData.wanType = wanTypeList.noWan;
+			}
+		}
+		else{
+			retData.wanType = wanTypeList.check;
+		}
 
 		return retData;
+	},
+
+	"isConnected": function(){
+		var wanInfo = httpApi.nvramGet(["wan0_state_t", "wan0_sbstate_t", "wan0_auxstate_t", "link_internet"], true);
+		return (
+			wanInfo.link_internet   == "2" &&
+			wanInfo.wan0_state_t    == "2" &&
+			wanInfo.wan0_sbstate_t  == "0" &&
+			wanInfo.wan0_auxstate_t == "0"
+		)
 	},
 
 	"isAlive": function(hostOrigin, token, callback){
@@ -333,24 +351,6 @@ var httpApi ={
 		}
 
 		$.getJSON(targetOrigin + "/chcap.json?callback=?");
-	},
-
-	"checkWhatsNews": function(modelName){
-		window.whatsnews = function(content){
-			var newsString = "";
-			var newsId = httpApi.nvramGet(["extendno", "preferred_lang"]);
-
-			try{
-				newsString = (content[newsId.extendno].hasOwnProperty(newsId.preferred_lang)) ? content[newsId.extendno][newsId.preferred_lang] : content[newsId.extendno]["EN"];
-			}
-			catch(e){
-				newsString = "";
-			}
-
-			// show what's news here
-		}
-
-		$.getJSON("https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/News/" + modelName + "_NEWS.zip?callback=?");
 	},
 
 	"cleanLog": function(path, callback) {

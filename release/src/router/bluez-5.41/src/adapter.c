@@ -5692,6 +5692,10 @@ static void adapter_remove_connection(struct btd_adapter *adapter,
 		DBG("Removing temporary device %s", path);
 		btd_adapter_remove_device(adapter, device);
 	}
+
+#ifdef RTCONFIG_LANTIQ
+	notify_rc("restart_bluetooth_service");
+#endif
 }
 
 static void adapter_stop(struct btd_adapter *adapter)

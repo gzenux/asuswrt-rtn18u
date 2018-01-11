@@ -460,14 +460,13 @@ function addRow_Group(upper, flag, idx){
 	document.openvpnManualForm.vpn_crt_client5_static.disabled = true;
 	document.openvpnManualForm.vpn_crt_client5_crl.disabled = true;
 	idx = parseInt(idx);
-	
+
 	if(flag == 'PPTP' || flag == 'L2TP') {
 		type_obj = document.form.vpnc_type;
 		description_obj = document.form.vpnc_des_edit;
 		server_obj = document.form.vpnc_svr_edit;
 		username_obj = document.form.vpnc_account_edit;
 		password_obj = document.form.vpnc_pwd_edit;
-		
 	}
 	else {	//OpenVPN: openvpn
 		type_obj = document.vpnclientForm.vpnc_type;
@@ -476,7 +475,7 @@ function addRow_Group(upper, flag, idx){
 		username_obj = document.vpnclientForm.vpnc_openvpn_username;
 		password_obj = document.vpnclientForm.vpnc_openvpn_pwd;
 	}
-	
+
 	if(validForm(flag)) {
 		duplicateCheck.tmpIdx = "";
 		duplicateCheck.saveTotmpIdx(idx);
@@ -528,7 +527,7 @@ function addRow_Group(upper, flag, idx){
 		cancel_add_rule();
 		gen_exception_list_table();
 		show_vpnc_rulelist();
-	}	
+	}
 }
 
 function handlePPTPOPtion(idx, objValue) {
@@ -745,7 +744,7 @@ function tabclickhandler(_type){
 		document.vpnclientForm.vpnc_type.value = "IPSec";
 		document.getElementById('ipsecTitle_' + tab_id + '').className = "vpnClientTitle_td_click";
 		document.getElementById('openvpnc_setting_ipsec').style.display = "block";
-		adjust_panel_block_top("openvpnc_setting_ipsec", 200);	
+		adjust_panel_block_top("openvpnc_setting_ipsec", 50);
 	}
 
 	var set_limit_hint = function(_type, _limitNum, _name) {
@@ -1595,8 +1594,12 @@ function gen_subnet_input(_type, _idx, _value) {
 	subnet_input_obj.value = _value;
 	if(subnetIP_support_IPv6)
 		subnet_input_obj.maxLength = "39";
-	else
+	else {
 		subnet_input_obj.maxLength = "18";
+		subnet_input_obj.onkeypress = function() {
+			return validator.isIPAddrPlusNetmask(this,event);
+		};
+	}
 	subnet_input_obj.style.marginTop = "4px";
 	return subnet_input_obj;
 }

@@ -148,6 +148,7 @@ static inline int before(int ver1, int ver2)
 #endif
 
 #define NAT_RULES	"/tmp/nat_rules"
+#define REDIRECT_RULES	"/tmp/redirect_rules"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(ary) (sizeof(ary) / sizeof((ary)[0]))
@@ -470,7 +471,7 @@ extern u_int ieee80211_mhz2ieee(u_int freq);
 
 /* board API under sysdeps/lantiq/lantiq.c */
 #if defined(RTCONFIG_LANTIQ)
-extern char *wav_get_security_str(const char *auth, const char *crypto);
+extern char *wav_get_security_str(const char *auth, const char *crypto, int weptype);
 extern char *wav_get_beacon_type(const char *crypto);
 extern char *wav_get_encrypt(const char *crypto);
 extern int start_repeater(void);
@@ -1103,6 +1104,11 @@ extern int setup_dnsmq(int mode);
 // ssh.c
 
 // usb.c
+#if defined(RTCONFIG_OPENPLUS_TFAT) \
+		|| defined(RTCONFIG_OPENPLUSPARAGON_NTFS) || defined(RTCONFIG_OPENPLUSTUXERA_NTFS) \
+		|| defined(RTCONFIG_OPENPLUSPARAGON_HFS) || defined(RTCONFIG_OPENPLUSTUXERA_HFS)
+extern int fs_coexist();
+#endif
 #ifdef RTCONFIG_USB
 FILE* fopen_or_warn(const char *path, const char *mode);
 extern void hotplug_usb(void);
@@ -1542,6 +1548,8 @@ extern void stop_mdns(void);
 extern void restart_mdns(void);
 extern int mkdir_if_none(const char *path);
 #endif
+extern void start_snooper(void);
+extern void stop_snooper(void);
 #ifdef RTCONFIG_DUALWAN
 extern int restart_dualwan(void);
 #endif

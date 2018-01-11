@@ -1581,6 +1581,8 @@ function update_pvid_options(){
 				break;
 		}		
 	}
+
+	show_pvid_list();
 }
 
 function show_pvid_list(){

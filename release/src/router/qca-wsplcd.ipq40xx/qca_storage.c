@@ -230,7 +230,17 @@ void transfer_to_nvram(void)
 								if(strstr(temp,"wl1"))
 									get_5g=1;
 								if(get_2g && get_5g)
-									system("hive_re waitimeout");
+								{
+									if(nvram_get_int("re_syncing")==2)
+									{
+										if(!strcmp(nvram_get("re_asuscmd"),"0"))
+                        								dprintf(MSG_DEBUG,"RE: wait asus command\n");
+										else
+											system("hive_re waitimeout");
+									}
+									else
+										system("hive_re waitimeout");
+								}
 							}
 							
 							
@@ -275,6 +285,8 @@ void transfer_to_nvram(void)
 						{
 							dprintf(MSG_DEBUG,"===> v1.0 set asus command as %s\n",data);		
 							uci2nvram("re_asuscmd",data);
+							if(nvram_get_int("re_syncing")==2)
+								system("hive_re waitimeout");
 						}
 						else if(strstr(buf,".SECURITY_TYPE"))
 						{

@@ -445,9 +445,10 @@ int pre_ipsec_prof_set()
 	            strcpy(p_tmp, nvram_safe_get(&buf[0]));
 				strcpy(p_tmp_ext, nvram_safe_get(&buf_ext[0]));
 	            /*to avoid nvram that it has not been inited ready*/
-	            if((0 != *p_tmp) && (0 != *p_tmp_ext)){
-		                ipsec_prof_fill(i-1, p_tmp,prof_count);
-					ipsec_prof_fill_ext(i-1, p_tmp_ext,prof_count);
+	            if(0 != *p_tmp){
+		            ipsec_prof_fill(i-1, p_tmp,prof_count);
+					if(0 != *p_tmp_ext)
+						ipsec_prof_fill_ext(i-1, p_tmp_ext,prof_count);
 	                rc = 1;
 	            }
 	        }
@@ -533,9 +534,9 @@ void rc_strongswan_conf_set()
                 "  i_dont_care_about_security_and_use_aggressive_mode_psk = yes\n\n"
                 "  plugins {\n    include strongswan.d/charon/*.conf\n  }\n"
                 "  filelog {\n      /var/log/strongswan.charon.log {\n"
-                "        time_format = %%b %%e %%T\n        default = 1\n"
+                "        time_format = %%b %%e %%T\n        default = %d\n"
                 "        append = no\n        flush_line = yes\n"
-                "     }\n  }\n", nvram_get_int("ipsec_threads_num"));
+                "     }\n  }\n", nvram_get_int("ipsec_threads_num"), nvram_get_int("ipsec_log_level"));
     if(0 != rc){
         if(('n' != samba_prof.dns1[0]) && ('\0' != samba_prof.dns1[0])){
             fprintf(fp,"\n  dns1=%s\n", samba_prof.dns1);

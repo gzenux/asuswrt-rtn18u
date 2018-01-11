@@ -55,10 +55,10 @@ int getStorageStatus(STORAGE_INFO_T *st)
 
 #ifdef RTCONFIG_AMAS
 	st->ExtendCap |= __cpu_to_le16(EXTEND_CAP_AMAS);
-#ifdef RTCONFIG_MASTER_DET
+#endif
+#if defined(RTCONFIG_CFGSYNC) && defined(RTCONFIG_MASTER_DET)
 	if (nvram_get_int("cfg_master"))
 		st->ExtendCap |= __cpu_to_le16(EXTEND_CAP_MASTER);
-#endif
 #endif
 	if(nvram_get_int("enable_webdav")) 	
 		st->u.wt.EnableWebDav = 1;

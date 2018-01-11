@@ -792,11 +792,6 @@ int do_dns_detect(int wan_unit)
 		do {
 			ret = read(pipefd[0], &status, sizeof(status));
 		} while (ret < 0 && errno == EINTR);
-#ifdef RTCONFIG_WIFI_SON
-		if (ret == 0)
-			ret = 0;
-		else
-#endif
 		ret = (ret == sizeof(status)) ? status : -1;
 	error:
 		close(pipefd[0]);
@@ -804,10 +799,8 @@ int do_dns_detect(int wan_unit)
 		if (debug)
 			_dprintf("%s: %s ret %d\n", __FUNCTION__, host, ret);
 
-#ifdef RTCONFIG_WIFI_SON
-		if (ret == 0)
+		if (ret == 0 && debug)
 			logmessage("WAN Connection", "DNS probe failed");
-#endif
 
 		return ret;
 	}
@@ -949,7 +942,7 @@ int detect_internet(int wan_unit)
 
 		// avoid the nat rules had be applied by wan_up before wanduck.
 		if(nvram_get_int("nat_state") == NAT_STATE_NORMAL)
-			stop_nat_rules();
+			nat_state = stop_nat_rules();
 	}
 #endif
 	else if(!dns_ret && /* PPP connections with DNS detection */
@@ -1185,7 +1178,6 @@ int chk_proto(int wan_unit){
 			}
 		}
 #endif
-
 		if(current_state[wan_unit] == WAN_STATE_INITIALIZING){
 			disconn_case[wan_unit] = case_fail;
 			return DISCONN;
@@ -3026,7 +3018,7 @@ _dprintf("wanduck(%d)(first detect start): state %d, state_old %d, changed %d, w
 				eval("rmmod", "ebtables");
 #endif
 				redirect_setting();
-				eval("iptables-restore", "/tmp/redirect_rules");
+				eval("iptables-restore", REDIRECT_RULES);
 				// nat_rules = NAT_STATE_REDIRECT;
 			}
 #ifdef RTCONFIG_WIFI_SON
@@ -3043,7 +3035,7 @@ _dprintf("wanduck(%d)(first detect start): state %d, state_old %d, changed %d, w
                                 {
                                         if(nvram_get_int("wl0.1_bss_enabled"))
                                         {
-                                                eval("ebtables", "-t", "broute", "-I", "BROUTING","-i","ath1.1" ,"-j","ACCEPT");
+                                                eval("ebtables", "-t", "broute", "-I", "BROUTING","-i","ath1.55" ,"-j","ACCEPT");
                                                 eval("ebtables", "-t", "broute", "-I", "BROUTING","-i",nvram_safe_get("wl0.1_ifname"),"-j","ACCEPT");
                                         }
                                 }
@@ -3372,6 +3364,11 @@ if(test_log)
 _dprintf("wanduck(%d)(fo    phy): state %d, state_old %d, changed %d, wan_state %d.\n"
 		, current_wan_unit, conn_state[current_wan_unit], conn_state_old[current_wan_unit], conn_changed_state[current_wan_unit], current_state[current_wan_unit]);
 
+#ifdef RTCONFIG_USB_MODEM
+			if(conn_state[current_wan_unit] == CONNED && conn_state_old[current_wan_unit] == PHY_RECONN)
+				conn_state[current_wan_unit] = PHY_RECONN;
+#endif
+
 			if(current_state[current_wan_unit] == WAN_STATE_DISABLED){
 				//record_wan_state_nvram(current_wan_unit, WAN_STATE_STOPPED, WAN_STOPPED_REASON_MANUAL, -1);
 
@@ -3533,6 +3530,11 @@ _dprintf("wanduck(%d)(fo change): state %d, state_old %d, changed %d, wan_state 
 			other_wan_unit = get_next_unit(current_wan_unit);
 
 			current_state[current_wan_unit] = nvram_get_int(nvram_state[current_wan_unit]);
+
+#ifdef RTCONFIG_USB_MODEM
+			if(conn_state[current_wan_unit] == CONNED && conn_state_old[current_wan_unit] == PHY_RECONN)
+				conn_state[current_wan_unit] = PHY_RECONN;
+#endif
 
 			if(current_state[current_wan_unit] == WAN_STATE_DISABLED){
 				//record_wan_state_nvram(current_wan_unit, WAN_STATE_STOPPED, WAN_STOPPED_REASON_MANUAL, -1);
@@ -3730,6 +3732,11 @@ _dprintf("wanduck(%d) fail-back: state %d, state_old %d, changed %d, wan_state %
 #endif
 
 			current_state[current_wan_unit] = nvram_get_int(nvram_state[current_wan_unit]);
+
+#ifdef RTCONFIG_USB_MODEM
+			if(conn_state[current_wan_unit] == CONNED && conn_state_old[current_wan_unit] == PHY_RECONN)
+				conn_state[current_wan_unit] = PHY_RECONN;
+#endif
 
 			if(current_state[current_wan_unit] == WAN_STATE_DISABLED){
 				disconn_case[current_wan_unit] = CASE_OTHERS;
@@ -4046,15 +4053,18 @@ _dprintf("nat_rule: stop_nat_rules 6.\n");
 					f_write_string("/proc/net/dnsmqctrl", domain_mapping, 0, 0);
 #endif
 
+#ifndef RTCONFIG_LANTIQ
 #ifdef RTCONFIG_REDIRECT_DNAME
 					eval("ebtables", "-t", "broute", "-A", "BROUTING", "-p", "ipv4", "--ip-proto", "udp", "--ip-dport", "53", "-j", "redirect", "--redirect-target", "DROP");
 #endif
+#endif
+
 #ifdef RTCONFIG_WIFI_SON
                                 	if(sw_mode() == SW_MODE_AP && nvram_match("cfg_master", "1"))
                                 	{
                                        		if(nvram_get_int("wl0.1_bss_enabled"))
                                         	{
-                                                	eval("ebtables", "-t", "broute", "-I", "BROUTING","-i","ath1.1" ,"-j","ACCEPT");
+                                                	eval("ebtables", "-t", "broute", "-I", "BROUTING","-i","ath1.55" ,"-j","ACCEPT");
                                                 	eval("ebtables", "-t", "broute", "-I", "BROUTING","-i",nvram_safe_get("wl0.1_ifname"),"-j","ACCEPT");
                                         	}
                                 	}
@@ -4088,7 +4098,7 @@ _dprintf("nat_rule: start_nat_rules 6.\n");
 				eval("ebtables", "-t", "broute", "-F");
 				eval("ebtables", "-t", "filter", "-F");
 				redirect_setting();
-				eval("iptables-restore", "/tmp/redirect_rules");
+				eval("iptables-restore", REDIRECT_RULES);
 				// nat_rules = NAT_STATE_REDIRECT;
 			}
 #ifdef RTCONFIG_WIFI_SON
@@ -4105,7 +4115,7 @@ _dprintf("nat_rule: start_nat_rules 6.\n");
                                 {
                                         if(nvram_get_int("wl0.1_bss_enabled"))
                                         {
-                                                eval("ebtables", "-t", "broute", "-I", "BROUTING","-i","ath1.1" ,"-j","ACCEPT");
+                                                eval("ebtables", "-t", "broute", "-I", "BROUTING","-i","ath1.55" ,"-j","ACCEPT");
                                                 eval("ebtables", "-t", "broute", "-I", "BROUTING","-i",nvram_safe_get("wl0.1_ifname"),"-j","ACCEPT");
                                         }
                                 }

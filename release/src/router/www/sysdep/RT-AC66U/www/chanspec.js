@@ -23,6 +23,20 @@ for(i=0;i<_chanspecs_5g.length;i++){
 	else{
 		wl1.channel_20m.push(_chanspecs_5g[i]);
 	}
+
+	if(based_modelid == "RT-AC87U"){
+		ch80m = JSON.parse('<% channel_list_5g_80m(); %>');
+		wl1.channel_80m.push("0");
+		for(i=0;i<ch80m.length;i++){
+			wl1.channel_80m.push(ch80m[i] + "/80");
+		}
+
+		ch40m = JSON.parse('<% channel_list_5g_40m(); %>');
+		wl1.channel_40m.push("0");
+		for(i=0;i<ch40m.length;i++){
+			wl1.channel_40m.push(wlextchannel_fourty(ch40m[i]));
+		}
+	}
 }
 if(wl_info.band5g_2_support){
 	var wl2 = {

@@ -26,7 +26,7 @@
 <script>
 <% wl_get_parameter(); %>
 $(function () {
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		$('<script>')
 			.attr('type', 'text/javascript')
 			.attr('src','/require/modules/amesh.js')
@@ -380,17 +380,43 @@ function applyRule(){
 		document.form.wl_wpa_psk.value = "";
 
 	if(validForm()){
-		if(amesh_support) {
+		if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 			if(!check_wl_auth_support(auth_mode, $("select[name=wl_auth_mode_x] option:selected")))
 				return false;
+			else {
+				var wl_parameter = {
+					"original" : {
+						"ssid" : '<% nvram_get("wl_ssid"); %>',
+						"psk" : '<% nvram_get("wl_wpa_psk"); %>'
+					},
+					"current": {
+						"ssid" : document.form.wl_ssid.value,
+						"psk" : document.form.wl_wpa_psk.value
+					}
+				};
+				if(!AiMesh_confirm_msg("Wireless_SSID_PSK", wl_parameter))
+					return false;
+			}
+
+			var radio_value = (document.form.wl_closed[0].checked) ? 1 : 0;
+			if(document.form.wps_enable.value == 1) {
+				if(!AiMesh_confirm_msg("Wireless_Hide_WPS", radio_value))
+					return false;
+				document.form.wps_enable.value = "0";
+			}
+			else {
+				if(!AiMesh_confirm_msg("Wireless_Hide", radio_value))
+					return false;
+			}
 		}
-        if(document.form.wl_closed[0].checked && document.form.wps_enable.value == 1 && (isSwMode("rt") || isSwMode("ap"))){ 
-            if(!confirm("<#wireless_JS_Hide_SSID#>")){
-                return false;           
-            }
- 
-             document.form.wps_enable.value = "0";
-        }
+		else {
+			if(document.form.wl_closed[0].checked && document.form.wps_enable.value == 1 && (isSwMode("rt") || isSwMode("ap"))){
+				if(confirm("<#wireless_JS_Hide_SSID#>"))
+					document.form.wps_enable.value = "0";
+				else
+					return false;
+			}
+		}
 	
         if(document.form.wps_enable.value == 1){
             if(document.form.wps_dualband.value == "1" || document.form.wl_unit.value == document.form.wps_band.value){         //9: RT-AC87U dual band WPS

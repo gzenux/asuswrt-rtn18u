@@ -121,7 +121,7 @@
 if(parent.location.pathname !== '<% abs_networkmap_page(); %>' && parent.location.pathname !== "/") top.location.href = "../"+'<% networkmap_page(); %>';
 
 $(function () {
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		$('<script>')
 			.attr('type', 'text/javascript')
 			.attr('src','/require/modules/amesh.js')
@@ -267,7 +267,8 @@ function initial(){
 			based_modelid == "RT-AC88U" ||
 			based_modelid == "RT-AC86U" ||
 			based_modelid == "AC2900" ||
-			based_modelid == "RT-AC3100"){
+			based_modelid == "RT-AC3100" ||
+			based_modelid == "BLUECAVE"){
 			var value = new Array();
 			var desc = new Array();
 				
@@ -281,7 +282,7 @@ function initial(){
 				value = ["0", "1"];
 				add_options_x2(document.form.smart_connect_t, desc, value, smart_connect_x);						
 			}
-			else if(based_modelid == "RT-AC88U" || based_modelid == "RT-AC86U" || based_modelid == "AC2900" || based_modelid == "RT-AC3100"){
+			else if(based_modelid == "RT-AC88U" || based_modelid == "RT-AC86U" || based_modelid == "AC2900" || based_modelid == "RT-AC3100" || based_modelid == "BLUECAVE"){
 				desc = ["none", "Dual-Band Smart Connect"];
 				value = ["0", "1"];
 				add_options_x2(document.form.smart_connect_t, desc, value, smart_connect_x);						
@@ -714,9 +715,23 @@ function submitForm(){
 	}
 	document.form.wsc_config_state.value = "1";
 
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		if(!check_wl_auth_support(auth_mode, $("select[name=wl_auth_mode_x] option:selected")))
 			return false;
+		else {
+			var wl_parameter = {
+				"original" : {
+					"ssid" : '<% nvram_get("wl_ssid"); %>',
+					"psk" : '<% nvram_get("wl_wpa_psk"); %>'
+				},
+				"current": {
+					"ssid" : document.form.wl_ssid.value,
+					"psk" : document.form.wl_wpa_psk.value
+				}
+			};
+			if(!AiMesh_confirm_msg("Wireless_SSID_PSK", wl_parameter))
+				return false;
+		}
 	}
 
 	parent.showLoading();
@@ -786,7 +801,7 @@ function tab_reset(v){
 	}else if(v == 1){	//Smart Connect
 		if(based_modelid == "RT-AC5300" || based_modelid == "RT-AC3200" || based_modelid == "GT-AC5300")
 			document.getElementById("span0").innerHTML = "2.4GHz, 5GHz-1 and 5GHz-2";
-		else if(based_modelid == "RT-AC88U" || based_modelid == "RT-AC86U" || based_modelid == "AC2900" || based_modelid == "RT-AC3100")
+		else if(based_modelid == "RT-AC88U" || based_modelid == "RT-AC86U" || based_modelid == "AC2900" || based_modelid == "RT-AC3100" || based_modelid == "BLUECAVE")
 			document.getElementById("span0").innerHTML = "2.4GHz and 5GHz";
 		
 		document.getElementById("t1").style.display = "none";

@@ -313,15 +313,15 @@ void start_jffs2(void)
 	}
 #endif
 	if (nvram_get_int("jffs2_clean_fs")) {
+		if((0 == nvram_get_int("x_Setting")) && (check_if_file_exist("/jffs/remove_hidden_flag")))
+		{
+			system("rm -rf /jffs/.*");
+			_dprintf("Clean /jffs/.*\n");
+		}
 		_dprintf("Clean /jffs/*\n");
 		system("rm -fr /jffs/*");
 		nvram_unset("jffs2_clean_fs");
 		nvram_commit_x();
-		if((0 == nvram_get_int("x_Setting")) && (check_if_file_exist("/jffs/.sys/remove_hidden_flag")))
-		{
-			system("rm -rf /jffs/.sys");
-			_dprintf("Clean /jffs/.sys\n");
-		}
 	}
 	
 	notice_set("jffs", format ? "Formatted" : "Loaded");
@@ -332,6 +332,15 @@ void start_jffs2(void)
 		system(p);
 		chdir("/");
 	}
+
+#ifdef HND_ROUTER
+#ifdef RTCONFIG_JFFS_NVRAM
+	system("rm -rf /jffs/nvram_war");
+	jffs_nvram_init();
+	system("touch /jffs/nvram_war");
+#endif
+#endif
+
 	run_userfile("/jffs", ".asusrouter", "/jffs", 3);
 }
 

@@ -196,3 +196,7 @@ var systemVariable = {
 	"forceChangePW": "",
 	"rebootTime": ""
 }
+
+var aimeshObj = {
+	"cfg_master": "1"
+}

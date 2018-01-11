@@ -1732,15 +1732,28 @@ void init_switch()
 			/* FA is capable */
 			fclose(fp);
 			nvram_set_int("ctf_fa_cap", 1);
-		} else nvram_set_int("ctf_fa_cap", 0);
+			ATE_BRCM_SET("ctf_fa_cap", "1");
+		} else {
+			nvram_set_int("ctf_fa_cap", 0);
+			ATE_BRCM_SET("ctf_fa_cap", "0");
+		}
 
 		if (nvram_ctf_fa_mode)
 			nvram_set("ctf_fa_mode", ctf_fa_mode_bak);
 		else
 			nvram_unset("ctf_fa_mode");
 		nvram_commit();
+		ATE_BRCM_COMMIT();
 
 		eval("rmmod", "et");
+
+		dbg("FA (hardware Flow Accelarator) cap recorded, rebooting...\n");
+		reboot(RB_AUTOBOOT);
+		sleep(1);
+	} else if (!cfe_nvram_get("ctf_fa_cap")) {
+		dbg("commit original FA cap info into cfe nvram space\n");
+		ATE_BRCM_SET("ctf_fa_cap", nvram_get("ctf_fa_cap"));
+		ATE_BRCM_COMMIT();
 	}
 #endif
 
@@ -1935,6 +1948,13 @@ reset_mssid_hwaddr(int unit)
 					mac_binary[5]);
 			macvalue_local = strtoll(macbuf, (char **) NULL, 16);
 
+#ifdef RTCONFIG_PSR_GUEST
+			if (is_psr(unit) && !nvram_match(strcat_r(prefix, "psr_guest", tmp), "1")) {
+				macvalue--;
+				macvalue_local--;
+			}
+#endif
+
 			/* including primary ssid */
 			for (subunit = 1; subunit < WL_MAXBSSCFG; subunit++)
 			{
@@ -1984,6 +2004,9 @@ reset_psr_hwaddr()
 			|| dpsta_mode()
 #endif
 			);
+#ifdef RTCONFIG_PSR_GUEST
+	int psr_guest_rmac = 0;
+#endif
 
 	memset(mac_binary, 0x0, 6);
 	memset(macbuf, 0x0, 13);
@@ -2016,6 +2039,17 @@ reset_psr_hwaddr()
 		sprintf(macaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", *(macp+5), *(macp+4), *(macp+3), *(macp+2), *(macp+1), *(macp+0));
 		nvram_set(macaddr_name, macaddr_str);
 	}
+
+#ifdef RTCONFIG_PSR_GUEST
+	psr_guest_rmac = (dpsr_mode()
+#ifdef RTCONFIG_DPSTA
+		|| dpsta_mode()
+#endif
+		);
+	nvram_set("psr_guest_rmac", psr_guest_rmac ? "1" : "0");
+#else
+	nvram_unset("psr_guest_rmac");
+#endif
 }
 #endif
 
@@ -2961,12 +2995,17 @@ void generate_wl_para(char *ifname, int unit, int subunit)
 		else if (is_psr(unit)) {
 			if (subunit == 1)
 			{
-#ifndef RTCONFIG_DPSTA
-				nvram_set(strcat_r(prefix, "bss_enabled", tmp), "1");
+#ifdef RTCONFIG_DPSTA
+#ifdef RTCONFIG_AMAS
+				nvram_set(strcat_r(prefix, "bss_enabled", tmp), ((!dpsta_mode() && !dpsr_mode()) || is_dpsta(unit) || is_dpsr(unit) || dpsta_mode()) ? "1" : "0");
+
 #else
 				nvram_set(strcat_r(prefix, "bss_enabled", tmp), ((!dpsta_mode() && !dpsr_mode()) || is_dpsta(unit) || is_dpsr(unit)) ? "1" : "0");
+#endif
 				if (!unit)
 				nvram_set(strcat_r(prefix, "wps_mode", tmp), "enabled");
+#else
+				nvram_set(strcat_r(prefix, "bss_enabled", tmp), "1");
 #endif
 			}
 			else
@@ -3020,10 +3059,17 @@ void generate_wl_para(char *ifname, int unit, int subunit)
 			nvram_set("ure_disable", "1");
 			if (
 #ifdef RTCONFIG_DPSTA
+#ifdef RTCONFIG_AMAS
+				dpsta_mode() ||
+#endif
 				is_dpsta(unit) ||
 #endif
 				is_dpsr(unit)) {
+#ifdef RTCONFIG_AMAS
+				snprintf(prefix2, sizeof(prefix2), "wlc%d_", unit);
+#else
 				snprintf(prefix2, sizeof(prefix2), "wlc%d_", unit ? 1 : 0);
+#endif
 				nvram_set(strcat_r(prefix, "ssid", tmp), nvram_safe_get(strcat_r(prefix2, "ssid", tmp2)));
 				nvram_set(strcat_r(prefix, "auth_mode_x", tmp), nvram_safe_get(strcat_r(prefix2, "auth_mode", tmp2)));
 				nvram_set(strcat_r(prefix, "wep_x", tmp), nvram_safe_get(strcat_r(prefix2, "wep", tmp2)));
@@ -3173,7 +3219,7 @@ void generate_wl_para(char *ifname, int unit, int subunit)
 	if (subunit == -1)
 	{
 #ifdef RTCONFIG_BCM_7114
-		/* for old fw(135x) compatibility, and don't use wlc_psta=3 afterwards  */
+		/* for old fw(135x) compatibility, and don't use wlc_psta=3 afterwards */
 		if(nvram_get_int("wlc_psta") == 3)
 			nvram_set("wlc_psta", "1");
 #endif
@@ -3629,7 +3675,7 @@ void generate_wl_para(char *ifname, int unit, int subunit)
 		nvram_set_int(strcat_r(prefix, "wmf_ucigmp_query", tmp), 1);
 		nvram_set_int(strcat_r(prefix, "wmf_mdata_sendup", tmp), 1);
 #ifdef RTCONFIG_BCMARM
-#ifndef  HND_ROUTER
+#ifndef HND_ROUTER
 		nvram_set_int(strcat_r(prefix, "wmf_ucast_upnp", tmp), 1);
 #endif
 		nvram_set_int(strcat_r(prefix, "wmf_igmpq_filter", tmp), 1);
@@ -6675,6 +6721,9 @@ void set_acs_ifnames()
 	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
 	int unit;
 	int dfs_in_use = 0;
+#if defined(RTAC3200) || defined(RTAC5300) || defined(GTAC5300)
+	int dfs_in_use_5g_2 = 0;
+#endif
 
 	wl_check_5g_band_group();
 
@@ -6718,6 +6767,7 @@ void set_acs_ifnames()
 #if defined(RTAC3200) || defined(RTAC5300) || defined(GTAC5300)
 	nvram_set("wl1_acs_excl_chans", "");
 	dfs_in_use = nvram_get_int("wl1_band5grp") & WL_5G_BAND_2;
+	dfs_in_use_5g_2 = nvram_get_int("wl1_band5grp") & WL_5G_BAND_3;
 
 #if defined(RTAC5300) || defined(GTAC5300)
 	if ((nvram_get_int("wl2_band5grp") & WL_5G_BAND_3) && nvram_match("wl2_country_code", "E0"))
@@ -6756,7 +6806,7 @@ void set_acs_ifnames()
 
 		/* exclude acsd from selecting chanspec 36, 36l, 36/80, 40, 40u, 40/80, 44, 44l, 44/80, 48, 48u, 48/80, 165 for non-US region by default */
 		nvram_set("wl1_acs_excl_chans", nvram_match("acs_band1", "1") ? "0xd0a5" : "0xd024,0xd826,0xe02a,0xd028,0xd926,0xe12a,0xd02c,0xd82e,0xe22a,0xd030,0xd92e,0xe32a,0xd0a5");
-	} else if (nvram_match("wl1_band5grp", "f")) {  // AU (NEW)
+	} else if (nvram_match("wl1_band5grp", "f")) {	// AU (NEW)
 		/* exclude acsd from selecting chanspec 52, 52l, 52/80, 56, 56u, 56/80, 60, 60l, 60/80, 64, 64u, 64/80, 100, 100l, 100/80, 104, 104u, 104/80, 108, 108l, 108/80, 112, 112u, 112/80, 116, 132, 132l, 136, 136u, 140, 165 */
 		nvram_set("wl1_acs_excl_chans", nvram_match("acs_dfs", "1") ? "0xd0a5" : "0xd034,0xe03a,0xd836,0xd038,0xe13a,0xd936,0xd03c,0xe23a,0xd83e,0xd040,0xe33a,0xd93e,0xd064,0xd866,0xe06a,0xd068,0xd966,0xe16a,0xd06c,0xd86e,0xe26a,0xd070,0xd96e,0xe36a,0xd074,0xd084,0xd886,0xd088,0xd986,0xd08c,0xd0a5");
 		dfs_in_use = nvram_match("acs_dfs", "1");
@@ -6766,9 +6816,10 @@ void set_acs_ifnames()
 	}
 #endif
 
+	nvram_set_int("wl0_acs_dfs", 0);
 	nvram_set_int("wl1_acs_dfs", dfs_in_use ? 2 : 0);
 #if defined(RTAC3200) || defined(RTAC5300) || defined(GTAC5300)
-	nvram_set_int("wl2_acs_dfs", dfs_in_use ? 2 : 0);
+	nvram_set_int("wl2_acs_dfs", dfs_in_use_5g_2 ? 2 : 0);
 #endif
 }
 #endif

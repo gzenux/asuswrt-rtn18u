@@ -26,7 +26,7 @@ struct nvram_tuple router_defaults[] = {
 #else
 	{ "sw_mode", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* big switch for different mode */
 #endif
-
+	{ "ASUS_EULA", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "preferred_lang", "EN", CKN_STR2, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 
 	// NVRAM from init_nvram: system wide parameters accodring to model and mode
@@ -357,10 +357,8 @@ struct nvram_tuple router_defaults[] = {
 #if !defined(RTCONFIG_BCM7) && !defined(RTCONFIG_BCM_7114) && !defined(RTCONFIG_BCM9) && !defined(HND_ROUTER)
 	{ "wl_ack_ratio", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 #endif
-#if !defined(RTCONFIG_BCM9)
 	{ "wl_ampdu_mpdu", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wl_ampdu_rts", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
-#endif
 #ifdef RTCONFIG_BCMARM
 #if defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER)
 	{ "wl_turbo_qam", "2", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
@@ -488,6 +486,8 @@ struct nvram_tuple router_defaults[] = {
 #else
 #ifdef RTCONFIG_LANTIQ
 	{ "wl_bw", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* 0/1/2/3 auto/20/40/80MHz */
+	{ "wl0_bw", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* 0/1/2 auto/20/40 */
+	{ "wl1_bw", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* 0/1/2/3 auto/20/40/80MHz */
 #else
 	{ "wl_bw", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* 0/1/2/3/4/5 20/auto/40/80/80+80/160MHz */
 #endif
@@ -869,9 +869,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_psta_inact", "600", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },/* PSTA inactivity timer */
 #endif
 #endif
-#ifdef LANTIQ_BSD
-	{ "bsd_enable", "0", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* Disable Band Steer Daemon */
-#endif
 #ifdef BCM_BSD
 	{ "bsd_role", "3", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* Disable Band Steer Daemon */
 						/* 0:Disable, 1:Primary, 2:Helper, 3:Standalone */
@@ -1000,6 +997,9 @@ struct nvram_tuple router_defaults[] = {
 #ifdef BCM_SSD
 	{ "ssd_enable", "0", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* Disable SSID Steer Daemon */
 	{ "wl_ssd_type", "0", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* default ssd_type "disabled" */
+#endif
+#ifdef HND_ROUTER
+	{"wl_dfs_bw_fallback", "0", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0},	/* DFS reduce bandwidth scheme */
 #endif
 #if defined(RTCONFIG_BCM7) || defined(RTCONFIG_BCM_7114) || defined(RTCONFIG_BCM9) || defined(HND_ROUTER)
 	{ "wl_dfs_pref", "", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* DFS Preferred channel value */
@@ -1254,6 +1254,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_netmask_x", "0.0.0.0", CKN_STR15, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* WAN netmask */
 	{ "wan_gateway_x", "0.0.0.0", CKN_STR15, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* WAN gateway */
 	{ "wan_gateway", "0.0.0.0", CKN_STR15, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+	{ "wan_gw_mac", "", CKN_STR17, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wan_dnsenable_x", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wan_dns1_x", "", CKN_STR15, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* x.x.x.x x.x.x.x ... */
 	{ "wan_dns2_x", "", CKN_STR15, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
@@ -1368,6 +1369,10 @@ struct nvram_tuple router_defaults[] = {
 #ifdef BLUECAVE
 	{ "bc_ledLv", "2", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	// Central led control
 #endif
+#ifdef LANTIQ_BSD
+        { "smart_connect_x", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },       /* Disable Band Steer Daemon */
+#endif
+
 
 #ifdef RTCONFIG_DSL
 	{ "dslx_modulation", "5", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* multiple mode */
@@ -2609,6 +2614,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "PM_attach_syslog", "", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "PM_attach_cfgfile", "", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "PM_attach_modemlog", "", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+	{ "PM_attach_wlanlog", "", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "fb_country", "", CKN_STR32, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "fb_email", "", CKN_STR64, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "fb_comment", "", CKN_STR2048, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
@@ -2931,6 +2937,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "ipsec_profile_client_3_ext",	"", CKN_STR1024, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "ipsec_profile_client_4_ext",	"", CKN_STR1024, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "ipsec_profile_client_5_ext",	"", CKN_STR1024, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+	{ "ipsec_log_level",	"0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 #if	defined(HND_ROUTER)
 	{ "ipsec_stack_block_size",	"0x20000", CKN_STR12, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "ipsec_threads_num", "8", CKN_STR4, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
@@ -4043,13 +4050,10 @@ nvram_default_get(const char *name)
 	}
 #endif
 #endif
+
 #ifdef RTCONFIG_TCODE
-	if (strncmp(name, "lan_", 4) == 0 || strncmp(name, "dhcp_", 5) == 0
-#if defined(RTAC58U)
-	 || strcmp(name, "http_username") == 0
-	 || strcmp(name, "http_passwd") == 0
-#endif
-	) {
+	/* varaible can be any, no skipping is possible */
+	{
 		char *value = tcode_default_get(fixed_name);
 		if (value) {
 			return value;

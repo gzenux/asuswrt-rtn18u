@@ -116,6 +116,7 @@ function initial(){
 
 	$("#tableContainer1").empty();
 	tableApi.genTableAPI(tableStruct);
+	hideCNT(1); // default select cmdMethod = 1
 }
 
 function controlClickEvent(_$this) {

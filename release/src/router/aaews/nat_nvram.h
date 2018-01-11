@@ -12,6 +12,7 @@
 #define DDNS_HOSTNAME "ddns_hostname_x"
 #define DDNS_ENABLE "ddns_enable_x"
 #define HTTPS_WAN_PORT "misc_httpsport_x"
+#define ASUS_EULA_FLAG_NANE "ASUS_EULA"
 /*#define HTTP_WAN_PORT "misc_httpport_x"
 #define HTTP_ENABLE "http_enable"*/
 //#define AAE_SEM_NAME "AAE_ENABLE_SEM"

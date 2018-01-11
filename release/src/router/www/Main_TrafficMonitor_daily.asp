@@ -89,7 +89,7 @@ function init(){
 	daily_history.sort(cmpHist);
 	redraw();
 	if(bwdpi_support){
-		document.getElementById('content_title').innerHTML = "<#menu5_3_2#> - <#traffic_monitor#>";
+		document.getElementById('content_title').innerHTML = "<#traffic_monitor#>";
 	}
 }
 

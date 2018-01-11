@@ -647,6 +647,10 @@ define(function(){
 					retArray.push("Advanced_MobileBroadband_Content.asp");
 				}
 
+				if(based_modelid == "BLUECAVE"){
+					retArray.push("Advanced_Smart_Connect.asp");
+				}
+
 				return retArray;
 			}
 		}

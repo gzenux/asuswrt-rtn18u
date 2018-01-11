@@ -516,6 +516,9 @@ extern char *get_wififname(int band);
 extern unsigned int get_radio_status(char *ifname);
 extern int get_radio(int unit, int subunit);
 extern void set_radio(int on, int unit, int subunit);
+
+extern char *nvram_get_r(const char *name, char *buf, size_t buflen);
+#define nvram_safe_get_r(name, buf, bufsize) (nvram_get_r(name, buf, bufsize) ? : "")
 extern char *nvram_pf_get(char *prefix, const char *name);
 #define nvram_pf_safe_get(prefix, name) (nvram_pf_get(prefix, name) ? : "")
 extern int nvram_pf_set(char *prefix, const char *name, const char *value);
@@ -877,6 +880,7 @@ enum led_id {
 #ifdef RTCONFIG_INTERNAL_GOBI
 #if defined(RT4GAC53U)
 	LED_LTE_OFF,
+	LED_POWER_RED,
 #else
 	LED_3G,
 	LED_LTE,
@@ -1302,7 +1306,7 @@ static inline int guest_wlif(char *ifname)
 #define GUEST_IF_NUM 6
 static inline int guest_wlif(char *ifname)
 {
-	char *p = ifname + 5;
+	// char *p = ifname + 5;
 	int i;
 
 	char *guest_wlif_name[GUEST_IF_NUM] = {
@@ -1378,13 +1382,16 @@ extern int get_maxassoc(char *ifname);
 #if defined(RTCONFIG_LANTIQ)
 extern int get_wl_sta_list(void);
 extern int get_maxassoc(char *ifname);
+extern int get_psta_status(int unit);
 #endif
-
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+extern int get_psta_status(int unit);
+#endif
 
 #define WLSTA_JSON_FILE 				"/tmp/wl_sta_list.json"
 #define MAX_STA_COUNT 128
 #define MAX_SUBIF_NUM 4
-#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_LANTIQ)
+#if defined(RTCONFIG_LANTIQ)
 #define MACF    "%02x:%02x:%02x:%02x:%02x:%02x"
 #define ETHERP_TO_MACF(ea)      ((struct ether_addr *) (ea))->ether_addr_octet[0], \
                                 ((struct ether_addr *) (ea))->ether_addr_octet[1], \
@@ -1891,6 +1898,7 @@ extern void set_wifiled(int mode);
 #define RGBLED_BLINK_MESK		RGBLED_SBLINK | RGBLED_3ON1OFF | RGBLED_NORMAL_MODE
 /* color+blink */
 #define RGBLED_GREEN_3ON1OFF		RGBLED_GREEN | RGBLED_3ON1OFF
+#define RGBLED_PURPLE_3ON1OFF		RGBLED_PURPLE | RGBLED_3ON1OFF
 #define RGBLED_WHITE_SBLINK		RGBLED_WHITE | RGBLED_SBLINK
 #define RGBLED_YELLOW_SBLINK		RGBLED_YELLOW | RGBLED_SBLINK
 extern void set_rgbled(unsigned int mode);
@@ -2078,6 +2086,7 @@ extern int FindBrifByWlif(char *wl_ifname, char *brif_name, int size);
 #ifdef RTCONFIG_HTTPS
 #define HTTPD_CERT	"/etc/cert.pem"
 #define HTTPD_KEY	"/etc/key.pem"
+#define LIGHTTPD_CERTKEY	"/etc/server.pem"
 #define UPLOAD_CERT_FOLDER	"/jffs/.cert"
 #define UPLOAD_CERT	"/jffs/.cert/cert.pem"
 #define UPLOAD_KEY	"/jffs/.cert/key.pem"
@@ -2178,5 +2187,13 @@ extern void deauth_guest_sta(char *, char *);
 extern int is_valid_group_id(const char *);
 extern char *if_nametoalias(char *name, char *alias, int alias_len);
 #endif
+
+#if defined(RTCONFIG_DETWAN) && (defined(RTCONFIG_SOC_IPQ40XX))
+extern void vlan_accept_vid_via_switch(int accept, int wan, int lan);
+extern int detwan_set_def_vid(const char *ifname, int vid, int needTagged, int avoidVid);
+#endif
+
+extern int IPTV_ports_cnt(void);
+
 
 #endif	/* !__SHARED_H__ */

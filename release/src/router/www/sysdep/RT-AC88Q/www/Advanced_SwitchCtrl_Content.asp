@@ -18,6 +18,7 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <style type="text/css">
 .lan_trunk_icon {
 	height: 60px;
@@ -93,59 +94,22 @@ function initial(){
 			document.form.lan_trunk_0.value = 0;
 			document.form.lan_trunk_1.value = 0;
 		}
-		var lan_trunk;
-		lan_trunk = document.form.lan_trunk_0.value;
-		for(var i = 1; lan_trunk != 0 && i <= 4; i++) {
-			if(lan_trunk & 1){
-				var name = "lan0_trunk_" + i;
-				var Elements = document.getElementsByName(name);
-				Elements[0].checked = true;
-			}
-			lan_trunk = lan_trunk >> 1;
-		}
-
-		lan_trunk = document.form.lan_trunk_1.value >> 4;
-		for(var i = 5; lan_trunk != 0 && i <= 8; i++) {
-			if(lan_trunk & 1){
-				var name = "lan1_trunk_" + i;
-				var Elements = document.getElementsByName(name);
-				Elements[0].checked = true;
-			}
-			lan_trunk = lan_trunk >> 1;
-		}
 		document.getElementById("tr_lan_trunk_type").style.display = "";
 		document.getElementById("lan0_trunk").style.display = "";
 		document.getElementById("lan1_trunk").style.display = "";
 		changeTrunkType(document.form.lan_trunk_type_item);
 
 		var gen_lan_trunk_icon = function(_group_id) {
-			var lan_trunk_icon_css = "";
-			var lan_trunk_text_css = "";
-		
 			var html = "";
 			var gen_lan_port = function(_port_idx, _group_id) {
 				var lan_port_html = "";
-				var lan_port_action = "";
-				lan_trunk_icon_css = "lan_trunk_icon icon_disable";
-				lan_trunk_text_css = "lan_trunk_text lan_trunk_text_disable";
-				if( (_group_id == 0 && _port_idx < 5) || (_group_id == 1 && _port_idx > 4) ) {
-					lan_trunk_icon_css = "lan_trunk_icon icon_enable_off";
-					lan_trunk_text_css = "lan_trunk_text";
-					var name = "lan" + _group_id + "_trunk_" + _port_idx;
-					if(document.getElementsByName(name)[0].checked) {
-						lan_trunk_icon_css = "lan_trunk_icon icon_enable_on";
-					}
-					lan_port_action = "controlLanPort(" + _group_id + ", " + _port_idx + ");";
-				}
-
-				
 				if(_port_idx % 2 == 1) {
-					lan_port_html += "<div class='" + lan_trunk_text_css + "'>LAN " + _port_idx +"</div>";
-					lan_port_html += "<div id='lan" + _group_id + "_trunk_" + _port_idx + "_icon' class='" + lan_trunk_icon_css + " icon_handstand' onClick='" + lan_port_action + "'></div>";
+					lan_port_html += "<div class='lan_text_" + _group_id + "_" + _port_idx + " lan_trunk_text'>LAN " + _port_idx +"</div>";
+					lan_port_html += "<div id='lan" + _group_id + "_trunk_" + _port_idx + "_icon' class='lan_icon_" + _group_id + "_" + _port_idx + " lan_trunk_icon icon_handstand'></div>";
 				}
 				else {
-					lan_port_html += "<div id='lan" + _group_id + "_trunk_" + _port_idx + "_icon' class='" + lan_trunk_icon_css + "' onClick='" + lan_port_action + "'></div>";
-					lan_port_html += "<div class='" + lan_trunk_text_css + "'>LAN " + _port_idx +"</div>";
+					lan_port_html += "<div id='lan" + _group_id + "_trunk_" + _port_idx + "_icon' class='lan_icon_" + _group_id + "_" + _port_idx + " lan_trunk_icon'></div>";
+					lan_port_html += "<div class='lan_text_" + _group_id + "_" + _port_idx + " lan_trunk_text'>LAN " + _port_idx +"</div>";
 				}
 				return lan_port_html;
 			};
@@ -167,11 +131,36 @@ function initial(){
 
 		document.getElementById("lan0_trunk_icon").innerHTML = gen_lan_trunk_icon(0);
 		document.getElementById("lan1_trunk_icon").innerHTML = gen_lan_trunk_icon(1);
+
+		var set_cb_lan_trunk = function(_group_id) {
+			var lan_trunk = 0;
+			if(_group_id == 0)
+				lan_trunk = $("input[name=lan_trunk_" + _group_id + "]").val();
+			else
+				lan_trunk = $("input[name=lan_trunk_" + _group_id + "]").val() >> 4;
+			var start_idx = _group_id * 4 + 1;
+			var end_idx = _group_id * 4 + 4;
+			for(var i = start_idx; lan_trunk != 0 && i <= end_idx; i += 1) {
+				if(lan_trunk & 1){
+					var name = "lan" + _group_id + "_trunk_" + i;
+					var Elements = document.getElementsByName(name);
+					Elements[0].checked = true;
+				}
+				lan_trunk = lan_trunk >> 1;
+			}
+		};
+		set_cb_lan_trunk(0);
+		set_cb_lan_trunk(1);
+		set_link_aggregation_event();
+		if(document.form.lan_trunk_type_item.value == "2")
+			retune8023adLanPort();
 	}
 }
 
-function controlLanPort(_group_id, _port_idx) {
-	var name = "lan" + _group_id + "_trunk_" + _port_idx;
+function controlLanPort(event) {
+	var group_id = event.data.group_id;
+	var port_idx = event.data.port_idx;
+	var name = "lan" + group_id + "_trunk_" + port_idx;
 	var name_icon = name + "_icon";
 	if(document.getElementsByName(name)[0].checked) {
 		document.getElementsByName(name)[0].checked = false;
@@ -181,12 +170,14 @@ function controlLanPort(_group_id, _port_idx) {
 		document.getElementsByName(name)[0].checked = true;
 		document.getElementById(name_icon).className = document.getElementById(name_icon).className.replace("icon_enable_off", "icon_enable_on");
 	}
+	if(document.form.lan_trunk_type_item.value == "2")
+		retune8023adLanPort();
 }
 function applyRule(){
-		if(valid_form()){
-				showLoading();
-				document.form.submit();	
-		}
+	if(valid_form()){
+		showLoading();
+		document.form.submit();
+	}
 }
 
 function valid_form(){
@@ -311,21 +302,119 @@ function changeTrunkType(obj) {
 		document.getElementById("lan_trunk_hint").innerHTML = "Current feature is disabled due to LAN as WAN setting, please remove the setting to process.";/*untranslated*/
 		document.getElementById("lan_trunk_hint").style.marginLeft = "0px";
 	}
-
-	switch(obj.value) {
-		case "1" :
-			document.getElementById("lan_trunk_hint").innerHTML = "Please select 2 - 4 ports for each group.";/*untranslated*/
-			document.getElementById("lan0_trunk").style.display = "";
-			document.getElementById("lan1_trunk").style.display = "";
-			break;
-		case "2" :
-			document.getElementById("lan_trunk_hint").innerHTML = "Please select 2 ports only for only one group.";/*untranslated*/
-			document.getElementById("lan0_trunk").style.display = "";
-			document.getElementById("lan1_trunk").style.display = "";
-			break;	
+	else {
+		$(".cb_lan0_trunk").prop("checked", false);
+		$(".cb_lan1_trunk").prop("checked", false);
+		switch(obj.value) {
+			case "1" :
+				document.getElementById("lan_trunk_hint").innerHTML = "Please select 2 - 4 ports for each group.";/*untranslated*/
+				document.getElementById("lan0_trunk").style.display = "";
+				document.getElementById("lan1_trunk").style.display = "";
+				break;
+			case "2" :
+				document.getElementById("lan_trunk_hint").innerHTML = "Please select 2 ports only for only one group.";/*untranslated*/
+				document.getElementById("lan0_trunk").style.display = "";
+				document.getElementById("lan1_trunk").style.display = "";
+				break;
+		}
+		set_link_aggregation_event();
 	}
 }
+function set_link_aggregation_event() {
+	$(".lan_trunk_text").removeClass("lan_trunk_text_disable");
+	$(".lan_trunk_icon").removeClass("icon_disable");
+	$(".lan_trunk_icon").removeClass("icon_enable_on");
+	$(".lan_trunk_icon").removeClass("icon_enable_off");
+	$(".lan_trunk_icon").unbind("click");
 
+	var getClassStartsWith = function(t,n) {
+		var r = $.grep(t.split(" "), function(t,r) {
+			return 0 === t.indexOf(n);
+		}).join();
+		return r || !1;
+	};
+
+	for(var i = 0; i < $(".lan_trunk_icon").length; i += 1) {
+		var className = $(".lan_trunk_icon:eq(" + i + ")").attr("class");
+		var group_and_idx = getClassStartsWith(className, "lan_icon").replace("lan_icon_", "");
+		var group_id = group_and_idx.split("_")[0];
+		var port_idx = group_and_idx.split("_")[1];
+		if( (group_id == 0 && port_idx < 5) || (group_id == 1 && port_idx > 4) ) {
+			var name = "lan" + group_id + "_trunk_" + port_idx;
+			if(document.getElementsByName(name)[0].checked)
+				$(".lan_icon_" + group_and_idx + "").addClass("icon_enable_on");
+			else
+				$(".lan_icon_" + group_and_idx + "").addClass("icon_enable_off");
+
+			$(".lan_icon_" + group_and_idx + "").click({"group_id" : group_id, "port_idx": port_idx}, controlLanPort);
+		}
+		else {
+			$(".lan_text_" + group_and_idx + "").addClass("lan_trunk_text_disable");
+			$(".lan_icon_" + group_and_idx + "").addClass("icon_disable");
+		}
+	}
+}
+function retune8023adLanPort() {
+	var group0_click_count = $(".cb_lan0_trunk:checked").length;
+	var group1_click_count = $(".cb_lan1_trunk:checked").length;
+
+	var set_lan_trunk_icon_default = function(_group_id) {
+		$("#lan" + _group_id + "_trunk_icon").children().find(".lan_trunk_text").addClass("lan_trunk_text_disable");
+		$("#lan" + _group_id + "_trunk_icon").children().find(".lan_trunk_icon").removeClass("icon_enable_off");
+		$("#lan" + _group_id + "_trunk_icon").children().find(".lan_trunk_icon").addClass("icon_disable");
+		$("#lan" + _group_id + "_trunk_icon").children().find(".lan_trunk_icon").unbind("click");
+	};
+	var set_lan_port_default = function(_group_id, _port_idx) {
+		$(".lan_text_" + _group_id + "_" + _port_idx + "").addClass("lan_trunk_text_disable");
+		$(".lan_icon_" + _group_id + "_" + _port_idx + "").removeClass("icon_enable_off");
+		$(".lan_icon_" + _group_id + "_" + _port_idx + "").addClass("icon_disable");
+		$(".lan_icon_" + _group_id + "_" + _port_idx + "").unbind("click");
+	};
+	var set_lan_port_enable = function(_group_id, _port_idx) {
+		$(".lan_text_" + _group_id + "_" + _port_idx + "").removeClass("lan_trunk_text_disable");
+		$(".lan_icon_" + _group_id + "_" + _port_idx + "").addClass("icon_enable_off");
+		$(".lan_icon_" + _group_id + "_" + _port_idx + "").removeClass("icon_disable");
+		$(".lan_icon_" + _group_id + "_" + _port_idx + "").unbind("click");
+		$(".lan_icon_" + _group_id + "_" + _port_idx + "").click({"group_id" : _group_id, "port_idx": _port_idx}, controlLanPort);
+	};
+	var control_check_two_port = function(_group_id) {
+		var unCheckLanPort = $(".cb_lan" + _group_id + "_trunk:not(:checked)");
+		for(var i = 0; i < unCheckLanPort.length; i += 1) {
+			var port_idx = $(".cb_lan" + _group_id + "_trunk:not(:checked):eq(" + i + ")").attr("name").replace("lan" + _group_id + "_trunk_", "");//get unchecked port idx
+			set_lan_port_default(_group_id, port_idx);
+		}
+	};
+	var control_check_one_port = function(_group_id) {
+		var checkLanPort = $(".cb_lan" + _group_id + "_trunk:checked").attr("name").replace("lan" + _group_id + "_trunk_", "");//get checked port idx
+		var start_idx = _group_id * 4 + 1;
+		var end_idx = _group_id * 4 + 4;
+		for(var i = start_idx; i <= end_idx; i += 1) {
+			if(checkLanPort == i) //filter check lan port
+				continue;
+			if(checkLanPort % 2 == i % 2) //horizontal lan port
+				set_lan_port_default(_group_id, i);
+			else //vertical lan port
+				set_lan_port_enable(_group_id, i);
+		}
+	};
+
+	if(group0_click_count != 0) {
+		set_lan_trunk_icon_default(1);
+		if(group0_click_count == 2)
+			control_check_two_port(0);
+		else
+			control_check_one_port(0);
+	}
+	else if(group1_click_count != 0) {
+		set_lan_trunk_icon_default(0);
+		if(group1_click_count == 2)
+			control_check_two_port(1);
+		else
+			control_check_one_port(1);
+	}
+	else
+		set_link_aggregation_event();
+}
 </script>
 </head>
 
@@ -469,10 +558,10 @@ function changeTrunkType(obj) {
 												<td>
 													<div id="lan0_trunk_icon"></div>
 													<div class='lan_port_hidden'>
-														<input type="checkbox" name="lan0_trunk_1" class="input">LAN 1
-														<input type="checkbox" name="lan0_trunk_2" class="input">LAN 2
-														<input type="checkbox" name="lan0_trunk_3" class="input">LAN 3
-														<input type="checkbox" name="lan0_trunk_4" class="input">LAN 4
+														<input type="checkbox" name="lan0_trunk_1" class="input cb_lan0_trunk" value="1">LAN 1
+														<input type="checkbox" name="lan0_trunk_2" class="input cb_lan0_trunk" value="2">LAN 2
+														<input type="checkbox" name="lan0_trunk_3" class="input cb_lan0_trunk" value="4">LAN 3
+														<input type="checkbox" name="lan0_trunk_4" class="input cb_lan0_trunk" value="8">LAN 4
 													</div>
 												</td>
 											</tr>
@@ -481,10 +570,10 @@ function changeTrunkType(obj) {
 												<td>
 													<div id="lan1_trunk_icon"></div>
 													<div class='lan_port_hidden'>
-														<input type="checkbox" name="lan1_trunk_5" class="input">LAN 5
-														<input type="checkbox" name="lan1_trunk_6" class="input">LAN 6
-														<input type="checkbox" name="lan1_trunk_7" class="input">LAN 7
-														<input type="checkbox" name="lan1_trunk_8" class="input">LAN 8
+														<input type="checkbox" name="lan1_trunk_5" class="input cb_lan1_trunk" value="16">LAN 5
+														<input type="checkbox" name="lan1_trunk_6" class="input cb_lan1_trunk" value="32">LAN 6
+														<input type="checkbox" name="lan1_trunk_7" class="input cb_lan1_trunk" value="64">LAN 7
+														<input type="checkbox" name="lan1_trunk_8" class="input cb_lan1_trunk" value="128">LAN 8
 													</div>
 												</td>
 											</tr>

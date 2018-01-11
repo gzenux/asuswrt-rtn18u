@@ -148,9 +148,9 @@ function submitForm(){
 		else if(http_enable != "0" && document.form.le_enable.value != orig_le_enable){
 			document.form.action_wait.value = "10";
 			if(orig_le_enable == "1")
-				document.form.action_script.value = "restart_httpd;restart_ddns_le";
+				document.form.action_script.value = "restart_httpd;restart_webdav;restart_ddns_le";
 			else
-				document.form.action_script.value += ";restart_httpd";
+				document.form.action_script.value += ";restart_httpd;restart_webdav";
 		}
 	}
 
@@ -550,6 +550,10 @@ function upload_cert_key(){
 		show_cert_details();
 	}
 }
+
+function save_cert_key(){
+	location.href = "cert_key.tar";
+}
 </script>
 </head>
 
@@ -705,7 +709,7 @@ function upload_cert_key(){
 			</tr>
 
 			<tr id="cert_details" style="display:none;">
-				<th>Server Certificate</th>
+				<th>Server Certificate</th><!--untranslated-->
 				<td>
 					<div style="display:table-row;">
 						<div style="display:table-cell;"><#Status_Str#> :</div>
@@ -722,6 +726,9 @@ function upload_cert_key(){
 					<div style="display:table-row;">
 						<div style="display:table-cell;">Expires on :</div> <!--untranslated-->
 						<div id="expireOn" style="display:table-cell; padding-left:10px;"></div>
+					</div>
+					<div>
+						<input class="button_gen" onclick="save_cert_key();" type="button" value="<#btn_Export#>" />
 					</div>
 				</td>
 			</tr>

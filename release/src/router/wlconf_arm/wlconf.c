@@ -1617,6 +1617,7 @@ wlconf(char *name)
 	char var[80], *next, *str, *addr = NULL;
 #ifdef RTCONFIG_PSR_GUEST
 	char *psr_guest;
+	char *psr_guest_rmac;
 #endif
 	/* Pay attention to buffer length requirements when using this */
 	char buf[WLC_IOCTL_SMLEN*2] __attribute__ ((aligned(4)));
@@ -1800,6 +1801,7 @@ wlconf(char *name)
 	str = nvram_safe_get(strcat_r(prefix, "mode", tmp));
 #ifdef RTCONFIG_PSR_GUEST
 	psr_guest = nvram_safe_get(strcat_r(prefix, "psr_guest", tmp));
+	psr_guest_rmac = nvram_safe_get("psr_guest_rmac");
 #endif
 
 	/* If ure_disable is not present or is 1, ure is not enabled;
@@ -1847,6 +1849,9 @@ wlconf(char *name)
 		|| (!strcmp(str, "psr") && !strcmp(psr_guest, "1"))
 #endif
 	) {
+#ifdef RTCONFIG_PSR_GUEST
+		if (strcmp(psr_guest_rmac, "1"))
+#endif
 		/* set local bit for our MBSS vif base */
 		ETHER_SET_LOCALADDR(vif_addr);
 
@@ -1859,10 +1864,15 @@ wlconf(char *name)
 				|| (!strcmp(str, "psr") && !strcmp(psr_guest, "1"))
 #endif
 			) {
-				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
-				        | ((max_no_vifs-1) & (vif_addr[5]+1));
+#ifdef RTCONFIG_PSR_GUEST
+				if (strcmp(psr_guest_rmac, "1"))
+#endif
+				{
+					vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
+					        | ((max_no_vifs-1) & (vif_addr[5]+1));
 
-				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
+					nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
+				}
 			}
 		}
 

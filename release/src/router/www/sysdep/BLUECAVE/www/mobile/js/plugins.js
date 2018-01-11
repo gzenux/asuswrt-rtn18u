@@ -210,6 +210,7 @@ function handleSysDep(){
 	$(".iptv").toggle(isSupport("IPTV"));
 	$(".defaultSupport").toggle(systemVariable.isDefault);
 	$(".configuredSupport").toggle(!systemVariable.isDefault);
+	$(".forceUpgrade").toggle(isSupport("FORCEUPGRADE"));
 }
 
 function setUpTimeZone(){
@@ -220,6 +221,22 @@ function setUpTimeZone(){
 		qisPostData.time_zone = timeZoneObj.time_zone;
 		qisPostData.time_zone_dst = (timeZoneObj.hasDst) ? 1 : 0;
 	});
+}
+
+function updateSubnet(ipAddr){
+	if(ipAddr == systemVariable.lanIpaddr && systemVariable.detwanResult.isIPConflict){
+		var ipAddrArray = ipAddr.split(".");
+		if(parseInt(ipAddrArray[2]) < 254){
+			ipAddrArray[2]++;		
+		}
+		else{
+			ipAddrArray[1]++;
+		}
+
+		return ipAddrArray.join(".")
+	}
+
+	return ipAddr;
 }
 
 var getRestartService = function(){
@@ -252,6 +269,10 @@ var getRestartService = function(){
 	if(qisPostData.hasOwnProperty("wrs_protect_enable")){
 		actionScript.push("restart_firewall");
 		actionScript.push("restart_wrs");
+	}
+
+	if(qisPostData.hasOwnProperty("cfg_master")){
+		actionScript.push("restart_cfgsync");
 	}
 
 	if( qisPostData.hasOwnProperty("switch_wantag") ||
@@ -468,7 +489,7 @@ function addNewScript(scriptName){
 }
 
 function startLiveUpdate(){
-	var linkLnternet = (httpApi.nvramGet(["link_internet"], true).link_internet == 2) ? true : false;
+	var linkLnternet = httpApi.isConnected();
 	if(!linkLnternet){
 		setTimeout(arguments.callee, 1000);
 	}

@@ -84,6 +84,23 @@ static int setAllSpecificColorLedOn(enum ate_led_color color)
 		}
 		break;
 #endif
+#if defined(RT4GAC53U)
+	case MODEL_RT4GAC53U:
+		{
+			static enum led_id blue_led[] = {
+				LED_POWER, LED_2G, LED_5G, LED_LAN, LED_USB,
+				LED_SIG1, LED_SIG2, LED_SIG3, LED_SIG4,
+				LED_ID_MAX
+			};
+			static enum led_id red_led[] = {
+				LED_LTE_OFF, LED_POWER_RED,
+				LED_ID_MAX
+			};
+			all_led[LED_COLOR_BLUE] = blue_led;
+			all_led[LED_COLOR_RED] = red_led;
+		}
+		break;
+#endif
 #if defined(RTAC82U)
 	case MODEL_RTAC82U:
 		{
@@ -1171,7 +1188,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		puts(nvram_safe_get("btn_rst"));
 		return 0;
 	}
-	else if (!strcmp(command, "Get_WpsButtonStatus")) {
+	else if (!strcmp(command, "Get_WpsButtonStatus") || !strcmp(command, "Get_PairingButtonStatus")) {
 		puts(nvram_safe_get("btn_ez"));
 		return 0;
 	}
@@ -1571,7 +1588,9 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 #if defined(RTCONFIG_QCA) && defined(RTCONFIG_SOC_IPQ40XX)
 		nvram_set_int("restwifi_qis", 1);
 #endif
+#if !defined(RPAC66)
 		Set_Qcmbr(value);
+#endif
 		return 0;
 	}
 #endif

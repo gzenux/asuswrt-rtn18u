@@ -159,12 +159,7 @@ endif
 
 mii-tool: mii-tool.c mii.h
 
-ifeq ($(wildcard $(SRCBASE)/router/utils/robocfg.c),)
-robocfg:
-	-cp -f $(SRCBASE)/wl/exe/prebuilt/robocfg robocfg
-else
 robocfg: robocfg.c etc53xx.h
-endif
 
 ttcp: epi_ttcp.c
 	$(CC) $(CFLAGS) -o $@ $^

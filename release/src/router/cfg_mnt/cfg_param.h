@@ -16,6 +16,13 @@
 #define FT_FEEDBACK		BIT(5)
 #define FT_DIAGNOSTIC	BIT(6)
 #define FT_BACKHAULCTRL	BIT(7)
+#if defined(MAPAC2200)
+#define FT_BHBLOCK	BIT(8)	/* normal client blocking in backhaul */
+#endif
+#ifdef RTCONFIG_WIFI_SON
+#define FT_SPCMD	BIT(9)	/* special command */
+#endif
+
 
 struct feature_mapping_s {
 	char *name;
@@ -32,6 +39,12 @@ struct feature_mapping_s feature_mapping_list[] = {
 	{ "feedback",	FT_FEEDBACK,	"restart_sendmail" },
 	{ "diagnostic",	FT_DIAGNOSTIC,	"restart_dblog" },
 	{ "backhalctrl", 	FT_BACKHAULCTRL,	"restart_amas_bhctrl"},
+#if defined(MAPAC2200)
+	{ "bhblock", 	FT_BHBLOCK,	"restart_bhblock" },
+#endif
+#ifdef RTCONFIG_WIFI_SON
+	{ "spcmd", 	FT_SPCMD,	"restart_spcmd" },
+#endif
 	/* END */
 	{ NULL, 0, NULL }
 };
@@ -95,7 +108,16 @@ enum {
 	SUBFT_DIAGNOSTIC,
 
 	/* sub feature for amas */
-	SUBFT_BACKHAULCTRL	/* backhaul ctrl */
+	SUBFT_BACKHAULCTRL,	/* backhaul ctrl */
+
+	/* sub feature for smart connect */
+	SUBFT_SMART_CONNECT,	/* smart connect */
+#if defined(MAPAC2200)
+	SUBFT_NCB,
+#endif
+#ifdef RTCONFIG_WIFI_SON
+	SUBFT_SPCMD,
+#endif
 };
 
 struct subfeature_mapping_s subfeature_mapping_list[] = {
@@ -147,6 +169,13 @@ struct subfeature_mapping_s subfeature_mapping_list[] = {
 	{ "diagnostic",		SUBFT_DIAGNOSTIC,	FT_DIAGNOSTIC},
 	/* backhaul ctrl */
 	{ "backhalctrl",		SUBFT_BACKHAULCTRL,	FT_BACKHAULCTRL },
+	{ "smart_connect", 	SUBFT_SMART_CONNECT, FT_WIRELESS },
+#if defined(MAPAC2200)
+	{ "ncb",		SUBFT_NCB,	FT_BHBLOCK },
+#endif
+#ifdef RTCONFIG_WIFI_SON
+	{ "spcmd",		SUBFT_SPCMD,	FT_SPCMD },
+#endif
 	/* END */
 	{ NULL, 0, 0}
 };
@@ -348,6 +377,14 @@ struct param_mapping_s param_mapping_list[] = {
 	{ "dblog_transid", 		FT_DIAGNOSTIC,		SUBFT_DIAGNOSTIC},
 	/* backhaul ctrl */
 	{ "amas_ethernet", 	FT_BACKHAULCTRL,	SUBFT_BACKHAULCTRL},
+	{ "smart_connect_x", 	FT_WIRELESS,	SUBFT_SMART_CONNECT},
+#if defined(MAPAC2200)
+	/* normal client blocking in backhaul */
+	{ "ncb_enable", 	FT_BHBLOCK,		SUBFT_NCB},
+#endif
+#ifdef RTCONFIG_WIFI_SON
+	{ "spcmd", 		FT_SPCMD,		SUBFT_SPCMD},
+#endif
 	/* END */
 	{ NULL, 0, 0 }
 };

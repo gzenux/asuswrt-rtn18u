@@ -11,10 +11,6 @@
 #include "shutils.h"
 #include "shared.h"
 
-#ifdef RTCONFIG_AMAS 
-#include <json.h>
-#endif
-
 #ifdef RTCONFIG_AMAS
 #include <net/ethernet.h>
 #include <amas_path.h>
@@ -152,222 +148,6 @@ char *get_pap_bssid(int unit)
 
 #endif
 //}
-
-#define ETHER_ADDR_STR_LEN       18
-int get_wl_sta_list(void)
-{
-#if 0
-	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
-	char *name;
-	struct maclist *auth = NULL;
-	int mac_list_size;
-	int i;
-	char ea[ETHER_ADDR_STR_LEN];
-	char name_vif[] = "wlX.Y_XXXXXXXXXX";
-	int ii;
-	sta_info_t *sta;
-	int unit = 0;
-	int unit_in = 0;
-	char word[256], *next;
-	char word_in[256], *next_in;
-	char brMac[32] = {0};
-	char ifAlias[16] = {0};
-	json_object *root = NULL;
-	json_object *brMacObj = NULL;
-	json_object *bandObj = NULL;
-	json_object *staObj = NULL;
-	int ret = 0;
-	time_t ts;
-	int pass_entry = 0;
-
-	time(&ts);
-	
-	snprintf(brMac, sizeof(brMac), "%s", get_lan_hwaddr());
-
-	root = json_object_new_object();
-	brMacObj = json_object_new_object();
-
-	foreach (word, nvram_safe_get("wl_ifnames"), next) {
-		bandObj = NULL;
-		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
-		name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
-
-#ifdef RTCONFIG_WIRELESSREPEATER
-		if ((sw_mode() == SW_MODE_REPEATER)
-			&& (nvram_get_int("wlc_band") == unit))
-		{
-			memset(name_vif, 0, sizeof(name_vif));
-			snprintf(name_vif, sizeof(name_vif), "wl%d.%d", unit, 1);
-			name = name_vif;
-		}
-#endif
-
-		if (!strlen(name))
-			goto exit;
-
-		/* buffers and length */
-		mac_list_size = sizeof(auth->count) + MAX_STA_COUNT * sizeof(struct ether_addr);
-		auth = malloc(mac_list_size);
-
-		if (!auth)
-			goto exit;
-
-		memset(auth, 0, mac_list_size);
-
-		/* query wl for authenticated sta list */
-		strcpy((char*)auth, "authe_sta_list");
-		if (wl_ioctl(name, WLC_GET_VAR, auth, mac_list_size))
-			goto exit;
-
-		memset(ifAlias, 0, sizeof(ifAlias));
-		if_nametoalias(name, &ifAlias[0], sizeof(ifAlias));
-
-		/* build authenticated sta list */
-		for (i = 0; i < auth->count; ++i) {
-			sta = wl_sta_info(name, &auth->ea[i]);
-			if (!sta) continue;
-			if (!(sta->flags & WL_STA_ASSOC) && !sta->in) continue;
-	
-			ether_etoa((void *)&auth->ea[i], ea);
-
-			/* filter sta's mac is same as ours */
-#if defined(RTCONFIG_BCMARM) && defined(RTCONFIG_PROXYSTA) && defined(RTCONFIG_DPSTA)
-			unit_in = 0;
-			pass_entry = 0;
-			foreach (word_in, nvram_safe_get("wl_ifnames"), next_in) {
-				SKIP_ABSENT_BAND_AND_INC_UNIT(unit);
-				if (!strcmp(ea, get_pap_bssid(unit_in))) {
-					pass_entry = 1;
-					break;
-				}
-				unit_in++;
-			}
-
-			if (pass_entry) continue;
-#endif
-
-			if (!bandObj)
-				bandObj = json_object_new_object();
-				staObj = json_object_new_object();
-				json_object_object_add(bandObj, ea, staObj);	
-		}
-		
-		if (bandObj)
-			json_object_object_add(brMacObj, ifAlias, bandObj);
-
-		for (i = 1; i < 4; i++) {
-			bandObj = NULL;
-#ifdef RTCONFIG_WIRELESSREPEATER
-			if ((sw_mode() == SW_MODE_REPEATER)
-				&& (unit == nvram_get_int("wlc_band")) && (i == 1))
-				break;
-#endif
-			memset(prefix, 0, sizeof(prefix));
-			snprintf(prefix, sizeof(prefix), "wl%d.%d_", unit, i);
-			if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1"))
-			{
-				memset(name_vif, 0, sizeof(name_vif));
-				snprintf(name_vif, sizeof(name_vif), "wl%d.%d", unit, i);
-
-				memset(auth, 0, mac_list_size);
-
-				memset(ifAlias, 0, sizeof(ifAlias));
-       		 		if_nametoalias(name_vif, &ifAlias[0], sizeof(ifAlias)); 
-
-				/* query wl for authenticated sta list */
-				strcpy((char*)auth, "authe_sta_list");
-				if (wl_ioctl(name_vif, WLC_GET_VAR, auth, mac_list_size))
-					goto exit;
-
-				for (ii = 0; ii < auth->count; ii++) {
-					sta = wl_sta_info(name_vif, &auth->ea[ii]);
-					if (!sta) continue;
-					if (!(sta->flags & WL_STA_ASSOC) && !sta->in) continue;
-
-					ether_etoa((void *)&auth->ea[ii], ea);
-
-					/* filter sta's mac is same as ours */
-#if defined(RTCONFIG_BCMARM) && defined(RTCONFIG_PROXYSTA) && defined(RTCONFIG_DPSTA)
-					unit_in = 0;
-					pass_entry = 0;
-					foreach (word_in, nvram_safe_get("wl_ifnames"), next_in) {
-						SKIP_ABSENT_BAND_AND_INC_UNIT(unit);
-						if (!strcmp(ea, get_pap_bssid(unit_in))) {
-							pass_entry = 1;
-							break;
-						}
-						unit_in++;
-					}
-
-					if (pass_entry) continue;
-#endif
-	
-					if (!bandObj)
-					bandObj = json_object_new_object();
-					staObj = json_object_new_object();
-					json_object_object_add(bandObj, ea, staObj);
-				}
-
-				if (bandObj)
-					json_object_object_add(brMacObj, ifAlias, bandObj);
-			}
-		}
-
-		if (auth) {
-			free(auth);
-			auth = NULL;
-		}
-
-		unit++;
-	}
-
-	if (brMacObj) {
-		json_object_object_add(root, brMac, brMacObj);
-		json_object_to_file(WLSTA_JSON_FILE, root);
-	}
-	ret = 1;
-	/* error/exit */
-exit:
-	json_object_put(root);
-
-	if (auth) free(auth);
-
-	return ret;
-#endif	
-}
-
-int wlif_status(char *ifname)
-{
-#if 0
-	unsigned char bssid[6];
-	unsigned char bssid_null[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-	char ure_mac[18]={0};
-	
-	if (wl_ioctl(ifname, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN) < 0)
-	{
-		cprintf("can't get %s status\n", ifname);
-		return -1;
-	}
-	else{		
-		memset(ure_mac, 0x00, sizeof(ure_mac));
-		sprintf(ure_mac, "%02X:%02X:%02X:%02X:%02X:%02X",
-							(unsigned char)bssid[0],
-							(unsigned char)bssid[1],
-							(unsigned char)bssid[2],
-							(unsigned char)bssid[3],
-							(unsigned char)bssid[4],
-							(unsigned char)bssid[5]);
-		//cprintf("ure_mac= %s\n", ure_mac);
-
-		if (!memcmp(&bssid, bssid_null, 6)){
-			return 0;
-		}
-		else
-			return 1;		
-	}
-	return -1;
-#endif
-}
 
 int get_wlan_service_status(int bssidx, int vifidx)
 {
@@ -709,6 +489,11 @@ err:
 		if (static_maclist != NULL)
 			free(static_maclist);
 #endif			
+}
+
+int get_psta_status(int unit)
+{
+return 0;
 }
 #endif
 

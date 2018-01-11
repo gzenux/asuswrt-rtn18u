@@ -380,6 +380,10 @@ ifeq ($(RTCONFIG_NORTON),y)
 export CFLAGS += -D__CONFIG_NORTON__
 endif
 
+ifeq ($(RTCONFIG_JFFS_NVRAM),y)
+export CFLAGS += -DJFFS_NVRAM
+endif
+
 ifeq ($(RTCONFIG_DEBUG),y)
 export CFLAGS += -g
 endif
@@ -993,7 +997,7 @@ endif
 # install before samba3 for not overwriting some binaries
 obj-$(RTCONFIG_WEBDAV) += samba-3.5.8
 obj-$(NEED_SAMBA2) += samba
-ifeq ($(or $(CONFIG_BCMWL5),$(RTCONFIG_RALINK),$(RTCONFIG_REALTEK)),y)
+ifeq ($(or $(CONFIG_BCMWL5),$(RTCONFIG_RALINK),$(RTCONFIG_REALTEK),$(RTCONFIG_LANTIQ)),y)
 ifneq ($(RTCONFIG_8M_SFP),y)
 #ifeq ($(HND_ROUTER),y)
 #obj-$(NEED_SAMBA3) += brcmssp_util
@@ -1304,7 +1308,6 @@ obj-$(HND_ROUTER) += pwrctl_lib
 obj-$(HND_ROUTER) += bridge-utils	# ig
 obj-$(HND_ROUTER) += stlport
 #obj-$(HND_ROUTER) += iperf-2.0.5
-#obj-$(HND_ROUTER) += iproute2-4.3
 obj-$(HND_ROUTER) += mmc-utils
 obj-$(HND_ROUTER) += mtd
 #obj-$(HND_ROUTER) += sysstat
@@ -2004,7 +2007,7 @@ ifeq ($(RTCONFIG_LANTIQ),y)
 	cd $(TARGETDIR)/usr/sbin && ln -sf qos_cli ./ifcfg
 	cd $(TARGETDIR)/usr/sbin && ln -sf qos_cli ./qcfg
 	cd $(TARGETDIR)/usr/sbin && ln -sf qos_cli ./classcfg
-	cp $(SRCBASE)/proprietary/sdk_7.2mr1_05.04.00.61.4_AE/usr/lib/libncurses.so.5.9 $(TARGETDIR)/usr/lib/libncurses.so.5.9
+	cp $(SRCBASE)/proprietary/sdk_7.2.1.20_05.04.00.61.6_AE/usr/lib/libncurses.so.5.9 $(TARGETDIR)/usr/lib/libncurses.so.5.9
 	cd $(TARGETDIR)/usr/lib && ln -sf libncurses.so.5.9 ./libncurses.so.5
 	# install -D rom_lantiq/opt/lantiq/lib/modules/3.10.104/directconnect_datapath.ko $(TARGETDIR)/lib/modules/3.10.104/
 	cd $(TARGETDIR)/lib/modules/3.10.104/; ln -sf ../../../rom/opt/lantiq/lib/modules/3.10.104/directconnect_datapath.ko ./directconnect_datapath.ko
@@ -4018,6 +4021,20 @@ iproute2-3.15.0-clean:
 	-@$(MAKE) -C iproute2-3.15.0 clean
 	-rm -f iproute2-3.15.0/Config
 
+iproute2-4.3:
+	touch iproute2-4.3/iproute2-4.3.0/configure
+	$(MAKE) -C iproute2-4.3
+
+iproute2-4.3-install:
+	install -D iproute2-4.3/iproute2-4.3.0/tc/tc $(INSTALLDIR)/iproute2-4.3/usr/sbin/tc
+	$(STRIP) $(INSTALLDIR)/iproute2-4.3/usr/sbin/tc
+	install -D iproute2-4.3/iproute2-4.3.0/ip/ip $(INSTALLDIR)/iproute2-4.3/usr/sbin/ip
+	$(STRIP) $(INSTALLDIR)/iproute2-4.3/usr/sbin/ip
+
+iproute2-4.3-clean:
+	-@$(MAKE) -C iproute2-4.3 clean
+	-rm -f iproute2-4.3/iproute2-4.3.0/Config
+
 ntpclient: nvram$(BCMEX)$(EX7) shared
 
 ntpclient-install:
@@ -4068,7 +4085,7 @@ wtfast-configure:
 	@true
 
 wtfast-install:
-	install -D wtfast/wtfslhd/wtfslhd $(INSTALLDIR)/wtfast/usr/sbin/wtfslhd
+	install -D wtfast/wtfslhd/wtfslhd$(BCMEX)$(EX7)/wtfslhd $(INSTALLDIR)/wtfast/usr/sbin/wtfslhd
 
 # Media libraries
 
@@ -7381,13 +7398,6 @@ stlport-install:
 	@echo done
 
 .PHONY : stlport
-
-
-iproute2-4.3:
-	touch iproute2-4.3/iproute2-4.3.0/configure
-	$(MAKE) -C iproute2-4.3
-
-.PHONY : iproute2-4.3
 
 mmc-utils:
 	$(MAKE) -C mmc-utils

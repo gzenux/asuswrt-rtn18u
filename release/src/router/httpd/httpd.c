@@ -559,8 +559,8 @@ send_token_headers( int status, char* title, char* extra_header, char* mime_type
 		strncpy(asus_token, gen_token, sizeof(asus_token));
 	}else{
 		generate_token(asus_token, sizeof(asus_token));
-		add_asus_token(asus_token);
 	}
+	add_asus_token(asus_token);
 
     (void) fprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
     (void) fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
@@ -755,6 +755,8 @@ void set_referer_host(void)
 	}else if(!strcmp(DUT_DOMAIN_NAME, host_name))	//transfer http domain to ip
 		strlcpy(referer_host, lan_ipaddr, sizeof(referer_host));
 	else if(!strncmp(lan_ipaddr, host_name, ip_len) && *(host_name + ip_len) == ':' && (port = atoi(host_name + ip_len + 1)) == 80)	//filter send hostip:80
+		strlcpy(referer_host, lan_ipaddr, sizeof(referer_host));
+	else if(nvram_match("x_Setting", "0"))
 		strlcpy(referer_host, lan_ipaddr, sizeof(referer_host));
 	else
 		strlcpy(referer_host, host_name, sizeof(referer_host));
@@ -1350,11 +1352,11 @@ handle_request(void)
 #if defined(RTCONFIG_IFTTT) || defined(RTCONFIG_ALEXA)
 					&& !strstr(file, "asustitle.png")
 #endif
-					){
+					&& !strstr(file,"cert_key.tar")){
 				send_error( 404, "Not Found", (char*) 0, "File not found." );
 				return;
 			}
-			if((strcmp(url, "QIS_default.cgi")==0 || strcmp(url, "page_default.cgi")==0) && nvram_match("x_Setting", "0")){
+			if(nvram_match("x_Setting", "0") && (strcmp(url, "QIS_default.cgi")==0 || strcmp(url, "page_default.cgi")==0 || !strcmp(websGetVar(file, "x_Setting", ""), "1"))){
 				if(!fromapp) set_referer_host();
 				send_token_headers( 200, "Ok", handler->extra_header, handler->mime_type, fromapp);
 
@@ -1975,12 +1977,13 @@ int main(int argc, char **argv)
 	//int do_ssl = 0;
 
 	do_ssl = 0; // default
+	char log_filename[128] = {0};
 
 #if defined(RTCONFIG_SW_HW_AUTH)
 	//if(!httpd_sw_hw_check()) return 0;
 #endif
 	// usage : httpd -s -p [port]
-	while ((c = getopt(argc, argv, "sp:i:")) != -1) {
+	while ((c = getopt(argc, argv, "sp:i:w:")) != -1) {
 		switch (c) {
 		case 's':
 #ifdef RTCONFIG_HTTPS
@@ -1993,6 +1996,13 @@ int main(int argc, char **argv)
 		case 'i':
 			http_ifname = optarg;
 			break;
+		case 'w':
+			//Generate Wi-Fi log
+			snprintf(log_filename, sizeof(log_filename), "%s", optarg);
+			FILE *fp = fopen(log_filename, "w");
+			ej_wl_status_2g(0, fp, 0, NULL);
+			fclose(fp);
+			return 0;
 		default:
 			fprintf(stderr, "ERROR: unknown option %c\n", c);
 			break;

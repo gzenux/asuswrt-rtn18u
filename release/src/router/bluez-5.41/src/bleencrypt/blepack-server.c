@@ -10,11 +10,7 @@
 #include "utility.h"
 #include <shutils.h>
 
-#define DEF_LEN_128 128
-#define DEF_LEN_256 256
-
 static char do_rc_service[DEF_LEN_256];
-extern int discover_interface(const char *current_wan_ifname, int dhcp_det);
 
 typedef struct TLV_Header_t
 {
@@ -344,6 +340,10 @@ void UnpackBLEDataToNvram(struct param_handler_svr *param_handler, unsigned char
 					}
 					else
 						chk_service = 1;
+#ifdef RTCONFIG_LANTIQ
+					nvram_set("x_Setting", "1");
+					notify_rc_and_wait("chpass");
+#endif
 				}
 				else
 				{
@@ -362,6 +362,7 @@ void UnpackBLEDataToNvram(struct param_handler_svr *param_handler, unsigned char
 					if ( chk_service == 1 )
 					{
 #ifdef RTCONFIG_BWDPI
+#ifndef RTCONFIG_LANTIQ
 						nvram_set("wrs_protect_enable", "1");
 						nvram_set("wrs_mals_t", "0");
 						nvram_set("wrs_cc_t", "0");
@@ -369,6 +370,7 @@ void UnpackBLEDataToNvram(struct param_handler_svr *param_handler, unsigned char
 						nvram_set("bwdpi_db_enable", "1");
 						nvram_set("apps_analysis", "1");
 						nvram_set("TM_EULA", "1");
+#endif
 #endif
 					} else {
 						eval("iwconfig", "ath1", "channel", nvram_safe_get("wl1_channel"));
@@ -395,7 +397,9 @@ void UnpackBLEDataToNvram(struct param_handler_svr *param_handler, unsigned char
 					{
 						snprintf(do_rc_service, sizeof(do_rc_service), "%s%s%s", do_rc_service, delim, "start_hyfi_process");
 #ifdef RTCONFIG_BWDPI
+#ifndef RTCONFIG_LANTIQ
 						snprintf(do_rc_service, sizeof(do_rc_service), "%s%s%s", do_rc_service, delim, "restart_wrs");
+#endif
 #endif
 						snprintf(do_rc_service, sizeof(do_rc_service), "%s%s%s", do_rc_service, delim, "restart_firewall");
 					}
@@ -779,25 +783,21 @@ void PackBLEResponseGetAth1Chan(int cmdno, int status, unsigned char *pdu, int *
 
 void PackBLEResponseGetWanStatus(int cmdno, int status, unsigned char *pdu, int *pdulen)
 {
-	char var_name[DEF_LEN_128];
-	int wanstatus=BLE_WAN_STATUS_ALL_DISCONN;
+	char prefix[DEF_LEN_128];
 	unsigned char wanss[2];
-	int wan_proto=-1, idx, conn_tmp=1;
+	int wanstatus=BLE_WAN_STATUS_ALL_DISCONN;
 #if defined(RTCONFIG_DETWAN)
 	char *detwan[] = {"detwan", NULL};
 	int max_inf, value, conn=0;
-#else
-	int model = get_model();
-	int wan_port;
-#endif
-	memset(var_name, '\0', DEF_LEN_128);
+	int wan_proto=-1, idx, conn_tmp=1;
 
-#if defined(RTCONFIG_DETWAN)
+	memset(prefix, '\0', sizeof(prefix));
+
 	/* Check the port status */
 	max_inf = nvram_get_int("detwan_max");
 	for (idx = 0; idx < max_inf; idx++, conn_tmp=conn_tmp<<1) {
-		snprintf(var_name, sizeof(var_name), "detwan_mask_%d", idx);
-		if ((value = nvram_get_int(var_name)) != 0) {
+		snprintf(prefix, sizeof(prefix), "detwan_mask_%d", idx);
+		if ((value = nvram_get_int(prefix)) != 0) {
 			if (get_ports_status((unsigned int)value))
 					conn |= conn_tmp;
 		}
@@ -814,8 +814,8 @@ void PackBLEResponseGetWanStatus(int cmdno, int status, unsigned char *pdu, int 
 			sleep(1);
 			idx++;
 		}
-		memset(var_name, '\0', DEF_LEN_128);
-		snprintf(var_name, sizeof(var_name), "%s", nvram_safe_get("wan0_ifname"));
+		memset(prefix, '\0', DEF_LEN_128);
+		snprintf(prefix, sizeof(prefix), "%s", nvram_safe_get("wan0_ifname"));
 		wan_proto = nvram_get_int("detwan_proto");
 
 		/* Check the link status */
@@ -828,18 +828,18 @@ void PackBLEResponseGetWanStatus(int cmdno, int status, unsigned char *pdu, int 
 			conn_tmp = nvram_get_int("link_internet");
 			idx++;
 		}
-		logmessage("BLUEZ", "wan:%s, proto:%d, internet:%d\n", var_name, wan_proto, conn_tmp);
+		logmessage("BLUEZ", "wan:%s, proto:%d, internet:%d\n", prefix, wan_proto, conn_tmp);
 
 		if (wan_proto == 3) {
 			if (conn_tmp == 2) wan_proto = 1;
 			else wan_proto = 2;
 		}
 
-		if (strlen(var_name)) {
+		if (strlen(prefix)) {
 #if defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
-			if (!strncmp(var_name, "vlan2", strlen(var_name))) {
+			if (!strncmp(prefix, "vlan2", strlen(prefix))) {
 #else
-			if (!strncmp(var_name, "eth0", strlen(var_name))) {
+			if (!strncmp(prefix, "eth0", strlen(prefix))) {
 #endif
 				if (wan_proto == 1)
 					wanstatus = BLE_WAN_STATUS_PORT0_DHCP;
@@ -865,52 +865,90 @@ void PackBLEResponseGetWanStatus(int cmdno, int status, unsigned char *pdu, int 
 		}
 	}
 #else
-	switch (model) {
-		case MODEL_VZWAC1300:
-			wan_port = 32;
-			break;
-		default:
-			wan_port = 1;
-			break;
-	}
+	char prefix2[DEF_LEN_128];
+	char tmp[DEF_LEN_128], tmp2[DEF_LEN_128];
+	int unit, idx=0;
 
-	if (get_ports_status((unsigned int)wan_port)) {
-		snprintf(var_name, sizeof(var_name), "%s", nvram_safe_get("wan0_ifname"));
-		wan_proto = discover_interface(var_name, nvram_match("wan0_proto", "dhcp"));
+	memset(prefix, '\0', sizeof(prefix));
+	memset(prefix2, '\0', sizeof(prefix2));
 
-		idx = 0;
-		while ( wan_proto==3 && conn_tmp!=2 && idx<10) {
-			conn_tmp = nvram_get_int("link_internet");
-			sleep(1);
-			idx++;
+	while (idx++<=5) sleep(1);
+
+#ifndef RTCONFIG_LANTIQ
+	for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+		if(get_dualwan_by_unit(unit) != WANS_DUALWAN_IF_WAN && get_dualwan_by_unit(unit) != WANS_DUALWAN_IF_LAN)
+			continue;
+#else
+	unit = 0;
+#endif
+		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+		if(unit == WAN_UNIT_FIRST)
+			snprintf(prefix2, sizeof(prefix2), "autodet_");
+		else
+			snprintf(prefix2, sizeof(prefix2), "autodet%d_", unit);
+
+		if (nvram_get_int(strcat_r(prefix2, "state", tmp2)) == AUTODET_STATE_FINISHED_NOLINK) {
+			if(nvram_get_int(strcat_r(prefix, "auxstate_t", tmp))==1) {
+				nvram_set("autodet_state", "0");
+				notify_rc_after_period_wait("start_autodet", 0);
+			}
+			wanstatus = BLE_WAN_STATUS_ALL_DISCONN;
 		}
-		logmessage("BLUEZ", "wan:%s, proto:%d, internet:%d\n", var_name, wan_proto, conn_tmp);
-		printf("BLUEZ: wan:%s, proto:%d, internet:%d\n", var_name, wan_proto, conn_tmp);
-
-		if (wan_proto == 3) {
-			if (conn_tmp == 2) wan_proto = 1;
-			else wan_proto = 2;
-		}
-		if (!strncmp(var_name, nvram_safe_get("wan0_ifname"), strlen(var_name))) {
-			if (wan_proto == 1)
+		else if (nvram_get_int(strcat_r(prefix2, "state", tmp2)) == AUTODET_STATE_FINISHED_WITHPPPOE
+			|| nvram_get_int(strcat_r(prefix2, "auxstate", tmp2)) == AUTODET_STATE_FINISHED_WITHPPPOE) {
+			if( ( nvram_get_int(strcat_r(prefix, "state_t", tmp))==2
+				&& nvram_get_int(strcat_r(prefix, "sbstate_t", tmp))==0
+				&& nvram_get_int(strcat_r(prefix, "auxstate_t", tmp))==0 ) 
+			    &&
+			    ( nvram_get_int("link_internet")==2
+				|| nvram_get_int(strcat_r(prefix, "realip_state", tmp))==2 )
+			   ) {
 				wanstatus = BLE_WAN_STATUS_PORT0_DHCP;
-			else if (wan_proto == 2)
-				wanstatus = BLE_WAN_STATUS_PORT0_PPPOE;
+			}
 			else
+				wanstatus = BLE_WAN_STATUS_PORT0_PPPOE;
+		}
+		else if( nvram_get_int(strcat_r(prefix, "state_t", tmp))==2
+			&& nvram_get_int(strcat_r(prefix, "sbstate_t", tmp))==0
+			&& nvram_get_int(strcat_r(prefix, "auxstate_t", tmp))==0 ) 
+			wanstatus = BLE_WAN_STATUS_PORT0_DHCP;
+		else if( nvram_get_int(strcat_r(prefix2, "state", tmp2))==2) {
+			if ( nvram_get_int(strcat_r(prefix, "auxstate_t", tmp))!=1)
+				wanstatus = BLE_WAN_STATUS_PORT0_DHCP;
+			else if( nvram_get_int(strcat_r(prefix, "state_t", tmp))==4
+				&& nvram_get_int(strcat_r(prefix, "sbstate_t", tmp))==4
+				&& nvram_get_int(strcat_r(prefix, "auxstate_t", tmp))==0 ) 
 				wanstatus = BLE_WAN_STATUS_PORT0_UNKNOWN;
 		}
-		else if (!strncmp(var_name, nvram_safe_get("wan1_ifname"), strlen(var_name))) {
-			if (wan_proto == 1)
-				wanstatus = BLE_WAN_STATUS_PORT1_DHCP;
-			else if (wan_proto == 2)
-				wanstatus = BLE_WAN_STATUS_PORT1_PPPOE;
-			else
-				wanstatus = BLE_WAN_STATUS_PORT1_UNKNOWN;
-		}
+		else if( nvram_get_int(strcat_r(prefix, "state_t", tmp))==4
+			&& nvram_get_int(strcat_r(prefix, "sbstate_t", tmp))==4 )
+			wanstatus = BLE_WAN_STATUS_PORT0_DHCP;
+		else
+			wanstatus = BLE_WAN_STATUS_PORT0_UNKNOWN;
+#ifndef RTCONFIG_LANTIQ
 	}
 #endif
-	wanss[0]=wanstatus;
 
+	if (BLEPACKET_DEBUG)
+		printf("%s, %s[%d], %s[%d], %s[%d], %s[%d]\n"
+			"%s, %s[%d], %s[%d]\n"
+			"%s, %s[%d]\n",
+				prefix,
+				"state", nvram_get_int(strcat_r(prefix, "state_t", tmp)),
+				"sbstate", nvram_get_int(strcat_r(prefix, "sbstate_t", tmp)),
+				"auxstate", nvram_get_int(strcat_r(prefix, "auxstate_t", tmp)),
+				"realip_state", nvram_get_int(strcat_r(prefix, "realip_state", tmp)),
+				prefix2,
+				"state", nvram_get_int(strcat_r(prefix2, "state", tmp2)),
+				"auxstate", nvram_get_int(strcat_r(prefix2, "auxstate", tmp2)),
+				"None",
+				"link_internet", nvram_get_int("link_internet")
+		);
+
+	logmessage("BLUEZ", "wan:%s, proto:%d, internet:%d\n", prefix, wanstatus, nvram_get_int("link_internet"));
+
+#endif
+	wanss[0]=wanstatus;
 	PackBLEResponseData(cmdno, status, wanss, 1, pdu, pdulen, BLE_RESPONSE_FLAGS|BLE_FLAG_WITH_ENCRYPT);
 }
 
@@ -971,4 +1009,16 @@ void PackBLEResponseReqServerNonce(int cmdno, int status, unsigned char *pdu, in
 #endif
 }
 
+void UnPackBLEExceptionGetNvram(int cmdno, int status, unsigned char *data, int datalen, unsigned char *pdu, int *pdulen)
+{
+	char value[DEF_LEN_256];
+	
+
+	memset(value, '\0', DEF_LEN_256);
+	snprintf(value, sizeof(value), "%s", nvram_safe_get(data));
+
+	printf("[nvram: value]: %s=%s , len:%d , size:%d \n", data, value, strlen(value), sizeof(value));
+
+	PackBLEResponseData(cmdno, status, (unsigned char*)value, sizeof(value), pdu, pdulen, BLE_RESPONSE_FLAGS|BLE_FLAG_WITH_ENCRYPT);
+}
 

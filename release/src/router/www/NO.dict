@@ -3036,5 +3036,6 @@ VPN_Fusion_FAQ=<a id="faq1" href="" target="_blank" style="font-weight:bolder;te
 [###MODEL_DEP###][GT-AC5300]VPN_Fusion_FAQ=<a id="faq1" href="" target="_blank" style="font-weight:bolder;text-decoration:underline;">Vanlige spørsmål om VPN Fusion.</a>
 VPN_Fusion_Default_Alert=Kan ikke angi som standard WAN for målpolicyen.
 Beta_test_only=Beta test only
+FIRM_fupgrade_desc=You can also select [Cancel], the device will automatically start downloading the update during the night time.
 QIS_internet_success_desc4_1=If you are using cable modem or modem with static IP address, here are suggested approaches you might take.
 qis_summary_description_step2=Once the new SSID is connected, go back to router.asus.com for more advanced settings.

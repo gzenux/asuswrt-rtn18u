@@ -48,11 +48,6 @@
 #endif
 //#define DHCP_SOCKET
 
-#if defined(RTCONFIG_DETWAN) && (defined(RTCONFIG_SOC_IPQ40XX))
-#define DETWAN_VLAN
-extern void vlan_accept_vid_via_switch(int accept, int wan, int lan);
-#endif
-
 /***********************************************************************/
 // ppp
 
@@ -70,17 +65,6 @@ strDup(char const *str)
     return copy;
 }
 
-int set_auxdata(int sockfd, int val)
-{
-#ifdef DETWAN_VLAN
-	if (setsockopt(sockfd, SOL_PACKET, PACKET_AUXDATA, &val, sizeof(val)) == -1)	{
-		perror("PACKET_AUXDATA");
-		return -1;
-	}
-#endif	/* DETWAN_VLAN */
-	return 0;
-}
-
 int
 openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
 {
@@ -93,15 +77,8 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
 
     memset(&sa, 0, sizeof(sa));
 
-
-#ifdef DETWAN_VLAN
-    domain = PF_PACKET;
-    stype = SOCK_RAW;
-    type = ETH_P_ALL;
-#else
     domain = PF_INET;
     stype = SOCK_PACKET;
-#endif
 
     if ((fd = socket(domain, stype, htons(type))) < 0) {
 	/* Give a more helpful message for the common error case */
@@ -114,8 +91,6 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     }
 	// test
 	//fprintf(stderr, "openInterface: socket [%d]\n", fd);
-
-    set_auxdata(fd, 1);
 
     if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(optval)) < 0) {
 	perror("setsockopt");
@@ -163,17 +138,7 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     /* Bind to device */
     /* only SO_BINDTODEVICE may also receive PADO (PPPoE Active Discovery Offer) frame from the other interface */
     {
-#ifdef DETWAN_VLAN
-    struct sockaddr_ll      sll;
-    memset(&sll, 0, sizeof(sll));
-    sll.sll_family          = AF_PACKET;
-    sll.sll_ifindex         = ifr.ifr_ifindex;
-    sll.sll_protocol        = htons(ETH_P_ALL);
-
-    if (bind(fd, (struct sockaddr *) &sll, sizeof(sll)) < 0)
-#else
     if (bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
-#endif
     {
 	perror("openInterface() bind ");
 	close(fd);
@@ -309,241 +274,6 @@ void dump(const char *title, unsigned char *data, int len)
 		eprintf("%s\n", buf);
 }
 
-#ifdef DETWAN_VLAN
-#define LAYER_2	2	//Ethernet
-#define LAYER_3 3	//IP
-#define LAYER_4 4	//TCP/UDP
-#define LAYER_5 5	//APP
-ssize_t sendtoVlan(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen, int vid, int pri, int layer)
-{
-	int rawfd;
-	struct ifreq if_tmp;
-	int tx_len = 0;
-	char sendbuf[1024];
-	struct ether_header *eh = (struct ether_header *) sendbuf;
-	struct sockaddr_ll socket_address;
-	char ifName[IFNAMSIZ];
-	int ifindex = -1;
-	int ret;
-
-	/* Get interface index */
-	memset(&if_tmp, 0, sizeof(struct ifreq));
-	if (addrlen == sizeof(struct sockaddr))
-	{
-		strncpy(ifName, dest_addr->sa_data, IFNAMSIZ-1);
-		ifName[IFNAMSIZ-1] = '\0';
-
-		/* Get the index of the interface to send on */
-		strncpy(if_tmp.ifr_name, ifName, IFNAMSIZ-1);
-		if (ioctl(sockfd, SIOCGIFINDEX, &if_tmp) < 0) {
-			perror("SIOCGIFINDEX");
-			return -1;
-		}
-		ifindex = if_tmp.ifr_ifindex;
-	}
-	else if(addrlen == sizeof(struct sockaddr_ll))
-	{
-		ifindex = ((const struct sockaddr_ll *) dest_addr)->sll_ifindex;
-
-		/* Get the name of the interface to send on */
-		if_tmp.ifr_ifindex = ifindex;
-		if (ioctl(sockfd, SIOCGIFNAME, &if_tmp) < 0) {
-			perror("SIOCGIFNAME");
-			return -1;
-		}
-		strncpy(ifName, if_tmp.ifr_name, IFNAMSIZ-1);
-		ifName[IFNAMSIZ-1] = '\0';
-	}
-	else
-	{
-		eprintf("no valid ifindex OR ifName\n");
-		return -1;
-	}
-
-	//eprintf("# ifindex(%d) ifName(%s)\n", ifindex, ifName);
-
-	{
-		/* Get the MAC address of the interface to send on */
-		if (ioctl(sockfd, SIOCGIFHWADDR, &if_tmp) < 0) {
-			perror("SIOCGIFHWADDR");
-			return -1;
-		}
-	}
-
-	/* Open RAW socket to send on */
-	if ((rawfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
-		perror("socket");
-		return -1;
-	}
-
-	/* Construct the Ethernet header */
-	memset(sendbuf, 0, sizeof(sendbuf));
-
-	/* Ethernet header */
-	memcpy(eh->ether_shost, if_tmp.ifr_hwaddr.sa_data, 6);
-	memset(eh->ether_dhost, 0xff, 6);				//broadcast
-
-	/* point to next field */
-	tx_len += sizeof(struct ether_header);
-
-	/* fill 802.1Q VLAN tags */
-	if(vid != 0)
-	{
-		eh->ether_type = htons(0x8100);
-		*(unsigned short *)&(sendbuf[tx_len]) = htons((unsigned short)( (pri&7) << 13 | (0&1) << 12 | (vid&0xfff)) );
-		tx_len += 4;
-	}
-
-	/* fill ethernet type */
-	if(layer < LAYER_2)
-		;
-	else if(layer == LAYER_2) {
-		memcpy(sendbuf + tx_len -2, buf + 12, len - 12);
-		tx_len += len - sizeof(struct ether_header);
-	}
-	else {
-		*((unsigned short *)&(sendbuf[tx_len -2]))  = htons(ETH_P_IP);
-	}
-
-	/* fill IP layer */
-	if(layer < LAYER_3)
-		;
-	else if(layer == LAYER_3) {
-		/* Packet data */
-		memcpy(sendbuf + tx_len, buf, len);
-		tx_len += len;
-	}
-	else {
-		//struct iphdr *iph = (struct iphdr *) (sendbuf + tx_len);
-		eprintf("%s: did not handle !!\n", __func__);
-		return -1;
-	}
-
-	memset(&socket_address, 0, sizeof(socket_address));
-	/* Index of the network device */
-	socket_address.sll_ifindex = ifindex;
-	/* Address length*/
-	socket_address.sll_halen = ETH_ALEN;
-	/* Destination MAC */
-	memcpy(socket_address.sll_addr, eh->ether_dhost, 6);
-
-//	dump("sendbuf", sendbuf, tx_len);
-
-	/* Send packet */
-	if ((ret = sendto(rawfd, sendbuf, tx_len, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll))) < 0)
-		perror("sendtoVlan sendto");
-
-	close(rawfd);
-	return ret;
-}
-
-
-int g_vid = 0, g_pri = 0;
-ssize_t recvfromVlan(int sockfd, void *payloadbuf, size_t payloadsize, int flags, struct sockaddr *src_addr, socklen_t *addrlen, int layer)
-{
-	int bufsize;
-	int packet_len = -1;
-	struct iovec		iov;
-	struct msghdr		msg;
-	struct cmsghdr		*cmsg;
-	union {
-		struct cmsghdr	cmsg;
-		char		buf[CMSG_SPACE(sizeof(struct tpacket_auxdata))];
-	} cmsg_buf;
-
-
-	bufsize = payloadsize;
-	g_vid = 0;
-	g_pri = 0;
-
-	/* count total buffer size */
-	switch(layer) {
-		case LAYER_5:
-			bufsize += sizeof(struct udphdr);
-		case LAYER_4:
-			bufsize += sizeof(struct iphdr);
-		case LAYER_3:
-			bufsize += sizeof(struct ether_header);
-		case LAYER_2:
-		default:
-			break;
-	}
-
-	/* recv packet with vlan via recvmsg() */
-	{
-		unsigned char recvbuf[bufsize];
-		struct ether_header *eh = (struct ether_header *)recvbuf;
-
-		msg.msg_name		= src_addr;
-		msg.msg_namelen		= (addrlen? *addrlen: 0);
-		msg.msg_iov		= &iov;
-		msg.msg_iovlen		= 1;
-		msg.msg_control		= &cmsg_buf;
-		msg.msg_controllen	= sizeof(cmsg_buf);
-		msg.msg_flags		= 0;
-		iov.iov_len		= bufsize;			//buffer size
-		iov.iov_base		= recvbuf;			//buffer address
-
-		packet_len = recvmsg(sockfd, &msg, MSG_TRUNC);
-//		cprintf("# packet_len(%d) iov_len(%d)\n", packet_len, iov.iov_len);
-
-		if(packet_len < 0)
-			return packet_len;						//got error
-
-		/* check the received packet */
-		{
-			struct ifreq ifr;
-			int len = sizeof(ifr.ifr_name);
-			memset(&ifr, 0, sizeof(ifr));
-			if(getsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, ifr.ifr_name, &len) < 0)
-				perror("getsockopt(SO_BINDTODEVICE)");
-			else if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) < 0)
-				perror("ioctl(SIOCGIFHWADDR)");
-			else if (memcmp(eh->ether_shost, ifr.ifr_hwaddr.sa_data, 6) == 0) {
-//				cprintf("# got a out-going frame\n");
-				return 0;
-			}
-		}
-		if(eh->ether_type == htons(0x8100) && eh->ether_dhost[0] == 0xff)	// this frame is send by ourself
-		{
-//			cprintf("# got frame with vlan tag\n");
-			return 0;
-		}
-
-		packet_len = packet_len > iov.iov_len ? iov.iov_len : packet_len;	//the packet_len may larger than the buffer size since MSG_TRUNC
-		packet_len = packet_len - (bufsize - payloadsize);			//reduce size of unrequired header
-//		cprintf("# packet_len(%d) bufsize(%d)\n", packet_len, bufsize);
-		if(packet_len < 0)
-			return 0;							//got invalid frame
-
-		memcpy(payloadbuf, recvbuf + (bufsize - payloadsize), packet_len);	//copy payload to upper layer
-	}
-	/* getting vlan data in auxdata */
-	{
-		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			struct tpacket_auxdata *aux;
-
-			if (cmsg->cmsg_len < CMSG_LEN(sizeof(struct tpacket_auxdata)) ||
-			    cmsg->cmsg_level != SOL_PACKET ||
-			    cmsg->cmsg_type != PACKET_AUXDATA)
-				continue;
-
-			aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
-			if ((aux->tp_vlan_tci == 0) && !(aux->tp_status & TP_STATUS_VLAN_VALID))
-				continue;
-
-			g_vid = ((aux->tp_vlan_tci) >>  0) & ((1<<12)-1);
-			g_pri = ((aux->tp_vlan_tci) >> 13) & ((1<< 3)-1);
-
-//			cprintf("# tp_vlan_tci(%02x) g_vid(%d) g_pri(%d)\n", aux->tp_vlan_tci, g_vid, g_pri);
-			break;
-		}
-	}
-	return packet_len;
-}
-#endif	/* DETWAN_VLAN */
-
-
 int
 packetIsForMe(PPPoEConnection *conn, PPPoEPacket *packet)
 {
@@ -570,32 +300,20 @@ sendPacket(PPPoEConnection *conn, int sock, PPPoEPacket *pkt, int size)
 	return -1;
     }
     strcpy(sa.sa_data, conn->ifName);
-#ifdef DETWAN_VLAN
-    if (sendtoVlan(sock, pkt, size, 0, &sa, sizeof(sa), nvram_get_int("detwan_vid"), 0, LAYER_2) < 0) {
-	return -1;
-    }
-#else
     if (sendto(sock, pkt, size, 0, &sa, sizeof(sa)) < 0) {
 	perror("sendPacket sendto");
 	return -1;
     }
-#endif	/* DETWAN_VLAN */
     return 0;
 }
 
 int
 receivePacket(int sock, PPPoEPacket *pkt, int *size)
 {
-#ifdef DETWAN_VLAN
-    if ((*size = recvfromVlan(sock, pkt, sizeof(PPPoEPacket), 0, NULL, NULL, LAYER_2)) < 0) {
-	return -1;
-    }
-#else
     if ((*size = recv(sock, pkt, sizeof(PPPoEPacket), 0)) < 0) {
 	perror("receivePacket recv");
 	return -1;
     }
-#endif	/* DETWAN_VLAN */
     return 0;
 }
 
@@ -688,17 +406,11 @@ int listen_socket(unsigned int ip, int port, char *inf)
 
 	//DEBUG(LOG_INFO, "Opening listen socket on 0x%08x:%d %s\n", ip, port, inf);
 
-#ifdef DETWAN_VLAN
-	if ((fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0)
-#else
 	if ((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
-#endif	/* DETWAN_VLAN */
 	{
 		perror("listen_socket socket");
 		return -1;
 	}
-
-	set_auxdata(fd, 1);
 
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n)) == -1) {
 		close(fd);
@@ -717,29 +429,12 @@ int listen_socket(unsigned int ip, int port, char *inf)
 	}
 
     {
-#ifdef DETWAN_VLAN
-	/* get ifr.ifr_ifindex */
-	struct sockaddr_ll sock;
-	struct ifreq ifr;
-
-	strncpy(ifr.ifr_name, inf, IFNAMSIZ-1);
-	if (ioctl(fd, SIOCGIFINDEX, &ifr) < 0) {
-		perror("SIOCGIFINDEX");
-		close(fd);
-		return -1;
-	}
-        sock.sll_family = AF_PACKET;
-	sock.sll_protocol = htons(ETH_P_ALL);
-        sock.sll_ifindex = interface.ifr_ifindex;
-        if (bind(fd, (struct sockaddr *) &sock, sizeof(sock)) < 0)
-#else
 	struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
         addr.sin_addr.s_addr = ip;
         if (bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) < 0)
-#endif	/* DETWAN_VLAN */
 	{
 		perror("listen_socket() bind ");
                 close(fd);
@@ -754,17 +449,11 @@ int raw_socket(int ifindex)
 {
 	int fd;
 
-#ifdef DETWAN_VLAN
-	if ((fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0)
-#else
 	if ((fd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP))) < 0)
-#endif	/* DETWAN_VLAN */
 	{
 		perror("raw_socket socket");
 		return -1;
 	}
-
-	set_auxdata(fd, 1);
 
 	{
 		struct ifreq ifr;
@@ -785,11 +474,7 @@ int raw_socket(int ifindex)
     {
 	struct sockaddr_ll sock;
         sock.sll_family = AF_PACKET;
-#ifdef DETWAN_VLAN
-	sock.sll_protocol = htons(ETH_P_ALL);
-#else
         sock.sll_protocol = htons(ETH_P_IP);
-#endif
         sock.sll_ifindex = ifindex;
         if (bind(fd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
 		perror("raw_socket() bind ");
@@ -877,16 +562,12 @@ int raw_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_port
 	dest.sll_halen = 6;
 	memcpy(dest.sll_addr, dest_arp, 6);
 
-#ifdef DETWAN_VLAN
-	result = sendtoVlan(fd, &packet, final_len, 0, (struct sockaddr *) &dest, sizeof(dest), nvram_get_int("detwan_vid"), 0, LAYER_3);
-#else
 	result = sendto(fd, &packet, final_len, 0, (struct sockaddr *) &dest, sizeof(dest));
 
 	if (result <= 0) {
 		//DEBUG(LOG_ERR, "write on socket failed: %s", strerror(errno));
 		fprintf(stderr, "write on socket failed: %s", strerror(errno));
 	}
-#endif	/* DETWAN_VLAN */
 
 	close(fd);
 	return result;
@@ -904,11 +585,7 @@ int get_packet(struct dhcpMessage *packet, int fd)
 
 	memset(packet, 0, sizeof(struct dhcpMessage));
 
-#ifdef DETWAN_VLAN
-	bytes = recvfromVlan(fd, packet, sizeof(struct dhcpMessage), 0, NULL, NULL, LAYER_5);
-#else
 	bytes = read(fd, packet, sizeof(struct dhcpMessage));
-#endif	/* DETWAN_VLAN */
 
 	if (bytes < 0) {
 		//DEBUG(LOG_INFO, "couldn't read on listening socket, ignoring");
@@ -945,11 +622,7 @@ int get_raw_packet(struct dhcpMessage *payload, int fd)
 
 	memset(&packet, 0, sizeof(struct udp_dhcp_packet));
 
-#ifdef DETWAN_VLAN
-	bytes = recvfromVlan(fd, &packet, sizeof(struct udp_dhcp_packet), 0, NULL, NULL, LAYER_3);
-#else
 	bytes = read(fd, &packet, sizeof(struct udp_dhcp_packet));
-#endif	/* DETWAN_VLAN */
 
 	if (bytes < 0) {
 		//DEBUG(LOG_INFO, "couldn't read on raw listening socket -- ignoring");
@@ -1349,9 +1022,6 @@ int discover_interfaces(int num, const char **current_wan_ifnames, int dhcp_det,
 	unsigned long xid = 0;
 #endif
 	char wan_ifNames[64], *p;	//for message
-#ifdef DETWAN_VLAN
-	int detwan_vid = nvram_get_int("detwan_vid");
-#endif	/* DETWAN_VLAN */
 
 
 	if(num <= 0)
@@ -1379,19 +1049,6 @@ int discover_interfaces(int num, const char **current_wan_ifnames, int dhcp_det,
 	}
 
 	get_proto_via_br(1);
-
-#ifdef DETWAN_VLAN
-	eprintf("### detwan_vid(%d) ###\n", detwan_vid);
-	if(detwan_vid)
-		vlan_accept_vid_via_switch(1, 1, 1);
-
-	void vlan_remove(int vid);
-	vlan_remove(nvram_get_int("detwan_v_vid"));
-	nvram_unset("detwan_v_phy");
-	nvram_unset("detwan_v_vid");
-	nvram_unset("detwan_v_pri");
-	nvram_unset("detwan_v_pto");
-#endif	/* DETWAN_VLAN */
 
 #ifdef DHCP_DETECT
 	if(dhcp_det){
@@ -1583,20 +1240,6 @@ eprintf("--- %s(%s): Got the wrong %d packet when detecting DHCP! ---\n", __func
 			else if (*message == DHCPOFFER)
 			{
 eprintf("--- %s(%s): Got the DHCP OFFER ! ---\n", __func__, pInf[idx].conn.ifName);
-#ifdef DETWAN_VLAN
-eprintf("--- g_vid(%d) g_pri(%d)\n", g_vid, g_pri);
-				if(g_vid != 0 && g_vid == detwan_vid) {
-					int proto = 0;
-eprintf("# v_phy(%s) v_pto(%s / %d) v_vid(%s) v_pri(%s)\n", nvram_get("detwan_v_phy"), nvram_get("detwan_v_pto"), DISCOVER_DHCP, nvram_get("detwan_v_vid"), nvram_get("detwan_v_pri"));
-					nvram_set_int("detwan_v_vid", g_vid);
-					nvram_set_int("detwan_v_pri", g_pri);
-					if(nvram_match("detwan_v_phy", pInf[idx].conn.ifName))
-						proto = nvram_get_int("detwan_v_pto");
-					else
-						nvram_set("detwan_v_phy", pInf[idx].conn.ifName);
-					nvram_set_int("detwan_v_pto", proto | DISCOVER_DHCP);
-				}
-#endif	/* DETWAN_VLAN */
 				*got_inf = idx;
 				pInf[idx].state |= DISCOVER_DHCP;
 				if(pInf[idx].state & DISCOVER_PPPOE) {
@@ -1620,20 +1263,6 @@ eprintf("--- %s(%s): discovery PPPoE! ---\n", __func__, pInf[idx].conn.ifName);
 //dump("PPPoE", (unsigned char *)&ppp_packet, ppp_len);
 			if (ppp_len > 0 && ppp_packet.code == CODE_PADO) {
 eprintf("--- %s(%s): Got the PPPoE ! ---\n", __func__, pInf[idx].conn.ifName);
-#ifdef DETWAN_VLAN
-eprintf("--- g_vid(%d) g_pri(%d)\n", g_vid, g_pri);
-				if(g_vid != 0 && g_vid == detwan_vid) {
-					int proto = 0;
-eprintf("# v_phy(%s) v_pto(%s / %d) v_vid(%s) v_pri(%s)\n", nvram_get("detwan_v_phy"), nvram_get("detwan_v_pto"), DISCOVER_DHCP, nvram_get("detwan_v_vid"), nvram_get("detwan_v_pri"));
-					nvram_set_int("detwan_v_vid", g_vid);
-					nvram_set_int("detwan_v_pri", g_pri);
-					if(nvram_match("detwan_v_phy", pInf[idx].conn.ifName))
-						proto = nvram_get_int("detwan_v_pto");
-					else
-						nvram_set("detwan_v_phy", pInf[idx].conn.ifName);
-					nvram_set_int("detwan_v_pto", proto | DISCOVER_PPPOE);
-				}
-#endif	/* DETWAN_VLAN */
 				*got_inf = idx;
 				pInf[idx].state |= DISCOVER_PPPOE;
 				if(pInf[idx].state & DISCOVER_DHCP) {
@@ -1655,10 +1284,6 @@ eprintf("--- %s(%s): Go to next detect loop. ---\n", __func__, pInf[idx].conn.if
 
 leave:
 	get_proto_via_br(0);
-#ifdef DETWAN_VLAN
-	if(detwan_vid)
-		vlan_accept_vid_via_switch(0, 1, 1);
-#endif	/* DETWAN_VLAN */
 
 	for(idx = 0; idx < num; idx++) {
 		closeall(pInf[idx].cfd, pInf[idx].conn.discoverySocket);

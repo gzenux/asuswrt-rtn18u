@@ -1457,9 +1457,14 @@ void init_wl(void)
 	if(nvram_get_int("wl0.1_bss_enabled"))
 	{
 		eval("vconfig","set_name_type","DEV_PLUS_VID_NO_PAD");
-		eval("vconfig", "add","ath1","1");
-		eval("ifconfig","ath1.1","up");
-		eval("brctl","addif",BR_GUEST,"ath1.1");
+		eval("vconfig", "add","ath1","55");
+		eval("ifconfig","ath1.55","up");
+		eval("brctl","addif",BR_GUEST,"ath1.55");
+#ifdef RTCONFIG_ETHBACKHAUL
+		eval("vconfig", "add", MII_IFNAME, "55");
+		eval("ifconfig", MII_IFNAME".55", "up");
+		eval("brctl", "addif", BR_GUEST, MII_IFNAME".55");
+#endif
 	}
 	
 #endif
@@ -1942,8 +1947,12 @@ void reinit_sfe(int unit)
 		act = 0;
 #endif
 
+#if defined(MAPAC1300) || defined(MAPAC2200) || defined(VZWAC1300)
+#else
 	if (act > 0 && !nvram_match("switch_wantag", "none") && !nvram_match("switch_wantag", ""))
 		act = 0;
+
+#endif
 
 	if (act > 0) {
 #if defined(RTCONFIG_DUALWAN)
@@ -2234,7 +2243,7 @@ int wl_exist(char *ifname, int band)
 		break;
 	case WL_60G_BAND:
 		r = _ifconfig_get(ifname, &flags, NULL, NULL, NULL, NULL);
-		if (r < 0 || (flags & IFUP) != IFUP) {
+		if (r != 0 || (flags & IFUP) != IFUP) {
 			dbg("%s: can't get flags of %s or it is not up. (flags 0x%x)\n",
 				__func__, ifname, flags);
 			ret = 1;
@@ -2278,6 +2287,13 @@ set_wan_tag(char *interface) {
 		if (nvram_match("switch_wantag", "stuff_fibre"))
 			eval("vconfig", "set_egress_map", wan_dev, "3", "5");
 #endif
+		break;
+	case MODEL_MAPAC1300:
+	case MODEL_VZWAC1300:
+	case MODEL_MAPAC2200:
+#if defined(RTCONFIG_SOC_IPQ40XX)
+		detwan_set_def_vid(interface, wan_vid, 1, 0);
+#endif	/* RTCONFIG_SOC_IPQ40XX */
 		break;
 	}
 

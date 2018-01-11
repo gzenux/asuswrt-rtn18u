@@ -28,7 +28,9 @@ extern "C" {
 #define INT     int
 #endif //#ifndef  WIN32
 
-#define BLE_VERSION		1
+#define BLE_VERSION		2
+#define DEF_LEN_128 		128
+#define DEF_LEN_256 		256
 
 #define BLEPACKET_DEBUG		0
 #define MAX_PACKET_SIZE		4096
@@ -77,6 +79,7 @@ enum  BLE_COMMAND
 	BLE_COMMAND_GET_MAC_BLE_VERSION		= 0x18,
 	BLE_COMMAND_GET_ATH1_CHAN		= 0x19,
 	BLE_COMMAND_SET_ATH1_CHAN		= 0x1a,
+	BLE_COMMAND_GET_NVRAM			= 0x1b,
 	BLE_COMMAND_END				= 0xff
 };
 
@@ -176,6 +179,7 @@ extern void PackBLEResponseReqServerNonce(int cmdno, int status, unsigned char *
 extern void PackBLEResponseGetMacBleVersion(int cmdno, int status, unsigned char *pdu, int *pdulen);
 extern void PackBLEResponseGetAth1Chan(int cmdno, int status, unsigned char *pdu, int *pdulen);
 
+extern void UnPackBLEExceptionGetNvram(int cmdno, int status, unsigned char *data, int datalen, unsigned char *pdu, int *pdulen);
 #ifdef __cplusplus
 }
 #endif

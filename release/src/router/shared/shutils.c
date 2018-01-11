@@ -1847,7 +1847,7 @@ wl_ether_etoa(const struct ether_addr *n)
 	for (i = 0; i < ETHER_ADDR_LEN; i++) {
 		if (i)
 			*c++ = ':';
-#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_LANTIQ)		
+#if defined(RTCONFIG_LANTIQ)		
 		c += sprintf(c, "%02X", n->ether_addr_octet[i] & 0xff);
 #else
 		c += sprintf(c, "%02X", n->octet[i] & 0xff);

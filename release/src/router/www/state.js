@@ -596,6 +596,10 @@ var adBlock_support = isSupport("adBlock");
 var keyGuard_support = isSupport("keyGuard");
 var rog_support = isSupport("rog");
 var smart_connect_support = isSupport("smart_connect");
+if(based_modelid == "BLUECAVE"){
+	smart_connect_support = isSupport("bandstr");
+}
+
 var rrsut_support = isSupport("rrsut");
 var gobi_support = isSupport("gobi");
 var findasus_support = isSupport("findasus");
@@ -1991,12 +1995,11 @@ function show_top_status(){
 	}
 
 	var ssid_status_2g =  decodeURIComponent('<% nvram_char_to_ascii("WLANConfig11b", "wl0_ssid"); %>');
-	ssid_status_2g = ssid_status_2g.replace(/\</g, "&lt;").replace(/\>/g, "&gt;");   //replace < to &lt and > to &gt
 	var ssid_status_5g =  decodeURIComponent('<% nvram_char_to_ascii("WLANConfig11b", "wl1_ssid"); %>');
-	ssid_status_5g = ssid_status_5g.replace(/\</g, "&lt;").replace(/\>/g, "&gt;");   //replace < to &lt and > to &gt
 
-	if(wl_info.band5g_2_support)
+	if(wl_info.band5g_2_support){
 		var ssid_status_5g_2 =  decodeURIComponent('<% nvram_char_to_ascii("WLANConfig11b", "wl2_ssid"); %>');
+	}
 
 	if(!band2g_support)
 		ssid_status_2g = "";
@@ -2063,73 +2066,75 @@ function show_top_status(){
 	}
 
 	var topbanner_ssid_2g = handle_show_str(ssid_status_2g);
+
 	if(topbanner_ssid_2g.length >18){
-		document.getElementById('elliptic_ssid_2g').innerHTML = extend_display_ssid(topbanner_ssid_2g)+"...";
+		document.getElementById('elliptic_ssid_2g').innerHTML = extend_display_ssid(ssid_status_2g)+"...";
 	}
 	else{
 		document.getElementById('elliptic_ssid_2g').innerHTML = topbanner_ssid_2g;
 	}
 
 	if(!lyra_hide_support)
-		document.getElementById('elliptic_ssid_2g').title = "2.4 GHz: \n"+ssid_status_2g;
-
+		document.getElementById('elliptic_ssid_2g').title = "2.4 GHz: \n"+ ssid_status_2g;
 
 	var topbanner_ssid_5g = handle_show_str(ssid_status_5g);
 	if(topbanner_ssid_5g.length >18){
-		document.getElementById('elliptic_ssid_5g').innerHTML = extend_display_ssid(topbanner_ssid_5g)+"...";
+		document.getElementById('elliptic_ssid_5g').innerHTML = extend_display_ssid(ssid_status_5g)+"...";
 	}
 	else{
 		document.getElementById('elliptic_ssid_5g').innerHTML = topbanner_ssid_5g;
 	}
-	document.getElementById('elliptic_ssid_5g').title = "5 GHz: \n"+ssid_status_5g;
 
+	document.getElementById('elliptic_ssid_5g').title = "5 GHz: \n"+ ssid_status_5g;
 
 	if(wl_info.band5g_2_support){
 		var topbanner_ssid_5g_2 = handle_show_str(ssid_status_5g_2);
 		if(topbanner_ssid_5g_2.length >18){
-			document.getElementById('elliptic_ssid_5g_2').innerHTML = extend_display_ssid(topbanner_ssid_5g_2)+"...";
+			document.getElementById('elliptic_ssid_5g_2').innerHTML = extend_display_ssid(ssid_status_5g_2)+"...";
 		}
 		else{
 			document.getElementById('elliptic_ssid_5g_2').innerHTML = topbanner_ssid_5g_2;
 		}
-		document.getElementById('elliptic_ssid_5g_2').title = "5 GHz-2: \n"+ssid_status_5g_2;
+		document.getElementById('elliptic_ssid_5g_2').title = "5 GHz-2: \n"+ ssid_status_5g_2;
 	}
 
 	if(smart_connect_support){
 		if('<% nvram_get("smart_connect_x"); %>' == '1'){
-			document.getElementById('elliptic_ssid_2g').title = "Smart Connect: \n"+ssid_status_2g;
+			document.getElementById('elliptic_ssid_2g').title = "Smart Connect: \n"+ ssid_status_2g;
 			document.getElementById('elliptic_ssid_5g').style.display = "none";
 			if(wl_info.band5g_2_support)
 				document.getElementById('elliptic_ssid_5g_2').style.display = "none";
 		}else if('<% nvram_get("smart_connect_x"); %>' == '2'){
-			document.getElementById('elliptic_ssid_2g').title = "2.4 GHz: \n"+ssid_status_2g;
-			document.getElementById('elliptic_ssid_5g').title = "5 GHz Smart Connect: \n"+ssid_status_5g;
+			document.getElementById('elliptic_ssid_2g').title = "2.4 GHz: \n"+ ssid_status_2g;
+			document.getElementById('elliptic_ssid_5g').title = "5 GHz Smart Connect: \n"+ ssid_status_5g;
 			document.getElementById('elliptic_ssid_5g').style.display = "";
 			if(wl_info.band5g_2_support)
 				document.getElementById('elliptic_ssid_5g_2').style.display = "none";
 		}else{
-			document.getElementById('elliptic_ssid_2g').title = "2.4 GHz: \n"+ssid_status_2g;
+			document.getElementById('elliptic_ssid_2g').title = "2.4 GHz: \n"+ ssid_status_2g;
 			document.getElementById('elliptic_ssid_5g').style.display = "";
 			if(wl_info.band5g_2_support)
 				document.getElementById('elliptic_ssid_5g_2').style.display = "";
 		}
-        }
+	}
 
-  var swpjverno = '<% nvram_get("swpjverno"); %>';
-  var buildno = '<% nvram_get("buildno"); %>';
-  var firmver = '<% nvram_get("firmver"); %>'
+  	var swpjverno = '<% nvram_get("swpjverno"); %>';
+ 	var buildno = '<% nvram_get("buildno"); %>';
+  	var firmver = '<% nvram_get("firmver"); %>'
 	var extendno = '<% nvram_get("extendno"); %>';
-	if(extendno == "") extendno="0";
+	if(extendno == ""){
+		extendno="0";
+	}
 
-  if(swpjverno == ''){
+	if(swpjverno == ''){
 		if(swisscom_support)
 			showtext(document.getElementById("firmver"), firmver + "." + buildno + '_' + extendno.split("-g")[0] + '_swisscom' );
 		else
 			showtext(document.getElementById("firmver"), firmver + "." + buildno + '_' + extendno.split("-g")[0]);
 	}
-  else{
+  	else{
 		showtext(document.getElementById("firmver"), swpjverno + '_' + extendno);
-  }
+ 	}
 	
 	// no_op_mode
 	if (!dsl_support && based_modelid != "AC2900" && !lyra_hide_support){	//MODELDEP: AC2900(RT-AC86U)
@@ -2162,79 +2167,77 @@ function extend_display_ssid(ssid){		//"&amp;"5&; "&lt;"4< ; "&gt;"4> ; "&nbsp;"
 		//alert(ssid.substring(0,20)+" : "+ssid.substring(0,20).lastIndexOf("&nbsp;")+" <&nbsp>");
 		if(ssid.substring(0,20).lastIndexOf("&nbsp;") >=15 || ssid.substring(0,20).lastIndexOf("&nbsp;") < 10 ){
 				//alert(ssid.substring(0,19)+" : "+ssid.substring(0,19).lastIndexOf("&amp;")+" <&amp>");
-				if(ssid.substring(0,19).lastIndexOf("&amp;") >=15 || ssid.substring(0,19).lastIndexOf("&amp;") < 11 ){
+			if(ssid.substring(0,19).lastIndexOf("&amp;") >=15 || ssid.substring(0,19).lastIndexOf("&amp;") < 11 ){
 						//alert(ssid.substring(0,18)+" : "+ssid.substring(0,18).lastIndexOf("&lt;")+" <&lt>");
-						if(ssid.substring(0,18).lastIndexOf("&lt;") >=15 || ssid.substring(0,19).lastIndexOf("&lt;") < 12 ){
+				if(ssid.substring(0,18).lastIndexOf("&lt;") >=15 || ssid.substring(0,19).lastIndexOf("&lt;") < 12 ){
 								//alert(ssid.substring(0,18)+" : "+ssid.substring(0,18).lastIndexOf("&gt;")+" <&gt>");
-								if(ssid.substring(0,18).lastIndexOf("&gt;") >=15 || ssid.substring(0,19).lastIndexOf("&gt;") < 12 ){
-										//alert(ssid.substring(0,15));
-										return ssid.substring(0,15);
-								}
-								else{
-										switch(ssid.substring(0,18).lastIndexOf("&gt;")){
-												case 12:
-																	return ssid.substring(0,16);
-																	break;
-												case 13:
-																	return ssid.substring(0,17);	
-																	break;
-												case 14:
-																	return ssid.substring(0,18);		
-																	break;	
-										}
-								}
+					if(ssid.substring(0,18).lastIndexOf("&gt;") >=15 || ssid.substring(0,19).lastIndexOf("&gt;") < 12 ){
+							//alert(ssid.substring(0,15));
+						return ssid.substring(0,15);
+					}
+					else{
+						switch(ssid.substring(0,18).lastIndexOf("&gt;")){
+							case 12:
+								return ssid.substring(0,16);
+								break;
+							case 13:
+								return ssid.substring(0,17);	
+								break;
+							case 14:
+								return ssid.substring(0,18);		
+								break;	
 						}
-						else{
-									switch(ssid.substring(0,18).lastIndexOf("&lt;")){
-											case 12:
-																return ssid.substring(0,16);
-																break;
-											case 13:
-																return ssid.substring(0,17);
-																break;
-											case 14:
-																return ssid.substring(0,18);
-																break;
-
-									}			
-						}
+					}
 				}
 				else{
-							switch (ssid.substring(0,19).lastIndexOf("&amp;")){
-									case 11:
-														return ssid.substring(0,16);
-														break;
-									case 12:
-														return ssid.substring(0,17);
-														break;
-									case 13:
-														return ssid.substring(0,18);
-														break;
-									case 14:
-														return ssid.substring(0,19);
-														break;
-
-							}
+					switch(ssid.substring(0,18).lastIndexOf("&lt;")){
+						case 12:
+							return ssid.substring(0,16);
+							break;
+						case 13:
+							return ssid.substring(0,17);
+							break;
+						case 14:
+							return ssid.substring(0,18);
+							break;
+					}			
 				}
+			}
+			else{
+				switch (ssid.substring(0,19).lastIndexOf("&amp;")){
+					case 11:
+						return ssid.substring(0,16);
+						break;
+					case 12:
+						return ssid.substring(0,17);
+						break;
+					case 13:
+						return ssid.substring(0,18);
+						break;
+					case 14:
+						return ssid.substring(0,19);
+						break;
+				}
+			}
 		}
 		else{
-					switch (ssid.substring(0,20).lastIndexOf("&nbsp;")){
-									case 10:			
-														return ssid.substring(0,16);
-														break;			
-									case 11:
-														return ssid.substring(0,17);
-														break;
-									case 12:
-														return ssid.substring(0,18);
-														break;
-									case 13:
-														return ssid.substring(0,19);
-														break;
-									case 14:
-														return ssid.substring(0,20);
-														break;					
-					}
+			switch (ssid.substring(0,20).lastIndexOf("&nbsp;")){
+				case 10:			
+					return ssid.substring(0,16);
+					break;			
+				case 11:
+					return ssid.substring(0,17);
+					break;
+				case 12:
+					return ssid.substring(0,18);
+					break;
+				case 13:
+					return ssid.substring(0,19);
+					break;
+				case 14:
+					return ssid.substring(0,20);
+					break;					
+			}
 		}
 }
 

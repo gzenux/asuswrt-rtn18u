@@ -32,9 +32,7 @@
 }
 
 .div_img {
-	text-align:center;
-	padding-top: 35px;
-	padding-left:25px;
+	padding: 35px 0px 100px 25px;
 }
 
 .step_1{
@@ -73,16 +71,6 @@
 	margin:auto;
 }
 
-.step_3_acclink{
-	width:219px;
-	height:181px;
-	background-position:center;
-	background-attachment:fixed;
-	background:url(images/New_ui/smh_step_3_acclink.png) no-repeat center;
-	margin:auto;
-	background-size: 219px 181px;
-}
-
 .and_you_can{
 	width:421px;
 	height:337px;
@@ -110,9 +98,21 @@
 	position:absolute;
 	background: rgba(0,0,0,0.95);
 	z-index:10;
-	margin-left:100px;
+	margin:-215px;
 	border-radius:10px;
 	padding:10px;
+	display: none;
+}
+
+.alert_ASUS_EULA{
+	width:480px;
+	height:auto;
+	position:absolute;
+	background: rgba(0,0,0,0.9);
+	z-index:10;
+	margin:-215px;
+	border-radius:10px;
+	padding:25px;
 	display: none;
 }
 </style>
@@ -127,6 +127,8 @@ var countdownid;
 var external_ip = -1;
 var MAX_RETRY_NUM = 5;
 var external_ip_retry_cnt = MAX_RETRY_NUM;
+var flag = '<% get_parameter("flag"); %>';
+var AAE_MAX_RETRY_NUM = 3;
 
 function initial(){
 	show_menu();
@@ -140,6 +142,11 @@ function initial(){
 
 	tag_control();
 	get_real_ip();
+
+	if(flag == 'from_endpoint'){
+		AAE_MAX_RETRY_NUM = 10;
+		get_activation_code();
+	}
 }
 
 function tag_control(){
@@ -187,6 +194,62 @@ function hide_remote_control(){
 	setTimeout("location.href=document.form.current_page.value", 5000);
 }
 
+function send_gen_pincode(){
+
+	close_alert('alert_ASUS_EULA');
+
+	if(flag == 'from_endpoint')
+		location.href = "/send_IFTTTPincode.cgi";
+	else
+		gen_new_pincode();
+}
+
+function detcet_aae_state(){
+	$.ajax({
+		url: '/appGet.cgi?hook=nvram_get(aae_enable)',
+		dataType: 'json',
+		error: function(xhr){
+		setTimeout("detcet_aae_state()", 1000);
+		},
+		success: function(response){
+			if(response.aae_enable == '1')
+				send_gen_pincode();
+			else{
+				AAE_MAX_RETRY_NUM--;
+				if(AAE_MAX_RETRY_NUM == 0)
+					send_gen_pincode();
+				else
+					setTimeout("detcet_aae_state()", 1000);
+			}
+		}
+	});
+}
+
+function setting_ASUS_EULA(){
+	if(document.form.ASUS_EULA_enable.checked == true){
+		require(['/require/modules/makeRequest.js'], function(makeRequest){
+			makeRequest.start('/enable_ASUS_EULA.cgi', function(){
+				document.form.ASUS_EULA.value = "1";
+				document.getElementById("eula_agree").style.display = "none";
+				document.getElementById("eula_button").style.display = "none";
+				document.getElementById("eula_loading").style.display = "";
+				detcet_aae_state();},
+				function(){});
+		});
+	}else{
+		document.form.ASUS_EULA_enable.focus();
+	}
+}
+
+function get_activation_code(){
+	if(document.form.ASUS_EULA.value != 1){
+		cal_panel_block("alert_ASUS_EULA");
+		$('#alert_ASUS_EULA').fadeIn(1000);
+	}else{
+		gen_new_pincode();
+	}
+}
+
 function gen_new_pincode(){
 	require(['/require/modules/makeRequest.js'], function(makeRequest){
 		makeRequest.start('/get_IFTTTPincode.cgi', show_alert_pin, function(){});
@@ -207,9 +270,13 @@ function show_alert_pin(xhr){
 	countdownid = window.setInterval(countdownfunc,1000);
 }
 
-function close_alert_pin(){
-	clearInterval(countdownid);
-	$('#alert_pin').fadeOut(100);
+function close_alert(name){
+	if(name == 'alert_pin'){
+		clearInterval(countdownid);
+	}else if(name == 'alert_ASUS_EULA'){
+		document.form.ASUS_EULA_enable.checked = false;
+	}
+	$('#'+name).fadeOut(100);
 }
 
 function checkTime(i){
@@ -239,11 +306,7 @@ function cal_panel_block(obj){
 		blockmarginLeft= (winWidth)*0.2 + document.body.scrollLeft;
 	}
 
-	if(obj == "alert_pin"){
-		document.getElementById(obj).style.marginLeft = (blockmarginLeft - 190)+"px";
-	}
-	else
-		document.getElementById(obj).style.marginLeft = blockmarginLeft+"px";
+	document.getElementById(obj).style.marginLeft = (blockmarginLeft-400)+"px";
 }
 
 function countdownfunc(){
@@ -253,7 +316,7 @@ function countdownfunc(){
 	document.getElementById("rtime").innerHTML = remaining_time_show;
 	if (remaining_time<0){
 		clearInterval(countdownid);
-		setTimeout("close_alert_pin();", 2000);
+		setTimeout("close_alert('alert_pin');", 2000);
 	}
 	remaining_time--;
 }
@@ -266,7 +329,6 @@ function clipboard(ID_value)
 		input.value = document.getElementById(ID_value).innerHTML;
 	else
 		input.value = document.getElementById(ID_value).value;
-	input.focus();
 	input.select();
 	document.execCommand('Copy');
 	input.remove();
@@ -289,6 +351,7 @@ function clipboard(ID_value)
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>" disabled>
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
+<input type="hidden" name="ASUS_EULA" value="<% nvram_get("ASUS_EULA"); %>">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
 		<td width="17">&nbsp;</td>
@@ -311,7 +374,6 @@ function clipboard(ID_value)
 									<div id="formfonttitle" class="formfonttitle">Alexa & IFTTT - Amazon Alexa</div>
 									<div id="divSwitchMenu" style="margin-top:-40px;float:right;"><div style="width:110px;height:30px;float:left;border-top-left-radius:8px;border-bottom-left-radius:8px;" class="block_filter_pressed"><div class="tab_font_color" style="text-align:center;padding-top:5px;font-size:14px">Amazon Alexa</div></div><div style="width:110px;height:30px;float:left;border-top-right-radius:8px;border-bottom-right-radius:8px;" class="block_filter"><a href="Advanced_Smart_Home_IFTTT.asp"><div class="block_filter_name">IFTTT</div></a></div></div>
 									<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-
 									<div class="div_table">
 											<div class="div_tr">
 												<div class="div_td div_desc" style="width:55%">
@@ -351,16 +413,16 @@ function clipboard(ID_value)
 																	<div class="div_td" style="vertical-align:middle;padding-top:30px;">
 																		<div class="step_2"></div>
 																	</div>
-																	<div class="div_td" style="vertical-align:middle;padding-top:30px;font-size:16px;">
-																		<span style="color:#c0c0c0;padding-left:5px;"><#Alexa_Signin#></span>
+																	<div class="div_td" style="vertical-align:middle;padding-top:30px;font-size:16px;padding-left:8px;">
+																		<span style="color:#c0c0c0;text-decoration:underline;cursor:pointer;" onclick="get_activation_code();">Get Activation Code</span>
 																	</div>
 																</div>
 																<div class="div_tr">
 																	<div class="div_td" style="vertical-align:top;padding-top:40px;">
 																		<div class="step_3"></div>
 																	</div>
-																	<div class="div_td" style="vertical-align:middle;padding-top:30px;">
-																		<div class="step_3_acclink"></div>
+																	<div class="div_td" style="vertical-align:middle;padding-top:30px;font-size:16px;padding-left: 8px;">
+																		<span style="color:#c0c0c0;">Paste activation code to link Amazon account and your ASUS Router</span>
 																	</div>
 																</div>
 															</div>
@@ -368,6 +430,35 @@ function clipboard(ID_value)
 																	<div class="smh_asus_router"></div>
 																	<div class="and_you_can"></div>
 															</div>
+														</table>
+													</div>
+													<div id="alert_ASUS_EULA" class="alert_ASUS_EULA">
+														<table style="width:99%">
+															<tr>
+																<th colspan="2">
+																	<div style="font-size:17px;padding-bottom:8px;">To get activation code for amazon acount linking, you have to agree ASUS EULA by pressing below button.</div>
+																</th>
+															</tr>
+															<tr id="eula_agree">
+																<td colspan="2">
+																	<span style="font-size:15px;padding-left:20px; color:#FFCC00"><input type="checkbox" name="ASUS_EULA_enable" value="0"> I agree to the ASUS Terms of service and Privacy Policy</span>
+																</td>
+															</tr>
+															<tr id="eula_button">
+																<td>
+																	<div style="text-align:right;padding:20px 10px 0px 0px;">
+																		<input class="button_gen" type="button" onclick="setting_ASUS_EULA();" value="<#CTL_Agree#>">
+																	</div>
+																</td>
+																<td>
+																	<div style="text-align:left;padding:20px 0px 0px 10px;">
+																		<input class="button_gen" type="button" onclick="close_alert('alert_ASUS_EULA');" value="<#CTL_close#>">
+																	</div>
+																</td>
+															</tr>
+															<tr id="eula_loading" style="display:none">
+																<td width="20%" height="80" align="center"><img src="/images/loading.gif"></td>
+															</tr>
 														</table>
 													</div>
 													<div id="alert_pin" class="alertpin">
@@ -399,16 +490,13 @@ function clipboard(ID_value)
 																</td>
 																<td>
 																	<div style="text-align:left;padding:20px 0px 0px 10px;">
-																		<input class="button_gen" type="button" onclick="close_alert_pin();" value="<#CTL_close#>">
+																		<input class="button_gen" type="button" onclick="close_alert('alert_pin');" value="<#CTL_close#>">
 																	</div>
 																</td>
 															</tr>
 														</table>
 													</div>
 												</div>
-											</div>
-											<div style="padding:102px 19px 0px 0px;text-align:right;">
-												<span style="cursor:pointer;font-family:Arial, Helvetica, sans-serif;font-style:italic;font-weight:lighter;font-size:14px;text-decoration: underline;" onclick="gen_new_pincode();" >Advanced</span>
 											</div>
 									</div>
 								</td>

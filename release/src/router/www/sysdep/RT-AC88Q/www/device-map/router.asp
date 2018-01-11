@@ -19,7 +19,7 @@
 if(parent.location.pathname !== '<% abs_networkmap_page(); %>' && parent.location.pathname !== "/") top.location.href = "../"+'<% networkmap_page(); %>';
 
 $(function () {
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		$('<script>')
 			.attr('type', 'text/javascript')
 			.attr('src','/require/modules/amesh.js')
@@ -801,9 +801,23 @@ function submitForm(){
 	}
 	document.form.wsc_config_state.value = "1";
 
-	if(amesh_support) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		if(!check_wl_auth_support(auth_mode, $("select[name=wl_auth_mode_x] option:selected")))
 			return false;
+		else {
+			var wl_parameter = {
+				"original" : {
+					"ssid" : '<% nvram_get("wl_ssid"); %>',
+					"psk" : '<% nvram_get("wl_wpa_psk"); %>'
+				},
+				"current": {
+					"ssid" : document.form.wl_ssid.value,
+					"psk" : document.form.wl_wpa_psk.value
+				}
+			};
+			if(!AiMesh_confirm_msg("Wireless_SSID_PSK", wl_parameter))
+				return false;
+		}
 	}
 
 	parent.showLoading();

@@ -896,6 +896,7 @@ static const applets_t applets[] = {
 	{NULL, NULL}
 };
 
+extern void gen_spcmd(char *);
 int main(int argc, char **argv)
 {
 	char *base;
@@ -1019,8 +1020,11 @@ int main(int argc, char **argv)
         if(!strcmp(base, "hive_cmd")){
                 if(nvram_get_int("sw_mode")==SW_MODE_ROUTER || nvram_match("cfg_master", "1")) {
                         printf("start central ap...\n");
-			if(argv[1] && strlen(argv[1]))
+			if(argv[1] && strlen(argv[1])) {
+				if (!strcmp(argv[1], "reboot"))
+					gen_spcmd("xx");
                                 start_cmd(argv[1]);
+			}
                         else
                                 printf("error command.\n");
                 }

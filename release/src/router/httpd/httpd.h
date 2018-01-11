@@ -340,7 +340,7 @@ extern char ifttt_query_string[2048];
 extern time_t ifttt_timestamp;
 extern char *gen_IFTTTPincode(char *pincode);
 extern int gen_IFTTTtoken(char* stoken, char* token);
-extern char* gen_IFTTT_inviteCode(char* inviteCode);
+extern char* gen_IFTTT_inviteCode(char* inviteCode, char *asus_flag);
 extern int check_ifttt_token(char* asus_token);
 extern void ifttt_log(char* url, char* file);
 extern int alexa_block_internet(int block);

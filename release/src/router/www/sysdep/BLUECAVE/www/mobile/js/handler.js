@@ -179,9 +179,6 @@ apply.login = function(){
 		else if(isOriginSwMode("Mesh")){
 			goTo.meshMode();
 		}
-		else if(systemVariable.detwanResult.wanType == "NOWAN"){
-			goTo.NoWan();
-		}
 		else{
 			goTo.autoWan();
 		}
@@ -479,6 +476,10 @@ apply.wireless = function(){
 		})
 	)
 
+	if(isSupport("AMAS") && (isSwMode("RT") || isSwMode("AP"))) {
+		postDataModel.insert(aimeshObj);
+	}
+
 	function applyChanges(){
 		if(!systemVariable.isNewFw){
 			setTimeout(function(){
@@ -507,7 +508,7 @@ apply.wireless = function(){
 		}
 	}
 
-	var linkInternet = (httpApi.nvramGet(["link_internet"], true).link_internet == 2) ? true : false;
+	var linkInternet = httpApi.isConnected();
 	if(linkInternet && isSupport("FORCEUPGRADE")){
 		var errCount = 0;
 		setTimeout(function(){
@@ -596,26 +597,6 @@ abort.eula = function(){
 };
 
 abort.opMode = function(){
-/*
-	setTimeout(function(){
-		systemVariable.detwanResult = httpApi.detwanGetRet();
-		switch(systemVariable.detwanResult.wanType){
-			case "DHCP":
-				goTo.DHCP();
-				break;
-			case "PPPoE":
-				goTo.PPPoE();
-				break;
-			case "Static":
-				goTo.Static();
-				break;
-			default:
-				if(isPage("noWan_page")) setTimeout(arguments.callee, 1000);
-				break;
-		}
-	}, 500);
-*/
-
 	if(location.search == "?flag=manual"){
 		window.history.back();
 	}
@@ -683,6 +664,9 @@ abort.wanType = function(){
 			systemVariable.detwanResult = httpApi.detwanGetRet();
 
 			switch(systemVariable.detwanResult.wanType){
+				case "CONNECTED":
+					if(systemVariable.manualWanType) goTo.Wireless();
+					break;
 				case "DHCP":
 					if(systemVariable.manualWanType) goTo.DHCP();
 					break;
@@ -921,7 +905,7 @@ abort.wireless = function(){
 	else if(qisPostData.hasOwnProperty("wan_ipaddr_x")){
 		goTo.loadPage("static_setting", true);
 	}
-	else if(systemVariable.detwanResult.wanType == "DHCP"){
+	else if(systemVariable.detwanResult.wanType == "DHCP" || systemVariable.detwanResult.wanType == "CONNECTED"){
 		if(qisPostData.hasOwnProperty("sw_mode"))
 			goTo.loadPage("opMode_page", true);
 		else if(systemVariable.forceChangePW)
@@ -1080,6 +1064,9 @@ goTo.autoWan = function(){
 		case "UNKNOWN":
 			goTo.WAN();
 			break;
+		case "CONNECTED":
+			goTo.Wireless();
+			break;
 		case "":
 			goTo.Waiting();
 			break;
@@ -1099,7 +1086,7 @@ goTo.rtMode = function(){
 	qisPostData.wlc_psta = 0;
 	systemVariable.opMode = "RT";
 
-	goTo.autoWan();
+	apply.manual();
 };
 
 goTo.rpMode = function(){
@@ -2010,23 +1997,35 @@ goTo.Modem = function(){
 };
 
 goTo.Update = function(){
+/*
 	if(isSupport("FORCEUPGRADE")){
 		apply.update()
 	}
 	else{
+*/
 		$("#newVersion").val(systemVariable.newFwVersion);
 		goTo.loadPage("update_page", false);
+/*
 	}
+*/
 };
 
 goTo.Upgrading = function(){
+	var errCount = 0;
+
 	setTimeout(function(){
 		var	fwUpgradeInfo = httpApi.nvramGet(["webs_state_upgrade", "webs_state_error"], true);
 
 		if(fwUpgradeInfo.isError){
-			$("#upgradeBtn").show();
-			$(".detectIcon").hide();
-			$("#liveUpdateStatus").html("<#Congratulations#><br/><#is_latest#>");
+			if(errCount > 5){
+				$("#upgradeBtn").show();
+				$(".detectIcon").hide();
+				$("#liveUpdateStatus").html("<#Congratulations#><br/><#is_latest#>");
+			}
+			else{
+				errCount++;
+				setTimeout(arguments.callee, 1000);			
+			}
 		}
 		else if(fwUpgradeInfo.webs_state_upgrade == "0"){
 			$("#liveUpdateStatus").html("<#fw_downloading#>...");
@@ -2096,9 +2095,7 @@ goTo.Finish = function(){
 
 			setTimeout(function(){
 				setInterval(function(){
-					httpApi.isAlive("", systemVariable.lanIpaddr, function(){
-						goTo.leaveQIS();
-					});
+					httpApi.isAlive("", updateSubnet(systemVariable.lanIpaddr), goTo.leaveQIS);
 				}, 2000);
 			}, 5000);
 		}, 7000);
@@ -2106,9 +2103,7 @@ goTo.Finish = function(){
 	else{
 		setTimeout(function(){
 			setInterval(function(){
-				httpApi.isAlive("", systemVariable.lanIpaddr, function(){
-					goTo.leaveQIS();
-				});
+				httpApi.isAlive("", updateSubnet(systemVariable.lanIpaddr), goTo.leaveQIS);
 			}, 2000);
 		}, 8000);
 	}
@@ -2199,7 +2194,7 @@ goTo.Conncap = function(){
 	}, 5000);
 
 	setInterval(function(){
-		httpApi.isAlive("", systemVariable.lanIpaddr, function(){
+		httpApi.isAlive("", updateSubnet(systemVariable.lanIpaddr), function(){
 			$("#errConn_howToFind").fadeIn(300);
 		});
 	}, 10000);
@@ -2241,6 +2236,9 @@ goTo.NoWan = function(){
 		if(systemVariable.manualWanType) return false;
 
 		switch(systemVariable.detwanResult.wanType){
+			case "CONNECTED":
+				goTo.Wireless();
+				break;
 			case "DHCP":
 				goTo.DHCP();
 				break;

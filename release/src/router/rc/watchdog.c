@@ -3580,11 +3580,7 @@ void timecheck(void)
 	}
 
 	// radio on/off
-	if (nvram_match("svc_ready", "1")
-#ifdef RTCONFIG_QCA
-		&& nvram_match("wlready", "1")
-#endif
-	)
+	if (nvram_match("svc_ready", "1") && nvram_match("wlready", "1"))
 	foreach (word, nvram_safe_get("wl_ifnames"), next) {
 		SKIP_ABSENT_BAND_AND_INC_UNIT(unit);
 		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
@@ -5613,6 +5609,7 @@ static void link_pap_status()
 	int count_point = 10;
 	int prelink_pap_status = nvram_get_int("prelink_pap_status");
 	int link_pap_status = 0;
+	int alive = nvram_get_int("cfg_alive");
 
 	if (!pids("bluetoothd")) {
 		if (sw_mode == SW_MODE_ROUTER || (sw_mode == SW_MODE_AP && nvram_match("cfg_master", "1"))) {
@@ -5628,8 +5625,11 @@ static void link_pap_status()
 			if (nvram_get_int("re_syncing")) //do not check wifi-status when CAP sync with RE
 				return;
 
-			link_pap_status = (int)getPapState(1)==2?1:((int)getPapState(0)==2?2:0);
-			/* temporarily for SPF4.0CS LIGHT daisy-chain limitation */
+			if (!alive && (prelink_pap_status==-1 || prelink_pap_status>count_point))
+				link_pap_status = 0;
+			else
+				link_pap_status = (int)getPapState(1)==2?1:((int)getPapState(0)==2?2:0);
+
 #ifdef RTCONFIG_ETHBACKHAUL
 			}
 #endif
@@ -5658,8 +5658,8 @@ static void link_pap_status()
 			}
 			else {
 				if (prelink_pap_status < count_point) {
-					if (sw_mode == SW_MODE_AP && !nvram_match("cfg_master", "1")) {
-						if (prelink_pap_status == -1) {
+					if (sw_mode == SW_MODE_AP) {
+						if (!alive && prelink_pap_status==-1) {
 							link_pap_status = count_point + 180;
 #if defined(RTCONFIG_LP5523)
 							lp55xx_leds_proc(LP55XX_ALL_BREATH_LEDS, LP55XX_ACT_NONE);
@@ -5698,14 +5698,20 @@ static void link_pap_status()
 				}
 				else if (prelink_pap_status > count_point) {
 					link_pap_status=prelink_pap_status-1;
-					if (link_pap_status == count_point)
+
+					if (link_pap_status == count_point) {
+						if (!alive)
+							nvram_set_int("cfg_alive", 99);
 #if defined(RTCONFIG_LP5523)
 						lp55xx_leds_proc(LP55XX_RED_LEDS, LP55XX_ACT_NONE);
 #elif defined(MAPAC1750)
 						set_rgbled(RGBLED_RED);
 #endif
+					}
 				}
 			}
+
+			logmessage("WATCHDOG", "[%s] cfg alive:%d state:%d, pre state:%d", __func__, alive, link_pap_status, prelink_pap_status);
 			nvram_set_int("prelink_pap_status", link_pap_status);
 		}
 	}
@@ -5782,6 +5788,7 @@ void onboarding_check()
 		notify_rc("resetdefault");
 	}
 }
+#endif
 
 #ifdef RTCONFIG_CFGSYNC
 void cfgsync_check()
@@ -5790,7 +5797,6 @@ void cfgsync_check()
 		start_cfgsync();
 }
 #endif /* RTCONFIG_CFGSYNC */
-#endif
 
 #ifdef RTCONFIG_USER_LOW_RSSI
 #define ETHER_ADDR_STR_LEN	18
@@ -6624,14 +6630,18 @@ void watchdog(int sig)
 		link_pap_status();
 		if (f_exists("/tmp/hyd.conf"))
 		{
+			static int invalid_state=0;
+			pid_t *pidList;
+			pid_t *pl;
+			int count;
+#ifdef RTCONFIG_ETHBACKHAUL
+			static int chaos_eth_state=0;
+#endif
+
 			if(uptime()-nvram_get_int("watchdog_hyd")>40)
 			{
-				static int invalid_state=0;
-				pid_t *pidList;
-				pid_t *pl;
-				int count = 0;
-
 				pidList = find_pid_by_name("hyd");
+				count=0;
 				for (pl = pidList; *pl; pl++)
 					count++;
 				if (count!=1)
@@ -6654,6 +6664,25 @@ void watchdog(int sig)
 				}
 				free(pidList);
 			}
+#ifdef RTCONFIG_ETHBACKHAUL
+			if (nvram_get_int("chaos_eth_daemon")) {
+				if (chaos_eth_state++ > 10) {
+					pidList = find_pid_by_name("eth_bh_mon");
+					count=0;
+					for (pl = pidList; *pl; pl++)
+						count++;
+					free(pidList);
+					if (count==0) {
+						pid_t eth_pid;
+						char *ethmon[]={"eth_bh_mon", NULL};
+						_dprintf("[[[WATCHDOG]]] : wakup eth_bh_mon\n");
+						_eval(ethmon, NULL, 0, &eth_pid);
+					} else
+						nvram_unset("chaos_eth_daemon");
+				}
+			} else
+				chaos_eth_state=0;
+#endif
 		}
 	}
 #if defined(RTCONFIG_BT_CONN)
@@ -6809,10 +6838,10 @@ wdp:
 
 #ifdef RTCONFIG_AMAS
 	amas_ctl_check();
+#endif
 #ifdef RTCONFIG_CFGSYNC
 	cfgsync_check();
 #endif
-#endif	
 
 	return;
 }

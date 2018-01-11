@@ -172,7 +172,7 @@ function init()
 	ref.initX();
 	document.getElementById("faq0").href = "https://www.asus.com/support/FAQ/114483/" ;
 	if(bwdpi_support){
-		document.getElementById('content_title').innerHTML = "<#menu5_3_2#> - <#traffic_monitor#>";
+		document.getElementById('content_title').innerHTML = "<#traffic_monitor#>";
 	}	
 }
 

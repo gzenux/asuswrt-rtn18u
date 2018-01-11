@@ -709,12 +709,13 @@ export_config:
 kernel_patch:
 ifeq ($(CONFIG_LANTIQ),y)
 	cd proprietary; rm -rf ltq_eip97_1.2.25; tar zxf ltq_eip97_1.2.25.tar.gz
-	cd proprietary; rm -rf ${SRCBASE}/router/rom_lantiq/; tar zxf rom_lantiq_05.04.00.61.4_AE.tgz -C ${SRCBASE}/router/ ; mv ${SRCBASE}/router/rom_lantiq_05.04.00.61.4_AE ${SRCBASE}/router/rom_lantiq/
+	cd proprietary; rm -rf ${SRCBASE}/router/rom_lantiq/; tar zxf rom_lantiq_05.04.00.61.6_AE.tgz -C ${SRCBASE}/router/ ; mv ${SRCBASE}/router/rom_lantiq_05.04.00.61.6_AE ${SRCBASE}/router/rom_lantiq/
+	cp patches/iptables-1.4.21/extensions/* ${SRCBASE}/router/iptables-1.4.21/extensions/
 	# rm -f ${SRCBASE}/router/rom_lantiq/opt/lantiq/wave/images/cal_wlan0.bin
 	# rm -f ${SRCBASE}/router/rom_lantiq/opt/lantiq/wave/images/cal_wlan1.bin
 	# rm -f proprietary/rom_lantiq/opt/lantiq/wave/images/cal_wlan0.bin
 	# rm -f proprietary/rom_lantiq/opt/lantiq/wave/images/cal_wlan1.bin
-	cd proprietary; cp -rf rom_lantiq_05.04.00.61.4_AE_patch/* ${SRCBASE}/router/rom_lantiq/
+	cd proprietary; cp -rf rom_lantiq_05.04.00.61.6_AE_patch/* ${SRCBASE}/router/rom_lantiq/
 	# cp -f proprietary/linux-3.10.104/firmware/lantiq/phy11g_ip_BE.bin linux/linux-3.10.104/firmware/lantiq/phy11g_ip_BE.bin
 endif
 
@@ -735,7 +736,7 @@ ifeq ($(CONFIG_LANTIQ),y)
 	fi
 endif
 	if [ ! -f "${SRCBASE}/tools/${TOOLCHAIN_NAME}/.patched" ] ; then \
-		cd ${SRCBASE}/tools/${TOOLCHAIN_NAME}/lib; cp ${SRCBASE}/patches/toolchain/lib/libnsl-0.9.33.2.so .; ln -s libnsl-0.9.33.2.so libnsl.so.0; ln -s libnsl.so.0 libnsl.so ; \
+		cd ${SRCBASE}/tools/${TOOLCHAIN_NAME}/lib; cp ${SRCBASE}/patches/toolchain/lib/libnsl-0.9.33.2.so .; cp ${SRCBASE}/patches/toolchain/lib/libresolv-0.9.33.2.so . ; ln -s libnsl-0.9.33.2.so libnsl.so.0; ln -s libnsl.so.0 libnsl.so ; ln -s libresolv-0.9.33.2.so libresolv.so.0 ; \
 		touch ${SRCBASE}/tools/${TOOLCHAIN_NAME}/.patched ; \
 	fi
 ifeq ($(CONFIG_LANTIQ),y)
@@ -1327,7 +1328,7 @@ define RouterOptions
 		echo "RTCONFIG_NEW_USER_LOW_RSSI=y" >>$(1); \
 	fi; \
 	if [ "$(USB)" = "USB" ]; then \
-		sed -i "/RTCONFIG_USB is not set/d" $(1); \
+		sed -i "/RTCONFIG_USB\b/d" $(1); \
 		echo "RTCONFIG_USB=y" >>$(1); \
 		if [ "$(USBEXTRAS)" = "y" ]; then \
 			sed -i "/RTCONFIG_USB_EXTRAS/d" $(1); \
@@ -1341,9 +1342,13 @@ define RouterOptions
 			sed -i "/RTCONFIG_EXT4FS/d" $(1); \
 			echo "RTCONFIG_EXT4FS=y" >>$(1); \
 		fi; \
-		if [ "$(TFAT)" = "y" ]; then \
+		if [ "$(TFAT)" != "" ]; then \
 			sed -i "/RTCONFIG_TFAT/d" $(1); \
 			echo "RTCONFIG_TFAT=y" >>$(1); \
+			if [ "$(findstring open, $(TFAT))" = "open" ]; then \
+				sed -i "/RTCONFIG_OPENPLUS_TFAT/d" $(1); \
+				echo "RTCONFIG_OPENPLUS_TFAT=y" >>$(1); \
+			fi; \
 		fi; \
 		if [ "$(NTFS)" != "" ]; then \
 			sed -i "/RTCONFIG_NTFS/d" $(1); \
@@ -1569,6 +1574,10 @@ define RouterOptions
 	if [ "$(BRCM_NAND_JFFS2)" = "y" ]; then \
 		sed -i "/RTCONFIG_BRCM_NAND_JFFS2/d" $(1); \
 		echo "RTCONFIG_BRCM_NAND_JFFS2=y" >>$(1); \
+	fi; \
+	if [ "$(JFFS_NVRAM)" = "y" ]; then \
+		sed -i "/RTCONFIG_JFFS_NVRAM/d" $(1); \
+		echo "RTCONFIG_JFFS_NVRAM=y" >>$(1); \
 	fi; \
 	if [ "$(JFFS1)" = "y" ]; then \
 		sed -i "/RTCONFIG_JFFSV1/d" $(1); \
@@ -1944,10 +1953,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_FBT/d" $(1); \
 		echo "RTCONFIG_FBT=y" >>$(1); \
 	fi; \
-        if [ "$(HAPDEVENT)" = "y" ] || [ "$(CONFIG_LANTIQ)" = "y" ]; then \
-                sed -i "/RTCONFIG_HAPDEVENT/d" $(1); \
-                echo "RTCONFIG_HAPDEVENT=y" >>$(1); \
-        fi; \
+	if [ "$(HAPDEVENT)" = "y" ] || [ "$(CONFIG_LANTIQ)" = "y" ]; then \
+		sed -i "/RTCONFIG_HAPDEVENT/d" $(1); \
+		echo "RTCONFIG_HAPDEVENT=y" >>$(1); \
+	fi; \
 	if [ "$(ADBLOCK)" = "y" ]; then \
 		sed -i "/RTCONFIG_ADBLOCK/d" $(1); \
 		echo "RTCONFIG_ADBLOCK=y" >>$(1); \
@@ -1994,7 +2003,7 @@ define RouterOptions
 		sed -i "/RTCONFIG_BCMBSD/d" $(1); \
 		echo "RTCONFIG_BCMBSD=y" >>$(1); \
 		sed -i "/RTCONFIG_GMAC3/d" $(1); \
-		echo "RTCONFIG_GMAC3=y" >>$(1); \
+		echo "# RTCONFIG_GMAC3 is not set" >>$(1); \
 	fi; \
 	if [ "$(HND_ROUTER)" = "y" ]; then \
 		sed -i "/RTCONFIG_HND_ROUTER/d" $(1); \
@@ -2018,6 +2027,11 @@ define RouterOptions
 			echo "RTCONFIG_VISUALIZATION=y" >>$(1); \
 		else \
 			echo "# RTCONFIG_VISUALIZATION is not set" >>$(1); \
+		fi; \
+		if [ "$(DFS_US)" = "y" ]; then \
+			echo "RTCONFIG_DFS_US=y" >>$(1); \
+		else \
+			echo "# RTCONFIG_DFS_US is not set" >>$(1); \
 		fi; \
 	fi; \
 	if [ "$(HND_ROUTER_F1)" = "y" ]; then \
@@ -2393,7 +2407,7 @@ define RouterOptions
 	if [ "$(RALINK)" = "y" -o "$(QCA)" = "y" -o "$(REALTEK)" = "y" ]; then \
 		sed -i "/CONFIG_LIBBCM/d" $(1); \
 		echo "# CONFIG_LIBBCM is not set" >>$(1); \
-  fi; \
+	fi; \
 	if [ "$(CFGSYNC)" = "y" ]; then \
 		sed -i "/RTCONFIG_CFGSYNC/d" $(1); \
 		echo "RTCONFIG_CFGSYNC=y" >>$(1); \
@@ -2441,6 +2455,10 @@ define RouterOptions
 			sed -i "/RTCONFIG_DUAL_BACKHAUL/d" $(1); \
 			echo "RTCONFIG_DUAL_BACKHAUL=y" >>$(1); \
 		fi; \
+	fi; \
+	if [ "$(AUTHSUPP)" = "y" ]; then \
+		sed -i "/RTCONFIG_AUTHSUPP/d" $(1); \
+		echo "RTCONFIG_AUTHSUPP=y" >>$(1); \
 	fi; \
 	if [ "$(VPN_FUSION)" = "y" ]; then \
 		sed -i "/RTCONFIG_VPN_FUSION/d" $(1); \
@@ -3259,20 +3277,23 @@ fi; \
 		echo "CONFIG_HAVE_LATENCYTOP_SUPPORT=y" >>$(1); \
 		sed -i "/CONFIG_GENERIC_LOCKBREAK/d" $(1); \
 		echo "CONFIG_BROKEN_ON_SMP=y" >>$(1); \
-		sed -i "/CONFIG_TREE_RCU=y/# CONFIG_TREE_RCU is not set/g" >>$(1); \
+		sed -i "/CONFIG_TREE_RCU/d" $(1); \
+		echo "# CONFIG_TREE_RCU is not set" >>$(1); \
+		sed -i "/CONFIG_TREE_PREEMPT_RCU/d" $(1); \
 		echo "CONFIG_TREE_PREEMPT_RCU=y" >>$(1); \
+		sed -i "/CONFIG_TINY_RCU/d" $(1); \
 		echo "# CONFIG_TINY_RCU is not set" >>$(1); \
 		sed -i "/CONFIG_USE_GENERIC_SMP_HELPERS/d" $(1); \
 		sed -i "/CONFIG_STOP_MACHINE/d" $(1); \
 		sed -i "/CONFIG_MUTEX_SPIN_ON_OWNER/d" $(1); \
 		echo "# CONFIG_MUTEX_SPIN_ON_OWNER is not set" >>$(1); \
-		sed -i "/# CONFIG_ARM_ERRATA_742230 is not set/d" $(1); \
-		sed -i "/# CONFIG_ARM_ERRATA_742231 is not set/d" $(1); \
-		sed -i "/# CONFIG_ARM_ERRATA_720789 is not set/d" $(1); \
-		sed -i "/CONFIG_SMP=y/d" $(1); \
+		sed -i "/CONFIG_ARM_ERRATA_742230/d" $(1); \
+		sed -i "/CONFIG_ARM_ERRATA_742231/d" $(1); \
+		sed -i "/CONFIG_ARM_ERRATA_720789/d" $(1); \
+		sed -i "/CONFIG_SMP\b/d" $(1); \
 		echo "# CONFIG_SMP is not set" >>$(1); \
 		sed -i "/CONFIG_NR_CPUS=2/d" $(1); \
-		sed -i "/# CONFIG_HOTPLUG_CPU is not set/d" $(1); \
+		sed -i "/CONFIG_HOTPLUG_CPU/d" $(1); \
 		sed -i "/CONFIG_RPS=y/d" $(1); \
 	fi; \
 	if [ "$(ALPINE)" = "y" ]; then \
@@ -3426,6 +3447,12 @@ fi; \
 	else \
 		echo "# CONFIG_DUMP_PREV_OOPS_MSG is not set" >>$(1); \
 	fi; \
+	sed -i "/CONFIG_JFFS_NVRAM/d" $(1); \
+	if [ "$(JFFS_NVRAM)" = "y" ]; then \
+                echo "CONFIG_JFFS_NVRAM=y" >>$(1); \
+	else \
+		echo "# CONFIG_JFFS_NVRAM is not set" >>$(1); \
+        fi; \
 	sed -i "/CONFIG_RTAC3200/d" $(1); \
 	if [ "$(BUILD_NAME)" = "RT-AC3200" ]; then \
 		echo "CONFIG_RTAC3200=y" >>$(1); \
