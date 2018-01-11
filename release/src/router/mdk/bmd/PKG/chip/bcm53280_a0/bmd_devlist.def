@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM53280_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM53280_A0
+BMD_DEVLIST_ENTRY(BCM53280, BCM53280_VENDOR_ID, BCM53280_DEVICE_ID, BCM53280_REV_A0, \
+                  0, BCM53280_PROBEINFO, \
+                  bcm53280_a0, bcm53280_a0, bcm53280_a0, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "24 FE + 4 GE", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm53280_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56750_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56750, BCM56750_VENDOR_ID, BCM56750_DEVICE_ID, BCM56750_REV_A0, \
+                  0, 0, \
+                  bcm56850_a0, bcm56750_a0, bcm56750_a0, \
+                  CDK_DEV_ARCH_XGSM, "Titan2", "BCM56850", \
+                  "1280 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56750_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56750, BCM56750_VENDOR_ID, BCM56750_DEVICE_ID, BCM56750_REV_A1, \
+                  0, 0, \
+                  bcm56850_a0, bcm56750_a0, bcm56750_a1, \
+                  CDK_DEV_ARCH_XGSM, "Titan2", "BCM56850", \
+                  "1280 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56750_A2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56750, BCM56750_VENDOR_ID, BCM56750_DEVICE_ID, BCM56750_REV_A2, \
+                  0, 0, \
+                  bcm56850_a0, bcm56750_a0, bcm56750_a2, \
+                  CDK_DEV_ARCH_XGSM, "Titan2", "BCM56850", \
+                  "1280 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+

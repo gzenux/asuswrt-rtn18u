@@ -1,0 +1,3 @@
+#define PHY_BUS_BCM56820_MIIM_EXT_INSTALLED
+extern phy_bus_t phy_bus_bcm56820_miim_ext;
+

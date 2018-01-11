@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56846_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56846, BCM56846_VENDOR_ID, BCM56846_DEVICE_ID, BCM56846_REV_A0, \
+                  0, 0, \
+                  bcm56840_b0, bcm56846_a0, bcm56846_a0, \
+                  CDK_DEV_ARCH_XGS, "Trident+", "BCM56840", \
+                  "640 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56846_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56846, BCM56846_VENDOR_ID, BCM56846_DEVICE_ID, BCM56846_REV_A1, \
+                  0, 0, \
+                  bcm56840_b0, bcm56846_a0, bcm56846_a1, \
+                  CDK_DEV_ARCH_XGS, "Trident+", "BCM56840", \
+                  "640 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+

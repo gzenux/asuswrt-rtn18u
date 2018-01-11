@@ -1,0 +1,40 @@
+#if CDK_CONFIG_INCLUDE_BCM56303_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56303, BCM56303_VENDOR_ID, BCM56303_DEVICE_ID, BCM56303_REV_A0, \
+                  0, 0, \
+                  bcm56504_a0, bcm56303_a0, bcm56303_a0, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port Gigabit Ethernet Multilayer Switch with Three 10 Gigabit Ethernet/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56303_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56303, BCM56303_VENDOR_ID, BCM56303_DEVICE_ID, BCM56303_REV_A1, \
+                  0, 0, \
+                  bcm56504_a0, bcm56303_a0, bcm56303_a1, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port Gigabit Ethernet Multilayer Switch with Three 10 Gigabit Ethernet/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56303_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56303, BCM56303_VENDOR_ID, BCM56303_DEVICE_ID, BCM56303_REV_B0, \
+                  0, 0, \
+                  bcm56304_b0, bcm56303_b0, bcm56303_b0, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port Gigabit Ethernet Multilayer Switch with Three 10 Gigabit Ethernet/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56303_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56303, BCM56303_VENDOR_ID, BCM56303_DEVICE_ID, BCM56303_REV_B1, \
+                  0, 0, \
+                  bcm56304_b0, bcm56303_b0, bcm56303_b1, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port Gigabit Ethernet Multilayer Switch with Three 10 Gigabit Ethernet/HiGig+ Ports", 0, 0)
+#endif
+#endif
+

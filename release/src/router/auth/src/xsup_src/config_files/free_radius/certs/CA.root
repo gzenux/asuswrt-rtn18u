@@ -1,0 +1,40 @@
+#!/bin/sh
+#SSL=/usr/local/openssl-certgen
+SSL=/usr/bin/openssl
+export PATH=${SSL}/bin/:${SSL}/ssl/misc:${PATH}
+export LD_LIBRARY_PATH=${SSL}/lib
+# needed if you need to start from scratch otherwise the CA.pl -newca command doesn't copy the new
+# private key into the CA directories
+rm -rf demoCA
+echo "*********************************************************************************"
+echo "Creating self-signed private key and certificate"
+echo "When prompted override the default value for the Common Name field"
+echo "*********************************************************************************"
+echo
+# Generate a new self-signed certificate.
+# After invocation, newreq.pem will contain a private key and certificate
+# newreq.pem will be used in the next step
+openssl req -new -x509 -keyout newreq.pem -out newreq.pem -passin pass:realtek -passout pass:realtek
+echo "*********************************************************************************"
+echo "Creating a new CA hierarchy (used later by the "ca" command) with the certificate"
+echo "and private key created in the last step"
+echo "*********************************************************************************"
+echo
+echo "newreq.pem" | CA.pl -newca >/dev/null
+echo "*********************************************************************************"
+echo "Creating ROOT CA"
+echo "*********************************************************************************"
+echo
+# Create a PKCS#12 file, using the previously created CA certificate/key
+# The certificate in demoCA/cacert.pem is the same as in newreq.pem. Instead of
+# using "-in demoCA/cacert.pem" we could have used "-in newreq.pem" and then omitted
+# the "-inkey newreq.pem" because newreq.pem contains both the private key and certificate
+openssl pkcs12 -export -in demoCA/cacert.pem -inkey newreq.pem -out root.p12 -cacerts -passin pass:realtek -passout pass:realtek
+# parse the PKCS#12 file just created and produce a PEM format certificate and key in root.pem
+openssl pkcs12 -in root.p12 -out root.pem -passin pass:realtek -passout pass:realtek
+# Convert root certificate from PEM format to DER format
+openssl x509 -inform PEM -outform DER -in root.pem -out root.der
+#Clean Up
+rm -rf newreq.pem
+
+

@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM56314_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM56314_A0
+BMD_DEVLIST_ENTRY(BCM56314, BCM56314_VENDOR_ID, BCM56314_DEVICE_ID, BCM56314_REV_A0, \
+                  0, 0, \
+                  bcm56314_a0, bcm56314_a0, bcm56314_a0, \
+                  CDK_DEV_ARCH_XGS, "Helix+", "BCM56310", \
+                  "24-Port Gigabit Ethernet Multilayer Switch with Four 10-Gigabit Ethernet/HiGig+ Ports", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm56314_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

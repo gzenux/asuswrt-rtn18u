@@ -1,0 +1,66 @@
+#if CDK_CONFIG_INCLUDE_BCM56840_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56840, BCM56840_VENDOR_ID, BCM56840_DEVICE_ID, BCM56840_REV_A0, \
+                  0, 0, \
+                  bcm56840_a0, bcm56840_a0, bcm56840_a0, \
+                  CDK_DEV_ARCH_XGS, "Trident", "BCM56840", \
+                  "480 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56840_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56840, BCM56840_VENDOR_ID, BCM56840_DEVICE_ID, BCM56840_REV_A1, \
+                  0, 0, \
+                  bcm56840_a0, bcm56840_a0, bcm56840_a1, \
+                  CDK_DEV_ARCH_XGS, "Trident", "BCM56840", \
+                  "480 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56840_A2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56840, BCM56840_VENDOR_ID, BCM56840_DEVICE_ID, BCM56840_REV_A2, \
+                  0, 0, \
+                  bcm56840_a0, bcm56840_a0, bcm56840_a2, \
+                  CDK_DEV_ARCH_XGS, "Trident", "BCM56840", \
+                  "480 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56840_A3 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56840, BCM56840_VENDOR_ID, BCM56840_DEVICE_ID, BCM56840_REV_A3, \
+                  0, 0, \
+                  bcm56840_a0, bcm56840_a0, bcm56840_a3, \
+                  CDK_DEV_ARCH_XGS, "Trident", "BCM56840", \
+                  "480 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56840_A4 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56840, BCM56840_VENDOR_ID, BCM56840_DEVICE_ID, BCM56840_REV_A4, \
+                  0, 0, \
+                  bcm56840_a0, bcm56840_a0, bcm56840_a4, \
+                  CDK_DEV_ARCH_XGS, "Trident", "BCM56840", \
+                  "480 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56840_B0 == 1
+CDK_DEVLIST_ENTRY(BCM56840, BCM56840_VENDOR_ID, BCM56840_DEVICE_ID, BCM56840_REV_B0, \
+                  0, 0, \
+                  bcm56840_b0, bcm56840_b0, bcm56840_b0, \
+                  CDK_DEV_ARCH_XGS, "Trident", "BCM56840", \
+                  "480 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56840_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56840, BCM56840_VENDOR_ID, BCM56840_DEVICE_ID, BCM56840_REV_B1, \
+                  0, 0, \
+                  bcm56840_b0, bcm56840_b0, bcm56840_b1, \
+                  CDK_DEV_ARCH_XGS, "Trident", "BCM56840", \
+                  "480 Gbps Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+

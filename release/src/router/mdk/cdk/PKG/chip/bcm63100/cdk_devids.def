@@ -1,0 +1,15 @@
+/* BCM63100 */
+#if defined(CHIP_63148) 
+#define BCM63100_VENDOR_ID                0xae02
+#define BCM63100_DEVICE_ID                0x5270
+#define BCM63100_REV_A0                   0x00
+#elif defined(CHIP_63138)
+#define BCM63100_VENDOR_ID                0x600d
+#define BCM63100_DEVICE_ID                0x85c0
+#define BCM63100_REV_A0                   0x00
+#elif defined(CHIP_4908)
+#define BCM63100_VENDOR_ID                0xae02
+#define BCM63100_DEVICE_ID                0x53a0
+#define BCM63100_REV_A0                   0x00
+#endif
+

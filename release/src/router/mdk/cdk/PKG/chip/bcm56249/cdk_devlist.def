@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56249_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56249, BCM56249_VENDOR_ID, BCM56249_DEVICE_ID, BCM56249_REV_A0, \
+                  0, 0, \
+                  bcm56440_a0, bcm56249_a0, bcm56249_a0, \
+                  CDK_DEV_ARCH_XGSM, "Katana", "BCM56440", \
+                  "24-Port FE Multilayer Switch with Two 2.5HGL and Two 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56249_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56249, BCM56249_VENDOR_ID, BCM56249_DEVICE_ID, BCM56249_REV_B0, \
+                  0, 0, \
+                  bcm56440_b0, bcm56249_b0, bcm56249_b0, \
+                  CDK_DEV_ARCH_XGSM, "Katana", "BCM56440", \
+                  "24-Port FE Multilayer Switch with Two 2.5HGL and Two 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+

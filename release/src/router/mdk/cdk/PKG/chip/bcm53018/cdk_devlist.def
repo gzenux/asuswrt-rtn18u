@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM53018_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53018, BCM53018_VENDOR_ID, BCM53018_DEVICE_ID, BCM53018_REV_A0, \
+                  BCM53018_MODEL, BCM53018_PROBEINFO, \
+                  bcm53010_a0, bcm53018_a0, bcm53018_a0, \
+                  CDK_DEV_ARCH_ROBO, "Costar", "BCM53010", \
+                  "8-Port GE Switch With 5-port Integrated PHY", 0, 0)
+#endif
+#endif
+

@@ -1,0 +1,8 @@
+#if CDK_CONFIG_INCLUDE_BCM56613_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56613, BCM56613_VENDOR_ID, BCM56613_DEVICE_ID, BCM56613_REV_A0, \
+                  0, 0, \
+                  bcm56613_a0, bcm56613_a0, bcm56613_a0, \
+                  CDK_DEV_ARCH_XGS, "Sportster", "BCM56610", \
+                  "Queueing Engine with Integrated Traffic Management", 0, 0)
+#endif
+

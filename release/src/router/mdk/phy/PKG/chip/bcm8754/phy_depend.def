@@ -1,0 +1,13 @@
+/*
+ * BCM8754
+ */
+/* Sets the default include state if it was not given */
+#ifndef PHY_CONFIG_INCLUDE_BCM8754
+#define PHY_CONFIG_INCLUDE_BCM8754 PHY_CONFIG_INCLUDE_CHIP_DEFAULT
+#endif
+
+#ifndef PHY_CONFIG_LONG_XFI
+#define PHY_CONFIG_LONG_XFI        PHY_CONFIG_EXTENDED_CONFIG_INCLUDE_DEFAULT
+#endif
+
+

@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM56440_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM56440_A0
+BMD_DEVLIST_ENTRY(BCM56440, BCM56440_VENDOR_ID, BCM56440_DEVICE_ID, BCM56440_REV_A0, \
+                  0, 0, \
+                  bcm56440_a0, bcm56440_a0, bcm56440_a0, \
+                  CDK_DEV_ARCH_XGSM, "Katana", "BCM56440", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Ports", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm56440_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

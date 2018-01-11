@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56116_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56116, BCM56116_VENDOR_ID, BCM56116_DEVICE_ID, BCM56116_REV_A0, \
+                  0, 0, \
+                  bcm56112_a0, bcm56116_a0, bcm56116_a0, \
+                  CDK_DEV_ARCH_XGS, "Felix+", "BCM56110", \
+                  "24-Port Fast Ethernet and 2-Port Gigabit Ethernet Layer 2 Switch with One 10-Gigabit Ethernet/HiGig Port", 0, 0)
+#endif
+#endif
+

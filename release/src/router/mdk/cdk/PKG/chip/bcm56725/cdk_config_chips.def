@@ -1,0 +1,17 @@
+/*
+ * BCM56725
+ */
+
+/* Sets the default include state if it was not given */
+#ifndef CDK_CONFIG_INCLUDE_BCM56725
+#define CDK_CONFIG_INCLUDE_BCM56725 CDK_CONFIG_INCLUDE_CHIP_DEFAULT
+#endif
+/* Resolve revision dependencies */
+#ifndef CDK_CONFIG_INCLUDE_BCM56725_Ax
+#define CDK_CONFIG_INCLUDE_BCM56725_Ax CDK_CONFIG_INCLUDE_BCM56725
+#endif
+#ifndef CDK_CONFIG_INCLUDE_BCM56725_A0
+#define CDK_CONFIG_INCLUDE_BCM56725_A0 CDK_CONFIG_INCLUDE_BCM56725_Ax
+#endif
+
+

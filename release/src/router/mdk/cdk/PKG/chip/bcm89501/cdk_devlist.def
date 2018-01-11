@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM89501_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM89501, BCM89501_VENDOR_ID, BCM89501_DEVICE_ID, BCM89501_REV_A0, \
+                  BCM89501_MODEL, BCM89501_PROBEINFO, \
+                  bcm89500_a0, bcm89501_a0, bcm89501_a0, \
+                  CDK_DEV_ARCH_ROBO, "Polar", "BCM89500", \
+                  "6-Port GE Switch With 1 intergrated Qual PHY and 1 Single PHY", 0, 0)
+#endif
+#endif
+

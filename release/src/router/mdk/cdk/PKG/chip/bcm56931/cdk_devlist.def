@@ -1,0 +1,8 @@
+#if CDK_CONFIG_INCLUDE_BCM56931_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56931, BCM56931_VENDOR_ID, BCM56931_DEVICE_ID, BCM56931_REV_A0, \
+                  0, 0, \
+                  bcm56931_a0, bcm56931_a0, bcm56931_a0, \
+                  CDK_DEV_ARCH_XGS, "Sportster", "BCM56930", \
+                  "XGS pass-through and standalone Traffic Manager, 50Gbps", 0, 0)
+#endif
+

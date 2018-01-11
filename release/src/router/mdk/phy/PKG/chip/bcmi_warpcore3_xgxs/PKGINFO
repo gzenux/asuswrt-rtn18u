@@ -1,0 +1,3 @@
+VERSION:2.8.0
+NAME:bcmi_warpcore3_xgxs
+DEPEND:bcmi_warpcore_xgxs

@@ -1,0 +1,131 @@
+* DATE/WHOM/TYPE:
+- 2014/07/02, PlusWang ;feature refine
+* DIGEST:
+P2P related refine 
+- 1)DUT as GC mode
+   1-1. after WPS success, wscd via ioctl report SSID and PSK to wlan driver then interface apply mib and down  up 
+        interface instead of orig flow, orig flow is when wscd success write to flash and do init.sh gw all
+        then  wlan driver read mib from flash, it's so slow some GO(peer) will timeout and back to p2p_dev mode.
+
+- 2)DUT and Peer are all ours device , via web and select PIN method to do P2P will fail
+   change 
+   system("wscd -sig_start wlan0"); 
+   to 
+   sprintf(tmpbuf2,"wscd -sig_start %s",GET_CURRENT_INTERFACE);
+- 3)when DUT is GC mode ,when choose AP to connect will avoid SSID!= [DIRECT-*]
+- 4)when DUT is GC mode ,do PBC PBC timeout will be 25 secs, per run scan timeout will be 10 secs
+
+* TEST METHOD:
+* ROOT CAUSE:
+* MODIFIED FILES
+* DESCRIPTION:
+
+=============================================================================================
+
+* DATE/WHOM/TYPE:
+- 2013/12/27, PlusWang ;feature refine
+* DIGEST:
+ for reaver-wps attack soft, when AP mode under  PBC duration don't allow ER nego with DUT
+
+* TEST METHOD:
+* ROOT CAUSE:
+* MODIFIED FILES
+	-rxptk.c
+	-wsc.h
+* DESCRIPTION:
+
+=============================================================================================
+
+- 2013/12/12, PlusWang ;feature refine
+* DIGEST:
+-modify  config method value at beacon/probe_rsp when wsc under unconfig mode
+
+* TEST METHOD:
+* ROOT CAUSE:
+* MODIFIED FILES
+	-utils.c
+* DESCRIPTION:
+-under unconfigured status let CM at beacon/probe_rsp no include PBC, comply with WPS test plan
+-under configured status let CM at beacon/probe_rsp include PBC, for IOT with win7 WZC PBC optional
+ let win7 wzc nego with DUT can always popup PBC optional
+
+=============================================================================================
+* DATE/WHOM/TYPE:
+- 2013/12/05, PlusWang ;update version string
+* DIGEST:
+-enlarge 1)issue scan request , 2) get scan result wait time
+
+* TEST METHOD:
+* ROOT CAUSE:
+* MODIFIED FILES
+	-wsc.c
+* DESCRIPTION:
+some customer has DFS channel delay,or scan dealy between run and run
+1 run means complete per-channel scan
+
+=============================================================================================
+- 2013/11/27, PlusWang ;update version string
+* DIGEST:
+-update wscd version string to 2.13
+
+* TEST METHOD:
+* ROOT CAUSE:
+* MODIFIED FILES
+	-wsc.h
+* DESCRIPTION:
+
+=============================================================================================
+* DATE/WHOM/TYPE:
+- 2013/11/22, PlusWang ;feature refine
+* DIGEST:
+-under 2.0 STA mode can accept WPA(TKIP) credential
+ under 2.0 both AP and STA mode can't accept WEP credential
+* TEST METHOD:
+* ROOT CAUSE:
+* MODIFIED FILES
+	-wsc.c
+
+* DESCRIPTION:
+	
+	Wi-Fi Simple Configuration Technical Specification v2.0.2
+  --------------------------------------------------------------------
+  If a STA gets provisioned with WPA-Personal credentials (by a
+  Registrar  that only supports WSC version 1.0), the STA will have to
+  look at the AP's  beacon (as the AP might have gone through initial
+  configuration); if the AP advertises WPA2-Personal the STA shall use
+  WPA2-Personal to connect  otherwise if the AP advertises WPA-Personal
+  the STA shall use the received WPA-Personal credentials.
+  --------------------------------------------------------------------
+=============================================================================================
+  
+* DATE/WHOM/TYPE:
+- 2013/09/27, PlusWang ;feature refine
+* DIGEST:
+- add support for WIFI-DIRECT
+* TEST METHOD:
+
+* ROOT CAUSE:
+
+* MODIFIED FILES
+	-wsc.c
+	-wscd.conf	
+	-utils.c
+	-rxptk.c
+* DESCRIPTION:
+	when bual interface board case let P2P can work well
+=============================================================================================
+* DATE/WHOM/TYPE:
+- 2013/09/13, PlusWang ;bug fixed
+* DIGEST:
+- for fixed  IOT issue with BroadCom test bed.
+* TEST METHOD:
+	DUT is AP mode & unconfigured status , BroadCom test bed as enrollee
+	let STA do WPS with AP then sometimes WPS will fail.
+* ROOT CAUSE:
+- on open/noisy enrivonment,after AP send out M8 , STA sometimes send disassoc before EAP-DONE
+  then AP can't complete WPS
+* MODIFIED FILES
+	-wsc.c
+	-utils.c
+* DESCRIPTION:
+besides, remove some unnecessary debug msg

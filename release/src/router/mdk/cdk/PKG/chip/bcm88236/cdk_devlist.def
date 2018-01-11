@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM88236_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM88236, BCM88236_VENDOR_ID, BCM88236_DEVICE_ID, BCM88236_REV_A0, \
+                  0, 0, \
+                  bcm88230_a0, bcm88236_a0, bcm88236_a0, \
+                  CDK_DEV_ARCH_XGS, "Sirius+", "BCM88230", \
+                  "Queueing Engine with Integrated Traffic Management", 0, 0)
+#endif
+#endif
+

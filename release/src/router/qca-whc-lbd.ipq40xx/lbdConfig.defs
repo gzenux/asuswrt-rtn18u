@@ -1,0 +1,27 @@
+#
+# @@-COPYRIGHT-START-@@
+#
+# Copyright (c) 2014 Qualcomm Atheros, Inc.
+# All Rights Reserved.
+# Qualcomm Atheros Confidential and Proprietary.
+#
+# @@-COPYRIGHT-END-@@
+#
+
+# LBD_DBG_MENU -- if we should enable debug menu
+ifndef LBD_DBG_MENU
+export LBD_DBG_MENU=y
+endif
+
+##############################################
+
+ifeq ($(LBD_DBG_MENU),y)
+CFLAGS += -DLBD_DBG_MENU
+endif
+
+ifeq ($(LBD_SUPPORT_VHT160),y)
+CFLAGS += -DLBD_SUPPORT_VHT160
+endif
+
+CFLAGS += -D_BYTE_ORDER=_BIG_ENDIAN
+

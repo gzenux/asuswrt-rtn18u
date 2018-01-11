@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56014_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56014, BCM56014_VENDOR_ID, BCM56014_DEVICE_ID, BCM56014_REV_A0, \
+                  0, 0, \
+                  bcm56218_a0, bcm56014_a0, bcm56014_a0, \
+                  CDK_DEV_ARCH_XGS, "Stags Leap", "BCM56010", \
+                  "Integrated Multilayer Switch and CPU", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56014_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56014, BCM56014_VENDOR_ID, BCM56014_DEVICE_ID, BCM56014_REV_A1, \
+                  0, 0, \
+                  bcm56218_a0, bcm56014_a0, bcm56014_a1, \
+                  CDK_DEV_ARCH_XGS, "Stags Leap", "BCM56010", \
+                  "Integrated Multilayer Switch and CPU", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56014_A2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56014, BCM56014_VENDOR_ID, BCM56014_DEVICE_ID, BCM56014_REV_A2, \
+                  0, 0, \
+                  bcm56218_a0, bcm56014_a0, bcm56014_a2, \
+                  CDK_DEV_ARCH_XGS, "Stags Leap", "BCM56010", \
+                  "Integrated Multilayer Switch and CPU", 0, 0)
+#endif
+#endif
+

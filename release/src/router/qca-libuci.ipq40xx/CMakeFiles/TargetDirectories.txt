@@ -1,0 +1,4 @@
+/home/work/hive.spf4.cs/qca-networking-2016-spf-4-0_qca_oem.git/qsdk/build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/uci-2015-08-27.1/CMakeFiles/cli.dir
+/home/work/hive.spf4.cs/qca-networking-2016-spf-4-0_qca_oem.git/qsdk/build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/uci-2015-08-27.1/CMakeFiles/uci.dir
+/home/work/hive.spf4.cs/qca-networking-2016-spf-4-0_qca_oem.git/qsdk/build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/uci-2015-08-27.1/lua/CMakeFiles/uci_lua.dir
+/home/work/hive.spf4.cs/qca-networking-2016-spf-4-0_qca_oem.git/qsdk/build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/uci-2015-08-27.1/CMakeFiles/ucimap.dir

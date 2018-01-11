@@ -1,0 +1,8 @@
+#if CDK_CONFIG_INCLUDE_BCM56800_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56800, BCM56800_VENDOR_ID, BCM56800_DEVICE_ID, BCM56800_REV_A0, \
+                  0, 0, \
+                  bcm56800_a0, bcm56800_a0, bcm56800_a0, \
+                  CDK_DEV_ARCH_XGS, "Bradley", "BCM56800", \
+                  "20-Port 10-Gigabit Ethernet Multilayer Switch", 0, 0)
+#endif
+

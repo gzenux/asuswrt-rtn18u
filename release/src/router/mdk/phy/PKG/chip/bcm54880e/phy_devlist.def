@@ -1,0 +1,3 @@
+#if PHY_CONFIG_INCLUDE_BCM54880E == 1 || defined(PHY_DEVLIST_INCLUDE_ALL)
+PHY_DEVLIST_ENTRY(BCM54880E, bcm54880e, 0, "Octal Gigabit Ethernet Transceiver (EEE)", 0, 0)
+#endif

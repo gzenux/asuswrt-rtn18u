@@ -1,0 +1,7 @@
+
+1. copy the certificate files into /etc/1x/
+
+2. edit the eap_tls section of /etc/1x/1x.conf 
+
+3. the example of EAP-TLS are placed in config_files
+   (FreeRadius and Xsupplicant)

@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56226_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56226, BCM56226_VENDOR_ID, BCM56226_DEVICE_ID, BCM56226_REV_A0, \
+                  0, 0, \
+                  bcm56224_a0, bcm56226_a0, bcm56226_a0, \
+                  CDK_DEV_ARCH_XGS, "Raven", "BCM56220", \
+                  "16 GbE + 4 x 1 Gb/2.5 Gb, L3/L2+", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56226_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56226, BCM56226_VENDOR_ID, BCM56226_DEVICE_ID, BCM56226_REV_B0, \
+                  0, 0, \
+                  bcm56224_b0, bcm56226_b0, bcm56226_b0, \
+                  CDK_DEV_ARCH_XGS, "Raven", "BCM56220", \
+                  "16 GbE + 4 x 1 Gb/2.5 Gb, L3/L2+", 0, 0)
+#endif
+#endif
+

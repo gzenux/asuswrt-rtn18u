@@ -1,0 +1,160 @@
+lldpcli-conf-med.o: conf-med.c \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/unistd.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/features.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_config.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/cdefs.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/posix_opt.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/environments.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wordsize.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/types.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/include/stddef.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/typesizes.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/pthreadtypes.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/endian.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/endian.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/byteswap.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap-common.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/confname.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/getopt.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/string.h \
+ client.h ../../config.h ../lib/lldpctl.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdlib.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/waitflags.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/waitstatus.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/types.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/time.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/select.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/select.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/sigset.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/time.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/sysmacros.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/alloca.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/include/stdint.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdint.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wchar.h \
+ ../lldp-const.h ../log.h ../ctl.h ../marshal.h ../compat/compat.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdio.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_stdio.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/wchar.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_mutex.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/pthread.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sched.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/sched.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_clk_tck.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/signal.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/setjmp.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_pthread.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/include/stdarg.h \
+ /opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/stdio_lim.h \
+ writer.h
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/unistd.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/features.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_config.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/cdefs.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/posix_opt.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/environments.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wordsize.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/types.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/include/stddef.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/typesizes.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/pthreadtypes.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/endian.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/endian.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/byteswap.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap-common.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/confname.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/getopt.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/string.h:
+
+client.h:
+
+../../config.h:
+
+../lib/lldpctl.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdlib.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/waitflags.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/waitstatus.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/types.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/time.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/select.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/select.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/sigset.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/time.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/sysmacros.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/alloca.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/include/stdint.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdint.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wchar.h:
+
+../lldp-const.h:
+
+../log.h:
+
+../ctl.h:
+
+../marshal.h:
+
+../compat/compat.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdio.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_stdio.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/wchar.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_mutex.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/pthread.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sched.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/sched.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_clk_tck.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/signal.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/setjmp.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_pthread.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/include/stdarg.h:
+
+/opt/openwrt-gcc463.arm/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.6.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/stdio_lim.h:
+
+writer.h:

@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56822_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56822, BCM56822_VENDOR_ID, BCM56822_DEVICE_ID, BCM56822_REV_A0, \
+                  0, 0, \
+                  bcm56820_a0, bcm56822_a0, bcm56822_a0, \
+                  CDK_DEV_ARCH_XGS, "Scorpion", "BCM56820", \
+                  "12 x 10-GbE + 4 x HG[20] + 4 x 1-GbE Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56822_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56822, BCM56822_VENDOR_ID, BCM56822_DEVICE_ID, BCM56822_REV_B0, \
+                  0, 0, \
+                  bcm56820_a0, bcm56822_a0, bcm56822_b0, \
+                  CDK_DEV_ARCH_XGS, "Scorpion", "BCM56820", \
+                  "12 x 10-GbE + 4 x HG[20] + 4 x 1-GbE Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+

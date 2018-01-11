@@ -1,0 +1,36 @@
+#if CDK_CONFIG_INCLUDE_BCM53280_A0 == 1
+CDK_DEVLIST_ENTRY(BCM53280, BCM53280_VENDOR_ID, BCM53280_DEVICE_ID, BCM53280_REV_A0, \
+                  0, BCM53280_PROBEINFO, \
+                  bcm53280_a0, bcm53280_a0, bcm53280_a0, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "24 FE + 4 GE", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53280_B0 == 1
+CDK_DEVLIST_ENTRY(BCM53280, BCM53280_VENDOR_ID, BCM53280_DEVICE_ID, BCM53280_REV_B0, \
+                  0, BCM53280_PROBEINFO, \
+                  bcm53280_b0, bcm53280_b0, bcm53280_b0, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "24 FE + 4 GE", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53280_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53280, BCM53280_VENDOR_ID, BCM53280_DEVICE_ID, BCM53280_REV_B1, \
+                  0, BCM53280_PROBEINFO, \
+                  bcm53280_b0, bcm53280_b0, bcm53280_b1, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "24 FE + 4 GE", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53280_B2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53280, BCM53280_VENDOR_ID, BCM53280_DEVICE_ID, BCM53280_REV_B2, \
+                  0, BCM53280_PROBEINFO, \
+                  bcm53280_b0, bcm53280_b0, bcm53280_b2, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "24 FE + 4 GE", 0, 0)
+#endif
+#endif
+

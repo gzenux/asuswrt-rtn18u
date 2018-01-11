@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM56504_B0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM56504_B0
+BMD_DEVLIST_ENTRY(BCM56504, BCM56504_VENDOR_ID, BCM56504_DEVICE_ID, BCM56504_REV_B0, \
+                  0, 0, \
+                  bcm56504_b0, bcm56504_b0, bcm56504_b0, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig+ Ports", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm56504_b0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

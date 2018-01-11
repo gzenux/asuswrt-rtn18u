@@ -1,0 +1,3 @@
+#define BCM89500_DRV_INSTALLED
+extern phy_driver_t bcm89500_drv;
+

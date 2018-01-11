@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56545_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56545, BCM56545_VENDOR_ID, BCM56545_DEVICE_ID, BCM56545_REV_A0, \
+                  0, 0, \
+                  bcm56640_a0, bcm56545_a0, bcm56545_a0, \
+                  CDK_DEV_ARCH_XGSM, "Firebolt4", "BCM56540", \
+                  "High-Bandwidth 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56545_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56545, BCM56545_VENDOR_ID, BCM56545_DEVICE_ID, BCM56545_REV_A1, \
+                  0, 0, \
+                  bcm56640_a0, bcm56545_a0, bcm56545_a1, \
+                  CDK_DEV_ARCH_XGSM, "Firebolt4", "BCM56540", \
+                  "High-Bandwidth 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56545_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56545, BCM56545_VENDOR_ID, BCM56545_DEVICE_ID, BCM56545_REV_B0, \
+                  0, 0, \
+                  bcm56640_b0, bcm56545_b0, bcm56545_b0, \
+                  CDK_DEV_ARCH_XGSM, "Firebolt4", "BCM56540", \
+                  "High-Bandwidth 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+

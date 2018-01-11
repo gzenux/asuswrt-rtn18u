@@ -1,0 +1,25 @@
+# use ie=1, not use=0, 2=used ie & auto generated SSID in the format of "ssid+last 2 bytes mac"
+use_ie = 2
+
+# AUTH_OPEN=1, AUTH_WPAPSK=2, AUTH_SHARED=4, AUTH_WPA=8, AUTH_WPA2=0x10, AUTH_WPA2PSK=0x20
+auth_type_flags = 35
+
+# ENCRYPT_NONE=1, ENCRYPT_WEP=2, ENCRYPT_TKIP=4, ENCRYPT_AES=8
+encrypt_type_flags = 15
+
+uuid = 63041253101920061228aabbccddeeff
+manufacturerURL = "http://www.trendnet.com/"
+modelURL = "http://www.trendnet.com/products/TEW-632BRP.htm"
+device_attrib_id = 1
+device_oui = 0050f204
+device_category_id = 6
+device_sub_category_id = 1
+
+# PASS_ID_DEFAULT=0, PASS_ID_USER=1, PASS_ID_MACHINE=2, PASS_ID_REKEY=3,
+# PASS_ID_PB=4, PASS_ID_REG=5, PASS_ID_RESERVED=6
+device_password_id = 0
+
+tx_timeout = 5
+resent_limit = 2
+reg_timeout = 120
+block_timeout = 60

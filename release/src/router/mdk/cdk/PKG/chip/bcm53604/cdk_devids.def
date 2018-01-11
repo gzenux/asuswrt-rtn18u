@@ -1,0 +1,7 @@
+/* BCM53604 */
+#define BCM53604_VENDOR_ID                0x0362
+#define BCM53604_DEVICE_ID                0x5f40
+#define BCM53604_MODEL                    0x0003
+#define BCM53604_PROBEINFO            0x000800e8
+#define BCM53604_REV_A0                     0x00
+

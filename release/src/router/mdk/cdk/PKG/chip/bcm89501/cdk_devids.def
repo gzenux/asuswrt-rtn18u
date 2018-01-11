@@ -1,0 +1,7 @@
+/* BCM89501 */
+#define BCM89501_VENDOR_ID                0x0362
+#define BCM89501_DEVICE_ID                0x5d30
+#define BCM89501_MODEL                    0x9501
+#define BCM89501_PROBEINFO            0x00040230
+#define BCM89501_REV_A0                     0x00
+

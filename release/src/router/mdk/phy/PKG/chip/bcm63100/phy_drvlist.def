@@ -1,0 +1,3 @@
+#define BCM63100_DRV_INSTALLED
+extern phy_driver_t bcm63100_drv;
+

@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56852_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56852, BCM56852_VENDOR_ID, BCM56852_DEVICE_ID, BCM56852_REV_A0, \
+                  0, 0, \
+                  bcm56850_a0, bcm56852_a0, bcm56852_a0, \
+                  CDK_DEV_ARCH_XGSM, "Trident2", "BCM56850", \
+                  "96x10G/24x40G/8x100G Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56852_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56852, BCM56852_VENDOR_ID, BCM56852_DEVICE_ID, BCM56852_REV_A1, \
+                  0, 0, \
+                  bcm56850_a0, bcm56852_a0, bcm56852_a1, \
+                  CDK_DEV_ARCH_XGSM, "Trident2", "BCM56850", \
+                  "96x10G/24x40G/8x100G Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56852_A2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56852, BCM56852_VENDOR_ID, BCM56852_DEVICE_ID, BCM56852_REV_A2, \
+                  0, 0, \
+                  bcm56850_a0, bcm56852_a0, bcm56852_a2, \
+                  CDK_DEV_ARCH_XGSM, "Trident2", "BCM56850", \
+                  "96x10G/24x40G/8x100G Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+

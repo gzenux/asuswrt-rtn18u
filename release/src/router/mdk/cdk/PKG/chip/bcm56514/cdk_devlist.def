@@ -1,0 +1,8 @@
+#if CDK_CONFIG_INCLUDE_BCM56514_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56514, BCM56514_VENDOR_ID, BCM56514_DEVICE_ID, BCM56514_REV_A0, \
+                  0, 0, \
+                  bcm56514_a0, bcm56514_a0, bcm56514_a0, \
+                  CDK_DEV_ARCH_XGS, "Firebolt2", "BCM56510", \
+                  "24-Port GbE Multilayer Switch With Four 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+

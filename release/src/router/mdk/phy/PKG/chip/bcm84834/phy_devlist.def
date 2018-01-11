@@ -1,0 +1,3 @@
+#if PHY_CONFIG_INCLUDE_BCM84834 == 1 || defined(PHY_DEVLIST_INCLUDE_ALL)
+PHY_DEVLIST_ENTRY(BCM84834, bcm84834, 0, "Four-Port 10GBASE-T Transceiver ", 0, 0)
+#endif

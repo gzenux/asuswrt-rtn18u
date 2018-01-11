@@ -1,0 +1,3 @@
+#if PHY_CONFIG_INCLUDE_BCM5421 == 1 || defined(PHY_DEVLIST_INCLUDE_ALL)
+PHY_DEVLIST_ENTRY(BCM5421, bcm5421, 0, "10/100/1000BASE-T Gigabit Copper Transceiver", 0, 0)
+#endif

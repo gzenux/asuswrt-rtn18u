@@ -1,0 +1,18 @@
+#if CDK_CONFIG_INCLUDE_BCM53010_A0 == 1
+CDK_DEVLIST_ENTRY(BCM53010, BCM53010_VENDOR_ID, BCM53010_DEVICE_ID, BCM53010_REV_A0, \
+                  BCM53010_MODEL, BCM53010_PROBEINFO, \
+                  bcm53010_a0, bcm53010_a0, bcm53010_a0, \
+                  CDK_DEV_ARCH_ROBO, "Northstar", "BCM53010", \
+                  "8-Port GE Switch With 5-Port Integrated PHY", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53010_A2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53010, BCM53010_VENDOR_ID, BCM53010_DEVICE_ID, BCM53010_REV_A2, \
+                  BCM53010_MODEL, BCM53010_PROBEINFO, \
+                  bcm53010_a0, bcm53010_a0, bcm53010_a2, \
+                  CDK_DEV_ARCH_ROBO, "Northstar", "BCM53010", \
+                  "8-Port GE Switch With 5-Port Integrated PHY", 0, 0)
+#endif
+#endif
+

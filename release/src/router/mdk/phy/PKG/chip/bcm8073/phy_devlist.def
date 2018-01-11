@@ -1,0 +1,3 @@
+#if PHY_CONFIG_INCLUDE_BCM8073 == 1 || defined(PHY_DEVLIST_INCLUDE_ALL)
+PHY_DEVLIST_ENTRY(BCM8073, bcm8073, 0, "Dual-Channel Serial 10-GbE BASE-KR to XAUI Transceiver", 0, 0)
+#endif

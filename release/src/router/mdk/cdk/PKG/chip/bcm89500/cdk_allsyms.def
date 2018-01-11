@@ -1,0 +1,3 @@
+#if CDK_CONFIG_INCLUDE_BCM89500_A0 == 1
+#include "chip/bcm89500_a0_sym.c"
+#endif

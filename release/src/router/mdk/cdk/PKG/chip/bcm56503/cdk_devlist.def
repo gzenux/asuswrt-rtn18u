@@ -1,0 +1,50 @@
+#if CDK_CONFIG_INCLUDE_BCM56503_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56503, BCM56503_VENDOR_ID, BCM56503_DEVICE_ID, BCM56503_REV_A0, \
+                  0, 0, \
+                  bcm56504_a0, bcm56503_a0, bcm56503_a0, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Three 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56503_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56503, BCM56503_VENDOR_ID, BCM56503_DEVICE_ID, BCM56503_REV_A1, \
+                  0, 0, \
+                  bcm56504_a0, bcm56503_a0, bcm56503_a1, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Three 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56503_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56503, BCM56503_VENDOR_ID, BCM56503_DEVICE_ID, BCM56503_REV_B0, \
+                  0, 0, \
+                  bcm56504_b0, bcm56503_b0, bcm56503_b0, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Three 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56503_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56503, BCM56503_VENDOR_ID, BCM56503_DEVICE_ID, BCM56503_REV_B1, \
+                  0, 0, \
+                  bcm56504_b0, bcm56503_b0, bcm56503_b1, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Three 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56503_B2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56503, BCM56503_VENDOR_ID, BCM56503_DEVICE_ID, BCM56503_REV_B2, \
+                  0, 0, \
+                  bcm56504_b0, bcm56503_b0, bcm56503_b2, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Three 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+

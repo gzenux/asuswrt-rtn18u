@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56132_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56132, BCM56132_VENDOR_ID, BCM56132_DEVICE_ID, BCM56132_REV_A0, \
+                  0, 0, \
+                  bcm56334_a0, bcm56132_a0, bcm56132_a0, \
+                  CDK_DEV_ARCH_XGS, "Enduro", "BCM56334", \
+                  "24-Port GbE Multilayer Switch with 2 10-GbE/HiGig2 Uplink Ports and 2 HG lite", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56132_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56132, BCM56132_VENDOR_ID, BCM56132_DEVICE_ID, BCM56132_REV_B0, \
+                  0, 0, \
+                  bcm56334_b0, bcm56132_b0, bcm56132_b0, \
+                  CDK_DEV_ARCH_XGS, "Enduro", "BCM56334", \
+                  "24-Port GbE Multilayer Switch with 2 10-GbE/HiGig2 Uplink Ports and 2 HG lite", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56132_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56132, BCM56132_VENDOR_ID, BCM56132_DEVICE_ID, BCM56132_REV_B1, \
+                  0, 0, \
+                  bcm56334_b0, bcm56132_b0, bcm56132_b1, \
+                  CDK_DEV_ARCH_XGS, "Enduro", "BCM56334", \
+                  "24-Port GbE Multilayer Switch with 2 10-GbE/HiGig2 Uplink Ports and 2 HG lite", 0, 0)
+#endif
+#endif
+

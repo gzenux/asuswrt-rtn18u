@@ -1,0 +1,8 @@
+/*
+ * BCM84834
+ */
+/* Sets the default include state if it was not given */
+#ifndef PHY_CONFIG_INCLUDE_BCM84834
+#define PHY_CONFIG_INCLUDE_BCM84834 PHY_CONFIG_INCLUDE_CHIP_DEFAULT
+#endif
+

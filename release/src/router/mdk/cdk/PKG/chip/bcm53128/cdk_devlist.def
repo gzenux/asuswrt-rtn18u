@@ -1,0 +1,18 @@
+#if CDK_CONFIG_INCLUDE_BCM53128_A0 == 1
+CDK_DEVLIST_ENTRY(BCM53128, BCM53128_VENDOR_ID, BCM53128_DEVICE_ID, BCM53128_REV_A0, \
+                  0, 0, \
+                  bcm53128_a0, bcm53128_a0, bcm53128_a0, \
+                  CDK_DEV_ARCH_ROBO, "Blackbird2", "BCM53128", \
+                  "8-Port GbE Switch With 7 Integrated PHYs", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53128_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53128, BCM53128_VENDOR_ID, BCM53128_DEVICE_ID, BCM53128_REV_B0, \
+                  0, 0, \
+                  bcm53128_a0, bcm53128_a0, bcm53128_b0, \
+                  CDK_DEV_ARCH_ROBO, "Blackbird2", "BCM53128", \
+                  "8-Port GbE Switch With 7 Integrated PHYs", 0, 0)
+#endif
+#endif
+

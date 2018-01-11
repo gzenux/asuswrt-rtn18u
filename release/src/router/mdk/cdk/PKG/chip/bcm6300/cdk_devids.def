@@ -1,0 +1,5 @@
+/* BCM6300 */
+#define BCM6300_VENDOR_ID                 0x6300
+#define BCM6300_DEVICE_ID                 0x6300
+#define BCM6300_REV_A0                      0x00
+

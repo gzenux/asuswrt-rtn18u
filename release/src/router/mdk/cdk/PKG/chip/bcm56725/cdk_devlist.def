@@ -1,0 +1,8 @@
+#if CDK_CONFIG_INCLUDE_BCM56725_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56725, BCM56725_VENDOR_ID, BCM56725_DEVICE_ID, BCM56725_REV_A0, \
+                  0, 0, \
+                  bcm56725_a0, bcm56725_a0, bcm56725_a0, \
+                  CDK_DEV_ARCH_XGS, "Conqueror", "BCM56725", \
+                  "8-Port 20-Gbps + 4-Port 16-Gbps, HiGig2 Switch Fabric", 0, 0)
+#endif
+

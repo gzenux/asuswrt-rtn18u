@@ -1,0 +1,10 @@
+Package: libuci
+Version: 2015-08-27.1-1
+Depends: libc, libubox
+Source: package/system/uci
+License: LGPL-2.1
+Section: libs
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Architecture: ipq806x
+Installed-Size: 14651
+Description:  C library for the Unified Configuration Interface (UCI)

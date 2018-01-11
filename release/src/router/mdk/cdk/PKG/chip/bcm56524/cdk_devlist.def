@@ -1,0 +1,16 @@
+#if CDK_CONFIG_INCLUDE_BCM56524_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56524, BCM56524_VENDOR_ID, BCM56524_DEVICE_ID, BCM56524_REV_A0, \
+                  0, 0, \
+                  bcm56524_a0, bcm56524_a0, bcm56524_a0, \
+                  CDK_DEV_ARCH_XGS, "Apollo", "BCM56520", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56524_B0 == 1
+CDK_DEVLIST_ENTRY(BCM56524, BCM56524_VENDOR_ID, BCM56524_DEVICE_ID, BCM56524_REV_B0, \
+                  0, 0, \
+                  bcm56524_b0, bcm56524_b0, bcm56524_b0, \
+                  CDK_DEV_ARCH_XGS, "Apollo", "BCM56520", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+

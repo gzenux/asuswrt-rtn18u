@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56542_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56542, BCM56542_VENDOR_ID, BCM56542_DEVICE_ID, BCM56542_REV_A0, \
+                  0, 0, \
+                  bcm56640_a0, bcm56542_a0, bcm56542_a0, \
+                  CDK_DEV_ARCH_XGSM, "Apollo2", "BCM56540", \
+                  "High-Bandwidth 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56542_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56542, BCM56542_VENDOR_ID, BCM56542_DEVICE_ID, BCM56542_REV_A1, \
+                  0, 0, \
+                  bcm56640_a0, bcm56542_a0, bcm56542_a1, \
+                  CDK_DEV_ARCH_XGSM, "Apollo2", "BCM56540", \
+                  "High-Bandwidth 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56542_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56542, BCM56542_VENDOR_ID, BCM56542_DEVICE_ID, BCM56542_REV_B0, \
+                  0, 0, \
+                  bcm56640_b0, bcm56542_b0, bcm56542_b0, \
+                  CDK_DEV_ARCH_XGSM, "Apollo2", "BCM56540", \
+                  "High-Bandwidth 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+

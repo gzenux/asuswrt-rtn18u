@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56801_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56801, BCM56801_VENDOR_ID, BCM56801_DEVICE_ID, BCM56801_REV_A0, \
+                  0, 0, \
+                  bcm56800_a0, bcm56801_a0, bcm56801_a0, \
+                  CDK_DEV_ARCH_XGS, "Bradley", "BCM56800", \
+                  "10-Port 10-Gigabit Ethernet and 8-Port HiGig2/10GbE Multilayer Switch", 0, 0)
+#endif
+#endif
+

@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56580_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56580, BCM56580_VENDOR_ID, BCM56580_DEVICE_ID, BCM56580_REV_A0, \
+                  0, 0, \
+                  bcm56800_a0, bcm56580_a0, bcm56580_a0, \
+                  CDK_DEV_ARCH_XGS, "Goldwing", "BCM56580", \
+                  "16 x 2.5 GbE + 4 x 10 GbE Ethernet Multilayer Switch", 0, 0)
+#endif
+#endif
+
