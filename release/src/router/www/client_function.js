@@ -90,6 +90,11 @@ var isJsonChanged = function(objNew, objOld){
 	// window object
 	var win = window.top || window;
 	
+	// Browser sometimes contain random characters here, breaking the JSON parser
+	if ((typeof(win.name) != "string") || (win.name.substring(2, 7) != "ouiDB") && (win.name.substring(2,6) != "menu")) {
+		win.name = "";
+	}
+
 	// session store
 	var store = (win.name ? JSON.parse(win.name) : {});
 	
@@ -126,6 +131,28 @@ var isJsonChanged = function(objNew, objOld){
  
  })();
 
+/* ouiDB lookup code */
+var ouiClientListArray = new Array();
+ouiClientListArray = Session.get("ouiDB");
+if(ouiClientListArray == undefined) {
+	ouiClientListArray = [];
+	//Download OUI DB
+	setTimeout(function() {
+		var ouiBDjs = document.createElement("script");
+		ouiBDjs.type = "application/javascript";
+		ouiBDjs.src = "/js/ouiDB.js";
+		window.document.body.appendChild(ouiBDjs);
+	}, 1000);
+}
+
+function updateManufacturer(_ouiDBArray) {
+	ouiClientListArray = [];
+	ouiClientListArray = _ouiDBArray;
+	Session.set("ouiDB", _ouiDBArray);
+}
+
+/* End ouiDB lookup code */
+
 var ipState = new Array();
 ipState["Static"] =  "<#BOP_ctype_title5#>";
 ipState["DHCP"] =  "<#BOP_ctype_title1#>";
@@ -151,6 +178,7 @@ var totalClientNum = {
 }
 
 var setClientAttr = function(){
+	this.hostname = "";
 	this.type = "0";
 	this.defaultType = "0";
 	this.name = "";
@@ -391,6 +419,7 @@ function getUploadIconList() {
 	});
 	return list
 }
+
 
 function getVenderIconClassName(venderName) {
 	var vender_class_name = "";
@@ -1023,6 +1052,10 @@ function card_confirm(callBack) {
 						}
 
 						switch(callBack) {
+							case "DNSFilter" :
+								showDropdownClientList('setclientmac', 'name>mac', 'all', 'ClientList_Block_PC', 'pull_arrow', 'all');
+								show_dnsfilter_list();
+								break;
 							case "DHCP" :
 								showDropdownClientList('setClientIP', 'mac>ip', 'all', 'ClientList_Block_PC', 'pull_arrow', 'all');
 								showdhcp_staticlist();
@@ -1257,7 +1290,7 @@ function select_image(type,  vender) {
 function oui_query_card(mac) {
 	var queryStr = mac.replace(/\:/g, "").splice(6,6,"");
 	$.ajax({
-	    url: 'https://services11.ieee.org/RST/standards-ra-web/rest/assignments/download/?registry=MA-L&format=html&text='+ queryStr,
+		url: 'https://services11.ieee.org/RST/standards-ra-web/rest/assignments/download/?registry=MA-L&format=html&text='+ queryStr,
 		type: 'GET',
 		success: function(response) {
 			if(document.getElementById("edit_client_block") == null) return true;
@@ -1464,6 +1497,12 @@ var sorter = {
 			b_num = (b[sorter.indexFlag] == "") ? 0 : b[sorter.indexFlag];
 			return parseInt(a_num) - parseInt(b_num);
 		}
+		else if(sorter.indexFlag == 8) { // Time string in (h)hh:mm:ss format
+			var a_num = 0, b_num = 0;
+			a_num = a[sorter.indexFlag].replace(/:/g, "");
+			b_num = b[sorter.indexFlag].replace(/:/g, "");
+			return parseInt(a_num) - parseInt(b_num);
+		}
 		else {
 			return parseInt(a[sorter.indexFlag]) - parseInt(b[sorter.indexFlag]);
 		}
@@ -1480,6 +1519,12 @@ var sorter = {
 			var a_num = 0, b_num = 0;
 			a_num = (a[sorter.indexFlag] == "") ? 0 : a[sorter.indexFlag];
 			b_num = (b[sorter.indexFlag] == "") ? 0 : b[sorter.indexFlag];
+			return parseInt(b_num) - parseInt(a_num);
+		}
+		else if(sorter.indexFlag == 8) { // Time string in (h)hh:mm:ss format
+			var a_num = 0, b_num = 0;
+			a_num = a[sorter.indexFlag].replace(/:/g, "");
+			b_num = b[sorter.indexFlag].replace(/:/g, "");
 			return parseInt(b_num) - parseInt(a_num);
 		}
 		else {
@@ -1771,7 +1816,7 @@ function exportClientListLog() {
 
 function sorterClientList() {
 	//initial sort ip
-	var indexMapType = ["", "", "str", "num", "str", "num", "num", "num", "str"];
+	var indexMapType = ["", "", "str", "num", "str", "num", "num", "num", "num"];
 	switch (clienlistViewMode) {
 		case "All" :
 			sorter.doSorter(sorter.all_index, indexMapType[sorter.all_index], 'all_list');
@@ -2518,7 +2563,7 @@ function showDropdownClientList(_callBackFun, _callBackFunParam, _interfaceMode,
 				}
 				break;
 			case "name" :
-				attribute_value = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
+				attribute_value = (clientObj.nickName == "") ? clientObj.name.replace(/'/g, "\\'") : clientObj.nickName.replace(/'/g, "\\'");
 				break;
 			default :
 				attribute_value = _attribute;
@@ -2629,3 +2674,103 @@ function showDropdownClientList(_callBackFun, _callBackFunParam, _interfaceMode,
 	else
 		document.getElementById(_pullArrowID).style.display = "";
 }
+
+/* Exported from device-map/clients.asp */
+
+function retOverLibStr(client){
+
+	if (typeof client == "undefined")
+		return "";
+
+	var overlibStr = "<p><#MAC_Address#>:</p>" + client.mac.toUpperCase();
+
+	if(client.ssid)
+		overlibStr += "<p>SSID:</p>" + client.ssid;
+	if(client.isLogin)
+		overlibStr += "<p><#CTL_localdevice#>:</p>YES";
+	if(client.isPrinter)
+		overlibStr += "<p><#Device_service_Printer#></p>YES";
+	if(client.isITunes)
+		overlibStr += "<p><#Device_service_iTune#></p>YES";
+	if(client.isWL > 0)
+		overlibStr += "<p><#Wireless_Radio#>:</p>" + ((client.isWL == 2) ? "5GHz (" : "2.4GHz (") + client.rssi + "db)";
+
+	return overlibStr;
+}
+
+function ajaxCallJsonp(target){
+    var data = $.getJSON(target, {format: "json"});
+
+    data.success(function(msg){
+	parent.retObj = msg;
+	parent.db("Success!");
+    });
+
+    data.error(function(msg){
+	parent.db("Error on fetch data!")
+    });
+}
+
+function oui_query_full_vendor(mac){
+	setTimeout(function(){
+		var manufacturer_id = mac.replace(/\:/g,"").substring(0, 6).toUpperCase();
+
+		if(ouiClientListArray[manufacturer_id] != undefined) {
+			if (typeof clientList[mac] != "undefined")
+				var overlibStrTmp = retOverLibStr(clientList[mac]);
+			else
+				var overlibStrTmp = "<p><#MAC_Address#>:</p>" + mac.toUpperCase();
+			overlibStrTmp += "<p><span>.....................................</span></p><p style='margin-top:5px'><#Manufacturer#>:</p>";
+			overlibStrTmp += ouiClientListArray[manufacturer_id];
+//			if(clientList[mac].vendor != "") {
+//				overlibStrTmp += "<p style='margin-top:5px'>Vendor:</p>";
+//				overlibStrTmp += clientList[mac].vendor;
+//			}
+			return overlib(overlibStrTmp);
+		} else {
+			return oui_query_web(mac);
+		}
+	}, 1);
+}
+
+function oui_query_web(mac){
+	if('<% nvram_get("x_Setting"); %>' == '1' && wanConnectStatus && ((typeof clientList[mac] == "undefined") || (clientList[mac].internetState))) {
+		var queryStr = mac.replace(/\:/g, "").splice(6,6,"");
+		$.ajax({
+			url: 'https://services11.ieee.org/RST/standards-ra-web/rest/assignments/download/?registry=MA-L&format=html&text='+ queryStr,
+			type: 'GET',
+			success: function(response) {
+				if(overlib.isOut) return nd();
+
+				if (typeof clientList[mac] != "undefined")
+					var overlibStrTmp  = retOverLibStr(clientList[mac]);
+				else
+					var overlibStrTmp = "<p><#MAC_Address#>:</p>" + mac.toUpperCase();
+
+				if(response.search("Sorry!") == -1) {
+					if(response.search(queryStr) != -1) {
+						var retData = response.split("pre")[1].split("(base 16)")[1].replace("PROVINCE OF CHINA", "R.O.C").split("</");
+						overlibStrTmp += "<p><span>.....................................</span></p><p style='margin-top:5px'><#Manufacturer#>:</p>";
+						overlibStrTmp += retData[0].slice(0,retData[0].indexOf("\n"))
+//						if(clientList[mac].vendor != "") {
+//							overlibStrTmp += "<p style='margin-top:5px'>Vendor:</p>";
+//							overlibStrTmp += clientList[mac].vendor;
+//						}
+					}
+				}
+                                return overlib(overlibStrTmp);
+			}
+		});
+	}
+}
+
+function clientFromIP(ip) {
+	for(var i=0; i<clientList.length;i++){
+		var clientObj = clientList[clientList[i]];
+		if(clientObj.ip == ip) return clientObj;
+	}
+	return 0;
+}
+
+/* End exported functions */
+

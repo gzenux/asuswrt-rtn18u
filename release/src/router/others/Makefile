@@ -32,7 +32,21 @@ endif
 ifeq ($(RTCONFIG_OPENVPN),y)
 	install -m 0700 setuprsa.sh $(INSTALLDIR)/usr/sbin
 	install -m 0700 -D updown.sh $(INSTALLDIR)/usr/sbin
+	install -m 0700 -D vpnrouting.sh $(INSTALLDIR)/usr/sbin
 endif
+
+# Entware setup script
+	install -m 0700 entware-setup.sh $(INSTALLDIR)/usr/sbin
+
+# Postconf helper script
+	install -m 0755 helper.sh $(INSTALLDIR)/usr/sbin
+
+# Adaptive QoS tc patch
+ifeq ($(RTCONFIG_BCMARM),y)
+	install -m 0700 -D faketc $(INSTALLDIR)/usr/sbin
+endif
+
+
 
 ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN300)$(RTN54U)$(RTAC1200HP)$(RTN56UB1)$(RTN56UB2)$(RTAC54U)$(RTAC1200)$(RTAC1200GA1)$(RTAC1200GU)$(RTN11PB1)$(RTAC85U)$(RPAC87),y)
 # for read/write Ralink PHY registers
@@ -49,4 +63,10 @@ else ifeq ($(RTAC85U)$(RPAC87),y)
 endif
 endif
 endif
+
+# Temporary fix for missing ld.so.cache
+ifeq ($(HND_ROUTER),y)
+	install ldconfig $(INSTALLDIR)/sbin/ldconfig
+endif
+
 clean:

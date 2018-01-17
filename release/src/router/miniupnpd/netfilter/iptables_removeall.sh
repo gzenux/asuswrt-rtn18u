@@ -1,6 +1,7 @@
 #! /bin/sh
 # $Id: iptables_removeall.sh,v 1.5 2011/05/16 12:11:37 nanard Exp $
 IPTABLES="`which iptables`" || exit 1
+IPTABLES="$IPTABLES -w"
 IP="`which ip`" || exit 1
 
 #change this parameters :
@@ -26,8 +27,8 @@ $IPTABLES -t filter -F MINIUPNPD
 $IPTABLES -t filter -D FORWARD -i $EXTIF ! -o $EXTIF -j MINIUPNPD
 $IPTABLES -t filter -X MINIUPNPD
 
-#removing the MINIUPNPD-PCP-PEER chain for nat
-$IPTABLES -t nat -F MINIUPNPD-PCP-PEER
-#removing the rule to MINIUPNPD-PCP-PEER
-$IPTABLES -t nat -D POSTROUTING -o $EXTIF -j MINIUPNPD-PCP-PEER
-$IPTABLES -t nat -X MINIUPNPD-PCP-PEER
+#removing the MINIUPNPD-POSTROUTING chain for nat
+$IPTABLES -t nat -F MINIUPNPD-POSTROUTING
+#removing the rule to MINIUPNPD-POSTROUTING
+$IPTABLES -t nat -D POSTROUTING -o $EXTIF -j MINIUPNPD-POSTROUTING
+$IPTABLES -t nat -X MINIUPNPD-POSTROUTING

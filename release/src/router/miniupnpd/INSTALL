@@ -1,12 +1,12 @@
 MiniUPnP project.
-(c) 2006-2014 Thomas Bernard
+(c) 2006-2017 Thomas Bernard
 Homepage : http://miniupnp.free.fr/
-Mirror: http://miniupnp.tuxfamily.org/
+Mirror: https://miniupnp.tuxfamily.org/
 github: https://github.com/miniupnp/miniupnp
 
-miniupnpd is still under active developpement. This documentation is
+miniupnpd is still under developpement. This documentation is
 likely to be a little outdated when you read it. So please go on the
-web forum http://miniupnp.tuxfamily.org/ if you need more information.
+web forum https://miniupnp.tuxfamily.org/ if you need more information.
 
 ================================ *BSD/pf =================================
 To Build and Install :
@@ -26,19 +26,16 @@ To Build and Install :
    pass out on $int_if from any to 239.0.0.0/8 keep state
    pass in on $int_if from any to 239.0.0.0/8 keep state
 - dont forget to " pfctl -f /etc/pf.conf "
-- you can check your modifications are taken into accout with
+- you can check your modifications are taken into account with
   "pfctl -s nat" and "pfctl -s rule". Look for the "rdr-anchor miniupnpd"
   (if applicable) and/or "anchor miniupnpd" lines.
+- OpenBSD users may need to add a multicast_host= line to /etc/rc.conf.local
+  see $man 8 netstart
 - install as root using :
   # make install
   or
   # PREFIX=/usr/local make install
 - run as root : The daemon needs rights to modify pf rules.
-
-edit the /etc/miniupnpd.conf file to set options. Almost all options are also
-available through command line switches.
-To stop the daemon use :
-  > kill `cat /var/run/miniupnpd.pid`
 
 =========================== *BSD,*Solaris/ipf =============================
 
@@ -113,9 +110,35 @@ How to get libiptc with its headers on debian :
 - it is now possible to compile miniupnpd using the following command :
   > IPTABLESPATH=/path/to/iptables-x.x.x make -f Makefile.linux
 
+======================== Linux/netfilter nftables =========================
+
+work is in progress. To build :
+ > make -f Makefile.linux_nft
+
+see :
+https://miniupnp.tuxfamily.org/forum/viewtopic.php?p=4370
+https://github.com/miniupnp/miniupnp/pull/114
+
 =========================== Configuration =============================
 Edit the /etc/miniupnpd.conf file to set options. Almost all options are
 also available through command line switches.
+
+A basic configuration would set :
+ext_ifname :   WAN network interface (interface connected to the internet)
+listening_ip : LAN network interface (network where to supply NAT traversal)
+enable_natpmp=yes
+enable_upnp=yes
+and the permission rules (see below).
+
+Historically, LAN had to be specified by IP/mask, such as
+listening_ip=192.168.0.1/24
+but if you compiled with IPv6 support, you need to specify an interface name :
+listening_ip=eth0
+The current code assumes there is only one IPv4 address assigned to LAN
+interfaces. That is not the case with some CARP setup, there is then a risk
+the wrong mask would be picked. You can force the mask when using interface
+names :
+listening_ip=eth0/24
 
 Miniupnpd supports some kind of security check for allowing or disallowing
 redirection to be made. The UPnP permission rules are read from the
@@ -158,3 +181,14 @@ or if your linux system use /etc/init.d/
   # /etc/init.d/miniupnpd stop
 
 
+* Signals :
+miniupnpd handles the following signals :
+SIGUSR1: Send public IP address change notification
+SIGUSR2: Handle special actions in Tomato Firmware version
+SIGINT:  Close gracefully
+SIGTERM: Close gracefully
+SIGPIPE: Ignore
+
+There is code to detect change in network interfaces bsd/ifacewatcher.c and
+linux/ifacewatcher.c, but if that code doesn't work for you, you may want to
+send SIGUSR1 to miniupnpd if you public IP address changed.

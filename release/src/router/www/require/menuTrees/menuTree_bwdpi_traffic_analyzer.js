@@ -64,6 +64,7 @@ define(function(){
 					{url: "AiProtection_InfectedDevicePreventBlock.asp", tabName: "<#AiProtection_detection_blocking#>"},
 					{url: "AiProtection_WebProtector.asp", tabName: "<#Parental_Control#>"},
 					{url: "ParentalControl.asp", tabName: "__INHERIT__"},
+					{url: "DNSFilter.asp", tabName: "DNSFilter"},
 					{url: "AiProtection_AdBlock.asp", tabName: "Ad Blocking"},
 					{url: "AiProtection_Key_Guard.asp", tabName: "Key Guard"},
 					{url: "NULL", tabName: "__INHERIT__"}
@@ -99,6 +100,7 @@ define(function(){
 				tab: [
 					{url: "AdaptiveQoS_Bandwidth_Monitor.asp", tabName: "<#Bandwidth_monitor#>"},
 					{url: "QoS_EZQoS.asp", tabName: "<#menu5_3_2#>"},
+					{url: "QoS_Stats.asp", tabName: "QoS Statistics"},
 					{url: "AdaptiveQoS_WebHistory.asp", tabName: "<#Adaptive_History#>"},
 					{url: "AdaptiveQoS_ROG.asp", tabName: "<table style='margin-top:-7px;'><tr><td><img src='/images/ROG_Logo.png' style='border:0px;width:32px;'></td><td>ROG First</td></tr></table>"}, 
 					{url: "Main_Spectrum_Content.asp", tabName: "Spectrum"},
@@ -112,10 +114,14 @@ define(function(){
 				menuName: "<#Traffic_Analyzer#>",
 				index: "menu_TrafficAnalyzer", 
 				tab: [
-					{url: "TrafficAnalyzer_Statistic.asp", tabName: "<#Statistic#>"},
 					{url: "Main_TrafficMonitor_realtime.asp", tabName: "<#traffic_monitor#>"},
 					{url: "Main_TrafficMonitor_last24.asp", tabName: "__INHERIT__"},
 					{url: "Main_TrafficMonitor_daily.asp", tabName: "__INHERIT__"},
+					{url: "Main_TrafficMonitor_monthly.asp", tabName: "__INHERIT__"},
+					{url: "Main_TrafficMonitor_devrealtime.asp", tabName: "__INHERIT__"},
+					{url: "Main_TrafficMonitor_devdaily.asp", tabName: "__INHERIT__"},
+					{url: "Main_TrafficMonitor_devmonthly.asp", tabName: "__INHERIT__"},
+					{url: "TrafficAnalyzer_Statistic.asp", tabName: "<#Statistic#>"},
 					{url: "AdaptiveQoS_TrafficLimiter.asp", tabName: "Traffic Limiter"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
@@ -136,6 +142,7 @@ define(function(){
 					{url: "aidisk.asp", tabName: "__INHERIT__"},
 					{url: "mediaserver.asp", tabName: "<#UPnPMediaServer#>"},
 					{url: "Advanced_AiDisk_samba.asp", tabName: "<#menu5_4_1#>".concat(WebDav_support?" / <#Cloud_Disk#>":"")},
+					{url: "Advanced_AiDisk_NFS.asp", tabName: "NFS Exports"},
 					{url: "Advanced_AiDisk_ftp.asp", tabName: "<#menu5_4_2#>"},
 					{url: "PrinterServer.asp", tabName: "__INHERIT__"},
 					{url: "Advanced_Modem_Content.asp", tabName: "__INHERIT__"},
@@ -152,6 +159,15 @@ define(function(){
 					{url: "cloud_router_sync.asp", tabName: "<#Server_Sync#>"},
 					{url: "cloud_settings.asp", tabName: "<#Settings#>"},
 					{url: "cloud_syslog.asp", tabName: "<#Log#>"},
+					{url: "NULL", tabName: "__INHERIT__"}
+				] 
+			},
+			{
+				menuName: "Tools",
+				index: "menu_Tools",
+				tab: [
+					{url: "Tools_Sysinfo.asp", tabName: "Sysinfo"},
+					{url: "Tools_OtherSettings.asp", tabName: "Other Settings"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
@@ -174,6 +190,8 @@ define(function(){
 					{url: "Advanced_WSecurity_Content.asp", tabName: "<#menu5_1_5#>"},
 					{url: "Advanced_WAdvanced_Content.asp", tabName: "<#menu5_1_6#>"},
 					{url: "Advanced_WProxy_Content.asp", tabName: "Wi-Fi Proxy"},
+					{url: "Advanced_Wireless_Survey.asp", tabName: "Site Survey"},
+					{url: "WiFi_Insight.asp", tabName: "<#WiFi_radar#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
@@ -230,10 +248,12 @@ define(function(){
 				menuName: "VPN",
 				index: "menu_VPN", 
 				tab: [
-					{url: "Advanced_VPN_PPTP.asp", tabName: "<#BOP_isp_heart_item#>"},
-					{url: "Advanced_VPN_OpenVPN.asp", tabName: "__INHERIT__"},
+					{url: "Advanced_VPNStatus.asp", tabName: "VPN Status"},
+					{url: "Advanced_VPN_OpenVPN.asp", tabName: "<#BOP_isp_heart_item#>"},
+					{url: "Advanced_VPN_PPTP.asp", tabName: "__INHERIT__"},
 					{url: "Advanced_VPN_IPSec.asp", tabName: "__INHERIT__"},
-					{url: "Advanced_VPNClient_Content.asp", tabName: (vpn_fusion_support) ? "<#VPN_Fusion#>" : "<#vpnc_title#>"},
+					{url: "Advanced_OpenVPNClient_Content.asp", tabName: (vpn_fusion_support) ? "<#VPN_Fusion#>" : "<#vpnc_title#>"},
+					{url: "Advanced_VPNClient_Content.asp", tabName: "__INHERIT__"},
 					{url: "Advanced_TOR_Content.asp", tabName: "TOR"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				]
@@ -257,7 +277,7 @@ define(function(){
 					{url: "Advanced_System_Content.asp", tabName: "<#menu5_6_2#>"},
 					{url: "Advanced_FirmwareUpgrade_Content.asp", tabName: "<#menu5_6_3#>"},
 					{url: "Advanced_SettingBackup_Content.asp", tabName: "<#menu5_6_4#>"},
-					{url: "Advanced_PerformanceTuning_Content.asp", tabName: "Performance tuning"},
+					{url: "Advanced_PerformanceTuning_Content.asp", tabName: "Temperature"},
 					{url: "Advanced_ADSL_Content.asp", tabName: "<#menu_dsl_setting#>"},
 					{url: "Advanced_Feedback.asp", tabName: "<#menu_feedback#>"},
 					{url: "Advanced_SNMP_Content.asp", tabName: "SNMP"},
@@ -298,6 +318,14 @@ define(function(){
 		exclude: {
 			menus: function(){
 				var retArray = [];
+
+				if(!nfsd_support){
+					retArray.push("Advanced_AiDisk_NFS.asp");
+				}
+
+				if(!dnsfilter_support){
+					retArray.push("DNSFilter.asp");
+				}
 
 				if(multissid_support == -1){
 					retArray.push("menu_GuestNetwork");
@@ -348,6 +376,9 @@ define(function(){
 				if(!wtfast_support) {
 					retArray.push("menu_GameBoost");
 				}
+
+				if(!rrsut_support)
+					retArray.push("cloud_router_sync.asp");
 
 				/* Operation Mode */
 				if(isSwMode("re")){
@@ -597,12 +628,9 @@ define(function(){
 						retArray.push("Captive_Portal_Advanced.asp");
 				}
 
-				if(!cooler_support){
-					retArray.push("Advanced_PerformanceTuning_Content.asp");
-				}
-
-				if(!rrsut_support)
-					retArray.push("cloud_router_sync.asp");
+//				if(!cooler_support){
+//					retArray.push("Advanced_PerformanceTuning_Content.asp");
+//				}
 
 				/* Operation Mode */
 				if(isSwMode("re")){
@@ -679,6 +707,13 @@ define(function(){
 				else if(based_modelid == "RT-N300"){
 					retArray.push("Advanced_WMode_Content.asp");
 					retArray.push("Advanced_IPTV_Content.asp");
+				}
+
+				if(based_modelid == 'RT-AC86U'){
+					retArray.push("Advanced_Wireless_Survey.asp");
+				}
+				else{
+					retArray.push("WiFi_Insight.asp");
 				}
 
 				if(lyra_hide_support){

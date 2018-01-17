@@ -24,6 +24,9 @@ is the default.
 \fB\-\-rdest\fP
 Match/save the destination address of each packet in the recent list table.
 .TP
+\fB\-\-mask\fPnetmask
+Netmask that will be applied to this recent list.
+.TP
 [\fB!\fP] \fB\-\-rcheck\fP
 Check if the source address of the packet is currently in the list.
 .TP
@@ -40,6 +43,11 @@ the address is not found, false is returned.
 This option must be used in conjunction with one of \fB\-\-rcheck\fP or
 \fB\-\-update\fP. When used, this will narrow the match to only happen when the
 address is in the list and was seen within the last given number of seconds.
+.TP
+\fB\-\-reap\fP
+This option can only be used in conjunction with \fB\-\-seconds\fP.
+When used, this will cause entries older than the last given number of seconds
+to be purged.
 .TP
 \fB\-\-hitcount\fP \fIhits\fP
 This option must be used in conjunction with one of \fB\-\-rcheck\fP or

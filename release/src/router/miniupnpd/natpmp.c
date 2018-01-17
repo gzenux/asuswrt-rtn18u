@@ -1,6 +1,6 @@
 /* $Id: natpmp.c,v 1.52 2015/05/27 12:43:14 nanard Exp $ */
 /* MiniUPnP project
- * (c) 2007-2015 Thomas Bernard
+ * (c) 2007-2017 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
@@ -28,36 +28,6 @@
 #include "asyncsendto.h"
 
 #ifdef ENABLE_NATPMP
-
-#define INLINE static inline
-/* theses macros are designed to read/write unsigned short/long int
- * from an unsigned char array in network order (big endian).
- * Avoid pointer casting, so avoid accessing unaligned memory, which
- * can crash with some cpu's */
-INLINE uint32_t readnu32(const uint8_t * p)
-{
-	return (p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3]);
-}
-#define READNU32(p) readnu32(p)
-INLINE uint16_t readnu16(const uint8_t * p)
-{
-	return (p[0] << 8 | p[1]);
-}
-#define READNU16(p) readnu16(p)
-INLINE void writenu32(uint8_t * p, uint32_t n)
-{
-	p[0] = (n & 0xff000000) >> 24;
-	p[1] = (n & 0xff0000) >> 16;
-	p[2] = (n & 0xff00) >> 8;
-	p[3] = n & 0xff;
-}
-#define WRITENU32(p, n) writenu32(p, n)
-INLINE void writenu16(uint8_t * p, uint16_t n)
-{
-	p[0] = (n & 0xff00) >> 8;
-	p[1] = n & 0xff;
-}
-#define WRITENU16(p, n) writenu16(p, n)
 
 int OpenAndConfNATPMPSocket(in_addr_t addr)
 {
@@ -274,7 +244,10 @@ void ProcessIncomingNATPMPPacket(int s, unsigned char *msg_buff, int len,
 	/* setting response TIME STAMP :
 	 * time elapsed since its port mapping table was initialized on
 	 * startup or reset for any other reason */
-	WRITENU32(resp+4, time(NULL) - startup_time);
+	if(epoch_origin == 0) {
+		epoch_origin = startup_time;
+	}
+	WRITENU32(resp+4, time(NULL) - epoch_origin);
 	if(req[0] > 0) {
 		/* invalid version */
 		syslog(LOG_WARNING, "unsupported NAT-PMP version : %u",
@@ -336,12 +309,12 @@ void ProcessIncomingNATPMPPacket(int s, unsigned char *msg_buff, int len,
 						if((iport == 0) || ((iport == iport2) && (proto == proto2))) {
 							r = _upnp_delete_redir(eport2, proto2);
 							if(r < 0) {
-								syslog(LOG_ERR, "Failed to remove NAT-PMP mapping eport %hu, protocol %s",
+								syslog(LOG_DEBUG, "Failed to remove NAT-PMP mapping eport %hu, protocol %s",
 								       eport2, (proto2==IPPROTO_TCP)?"TCP":"UDP");
 								resp[3] = 2;	/* Not Authorized/Refused */
 								break;
 							} else {
-								syslog(LOG_DEBUG, "NAT-PMP %s port %hu mapping removed",
+								syslog(LOG_INFO, "NAT-PMP %s port %hu mapping removed",
 								       proto2==IPPROTO_TCP?"TCP":"UDP", eport2);
 								index--;
 							}
@@ -463,7 +436,10 @@ void SendNATPMPPublicAddressChangeNotification(int * sockets, int n_sockets)
 	/* seconds since "start of epoch" :
 	 * time elapsed since the port mapping table was initialized on
 	 * startup or reset for any other reason */
-	WRITENU32(notif+4, time(NULL) - startup_time);
+	if(epoch_origin == 0) {
+		epoch_origin = startup_time;
+	}
+	WRITENU32(notif+4, time(NULL) - epoch_origin);
 #ifndef MULTIPLE_EXTERNAL_IP
 	FillPublicAddressResponse(notif, 0);
 	if(notif[3])
@@ -496,8 +472,8 @@ void SendNATPMPPublicAddressChangeNotification(int * sockets, int n_sockets)
 		           (struct sockaddr *)&sockname, sizeof(struct sockaddr_in));
 		if(n < 0)
 		{
-			syslog(LOG_ERR, "%s: sendto(s_udp=%d): %m",
-			       "SendNATPMPPublicAddressChangeNotification", sockets[j]);
+			syslog(LOG_ERR, "%s: sendto(s_udp=%d, port=%d): %m",
+			       "SendNATPMPPublicAddressChangeNotification", sockets[j], NATPMP_PORT);
 			return;
 		}
 		/* Port to use in 2008 version of the NAT-PMP specification */
@@ -506,12 +482,11 @@ void SendNATPMPPublicAddressChangeNotification(int * sockets, int n_sockets)
 		           (struct sockaddr *)&sockname, sizeof(struct sockaddr_in));
 		if(n < 0)
 		{
-			syslog(LOG_ERR, "%s: sendto(s_udp=%d): %m",
-			       "SendNATPMPPublicAddressChangeNotification", sockets[j]);
+			syslog(LOG_ERR, "%s: sendto(s_udp=%d, port=%d): %m",
+			       "SendNATPMPPublicAddressChangeNotification", sockets[j], NATPMP_NOTIF_PORT);
 			return;
 		}
 	}
 }
 
-#endif
-
+#endif /* ENABLE_NATPMP */

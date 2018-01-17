@@ -409,7 +409,6 @@ function get_ethernet_ports() {
 			var tableStruct = {
 				data: parseStrToArray(wanLanStatus),
 				container: "tableContainer",
-				title: "Ethernet Ports", /*untranslated*/
 				header: [ 
 					{
 						"title" : "Port", /*untranslated*/

@@ -671,6 +671,7 @@ extern void fa_nvram_adjust();
 #endif
 
 // format.c
+extern void adjust_merlin_config();
 extern void adjust_url_urlelist();
 extern void adjust_ddns_config();
 extern void adjust_access_restrict_config();
@@ -831,6 +832,7 @@ extern void redirect_nat_setting(void);
 extern void set_load_balance(void);
 #endif
 extern void ip2class(char *lan_ip, char *netmask, char *buf);
+extern void ipt_account(FILE *fp, char *interface);
 #ifdef RTCONFIG_WIFI_SON
 extern void set_cap_apmode_filter(void);
 #endif
@@ -910,6 +912,8 @@ extern void update_wan_state(char *prefix, int state, int reason);
 extern int update_resolvconf(void);
 
 /* qos.c */
+extern void set_codel_patch(void);
+extern void remove_codel_patch(void);
 extern int start_iQos(void);
 extern void stop_iQos(void);
 extern void del_iQosRules(void);
@@ -1062,8 +1066,10 @@ extern int start_ots(void);
 extern int rand_seed_by_time(void);
 
 // common.c
+extern char *conv_mac2(char *mac, char *buf);
+extern void killall_tk_period_wait(const char *name, int wait);
 extern void usage_exit(const char *cmd, const char *help) __attribute__ ((noreturn));
-#define modprobe(mod, args...) ({ char *argv[] = { "modprobe", "-s", mod, ## args, NULL }; _eval(argv, NULL, 0, NULL); })
+#define modprobe(mod, args...) ({ char *argv[] = { "modprobe", "-s", "-q", mod, ## args, NULL }; _eval(argv, NULL, 0, NULL); })
 extern int modprobe_r(const char *mod);
 #define xstart(args...)	_xstart(args, NULL)
 extern int _xstart(const char *cmd, ...);
@@ -1082,6 +1088,8 @@ extern long fappend(FILE *out, const char *fname);
 extern long fappend_file(const char *path, const char *fname);
 extern void logmessage(char *logheader, char *fmt, ...);
 extern char *trim_r(char *str);
+extern int is_valid_char_for_volname(char c);
+extern int is_valid_volname(const char *name);
 extern void restart_lfp(void);
 extern int get_meminfo_item(const char *name);
 extern void setup_timezone(void);
@@ -1100,8 +1108,6 @@ extern int mssid_mac_validate(const char *macaddr);
 #ifdef CONFIG_BCMWL5
 extern int setup_dnsmq(int mode);
 #endif
-
-// ssh.c
 
 // usb.c
 #if defined(RTCONFIG_OPENPLUS_TFAT) \
@@ -1158,6 +1164,11 @@ extern void start_webdav(void);
 extern void create_custom_passwd(void);
 extern void stop_samba(void);
 extern void start_samba(void);
+#endif
+#ifdef RTCONFIG_NFS
+extern void start_nfsd(void);
+extern void restart_nfsd(void);
+extern void stop_nfsd(void);
 #endif
 #ifdef RTCONFIG_WEBDAV
 extern void stop_webdav(void);
@@ -1227,18 +1238,20 @@ extern int vpnc_set_dev_policy_rule();
 
 // openvpn.c
 #ifdef RTCONFIG_OPENVPN
-extern void start_vpnclient(int clientNum);
-extern void stop_vpnclient(int clientNum);
-extern void start_vpnserver(int serverNum);
-extern void stop_vpnserver(int serverNum);
-extern void start_vpn_eas();
-extern void stop_vpn_eas();
-extern void run_vpn_firewall_scripts();
-extern void write_vpn_dnsmasq_config(FILE*);
-extern int write_vpn_resolv(FILE*);
-//static inline void start_vpn_eas() { }
-//#define write_vpn_resolv(f) (0)
-extern void create_openvpn_passwd();
+extern void start_ovpn_client(int clientNum);
+extern void stop_ovpn_client(int clientNum);
+extern void start_ovpn_server(int serverNum);
+extern void stop_ovpn_server(int serverNum);
+extern void start_ovpn_eas(void);
+extern void stop_ovpn_eas(void);
+extern void run_ovpn_fw_script();
+extern void write_ovpn_dnsmasq_config(FILE*);
+extern int write_ovpn_resolv(FILE*);
+//static inline void start_ovpn_eas() { }
+//#define write_ovpn_resolv(f) (0)
+extern void create_ovpn_passwd();
+extern void stop_ovpn_all();
+extern void update_ovpn_profie_remote();
 #endif
 
 // wanduck.c
@@ -1306,6 +1319,8 @@ extern void dsl_defaults(void);
 #endif
 
 //services.c
+void start_Tor_proxy(void);
+void stop_Tor_proxy(void);
 extern void write_static_leases(FILE *fp);
 #ifdef RTCONFIG_DHCP_OVERRIDE
 extern int restart_dnsmasq(int need_link_DownUp);
@@ -1362,7 +1377,7 @@ extern void stop_nas(void);
 extern void stop_acsd(void);
 extern int start_acsd();
 extern void set_acs_ifnames();
-#ifdef RTCONFIG_PROXYSTA
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 extern int stop_psta_monitor();
 extern int start_psta_monitor();
 #endif
@@ -1524,6 +1539,22 @@ extern void start_DSLsenddiagmail(void);
 extern void start_snmpd(void);
 extern void stop_snmpd(void);
 #endif
+#if !defined(HND_ROUTER)
+void start_cstats(int new);
+void restart_cstats(void);
+void stop_cstats(void);
+#endif
+extern void setup_leds();
+int ddns_custom_updated_main(int argc, char *argv[]);
+
+// dnsfilter.c
+#ifdef RTCONFIG_DNSFILTER
+extern void dnsfilter_settings(FILE *fp, char *lan_ip);
+extern void dnsfilter6_settings(FILE *fp, char *lan_if, char *lan_ip);
+extern void dnsfilter_setup_dnsmasq(FILE *fp);
+#endif
+
+// lan.c
 #ifdef RTCONFIG_TIMEMACHINE
 extern int start_timemachine(void);
 extern void stop_timemachine(void);
@@ -1683,8 +1714,8 @@ extern int dump_powertable(void);
 
 //speedtest.c
 extern int speedtest_main(int argc, char **argv);
-extern void wan_bandwidth_detect(void);
 extern int speedtest();
+extern void wan_bandwidth_detect(void);
 
 #if defined(RTCONFIG_BWDPI)
 extern int bwdpi_main(int argc, char **argv);
@@ -1894,7 +1925,6 @@ enum LED_STATUS
 	LED_AP_WPS_START
 };
 #endif
-
 #ifdef RTCONFIG_TUNNEL
 extern void start_mastiff();
 extern void stop_mastiff();

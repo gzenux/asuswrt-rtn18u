@@ -630,10 +630,11 @@ static int serverinfo_cli_parse_cb(SSL *s, unsigned int ext_type,
     unsigned char ext_buf[4 + 65536];
 
     /* Reconstruct the type/len fields prior to extension data */
-    ext_buf[0] = ext_type >> 8;
-    ext_buf[1] = ext_type & 0xFF;
-    ext_buf[2] = inlen >> 8;
-    ext_buf[3] = inlen & 0xFF;
+    inlen &= 0xffff; /* for formal memcpy correctness */
+    ext_buf[0] = (unsigned char)(ext_type >> 8);
+    ext_buf[1] = (unsigned char)(ext_type);
+    ext_buf[2] = (unsigned char)(inlen >> 8);
+    ext_buf[3] = (unsigned char)(inlen);
     memcpy(ext_buf + 4, in, inlen);
 
     BIO_snprintf(pem_name, sizeof(pem_name), "SERVERINFO FOR EXTENSION %d",
@@ -694,12 +695,12 @@ int MAIN(int argc, char **argv)
     char *inrand = NULL;
     int mbuf_len = 0;
     struct timeval timeout, *timeoutp;
-#ifndef OPENSSL_NO_ENGINE
     char *engine_id = NULL;
+    ENGINE *e = NULL;
+#ifndef OPENSSL_NO_ENGINE
     char *ssl_client_engine_id = NULL;
     ENGINE *ssl_client_engine = NULL;
 #endif
-    ENGINE *e = NULL;
 #if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_MSDOS) || defined(OPENSSL_SYS_NETWARE) || defined(OPENSSL_SYS_BEOS_R5)
     struct timeval tv;
 # if defined(OPENSSL_SYS_BEOS_R5)
@@ -1186,8 +1187,8 @@ int MAIN(int argc, char **argv)
         next_proto.data = NULL;
 #endif
 
-#ifndef OPENSSL_NO_ENGINE
     e = setup_engine(bio_err, engine_id, 1);
+#ifndef OPENSSL_NO_ENGINE
     if (ssl_client_engine_id) {
         ssl_client_engine = ENGINE_by_id(ssl_client_engine_id);
         if (!ssl_client_engine) {
@@ -1667,6 +1668,8 @@ int MAIN(int argc, char **argv)
             if (strstr(mbuf, "/stream:features>"))
                 goto shut;
             seen = BIO_read(sbio, mbuf, BUFSIZZ);
+            if (seen <= 0)
+                goto shut;
             mbuf[seen] = 0;
         }
         BIO_printf(sbio,
@@ -2123,6 +2126,7 @@ int MAIN(int argc, char **argv)
         OPENSSL_cleanse(mbuf, BUFSIZZ);
         OPENSSL_free(mbuf);
     }
+    release_engine(e);
     if (bio_c_out != NULL) {
         BIO_free(bio_c_out);
         bio_c_out = NULL;
@@ -2131,6 +2135,7 @@ int MAIN(int argc, char **argv)
         BIO_free(bio_c_msg);
         bio_c_msg = NULL;
     }
+    SSL_COMP_free_compression_methods();
     apps_shutdown();
     OPENSSL_EXIT(ret);
 }

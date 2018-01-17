@@ -746,7 +746,7 @@ function show_wans_rules(){
 					"option" : {"<#dualwan_primary#>" : "0", "<#dualwan_secondary#>" : "1"}
 				},
 			],
-			maximum: 32
+			maximum: 64
 		},
 
 		clickRawEditPanel: {

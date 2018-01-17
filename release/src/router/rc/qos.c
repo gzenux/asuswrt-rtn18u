@@ -20,12 +20,20 @@
 	ex. Traditional qos / bandwidth limiter / Facebook wifi
 */
 
+#include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "rc.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #ifdef RTCONFIG_FBWIFI
 #include <fbwifi.h>
+#endif
+
+#ifdef HND_ROUTER
+#define TCPATH "/bin/tc"
+#else
+#define TCPATH "/usr/sbin/tc"
 #endif
 
 /*
@@ -394,6 +402,10 @@ void del_iQosRules(void)
 	eval("iptables", "-t", "mangle", "-F");
 #ifdef RTCONFIG_IPV6
 	eval("ip6tables", "-t", "mangle", "-F");
+#endif
+
+#ifdef RTCONFIG_BCMARM
+	remove_codel_patch();
 #endif
 }
 
@@ -842,6 +854,7 @@ static int add_qos_rules(char *pcWANIF)
 
 	fprintf(fn, "COMMIT\n");
 	fclose(fn);
+
 	chmod(mangle_fn, 0700);
 	eval("iptables-restore", (char*)mangle_fn);
 #ifdef RTCONFIG_IPV6
@@ -853,6 +866,7 @@ static int add_qos_rules(char *pcWANIF)
 //		eval("ip6tables-restore", (char*)mangle_fn_ipv6);
 	}
 #endif
+	run_custom_script("qos-start", "rules");
 	QOSDBG("[qos] iptables DONE!\n");
 
 	return 0;
@@ -891,6 +905,9 @@ static int start_tqos(void)
 #ifdef CONFIG_BCMWL5
 	char *protocol="802.1q";
 #endif
+	char *qsched;
+	int overhead = 0;
+	char overheadstr[sizeof("overhead 128 linklayer ethernet")];
 
 	// judge interface by get_wan_ifname
 	// add Qos iptable rules in mangle table,
@@ -921,6 +938,33 @@ static int start_tqos(void)
 	mtu = strtoul(nvram_safe_get("wan_mtu"), NULL, 10);
 	bw = obw;
 
+#ifdef RTCONFIG_BCMARM
+		switch(nvram_get_int("qos_sched")){
+			case 1:
+				qsched = "codel";
+				break;
+			case 2:
+				if (bw < 51200)
+					qsched = "fq_codel quantum 300 noecn";
+				else
+					qsched = "fq_codel noecn";
+				break;
+			default:
+				qsched = "sfq perturb 10";
+				break;
+		}
+
+		overhead = nvram_get_int("qos_overhead");
+#else
+		qsched = "sfq perturb 10";
+#endif
+
+		if (overhead > 0)
+			snprintf(overheadstr, sizeof(overheadstr),"overhead %d %s",
+			         overhead, nvram_get_int("qos_atm") ? "linklayer atm" : "linklayer ethernet");
+		else
+			strcpy(overheadstr, "");
+
 	/* WAN */
 	fprintf(f,
 		"#!/bin/sh\n"
@@ -946,13 +990,13 @@ static int start_tqos(void)
 		"\t$TQADL root handle 2: htb default %u\n"
 #endif
 		"# upload 1:1\n"
-		"\t$TCA parent 1: classid 1:1 htb rate %ukbit ceil %ukbit %s\n" ,
+		"\t$TCA parent 1: classid 1:1 htb rate %ukbit ceil %ukbit %s %s\n" ,
 			get_wan_ifname(wan_primary_ifunit()), // judge WAN interface
 			(nvram_get_int("qos_default") + 1) * 10,
 #ifdef CLS_ACT
 			(nvram_get_int("qos_default") + 1) * 10,
 #endif
-			bw, bw, burst_root);
+			bw, bw, burst_root, overheadstr);
 
 	/* LAN protocol: 802.1q */
 #ifdef CONFIG_BCMWL5 // TODO: it is only for the case, eth0 as wan, vlanx as lan
@@ -990,12 +1034,12 @@ static int start_tqos(void)
 
 		fprintf(f,
 			"# egress %d: %u-%u%%\n"
-			"\t$TCA parent 1:1 classid 1:%d htb rate %ukbit %s %s prio %d quantum %u\n"
-			"\t$TQA parent 1:%d handle %d: $SFQ\n"
+			"\t$TCA parent 1:1 classid 1:%d htb rate %ukbit %s %s prio %d quantum %u %s\n"
+			"\t$TQA parent 1:%d handle %d: %s\n"
 			"\t$TFA parent 1: prio %d protocol ip handle %d fw flowid 1:%d\n",
 				i, rate, ceil,
-				x, calc(bw, rate), s, burst_leaf, (i >= 6) ? 7 : (i + 1), mtu,
-				x, x,
+				x, calc(bw, rate), s, burst_leaf, (i >= 6) ? 7 : (i + 1), mtu, overheadstr,
+				x, x, qsched,
 				x, i + 1, x);
 	}
 	free(buf);
@@ -1084,12 +1128,12 @@ static int start_tqos(void)
 			x = (i + 1) * 10;
 			fprintf(f,
 				"# ingress %d: %u%%\n"
-				"\t$TCADL parent 2:1 classid 2:%d htb rate %ukbit %s prio %d quantum %u\n"
-				"\t$TQADL parent 2:%d handle %d: $SFQ\n"
+				"\t$TCADL parent 2:1 classid 2:%d htb rate %ukbit %s prio %d quantum %u %s\n"
+				"\t$TQADL parent 2:%d handle %d: %s\n"
 				"\t$TFADL parent 2: prio %d protocol ip handle %d fw flowid 2:%d\n",
 					i, rate,
-					x, calc(bw, rate), burst_leaf, (i >= 6) ? 7 : (i + 1), mtu,
-					x, x,
+					x, calc(bw, rate), burst_leaf, (i >= 6) ? 7 : (i + 1), mtu, overheadstr,
+					x, x, qsched,
 					x, i + 1, x);
 #else
 			x = i + 1;
@@ -1129,6 +1173,7 @@ static int start_tqos(void)
 
 	fclose(f);
 	chmod(qosfn, 0700);
+	run_custom_script("qos-start", "init");
 	eval((char *)qosfn, "start");
 	QOSDBG("[qos] tc done!\n");
 
@@ -1310,6 +1355,23 @@ static int start_bandwidth_limiter(void)
 	int addr_type;
 	char addr_new[40];
 	char wl_ifname[IFNAMSIZ];
+	char *qsched;
+
+#ifdef RTCONFIG_BCMARM
+	switch(nvram_get_int("qos_sched")){
+		case 1:
+			qsched = "codel";
+			break;
+		case 2:
+			qsched = "fq_codel quantum 300";
+			break;
+		default:
+			qsched = "sfq perturb 10";
+			break;
+	}
+#else
+	qsched = "sfq perturb 10";
+#endif
 
 	if ((f = fopen(qosfn, "w")) == NULL) return -2;
 	fprintf(f,
@@ -1343,12 +1405,14 @@ static int start_bandwidth_limiter(void)
 	fprintf(f,
 		"\n"
 		"\t$TCA parent 1:1 classid 1:9 htb rate 10240000kbit ceil 10240000kbit prio 1\n"
-		"\t$TQA parent 1:9 handle 9: $SFQ\n"
+		"\t$TQA parent 1:9 handle 9: %s\n"
 		"\t$TFA parent 1: prio 1 protocol ip handle 9 fw flowid 1:9\n"
 		"\n"
 		"\t$TCAU parent 2:1 classid 2:9 htb rate 10240000kbit ceil 10240000kbit prio 1\n"
-		"\t$TQAU parent 2:9 handle 9: $SFQ\n"
-		"\t$TFAU parent 2: prio 1 protocol ip handle 9 fw flowid 2:9\n"
+		"\t$TQAU parent 2:9 handle 9: %s\n"
+		"\t$TFAU parent 2: prio 1 protocol ip handle 9 fw flowid 2:9\n",
+		qsched,
+		qsched
 	);
 
 	/* ASUSWRT
@@ -1376,17 +1440,17 @@ static int start_bandwidth_limiter(void)
 			fprintf(f,
 				"\n"
 				"\t$TCA parent 1:1 classid 1:%d htb rate %skbit ceil %skbit prio %d\n"
-				"\t$TQA parent 1:%d handle %d: $SFQ\n"
+				"\t$TQA parent 1:%d handle %d: %s\n"
 				"\t$TFA parent 1: protocol ip prio %d u32 match u16 0x0800 0xFFFF at -2 match u32 0x%02X%02X%02X%02X 0xFFFFFFFF at -12 match u16 0x%02X%02X 0xFFFF at -14 flowid 1:%d"
 				"\n"
 				"\t$TCAU parent 2:1 classid 2:%d htb rate %skbit ceil %skbit prio %d\n"
-				"\t$TQAU parent 2:%d handle %d: $SFQ\n"
+				"\t$TQAU parent 2:%d handle %d: %s\n"
 				"\t$TFAU parent 2: prio %d protocol ip handle %d fw flowid 2:%d\n"
 				, class, dlc, dlc, class
-				, class, class
+				, class, class, qsched
 				, class, s[2], s[3], s[4], s[5], s[0], s[1], class
 				, class, upc, upc, class
-				, class, class
+				, class, class, qsched
 				, class, class, class
 			);
 		}
@@ -1395,17 +1459,17 @@ static int start_bandwidth_limiter(void)
 			fprintf(f,
 				"\n"
 				"\t$TCA parent 1:1 classid 1:%d htb rate %skbit ceil %skbit prio %d\n"
-				"\t$TQA parent 1:%d handle %d: $SFQ\n"
+				"\t$TQA parent 1:%d handle %d: %s\n"
 				"\t$TFA parent 1: prio %d protocol ip handle %d fw flowid 1:%d\n"
 				"\n"
 				"\t$TCAU parent 2:1 classid 2:%d htb rate %skbit ceil %skbit prio %d\n"
-				"\t$TQAU parent 2:%d handle %d: $SFQ\n"
+				"\t$TQAU parent 2:%d handle %d: %s\n"
 				"\t$TFAU parent 2: prio %d protocol ip handle %d fw flowid 2:%d\n"
 				, class, dlc, dlc, class
-				, class, class
+				, class, class, qsched
 				, class, class, class
 				, class, upc, upc, class
-				, class, class
+				, class, class, qsched
 				, class, class, class
 			);
 		}
@@ -1451,11 +1515,11 @@ static int start_bandwidth_limiter(void)
 					"\t$TCA%d%d parent %d: classid %d:1 htb rate %skbit\n" // 7
 					"\n"
 					"\t$TCA%d%d parent %d:1 classid %d:%d htb rate 1kbit ceil %skbit prio %d\n"
-					"\t$TQA%d%d parent %d:%d handle %d: $SFQ\n"
+					"\t$TQA%d%d parent %d:%d handle %d: %s\n"
 					"\t$TFA%d%d parent %d: prio %d protocol ip handle %d fw flowid %d:%d\n" // 10
 					"\n"
 					"\t$TCAU parent 2:1 classid 2:%d htb rate 1kbit ceil %skbit prio %d\n"
-					"\t$TQAU parent 2:%d handle %d: $SFQ\n"
+					"\t$TQAU parent 2:%d handle %d: %s\n"
 					"\t$TFAU parent 2: prio %d protocol ip handle %d fw flowid 2:%d\n" // 13
 					, wl_if
 					, i, j, wl_if
@@ -1465,10 +1529,10 @@ static int start_bandwidth_limiter(void)
 					, i, j, guest
 					, i, j, guest, guest, nvram_safe_get(strcat_r(wlv, "_bw_dl", tmp)) //7
 					, i, j, guest, guest, guest_mark, nvram_safe_get(strcat_r(wlv, "_bw_dl", tmp)), guest_mark
-					, i, j, guest, guest_mark, guest_mark
+					, i, j, guest, guest_mark, guest_mark, qsched
 					, i, j, guest, guest_mark, guest_mark, guest, guest_mark // 10
 					, guest_mark, nvram_safe_get(strcat_r(wlv, "_bw_ul", tmp)), guest_mark
-					, guest_mark, guest_mark
+					, guest_mark, guest_mark, qsched
 					, guest_mark, guest_mark, guest_mark //13
 				);
 				QOSDBG("[BWLIT_GUEST] create %s bandwidth limiter, qdisc=%d, class=%d\n", wl_if, guest, guest_mark);
@@ -1550,6 +1614,10 @@ static int start_bandwidth_limiter(void)
 int add_iQosRules(char *pcWANIF)
 {
 	int status = 0;
+
+	if (nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") == 1)
+		set_codel_patch();
+
 	if (pcWANIF == NULL || nvram_get_int("qos_enable") != 1 || nvram_get_int("qos_type") == 1) return -1;
 	
 	if (nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") == 0)
@@ -1612,3 +1680,38 @@ void ForceDisableWLan_bw(void)
 	}
 	QOSDBG("[BWLIT] ALL Guest Netwok of Bandwidth Limiter has been Didabled.\n");
 }
+
+#ifdef RTCONFIG_BCMARM
+void set_codel_patch(void)
+{
+	int sched;
+
+	if (nvram_get_int("qos_type") != 1)
+		return;
+
+	sched = nvram_get_int("qos_sched");
+
+	if (!f_exists("/var/lock/qostc") &&
+	    ((sched == 1) || (sched == 2))) {
+		eval("touch", "/var/lock/qostc");
+		mount("/usr/sbin/faketc", TCPATH, NULL, MS_BIND, NULL);
+		logmessage("qos", "Applying codel patch");
+	}
+}
+
+void remove_codel_patch(void)
+{
+#if 0
+	if (f_exists("/var/lock/qostc")) {
+		umount2(TCPATH,MNT_DETACH);
+		unlink("/var/lock/qostc");
+		logmessage("qos", "Removing codel patch");
+	}
+#else
+	return;
+#endif
+
+}
+
+#endif
+

@@ -130,6 +130,13 @@ function parseNvramToArray(_oriNvram, _arrayLength) {
 }
 function initial(){
 	show_menu();
+
+	if(openvpnd_support) {
+		var vpn_client_array = {"OpenVPN" : ["OpenVPN", "Advanced_OpenVPNClient_Content.asp"], "PPTP" : ["PPTP/L2TP", "Advanced_VPNClient_Content.asp"]};
+		$('#divSwitchMenu').html(gen_switch_menu(vpn_client_array, "PPTP"));
+		document.getElementById("divSwitchMenu").style.display = "";
+	}
+
 	vpnc_clientlist_array = parseNvramToArray('<% nvram_char_to_ascii("","vpnc_clientlist"); %>', 5);
 	vpnc_pptp_options_x_list_array = parseNvramToArray('<% nvram_char_to_ascii("","vpnc_pptp_options_x_list"); %>', 1);
 	show_vpnc_rulelist();
@@ -550,8 +557,8 @@ function tabclickhandler(_type){
 	}
 	document.getElementById('pptpcTitle_' + tab_id + '').className = "vpnClientTitle_td_unclick";
 	document.getElementById('l2tpcTitle_' + tab_id + '').className = "vpnClientTitle_td_unclick";
-	if(openvpnd_support)
-		document.getElementById('opencTitle_' + tab_id + '').className = "vpnClientTitle_td_unclick";
+//	if(openvpnd_support)
+//		document.getElementById('opencTitle_' + tab_id + '').className = "vpnClientTitle_td_unclick";
 	if(ipsec_cli_support)
 		document.getElementById('ipsecTitle_' + tab_id + '').className = "vpnClientTitle_td_unclick";
 	document.getElementById('openvpnc_setting').style.display = "none";
@@ -596,6 +603,7 @@ function tabclickhandler(_type){
 		document.vpnclientForm.vpnc_type.value = "IPSec";
 		document.getElementById('ipsecTitle_' + tab_id + '').className = "vpnClientTitle_td_click";
 		document.getElementById('openvpnc_setting_ipsec').style.display = "block";
+		
 		adjust_panel_block_top("openvpnc_setting_ipsec", 50);
 	}
 
@@ -610,10 +618,10 @@ function tabclickhandler(_type){
 		$("#tr_" + _type + "_limit_hint").css("display", "none");
 		$("#openvpnc_setting_" + _type + "").find("input,button,textarea,select").attr("disabled", false);
 	}
-	if (openvpn_arrayLength == 5 && openvpnd_support && add_profile_flag)
-		set_limit_hint("openvpn", openvpn_arrayLength, "OpenVPN");
-	else
-		reset_limit_hint("openvpn");
+//	if (openvpn_arrayLength == 5 && openvpnd_support && add_profile_flag)
+//		set_limit_hint("openvpn", openvpn_arrayLength, "OpenVPN");
+//	else
+//		reset_limit_hint("openvpn");
 
 	if(ipsec_arrayLength == 5 && ipsec_cli_support && add_profile_flag)
 		set_limit_hint("ipsec", ipsec_arrayLength, "IPSec");
@@ -1079,8 +1087,8 @@ function Edit_Row(rowdata, flag){
 		document.getElementById("pptpcTitle_pptp").style.display = "none";
 		document.getElementById("trPPTPOptions").style.display = "none";
 		document.getElementById("l2tpcTitle_pptp").style.display = "none";
-		if(openvpnd_support)
-			document.getElementById("opencTitle_pptp").style.display = "none";
+//		if(openvpnd_support)
+//			document.getElementById("opencTitle_pptp").style.display = "none";
 		if(ipsec_cli_support)
 			document.getElementById("ipsecTitle_pptp").style.display = "none";
 		if(vpnc_proto == "PPTP") {
@@ -1368,9 +1376,9 @@ function gen_vpnc_tab_list(_type) {
 	code += "<tr>";
 	code += "<td align='center' id='pptpcTitle_" + _type + "' onclick='tabclickhandler(0);'>PPTP</td>";
 	code += "<td align='center' id='l2tpcTitle_" + _type + "' onclick='tabclickhandler(1);'>L2TP</td>";
-	if(openvpnd_support) {
-		code += "<td align='center' id='opencTitle_" + _type + "' onclick='tabclickhandler(2);'>OpenVPN</td>";
-	}
+//	if(openvpnd_support) {
+//		code += "<td align='center' id='opencTitle_" + _type + "' onclick='tabclickhandler(2);'>OpenVPN</td>";
+//	}
 	if(ipsec_cli_support)
 		code += "<td align='center' id='ipsecTitle_" + _type + "' onclick='tabclickhandler(3);'>IPSec</td>";
 	code += "</tr>";
@@ -1537,8 +1545,8 @@ function editIPSecProfile(mode) {
 	$("#openvpnc_setting_ipsec").fadeIn(300);
 	document.getElementById("pptpcTitle_ipsec").style.display = "none";
 	document.getElementById("l2tpcTitle_ipsec").style.display = "none";
-	if(openvpnd_support)
-		document.getElementById("opencTitle_ipsec").style.display = "none";
+//	if(openvpnd_support)
+//		document.getElementById("opencTitle_ipsec").style.display = "none";
 	document.getElementById("ipsecTitle_ipsec").style.display = "";
 	tabclickhandler(3);
 
@@ -2328,6 +2336,7 @@ function changeRemoteGatewayMethod() {
 						<td bgcolor="#4D595D" valign="top">
 							<div>&nbsp;</div>
 							<div class="formfonttitle">VPN - <#vpnc_title#></div>
+							<div id="divSwitchMenu" style="margin-top:-40px;float:right;"></div>
 							<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 							<div class="formfontdesc">
 								<#vpnc_desc1#><br>

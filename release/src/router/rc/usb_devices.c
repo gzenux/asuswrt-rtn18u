@@ -1585,13 +1585,6 @@ int write_3g_conf(FILE *fp, int dno, int aut, const unsigned int vid, const unsi
 			fprintf(fp, "DefaultProduct=0x%04x\n",	0x15e7);
 			fprintf(fp, "HuaweiNewMode=1\n");
 			break;
-		case SN_Huawei_K5160:
-			fprintf(fp, "DefaultVendor=0x%04x\n",	0x12d1);
-			fprintf(fp, "DefaultProduct=0x%04x\n",	0x1f1e);
-			fprintf(fp, "TargetVendor=0x%04x\n",	0x12d1);
-			fprintf(fp, "TargetProductList=\"%s\"\n", "157f,1592");
-			fprintf(fp, "HuaweiNewMode=1\n");
-			break;
 		case SN_Huawei_GP02:
 			fprintf(fp, "DefaultVendor=0x%04x\n",	0x12d1);
 			fprintf(fp, "DefaultProduct=0x%04x\n",	0x1c1b);
@@ -1709,6 +1702,21 @@ int write_3g_conf(FILE *fp, int dno, int aut, const unsigned int vid, const unsi
 			fprintf(fp, "TargetVendor=0x%04x\n",	0x1ee8);
 			fprintf(fp, "TargetProduct=0x%04x\n",	0x0064);
 			fprintf(fp, "MessageContent=%s\n",	"555342431234567800000000000008FF000000000000030000000000000000");
+			break;
+		case SN_Huawei_K5160:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x12d1);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0x1f1e);
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x12d1);
+			fprintf(fp, "TargetProductList=\"%s\"\n", "157f,1592");
+			fprintf(fp, "HuaweiNewMode=1\n");
+			break;
+		case SN_Vodafone_R226:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x12d1);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0x1f07);
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x12d1);
+			fprintf(fp, "TargetProductList=%s\n",	"15bf,15c8");
+			fprintf(fp, "MessageContent=%s\n",      "55534243484e73852400000080000612000000240000000000000000000000");
+			fprintf(fp, "HuaweiNewMode=1");
 			break;
 		default:
 			fprintf(fp, "\n");
@@ -2170,6 +2178,8 @@ usb_dbg("3G: Auto setting.\n");
 			write_3g_conf(fp, SN_Huawei_E3531, 1, vid, pid);
 		else if(vid == 0x12d1 && pid == 0x1f1e)
 			write_3g_conf(fp, SN_Huawei_K5160, 1, vid, pid);
+		else if(vid == 0x12d1 && pid == 0x1f07)
+			write_3g_conf(fp, SN_Vodafone_R226, 1, vid, pid);
 		else if(vid == 0x12d1 && pid == 0x1c1b)
 			write_3g_conf(fp, SN_Huawei_GP02, 1, vid, pid);
 		else if(vid == 0x12d1)

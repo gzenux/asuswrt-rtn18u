@@ -1,13 +1,15 @@
-/* $Id: upnpevents.h,v 1.9 2011/05/18 22:21:19 nanard Exp $ */
+/* $Id: upnpevents.h,v 1.12 2017/11/02 15:48:29 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2008-2011 Thomas Bernard
+ * (c) 2008-2017 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
 #ifndef UPNPEVENTS_H_INCLUDED
 #define UPNPEVENTS_H_INCLUDED
 
+/* for fd_set */
+#include <sys/select.h>
 #include "config.h"
 
 #ifdef ENABLE_EVENTS
@@ -36,8 +38,8 @@ upnpevents_addSubscriber(const char * eventurl,
 int
 upnpevents_removeSubscriber(const char * sid, int sidlen);
 
-int
-renewSubscription(const char * sid, int sidlen, int timeout);
+const char *
+upnpevents_renewSubscription(const char * sid, int sidlen, int timeout);
 
 void upnpevents_selectfds(fd_set *readset, fd_set *writeset, int * max_fd);
 void upnpevents_processfds(fd_set *readset, fd_set *writeset);

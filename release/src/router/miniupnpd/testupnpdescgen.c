@@ -1,7 +1,7 @@
-/* $Id: testupnpdescgen.c,v 1.32 2014/03/10 11:04:52 nanard Exp $ */
+/* $Id: testupnpdescgen.c,v 1.34 2017/05/27 07:47:57 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2014 Thomas Bernard
+ * (c) 2006-2017 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -27,13 +27,17 @@ char modelnumber[] = "1";
 char presentationurl[] = "http://192.168.0.1:8080/";
 /*char presentationurl[] = "";*/
 #ifdef ENABLE_MANUFACTURER_INFO_CONFIGURATION
-char friendly_name[] = ROOTDEV_FRIENDLYNAME;
+char friendly_name[] = OS_NAME " router";
 char manufacturer_name[] = ROOTDEV_MANUFACTURER;
 char manufacturer_url[] = ROOTDEV_MANUFACTURERURL;
 char model_name[] = ROOTDEV_MODELNAME;
 char model_description[] = ROOTDEV_MODELDESCRIPTION;
 char model_url[] = ROOTDEV_MODELURL;
-#endif
+#endif /* ENABLE_MANUFACTURER_INFO_CONFIGURATION */
+#ifdef RANDOMIZE_URLS
+char random_url[] = "RANDOM";
+#endif /* RANDOMIZE_URLS */
+unsigned int upnp_configid = 666;
 
 char * use_ext_ip_addr = NULL;
 const char * ext_if_name = "eth0";

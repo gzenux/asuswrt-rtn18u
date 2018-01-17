@@ -2783,13 +2783,6 @@ int init_nvram(void)
 #if 0
 	conf_swmode_support(model);
 #endif
-#ifdef RTCONFIG_OPENVPN
-	nvram_set("vpn_upload_state", "");
-	if(!nvram_is_empty("vpn_server_clientlist")) {
-		nvram_set("vpn_serverx_clientlist", nvram_safe_get("vpn_server_clientlist"));
-		nvram_unset("vpn_server_clientlist");
-	}
-#endif
 
 #ifdef RTCONFIG_DSL_TCLINUX
 	nvram_set("dsllog_opmode", "");
@@ -6494,7 +6487,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 		add_rc_support("pwrctrl");
@@ -6699,7 +6697,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update");
+		add_rc_support("mssid 2.4G 5G");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 #ifdef RT4GAC68U
 		add_rc_support("usbX1");
 #else
@@ -6904,7 +6907,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 //		add_rc_support("pwrctrl");
@@ -7078,7 +7086,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 //		add_rc_support("pwrctrl");
@@ -7311,7 +7324,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 		add_rc_support("pwrctrl");
@@ -7409,7 +7427,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 		add_rc_support("pwrctrl");
@@ -7548,7 +7571,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 		add_rc_support("pwrctrl");
@@ -7663,7 +7691,12 @@ int init_nvram(void)
 		}
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 		add_rc_support("pwrctrl");
@@ -8020,7 +8053,12 @@ int init_nvram(void)
 
 		if (!nvram_get("ct_max"))
 			nvram_set("ct_max", "300000");
-		add_rc_support("mssid 2.4G 5G update usbX2");
+		add_rc_support("mssid 2.4G 5G usbX2");
+#ifdef RTCONFIG_MERLINUPDATE
+		add_rc_support("update");
+#else
+		add_rc_support("noupdate");
+#endif
 		add_rc_support("switchctrl"); // broadcom: for jumbo frame only
 		add_rc_support("manual_stb");
 		add_rc_support("pwrctrl");
@@ -8310,6 +8348,9 @@ int init_nvram(void)
 	}
 #endif
 
+#ifdef RTCONFIG_DNSFILTER
+	add_rc_support("dnsfilter");
+#endif
 #ifdef RTCONFIG_DUALWAN // RTCONFIG_DUALWAN
 	add_rc_support("dualwan");
 
@@ -8375,7 +8416,7 @@ int init_nvram(void)
 #endif
 
 #ifdef RTCONFIG_PUSH_EMAIL
-	add_rc_support("feedback");
+//	add_rc_support("feedback");
 	add_rc_support("email");
 #ifdef RTCONFIG_DBLOG
 	add_rc_support("dblog");
@@ -8572,10 +8613,21 @@ int init_nvram(void)
 	add_rc_support("sfp8m");
 #endif
 	//add_rc_support("ruisp");
+
 #ifdef RTCONFIG_WIFI_TOG_BTN
 	add_rc_support("wifi_tog_btn");
 #endif
 
+#ifdef RTCONFIG_NFS
+	add_rc_support("nfsd");
+#endif
+
+#ifdef RTCONFIG_IGD2
+	add_rc_support("igd2");
+#endif
+#ifdef RTCONFIG_DNSSEC
+        add_rc_support("dnssec");
+#endif
 #ifdef RTCONFIG_WPSMULTIBAND
 	add_rc_support("wps_multiband");
 #endif
@@ -8838,6 +8890,8 @@ int init_nvram2(void)
 	char *macp = NULL;
 	unsigned char mac_binary[6];
 	char friendly_name[32];
+	int i;
+	char varname[20];
 
 	macp = get_2g_hwaddr();
 	ether_atoe(macp, mac_binary);
@@ -8866,6 +8920,25 @@ int init_nvram2(void)
 #else
 	sprintf(friendly_name, "%s-%02X%02X", get_productid(), mac_binary[4], mac_binary[5]);
 #endif
+
+#ifdef RTCONFIG_OPENVPN
+/* Initialize OpenVPN state flags */
+
+	for (i = 1; i <= OVPN_CLIENT_MAX; i++) {
+		sprintf(varname, "vpn_client%d_state", i);
+		nvram_set(varname, "0");
+
+		sprintf(varname, "vpn_client%d_errno", i);
+		nvram_set(varname, "0");
+	}
+
+	nvram_set("vpn_server1_state", "0");
+	nvram_set("vpn_server2_state", "0");
+	nvram_set("vpn_server1_errno", "0");
+	nvram_set("vpn_server2_errno", "0");
+	nvram_set("vpn_upload_state", "");
+#endif
+
 	if (restore_defaults_g)
 	{
 		nvram_set("computer_name", friendly_name);
@@ -8962,7 +9035,6 @@ int init_nvram2(void)
 	return 0;
 }
 
-
 #if defined(RTCONFIG_SOC_IPQ40XX)
 int init_nvram3(void)
 {
@@ -9054,6 +9126,11 @@ void force_free_caches()
 		free_caches(FREE_MEM_PAGE, 2, 0);
 	}
 #endif
+
+#ifdef RTCONFIG_BCMARM
+	f_write_string("/proc/sys/vm/drop_caches", "1", 0, 0);
+#endif
+	nvram_unset("reload_svc_radio");
 }
 
 #ifdef RTN65U
@@ -9223,6 +9300,9 @@ fa_mode_adjust()
 	) {
 		if (!nvram_match("ctf_disable_force", "1")
 			&& nvram_get_int("ctf_fa_cap")
+#if !defined(HND_ROUTER)
+			&& !nvram_get_int("cstats_enable")
+#endif
 			&& !nvram_match("gmac3_enable", "1")
 			&& !nvram_get_int("qos_enable")
 			&& nvram_match("x_Setting", "1")
@@ -9615,6 +9695,10 @@ static void sysinit(void)
 	unlink("/etc/resolv.conf");
 	symlink("/tmp/resolv.conf", "/etc/resolv.conf");
 
+#ifdef HND_ROUTER
+	system("/sbin/ldconfig &>/dev/null");
+#endif
+
 #if defined(RTAC55U) || defined(RTAC55UHP) || defined(RTAC58U) || defined(RT4GAC53U) || defined(RTAC82U) || defined(MAPAC3000)
 	ratio = 20;
 #elif defined(RTCONFIG_SOC_IPQ8064)
@@ -9688,7 +9772,7 @@ static void sysinit(void)
 		run_shell(1, 0);
 	}
 
-	dbg("firmware version: %s.%s_%s\n", rt_version, rt_serialno, rt_extendno);
+	dbg("firmware version: %s_%s\n", rt_serialno, rt_extendno);
 
 	nvram_set("buildno_org", nvram_safe_get("buildno"));
 	nvram_set("extendno_org", nvram_safe_get("extendno"));
@@ -9852,6 +9936,8 @@ static void sysinit(void)
 		nvram_set("gmac3_enable", "0");
 	else
 		nvram_set("gmac3_enable", "1");
+#else
+	nvram_set("gmac3_enable", "0");
 #endif
 #endif
 
@@ -9945,6 +10031,10 @@ static void sysinit(void)
 	init_wl(); // for system dependent part
 	klogctl(8, NULL, nvram_get_int("console_loglevel"));
 
+	// Enable rate report for tc classes (QoS stats)
+#ifdef HND_ROUTER
+	f_write_string("/sys/module/sch_htb/parameters/htb_rate_est", "1", 0, 0);
+#endif
 	setup_conntrack();
 	setup_timezone();
 	if (!noconsole) xstart("console");
@@ -10067,6 +10157,7 @@ Alarm_Led(void) {
 }
 void config_format_compatibility_handler(void)
 {
+	adjust_merlin_config();
 	adjust_url_urlelist();
 	adjust_ddns_config();
 	adjust_access_restrict_config();
@@ -10172,6 +10263,10 @@ int init_main(int argc, char *argv[])
 		asm1042_upgrade(1);	// check whether upgrade firmware of ASM1042
 #endif
 
+		run_custom_script("init-start", NULL);
+		setup_passwd();		// Re-apply now that jffs is up, in case of custom configs
+		use_custom_config("fstab", "/etc/fstab");
+		run_postconf("fstab", "/etc/fstab");
 		state = SIGUSR2;	/* START */
 	}
 
@@ -10753,7 +10848,8 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 #endif
 #if defined(RTCONFIG_BCMARM) && !defined(HND_ROUTER)
 		/* free pagecache */
-		f_write_string("/proc/sys/vm/drop_caches", "1", 0, 0);
+		if (nvram_get_int("drop_caches"))
+			f_write_string("/proc/sys/vm/drop_caches", "1", 0, 0);
 #endif
 #if defined(RTCONFIG_SOC_IPQ40XX)
 		/* free pagecache */

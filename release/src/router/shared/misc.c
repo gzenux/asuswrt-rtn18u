@@ -2152,7 +2152,68 @@ int nvram_set_double(const char *key, double value)
 	return nvram_set(key, nvramstr);
 }
 
-#if defined(RTCONFIG_SSH) || defined(RTCONFIG_HTTPS)
+#ifdef HND_ROUTER
+/**
+ * Functions that split settings accross multiple variables
+ */
+char *nvram_split_get(const char *key, char *buffer, int maxlen, int maxinst)
+{
+	char nvname[64];
+	int i;
+
+	strlcpy(buffer, nvram_safe_get(key), maxlen);
+
+	for (i=1; i <= maxinst; ++i) {
+		snprintf(nvname, sizeof (nvname), "%s%d", key, i);
+		strlcat(buffer, nvram_safe_get(nvname), maxlen);
+	}
+
+	return buffer;
+}
+
+int nvram_split_set(const char *key, char *value, int size, int maxinst)
+{
+	char nvname[64];
+	char *piece, *ptr;
+	int valuelen, i;
+
+	piece = malloc(size + 1);
+	if (piece == NULL)
+		return -1;
+	piece[size] = '\0';
+
+	valuelen = strlen(value);
+	ptr = value;
+
+	strncpy(piece, ptr, size);
+	nvram_set(key, piece);
+	ptr += size;
+
+	if (valuelen <= size) {
+		free(piece);
+		return 1;
+	}
+
+	for (i=1; i <= maxinst; ++i) {
+		strncpy(piece, ptr, size);
+
+		snprintf(nvname, sizeof (nvname), "%s%d", key, i);
+		nvram_set(nvname, piece);
+
+		ptr += size;
+		if (ptr >= value + valuelen) {
+			free(piece);
+			return i;
+		}
+	}
+
+	free(piece);
+
+	return i;
+}
+#endif
+
+#if defined(RTCONFIG_HTTPS)
 int nvram_get_file(const char *key, const char *fname, int max)
 {
 	int n;
@@ -2172,7 +2233,7 @@ int nvram_get_file(const char *key, const char *fname, int max)
 	}
 	return r;
 /*
-	char b[2048];
+	char b[3500];
 	int n;
 	char *p;
 
@@ -2209,8 +2270,8 @@ int nvram_set_file(const char *key, const char *fname, int max)
 	}
 	return r;
 /*
-	char a[2048];
-	char b[4096];
+	char a[3500];
+	char b[7000];
 	int n;
 
 	if (((n = f_read(fname, &a, sizeof(a))) > 0) && (n <= max)) {
@@ -2355,8 +2416,8 @@ char *get_productid(void)
 	return productid;
 }
 
-int backup_rx;
-int backup_tx;
+long backup_rx = 0;
+long backup_tx = 0;
 int backup_set = 0;
 
 unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2, char *nv_lan_ifname, char *nv_lan_ifnames)		
@@ -2640,13 +2701,20 @@ _dprintf("%s: Finish.\n", __FUNCTION__);
 void logmessage_normal(char *logheader, char *fmt, ...){
   va_list args;
   char buf[512];
+  char logheader2[33];
+  int level;
 
   va_start(args, fmt);
 
   vsnprintf(buf, sizeof(buf), fmt, args);
 
-  openlog(logheader, 0, 0);
-  syslog(0, buf);
+  level = nvram_get_int("message_loglevel");
+  if (level > 7) level = 7;
+
+  strlcpy(logheader2, logheader, sizeof (logheader2));
+  replace_char(logheader2, ' ', '_');
+  openlog(logheader2, 0, 0);
+  syslog(level, buf);
   closelog();
   va_end(args);
 }

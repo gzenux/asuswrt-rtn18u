@@ -111,6 +111,7 @@ OBJS += bwdpi_utils.o
 OBJS += bwdpi_utils.o
 OBJS += mac_name_tab.o
 OBJS += stun.o
+OBJS += scripts.o
 ifeq ($(RTCONFIG_TRAFFIC_LIMITER),y)
 OBJS += tld_utils.o
 endif
@@ -317,6 +318,7 @@ endif
 
 all: libshared.so libshared.a
 
+
 libshared.so: $(OBJS)
 	@echo " [shared] LD $@"
 ifeq ($(HND_ROUTER),y)
@@ -349,12 +351,12 @@ endif
 
 sw_auth.o:
 ifeq ($(wildcard $(SRCBASE)/router/sw-hw-auth/*.c),)
-	cp -f $(TOP)/sw-hw-auth/prebuild/sw_auth.o ./
+	cp -f $(TOP)/sw-hw-auth/prebuild/models/$(BUILD_NAME)/sw_auth.o ./
 endif
 
 hw_auth.o:
 ifeq ($(wildcard $(SRCBASE)/router/sw-hw-auth/*.c),)
-	cp -f $(TOP)/sw-hw-auth/prebuild/hw_auth.o ./
+	cp -f $(TOP)/sw-hw-auth/prebuild/models/$(BUILD_NAME)/hw_auth.o ./
 endif
 
 ifeq ($(RTCONFIG_USB),y)
@@ -373,12 +375,23 @@ $(patsubst %.o,.%.depend,$(notdir $(ID_OBJS))): .%.depend: %.c
 #	@$(LD) -r -e find_label_or_uuid --gc-sections -o $@ $(notdir $(ID_OBJS))
 endif
 
+prebuild/%.o:
+	#nothing to do...
+
+ifeq ($(RTCONFIG_USB),y)
+vpath %.c $(sort $(dir $(ID_OBJS)))
+
+$(notdir $(ID_OBJS)): %.o: %.c .%.depend
+	@echo " [shared] CC $@"
+	@$(CC) $(CFLAGS) $(ID_CFLAGS) -o $@ -c $<
+
+$(patsubst %.o,.%.depend,$(notdir $(ID_OBJS))): .%.depend: %.c
+	@$(CC) $(CFLAGS) $(ID_CFLAGS) -M $< > $@
+endif
+
 %.o: %.c .%.depend
 	@echo " [shared] CC $@"
 	@$(CC) $(CFLAGS) -o $@ -c $<
-
-prebuild/%.o:
-	#nothing to do...
 
 .depend: $(OBJS:%.o=%.c)
 	@$(CC) $(CFLAGS) -M $^ > .depend

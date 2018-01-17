@@ -116,7 +116,7 @@ function initial(){
 		var KnownApps = document.form.KnownApps;
 		KnownApps.options[1].selected = 1;
 		change_wizard(KnownApps, 'KnownApps');
-		if(addRow_Group(32, $("#vts_rulelist_0")[0])) applyRule();
+		if(addRow_Group(128, $("#vts_rulelist_0")[0])) applyRule();
 	}
 
 	if(based_modelid == "GT-AC5300" || based_modelid == "GT-AC9600")
@@ -167,12 +167,25 @@ function applyRule(){
 		}
 		return tmp_value;
 	};
-	
 
-	document.form.vts_rulelist.value = parseArrayToNvram(vts_rulelist_array["vts_rulelist_0"]);
+	var rulelist = parseArrayToNvram(vts_rulelist_array["vts_rulelist_0"]);
+
+	if (rulelist.length > 2047) {
+		alert("Resulting list of Port Forwards is too long - remove some, or use shorter descriptions.");
+                return false;
+	}
+
+	document.form.vts_rulelist.value = rulelist;
 	if(support_dual_wan_unit_flag) {
 		document.form.vts1_rulelist.disabled = false;
-		document.form.vts1_rulelist.value = parseArrayToNvram(vts_rulelist_array["vts_rulelist_1"]);
+		rulelist = parseArrayToNvram(vts_rulelist_array["vts_rulelist_1"]);
+
+		if (rulelist.length > 2047) {
+			alert("Resulting list of Port Forwards is too long - remove some, or use shorter descriptions.");
+			return false;
+		}
+
+		document.form.vts1_rulelist.value = rulelist;
 	}
 	
 	/* 2014.04 Viz: No need to reboot for ctf enable models.
@@ -574,13 +587,13 @@ function gen_vts_ruleTable_Block(_tableID) {
 				break;
 		}
 	}
-	html += '<td colspan="7">' + wan_title + '<#IPConnection_VSList_title#>&nbsp;(<#List_limit#>&nbsp;32)</td>';
+	html += '<td colspan="7">' + wan_title + '<#IPConnection_VSList_title#>&nbsp;(<#List_limit#>&nbsp;128)</td>';
 	html += '</tr>';
 	html += '</thead>';
 
 	html += '<tr>';
 	html += '<th width="20%"><#BM_UserList1#></th>';
-	html += '<th width="20%"><a class="hintstyle" href="javascript:void(0);" onClick=""><#IPConnection_VSList_SourceTarget#></a></th>';
+	html += '<th width="20%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(50,23)">Source IP</a></th>';
 	html += '<th width="16%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);"><#FirewallConfig_LanWanSrcPort_itemname#></a></th>';
 	html += '<th width="18%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);"><#IPConnection_VServerIP_itemname#></a></th>';
 	html += '<th width="10%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,26);"><#IPConnection_VServerLPort_itemname#></a></th>';
@@ -617,7 +630,7 @@ function gen_vts_ruleTable_Block(_tableID) {
 	html += '</select>';
 	html += '</td>';	
 	html += '<td width="6%">';
-	html += '<input type="button" class="add_btn" onClick="addRow_Group(32, this);" name="vts_rulelist_' + wan_idx + '" id="vts_rulelist_' + wan_idx + '" value="">';
+	html += '<input type="button" class="add_btn" onClick="addRow_Group(128, this);" name="vts_rulelist_' + wan_idx + '" id="vts_rulelist_' + wan_idx + '" value="">';
 	html += '</td>';
 	html += '</tr>';
 	html += '</table>';

@@ -22,6 +22,15 @@
 #include <mntent.h>	// !!TB
 #endif
 
+/* index page defined for httpd and wanduck */
+#if defined(GTAC5300)
+#define INDEXPAGE "GameDashboard.asp"
+#else
+#define INDEXPAGE "index.asp"
+#endif
+
+#define NETWORKMAP_PAGE "index.asp"
+
 #ifdef RTCONFIG_TRAFFIC_LIMITER
 #include <tld_utils.h>
 #endif
@@ -531,6 +540,10 @@ extern int nvram_pf_match(char *prefix, char *name, char *match);
 extern int nvram_pf_invmatch(char *prefix, char *name, char *invmatch);
 extern double nvram_get_double(const char *key);
 extern int nvram_set_double(const char *key, double value);
+#ifdef HND_ROUTER
+extern char *nvram_split_get(const char *key, char *buffer, int maxlen, int maxinst);
+extern int nvram_split_set(const char *key, char *value, int size, int maxinst);
+#endif
 
 //	extern long nvram_xget_long(const char *name, long min, long max, long def);
 extern int nvram_contains_word(const char *key, const char *word);
@@ -753,6 +766,7 @@ extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int process_exists(pid_t pid);
 extern int module_loaded(const char *module);
+extern int ppid(int pid);
 
 // files.c
 extern int check_if_dir_empty(const char *dirpath);
@@ -968,6 +982,13 @@ enum led_id {
 
 	LED_ID_MAX,	/* last item */
 };
+
+// Outside of enum to avoid conflicting with Asus's code
+enum led_merlin_id {
+	LED_SWITCH = LED_ID_MAX + 1,
+	LED_5G_FORCED,
+};
+
 
 enum led_fan_mode_id {
 	LED_OFF = 0,
@@ -1328,6 +1349,7 @@ extern int set_pwr_modem(int boolOn);
 #endif
 extern int button_pressed(int which);
 extern int led_control(int which, int mode);
+extern int led_control_atomic(int which, int mode);
 
 /* api-*.c */
 extern uint32_t gpio_dir(uint32_t gpio, int dir);
@@ -1562,6 +1584,8 @@ extern void ascii_to_char(const char *output, const char *input);
 extern const char *find_word(const char *buffer, const char *word);
 extern int remove_word(char *buffer, const char *word);
 extern void trim_space(char *str);
+extern int replace_char(char *str, const char from, const char to);
+extern int str_escape_quotes(const char *output, const char *input, int outsize);
 
 // file.c
 extern int check_if_file_exist(const char *file);
@@ -1593,7 +1617,7 @@ extern char *get_syslog_fname(unsigned int idx);
 #ifdef RTCONFIG_USB_MODEM
 extern char *get_modemlog_fname(void);
 #endif
-#if defined(RTCONFIG_SSH) || defined(RTCONFIG_HTTPS)
+#if defined(RTCONFIG_HTTPS)
 extern int nvram_get_file(const char *key, const char *fname, int max);
 extern int nvram_set_file(const char *key, const char *fname, int max);
 #endif
@@ -1694,6 +1718,15 @@ extern struct vlan_rules_s *get_vlan_rules(void);
 #if defined(HND_ROUTER) && defined(RTCONFIG_BONDING)
 extern int get_bonding_status();
 #endif
+
+/* scripts.c */
+#define xstart(args...) _xstart(args, NULL)
+extern int _xstart(const char *cmd, ...);
+extern void run_custom_script(char *name, char *args);
+extern void run_custom_script_blocking(char *name, char *args);
+extern void run_postconf(char *name, char *config);
+extern void use_custom_config(char *config, char *target);
+extern void append_custom_config(char *config, FILE *fp);
 
 /* mt7620.c */
 #if defined(RTCONFIG_RALINK_MT7620)
@@ -2087,13 +2120,18 @@ extern int FindBrifByWlif(char *wl_ifname, char *brif_name, int size);
 #define HTTPD_CERT	"/etc/cert.pem"
 #define HTTPD_KEY	"/etc/key.pem"
 #define LIGHTTPD_CERTKEY	"/etc/server.pem"
-#define UPLOAD_CERT_FOLDER	"/jffs/.cert"
-#define UPLOAD_CERT	"/jffs/.cert/cert.pem"
-#define UPLOAD_KEY	"/jffs/.cert/key.pem"
+#define UPLOAD_CERT_FOLDER	"/jffs/ssl"
+#define UPLOAD_CERT	"/jffs/ssl/cert.pem"
+#define UPLOAD_KEY	"/jffs/ssl/key.pem"
 #ifdef RTCONFIG_LETSENCRYPT
 #define ACME_CERTHOME	"/jffs/.le"
 #endif
 #endif
+
+#ifdef RTCONFIG_SSH
+#define SSHD_CERT_FOLDER	"/jffs/ssl"
+#endif
+
 
 #ifdef RTAC68U
 extern int is_ac66u_v2_series();
@@ -2130,7 +2168,7 @@ extern void set_deauth_sta(int bssidx, int vifidx, char *mac_addr);
 #endif
 
 enum {
-	CKN_STR_DEFAULT = 0,
+	CKN_STR_DEFAULT_ASUS = 0,
 	CKN_STR1,
 	CKN_STR2,
 	CKN_STR3,
@@ -2163,6 +2201,8 @@ enum {
 	CKN_STR4096 = 4096,
 	CKN_STR_MAX = 65535
 };
+
+#define CKN_STR_DEFAULT 1024	// Otherwise a whole bunch of nvram can't be changed by webui
 
 enum {
 	CKN_TYPE_DEFAULT = 0

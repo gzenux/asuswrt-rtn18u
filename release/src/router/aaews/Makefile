@@ -34,8 +34,8 @@ WSLIB_OBJS := $(WS_SOURCES:%.c=$(OUTPUT)/%.o)
 
 ifeq ($(wildcard $(TOP)/aaews/*.c),)
 all:
-	-cp -f $(TOP)/aaews/prebuild/aaews aaews
-	-cp -f $(TOP)/aaews/prebuild/mastiff mastiff
+	-cp -f $(TOP)/aaews/prebuild$(BCMEX)$(EXHND)/aaews aaews
+	-cp -f $(TOP)/aaews/prebuild$(BCMEX)$(EXHND)/mastiff mastiff
 else
 all: $(WSLIB) $(TARGET)
 endif
@@ -94,7 +94,7 @@ endif
 
 ifeq ($(wildcard $(TOP)/aaews/*.c),)
 $(DOG):
-	-cp -f $(TOP)/aaews/prebuild/mastiff mastiff
+	-cp -f $(TOP)/aaews/prebuild$(BCMEX)$(EXHND)/mastiff mastiff
 else
 $(DOG): $(DOG).o nat_nvram.o  ws_caller.o nw_util.o natapi.o $(WSLIB_OBJS) cmd_handler.o info_report.o
 	$(CC) -fPIC $(CFLAGS) $(LDFLAGS) $(LIBS) $(ROUTER_LDFLAGS) $(ROUTER_LIBS) -o $@ $^ 
@@ -104,7 +104,7 @@ aicam:$(TARGET)
 
 ifeq ($(wildcard $(TOP)/aaews/*.c),)
 router:
-	-cp -f $(TOP)/aaews/prebuild/aaews aaews
+	-cp -f $(TOP)/aaews/prebuild$(BCMEX)$(EXHND)/aaews aaews
 else
 router: $(WSLIB) $(TARGET)
 endif

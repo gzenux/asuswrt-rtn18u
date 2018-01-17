@@ -22,9 +22,9 @@ endif
 
 OBJS = sysstate.o dumplog.o respipc.o cpuusage.o cputemp.o ramusage.o
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./prebuild$(BCMEX)$(EXHND)),)
 all:
-	@-cp -f ./prebuild/sysstate .
+	@-cp -f ./prebuild$(BCMEX)$(EXHND)/sysstate .
 else
 all: sysstate
 endif

@@ -55,6 +55,7 @@
 #include <net/route.h>
 #include <sys/ioctl.h>
 #include <math.h>	//for ceil()
+#include <sys/sysinfo.h>
 
 #include <typedefs.h>
 #include <bcmutils.h>
@@ -130,6 +131,9 @@ typedef unsigned long long u64;
 #include <sys/shm.h>
 #include <sys/sysinfo.h>
 
+#include "sysinfo.h"
+#include "data_arrays.h"
+
 #ifdef RTCONFIG_QTN
 #include "web-qtn.h"
 #endif
@@ -174,8 +178,13 @@ typedef unsigned long long u64;
 
 #include <passwd.h>
 
+static void do_jffs_file(char *url, FILE *stream);
+static void do_jffsupload_cgi(char *url, FILE *stream);
+static void do_jffsupload_post(char *url, FILE *stream, int len, char *boundary);
+
 #ifdef RTCONFIG_HTTPS
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <openssl/pem.h>
 #ifdef RTCONFIG_LETSENCRYPT
 #include <letsencrypt_config.h>
@@ -203,6 +212,7 @@ extern int ej_wl_stainfo_list_5g_2(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv);
 #if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_LANTIQ)
 extern int ej_wl_control_channel(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_extent_channel(int eid, webs_t wp, int argc, char_t **argv);
 #endif
 extern int ej_get_wlstainfo_list(int eid, webs_t wp, int argc, char_t **argv);
 
@@ -550,7 +560,7 @@ void sys_script(char *name)
 
      char scmd[64];
 
-     sprintf(scmd, "/tmp/%s", name);
+     snprintf(scmd, sizeof(scmd), "/tmp/%s", name);
 
      //handle special scirpt first
      if (strcmp(name,"syscmd.sh")==0)
@@ -690,7 +700,7 @@ ej_nvram_get(int eid, webs_t wp, int argc, char_t **argv)
 	int ret = 0;
 //	char sid_dummy = "",
 	int from_app = 0;
-	char dec_passwd[2048];
+	char dec_passwd[4096];
 
 	memset(dec_passwd, 0, sizeof(dec_passwd));
 
@@ -1306,12 +1316,15 @@ ej_load_clientlist_char_to_ascii(int eid, webs_t wp, int argc, char_t **argv)
 		str = (char *)malloc(sizeof(char)*size_ncl+1);
 		if (fread(str, 1, size_ncl, fp) != size_ncl) {
 			csprintf("Read nmp_client_list FILE ERR\n");
+			fclose(fp);
+			free(str);
 			return 0;
 		}
-	}
-	else
+		fclose(fp);
+	} else {
+		fclose(fp);
 		return 0;
-	fclose(fp);
+	}
 	str[size_ncl] = '\0';
 
 	/* each char expands to %XX at max */
@@ -1320,6 +1333,7 @@ ej_load_clientlist_char_to_ascii(int eid, webs_t wp, int argc, char_t **argv)
 		buf = (char *)malloc(ret);
 		if (buf == NULL) {
 			csprintf("No memory.\n");
+			free(str);
 			return 0;
 		}
 	}
@@ -1495,10 +1509,12 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 	else if (strcmp(file, "ipv6_network.log")==0)
 		return (ej_lan_ipv6_network(eid, wp, 0, NULL));
 #endif
+#if 0 // We use data_arrays functions
 	else if (strcmp(file, "iptable.log")==0)
 		return (get_nat_vserver_table(eid, wp, 0, NULL));
 	else if (strcmp(file, "route.log")==0)
 		return (ej_route_table(eid, wp, 0, NULL));
+#endif
 	else if (strcmp(file, "wps_info.log")==0)
 	{
 #ifndef RTAC3200
@@ -1955,6 +1971,22 @@ ej_vpn_crt_server(int eid, webs_t wp, int argc, char **argv) {
 		}
 		websWrite(wp, "'];\n");
 
+		//vpn_crt_server_extra
+		memset(buf, 0, sizeof(buf));
+		memset(file_name, 0, sizeof(file_name));
+		sprintf(file_name, "vpn_crt_server%d_extra", idx);
+		get_ovpn_key(OVPN_TYPE_SERVER, idx, OVPN_SERVER_CA_EXTRA, buf, sizeof(buf));
+		websWrite(wp, "%s=['", file_name);
+		for (c = buf; *c; c++) {
+			if (isprint(*c) &&
+				*c != '"' && *c != '&' && *c != '<' && *c != '>')
+					websWrite(wp, "%c", *c);
+			else
+			websWrite(wp, "&#%d", *c);
+		}
+		websWrite(wp, "'];\n");
+
+
 		websWrite(wp, "\n");
 	}
 	return 0;
@@ -2044,6 +2076,21 @@ ej_vpn_crt_client(int eid, webs_t wp, int argc, char **argv) {
 		}
 		websWrite(wp, "'];\n");
 
+		//vpn_crt_client_extra
+		memset(buf, 0, sizeof(buf));
+		memset(file_name, 0, sizeof(file_name));
+		sprintf(file_name, "vpn_crt_client%d_extra", idx);
+		get_ovpn_key(OVPN_TYPE_CLIENT, idx, OVPN_CLIENT_CA_EXTRA, buf, sizeof(buf));
+		websWrite(wp, "%s=['", file_name);
+		for (c = buf; *c; c++) {
+			if (isprint(*c) &&
+				*c != '"' && *c != '&' && *c != '<' && *c != '>')
+					websWrite(wp, "%c", *c);
+			else
+				websWrite(wp, "&#%d", *c);
+		}
+		websWrite(wp, "'];\n");
+
 		websWrite(wp, "\n");
 	}
 	return 0;
@@ -2082,9 +2129,9 @@ static void do_html_post_and_get(char *url, FILE *stream, int len, char *boundar
 
 	if (query && strlen(query) > 0){
 		if (strlen(post_buf) > 0)
-			sprintf(post_buf_backup, "?%s&%s", post_buf, query);
+			snprintf(post_buf_backup, sizeof(post_buf_backup), "?%s&%s", post_buf, query);
 		else
-			sprintf(post_buf_backup, "?%s", query);
+			snprintf(post_buf_backup, sizeof(post_buf_backup), "?%s", query);
 		sprintf(post_buf, "%s", post_buf_backup+1);
 	}
 	else if (strlen(post_buf) > 0)
@@ -2513,6 +2560,9 @@ int validate_instance(webs_t wp, char *name, json_object *root)
 				else if(!strcmp(name+15, "dh")) {
 					key_type = OVPN_SERVER_DH;
 				}
+				else if(!strcmp(name+15, "extra")) {
+					key_type = OVPN_SERVER_CA_EXTRA;
+				}
 				else {
 					continue;
 				}
@@ -2562,6 +2612,9 @@ int validate_instance(webs_t wp, char *name, json_object *root)
 				else if(!strcmp(name+15, "crl")) {
 					key_type = OVPN_CLIENT_CRL;
 				}
+				else if(!strcmp(name+15, "extra")) {
+					key_type = OVPN_CLIENT_CA_EXTRA;
+				}
 				else {
 					continue;
 				}
@@ -2589,6 +2642,7 @@ int nvram_check(char *name, char *value, struct nvram_tuple *t, char *output)
 	{
 		ret=1;
 		_dprintf("nvram_check fail: nvram %s over length\n", t->name);
+		logmessage("httpd", "nvram_check fail: nvram %s over length (%d > %d)", t->name, strlen(value), t->len);
 	}
 #if defined(RTCONFIG_NVRAM_ENCRYPT)
 	else if(t->enc == 1){
@@ -2684,7 +2738,7 @@ static int validate_apply(webs_t wp, json_object *root) {
 	char *value;
 	char name[64];
 	char tmp[3500], prefix[32];
-	char dec_passwd[1024];
+	char dec_passwd[4096];
 #ifdef RTCONFIG_NVRAM_ENCRYPT
 	char dec_passwd2[128];
 	char dec_passwd3[128];
@@ -2730,6 +2784,7 @@ static int validate_apply(webs_t wp, json_object *root) {
 			}
 		}
 		else {
+
 			memset(dec_passwd, 0, sizeof(dec_passwd));
 			if((ckn_ret = nvram_check(name, value, t, dec_passwd)) == 1) {
 				continue;
@@ -2919,26 +2974,6 @@ static int validate_apply(webs_t wp, json_object *root) {
 			}
 #endif
 #ifdef RTCONFIG_OPENVPN
-			else if(!strncmp(name, "vpn_server_", 11) && unit!=-1) {
-				snprintf(prefix, sizeof(prefix), "vpn_server%d_", unit);
-				(void)strcat_r(prefix, name+11, tmp);
-
-				if(strcmp(nvram_safe_get(tmp), value)) {
-					nvram_set(tmp, value);
-					nvram_modified = 1;
-					_dprintf("set %s=%s\n", tmp, value);
-				}
-			}
-			else if(!strncmp(name, "vpn_client_", 11) && unit!=-1) {
-				snprintf(prefix, sizeof(prefix), "vpn_client%d_", unit);
-				(void)strcat_r(prefix, name+11, tmp);
-
-				if(strcmp(nvram_safe_get(tmp), value)) {
-					nvram_set(tmp, value);
-					nvram_modified = 1;
-					_dprintf("set %s=%s\n", tmp, value);
-				}
-			}
 			else if(!strncmp(name, "vpn_crt_server_", 15) && unit!=-1) {
 				ovpn_key_t key_type;
 				char buf[4096];
@@ -2964,6 +2999,9 @@ static int validate_apply(webs_t wp, json_object *root) {
 				else if(!strcmp(name+15, "dh")) {
 					key_type = OVPN_SERVER_DH;
 				}
+				else if(!strcmp(name+15, "extra")) {
+					key_type = OVPN_SERVER_CA_EXTRA;
+				}
 				else {
 					_dprintf("unknown key type %s\n", name);
 					continue;
@@ -2972,7 +3010,7 @@ static int validate_apply(webs_t wp, json_object *root) {
 				get_ovpn_key(OVPN_TYPE_SERVER, unit, key_type, buf, sizeof(buf));
 
 				if(strcmp(buf, value)) {
-					set_ovpn_key(OVPN_TYPE_SERVER, unit, key_type, buf, NULL);
+					set_ovpn_key(OVPN_TYPE_SERVER, unit, key_type, value, NULL);
 					nvram_modified = 1;
 					_dprintf("set %s=%s\n", tmp, value);
 				}
@@ -2999,6 +3037,9 @@ static int validate_apply(webs_t wp, json_object *root) {
 				else if(!strcmp(name+15, "crl")) {
 					key_type = OVPN_CLIENT_CRL;
 				}
+				else if(!strcmp(name+15, "extra")) {
+					key_type = OVPN_CLIENT_CA_EXTRA;
+				}
 				else {
 					_dprintf("unknown key type %s\n", name);
 					continue;
@@ -3007,12 +3048,38 @@ static int validate_apply(webs_t wp, json_object *root) {
 				get_ovpn_key(OVPN_TYPE_CLIENT, unit, key_type, buf, sizeof(buf));
 
 				if(strcmp(buf, value)) {
-					set_ovpn_key(OVPN_TYPE_CLIENT, unit, key_type, buf, NULL);
+					set_ovpn_key(OVPN_TYPE_CLIENT, unit, key_type, value, NULL);
+					nvram_modified = 1;
+					_dprintf("set %s=%s\n", tmp, value);
+				}
+			}
+			else if(!strncmp(name, "vpn_server_", 11) && unit!=-1) {
+				snprintf(prefix, sizeof(prefix), "vpn_server%d_", unit);
+				(void)strcat_r(prefix, name+11, tmp);
+
+				if(strcmp(nvram_safe_get(tmp), value)) {
+					nvram_set(tmp, value);
+					nvram_modified = 1;
+					_dprintf("set %s=%s\n", tmp, value);
+				}
+			}
+			else if(!strncmp(name, "vpn_client_", 11) && unit!=-1) {
+				snprintf(prefix, sizeof(prefix), "vpn_client%d_", unit);
+				(void)strcat_r(prefix, name+11, tmp);
+
+				if(strcmp(nvram_safe_get(tmp), value)) {
+					nvram_set(tmp, value);
 					nvram_modified = 1;
 					_dprintf("set %s=%s\n", tmp, value);
 				}
 			}
 #endif
+			else if(!strncmp(name, "sshd_", 5)) {
+				write_encoded_crt(name, value);
+				nvram_modified = 1;
+				_dprintf("set %s=%s\n", name, value);
+			}
+
 #ifdef RTCONFIG_DISK_MONITOR
 			else if(!strncmp(name, "diskmon_", 8)) {
 				snprintf(prefix, sizeof(prefix), "usb_path%s_diskmon_", nvram_safe_get("diskmon_usbport"));
@@ -5324,7 +5391,6 @@ static int ej_get_ascii_parameter(int eid, webs_t wp, int argc, char_t **argv){
 
 	if (buf != tmp)
 		free(buf);
-
 	return ret;
 }
 
@@ -5512,9 +5578,10 @@ static int get_cpu_temperature(int eid, webs_t wp, int argc, char_t **argv)
 	if ((fp = fopen("/sys/class/thermal/thermal_zone0/temp", "r")) != NULL) {
 		fscanf(fp, "%d", &temperature);
 		fclose(fp);
+		return websWrite(wp, "%3.3f", (double) temperature / 1000);
+	} else {
+		return websWrite(wp, "%s", "");
 	}
-
-	return websWrite(wp, "%3.3f", (double) temperature / 1000);
 #else
 	FILE *fp;
 	int temperature = -1;
@@ -5775,7 +5842,7 @@ ej_IP_dhcpLeaseInfo(int eid, webs_t wp, int argc, char_t **argv)
 #define DHCP_LEASE_FILE		"/var/lib/misc/dnsmasq.leases"
 #define IPV6_CLIENT_NEIGH	"/tmp/ipv6_neigh"
 #define IPV6_CLIENT_INFO	"/tmp/ipv6_client_info"
-#define	IPV6_CLIENT_LIST	"/tmp/ipv6_client_list"
+//#define	IPV6_CLIENT_LIST	"/tmp/ipv6_client_list"	// Moved to httpd.h
 #define	MAC			1
 #define	HOSTNAME		2
 #define	IPV6_ADDRESS		3
@@ -5785,7 +5852,6 @@ static int compare_back(FILE *fp, int current_line, char *buffer);
 static int check_mac_previous(char *mac);
 static char *value(FILE *fp, int line, int token);
 static void find_hostname_by_mac(char *mac, char *hostname);
-static void get_ipv6_client_info();
 static int total_lines = 0;
 
 /* Init File and clear the content */
@@ -5831,7 +5897,7 @@ static char *get_stok(char *str, char *dest, char delimiter)
 		if (p == str)
 			*dest = '\0';
 		else
-			strncpy(dest, str, p-str);
+			strlcpy(dest, str, p-str);
 
 		p++;
 	} else
@@ -5857,10 +5923,10 @@ static char *value(FILE *fp, int line, int token)
 	}
 	memset(buffer, 0, sizeof(buffer));
 	switch (token) {
-		case MAC:
+		case HOSTNAME:
 			get_stok(temp, buffer, ' ');
 			break;
-		case HOSTNAME:
+		case MAC:
 			ptr = get_stok(temp, buffer, ' ');
 			if (ptr)
 				get_stok(ptr, buffer, ' ');
@@ -5957,7 +6023,7 @@ static void find_hostname_by_mac(char *mac, char *hostname)
 
 		if (strncasecmp(macaddr, mac, 17) == 0) {
 			fclose(fp);
-			strcpy(hostname, host_name);
+			strlcpy(hostname, host_name, 64);
 			return;
 		}
 
@@ -5967,10 +6033,10 @@ static void find_hostname_by_mac(char *mac, char *hostname)
 	}
 	fclose(fp);
 END:
-	strcpy(hostname, "");
+	strcpy(hostname, "<unknown>");
 }
 
-static void get_ipv6_client_info()
+void get_ipv6_client_info()
 {
 	FILE *fp;
 	char buffer[128], ipv6_addr[128], mac[32];
@@ -6011,7 +6077,7 @@ static void get_ipv6_client_info()
 	fclose(fp);
 }
 
-static void get_ipv6_client_list(void)
+void get_ipv6_client_list(void)
 {
 	FILE *fp;
 	int line_index = 1;
@@ -6234,7 +6300,7 @@ const static struct {
 };
 
 #ifdef RTCONFIG_IPV6
-static int inet_raddr6_pton(const char *src, void *dst, void *buf)
+int inet_raddr6_pton(const char *src, void *dst, void *buf)
 {
 	char *sptr = (char *) src;
 	char *dptr = buf;
@@ -6249,6 +6315,7 @@ static int inet_raddr6_pton(const char *src, void *dst, void *buf)
 	return inet_pton(AF_INET6, buf, dst);
 }
 
+#if 0
 static int ipv6_route_table(webs_t wp)
 {
 	FILE *fp;
@@ -6342,8 +6409,10 @@ again:
 
 	return ret;
 }
+#endif	// if 0
 #endif
 
+#if 0
 static int ipv4_route_table(webs_t wp)
 {
 	FILE *fp;
@@ -6416,9 +6485,11 @@ static int ipv4_route_table(webs_t wp)
 				 inet_ntoa(mask), sflags, metric, ref, use, dev ? : "", ifname);
 	}
 	fclose(fp);
+	if (buf != tmp) free(buf);
 
 	return ret;
 }
+
 
 int
 ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
@@ -6437,6 +6508,7 @@ ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
 
 	return ret;
 }
+#endif // if 0
 
 #ifdef RTCONFIG_NETOOL
 int
@@ -6650,6 +6722,7 @@ netool(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, char_t *url, char_
 	return;
 }
 #endif
+
 static int ej_get_arp_table(int eid, webs_t wp, int argc, char_t **argv){
 	const int MAX = 80;
 	const int FIELD_NUM = 6;
@@ -9613,10 +9686,12 @@ int ej_shown_language_css(int eid, webs_t wp, int argc, char **argv){
 
 	memset(lang, 0, 4);
 	strcpy(lang, nvram_safe_get("preferred_lang"));
+#if 0
 	if(!strncmp(nvram_safe_get("territory_code"), "JP", 2) && strcmp(nvram_safe_get(ATE_FACTORY_MODE_STR()), "1")){
 		websWrite(wp, "<li style=\"visibility:hidden;\"><dl><a href=\"#\"><dt id=\"selected_lang\"></dt></a>\\n");
 	}
 	else{
+#endif
 		websWrite(wp, "<li><dl><a href=\"#\"><dt id=\"selected_lang\"></dt></a>\\n");
 		while (1) {
 			memset(buffer, 0, sizeof(buffer));
@@ -9648,10 +9723,10 @@ int ej_shown_language_css(int eid, webs_t wp, int argc, char **argv){
 			}
 			else
 				break;
-
 		}
+#if 0
 	}
-
+#endif
 	websWrite(wp, "</dl></li>\\n");
 	fclose(fp);
 
@@ -9683,7 +9758,7 @@ send_action(char *ftp_url,int port)
 		close(my_fd);
 		return NULL;
 	}
-	sprintf(str,"refresh@%s",ftp_url);
+	snprintf(str,sizeof(str),"refresh@%s",ftp_url);
 	_dprintf("socket:%s\n",str);
 	if (send(my_fd, str, strlen(str), 0) == -1) {
 		perror("send");
@@ -9752,7 +9827,7 @@ json_unescape(char *s)
 		if (*s == '%') {
 			sscanf(s + 1, "%02x", &c);
 			*s++ = (char) c;
-			strncpy(s, s + 2, strlen(s) + 1);
+			strlcpy(s, s + 2, strlen(s) + 1);
 		}
 		/* Space is special */
 		else if (*s == '+')
@@ -10024,6 +10099,11 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				nvram_set("ateUpgrade_flag", "1");
 			}
 		}
+		else if(!strcmp(current_url, "Main_ConnStatus_Content.asp") &&
+			(strncasecmp(system_cmd, "netstat-nat", 11) == 0)){
+			strlcpy(SystemCmd, system_cmd, sizeof(SystemCmd));
+		}
+
 		else{
 			_dprintf("[httpd] Invalid SystemCmd!\n");
 			strcpy(SystemCmd, "");
@@ -10290,6 +10370,11 @@ wps_finish:
 
 		if(action_para)
 			nvram_set("vpn_server_unit", action_para);
+
+		action_para = websGetVar(wp, "VPNServer_mode", "");
+
+		if(action_para)
+			nvram_set("VPNServer_mode", action_para);
 
 		websRedirect(wp, current_url);
 	}
@@ -11028,7 +11113,7 @@ do_auth(char *userid, char *passwd, char *realm)
 
 	reget_passwd = 0;
 
-	strncpy(userid, UserID, AUTH_MAX);
+	strlcpy(userid, UserID, AUTH_MAX);
 
 	if (!is_auth())
 	{
@@ -11036,9 +11121,9 @@ do_auth(char *userid, char *passwd, char *realm)
 	}
 	else
 	{
-		strncpy(passwd, UserPass, AUTH_MAX);
+		strlcpy(passwd, UserPass, AUTH_MAX);
 	}
-	strncpy(realm, ProductID, AUTH_MAX);
+	strlcpy(realm, ProductID, AUTH_MAX);
 }
 
 //andi
@@ -11986,6 +12071,12 @@ do_vpnupload_cgi(char *url, FILE *stream)
 		else if(!strcmp(filetype, "scrl")) {
 			set_ovpn_key(OVPN_TYPE_SERVER, unit, OVPN_SERVER_CRL, NULL, VPN_CLIENT_UPLOAD);
 		}
+		else if(!strcmp(filetype, "extra")) {
+			set_ovpn_key(OVPN_TYPE_CLIENT, unit, OVPN_CLIENT_CA_EXTRA, NULL, VPN_CLIENT_UPLOAD);
+			state = nvram_get_int("vpn_upload_state");
+			nvram_set_int("vpn_upload_state", state & (~VPN_UPLOAD_NEED_EXTRA));
+		}
+
 	}
 	else
 	{
@@ -12742,7 +12833,7 @@ deleteOfflineClient(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, char_
 	int lock;
 
 	i = 0;
-	while(*mac) {
+	while((*mac) && (i < 12)) {
 		if(*mac==':') {
 			mac++;
 			continue;
@@ -13588,7 +13679,7 @@ static char syslog_txt[] =
 ;
 
 static char cache_object[] =
-"Cache-Control: max-age=300"
+"Cache-Control: max-age=3600"
 ;
 
 #ifdef RTCONFIG_USB_MODEM
@@ -14866,7 +14957,9 @@ struct mime_handler mime_handlers[] = {
 	{ "ure_success.htm", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
 	{ "ureip.asp", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
 	{ "remote.asp", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "js/jquery.js", "text/javascript", no_cache_IE7, NULL, do_file, NULL }, // 2010.09 James.
+	{ "js/jquery.js", "text/javascript", cache_object, NULL, do_file, NULL }, // 2010.09 James.
+	{ "js/ouiDB.js", "text/javascript", cache_object, NULL, do_file, NULL },
+	{ "js/chart.min.js", "text/javascript", cache_object, NULL, do_file, NULL },
 	{ "require/require.min.js", "text/javascript", no_cache_IE7, NULL, do_file, NULL },
 	{ "httpd_check.xml", "text/xml", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
 	{ "repage.json", "application/json", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
@@ -14913,7 +15006,7 @@ struct mime_handler mime_handlers[] = {
 	{ "**.tgz", "application/octet-stream", NULL, NULL, do_file, NULL },
 	{ "**.zip", "application/octet-stream", NULL, NULL, do_file, NULL },
 	{ "**.ipk", "application/octet-stream", NULL, NULL, do_file, NULL },
-	{ "**.css", "text/css", NULL, NULL, do_file, NULL },
+	{ "**.css", "text/css", cache_object, NULL, do_file, NULL },
 #if defined(RTCONFIG_IFTTT) || defined(RTCONFIG_ALEXA)
 	{ "images/New_ui/asustitle.png", "image/png", no_cache_IE7, do_html_post_and_get, do_file, NULL },
 #endif
@@ -14984,16 +15077,22 @@ struct mime_handler mime_handlers[] = {
 #endif
 	// Viz 2010.08 vvvvv
 	{ "update.cgi*", "text/javascript", no_cache_IE7, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5
-	{ "bwm/*.gz", NULL, no_cache, do_html_post_and_get, wo_bwmbackup, do_auth }, // jerry5
+	{ "bwm/*.gz", NULL, no_cache, do_html_post_and_get, wo_bwmbackup, do_auth }, /* jerry5 */
 	// end Viz  ^^^^^^^^
+	{ "**.pac", "application/x-ns-proxy-autoconfig", NULL, NULL, do_file, NULL },
+	{ "wpad.dat", "application/x-ns-proxy-autoconfig", NULL, NULL, do_file, NULL },
 #ifdef TRANSLATE_ON_FLY
 	{ "change_lang.cgi*", "text/html", no_cache_IE7, do_lang_post, do_lang_cgi, do_auth },
 #endif //TRANSLATE_ON_FLY
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
+	{ "backup_jffs.tar", "application/force-download", NULL, NULL, do_jffs_file, do_auth },
+	{ "jffsupload.cgi*", "text/html", no_cache_IE7, do_jffsupload_post, do_jffsupload_cgi, do_auth },
+#endif
 #ifdef RTCONFIG_OPENVPN
 	{ "vpnupload.cgi*", "text/html", no_cache_IE7, do_vpnupload_post, do_vpnupload_cgi, do_auth },
 #endif
 #ifdef RTCONFIG_CAPTIVE_PORTAL
-	{ "jffs/customized_splash/**.json", "application/json", NULL, NULL, do_file, NULL },
+	{ "jffs/customized_splash/**.json", "application/json", NULL, NULL, do_file, NULL }, /* */
 	{ "splash_page.cgi*", "text/html", no_cache_IE7, do_splash_page_post, do_splash_page_cgi, do_auth },
 	{ "splash_page_del.cgi*", "text/html", no_cache_IE7, do_splash_page_del, do_splash_page_cgi, do_auth },
 #endif
@@ -15034,7 +15133,7 @@ struct except_mime_handler except_mime_handlers[] = {
 	{ "images/New_ui/icon_titleName.png", MIME_EXCEPTION_MAINPAGE},
 #ifdef RTCONFIG_WIFI_SON
 	{ "QIS_*", MIME_EXCEPTION_NOAUTH_FIRST},
-	{ "qis/*", MIME_EXCEPTION_NOAUTH_FIRST},
+	{ "qis/*", MIME_EXCEPTION_NOAUTH_FIRST}, /* */
 	{ "*.css", MIME_EXCEPTION_NOAUTH_FIRST},
 	{ "state.js", MIME_EXCEPTION_NOAUTH_FIRST},
 	{ "popup.js", MIME_EXCEPTION_NOAUTH_FIRST},
@@ -17308,7 +17407,7 @@ int ej_cloud_status(int eid, webs_t wp, int argc, char **argv){
 	FILE *fp = fopen("/tmp/smartsync/.logs/asuswebstorage", "r");
 	char line[PATH_MAX], buf[PATH_MAX];
 	int line_num;
-	char status[16], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX];
+	char status[17], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX];
 
 	websWrite(wp, "cloud_sync=\"%s\";\n", nvram_safe_get("cloud_sync"));
 
@@ -17319,7 +17418,7 @@ int ej_cloud_status(int eid, webs_t wp, int argc, char **argv){
 		return 0;
 	}
 
-	memset(status, 0, 16);
+	memset(status, 0, 17);
 	memset(mounted_path, 0, PATH_MAX);
 	memset(target_obj, 0, PATH_MAX);
 	memset(error_msg, 0, PATH_MAX);
@@ -17380,7 +17479,7 @@ int ej_UI_cloud_status(int eid, webs_t wp, int argc, char **argv){
 	FILE *fp = fopen("/tmp/smartsync/.logs/asuswebstorage", "r");
 	char line[PATH_MAX], buf[PATH_MAX], dest[PATH_MAX];
 	int line_num;
-	char status[16], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], captcha_url[PATH_MAX];
+	char status[17], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], captcha_url[PATH_MAX];
 
 	if(fp == NULL){
 		websWrite(wp, "cloud_status=\"WAITING\";\n"); //gauss change status fromm 'ERROR' to 'WAITING' 2014.11.4
@@ -17392,7 +17491,7 @@ int ej_UI_cloud_status(int eid, webs_t wp, int argc, char **argv){
 		return 0;
 	}
 
-	memset(status, 0, 16);
+	memset(status, 0, 17);
 	memset(mounted_path, 0, PATH_MAX);
 	memset(target_obj, 0, PATH_MAX);
 	memset(error_msg, 0, PATH_MAX);
@@ -17411,28 +17510,28 @@ int ej_UI_cloud_status(int eid, webs_t wp, int argc, char **argv){
 		}
 		else if(strstr(line, "MOUNT_PATH") != NULL){
 			memset(buf, 0, PATH_MAX);
-			substr(dest, line, 11, PATH_MAX);
+			substr(dest, line, 11, PATH_MAX-11);
 			char_to_ascii(buf, dest);
 			strcpy(mounted_path, buf);
 		}
 		else if(strstr(line, "FILENAME") != NULL){
-			substr(dest, line, 9, PATH_MAX);
+			substr(dest, line, 9, PATH_MAX-9);
 			strcpy(target_obj, dest); // support Chinese
 		}
 		else if(strstr(line, "ERR_MSG") != NULL){
-			substr(dest, line, 8, PATH_MAX);
+			substr(dest, line, 8, PATH_MAX-8);
 			strcpy(error_msg, dest);
 		}
 		else if(strstr(line, "TOTAL_SPACE") != NULL){
-			substr(dest, line, 12, PATH_MAX);
+			substr(dest, line, 12, PATH_MAX-12);
 			strcpy(full_capa, dest);
 		}
 		else if(strstr(line, "USED_SPACE") != NULL){
-			substr(dest, line, 11, PATH_MAX);
+			substr(dest, line, 11, PATH_MAX-11);
 			strcpy(used_capa, dest);
 		}
 		else if(strstr(line, "CAPTCHA_URL") != NULL){
-			substr(dest, line, 12, PATH_MAX);
+			substr(dest, line, 12, PATH_MAX-12);
 			strcpy(captcha_url, dest);
 		}
 
@@ -17468,7 +17567,7 @@ int ej_UI_cloud_dropbox_status(int eid, webs_t wp, int argc, char **argv){
 	FILE *fp = fopen("/tmp/smartsync/.logs/dropbox", "r");
 	char line[PATH_MAX], buf[PATH_MAX], dest[PATH_MAX];
 	int line_num;
-	char status[16], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
+	char status[17], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
 
 	if(fp == NULL){
 		websWrite(wp, "cloud_dropbox_status=\"WAITING\";\n"); //gauss change status fromm 'ERROR' to 'WAITING' 2014.11.4
@@ -17480,7 +17579,7 @@ int ej_UI_cloud_dropbox_status(int eid, webs_t wp, int argc, char **argv){
 		return 0;
 	}
 
-	memset(status, 0, 16);
+	memset(status, 0, 17);
 	memset(mounted_path, 0, PATH_MAX);
 	memset(target_obj, 0, PATH_MAX);
 	memset(error_msg, 0, PATH_MAX);
@@ -17556,7 +17655,7 @@ int ej_UI_cloud_ftpclient_status(int eid, webs_t wp, int argc, char **argv){
 	FILE *fp = fopen("/tmp/smartsync/.logs/ftpclient", "r");
 	char line[PATH_MAX], buf[PATH_MAX], dest[PATH_MAX];
 	int line_num;
-	char status[16], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
+	char status[17], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
 
 	if(fp == NULL){
 		websWrite(wp, "cloud_ftpclient_status=\"WAITING\";\n"); //gauss change status fromm 'ERROR' to 'WAITING' 2014.11.4
@@ -17568,7 +17667,7 @@ int ej_UI_cloud_ftpclient_status(int eid, webs_t wp, int argc, char **argv){
 		return 0;
 	}
 
-	memset(status, 0, 16);
+	memset(status, 0, 17);
 	memset(mounted_path, 0, PATH_MAX);
 	memset(target_obj, 0, PATH_MAX);
 	memset(error_msg, 0, PATH_MAX);
@@ -17644,7 +17743,7 @@ int ej_UI_cloud_sambaclient_status(int eid, webs_t wp, int argc, char **argv){
 	FILE *fp = fopen("/tmp/smartsync/.logs/sambaclient", "r");
 	char line[PATH_MAX], buf[PATH_MAX], dest[PATH_MAX];
 	int line_num;
-	char status[16], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
+	char status[17], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
 
 	if(fp == NULL){
 		websWrite(wp, "cloud_sambaclient_status=\"WAITING\";\n"); //gauss change status fromm 'ERROR' to 'WAITING' 2014.11.4
@@ -17656,7 +17755,7 @@ int ej_UI_cloud_sambaclient_status(int eid, webs_t wp, int argc, char **argv){
 		return 0;
 	}
 
-	memset(status, 0, 16);
+	memset(status, 0, 17);
 	memset(mounted_path, 0, PATH_MAX);
 	memset(target_obj, 0, PATH_MAX);
 	memset(error_msg, 0, PATH_MAX);
@@ -17732,7 +17831,7 @@ int ej_UI_cloud_usbclient_status(int eid, webs_t wp, int argc, char **argv){
 	FILE *fp = fopen("/tmp/smartsync/.logs/usbclient", "r");
 	char line[PATH_MAX], buf[PATH_MAX], dest[PATH_MAX];
 	int line_num;
-	char status[16], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
+	char status[17], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX], rule_num[PATH_MAX];
 
 	if(fp == NULL){
 		websWrite(wp, "cloud_usbclient_status=\"WAITING\";\n"); //gauss change status fromm 'ERROR' to 'WAITING' 2014.11.4
@@ -17744,7 +17843,7 @@ int ej_UI_cloud_usbclient_status(int eid, webs_t wp, int argc, char **argv){
 		return 0;
 	}
 
-	memset(status, 0, 16);
+	memset(status, 0, 17);
 	memset(mounted_path, 0, PATH_MAX);
 	memset(target_obj, 0, PATH_MAX);
 	memset(error_msg, 0, PATH_MAX);
@@ -17820,7 +17919,7 @@ int ej_UI_rs_status(int eid, webs_t wp, int argc, char **argv){
 	FILE *fp = fopen("/tmp/Cloud/log/WebDAV", "r");
 	char line[PATH_MAX], buf[PATH_MAX], dest[PATH_MAX];
 	int line_num;
-	char rulenum[PATH_MAX], status[16], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX];
+	char rulenum[PATH_MAX], status[17], mounted_path[PATH_MAX], target_obj[PATH_MAX], error_msg[PATH_MAX], full_capa[PATH_MAX], used_capa[PATH_MAX];
 
 	if(fp == NULL){
 		websWrite(wp, "rs_rulenum=\"\";\n");
@@ -17832,7 +17931,7 @@ int ej_UI_rs_status(int eid, webs_t wp, int argc, char **argv){
 		return 0;
 	}
 
-	memset(status, 0, 16);
+	memset(status, 0, 17);
 	memset(rulenum, 0, PATH_MAX);
 	memset(mounted_path, 0, PATH_MAX);
 	memset(target_obj, 0, PATH_MAX);
@@ -17850,29 +17949,29 @@ int ej_UI_rs_status(int eid, webs_t wp, int argc, char **argv){
 			strncpy(status, convert_cloudsync_status(line), 16);
 		}
 		else if(strstr(line, "RULENUM") != NULL){
-			substr(dest, line, 8, PATH_MAX);
+			substr(dest, line, 8, PATH_MAX-8);
 			strcpy(rulenum, dest);
 		}
 		else if(strstr(line, "MOUNT_PATH") != NULL){
 			memset(buf, 0, PATH_MAX);
-			substr(dest, line, 11, PATH_MAX);
+			substr(dest, line, 11, PATH_MAX-11);
 			char_to_ascii(buf, dest);
 			strcpy(mounted_path, buf);
 		}
 		else if(strstr(line, "FILENAME") != NULL){
-			substr(dest, line, 9, PATH_MAX);
+			substr(dest, line, 9, PATH_MAX-9);
 			strcpy(target_obj, dest); // support Chinese
 		}
 		else if(strstr(line, "ERR_MSG") != NULL){
-			substr(dest, line, 8, PATH_MAX);
+			substr(dest, line, 8, PATH_MAX-8);
 			strcpy(error_msg, dest);
 		}
 		else if(strstr(line, "TOTAL_SPACE") != NULL){
-			substr(dest, line, 12, PATH_MAX);
+			substr(dest, line, 12, PATH_MAX-12);
 			strcpy(full_capa, dest);
 		}
 		else if(strstr(line, "USED_SPACE") != NULL){
-			substr(dest, line, 11, PATH_MAX);
+			substr(dest, line, 11, PATH_MAX-11);
 			strcpy(used_capa, dest);
 		}
 
@@ -18400,7 +18499,6 @@ static int ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 #endif	/* RTCONFIG_BCM5301X_TRAFFIC_MONITOR */
 				if (!netdev_calc(ifname, ifname_desc, (long unsigned int *) &rx, (long unsigned int *) &tx, ifname_desc2, (long unsigned int *) &rx2, (long unsigned int *) &tx2, nv_lan_ifname, nv_lan_ifnames)) continue;
 
-
 loopagain:
 				if (!strncmp(ifname_desc, "WIRELESS0", 9)) {
 					wl0_valid = 1;
@@ -18436,7 +18534,6 @@ loopagain:
 					}
 						comma = ',';
 				}
-
 				if(strlen(ifname_desc2)) {
 					strcpy(ifname_desc, ifname_desc2);
 					rx = rx2;
@@ -18953,6 +19050,7 @@ ej_cpu_core_num(int eid, webs_t wp, int argc, char_t **argv){
 
 	websWrite(wp, "%d", count);
 	return 0;
+
 }
 
 static int
@@ -21224,7 +21322,7 @@ ej_httpd_cert_info(int eid, webs_t wp, int argc, char **argv)
 	int le_enable = nvram_get_int("le_enable");
 	int http_enable = nvram_get_int("http_enable");
 
-	if(http_enable == 0)	//http only
+	if(http_enable == 0)    //http only
 	{
 		if(le_enable == 1)
 			get_path_le_domain_cert(cert_path, sizeof(cert_path));
@@ -21237,9 +21335,11 @@ ej_httpd_cert_info(int eid, webs_t wp, int argc, char **argv)
 #endif
 	{
 		snprintf(cert_path, sizeof(cert_path), "%s", HTTPD_CERT);
+//		strcpy(cert_path, UPLOAD_CERT);
 	}
 
 	fp = fopen(cert_path, "r");
+
 	if (fp == NULL){
 		websWrite(wp, "{\"issueTo\":\"\",\"issueBy\":\"\",\"from\":\"\",\"expire\":\"\"}");
 		return FALSE;
@@ -21268,6 +21368,55 @@ ej_httpd_cert_info(int eid, webs_t wp, int argc, char **argv)
 
 	websWrite(wp, "{");
 	websWrite(wp, "\"issueTo\":\"%s\",", subject);
+
+	websWrite(wp, "\"SAN\":\"");
+
+// Dump SANs
+	GENERAL_NAMES* names = NULL;
+	unsigned char* utf8 = NULL;
+
+	do
+	{
+		names = X509_get_ext_d2i(x509data, NID_subject_alt_name, 0, 0 );
+		if(!names) break;
+
+		int i = 0, count = sk_GENERAL_NAME_num(names);
+		if(!count) break; /* failed */
+
+		for( i = 0; i < count; ++i )
+		{
+			GENERAL_NAME* entry = sk_GENERAL_NAME_value(names, i);
+			if(!entry) continue;
+
+			if(GEN_DNS == entry->type)
+			{
+				int len1 = 0, len2 = -1;
+
+				len1 = ASN1_STRING_to_UTF8(&utf8, entry->d.dNSName);
+				if(utf8) {
+					len2 = (int)strlen((const char*)utf8);
+				}
+
+				if(utf8 && len1 && len2 && (len1 == len2)) {
+					websWrite(wp, "%s ", utf8);
+				}
+
+				if(utf8) {
+					OPENSSL_free(utf8), utf8 = NULL;
+				}
+
+			}
+		}
+	} while (0);
+
+	if(names)
+		GENERAL_NAMES_free(names);
+
+	if(utf8)
+		OPENSSL_free(utf8);
+
+	websWrite(wp, "\",");
+
 	websWrite(wp, "\"issueBy\":\"%s\",", issuer);
 	websWrite(wp, "\"from\":\"%s\",", notBefore);
 	websWrite(wp, "\"expire\":\"%s\"", notAfter);
@@ -21634,105 +21783,67 @@ ej_get_fwdl_percent(int eid, webs_t wp, int argc, char **argv)
 }
 
 static int
-ej_get_wan_lan_status(int eid, webs_t wp, int argc, char **argv) {
-	char out[128];
-	char cmd[32];
-	int out_len = 0;
-	int ret = 0;
-	int idx = 0;
-	char item[8];
-	char item_tmp[2];
-	char speed[2];
-	char count[2];
-	int wanCount = 0, lanCount = 0;
-	FILE *p_fp = NULL;
+ej_get_wan_lan_status(int eid, webs_t wp, int argc, char **argv)
+{
+	FILE *fp;
+	char line[128], name[sizeof("WAN XXXXXXXXXX")], *ptr, *item, *port, *speed;
+	int wan_count, lan_count, ret = 0;
 
-	struct json_object *wanLanStatus = NULL, *wanLanLinkSpeed = NULL, *wanLanCount = NULL;
-	wanLanStatus = json_object_new_object();
-	wanLanLinkSpeed = json_object_new_object();
-	wanLanCount = json_object_new_object();
+	struct json_object *wanLanStatus = json_object_new_object();
+	struct json_object *wanLanLinkSpeed = json_object_new_object();
+	struct json_object *wanLanCount = json_object_new_object();
 
-	memset(out, 0, sizeof(out));
-	memset(cmd, 0, sizeof(cmd));
+	if (wanLanStatus == NULL || wanLanLinkSpeed == NULL || wanLanCount == NULL)
+		goto error;
 
-	snprintf(cmd, sizeof(cmd), "%s", "ATE Get_WanLanStatus");
+	fp = popen("ATE Get_WanLanStatus", "r");
+	if (fp == NULL)
+		goto error;
 
-	if((p_fp = popen(cmd, "r")) != NULL) {
-		while (!feof(p_fp)){
-			if(fgets(out, sizeof(out), p_fp)) {
-				out_len = strlen(out);
-				if (out_len > 0) {
-					if(out[out_len - 1] == '\n' || out[out_len - 1] == '\r')
-						out[out_len - 1] = '\0';
+	ptr = fgets(line, sizeof(line), fp);
+	pclose(fp);
 
-					//ex, out is W0=M;L1=X;L2=X;L3=X;L4=G; tranform { "WAN 0": "M", "LAN 1": "X", "LAN 2": "X", "LAN 3": "X", "LAN 4": "G" }
-					for (idx = 0; idx < out_len; idx++) {
-						if(out[idx] != '\0') {
-							if(out[idx] >= '0' && out[idx] <= '9') {
-								memset(item_tmp, 0, sizeof(item_tmp));
-								item_tmp[0] = out[idx];
-								item_tmp[1] = '\0';
-								strlcat(item, item_tmp, sizeof(item));
-								json_object_object_add(wanLanLinkSpeed, item, json_object_new_string("X")); //default port speed
-							}
-							else {
-								switch (out[idx]) {
-									case 'W' :
-										memset(item, 0, sizeof(item));
-										strlcat(item, "WAN ", sizeof(item));
-										wanCount++;
-										break;
-									case 'L' :
-										memset(item, 0, sizeof(item));
-										strlcat(item, "LAN ", sizeof(item));
-										lanCount++;
-										break;
-									case 'M' :
-									case 'G' :
-									case 'X' :
-										memset(speed, 0, sizeof(speed));
-										speed[0] = out[idx];
-										speed[1] = '\0';
-										json_object_object_add(wanLanLinkSpeed, item, json_object_new_string(speed)); //Update port speed
-										break;
-									default :
-										break;
-								}
-							}
-						}
-					}
-					memset(count, 0, sizeof(count));
-					snprintf(count, sizeof(count), "%d", wanCount);
-					json_object_object_add(wanLanCount, "wanCount", json_object_new_string(count));
-					memset(count, 0, sizeof(count));
-					snprintf(count, sizeof(count), "%d", lanCount);
-					json_object_object_add(wanLanCount, "lanCount", json_object_new_string(count));
-					json_object_object_add(wanLanStatus, "portSpeed", wanLanLinkSpeed);
-					json_object_object_add(wanLanStatus, "portCount", wanLanCount);
-					ret = websWrite(wp, "%s", json_object_get_string(wanLanStatus));
-				}
-				else {
-					ret = websWrite(wp, "{}");
-				}
-			}
+	wan_count = lan_count = 0;
+	while ((item = strsep(&ptr, ";\r\n")) != NULL) {
+		if (vstrsep(item, "=", &port, &speed) < 2)
+			continue;
+		switch (*port++) {
+		case 'W':
+			snprintf(name, sizeof(name), "%s%s%s", "WAN", *port ? " " : "", port);
+			wan_count++;
+			break;
+		case 'L':
+			snprintf(name, sizeof(name), "%s%s%s", "LAN", *port ? " " : "", port);
+			lan_count++;
+			break;
+		default:
+			continue;
 		}
-		pclose(p_fp);
+		json_object_object_add(wanLanLinkSpeed, name, json_object_new_string(speed));
 	}
-	else {
-		ret = websWrite(wp, "{}");
-	}
+	json_object_object_add(wanLanCount, "wanCount", json_object_new_int(wan_count));
+	json_object_object_add(wanLanCount, "lanCount", json_object_new_int(lan_count));
+	json_object_object_add(wanLanStatus, "portSpeed", wanLanLinkSpeed);
+	json_object_object_add(wanLanStatus, "portCount", wanLanCount);
 
-	
-	if(wanLanStatus)
+	ptr = (char *)json_object_get_string(wanLanStatus);
+	if (ptr == NULL)
+		goto error;
+
+	ret = websWrite(wp, "%s", ptr);
+
+error:
+	if (ret == 0)
+		ret = websWrite(wp, "{}");
+	if (wanLanStatus)
 		json_object_put(wanLanStatus);
-	if(wanLanLinkSpeed)
+	if (wanLanLinkSpeed)
 		json_object_put(wanLanLinkSpeed);
-	if(wanLanCount)
+	if (wanLanCount)
 		json_object_put(wanLanCount);
 
 	return ret;
 }
-
 
 static int ej_get_wifi_probe_status(int eid, webs_t wp, int argc, char **argv){
 
@@ -21814,6 +21925,13 @@ struct ej_handler ej_handlers[] = {
 	{ "qrate", ej_qos_packet},
 	{ "ctdump", ej_ctdump},
 	{ "netdev", ej_netdev},
+
+#if !defined(HND_ROUTER)
+	{ "iptraffic", ej_iptraffic},
+	{ "iptmon", ej_iptmon},
+	{ "ipt_bandwidth", ej_ipt_bandwidth},
+#endif
+
 	{ "bandwidth", ej_bandwidth},
 #ifdef RTCONFIG_DSL
 	{ "spectrum", ej_spectrum}, //Ren
@@ -21994,6 +22112,7 @@ struct ej_handler ej_handlers[] = {
 	{ "wl_auth_list", ej_wl_auth_list},
 #if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_LANTIQ)
 	{ "wl_control_channel", ej_wl_control_channel},
+	{ "wl_extent_channel", ej_wl_extent_channel},
 #endif
 	{ "get_wlstainfo_list", ej_get_wlstainfo_list},
 #ifdef RTCONFIG_DSL
@@ -22052,8 +22171,23 @@ struct ej_handler ej_handlers[] = {
 	{ "get_default_ssid", ej_get_default_ssid},
 #endif
 	{ "get_default_reboot_time", ej_get_default_reboot_time},
+	{ "sysinfo",  ej_show_sysinfo},
+#ifdef RTCONFIG_IPV6
+#ifdef RTCONFIG_IGD2
+	{ "ipv6_pinholes",  ej_ipv6_pinhole_array},
+#endif
+	{ "get_ipv6net_array", ej_lan_ipv6_network_array},
+#endif
+	{ "get_leases_array", ej_get_leases_array},
+	{ "get_vserver_array", ej_get_vserver_array},
+	{ "get_upnp_array", ej_get_upnp_array},
+	{ "get_route_array", ej_get_route_array},
+	{ "get_tcclass_array", ej_tcclass_dump_array},
+#ifdef RTCONFIG_BCMWL6
+	{ "get_wl_status", ej_wl_status_2g_array},
+#endif
 	{ "radio_status", ej_radio_status},
-	{ "sysinfo", ej_sysinfo},
+	{ "asus_sysinfo", ej_sysinfo},
 #ifdef RTCONFIG_OPENVPN
 	{ "vpn_server_get_parameter", ej_vpn_server_get_parameter},
 	{ "vpn_client_get_parameter", ej_vpn_client_get_parameter},
@@ -22202,6 +22336,7 @@ write_ver:
 	nvram_set_f("general.log", "firmver", fwver);
 }
 
+#if 0	// Moved to data_array
 int
 get_nat_vserver_table(int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -22287,6 +22422,7 @@ get_nat_vserver_table(int eid, webs_t wp, int argc, char_t **argv)
 
 	return ret;
 }
+#endif
 
 /* remove space in the end of string */
 char *trim_r(char *str)
@@ -22393,3 +22529,138 @@ struct AiMesh_whitelist AiMesh_whitelists[] = {
 	{ NULL, NULL }
 };
 #endif
+
+void write_encoded_crt(char *name, char *value){
+	int len, i, j;
+	char tmp[3500];
+
+	if (!value) return;
+
+	len = strlen(value);
+	if (len > (sizeof(tmp) - 1)) len = sizeof(tmp) - 1;
+
+	i = 0;
+	for (j=0; (j < len); j++) {
+		if (value[j] == '\n') tmp[i++] = '>';
+		else if (value[j] != '\r') tmp[i++] = value[j];
+	}
+
+	tmp[i] = '\0';
+	nvram_set(name, tmp);
+}
+
+
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
+
+#define JFFS_BACKUP_FILE "/tmp/backup_jffs.tar"
+
+static void
+do_jffs_file(char *url, FILE *stream)
+{
+        system("tar cf /tmp/backup_jffs.tar -C /jffs .");
+        do_file(JFFS_BACKUP_FILE, stream);
+        unlink(JFFS_BACKUP_FILE);
+}
+
+static void
+do_jffsupload_cgi(char *url, FILE *stream)
+{
+	int ret;
+
+#ifdef RTCONFIG_HTTPS
+	if(do_ssl)
+		ret = fcntl(ssl_stream_fd , F_GETOWN, 0);
+	else
+#endif
+	ret = fcntl(fileno(stream), F_GETOWN, 0);
+
+	if (ret == 0)
+	{
+		if (f_size(JFFS_BACKUP_FILE) > 10) {
+			logmessage("httpd", "Restoring JFFS backup...");
+			system("rm -rf /jffs/*"); /* */
+			system("/bin/tar -xf /tmp/backup_jffs.tar -C /jffs");
+			unlink(JFFS_BACKUP_FILE);
+			logmessage("httpd", "JFFS restore completed");
+			websApply(stream, "UploadingJFFS.asp");
+#ifdef RTCONFIG_HTTPS
+			if(do_ssl)
+				shutdown(ssl_stream_fd, SHUT_RDWR);
+			else
+#endif
+				shutdown(fileno(stream), SHUT_RDWR);
+		} else {
+			logmessage("httpd", "Error while restoring JFFS backup - no change made");
+		}
+	}
+	else
+	{
+		websApply(stream, "UploadError.asp");
+	}
+}
+
+static void
+do_jffsupload_post(char *url, FILE *stream, int len, char *boundary)
+{
+	FILE *fifo = NULL;
+	char buf[1024];
+	int count, ret = EINVAL, ch;
+	long filelen = 0;
+
+	/* Look for our part */
+	while (len > 0) {
+		if (!fgets(buf, MIN(len + 1, sizeof(buf)), stream)) {
+			goto err;
+		}
+
+		len -= strlen(buf);
+
+		if (!strncasecmp(buf, "Content-Disposition:", 20)
+				&& strstr(buf, "name=\"file2\""))
+			break;
+	}
+
+	/* Skip boundary and headers */
+	while (len > 0) {
+		if (!fgets(buf, MIN(len + 1, sizeof(buf)), stream)) {
+			goto err;
+		}
+
+		len -= strlen(buf);
+		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n")) {
+			break;
+		}
+	}
+
+	if (!(fifo = fopen(JFFS_BACKUP_FILE, "w")))
+		goto err;
+
+	while (len > 0) {
+		count = fread(buf, 1, MIN(len, sizeof(buf)), stream);
+		if(count <= 0)
+			goto err;
+
+		len -= count;
+		filelen += count;
+		fwrite(buf, 1, count, fifo);
+	}
+
+	fclose(fifo);
+	fifo = NULL;
+
+	/* Strip boundary from file */
+	if (boundary)
+		truncate(JFFS_BACKUP_FILE, filelen - strlen(boundary) - 8);
+
+err:
+	if (fifo)
+		fclose(fifo);
+
+	/* Slurp anything remaining in the request */
+	while (len-- > 0)
+		if((ch = fgetc(stream)) == EOF)
+			break;
+
+	fcntl(fileno(stream), F_SETOWN, -ret);
+}
+#endif // (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2)

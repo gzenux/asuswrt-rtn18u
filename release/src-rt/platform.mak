@@ -24,7 +24,7 @@ export CROSS_COMPILE := /opt/toolchains/crosstools-arm-gcc-5.3-linux-4.1-glibc-2
 export CROSS_COMPILER := $(CROSS_COMPILE)
 export CONFIGURE := ./configure LD=$(CROSS_COMPILE)ld --host=arm-buildroot-linux-gnueabi
 export CONFIGURE_64 := ./configure LD=$(CROSS_COMPILE_64)ld --host=aarch64-buildroot-linux-gnu 
-export HOSTCONFIG := linux-armv4 -DOPENSSL_NO_HEARTBEATS -DL_ENDIAN no-engine -Os -march=armv7-a -fomit-frame-pointer -mabi=aapcs-linux -marm -ffixed-r8 -msoft-float -D__ARM_ARCH_7A__
+export HOSTCONFIG := linux-armv4 -DOPENSSL_NO_HEARTBEATS -DL_ENDIAN -march=armv7-a -fomit-frame-pointer -mabi=aapcs-linux -marm -ffixed-r8 -msoft-float -D__ARM_ARCH_7A__
 export HOSTCONFIG_64 := linux-aarch64 -DOPENSSL_NO_HEARTBEATS -DL_ENDIAN no-engine -Os -march=armv8-a -fomit-frame-pointer -mabi=lp64 -ffixed-r8 -D__ARM_ARCH_8A__ no-asm
 export BCMEX := _arm
 export ARCH := arm
@@ -66,7 +66,7 @@ export CROSS_COMPILE := mipsel-uclibc-
 export CROSS_COMPILER := $(CROSS_COMPILE)
 export READELF := mipsel-linux-readelf
 export CONFIGURE := ./configure --host=mipsel-linux --build=$(BUILD)
-export HOSTCONFIG := linux-mipsel
+export HOSTCONFIG := linux-mips32
 export ARCH := mips
 export HOST := mipsel-linux
 export TOOLS := $(SRCBASE)/../../tools/brcm/hndtools-mipsel-linux
@@ -324,9 +324,9 @@ define platformKernelConfig
 		elif [ "$(BCM_7114)" = "y" ]; then \
 			if [ -d $(SRCBASE)/router/wl_arm_7114/prebuilt ]; then \
 				mkdir -p $(SRCBASE)/../dhd/src/dhd/linux ; \
-				cp $(SRCBASE)/router/wl_arm_7114/prebuilt/dhd.o $(SRCBASE)/../dhd/src/dhd/linux ; \
+				cp $(SRCBASE)/router/wl_arm_7114/prebuilt/$(BUILD_NAME)/dhd.o $(SRCBASE)/../dhd/src/dhd/linux ; \
 				mkdir -p $(SRCBASE)/../dhd24/src/dhd/linux ; \
-				cp $(SRCBASE)/router/wl_arm_7114/prebuilt/dhd24.o $(SRCBASE)/../dhd24/src/dhd/linux ; \
+				cp $(SRCBASE)/router/wl_arm_7114/prebuilt/$(BUILD_NAME)/dhd24.o $(SRCBASE)/../dhd24/src/dhd/linux ; \
 			fi; \
 			if [ -d $(SRCBASE)/router/et_arm_7114/prebuilt ]; then \
 				mkdir -p $(SRCBASE)/et/linux ; \
@@ -394,6 +394,7 @@ define platformKernelConfig
 				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_legacy_io_map.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
 				cp $(HND_SRC)/router/hnd_extra/prebuilt/blxargs.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
 				cp $(HND_SRC)/router/hnd_extra/prebuilt/setup.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_thermal.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/bcm_thermal$(PRBM_EXT).o ; \
 				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_usb.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/bcm_usb$(PRBM_EXT).o ; \
 				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_thermal.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/bcm_thermal$(PRBM_EXT).o ; \
 				cp $(HND_SRC)/router/hnd_extra/prebuilt/rdp_fpm.o $(HND_SRC)/bcmdrivers/opensource/char/fpm/impl1/rdp_fpm$(PRBM_EXT).o ; \
@@ -436,9 +437,9 @@ define platformKernelConfig
 					cp -f $(SRCBASE)/wl/sysdeps/default/clm/src/wlc_clm_data.c $(SRCBASE)/wl/clm/src/. ; \
 				fi; \
 			fi; \
-			if [ -d $(SRCBASE)/router/wl_arm/prebuilt ]; then \
+			if [ -d $(SRCBASE)/router/wl_arm/prebuilt/$(BUILD_NAME) ]; then \
 				mkdir $(SRCBASE)/wl/linux ; \
-				cp $(SRCBASE)/router/wl_arm/prebuilt/wl*.o $(SRCBASE)/wl/linux ; \
+				cp $(SRCBASE)/router/wl_arm/prebuilt/$(BUILD_NAME)/wl*.o $(SRCBASE)/wl/linux ; \
 			fi; \
 			if [ -d $(SRCBASE)/router/et_arm/prebuilt ]; then \
 				mkdir -p $(SRCBASE)/et/linux ; \
@@ -462,3 +463,6 @@ define platformKernelConfig
 	fi; \
 	)
 endef
+
+#export PARALLEL_BUILD :=
+export PARALLEL_BUILD := -j$(grep -c '^processor' /proc/cpuinfo)

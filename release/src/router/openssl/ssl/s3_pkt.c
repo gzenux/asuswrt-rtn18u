@@ -136,6 +136,9 @@ static int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
                          unsigned int len, int create_empty_fragment);
 static int ssl3_get_record(SSL *s);
 
+/*
+ * Return values are as per SSL_read()
+ */
 int ssl3_read_n(SSL *s, int n, int max, int extend)
 {
     /*
@@ -667,7 +670,7 @@ int ssl3_write_bytes(SSL *s, int type, const void *buf_, int len)
      * promptly send beyond the end of the users buffer ... so we trap and
      * report the error in a way the user will notice
      */
-    if (len < tot) {
+    if ((len < tot) || ((wb->left != 0) && (len < (tot + s->s3->wpend_tot)))) {
         SSLerr(SSL_F_SSL3_WRITE_BYTES, SSL_R_BAD_LENGTH);
         return (-1);
     }
@@ -696,6 +699,7 @@ int ssl3_write_bytes(SSL *s, int type, const void *buf_, int len)
         len >= 4 * (int)(max_send_fragment = s->max_send_fragment) &&
         s->compress == NULL && s->msg_callback == NULL &&
         SSL_USE_EXPLICIT_IV(s) &&
+        s->enc_write_ctx != NULL &&
         EVP_CIPHER_flags(s->enc_write_ctx->cipher) &
         EVP_CIPH_FLAG_TLS1_1_MULTIBLOCK) {
         unsigned char aad[13];
@@ -1082,7 +1086,10 @@ static int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
     return -1;
 }
 
-/* if s->s3->wbuf.left != 0, we need to call this */
+/* if s->s3->wbuf.left != 0, we need to call this
+ *
+ * Return values are as per SSL_write(), i.e.
+ */
 int ssl3_write_pending(SSL *s, int type, const unsigned char *buf,
                        unsigned int len)
 {
@@ -1122,7 +1129,7 @@ int ssl3_write_pending(SSL *s, int type, const unsigned char *buf,
                  */
                 wb->left = 0;
             }
-            return (i);
+            return i;
         }
         wb->offset += i;
         wb->left -= i;
@@ -1317,10 +1324,16 @@ int ssl3_read_bytes(SSL *s, int type, unsigned char *buf, int len, int peek)
         }
 #ifndef OPENSSL_NO_HEARTBEATS
         else if (rr->type == TLS1_RT_HEARTBEAT) {
-            tls1_process_heartbeat(s);
+            i = tls1_process_heartbeat(s);
+
+            if (i < 0)
+                return i;
+
+            rr->length = 0;
+            if (s->mode & SSL_MODE_AUTO_RETRY)
+                goto start;
 
             /* Exit and notify application to read again */
-            rr->length = 0;
             s->rwstate = SSL_READING;
             BIO_clear_retry_flags(SSL_get_rbio(s));
             BIO_set_retry_read(SSL_get_rbio(s));
@@ -1420,7 +1433,7 @@ int ssl3_read_bytes(SSL *s, int type, unsigned char *buf, int len, int peek)
         (s->s3->handshake_fragment_len >= 4) &&
         (s->s3->handshake_fragment[0] == SSL3_MT_CLIENT_HELLO) &&
         (s->session != NULL) && (s->session->cipher != NULL) &&
-        !(s->ctx->options & SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)) {
+        !(s->options & SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)) {
         /*
          * s->s3->handshake_fragment_len = 0;
          */
@@ -1593,16 +1606,13 @@ int ssl3_read_bytes(SSL *s, int type, unsigned char *buf, int len, int peek)
 
     switch (rr->type) {
     default:
-#ifndef OPENSSL_NO_TLS
         /*
-         * TLS up to v1.1 just ignores unknown message types: TLS v1.2 give
-         * an unexpected message alert.
+         * TLS 1.0 and 1.1 say you SHOULD ignore unrecognised record types, but
+         * TLS 1.2 says you MUST send an unexpected message alert. We use the
+         * TLS 1.2 behaviour for all protocol versions to prevent issues where
+         * no progress is being made and the peer continually sends unrecognised
+         * record types, using up resources processing them.
          */
-        if (s->version >= TLS1_VERSION && s->version <= TLS1_1_VERSION) {
-            rr->length = 0;
-            goto start;
-        }
-#endif
         al = SSL_AD_UNEXPECTED_MESSAGE;
         SSLerr(SSL_F_SSL3_READ_BYTES, SSL_R_UNEXPECTED_RECORD);
         goto f_err;

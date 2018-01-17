@@ -85,6 +85,7 @@
 #define NORMAL_PERIOD		1		/* second */
 #define URGENT_PERIOD		100 * 1000	/* microsecond */
 #define RUSHURGENT_PERIOD	50 * 1000	/* microsecond */
+#define DAY_PERIOD		2 * 60 * 24	/* 1 day (in 30 sec periods) */
 
 #define WPS_TIMEOUT_COUNT	121 * 20
 #ifdef RTCONFIG_WPS_LED
@@ -130,7 +131,7 @@ static int modem_flow_count = 0;
 static int modem_data_save = 0;
 #endif
 #endif
-#if defined(RTCONFIG_TOR) && (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
+#if 0	//defined(RTCONFIG_TOR) && (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
 #define TOR_CHECK_PERIOD	10		/* 10 x 30 seconds */
 unsigned int tor_check_count = 0;
 #endif
@@ -163,6 +164,7 @@ static int wsc_timeout = 0;
 static int btn_count_setup_second = 0;
 static int btn_pressed_toggle_radio = 0;
 #endif
+static long ddns_update_timer = 0;
 
 #if defined(RTCONFIG_WIRELESS_SWITCH) && defined(RTCONFIG_DSL)
 // for WLAN sw init, only for slide switch
@@ -3595,6 +3597,14 @@ void timecheck(void)
 
 		/*transfer wl_sched NULL value to 000000 value, because
 		of old version firmware with wrong default value*/
+		if(!strcmp(nvram_safe_get("wl_sched"), "") || !strcmp(nvram_safe_get(strcat_r(prefix, "sched", tmp)), ""))
+		{
+			nvram_set(strcat_r(prefix, "sched", tmp),"000000");
+			nvram_set("wl_sched", "000000");
+		}
+
+		/*transfer wl_sched NULL value to 000000 value, because
+		of old version firmware with wrong default value*/
 		if (!strcmp(nvram_safe_get(strcat_r(prefix, "sched", tmp)), ""))
 		{
 			nvram_set(strcat_r(prefix, "sched", tmp),"000000");
@@ -5200,6 +5210,8 @@ void qtn_module_check(void)
 			logmessage("QTN", "QTN connection lost[%s][%s]", src_ip, dst_ip);
 			system("reboot &");
 		}
+	} else {
+		failed = 0;
 	}
 	waiting = 0;
 
@@ -5478,8 +5490,9 @@ static void auto_firmware_check()
 #ifndef RTCONFIG_FORCE_AUTO_UPGRADE
 	static int rand_hr, rand_min;
 #endif
+	int initial_state;
 
-	if (!nvram_get_int("ntp_ready"))
+	if (!nvram_get_int("ntp_ready") || !nvram_get_int("firmware_check_enable"))
 		return;
 
 #ifdef RTCONFIG_FORCE_AUTO_UPGRADE
@@ -5505,12 +5518,14 @@ static void auto_firmware_check()
 	}
 #endif
 
+#if 0
 #if defined(RTAC68U)
 	else if (After(get_blver(nvram_safe_get("bl_version")), get_blver("2.1.2.1")) && !nvram_get_int("PA") && !nvram_match("cpurev", "c0"))
 	{
 		periodic_check = 1;
 		nvram_set_int("fw_check_period", 10);
 	}
+#endif
 #endif
 
 	if (bootup_check || periodic_check)
@@ -5532,6 +5547,7 @@ static void auto_firmware_check()
 			rand_min = rand_seed_by_time() % 60;
 #endif
 		}
+		initial_state = nvram_get_int("webs_state_flag");
 
 		if(!nvram_contains_word("rc_support", "noupdate")){
 			eval("/usr/sbin/webs_update.sh");
@@ -5545,6 +5561,19 @@ static void auto_firmware_check()
 		    strlen(nvram_safe_get("webs_state_info")))
 		{
 			dbg("retrieve firmware information\n");
+
+			if ((initial_state == 0) && (nvram_get_int("webs_state_flag") == 1))		// New update
+			{
+				char version[4], revision[3], build[16];
+
+				memset(version, 0, sizeof(version));
+				memset(revision, 0, sizeof(revision));
+				memset(build, 0, sizeof(build));
+
+				sscanf(nvram_safe_get("webs_state_info"), "%3s_%2s_%15s", version, revision, build);
+				logmessage("watchdog", "New firmware version %s.%s_%s is available.", version, revision, build);
+				run_custom_script("update-notification", NULL);
+			}
 
 #if defined(RTAC68U) || defined(RTCONFIG_FORCE_AUTO_UPGRADE)
 #if defined(RTAC68U) && !defined(RTAC68A)
@@ -6000,14 +6029,13 @@ void rssi_check()
 }
 #endif
 
-#ifdef RTCONFIG_TOR
+#if 0 //#ifdef RTCONFIG_TOR
 #if (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
 static void Tor_microdes_check() {
 
 	FILE *f;
 	char buf[256];
-	char *ifname, *p;
-	unsigned long counter1, counter2;
+	char *p;
 	struct stat tmp_db_stat, jffs_db_stat;
 	int tmp_stat, jffs_stat;
 
@@ -6024,12 +6052,12 @@ static void Tor_microdes_check() {
 			return;
 		}
 
-		if ((f = fopen("/tmp/torlog", "r")) == NULL) return -1;
+		if ((f = fopen("/tmp/torlog", "r")) == NULL) return;
 
 		while (fgets(buf, sizeof(buf), f)) {
 			if ((p=strstr(buf, "now have enough directory")) == NULL) continue;
 			*p = 0;
-			eval("cp", "-rf", "/tmp/.tordb", "/jffs/.tordb");
+			eval("cp", "-rfa", "/tmp/.tordb", "/jffs/.tordb");
 			break;
 		}
 		fclose(f);
@@ -6562,6 +6590,8 @@ void fan_check()
 
 void watchdog(int sig)
 {
+	int period;
+
 #ifdef RTL_WTDOG
 	watchdog_func();
 #endif
@@ -6773,6 +6803,14 @@ wdp:
 	bk_center_main();
 #endif
 #endif
+
+	/* Force a DDNS update every "x" days - default is 21 days */
+	period = nvram_get_int("ddns_refresh_x");
+	if ((period) && (++ddns_update_timer >= (DAY_PERIOD * period))) {
+		ddns_update_timer = 0;
+		nvram_set("ddns_updated", "0");
+	}
+
 	ddns_check();
 	networkmap_check();
 	httpd_check();
@@ -6818,7 +6856,7 @@ wdp:
 
 	check_hour_monitor_service();
 
-#if defined(RTCONFIG_TOR) && (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
+#if 0 //#if defined(RTCONFIG_TOR) && (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
 	if (nvram_get_int("Tor_enable"))
 		Tor_microdes_check();
 #endif

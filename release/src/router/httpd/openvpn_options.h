@@ -6,6 +6,7 @@
 #define	VPN_UPLOAD_NEED_KEY			4
 #define	VPN_UPLOAD_NEED_STATIC		8
 #define VPN_UPLOAD_NEED_CRL			16
+#define VPN_UPLOAD_NEED_EXTRA		32
 
 #define MAX_PARMS 16
 
@@ -139,5 +140,4 @@ bool buf_printf (struct buffer *buf, const char *format, ...);
 char *string_alloc (const char *str);
 int parse_line (const char *line, char *p[], const int n, const int line_num);
 int read_config_file (const char *file, int unit);
-void reset_client_setting(int unit);
 void parse_openvpn_status(int unit);

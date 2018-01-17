@@ -141,11 +141,14 @@ function get_real_ip(){
 
 function submitForm(){
 	if(letsencrypt_support){
+		if(document.form.https_crt_cn.value != '<% nvram_get("https_crt_cn"); %>'){
+			document.form.https_crt_gen.value = "1";
+		}
 		if(document.form.ddns_enable_x.value == "1" && document.form.le_enable.value == "1"){
 			document.form.action_wait.value = "10";
 			document.form.action_script.value = "restart_ddns_le";
 		}
-		else if(http_enable != "0" && document.form.le_enable.value != orig_le_enable){
+		else if(http_enable != "0" && (document.form.le_enable.value != orig_le_enable || document.form.https_crt_gen.value == "1")){
 			document.form.action_wait.value = "10";
 			if(orig_le_enable == "1")
 				document.form.action_script.value = "restart_httpd;restart_webdav;restart_ddns_le";
@@ -209,13 +212,9 @@ function ddns_load_body(){
             else
                 document.getElementById("ddns_hostname_x").value = "<#asusddns_inputhint#>";
         }
-		
+	inputCtrl(document.form.ddns_refresh_x, 1);
+
         change_ddns_setting(document.form.ddns_server_x.value);
-        if(letsencrypt_support){
-            show_cert_settings(1);
-            change_cert_method(orig_le_enable);
-            show_cert_details();
-        }
 
 	    if(document.form.ddns_server_x.value == "WWW.ORAY.COM"){
 		    if(ddns_updated_t == "1"){
@@ -232,16 +231,27 @@ function ddns_load_body(){
         inputCtrl(document.form.ddns_passwd_x, 0);
         document.form.ddns_wildcard_x[0].disabled= 1;
         document.form.ddns_wildcard_x[1].disabled= 1;
+	inputCtrl(document.form.ddns_refresh_x, 0);
         showhide("wildcard_field",0);
-        if(letsencrypt_support)
-            show_cert_settings(0);
     }
+
+	if(letsencrypt_support){
+		show_cert_settings(1);
+		change_cert_method(orig_le_enable);
+		show_cert_details();
+	}
    
     hideLoading();
     var ddnsHint = getDDNSState(ddns_return_code, ddns_hostname_x_t, ddns_old_name);
 
-    if(ddnsHint != "")
-        alert(ddnsHint);
+    if(ddnsHint != "") {
+        if(ddns_return_code.indexOf('200')!=-1) {
+            document.getElementById("ddns_state").innerHTML=ddnsHint;
+            document.getElementById("ddns_state").display="";
+        } else {
+            alert(ddnsHint);
+        }
+    }
     if(ddns_return_code.indexOf('200')!=-1 || ddns_return_code.indexOf('220')!=-1 || ddns_return_code == 'register,230'){
         showhide("wan_ip_hide2", 0);
         if(ddns_server_x == "WWW.ASUS.COM"){
@@ -302,7 +312,10 @@ function validForm(){
 
 				return true;
 			}
-		}else{		
+		}else{
+			if(!validator.numberRange(document.form.ddns_refresh_x, 0, 365))
+				return false;
+
 			if(document.form.ddns_server_x.value != "WWW.ORAY.COM" && document.form.ddns_hostname_x.value == ""){
 				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
 				document.form.ddns_hostname_x.focus();
@@ -311,23 +324,24 @@ function validForm(){
 			}else if(!validator.string(document.form.ddns_hostname_x)){
 				return false;
 			}
-			
-			if(document.form.ddns_username_x.value == ""){
-				alert("<#QKSet_account_nameblank#>");
-				document.form.ddns_username_x.focus();
-				document.form.ddns_username_x.select();
-				return false;
-			}else if(!validator.string(document.form.ddns_username_x)){
-				return false;
-			}
-			
-			if(document.form.ddns_passwd_x.value == ""){
-				alert("<#File_Pop_content_alert_desc6#>");
-				document.form.ddns_passwd_x.focus();
-				document.form.ddns_passwd_x.select();
-				return false;
-			}else if(!validator.string(document.form.ddns_passwd_x)){
-				return false;
+
+			if(document.form.ddns_server_x.value != "CUSTOM"){             // Not CUSTOM
+				if(document.form.ddns_username_x.value == ""){
+					alert("<#QKSet_account_nameblank#>");
+					document.form.ddns_username_x.focus();
+					document.form.ddns_username_x.select();
+					return false;
+				}else if(!validator.string(document.form.ddns_username_x)){
+					return false;
+				}
+				if(document.form.ddns_passwd_x.value == ""){
+					alert("<#File_Pop_content_alert_desc6#>");
+					document.form.ddns_passwd_x.focus();
+					document.form.ddns_passwd_x.select();
+					return false;
+				}else if(!validator.string(document.form.ddns_passwd_x)){
+					return false;
+				}
 			}
 			
 			if(document.form.ddns_regular_period.value < 30){
@@ -339,6 +353,10 @@ function validForm(){
 		
 			return true;
 		}
+	}
+	else if (document.form.le_enable[0].checked == true) {
+		alert("Let's Encrypt requires DDNS to be enabled.");
+		return false;
 	}
 	else
 		return true;
@@ -437,7 +455,12 @@ function change_cert_method(cert_method){
 					document.form.le_enable[2].checked = true;
 					break;
 				case "1":
-					document.form.le_enable[0].checked = true;
+					if(document.form.ddns_enable_x[1].checked) {
+						alert("Let's Encrypt requires DDNS to be enabled.");
+						document.form.le_enable[2].checked = true;
+					} else {
+						document.form.le_enable[0].checked = true;
+					}
 					break;
 				case "2":
 					document.form.le_enable[1].checked = true;
@@ -447,6 +470,8 @@ function change_cert_method(cert_method){
 
 		switch(cert_method){
 			case "0":
+				document.getElementById("cert_gen").style.display = "none";
+				document.getElementById("cert_san").style.display = "none";
 				document.getElementById("cert_desc").style.display = "none";
 				document.getElementById("cert_act").style.display = "none";
 				if(orig_le_enable != "0")
@@ -457,6 +482,13 @@ function change_cert_method(cert_method){
 				break;
 
 			case "1":
+				if(document.form.ddns_enable_x[1].checked) {
+					alert("Let's Encrypt requires DDNS to be enabled.");
+					document.form.le_enable[2].checked = true;
+					return false;
+				}
+				document.getElementById("cert_gen").style.display = "none";
+				document.getElementById("cert_san").style.display = "none";
 				document.getElementById("cert_desc").style.display = "";
 				document.getElementById("le_desc").innerHTML = "Let's Encrypt is a service to provide free domain-validated certificate and certificate will be renewed automatically."; //untranslated
 				html_code = '<div style="margin-top:5px;"><input type="checkbox" name="letsEncryptTerm_check" checked>';
@@ -481,6 +513,8 @@ function change_cert_method(cert_method){
 				break;
 
 			case "2":
+				document.getElementById("cert_gen").style.display = "";
+				document.getElementById("cert_san").style.display = "";
 				document.getElementById("cert_desc").style.display = "none";
 				html_code += '<div style="display:table-cell"><input class="button_gen" onclick="open_upload_window();" type="button" value="<#CTL_upload#>"/><img id="loadingicon" style="margin-left:5px;display:none;" src="/images/InternetScan.gif"></div>';
 				document.getElementById("cert_act").innerHTML = html_code;
@@ -515,6 +549,7 @@ function show_cert_details(){
 		document.getElementById("cert_status").innerHTML = "Authorizing";
 		setTimeout("get_cert_info();", 1000);
 	}
+	document.getElementById("SAN").innerHTML = httpd_cert_info.SAN;
 	document.getElementById("issueTo").innerHTML = httpd_cert_info.issueTo;
 	document.getElementById("issueBy").innerHTML = httpd_cert_info.issueBy;
 	document.getElementById("expireOn").innerHTML = httpd_cert_info.expire;
@@ -523,8 +558,8 @@ function show_cert_details(){
 function check_filename(){
 	var key_file = document.upload_form.file_key.value;
 	var cert_file = document.upload_form.file_cert.value;
-	var key_subname = key_file.substring(key_file.indexOf('.') + 1);
-	var cert_subname = cert_file.substring(cert_file.indexOf('.') + 1);
+	var key_subname = key_file.substring(key_file.lastIndexOf('.') + 1);
+	var cert_subname = cert_file.substring(cert_file.lastIndexOf('.') + 1);
 
 	if(key_subname != 'pem' && key_subname != 'key'){
 		alert("Please select correct private key file.");
@@ -602,6 +637,7 @@ function save_cert_key(){
 				<div class="formfontdesc" id="wan_ip_hide2" style="color:#FFCC00; display:none;"><#LANHostConfig_x_DDNSEnable_sectiondesc2#></div>
 				<div class="formfontdesc" id="wan_ip_hide3" style="color:#FFCC00; display:none;"><#LANHostConfig_x_DDNSEnable_sectiondesc3#></div>
 				<div class="formfontdesc" id="lb_note" style="color:#FFCC00; display:none;"><#lb_note_ddns#></div>
+				<div class="formfontdesc" id="ddns_state" style="color:#FFCC00; display:none;"></div>
 				<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 				<input type="hidden" name="wl_gmode_protection_x" value="<% nvram_get("wl_gmode_protection_x"); %>">
 			<tr>
@@ -636,9 +672,13 @@ function save_cert_key(){
 						<option value="WWW.TUNNELBROKER.NET" <% nvram_match("ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>WWW.TUNNELBROKER.NET</option>
 						<option value="WWW.NO-IP.COM" <% nvram_match("ddns_server_x", "WWW.NO-IP.COM","selected"); %>>WWW.NO-IP.COM</option>
 						<option value="WWW.ORAY.COM" <% nvram_match("ddns_server_x", "WWW.ORAY.COM","selected"); %>>WWW.ORAY.COM(花生壳)</option>
+						<option value="WWW.NAMECHEAP.COM" <% nvram_match("ddns_server_x", "WWW.NAMECHEAP.COM","selected"); %>>WWW.NAMECHEAP.COM</option>
+						<option value="CUSTOM" <% nvram_match("ddns_server_x", "CUSTOM","selected");  %>>Custom</option>
 					</select>
 				<a id="link" href="javascript:openLink('x_DDNSServer')" style=" margin-left:5px; text-decoration: underline;"><#LANHostConfig_x_DDNSServer_linkname#></a>
 				<a id="linkToHome" href="javascript:openLink('x_DDNSServer')" style=" margin-left:5px; text-decoration: underline;"><#ddns_home_link#></a>
+				<div id="customnote" style="display:none;"><span>For the Custom DDNS you must manually create a ddns-start script that handles your custom notification.</span></div>
+				<div id="need_custom_scripts" style="display:none;"><span>WARNING: you must enable both the JFFS2 partition and custom scripts support!<br>Click <a href="Advanced_System_Content.asp" style="text-decoration: underline;">HERE</a> to proceed.</span></div>
 				</td>
 			</tr>
 			<tr id="ddns_hostname_tr">
@@ -660,18 +700,24 @@ function save_cert_key(){
 				<td id="ddns_hostname_x_value"><% nvram_get("ddns_hostname_x"); %></td>
 			</tr>
 			<tr>
-				<th><#LANHostConfig_x_DDNSUserName_itemname#></th>
+				<th id="ddns_username_th"><#LANHostConfig_x_DDNSUserName_itemname#></th>
 				<td><input type="text" maxlength="32" class="input_25_table" name="ddns_username_x" value="<% nvram_get("ddns_username_x"); %>" onKeyPress="return validator.isString(this, event)" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			</tr>
 			<tr>
 				<th><#LANHostConfig_x_DDNSPassword_itemname#></th>
-				<td><input type="password" maxlength="64" class="input_25_table" name="ddns_passwd_x" value="<% nvram_get("ddns_passwd_x"); %>" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
+				<td><input type="password" maxlength="64" class="input_25_table" name="ddns_passwd_x" value="<% nvram_get("ddns_passwd_x"); %>" autocomplete="new-password" autocorrect="off" autocapitalize="off"></td>
 			</tr>
 			<tr id="wildcard_field">
 				<th><#LANHostConfig_x_DDNSWildcard_itemname#></th>
 				<td>
 					<input type="radio" value="1" name="ddns_wildcard_x" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_wildcard_x', '1')" <% nvram_match("ddns_wildcard_x", "1", "checked"); %>><#checkbox_Yes#>
 					<input type="radio" value="0" name="ddns_wildcard_x" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_wildcard_x', '0')" <% nvram_match("ddns_wildcard_x", "0", "checked"); %>><#checkbox_No#>
+				</td>
+			</tr>
+			<tr style="display:none;">
+				<th>Forced refresh interval (in days)</th>
+				<td>
+					<input type="text" maxlength="3" name="ddns_refresh_x" class="input_3_table" value="<% nvram_get("ddns_refresh_x"); %>" onKeyPress="return validator.isNumber(this,event)">
 				</td>
 			</tr>
 			<tr id="check_ddns_field" style="display:none;">
@@ -697,9 +743,9 @@ function save_cert_key(){
 				<th>HTTPS/SSL Certificate</th> <!--untranslated-->
 				<td>
 					<span id="le_crypt" style="color:#FFF;display:none;">
-					<input type="radio" value="1" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "1", "checked"); %>>Free Certificate form Let's Encrypt<!--untranslated-->
+					<input type="radio" value="1" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "1", "checked"); %>>Let's Encrypt<!--untranslated-->
 					</span>
-					<input type="radio" value="2" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "2", "checked"); %>>Import Your Own Certificate<!--untranslated-->
+					<input type="radio" value="2" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "2", "checked"); %>>Import/Persistent Auto-generated<!--untranslated-->
 					<span id="self_signed" style="color:#FFF;">
 					<input type="radio" value="0" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "0", "checked"); %>><#wl_securitylevel_0#>
 					</span>	
@@ -707,23 +753,40 @@ function save_cert_key(){
 					<div id="cert_act" style="margin-top: 5px;"></div>
 				</td>
 			</tr>
+			<tr id="cert_gen" style="display:none;">
+				<th>Generate a new certificate</th>
+				<td>
+					<input type="radio" name="https_crt_gen" class="input" value="1" <% nvram_match_x("", "https_crt_gen", "1", "checked"); %>><#checkbox_Yes#>
+					<input type="radio" name="https_crt_gen" class="input" value="0" <% nvram_match_x("", "https_crt_gen", "0", "checked"); %>><#checkbox_No#>
+				</td>
+			</tr>
+			<tr id="cert_san" style="display:none;">
+				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(50,22)">Additional Certificate SANs</a></th>
+				<td>
+					<input type="text" name="https_crt_cn" value="<% nvram_get("https_crt_cn"); %>" autocomplete="off" class="input_32_table" maxlength="64" autocorrect="off" autocapitalize="off">
+				</td>
+			</tr>
 
 			<tr id="cert_details" style="display:none;">
 				<th>Server Certificate</th><!--untranslated-->
 				<td>
-					<div style="display:table-row;">
-						<div style="display:table-cell;"><#Status_Str#> :</div>
+					<div style="display:table-row;white-space: nowrap;">
+						<div style="display:table-cell;white-space: nowrap;"><#Status_Str#> :</div>
 						<div id="cert_status" style="display:table-cell; padding-left:10px;"></div>
 					</div>
-					<div style="display:table-row;">
+					<div style="display:table-row;white-space: nowrap;">
 						<div style="display:table-cell;">Issued to :</div> <!--untranslated-->
 						<div id="issueTo" style="display:table-cell; padding-left:10px;"></div>
 					</div>
-					<div style="display:table-row;">
+					<div style="display:table-row;white-space: nowrap;">
+						<div style="display:table-cell;">SAN :</div>
+						<div id="SAN" style="display:table-cell; padding-left:10px;"></div>
+					</div>
+					<div style="display:table-row;white-space: nowrap;">
 						<div style="display:table-cell;">Issued by :</div> <!--untranslated-->
 						<div id="issueBy" style="display:table-cell; padding-left:10px;"></div>
 					</div>
-					<div style="display:table-row;">
+					<div style="display:table-row;white-space: nowrap;">
 						<div style="display:table-cell;">Expires on :</div> <!--untranslated-->
 						<div id="expireOn" style="display:table-cell; padding-left:10px;"></div>
 					</div>

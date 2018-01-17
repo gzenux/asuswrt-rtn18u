@@ -187,7 +187,7 @@ extern "C" {
 # define SSL_TXT_DES_64_CBC_WITH_MD5     SSL2_TXT_DES_64_CBC_WITH_MD5
 # define SSL_TXT_DES_64_CBC_WITH_SHA     SSL2_TXT_DES_64_CBC_WITH_SHA
 # define SSL_TXT_DES_192_EDE3_CBC_WITH_MD5 SSL2_TXT_DES_192_EDE3_CBC_WITH_MD5
-//# define SSL_TXT_DES_192_EDE3_CBC_WITH_SHA SSL2_TXT_DES_192_EDE3_CBC_WITH_SHA
+# define SSL_TXT_DES_192_EDE3_CBC_WITH_SHA SSL2_TXT_DES_192_EDE3_CBC_WITH_SHA
 
 /*
  * VRS Additional Kerberos5 entries
@@ -1727,7 +1727,7 @@ extern "C" {
 # define SSL_ST_BEFORE                   0x4000
 # define SSL_ST_OK                       0x03
 # define SSL_ST_RENEGOTIATE              (0x04|SSL_ST_INIT)
-# define SSL_ST_ERR                      0x05
+# define SSL_ST_ERR                      (0x05|SSL_ST_INIT)
 
 # define SSL_CB_LOOP                     0x01
 # define SSL_CB_EXIT                     0x02

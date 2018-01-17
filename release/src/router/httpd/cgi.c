@@ -52,6 +52,10 @@
 extern char *strsep(char **stringp, char *delim);
 #endif
 
+#ifdef HND_ROUTER
+#include <shared.h>
+#endif
+
 /* CGI hash table */
 static struct hsearch_data htab;
 
@@ -65,7 +69,7 @@ unescape(char *s)
 		if (*s == '%') {
 			sscanf(s + 1, "%02x", &c);
 			*s++ = (char) c;
-			strncpy(s, s + 2, strlen(s) + 1);
+			strlcpy(s, s + 2, strlen(s) + 1);
 		}
 		/* Space is special */
 		else if (*s == '+')

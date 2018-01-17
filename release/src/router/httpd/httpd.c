@@ -56,7 +56,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-//#include <sys/stat.h>
+#include <sys/stat.h>
 #include <assert.h>
 #include <sys/ioctl.h>
 #include <ctype.h>
@@ -78,7 +78,7 @@ typedef unsigned int __u32;   // 1225 ham
 #define SIOCGETCPHYRD   0x89FE
 //#include "etioctl.h"
 
-#include <shutils.h>
+#include <sys/file.h>
 
 #ifdef RTCONFIG_HTTPS
 #include <syslog.h>
@@ -520,6 +520,7 @@ send_headers( int status, char* title, char* extra_header, char* mime_type, int 
     (void) fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
     (void) fprintf( conn_fp, "x-frame-options: SAMEORIGIN\r\n");
     (void) fprintf( conn_fp, "x-xss-protection: 1; mode=block\r\n");
+
     if (fromapp != 0){
 	(void) fprintf( conn_fp, "Cache-Control: no-store\r\n");	
 	(void) fprintf( conn_fp, "Pragma: no-cache\r\n");
@@ -1339,7 +1340,7 @@ handle_request(void)
 				}
 #endif
 			}
-			if(!strstr(file, ".cgi") && !strstr(file, "syslog.txt") && !(strstr(file,"uploadIconFile.tar")) && !(strstr(file,"networkmap.tar")) && !(strstr(file,".CFG")) && !(strstr(file,".log")) && !check_if_file_exist(file)
+			if(!strstr(file, ".cgi") && !strstr(file, "syslog.txt") && !(strstr(file,"uploadIconFile.tar")) && !(strstr(file,"backup_jffs.tar")) && !(strstr(file,"networkmap.tar")) && !(strstr(file,".CFG")) && !(strstr(file,".log")) && !check_if_file_exist(file)
 #ifdef RTCONFIG_USB_MODEM
 					&& !strstr(file, "modemlog.txt")
 #endif
@@ -2206,33 +2207,51 @@ int main(int argc, char **argv)
 #ifdef RTCONFIG_HTTPS
 void save_cert(void)
 {
+#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
+	eval("cp", "-p", "/etc/cert.pem", "/etc/key.pem", "/jffs/ssl/");
+	chmod("/jffs/ssl/key.pem", S_IRUSR|S_IWUSR);
+#else
 	if (eval("tar", "-C", "/", "-czf", "/tmp/cert.tgz", "etc/cert.pem", "etc/key.pem") == 0) {
 		if (nvram_set_file("https_crt_file", "/tmp/cert.tgz", 8192)) {
 			nvram_commit_x();
 		}
 	}
 	unlink("/tmp/cert.tgz");
+#endif
+
 }
 
 void erase_cert(void)
 {
 	unlink("/etc/cert.pem");
 	unlink("/etc/key.pem");
+#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
+	unlink(UPLOAD_CERT);
+	unlink(UPLOAD_KEY);
+#else
 	nvram_unset("https_crt_file");
+#endif
 	//nvram_unset("https_crt_gen");
 	nvram_set("https_crt_gen", "0");
 }
 
 void start_ssl(void)
 {
-	int ok;
-	int save;
+	int lockfd;
 	int retry;
-	unsigned long long sn;
-	char t[32];
+	int i;
 
-	//fprintf(stderr,"[httpd] start_ssl running!!\n");
-	//nvram_set("https_crt_gen", "1");
+	lockfd = open("/var/lock/sslinit.lock", O_CREAT | O_RDWR, 0666);
+
+	// Avoid collisions if another httpd instance is initializing SSL cert
+	for ( i = 1; i < 5; i++ ) {
+		if (flock(lockfd, LOCK_EX | LOCK_NB) < 0) {
+			//logmessage("httpd", "Conflict, waiting %d", i);
+			sleep(i*i);
+		} else {
+			i = 5;
+		}
+	}
 
 	if (nvram_match("https_crt_gen", "1")) {
 		erase_cert();
@@ -2240,47 +2259,32 @@ void start_ssl(void)
 
 	retry = 1;
 	while (1) {
-		save = nvram_match("https_crt_save", "1");
-
 		if ((!f_exists("/etc/cert.pem")) || (!f_exists("/etc/key.pem"))) {
-			ok = 0;
-			if (save) {
-				fprintf(stderr, "Save SSL certificate...\n"); // tmp test
-				if (nvram_get_file("https_crt_file", "/tmp/cert.tgz", 8192)) {
-					if (eval("tar", "-xzf", "/tmp/cert.tgz", "-C", "/", "etc/cert.pem", "etc/key.pem") == 0){
-						system("cat /etc/key.pem /etc/cert.pem > /etc/server.pem");
-						ok = 1;
-					}
+			erase_cert();
+			logmessage("httpd", "Generating SSL certificate...");
+			eval("gencert.sh", "web");
 
-					int save_intermediate_crt = nvram_match("https_intermediate_crt_save", "1");
-					if(save_intermediate_crt){
-						eval("tar", "-xzf", "/tmp/cert.tgz", "-C", "/", "etc/intermediate_cert.pem");
-					}
-
-					unlink("/tmp/cert.tgz");
-				}
-			}
-			if (!ok) {
-				erase_cert();
-				syslog(LOG_NOTICE, "Generating SSL certificate...");
-				fprintf(stderr, "Generating SSL certificate...\n"); // tmp test
-				// browsers seems to like this when the ip address moves...	-- zzz
-				f_read("/dev/urandom", &sn, sizeof(sn));
-
-				sprintf(t, "%llu", sn & 0x7FFFFFFFFFFFFFFFULL);
-				eval("gencert.sh", t);
+#ifdef RTCONFIG_LETSENCRYPT
+			if (nvram_match("le_enable", "2"))
+#endif
+			{
+				save_cert();
 			}
 		}
 
-		if ((save) && (*nvram_safe_get("https_crt_file")) == 0) {
-			save_cert();
+		if (mssl_init("/etc/cert.pem", "/etc/key.pem")) {
+			flock(lockfd, LOCK_UN);
+			return;
 		}
 
-		if (mssl_init("/etc/cert.pem", "/etc/key.pem")) return;
-
+		logmessage("httpd", "Failed to initialize SSL, generating new key/cert.");
 		erase_cert();
 
-		if (!retry) exit(1);
+		if (!retry) {
+			flock(lockfd, LOCK_UN);
+			logmessage("httpd", "Unable to start in SSL mode, exiting!");
+			exit(1);
+		}
 		retry = 0;
 	}
 }

@@ -68,9 +68,9 @@ CFLAGS += -Wall -I.
 CFLAGS += $(DEBFLAGS)
 
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./prebuild$(BCMEX)$(EXHND)),)
 all:
-	cp prebuild/$(PROG) .
+	cp prebuild$(BCMEX)$(EXHND)/$(PROG) .
 
 $(PROG): 
 else

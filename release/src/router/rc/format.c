@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef RTCONFIG_OPENVPN
+#include <openvpn_config.h>
+#endif
 #if defined(RTCONFIG_VPN_FUSION)
 #include <vpnc_fusion.h>
 extern int vpnc_load_profile(VPNC_PROFILE *list, const int list_size, const int prof_ver);
@@ -9,6 +12,80 @@ extern int vpnc_load_profile(VPNC_PROFILE *list, const int list_size, const int 
 #if defined(RTCONFIG_NOTIFICATION_CENTER)
 #include <libnt.h>
 #endif
+
+void adjust_merlin_config(void)
+{
+#ifdef RTCONFIG_OPENVPN
+	int unit;
+	char varname_ori[32];
+#endif
+
+#ifdef RTCONFIG_OPENVPN
+	if(!nvram_is_empty("vpn_server_clientlist")) {
+		nvram_set("vpn_serverx_clientlist", nvram_safe_get("vpn_server_clientlist"));
+		nvram_unset("vpn_server_clientlist");
+	}
+
+/* Convert ASCII custom into base64 custom2 */
+	for (unit = 1; unit <= OVPN_SERVER_MAX; unit++) {
+		sprintf(varname_ori,"vpn_server%d_custom", unit);
+		if(!nvram_is_empty(varname_ori)) {
+			set_ovpn_custom(OVPN_TYPE_SERVER, unit, nvram_safe_get(varname_ori));
+			nvram_unset(varname_ori);
+		}
+	}
+
+	for (unit = 1; unit <= OVPN_CLIENT_MAX; unit++) {
+		sprintf(varname_ori,"vpn_client%d_custom", unit);
+		if(!nvram_is_empty(varname_ori)) {
+			set_ovpn_custom(OVPN_TYPE_CLIENT, unit, nvram_safe_get(varname_ori));
+			nvram_unset(varname_ori);
+		}
+	}
+#endif
+
+/* migrade httpd key/cert from Asus */
+#ifdef RTCONFIG_HTTPS
+	if (f_exists("/jffs/.cert/cert.pem"))
+		eval("mv", "/jffs/.cert/cert.pem", UPLOAD_CERT);
+	if (f_exists("/jffs/.cert/key.pem"))
+		eval("mv", "/jffs/.cert/key.pem", UPLOAD_KEY);
+#endif
+
+/* migrate dhcpc_options to wanxxx_clientid */
+	char *oldclientid = nvram_safe_get("wan0_dhcpc_options");
+	if (*oldclientid) {
+		nvram_set("wan0_clientid", oldclientid);
+		nvram_unset("wan0_dhcpc_options");
+	}
+
+	oldclientid = nvram_safe_get("wan1_dhcpc_options");
+	if (*oldclientid) {
+		nvram_set("wan1_clientid", oldclientid);
+		nvram_unset("wan1_dhcpc_options");
+	}
+
+/* Migrate to Asus's new tri-state sshd_enable to our dual nvram setup */
+	if (nvram_match("sshd_enable", "1")) {
+		if (nvram_match("sshd_wan", "0"))
+			nvram_set("sshd_enable", "2");  // LAN-only
+		// else stay WAN+LAN
+		nvram_unset("sshd_wan");
+	}
+
+/* Adjust automatic reboot count on failed radio - reduce from 3 to 1 reboot */
+	if (nvram_match("dev_fail_reboot", "3")) {
+		nvram_set("dev_fail_reboot", "1");
+	}
+
+/* We no longer support OpenVPN client units > 2 on RT-AC3200 */
+#if defined(RTAC3200)
+	if (nvram_get_int("vpn_client_unit") > 2) {
+		nvram_set_int("vpn_client_unit", 2);
+	}
+#endif
+
+}
 
 void adjust_url_urlelist(void)
 {

@@ -54,8 +54,7 @@
 -A INPUT -p tcp -m tcpmss --mss 1:2 -m tcp --tcp-flags FIN,SYN,RST,ACK SYN
 -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 4/0
 -A INPUT
--A INPUT -p mobility
--A INPUT -p mobility -m mh --mh-type 3
+-A INPUT -p ipv6-mh -m mh --mh-type 3
 -A OUTPUT -m owner --socket-exists --uid-owner 1-2 --gid-owner 2-3
 -A OUTPUT -m owner ! --socket-exists ! --uid-owner 0 ! --gid-owner 0
 -A matches -m connbytes --connbytes 1 --connbytes-mode bytes --connbytes-dir both
@@ -97,6 +96,9 @@
 -A matches -m hashlimit --hashlimit-upto 1/min --hashlimit-burst 1 --hashlimit-name mini2
 -A matches -m hashlimit --hashlimit-upto 1/hour --hashlimit-burst 1 --hashlimit-name mini3
 -A matches -m hashlimit --hashlimit-upto 1/day --hashlimit-burst 1 --hashlimit-name mini4
+-A matches -m hashlimit --hashlimit-upto 4kb/s --hashlimit-burst 400kb --hashlimit-name mini5
+-A matches -m hashlimit --hashlimit-upto 10mb/s --hashlimit-name mini6
+-A matches -m hashlimit --hashlimit-upto 123456b/s --hashlimit-burst 1mb --hashlimit-name mini7
 -A matches
 -A matches -m hbh ! --hbh-len 5
 -A matches
@@ -184,20 +186,17 @@
 -A ntarg
 -A ntarg -j RATEEST --rateest-name RE2 --rateest-interval 250.0ms --rateest-ewmalog 500.0ms
 -A ntarg
-#-A zmatches -m rateest --rateest RE1 --rateest-lt --rateest-bps 8bit
-#-A zmatches -m rateest --rateest RE1 --rateest-eq --rateest-bps 8bit
-#-A zmatches -m rateest --rateest RE1 --rateest-gt --rateest-bps 8bit
-#-A zmatches -m rateest --rateest RE1 --rateest-lt --rateest-pps 5
-#-A zmatches -m rateest --rateest RE1 --rateest-eq --rateest-pps 5
-#-A zmatches -m rateest --rateest RE1 --rateest-gt --rateest-pps 5
-#-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-bps1 8bit --rateest-lt --rateest-bps2 16bit
-#-A zmatches -m rateest --rateest1 RE1 --rateest-lt --rateest2 RE2 --bytes
-#-A zmatches -m rateest --rateest1 RE1 --rateest-lt --rateest2 RE2 --packets
-#-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-bps1 8bit --rateest-eq --rateest-bps2 16bit
-#-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-bps1 8bit --rateest-gt --rateest-bps2 16bit
-#-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-pps1 8 --rateest-lt --rateest-pps2 9
-#-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-pps1 8 --rateest-eq --rateest-pps2 9
-#-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-pps1 8 --rateest-gt --rateest-pps2 9
+-A zmatches -m rateest --rateest RE1 --rateest-lt --rateest-bps 8bit
+-A zmatches -m rateest --rateest RE1 --rateest-eq --rateest-pps 5
+-A zmatches -m rateest --rateest RE1 --rateest-gt --rateest-bps 5kbit
+-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-bps1 8bit --rateest-lt --rateest-bps2 16bit
+-A zmatches -m rateest --rateest1 RE1 --rateest-lt --rateest-bps --rateest2 RE2
+-A zmatches -m rateest --rateest-delta --rateest1 RE1 --rateest-lt --rateest2 RE2 --rateest-pps2 42
+-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-bps1 8bit --rateest-eq --rateest-bps2 16bit
+-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-bps1 8bit --rateest-gt --rateest-bps2 16bit
+-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-pps1 8 --rateest-lt --rateest-pps2 9
+-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-pps1 8 --rateest-eq --rateest-pps2 9
+-A zmatches -m rateest --rateest-delta --rateest RE1 --rateest-pps1 8 --rateest-gt --rateest-pps2 9
 COMMIT
 *mangle
 :PREROUTING ACCEPT [0:0]
