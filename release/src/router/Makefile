@@ -1527,12 +1527,12 @@ endif
 endif
 else	# RTCONFIG_BCMARM
 	(echo '.NOTPARALLEL:' ; cat ${LINUXDIR}/Makefile) |\
-		$(MAKE) -C ${LINUXDIR} -f - $(SUBMAKE_SETTINGS) zImage
+		$(MAKE) $(PARALLEL_BUILD) -C ${LINUXDIR} -f - $(SUBMAKE_SETTINGS) zImage
 	+$(MAKE) CONFIG_SQUASHFS=$(CONFIG_SQUASHFS) -C $(SRCBASE)/router/compressed ARCH=$(ARCH)
 
 	$(if $(shell grep "CONFIG_MODULES=y" ${LINUXDIR}/.config), \
-	(echo '.NOTPARALLEL:' ; cat ${LINUXDIR}/Makefile) | $(MAKE) -C ${LINUXDIR} -f - $(SUBMAKE_SETTINGS) MFG_WAR=1 zImage ; \
-	(echo '.NOTPARALLEL:' ; cat ${LINUXDIR}/Makefile) | $(MAKE) -C ${LINUXDIR} -f - ARCH=$(ARCH) modules)
+	(echo '.NOTPARALLEL:' ; cat ${LINUXDIR}/Makefile) | $(MAKE) $(PARALLEL_BUILD) -C ${LINUXDIR} -f - $(SUBMAKE_SETTINGS) MFG_WAR=1 zImage ; \
+	(echo '.NOTPARALLEL:' ; cat ${LINUXDIR}/Makefile) | $(MAKE) $(PARALLEL_BUILD) -C ${LINUXDIR} -f - ARCH=$(ARCH) modules)
 	# Preserve the debug versions of these and strip for release
 	$(call STRIP_DEBUG_SYMBOLS,$(LINUXDIR)/vmlinux)
 	$(call STRIP_DEBUG_SYMBOLS,$(LINUXDIR)/drivers/net/wl/wl.ko)
@@ -2348,7 +2348,7 @@ ifeq ($(HND_ROUTER),y)
 endif
 	@-rm -f httpd/prebuild/*.o || true
 	@-cp -f httpd/prebuild/models/$(BUILD_NAME)/* httpd/prebuild/
-	$(MAKE) -C httpd
+	$(MAKE) $(PARALLEL_BUILD) -C httpd
 
 httpd-install:
 	$(MAKE) -C httpd INSTALLDIR=$(INSTALLDIR)/httpd install
@@ -2590,7 +2590,7 @@ rc: shared nvram$(BCMEX)$(EX7) libbcmcrypto libdisk $(if $(RTCONFIG_FBWIFI),fb_w
 # Dig into our collection of prebuilt objects based on model
 	@-rm -f rc/prebuild/*.o || true
 	@-cp -f rc/prebuild/models/$(BUILD_NAME)/* rc/prebuild/
-	@$(MAKE) -C rc
+	@$(MAKE) $(PARALLEL_BUILD) -C rc
 
 rc-install:
 	$(MAKE) -C rc INSTALLDIR=$(INSTALLDIR)/rc install
@@ -2754,7 +2754,7 @@ endif
 
 dnsmasq:  $(if $(RTCONFIG_DNSSEC),nettle,)
 	@$(SEP)
-	@$(MAKE) -C dnsmasq \
+	@$(MAKE) $(PARALLEL_BUILD) -C dnsmasq \
 	COPTS="-DHAVE_BROKEN_RTC -DHAVE_LEASEFILE_EXPIRE -DNO_ID -DNO_AUTH -DNO_INOTIFY -DNO_GMP \
 		$(if $(RTCONFIG_IPV6),-DUSE_IPV6,-DNO_IPV6) \
 		$(if $(RTCONFIG_USB_EXTRAS)||$(RTCONFIG_TR069),,-DNO_SCRIPT) \
@@ -2886,7 +2886,7 @@ endif
 
 iptables-1.4.x: iptables-1.4.x/Makefile libnfnetlink
 	@$(SEP)
-	$(MAKE) -C $@ KERNEL_DIR=$(LINUX_INC_DIR) COPT_FLAGS="-Os $(EXTRACFLAGS) -U CONFIG_NVRAM_SIZE"
+	$(MAKE) $(PARALLEL_BUILD) -C $@ KERNEL_DIR=$(LINUX_INC_DIR) COPT_FLAGS="-Os $(EXTRACFLAGS) -U CONFIG_NVRAM_SIZE"
 #		CFLAGS="-Wall -Os -D_GNU_SOURCE $(EXTRACFLAGS) -I$(TOP)/libnfnetlink/include" \
 #		LDFLAGS="-L$(TOP)/libnfnetlink/src/.libs -lnfnetlink"
 
@@ -2984,7 +2984,7 @@ shared: $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(RTCONFIG_HTTPS),openssl) $
 ifeq ($(RTCONFIG_RALINK)$(RTCONFIG_QCA)$(RTCONFIG_ALPINE)$(RTCONFIG_LANTIQ),y)
 	make -C wireless_tools wireless.h
 endif
-	$(MAKE) -C shared
+	$(MAKE) $(PARALLEL_BUILD) -C shared
 
 shared-install:
 	$(MAKE) -C shared INSTALLDIR=$(INSTALLDIR)/shared install
@@ -3688,7 +3688,7 @@ wpa_supplicant-0.7.3/stamp-h1:
 	touch $@
 
 wpa_supplicant-0.7.3: $@/stamp-h1
-	$(MAKE) -C $@/src/eap_peer
+	$(MAKE) $(PARALLEL_BUILD) -C $@/src/eap_peer
 
 wpa_supplicant-0.7.3-install: wpa_supplicant-0.7.3
 	install -D wpa_supplicant-0.7.3/src/eap_peer/libeap.so.0.0.0 $(INSTALLDIR)/wpa_supplicant-0.7.3/usr/lib/libeap.so.0.0.0
@@ -4046,7 +4046,7 @@ iproute2-install: iproute2
 
 iproute2-3.x: kernel_header iptables-1.4.x
 	@$(SEP)
-	@$(MAKE) -C $@ IPTABLES_DIR=$(TOP)/iptables-1.4.x KERNEL_INCLUDE=$(TOP)/kernel_header/include EXTRACFLAGS="$(EXTRACFLAGS) $(if $(RTCONFIG_IPV6),-DUSE_IPV6,-DNO_IPV6)" && $(MAKE) -C $@ stage
+	@$(MAKE) $(PARALLEL_BUILD) -C $@ IPTABLES_DIR=$(TOP)/iptables-1.4.x KERNEL_INCLUDE=$(TOP)/kernel_header/include EXTRACFLAGS="$(EXTRACFLAGS) $(if $(RTCONFIG_IPV6),-DUSE_IPV6,-DNO_IPV6)" && $(MAKE) -C $@ stage
 
 iproute2-3.x-install: iproute2-3.x
 	install -D iproute2-3.x/tc/tc $(INSTALLDIR)/iproute2-3.x/usr/sbin/tc
@@ -6606,7 +6606,7 @@ ethtool-3.7-install: ethtool-3.7
 	$(STRIP) $(INSTALLDIR)/ethtool-3.7/usr/bin/ethtool
 
 libnl-bf:
-	$(MAKE) -C $@ && $(PARALLEL_BUILD) $(MAKE) $@-stage
+	$(MAKE) -C $@ $(PARALLEL_BUILD) && $(MAKE) $@-stage
 
 i2c-tools-2013-12-15:
 	$(MAKE) -C $@
@@ -6676,8 +6676,8 @@ fapi_wlan_common-1.0.0.1-install:
 	install -D fapi_wlan_common-1.0.0.1/ipkg-lantiq/fapi_wlan_common/usr/lib/fapi_wlan_beerock_cli $(TARGETDIR)/usr/lib/
 
 hostapd-2.6: libnl-bf openssl
-	cd hostapd-2.6/hostapd;	make clean; make hostapd; make hostapd_cli
-	cd hostapd-2.6/wpa_supplicant; make clean; make wpa_supplicant; make wpa_cli
+	cd hostapd-2.6/hostapd;	make clean; make $(PARALLEL_BUILD) hostapd; make $(PARALLEL_BUILD) hostapd_cli
+	cd hostapd-2.6/wpa_supplicant; make clean; make $(PARALLEL_BUILD) wpa_supplicant; make $(PARALLEL_BUILD) wpa_cli
 
 hostapd-2.6-install:
 	mkdir -p $(TARGETDIR)/bin
