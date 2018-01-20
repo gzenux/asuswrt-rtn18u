@@ -569,7 +569,7 @@ unsigned int get_phy_temperature(int radio)
 		return 0;
 	}
 
-	if ((ret = wl_ioctl(interface, WLC_GET_VAR, buf, sizeof(buf)))) {
+	if (!interface || (ret = wl_ioctl(interface, WLC_GET_VAR, buf, sizeof(buf)))) {
 		return 0;
 	} else {
 		temp = (unsigned int *)buf;
