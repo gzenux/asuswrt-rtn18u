@@ -156,7 +156,6 @@ if(cfg_sync_support){
 	var cfg_upgrade = '<% nvram_get("cfg_upgrade"); %>';
 }
 
-
 var download_srv = '<% nvram_get("firmware_server"); %>';
 if (download_srv == "") {
 	download_url = "https://asuswrt.lostrealm.ca/download";
@@ -274,7 +273,6 @@ function initial(){
 		interval_update_AiMesh_fw_status = setInterval(update_AiMesh_fw, 5000);
 	}
 
-
 	if(bwdpi_support){
 		if(dpi_engine_status.DpiEngine == 1)
 			document.getElementById("sig_ver_field").style.display="";
@@ -291,7 +289,7 @@ function initial(){
 		else
 			document.getElementById("sig_update_date").innerHTML = "&nbsp;&nbsp;"+transferTimeFormat(sig_update_t*1000);
 	}
-	
+
 	if(cfg_sync_support){
 		if(cfg_upgrade != "" && cfg_upgrade != "10"){   //Show firmware is still downloading or fw upgrade loading bar if doing webs_upgrade.sh 
 			startDownloading();
@@ -304,8 +302,8 @@ function initial(){
 	}
 
 	if(no_update_support){
- 		document.getElementById("update_div").style.display = "none";
- 		document.getElementById("beta_firmware_path_span").style.display = "none";
+		document.getElementById("update_div").style.display = "none";
+		document.getElementById("beta_firmware_path_span").style.display = "none";
 		document.getElementById("linkpage_div").style.display = "none";
 	}
 	else{
@@ -492,9 +490,35 @@ function detect_firmware(flag){
 function do_show_confirm(FWVer, CheckPath, CurrentPath){
 
 					if(isNewFW(FWVer, CheckPath, CurrentPath)){	//check_path, current_path
+						var online_upgrade = "<% nvram_get("firmware_online_upgrade"); %>";
+						var right_btn_title = "Visit download site";
+						// confirm dialog overwritten
+						if(online_upgrade == "1"){
+							right_btn_title = "<#CTL_upgrade#>";
+						}
 						document.getElementById('update_scan').style.display="none";
 						document.getElementById('update_states').style.display="none";													
 						if(CheckPath==1 && FWVer.search(/alpha|beta/) != -1){	//for beta
+							var right_btn_callback = function(){
+								if (webs_state_info_beta.indexOf("alpha") != -1) {
+									window.open(download_url_alpha);
+								} else if (webs_state_info_beta.indexOf("beta") != -1) {
+									window.open(download_url_beta);
+								} else {
+									window.open(download_url);
+								}
+							};
+
+							// confirm dialog overwritten
+							if(online_upgrade == "1"){
+								right_btn_callback = function(){
+									document.start_update.action_mode.value="apply";
+									document.start_update.firmware_path.value=1;
+									document.start_update.action_script.value="start_webs_upgrade";
+									document.start_update.submit();
+								};
+							}
+
 								confirm_asus({
          					title: "Beta Firmware Available",
          					ribbon: "ribbon-red",
@@ -504,16 +528,8 @@ function do_show_confirm(FWVer, CheckPath, CurrentPath){
          					left_button: "<#CTL_Cancel#>",
          					left_button_callback: function(){confirm_cancel();},
          					left_button_args: {},
-         					right_button: "Visit download site",
-         					right_button_callback: function(){	
-							if (webs_state_info_beta.indexOf("alpha") != -1) {
-								window.open(download_url_alpha);
-							} else if (webs_state_info_beta.indexOf("beta") != -1) {
-								window.open(download_url_beta);
-							} else {
-								window.open(download_url);
-							}
-									},
+         					right_button: right_btn_title,
+							right_button_callback: right_btn_callback,
          					right_button_args: {},
          					iframe: "get_release_note1.asp",
          					margin: "100px 0px 0px 25px",
@@ -521,6 +537,29 @@ function do_show_confirm(FWVer, CheckPath, CurrentPath){
      						});
 						}
 						else{
+							var right_btn_callback = function(){
+								if(cfg_sync_support){
+									cfgsync_firmware_upgrade();
+								}
+								else{
+									window.open(download_url);
+								}
+							};
+
+							// confirm dialog overwritten
+							if(online_upgrade == "1"){
+								right_btn_callback = function(){
+									if(cfg_sync_support){
+										cfgsync_firmware_upgrade();
+									}
+									else{
+										document.start_update.action_mode.value="apply";
+										document.start_update.action_script.value="start_webs_upgrade";
+										document.start_update.submit();
+									}
+								};
+							}
+
 							confirm_asus({
          					title: "New Firmware Available",
          					contentA: "There is a newer firmware available.  For security reasons it is usually recommended to update to the latest version available.  Please review the release notes below.<br>",
@@ -528,15 +567,8 @@ function do_show_confirm(FWVer, CheckPath, CurrentPath){
          					left_button: "<#CTL_Cancel#>",
          					left_button_callback: function(){confirm_cancel();},
          					left_button_args: {},
-         					right_button: "Visit download site",
-							right_button_callback: function(){
-								if(lyra_hide_support){
-									cfgsync_firmware_upgrade();
-								}
-								else{
-									window.open(download_url);
-								}
-							},
+         					right_button: right_btn_title,
+							right_button_callback: right_btn_callback,
          					right_button_args: {},
          					iframe: "get_release_note0.asp",
          					margin: "100px 0px 0px 25px",

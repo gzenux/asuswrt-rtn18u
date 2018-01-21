@@ -138,6 +138,7 @@ endif
 	#install -m 0755 webs_scripts/*.sh $(INSTALLDIR)/usr/sbin
 
 ifeq ($(RTCONFIG_MERLINUPDATE),y)
+	cp -f webs_scripts/merlin_webs_upgrade.sh $(INSTALLDIR)/usr/sbin/webs_upgrade.sh
 	cp -f webs_scripts/merlin_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
 ifeq ($(or $(RTCONFIG_BWDPI),$(RTCONFIG_BWDPI_DEP)),y)
 	cp -f webs_scripts/sig2nd_upgrade.sh $(INSTALLDIR)/usr/sbin/sig_upgrade.sh

@@ -2,7 +2,7 @@
 
 wget_timeout=$(nvram get apps_wget_timeout)
 #wget_options="-nv -t 2 -T $wget_timeout --dns-timeout=120"
-wget_options="-q -t 2 -T $wget_timeout"
+wget_options="-q -t 2 -T $wget_timeout --no-check-certificate"
 
 fwsite=$(nvram get firmware_server)
 if [ "$fwsite" == "" ]; then
@@ -149,40 +149,54 @@ webs_state_flag=$(nvram get webs_state_flag)
 get_productid=$(nvram get productid)
 get_productid=$(echo $get_productid | sed s/+/plus/;)	#replace 'plus' to '+' for one time
 get_preferred_lang=$(nvram get preferred_lang)
+firmware_path=$(nvram get firmware_path)
 
-if [ "$webs_state_flag" -eq "1" ]; then
+if [ "$webs_state_flag" == "1" ]; then
 	releasenote_file0_US=$(nvram get webs_state_info)_note.txt
 	releasenote_path0="/tmp/release_note0.txt"
 	if [ "$forsq" == "1" ]; then
 		echo "---- download SQ release note $fwsite/test/$releasenote_file0_US ----" >> /tmp/webs_upgrade.log
 		/usr/sbin/wget $wget_options $fwsite/test/$releasenote_file0_US -O $releasenote_path0
-		echo "---- $fwsite/test/$releasenote_file0 ----" >> /tmp/webs_upgrade.log
+		echo "---- $fwsite/test/$releasenote_file0_US ----" >> /tmp/webs_upgrade.log
 	else
 		echo "---- download real release note ----" >> /tmp/webs_upgrade.log
 		/usr/sbin/wget $wget_options $fwsite/$releasenote_file0_US -O $releasenote_path0
-		echo "---- $fwsite/$releasenote_file0 ----" >> /tmp/webs_upgrade.log
+		echo "---- $fwsite/$releasenote_file0_US ----" >> /tmp/webs_upgrade.log
 	fi
 
 	if [ "$?" != "0" ]; then
-		echo "---- download SQ release note failed ----" >> /tmp/webs_upgrade.log
-		nvram set webs_state_error=1
+		if [ "$firmware_path" == "1" ]; then
+			echo "---- download stable release note failed (ignored) ----" >> /tmp/webs_upgrade.log
+		else
+			echo "---- download stable release note failed (error) ----" >> /tmp/webs_upgrade.log
+			nvram set webs_state_error=1
+		fi
 	fi
-elif [ "$get_beta_release" == "1" ]; then
+else
+	echo "---- skip download stable release note since there is no update ----" >> /tmp/webs_upgrade.log
+fi
+if [ "$get_beta_release" == "1" ]; then
 	releasenote_file1_US=$(nvram get webs_state_info_beta)_note.txt
 	releasenote_path1="/tmp/release_note1.txt"
 	if [ "$forsq" == "1" ]; then
 		echo "---- download SQ beta release note $fwsite/test/$releasenote_file1_US ----" >> /tmp/webs_upgrade.log
 		/usr/sbin/wget $wget_options $fwsite/test/$releasenote_file1_US -O $releasenote_path1
-		echo "---- $fwsite/test/$releasenote_file1 ----" >> /tmp/webs_upgrade.log
+		echo "---- $fwsite/test/$releasenote_file1_US ----" >> /tmp/webs_upgrade.log
 	else
 		echo "---- download real beta release note ----" >> /tmp/webs_upgrade.log
 		/usr/sbin/wget $wget_options $fwsite/$releasenote_file1_US -O $releasenote_path1
-		echo "---- $fwsite/$releasenote_file1 ----" >> /tmp/webs_upgrade.log
+		echo "---- $fwsite/$releasenote_file1_US ----" >> /tmp/webs_upgrade.log
 	fi
 	if [ "$?" != "0" ]; then
-		echo "---- download SQ release note failed ----" >> /tmp/webs_upgrade.log
-		nvram set webs_state_error=1
+		if [ "$firmware_path" == "1" ]; then
+			echo "---- download beta release note failed (error) ----" >> /tmp/webs_upgrade.log
+			nvram set webs_state_error=1
+		else
+			echo "---- download beta release note failed (ignored) ----" >> /tmp/webs_upgrade.log
+		fi
 	fi
+else
+	echo "---- skip download beta release note since there is no update ----" >> /tmp/webs_upgrade.log
 fi
 
 nvram set webs_state_update=1
