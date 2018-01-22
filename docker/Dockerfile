@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y \
 ARG UID=1000
 ARG USER=user
 ARG HOME=/home/${USER}
-RUN useradd -m -u ${UID} -d ${HOME} ${USER} && passwd -d ${USER} && \
+RUN mkdir -p $(dirname ${HOME}) && useradd -m -u ${UID} -d ${HOME} ${USER} && passwd -d ${USER} && \
 gpasswd -a ${USER} sudo && sed -i 's:%sudo\tALL=(ALL\:ALL) ALL:%sudo\tALL=NOPASSWD\: ALL:g' /etc/sudoers
 
 USER ${USER}
