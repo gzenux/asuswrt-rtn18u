@@ -1,0 +1,17 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+
+382.2-beta3
+ - NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+
+ - NOTE: This firmware is based on ASUS GPL code release 382_18991
+         and applied Asuswrt-Merlin's changes to revision
+         382.2-beta3 with the following additional changes.
+
+ - NEW: Added online upgrade feature support.
+
+ - FIX: httpd crash when NULL interface value in
+        get_phy_temperature() when the model does not support
+        5G wireless.
+ - FIX: Beta release note will not show if stable release note
+        download fail.
