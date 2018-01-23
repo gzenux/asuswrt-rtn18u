@@ -726,7 +726,7 @@ int led_control_atomic(int which, int mode)
 					eval("wl", "-i", "eth1", "ledbh", "3", "7");
 				else if (mode == LED_OFF)
 					eval("wl", "-i", "eth1", "ledbh", "3", "0");
-			} else if ((model == MODEL_RTAC68U) || (model == MODEL_RTAC87U) || (model == MODEL_RTAC3200)) {
+			} else if ((model == MODEL_RTAC68U) || (model == MODEL_RTAC87U) || (model == MODEL_RTAC3200) || (model == MODEL_RTN18U)) {
 				if (mode == LED_ON)
 					eval("wl", "ledbh", "10", "7");
 				else if (mode == LED_OFF)
