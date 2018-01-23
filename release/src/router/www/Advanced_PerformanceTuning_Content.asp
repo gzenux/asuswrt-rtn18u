@@ -35,8 +35,12 @@ function initial(){
 	document.form.fanctrl_fullspeed_temp_unit.selectedIndex = cookie.get("CoreTmpUnit");
 	update_coretmp();
 
-	code1 = '<br>Legend: <span style="color: #FF9900;">2.4 GHz</span> - <span style="color: #33CCFF;">5 GHz</span>';
-	code2 = '<br>Current Temperatures: <span id="coreTemp_2" style="text-align:center; font-weight:bold;color:#FF9900"></span> - <span id="coreTemp_5" style="text-align:center; font-weight:bold;color:#33CCFF"></span>';
+	code1 = '<br>Legend: <span style="color: #FF9900;">2.4 GHz</span>';
+	if (band5g_support)
+		code1 += ' - <span style="color: #33CCFF;">5 GHz</span>';
+	code2 = '<br>Current Temperatures: <span id="coreTemp_2" style="text-align:center; font-weight:bold;color:#FF9900"></span>';
+	if (band5g_support)
+		code2 += ' - <span id="coreTemp_5" style="text-align:center; font-weight:bold;color:#33CCFF"></span>';
 
 	if(curr_coreTmp_cpu != "") {
 		code1 += ' - <span style="color: #00FF33;">CPU</span>';
@@ -66,13 +70,15 @@ function updateNum(_coreTmp_2, _coreTmp_5, _cpuTemp){
 
 	if(document.form.fanctrl_fullspeed_temp_unit.value == 1){
 		document.getElementById("coreTemp_2").innerHTML = (_coreTmp_2 == 0 ? "disabled" : Math.round(_coreTmp_2*9/5+32) + " °F");
-		document.getElementById("coreTemp_5").innerHTML = (_coreTmp_5 == 0 ? "disabled" : Math.round(_coreTmp_5*9/5+32) + " °F");
+		if (band5g_support)
+			document.getElementById("coreTemp_5").innerHTML = (_coreTmp_5 == 0 ? "disabled" : Math.round(_coreTmp_5*9/5+32) + " °F");
 		if (_cpuTemp != "")
 			document.getElementById("coreTemp_cpu").innerHTML = Math.round(_cpuTemp*9/5+32) + " °F";
 	}
 	else{
 		document.getElementById("coreTemp_2").innerHTML = (_coreTmp_2 == 0 ? "disabled" : _coreTmp_2 + " °C");
-		document.getElementById("coreTemp_5").innerHTML = (_coreTmp_5 == 0 ? "disabled" : _coreTmp_5 + " °C");
+		if (band5g_support)
+			document.getElementById("coreTemp_5").innerHTML = (_coreTmp_5 == 0 ? "disabled" : _coreTmp_5 + " °C");
 		if (_cpuTemp != "")
 			document.getElementById("coreTemp_cpu").innerHTML = parseInt(_cpuTemp) + " °C";
 	}
