@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>RT-N18U for Asuswrt-Merlin</title>
+    <link href="website/css/bower_components/normalize.css/normalize.css" type="text/css" rel="stylesheet">
+    <link href="website/css/jquery-ui.min.css" type="text/css" rel="stylesheet">
+    <link href="website/css/main.css" type="text/css" rel="stylesheet">
+    <script src="website/js/jquery-3.3.1.min.js" type="text/javascript"></script>
+    <script src="website/js/jquery-ui.min.js" type="text/javascript"></script>
+    <script src="website/js/main.js" type="text/javascript"></script>
+  </head>
+
+  <body>
+    <div class="header"><div class="container">
+      <img style="float:right;" src="website/img/product_rtn18u.png" alt="ASUS RT-N18U" width="248" height="208" />
+      <h1 class="logo">RT-N18U</h1>
+      <div class="tagline">
+        The <em>UNOFFICIAL</em> Asuswrt-Merlin firmware<br> for ASUS RT-N18U router.
+      </div>
+      <table class="tbl_fw">
+        <tr class="nofw_hidden nofw_warning"><td><em>Firmware release is not yet available!</em></td></tr>
+        <tr class="stable_hidden">
+          <td class="tbl_fw_type" style=""><b>Stable Release&nbsp;:</b></td>
+          <td class="tbl_fw_num"><span id="txt_stable_version" /></td>
+        </tr>
+        <tr class="beta_hidden">
+          <td class="tbl_fw_type"><b>Beta Release&nbsp;:</b></td>
+          <td class="tbl_fw_num"><span id="txt_beta_version" /></td>
+        </tr>
+      </table>
+      <div class="cta">
+        <a class="stable_hidden" role="button">Download Stable Release</a>
+        <a class="beta_hidden" role="button">Download Beta Release</a>
+        <a href="https://github.com/gzenux/asuswrt-rtn18u" role="button">View on GitHub</a>
+      </div>
+    </div></div>
+
+    <div class="main"><div class="container">
+<!--
+      <div class="subtagline">
+        <p>Work in progress...</p>
+      </div>
+
+      <ul class="features">
+        <li><b>feature1:</b> Description1.</li>
+        <li><b>feature2:</b> Description2.</li>
+        <li><b>feature3:</b> Description3.</li>
+        <li><b>feature4:</b> Description4.</li>
+      </ul>
+-->
+      <!-- release note section -->
+      <div id="release_note_accordion">
+        <div id="release_note_stable" class="stable_hidden">
+          <h2 style="text-align: right;">Release Note for <em><span id="release_note_stable_version" /></em></h2>
+          <div>
+            <span id="release_stable_nonote_warning" class="nonote_warning">Could not load the release note!</span>
+            <pre id="release_note_stable_txt"></pre>
+          </div>
+        </div>
+        <div id="release_note_beta" class="beta_hidden">
+          <h2 style="text-align: right;">Release Note for <em><span id="release_note_beta_version" /></em></h2>
+          <div>
+            <span id="release_beta_nonote_warning" class="nonote_warning">Could not load the release note!</span>
+            <pre id="release_note_beta_txt"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta">
+        <a class="stable_hidden" role="button">Download Stable Release</a>
+        <a class="beta_hidden" role="button">Download Beta Release</a>
+        <a href="https://github.com/gzenux/asuswrt-rtn18u" role="button">View on GitHub</a>
+      </div>
+    </div></div>
+
+    <div class="footer"><div class="container">
+      <span class="credits">
+        Created by <a href="https://github.com/gzenux">YiJun</a>
+      </span>
+      <span class="credits-right">
+        Web template referenced from <a href="https://khan.github.io/KaTeX/">KaTeX</a>
+      </span>
+    </div></div>
+
+    <!-- Non-visiable elements -->
+    <span style="display:none" id="manifest_txt" />
+  </body>
+</html>
+

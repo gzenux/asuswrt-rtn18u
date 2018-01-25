@@ -1,0 +1,154 @@
+body {
+    font: 16px/1.4 "proxima-nova", "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.container {
+    margin: 0 auto;
+    width: 800px;
+}
+
+.header, .footer {
+    color: #fff;
+    background: #329894;
+    overflow: hidden;
+}
+
+.cta {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.container .stable_hidden, .container .beta_hidden, .container .nofw_hidden {
+    display: none;
+}
+
+.nofw_warning {
+    color: #ff0;
+    font-size: 18px;
+}
+
+.nonote_warning {
+    color: #f00;
+    text-align: center;
+}
+
+.cta a {
+    border-radius: 3px;
+    display: inline-block;
+    font-weight: 600;
+    margin: 0 10px;
+    padding: 8px 24px;
+    text-decoration: none;
+}
+
+.header {
+    padding: 40px 0 0;
+}
+
+.logo {
+    color: #fff;
+    font-size: 45px;
+    margin: 0;
+}
+
+.head_banner {
+    width: 100%;
+    text-align: center;
+    display: inline-block;
+}
+
+.tagline {
+    font-size: 28px;
+    font-weight: 300;
+    padding: 20px 0;
+    text-align: center;
+}
+
+.tagline em {
+    font-weight: 600;
+}
+
+.header .cta a {
+    border: 3px solid;
+    color: #fff;
+}
+
+.header .cta a:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.main {
+    background: #fff2e7;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    min-height: 400px;
+    position: relative;
+    padding: 30px 0;
+}
+
+.subtagline {
+    color: #329894;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 20px 0;
+    text-align: center;
+}
+
+.tbl_fw {
+    font-size: 16px;
+}
+
+.tbl_fw_type {
+    text-align: right;
+}
+
+.tbl_fw_num {
+    color: #ff0;
+    padding: 0 0 0 10px;
+    text-align: left;
+}
+
+.features {
+    font-size: 20px;
+    margin: 0 auto;
+    width: 540px;
+}
+
+.features > li {
+    margin: 10px 0;
+}
+
+.main .cta {
+    padding-top: 50px;
+}
+
+.main .cta a {
+    border: 3px solid;
+    color: #329894;
+}
+
+.main .cta a:hover {
+    background: rgba(50, 152, 148, 0.1);
+}
+
+.footer {
+    padding: 30px 0;
+    font-size: 21px;
+}
+
+.credits-right {
+    float: right;
+    font-size: 16px;
+}
+
+.credits-right a {
+    color: white;
+}
+
+.credits {
+    float: left;
+    font-size: 16px;
+}
+
+.credits a {
+    color: white;
+}
