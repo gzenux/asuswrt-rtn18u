@@ -34,7 +34,6 @@ function initial(){
 	loadGameOptions();
 	setTimeout("showDropdownClientList('setClientIP', 'ip', 'all', 'ClientList_Block', 'pull_arrow', 'online');", 1000);	
 	showvts_rulelist();
-	addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "port", "forwarding"]);
 	update_game_profile();
 }
 function extractValue(row, col){

@@ -19,6 +19,7 @@
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 .contentM_qis{
 	position:absolute;
@@ -58,8 +59,9 @@ function initial(){
 	var pptpd_wins2_orig = '<% nvram_get("pptpd_wins2"); %>';
 	var pptpd_clients = '<% nvram_get("pptpd_clients"); %>';
 	
-	show_menu();		
-	addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "VPN"]);
+	show_menu();
+	// https://www.asus.com/US/support/FAQ/1033906
+	httpApi.faqURL("faq", "1033906", "https://www.asus.com", "/support/FAQ/");
 	//if support pptpd and openvpnd then show switch button
 	if(pptpd_support && openvpnd_support) {
 		document.getElementById("divSwitchMenu").style.display = "";

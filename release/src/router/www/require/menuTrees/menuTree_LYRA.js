@@ -77,7 +77,7 @@ define(function(){
 					{url: "QoS_EZQoS.asp", tabName: "<#menu5_3_2#>"},
 					{url: "AdaptiveQoS_WebHistory.asp", tabName: "<#Adaptive_History#>"},
 					{url: "AdaptiveQoS_ROG.asp", tabName: "<table style='margin-top:-7px;'><tr><td><img src='/images/ROG_Logo.png' style='border:0px;width:32px;'></td><td>ROG First</td></tr></table>"}, 
-					{url: "Main_Spectrum_Content.asp", tabName: "Spectrum"},
+					{url: "Main_Spectrum_Content.asp", tabName: "<#Spectrum_title#>"},
 					{url: "Advanced_QOSUserPrio_Content.asp", tabName: "__INHERIT__"},
 					{url: "Advanced_QOSUserRules_Content.asp", tabName: "__INHERIT__"},
 					{url: "AdaptiveQoS_Adaptive.asp", tabName: "__INHERIT__"},
@@ -382,6 +382,9 @@ define(function(){
 				if(lyra_hide_support){
 					retArray.push("menu_Wireless");
 					retArray.push("menu_TrafficAnalyzer");
+					if(based_modelid == "MAP-AC1750"){
+						retArray.push("menu_BandwidthMonitor");
+					}
 				}
 
 				return retArray;
@@ -665,7 +668,9 @@ define(function(){
 					retArray.push("Advanced_OperationMode_Content.asp");
 					retArray.push("QoS_EZQoS.asp");
 					retArray.push("AdaptiveQoS_WebHistory.asp");
-					retArray.push("Advanced_DHCP_Content.asp");
+					if(based_modelid == "MAP-AC1750"){
+						retArray.push("AiProtection_IntrusionPreventionSystem.asp");
+					}
 				}
 
 				return retArray;

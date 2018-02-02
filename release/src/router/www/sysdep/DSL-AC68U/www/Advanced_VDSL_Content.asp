@@ -31,6 +31,8 @@ var dsl_pvc_enabled = ["0", "0", "0", "0", "0", "0", "0", "0"];
 var wans_dualwan = '<% nvram_get("wans_dualwan"); %>';
 <% wan_get_parameter(); %>
 var original_dnsenable = parseInt('<% nvram_get("dslx_dnsenable"); %>');
+var original_ppp_echo = parseInt('<% nvram_get("wan_ppp_echo"); %>');
+var default_ppp_echo = parseInt('<% nvram_default_get("wan_ppp_echo"); %>');
 
 if(dualWAN_support){
 	var wan_type_name = wans_dualwan.split(" ")[<% nvram_get("wan_unit"); %>];
@@ -671,6 +673,8 @@ function change_dsl_type(dsl_type){
 		inputCtrl(document.form.dslx_pppoe_options, 1);
 		// 2008.03 James. patch for Oleg's patch. }
 		showhide("PPPsetting",1);
+		inputCtrl(document.form.wan_ppp_echo, 1);
+		ppp_echo_control();
 	}
 	else if(dsl_type == "static"){
 		inputCtrl(document.form.dslx_dnsenable[0], 0);
@@ -687,6 +691,8 @@ function change_dsl_type(dsl_type){
 		inputCtrl(document.form.dslx_pppoe_options, 0);
 		// 2008.03 James. patch for Oleg's patch. }
 		showhide("PPPsetting",0);
+		inputCtrl(document.form.wan_ppp_echo, 0);
+		ppp_echo_control(0);
 	}
 	else if(dsl_type == "dhcp"){
 		inputCtrl(document.form.dslx_dnsenable[0], 1);
@@ -704,6 +710,8 @@ function change_dsl_type(dsl_type){
 		inputCtrl(document.form.dslx_pppoe_options, 0);
 		// 2008.03 James. patch for Oleg's patch. }
 		showhide("PPPsetting",0);
+		inputCtrl(document.form.wan_ppp_echo, 0);
+		ppp_echo_control(0);
 	}
 	else if(dsl_type == "bridge") {
 		inputCtrl(document.form.dslx_dnsenable[0], 0);
@@ -720,6 +728,8 @@ function change_dsl_type(dsl_type){
 		inputCtrl(document.form.dslx_pppoe_options, 0);
 		// 2008.03 James. patch for Oleg's patch. }
 		showhide("PPPsetting",0);
+		inputCtrl(document.form.wan_ppp_echo, 0);
+		ppp_echo_control(0);
 	}
 	else {
 		alert("error");
@@ -753,6 +763,8 @@ function fixed_change_dsl_type(dsl_type){
 		showhide("IPsetting",1);
 		showhide("DNSsetting",1);
 		showhide("vpn_server",1);
+		document.form.wan_ppp_echo.value = original_ppp_echo;
+		ppp_echo_control();
 	}
 	//else if(dsl_type == "ipoa"){
 	else if(dsl_type == "static"){
@@ -975,6 +987,17 @@ function check_macaddr(obj,flag){ //control hint of input mac address
 /* password item show or not */
 function pass_checked(obj){
 	switchType(obj, document.form.show_pass_1.checked, true);
+}
+
+function ppp_echo_control(flag){
+	if (typeof(flag) == 'undefined')
+		flag = document.form.wan_ppp_echo.value;
+	var enable = (flag == 1) ? 1 : 0;
+	inputCtrl(document.form.wan_ppp_echo_interval, enable);
+	inputCtrl(document.form.wan_ppp_echo_failure, enable);
+	enable = (flag == 2) ? 1 : 0;
+	//inputCtrl(document.form.dns_probe_timeout, enable);
+	inputCtrl(document.form.dns_delay_round, enable);
 }
 
 </script>
@@ -1299,6 +1322,32 @@ function pass_checked(obj){
 											<td align="left">
 												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_hostuniq" value="<% nvram_get("dslx_pppoe_hostuniq"); %>" onkeypress="return validator.isString(this, event);" autocorrect="off" autocapitalize="off"/>
 											</td>
+										</tr>
+										<tr>
+											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,31);"><#PPPConnection_x_InternetDetection_itemname#></a></th>
+											<td>
+												<select name="wan_ppp_echo" class="input_option" onChange="ppp_echo_control();">
+												<option value="0" <% nvram_match("wan_ppp_echo", "0","selected"); %>><#btn_disable#></option>
+												<option value="1" <% nvram_match("wan_ppp_echo", "1","selected"); %>>PPP Echo</option>
+												<option value="2" <% nvram_match("wan_ppp_echo", "2","selected"); %>>DNS Probe</option>
+												</select>
+											</td>
+										</tr>
+										<tr>
+											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,32);"><#PPPConnection_x_PPPEcho_Interval#></a></th>
+											<td><input type="text" maxlength="6" class="input_6_table" name="wan_ppp_echo_interval" value="<% nvram_get("wan_ppp_echo_interval"); %>" onkeypress="return validator.isNumber(this, event)" autocorrect="off" autocapitalize="off"/></td>
+										</tr>
+										<tr>
+											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,33);"><#PPPConnection_x_PPPEcho_Max_Failure#></a></th>
+											<td><input type="text" maxlength="6" class="input_6_table" name="wan_ppp_echo_failure" value="<% nvram_get("wan_ppp_echo_failure"); %>" onkeypress="return validator.isNumber(this,event);" autocorrect="off" autocapitalize="off"/></td>
+										</tr>
+										<!--tr>
+											<th><a class="hintstyle" href="javascript:void(0);">DNS Probe Timeout</a></th><!--untranslated--\>
+											<td><input type="text" maxlength="6" class="input_6_table" name="dns_probe_timeout" value="<% nvram_get("dns_probe_timeout"); %>" onkeypress="return validator.isNumber(this, event)" autocorrect="off" autocapitalize="off"/></td>
+										</tr-->
+										<tr>
+											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,34);">DNS Probe Max Failures</a></th><!--untranslated-->
+											<td><input type="text" maxlength="6" class="input_6_table" name="dns_delay_round" value="<% nvram_get("dns_delay_round"); %>" onkeypress="return validator.isNumber(this,event);" autocorrect="off" autocapitalize="off"/></td>
 										</tr>
 										<!-- 2008.03 James. patch for Oleg's patch. { -->
 										<tr>

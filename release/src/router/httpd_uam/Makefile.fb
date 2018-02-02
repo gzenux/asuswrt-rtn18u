@@ -94,10 +94,6 @@ LIBS += -L$(TOP)/libqcsapi_client -lqcsapi_client
 endif
 endif
 
-ifeq ($(RTCONFIG_AMAS),y)
-LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
-endif
-
 ifeq ($(RTCONFIG_USB),y)
 LIBS += -L$(TOP)/libdisk -ldisk
 endif

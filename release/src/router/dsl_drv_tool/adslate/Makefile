@@ -45,9 +45,6 @@ CFLAGS += -I$(LINUXDIR)/include
 
 LDFLAGS = -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX} -lnvram
 
-ifeq ($(RTCONFIG_AMAS),y)
-LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
-endif
 
 INSTALL = install
 

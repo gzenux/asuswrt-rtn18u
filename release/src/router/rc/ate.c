@@ -550,6 +550,9 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 	/*** ATE Set function ***/
 	if (!strcmp(command, "Set_StartATEMode")) {
 		asus_ate_StartATEMode();
+#if defined(MAPAC1750)
+		set_rgbled(RGBLED_ATE_MODE);
+#endif
 		puts("1");
 		return 0;
 	}
@@ -1147,7 +1150,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		return 0;
 	}
 #endif
-#if defined(RTAC85U)
+#if defined(RTAC85U) || defined(RTN800HP)
 	else if (!strcmp(command, "Set_DisableStp")) {
 		FWrite("1", OFFSET_BR_STP, 1);
 		puts("1");
@@ -1175,8 +1178,8 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 	}
 	/*** ATE Get functions ***/
 	else if (!strcmp(command, "Get_FWVersion")) {
-		char fwver[12];
-		sprintf(fwver, "%s.%s", nvram_safe_get("firmver"), nvram_safe_get("buildno"));
+		char fwver[16];
+		snprintf(fwver, sizeof(fwver), "%s.%s", nvram_safe_get("firmver"), nvram_safe_get("buildno"));
 		puts(fwver);
 		return 0;
 	}
@@ -1355,8 +1358,9 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 #if defined(RTCONFIG_EXT_RTL8365MB) || defined(RTCONFIG_EXT_RTL8370MB)
 		GetPhyStatus(1);
 #else
-		if (!GetPhyStatus(1))
+		if (!GetPhyStatus(1) && nvram_match("ATEMODE", "1")) {
 			puts("ATE_ERROR");
+		}
 #endif
 
 		return 0;
@@ -1418,7 +1422,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		return 0;
 	}
 #ifdef RTCONFIG_RALINK
-#if !defined(RTN14U) && !defined(RTAC52U) && !defined(RTAC51U) && !defined(RTN11P) && !defined(RTN300) && !defined(RTN54U) && !defined(RTAC1200HP) && !defined(RTN56UB1) && !defined(RTAC54U) && !defined(RTN56UB2) && !defined(RTAC54U) && !defined(RTAC1200) && !defined(RTAC1200GA1) && !defined(RTAC1200GU) && !defined(RTN11P_B1) && !defined(RTN10P_V3) && !defined(RTAC51UP) && !defined(RTAC53) && !defined(RPAC87) && !defined(RTAC85U) && !defined(RTAC65U)
+#if !defined(RTN14U) && !defined(RTAC52U) && !defined(RTAC51U) && !defined(RTN11P) && !defined(RTN300) && !defined(RTN54U) && !defined(RTAC1200HP) && !defined(RTN56UB1) && !defined(RTAC54U) && !defined(RTN56UB2) && !defined(RTAC54U) && !defined(RTAC1200) && !defined(RTAC1200GA1) && !defined(RTAC1200GU) && !defined(RTN11P_B1) && !defined(RTN10P_V3) && !defined(RTAC51UP) && !defined(RTAC53) && !defined(RPAC87) && !defined(RTAC85U) && !defined(RTAC65U) && !defined(RTN800HP) 
 	else if (!strcmp(command, "Ra_FWRITE")) {
 		return FWRITE(value, value2);
 	}
@@ -2045,6 +2049,14 @@ int ate_dev_status(void)
 	{
 #define RETRY_MAX 100
 		int retry;
+#ifdef RTCONFIG_LANTIQ
+		system("killall bluetoothd");
+		system("hciconfig hci0 down");
+		system("hciconfig hci0 reset");
+		system("hciconfig hci0 up");
+		system("hciconfig hci0 leadv 0");
+		system("bluetoothd &");
+#endif
 		for(retry = 0; retry < RETRY_MAX; retry++){
 			extern int check_bluetooth_device(const char *bt_dev);
 			if(check_bluetooth_device("hci0") == 0)

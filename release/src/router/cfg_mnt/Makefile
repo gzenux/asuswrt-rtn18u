@@ -19,7 +19,7 @@ LDFLAGS += -L$(TOP)/amas-utils -lamas-utils
 endif
 
 ifeq ($(HND_ROUTER),y)
-CFLAGS += -DPTHREAD_STACK_SIZE_1M
+CFLAGS += -DPTHREAD_STACK_SIZE_256K -DPTHREAD_EXIT
 LDFLAGS += -L$(TOP)/wlcsm -lwlcsm
 endif
 

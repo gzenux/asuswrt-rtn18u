@@ -16,6 +16,7 @@
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 .div_table{
 	display:table;
@@ -32,7 +33,7 @@
 }
 
 .div_img {
-	padding: 35px 0px 100px 25px;
+	padding: 35px 0px 50px 25px;
 }
 
 .step_1{
@@ -78,7 +79,7 @@
 	background-attachment:fixed;
 	background:url(images/New_ui/smh_step_4_flow.png) no-repeat center;
 	margin:auto;
-	background-size: 421px 337px;
+	background-size: 365px 292px;
 }
 
 .smh_asus_router{
@@ -87,8 +88,8 @@
 	background-position:center;
 	background-attachment:fixed;
 	background:url(images/New_ui/smh_asus_router.png) no-repeat center;
-	margin:41px 0px 0px 287px;
-	background-size: 146px 146px;
+	margin:53px 0px 0px 265px;
+	background-size: 110px 110px;
 	position: absolute;
 }
 
@@ -115,6 +116,7 @@
 	padding:25px;
 	display: none;
 }
+
 </style>
 <script>
 
@@ -123,15 +125,41 @@ var remaining_time_min;
 var remaining_time_sec;
 var remaining_time_show;
 var countdownid;
-
-var external_ip = -1;
 var MAX_RETRY_NUM = 5;
 var external_ip_retry_cnt = MAX_RETRY_NUM;
-var flag = '<% get_parameter("flag"); %>';
+var external_ip = -1;
 var AAE_MAX_RETRY_NUM = 3;
+var flag = '<% get_parameter("flag"); %>';
+var realip_state = "";
+
+var StatusList = {
+	"NoInetrnet": "Internet is disconnected. Please check your WAN connection for remote control",
+	"SvrFail": "Server connection failed",
+	"StepAccount": "Please follow steps to pair your account",
+	"EnableRemoteCtrl": "<#Alexa_Register1#>",
+	"Success": "Amazon Alexa account is registered"
+}
+
+var AccLinkStatus = {
+	"RemoteStatus":{
+		"ddns_enable_x":'<% nvram_get("ddns_enable_x"); %>',
+		"ddns_hostname_x":'<% nvram_get("ddns_hostname_x"); %>',
+		"ddns_server_x":'<% nvram_get("ddns_server_x"); %>',
+		"misc_http_x":'<% nvram_get("misc_http_x"); %>',
+		"link_internet":'<% nvram_get("link_internet"); %>',
+	},
+	"getoken":{
+		"ifttt_token":('<% nvram_match_x("","ifttt_token", "", "1"); %>' == '1')?false:true,
+	},
+	"AAE_SIP":{
+		"aae_sip_connected":'<% nvram_get("aae_sip_connected"); %>',
+	}
+}
 
 function initial(){
 	show_menu();
+	//	https://www.asus.com/us/support/FAQ/1033393
+	httpApi.faqURL("faq", "1033393", "https://www.asus.com", "/support/FAQ/");
 
 	if(!ifttt_support){
 		document.getElementById("divSwitchMenu").style.display = "none";
@@ -140,44 +168,45 @@ function initial(){
 	if('<% nvram_get("fw_lw_enable_x"); %>' == '1')
 		document.getElementById("network_services_Remind").style.display = "";
 
-	tag_control();
-	get_real_ip();
-
 	if(flag == 'from_endpoint'){
 		AAE_MAX_RETRY_NUM = 10;
 		get_activation_code();
 	}
+
+	tag_control();
+	setTimeout("get_real_ip();", 1000);
+	setTimeout("update_acc_link_status();", 1000);
 }
 
 function tag_control(){
-	document.getElementById("remote_control_here").style="text-decoration: underline;cursor:pointer;";
-	document.getElementById("remote_control_here").onclick=function(){
-		enable_remote_control();
-	};
-}
-
-function show_remote_control(){
-	if(stopFlag != 1 && external_ip_retry_cnt > 0)
-		setTimeout("get_real_ip();", 3000);
-
-	if(external_ip == 1 && ('<% nvram_get("ddns_enable_x"); %>' == '0' || '<% nvram_get("ddns_hostname_x"); %>' == '' || '<% nvram_get("misc_http_x"); %>' == '0'))
-			document.getElementById("remote_control").style.display = "";
-	else
-			document.getElementById("remote_control").style.display = "none";
+	var obj;
+	if((obj = document.getElementById('remote_control_here')) != null){
+		obj.style="text-decoration: underline;cursor:pointer;";
+		obj.onclick=function(){
+			enable_remote_control();
+		};
+	}
 }
 
 function get_real_ip(){
-	$.ajax({
-		url: 'get_real_ip.asp',
-		dataType: 'script',
-		error: function(xhr){
-			setTimeout("get_real_ip();", 3000);
-		},
-		success: function(response){
-			external_ip_retry_cnt--;
-			show_remote_control();
-		}
-	});
+	if(AccLinkStatus.RemoteStatus.link_internet == '2'){
+		$.ajax({
+			url: 'get_real_ip.asp',
+			dataType: 'script',
+			error: function(xhr){
+				setTimeout("get_real_ip();", 3000);
+			},
+			success: function(response){
+				external_ip_retry_cnt--;
+				if(realip_state != "2" && external_ip_retry_cnt > 0){
+					setTimeout("get_real_ip();", 3000);
+				}
+			}
+		});
+	}else{
+		external_ip_retry_cnt--;
+		setTimeout("get_real_ip();", 3000);
+	}
 }
 
 function enable_remote_control(){
@@ -334,6 +363,54 @@ function clipboard(ID_value)
 	input.remove();
 }
 
+function update_acc_link_status(){
+
+	AccLinkStatus.RemoteStatus = httpApi.nvramGet(["ddns_enable_x", "ddns_hostname_x", "ddns_server_x", "misc_http_x", "link_internet"],true);
+	AccLinkStatus.AAE_SIP = httpApi.nvramGet(["aae_sip_connected"],true);
+	AccLinkStatus.getoken = httpApi.nvram_match_x("ifttt_token","","1");
+
+	setTimeout("update_acc_link_status()", 5000);
+	show_account_state();
+}
+
+function show_account_state(){
+
+	var RetDDNSstatus = function(){
+
+		if(AccLinkStatus.RemoteStatus.ddns_enable_x == '0' || AccLinkStatus.RemoteStatus.ddns_hostname_x == '' || AccLinkStatus.RemoteStatus.misc_http_x == '0')
+			return false;
+		else
+			return true;
+	}
+
+	var RetAccLink = {
+		"AccLink":(AccLinkStatus.getoken.ifttt_token == '1')?false:true,
+		"AAE_SIP":(AccLinkStatus.AAE_SIP.aae_sip_connected == "1")?true:false,
+		"DDNSLink":RetDDNSstatus()
+	}
+
+	var RetStatus;
+	if(AccLinkStatus.RemoteStatus.link_internet != "2"){
+		RetStatus = StatusList.NoInetrnet;
+	}
+	else if(external_ip == 1){	//public ip
+		if(RetAccLink.DDNSLink)
+			RetStatus = (RetAccLink.AccLink)?StatusList.Success:StatusList.StepAccount;
+		else
+			RetStatus = StatusList.EnableRemoteCtrl;
+	}
+	else{
+		if(RetAccLink.AccLink)
+			RetStatus = (RetAccLink.AAE_SIP)?StatusList.Success:StatusList.SvrFail;
+		else
+			RetStatus = StatusList.StepAccount;
+	}
+
+	document.getElementById("acc_link_status").innerHTML = RetStatus;
+
+	if(RetStatus == StatusList.EnableRemoteCtrl)
+		tag_control();
+}
 </script>
 </head>
 <body onload="initial();" onunLoad="return unload_body();">
@@ -382,16 +459,16 @@ function clipboard(ID_value)
 														<span><#Alexa_Desc2#></span>
 														<p style="font-size:13px;padding-top: 20px;font-style:italic;"><#Alexa_Example0#></p>
 														<p style="font-size:13px;padding-left: 20px;font-style:italic;">“Alexa, ask ASUS ROUTER to turn on the Guest Network”</p>
-														<p style="font-size:13px;padding-left: 20px;font-style:italic;">“Alexa, ask ASUS ROUTER upgrade to the latest firmware”</p>
+														<p style="font-size:13px;padding-left: 20px;font-style:italic;">“Alexa, ask ASUS ROUTER to upgrade the firmware”</p>
 														<p style="font-size:13px;padding-left: 20px;font-style:italic;">“Alexa, ask ASUS ROUTER to pause the Internet”</p>
-														<a style="font-family:Arial, Helvetica, sans-serif;font-size:13px;padding-top: 2px;padding-left: 20px;font-style:italic;text-decoration: underline;cursor:pointer;" href="https://www.asus.com/us/support/FAQ/1033393" target="_blank"><#Alexa_More_Skill#></a>
-														<p id="network_services_Remind" style="font-size:13px;padding-top: 10px;font-style:italic;color:#FFCC00;font-size:13px;display: none;"><#Alexa_Example_warning#></p>
+														<a id="faq" href="" style="font-family:Arial, Helvetica, sans-serif;font-size:13px;padding-top: 2px;padding-left: 20px;font-style:italic;text-decoration: underline;cursor:pointer;" target="_blank"><#Alexa_More_Skill#></a>
+														<p id="network_services_Remind" style="font-size:13px;padding-top: 10px;font-style:italic;color:#FFCC00;font-size:13px;display: none;">WARNING: The current network service filter policy for firewall will be overwritten once you say “Alexa, ask ASUS Router to pause the Internet</p>
 													</div>
 													<div style="text-align:center;padding-top:60px;font-family:Arial, Helvetica, sans-serif;font-style:italic;font-weight:lighter;font-size:18px;"><#Alexa_Register0#></div>
-													<div id="remote_control" style="text-align:center;padding-top:10px;font-size:15px;color:#FFCC00;font-weight:bolder;display:none;"><#Alexa_Register1#></div> <!-- id="remote_control_here" -->
+													<div id="acc_link_status" style="text-align:center;padding-top:10px;font-size:15px;color:#FFCC00;font-weight:bolder;"></div> <!-- id="remote_control_here" -->
 													<div class="div_img">
 														<table style="width:99%">
-															<div class="div_td" style="vertical-align:middle;">
+															<div class="div_td" style="padding-top:20px">
 																<div class="div_tr">
 																	<div class="div_td" style="vertical-align:middle;">
 																		<div class="step_1"></div>
@@ -410,23 +487,23 @@ function clipboard(ID_value)
 																	</div>
 																</div>
 																<div class="div_tr">
-																	<div class="div_td" style="vertical-align:middle;padding-top:30px;">
+																	<div class="div_td" style="vertical-align:middle;padding-top:45px;">
 																		<div class="step_2"></div>
 																	</div>
-																	<div class="div_td" style="vertical-align:middle;padding-top:30px;font-size:16px;padding-left:8px;">
+																	<div class="div_td" style="vertical-align:middle;padding-top:45px;font-size:16px;padding-left:8px;">
 																		<span style="color:#c0c0c0;text-decoration:underline;cursor:pointer;" onclick="get_activation_code();">Get Activation Code</span>
 																	</div>
 																</div>
 																<div class="div_tr">
-																	<div class="div_td" style="vertical-align:top;padding-top:40px;">
+																	<div class="div_td" style="vertical-align:top;padding-top:45px;">
 																		<div class="step_3"></div>
 																	</div>
-																	<div class="div_td" style="vertical-align:middle;padding-top:30px;font-size:16px;padding-left: 8px;">
+																	<div class="div_td" style="vertical-align:middle;padding-top:49px;font-size:16px;padding-left: 8px;">
 																		<span style="color:#c0c0c0;">Paste activation code to link Amazon account and your ASUS Router</span>
 																	</div>
 																</div>
 															</div>
-															<div class="div_td" style="vertical-align:middle;padding-left:23px;padding-top: 23px;">
+															<div class="div_td" style="vertical-align:middle;padding-left:23px;padding-top: 5px;">
 																	<div class="smh_asus_router"></div>
 																	<div class="and_you_can"></div>
 															</div>
@@ -441,7 +518,7 @@ function clipboard(ID_value)
 															</tr>
 															<tr id="eula_agree">
 																<td colspan="2">
-																	<span style="font-size:15px;padding-left:20px; color:#FFCC00"><input type="checkbox" name="ASUS_EULA_enable" value="0"> I agree to the ASUS Terms of service and Privacy Policy</span>
+																	<span style="font-size:15px;padding-left:20px; color:#FFCC00"><input type="checkbox" name="ASUS_EULA_enable" value="0"> I agree to the <a style="color:#FFCC00;text-decoration:underline" target="_blank" href="https://www.asus.com/us/Terms_of_Use_Notice_Privacy_Policy/Official-Site/">ASUS Terms Of Use Notice</a> and <a style="color:#FFCC00;text-decoration:underline" target="_blank" href="https://www.asus.com/us/Terms_of_Use_Notice_Privacy_Policy/Privacy_Policy/">Privacy Policy</a></span>
 																</td>
 															</tr>
 															<tr id="eula_button">
@@ -504,7 +581,6 @@ function clipboard(ID_value)
 							</tbody>
 						</table>
 					</td>
-</form>
 				</tr>
 			</table>
 		<!--===================================Ending of Main Content===========================================-->
@@ -512,7 +588,7 @@ function clipboard(ID_value)
 		<td width="10" align="center" valign="top">&nbsp;</td>
 	</tr>
 </table>
-
+</form>
 <div id="footer"></div>
 </body>
 </html>

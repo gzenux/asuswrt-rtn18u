@@ -12,7 +12,9 @@ $(TARGET_LIB): $(TARGET_OBJECTS)
 	$(CC) -L$(STAGEDIR)/usr/lib -L$(LBLIB_STATIC) -shared -o $@ -Wl,-whole-archive $(TARGET_OBJECTS) -ljansson -Wl,-no-whole-archive
 
 install: $(TARGET_LIB)
-	cp -a -f $(TARGET_LIB) $(TOP)/hive_lib
+	[ -d $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/lib ] || install -d $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/lib
+	install -m 755 $(TARGET_LIB) $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/lib
+	$(STRIP) $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/lib/*
 
 clean:
 	@rm -f *.o *.d $(TARGET_LIB) *~

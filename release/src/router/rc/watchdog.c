@@ -98,7 +98,7 @@ static int bc_wps_led = 0;
 
 #ifdef RTCONFIG_AMAS
 #define AMESH_TIMEOUT_COUNT	30 * 20		/* 30 secnods */
-#define ONBOARDING_TIMEOUT	60		/* 60 seconds */
+#define ONBOARDING_TIMEOUT	120		/* 120 seconds */
 #endif
 
 #ifdef RTCONFIG_WPS_RST_BTN
@@ -2794,13 +2794,15 @@ void btn_check(void)
 			if (LED_status_on) {
 				TRACE_PT("LED turn to normal\n");
 				led_control(LED_POWER, LED_ON);
-#if defined(RTAC65U)  || defined(RTAC85U)
+#if defined(RTAC65U)  || defined(RTAC85U) || defined(RTN800HP)
 			if (nvram_match("wl0_radio", "1")) {
 				led_control(LED_2G, LED_ON);
 			}
+#ifdef RTCONFIG_HAS_5G
 			if (nvram_match("wl1_radio", "1")) {
 				led_control(LED_5G, LED_ON);
 			}
+#endif
 #endif
 #if defined(RTAC51UP) || defined(RTAC53)
 				eval("rtkswitch", "100", "0x20000"); //lan/wan ethernet/giga led
@@ -3123,7 +3125,7 @@ void btn_check(void)
 #if (defined(PLN12) || defined(PLAC56))
 						set_wifiled(3);
 #elif defined(MAPAC1750)
-						set_rgbled(RGBLED_GREEN_3ON1OFF);
+						set_rgbled(RGBLED_BLUE_3ON1OFF);
 #endif
 #endif // RTCONFIG_WIFI_CLONE
 
@@ -3307,7 +3309,10 @@ void btn_check(void)
 #if defined(RTCONFIG_LP5523)
 				lp55xx_leds_proc(LP55XX_ALL_LEDS_OFF, LP55XX_PREVIOUS_STATE);
 #elif defined(MAPAC1750)
-				nvram_set("prelink_pap_status", "0");
+				if (pids("bluetoothd") && wsc_timeout == 0)
+					set_rgbled(RGBLED_WHITE);
+				else
+					nvram_set("prelink_pap_status", "-1");
 #endif
 #endif
 
@@ -4987,6 +4992,10 @@ void ddns_check(void)
 
 void networkmap_check()
 {
+#ifdef RTCONFIG_WIFI_SON
+	if (sw_mode() == SW_MODE_AP && !nvram_match("cfg_master", "1"))
+		return;
+#endif
 	if (!pids("networkmap"))
 		start_networkmap(0);
 }
@@ -5664,7 +5673,6 @@ static void link_pap_status()
 #if defined(RTCONFIG_LP5523)
 							lp55xx_leds_proc(LP55XX_ALL_BREATH_LEDS, LP55XX_ACT_NONE);
 #elif defined(MAPAC1750)
-							set_rgbled(RGBLED_BLUE);
 #endif
 						}
 						else {
@@ -5676,7 +5684,7 @@ static void link_pap_status()
 #if defined(RTCONFIG_LP5523)
 							lp55xx_leds_proc(LP55XX_GREENERY_LEDS, LP55XX_ACT_3ON1OFF);
 #elif defined(MAPAC1750)
-							set_rgbled(RGBLED_GREEN_3ON1OFF);
+							set_rgbled(RGBLED_BLUE_3ON1OFF);
 #endif
 						}
 					}
@@ -5775,6 +5783,9 @@ void onboarding_check()
 {
 	static int onboarding_count = 0;
 
+	if (!nvram_match("start_service_ready", "1"))
+		return;
+
 	if (!nvram_match("re_mode", "1"))
 		return;
 
@@ -5793,10 +5804,18 @@ void onboarding_check()
 #ifdef RTCONFIG_CFGSYNC
 void cfgsync_check()
 {
-	if (!pids("cfg_client") && !pids("cfg_server"))
+	if (nvram_match("x_Setting", "1") && !pids("cfg_client") && !pids("cfg_server"))
 		start_cfgsync();
 }
 #endif /* RTCONFIG_CFGSYNC */
+
+#ifdef RTCONFIG_TUNNEL
+void mastiff_check()
+{
+	if (!pids("mastiff"))
+		start_mastiff();
+}
+#endif /* RTCONFIG_TUNNEL */
 
 #ifdef RTCONFIG_USER_LOW_RSSI
 #define ETHER_ADDR_STR_LEN	18
@@ -6634,11 +6653,15 @@ void watchdog(int sig)
 			pid_t *pidList;
 			pid_t *pl;
 			int count;
+			static int hyd_wake_cnt=0, hyd_reset_cnt=0;
+			static long hyd_last_wake_time=0;
+			long uptime_now;
 #ifdef RTCONFIG_ETHBACKHAUL
 			static int chaos_eth_state=0;
 #endif
 
-			if(uptime()-nvram_get_int("watchdog_hyd")>40)
+			uptime_now = uptime();
+			if(uptime_now- atol(nvram_get("hyd_cfg_time"))>40)
 			{
 				pidList = find_pid_by_name("hyd");
 				count=0;
@@ -6650,8 +6673,37 @@ void watchdog(int sig)
 					invalid_state=0;
 				if (invalid_state >= 2) {
 					if (count==0) {
-						_dprintf("[[[WATCHDOG]]] : wakup hyd\n");
-						eval("hyd","-C","/tmp/hyd.conf");
+						if ((uptime_now-hyd_last_wake_time)>10) { /* reset */
+							hyd_wake_cnt=0;
+							hyd_reset_cnt=0;
+						}
+						hyd_last_wake_time = uptime_now;
+						hyd_wake_cnt++;
+						if (hyd_wake_cnt > 5) { /* something wrong, regen hyd config */
+							hyd_wake_cnt=0;
+							hyd_reset_cnt++;
+							if (hyd_reset_cnt > 2) { /* serious situation... */
+								logmessage("HYD", "hyd cannot startup, reboot!");
+								eval("reboot");
+							} else {
+								char lbuf[40];
+								_dprintf("[[[WATCHDOG]]] : reset hyd process!\n");
+								/* log some information */
+								logmessage("HYD", "==================================");
+								system("ifconfig -a | logger -s");
+								logmessage("HYD", "==================================");
+								system("iwconfig | logger -s");
+								logmessage("HYD", "==================================");
+								system("cat /tmp/hyd.conf | logger -s");
+								logmessage("HYD", "==================================");
+								eval("hive_hyd");
+								sprintf(lbuf, "%lu", uptime_now-40);
+								nvram_set("hyd_cfg_time", lbuf);
+							}
+						} else {
+							_dprintf("[[[WATCHDOG]]] : wakup hyd\n");
+							eval("hyd","-C","/tmp/hyd.conf");
+						}
 					} else {
 						int tmp_count;
 						for (tmp_count=0; tmp_count<=(count-1); tmp_count++) {
@@ -6841,6 +6893,9 @@ wdp:
 #endif
 #ifdef RTCONFIG_CFGSYNC
 	cfgsync_check();
+#endif
+#ifdef RTCONFIG_TUNNEL
+	mastiff_check();
 #endif
 
 	return;

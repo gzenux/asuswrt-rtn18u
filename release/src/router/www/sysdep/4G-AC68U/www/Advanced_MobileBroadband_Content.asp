@@ -651,7 +651,7 @@ function check_connect_status(){
 				mobile_auxstate = second_wanauxstate;
 			}
 
-			if(mobile_state == 2 && mobile_sbstate == 0 && mobile_auxstate == 0){
+			if(mobile_state == 2 && mobile_sbstate == 0 && mobile_auxstate != 1){
 				document.getElementById("connection_status").innerHTML = "<#Connected#>";
 				document.getElementById("mconnect_status").innerHTML = "<#Connected#>";
 			}

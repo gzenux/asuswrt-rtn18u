@@ -24,6 +24,7 @@
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/form.js"></script>
 <script type="text/javascript" src="client_function.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 .QISform_wireless{
 	width:600px;
@@ -346,6 +347,9 @@ if(pm_support) {
 
 function initial(){
 	show_menu();
+	// http://www.asus.com/support/FAQ/1008718/
+	httpApi.faqURL("faq", "1008718", "https://www.asus.com", "/support/FAQ/");
+
 	if(downsize_4m_support || downsize_8m_support)
 		document.getElementById("guest_image").parentNode.style.display = "none";
 
@@ -410,7 +414,8 @@ function initial(){
 	}
 
 	/* MODELDEP */
-	if(based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U" || based_modelid == "BLUECAVE"){
+	if(based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U"){
+	//if(based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U" || based_modelid == "BLUECAVE"){
 		if(document.form.qos_type_orig.value == "1"){
 			document.getElementById('bandwidth_setting_tr').style.display = "none";
 			document.form.qos_type_radio[1].checked = true;
@@ -420,13 +425,28 @@ function initial(){
 		document.getElementById('int_type_link').style.display = "none";
 		show_settings("NonAdaptive");
 	}
-	
+
+	/*show adaptive qos*/
+	if(based_modelid == "BLUECAVE"){
+		if(document.form.qos_type_orig.value == "0" || document.form.qos_type_orig.value == "2"){
+			document.getElementById('bandwidth_setting_tr').style.display = "none";
+			document.form.qos_type_radio[0].checked = true;
+		}
+
+		document.getElementById('function_trad_desc').style.display = "none";
+		document.getElementById('function_bandwidthLimit_desc').style.display = "none";
+		document.getElementById('trad_type').style.display = "none";
+		document.getElementById('bw_limit_type').style.display = "none";
+		document.getElementById('trad_type_link').style.display = "none";
+		document.getElementById('bw_limit_type_link').style.display = "none";
+	}
+	/*end show adaptive qos*/
+
 	if(pm_support) {
 		collect_info();
 		generate_group_list();
 	}
-	init_changeScale();
-	//addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "QoS"]);
+	init_changeScale();	
 
 	if((isFirefox || isOpera) && document.getElementById("FormTitle"))
 		document.getElementById("FormTitle").className = "FormTitle";	
@@ -660,9 +680,16 @@ function submitQoS(){
 
 function change_qos_type(value){
 	/* MODELDEP */
-	if(value=="1" && (based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U" || based_modelid == "BLUECAVE")){	//Force change to 0 
+	if(value=="1" && (based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U")){	//Force change to 0 
+	//if(value=="1" && (based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U" || based_modelid == "BLUECAVE")){	//Force change to 0 
 		value = 0;
 	}
+
+	/*show apaptive qos*/
+	if((value == 0 || value == 2) && based_modelid == "BLUECAVE"){
+		value = 1;
+	}
+	/*ens show adaptive qos*/
 	if(value == 0){		//Traditional QoS
 		document.getElementById('int_type').checked = false;
 		document.getElementById('trad_type').checked = true;
@@ -1485,13 +1512,13 @@ function setGroup(name){
 														<#EzQoS_desc#>
 														<ul>
 															<li id="function_int_desc"><#EzQoS_desc_Adaptive#></li>
-															<li><#EzQoS_desc_Traditional#></li>
-															<li><#EzQoS_desc_Bandwidth_Limiter#></li>
+															<li id="function_trad_desc"><#EzQoS_desc_Traditional#></li>
+															<li id="function_bandwidthLimit_desc"><#EzQoS_desc_Bandwidth_Limiter#></li>
 														</ul>
 														<#EzQoS_desc_note#>														
 													</div>
 													<div class="formfontdesc">
-														<a id="faq" href="http://www.asus.com/support/FAQ/1008718/" target="_blank" style="text-decoration:underline;">QoS FAQ</a>
+														<a id="faq" href="" target="_blank" style="text-decoration:underline;">QoS FAQ</a>
 													</div>
 												</td>
 											</tr>
@@ -1556,8 +1583,8 @@ function setGroup(name){
 											<th><#QoS_Type#></th>
 											<td colspan="2">
 												<input id="int_type" name="qos_type_radio" value="1" onClick="change_qos_type(this.value);" style="display:none;" type="radio" <% nvram_match("qos_type", "1","checked"); %>><a id="int_type_link" class="hintstyle" style="display:none;" href="javascript:void(0);" onClick="openHint(20, 5);"><label for="int_type"><#Adaptive_QoS#></label></a>
-												<input id="trad_type" name="qos_type_radio" value="0" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "0","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 6);"><label for="trad_type"><#EzQoS_type_traditional#></label></a>
-												<input id="bw_limit_type" name="qos_type_radio" value="2" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "2","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 7)"><label for="bw_limit_type"><#Bandwidth_Limiter#></label></a>
+												<input id="trad_type" name="qos_type_radio" value="0" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "0","checked"); %>><a id="trad_type_link" class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 6);"><label for="trad_type"><#EzQoS_type_traditional#></label></a>
+												<input id="bw_limit_type" name="qos_type_radio" value="2" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "2","checked"); %>><a id="bw_limit_type_link" class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 7)"><label for="bw_limit_type"><#Bandwidth_Limiter#></label></a>
 											</td>
 										</tr>
 										<tr id="bandwidth_setting_tr" style="display:none">
