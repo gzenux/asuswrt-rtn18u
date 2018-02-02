@@ -4,10 +4,6 @@ CFLAGS	= -Os -Wall $(EXTRACFLAGS) #-mips32
 CFLAGS	+= -I$(SRCBASE)/include -I$(TOP)/shared -DRTCONFIG_ISP_METER -DDEBUG
 LDFLAGS	= $(EXTRALDFLAGS)
 
-ifeq ($(RTCONFIG_AMAS),y)
-LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
-endif
-
 ifeq ($(RTCONFIG_BCMARM),y)
 CFLAGS += -I$(SRCBASE)/common/include
 endif

@@ -1,2 +1,0 @@
-/home/work/hive.spf4.cs/qca-networking-2016-spf-4-0_qca_oem.git/qsdk/staging_dir/toolchain-arm_cortex-a7_gcc-4.8-linaro_uClibc-1.0.14_eabi/bin/arm-openwrt-linux-uclibcgnueabi-gcc-ar cr libucimap.a  CMakeFiles/ucimap.dir/ucimap.c.o
-/home/work/hive.spf4.cs/qca-networking-2016-spf-4-0_qca_oem.git/qsdk/staging_dir/toolchain-arm_cortex-a7_gcc-4.8-linaro_uClibc-1.0.14_eabi/bin/arm-openwrt-linux-uclibcgnueabi-gcc-ranlib libucimap.a

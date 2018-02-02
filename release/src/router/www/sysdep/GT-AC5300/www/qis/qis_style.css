@@ -329,7 +329,7 @@ legend {
 }
 
 .QISGeneralFont{
-	font-size: 12px;
+	font-size: 14px;
 	font-family:Segoe UI, Arial, sans-serif;
 	margin-left:70px;
 	*margin-left:90px;
@@ -425,7 +425,6 @@ legend {
 .QISTutorFont_admin_pass{
 	font-family: Verdana, Arial, sans-serif;
 	line-height: 20px;
-	width:320px;
 }
 #radio_1{
 	background: url(../images/survey/radio_status.png);

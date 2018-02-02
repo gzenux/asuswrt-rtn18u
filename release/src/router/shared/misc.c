@@ -2359,6 +2359,52 @@ int backup_rx;
 int backup_tx;
 int backup_set = 0;
 
+/* Looking for a ifino_s by interface name.
+ * @ifinotbl:
+ * @ifname:
+ * @return:
+ * 	NULL		not found or invalid parameter;
+ *  otherwise		pointer to struct ifname_ino
+ */
+struct ifino_s *ifname_ino_ptr(struct ifname_ino_tbl *ifinotbl, const char *ifname)
+{
+	int i;
+	struct ifino_s *ret = NULL, *p;
+
+	if (!ifinotbl || !ifname || *ifname == '\0')
+		return NULL;
+
+	for (i = 0, p = &ifinotbl->items[0]; i < ifinotbl->nr_items; ++i, ++p) {
+		if (strcmp(p->ifname, ifname))
+			continue;
+		ret = p;
+		break;
+	}
+
+	return ret;
+}
+
+/* Get inode of a interface.
+ * @ifname:
+ * @return:
+ * 	0	error
+ *  otherwise	inode of @ifname
+ */
+ino_t get_iface_inode(const char *ifname)
+{
+	struct stat s;
+	char path[sizeof(SYS_CLASS_NET) + 1 + IFNAMSIZ + 6];
+
+	if (!ifname || *ifname == '\0')
+		return 0;
+
+	snprintf(path, sizeof(path), "%s/%s", SYS_CLASS_NET, ifname);
+	if (stat(path, &s))
+		return 0;
+
+	return s.st_ino;
+}
+
 unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2, char *nv_lan_ifname, char *nv_lan_ifnames)		
 {
 	char word[100], word1[100], *next, *next1;
@@ -3755,7 +3801,7 @@ int ppa_support(int wan_unit)
 	ctf_disable_force = nvram_get_int("ctf_disable_force");
 
 	/* recover the NAT accelerator*/
-	nvram_set("ctf_disable_force", "0");
+	// nvram_set("ctf_disable_force", "0");
 
 #ifdef RTCONFIG_USB_MODEM
 	char modem_type[32];
@@ -3781,11 +3827,15 @@ int ppa_support(int wan_unit)
 		1. traditaional qos / bandwidth limiter / disable NAT accelerator
 		2. stop_ppa_wan : debug usage
 	*/
-	if((nvram_get_int("qos_enable") == 1 && (nvram_get_int("qos_type") != 1))
-		|| nvram_match("ctf_disable_force", "1") || nvram_match("stop_ppa_wan", "1"))
+	if((nvram_get_int("qos_enable") == 1 &&
+		(nvram_get_int("qos_type") != 1)))
 	{
 		ret = 0;
 	}
+
+	if(ctf_disable_force == 1) ret = 0;
+
+	if (nvram_match("stop_ppa_wan", "1")) ret = 0;
 
 	snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
 	snprintf(wan_proto, sizeof(wan_proto), "%s", nvram_safe_get(strcat_r(prefix, "proto", tmp)));
@@ -3793,16 +3843,9 @@ int ppa_support(int wan_unit)
 	if(strcmp(wan_proto, "pptp") == 0) ret = 0;
 	if(strcmp(wan_proto, "l2tp") == 0) ret = 0;
 	if(strcmp(nvram_safe_get(strcat_r(prefix, "hwaddr_x", tmp)), "")) ret = 0;
-	if(ctf_disable_force == 1) ret = 0;
 
-	/* when ppa wan interface removed, show NAT accelerator status */
-	if (ret == 0) {
-		nvram_set("ctf_disable", "1"); // GUI display
-		nvram_set("ctf_disable_force", "1");
-	}
-	else {
-		nvram_set("ctf_disable", "0"); // GUI display
-	}
+	if(ret == 0) nvram_set_int("ppa_running", 0);
+	else nvram_set_int("ppa_running", 1);
 
 	return ret;
 }

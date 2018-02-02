@@ -17,6 +17,13 @@ jQuery.fn.showSelectorHint = function(hintStr){
 		.appendTo(this.parent());
 }
 
+jQuery.fn.enableCheckBox = function(checked){
+	this
+		.checkboxradio()
+		.prop('checked', checked)
+		.checkboxradio('refresh')
+}
+
 var htmlEnDeCode = (function() {
 	var charToEntityRegex,
 		entityToCharRegex,
@@ -99,7 +106,28 @@ function hadPlugged(deviceType){
 	return (usbDeviceList.join().search(deviceType) != -1)
 }
 
-function Get_Component_Loading(){
+var Get_Component_Header = function(){
+	var tableTr = $("<tr>");
+
+	tableTr
+		.append(
+			$("<td>")
+				.css({"width":"17px"})
+				.append('<div style="margin-right:20px;"><a href="#navigation"><div class="icon_menu"></div></a></div>')
+		)
+		.append(
+			$("<td>").append('<div><div class="icon_logo"></div></div>')
+		)
+		.append(
+			$("<td>").append('<div class="model_welcome"></div>')
+		)
+
+	return $("<table>")
+		.append(tableTr)
+		.css({"width": "100%"})
+}
+
+var Get_Component_Loading = function(){
 	if($(this).find( ".cssload-bell" ).length === 0){
 		var loadContainer = $("<div>").addClass("cssload-bell");
 	
@@ -114,6 +142,12 @@ function Get_Component_Loading(){
 	}
 }
 
+var Get_Component_btnLoading = function(){
+	return $("<img>").attr({
+		"width": "30px",
+		"src": "/images/InternetScan.gif"
+	})
+}
 var Get_Component_WirelessInput = function(wlArray){
 	var container = $("<div>");
 
@@ -205,12 +239,23 @@ function handleSysDep(){
 	$(".repeaterSupport").toggle(isSupport("repeater"));
 	$(".pstaSupport").toggle(isSupport("psta"));
 	$(".dualbandSupport").toggle(isSupport("DUALBAND") || isSupport("TRIBAND"));
-	$(".bandStreeringSupport").toggle(isSupport("bandstr") || isSupport("smart_connect"));
+	$(".bandStreeringSupport").toggle(isSupport("SMARTCONNECT"));
 	$(".vpnClient").toggle(isSupport("VPNCLIENT"));
 	$(".iptv").toggle(isSupport("IPTV"));
 	$(".defaultSupport").toggle(systemVariable.isDefault);
 	$(".configuredSupport").toggle(!systemVariable.isDefault);
 	$(".forceUpgrade").toggle(isSupport("FORCEUPGRADE"));
+
+	$("#syncSSID").toggle(!isSupport("SMARTCONNECT") && (isSupport("DUALBAND") || isSupport("TRIBAND")));
+	$("#wireless_sync_checkbox").enableCheckBox(!isSupport("SMARTCONNECT") && (isSupport("DUALBAND") || isSupport("TRIBAND")));
+
+	if(systemVariable.forceChangePw && isSupport("AMAS")){
+		systemVariable.forceChangePw = false;
+		systemVariable.forceChangePwInTheEnd = true;
+	}
+
+	var wanType = httpApi.detwanGetRet().wanType;
+	$(".amasInAdv").toggle(wanType === 'NOWAN')
 }
 
 function setUpTimeZone(){
@@ -243,7 +288,7 @@ var getRestartService = function(){
 	var actionScript = [];
 
 	if(isWANChanged()){
-		actionScript.push("restart_wan");
+		actionScript.push("restart_wan_if 0");
 	}
 
 	if(systemVariable.detwanResult.isIPConflict){
@@ -361,6 +406,9 @@ var isSupport = function(_ptn){
 			break;
 		case "FORCEUPGRADE":
 			matchingResult = (systemVariable.rcSupport.search("fupgrade") !== -1) ? true : false;
+			break;
+		case "SMARTCONNECT":
+			matchingResult = (systemVariable.rcSupport.search("smart_connect") !== -1 || systemVariable.rcSupport.search("bandstr") !== -1) ? true : false;
 			break;
 		default:
 			matchingResult = ((systemVariable.rcSupport.search(_ptn) !== -1) || (systemVariable.productid.search(_ptn) !== -1)) ? true : false;
@@ -509,3 +557,36 @@ function startLiveUpdate(){
 		});
 	}
 }
+
+validator.hostNameString = function(str){
+	var testResult = {
+		'isError': false,
+		'errReason': "<#JS_validhostname#>"
+	}
+
+	var re = new RegExp("^[a-zA-Z0-9][a-zA-Z0-9\-\_]+$","gi");
+	testResult.isError = re.test(str) ? false : true;
+
+	return testResult;
+};
+
+validator.invalidChar = function(str){
+	var testResult = {
+		'isError': false,
+		'errReason': ''
+	}
+
+	var invalid_char = [];
+	for(var i = 0; i < str.length; ++i){
+		if(str.charAt(i) < ' ' || str.charAt(i) > '~'){
+			invalid_char.push(str.charAt(i));
+		}
+	}
+
+	if(invalid_char.length != 0){
+		testResult.isError = true;
+		testResult.errReason = "<#JS_validstr2#> '" + invalid_char.join('') + "' !";
+	}
+
+	return testResult;
+};

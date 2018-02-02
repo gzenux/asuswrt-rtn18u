@@ -115,7 +115,7 @@ install: all
 	@cp -f bin/libshn_*.so RC_INDEP
 	@cp -f bin/rule.trf RC_INDEP
 	@cp -f bin/tdts_rule_agent RC_INDEP
-	@cp -f bin/tcd RC_INDEP
+	-@cp -f bin/tcd RC_INDEP
 	@rm -f RC_INDEP/*.sh
 	@rm -f RC_INDEP/*.conf
 ifeq ($(RTCONFIG_SOC_IPQ8064),y)
@@ -124,6 +124,7 @@ else ifeq ($(RTCONFIG_SOC_IPQ40XX),y)
 	@cp -f modules/dakota/* RC_INDEP/
 else ifeq ($(RTCONFIG_QCA956X),y)
 	@cp -f modules/qca956x/* RC_INDEP/
+	@cp -f bin/lite/rule.trf RC_INDEP/
 else ifeq ($(RTCONFIG_RALINK),y)
 	@cp -f modules/mtk/* RC_INDEP/
 	@cp -f bin/partial/rule.trf RC_INDEP/

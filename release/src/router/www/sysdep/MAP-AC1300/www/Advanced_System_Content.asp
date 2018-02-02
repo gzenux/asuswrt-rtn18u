@@ -124,10 +124,6 @@ function initial(){
 	corrected_timezone();
 	load_timezones();
 	parse_dstoffset();
-	load_dst_m_Options();
-	load_dst_w_Options();
-	load_dst_d_Options();
-	load_dst_h_Options();	
 	document.form.http_passwd2.value = "";	
 	
 	if(svc_ready == "0")
@@ -740,26 +736,30 @@ var dstoff_start_m,dstoff_start_w,dstoff_start_d,dstoff_start_h;
 var dstoff_end_m,dstoff_end_w,dstoff_end_d,dstoff_end_h;
 
 function parse_dstoffset(){     //Mm.w.d/h,Mm.w.d/h
-		if(dstoffset){
-					var dstoffset_startend = dstoffset.split(",");
-    			
-					var dstoffset_start = dstoffset_startend[0];		
-					var dstoff_start = dstoffset_start.split(".");
-					dstoff_start_m = dstoff_start[0];
-					dstoff_start_w = dstoff_start[1];
-					dstoff_start_d = dstoff_start[2].split("/")[0];
-					dstoff_start_h = dstoff_start[2].split("/")[1];
-					
-					var dstoffset_end = dstoffset_startend[1];
-					var dstoff_end = dstoffset_end.split(".");
-					dstoff_end_m = dstoff_end[0];
-					dstoff_end_w = dstoff_end[1];
-					dstoff_end_d = dstoff_end[2].split("/")[0];
-					dstoff_end_h = dstoff_end[2].split("/")[1];
-    			
-					//alert(dstoff_start_m+"."+dstoff_start_w+"."+dstoff_start_d+"/"+dstoff_start_h);
-					//alert(dstoff_end_m+"."+dstoff_end_w+"."+dstoff_end_d+"/"+dstoff_end_h);
-		}
+	if(dstoffset){
+		var dstoffset_startend = dstoffset.split(",");
+
+		var dstoffset_start = trim(dstoffset_startend[0]);		
+		var dstoff_start = dstoffset_start.split(".");
+		dstoff_start_m = dstoff_start[0];
+		dstoff_start_w = dstoff_start[1];
+		dstoff_start_d = dstoff_start[2].split("/")[0];
+		dstoff_start_h = dstoff_start[2].split("/")[1];
+			
+		var dstoffset_end = trim(dstoffset_startend[1]);
+		var dstoff_end = dstoffset_end.split(".");
+		dstoff_end_m = dstoff_end[0];
+		dstoff_end_w = dstoff_end[1];
+		dstoff_end_d = dstoff_end[2].split("/")[0];
+		dstoff_end_h = dstoff_end[2].split("/")[1];
+    		
+		//console.log(dstoff_start_m+"."+dstoff_start_w+"."+dstoff_start_d+"/"+dstoff_start_h);
+		//console.log(dstoff_end_m+"."+dstoff_end_w+"."+dstoff_end_d+"/"+dstoff_end_h);
+		load_dst_m_Options();
+		load_dst_w_Options();
+		load_dst_d_Options();
+		load_dst_h_Options();
+	}
 }
 
 function load_dst_m_Options(){

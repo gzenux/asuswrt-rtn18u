@@ -485,11 +485,6 @@ function edit_guest_unit(_unit, _subunit) {
 
 	updateMacModeOption(gn_array[idx]);
 
-
-	if(sw_mode == "3") {
-		document.getElementById("gnset_wl_lanaccess").style.display = "none";
-	}
-
 	if (Rawifi_support)
 		g_maxsta = 32;
 	else if (Qcawifi_support){
@@ -525,6 +520,8 @@ function edit_guest_unit(_unit, _subunit) {
 		document.getElementById("gnset_wl_lanaccess").style.display = "";
 		document.getElementById("gnset_wl_bw_enabled").style.display = "";
 		document.getElementById("gnset_wl_bw_setting").style.display = "";
+		if(isSwMode("ap"))
+			document.getElementById("gnset_wl_lanaccess").style.display = "none";
 	}
 
 	$('#full_screen_bg').fadeIn();

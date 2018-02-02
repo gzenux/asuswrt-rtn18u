@@ -8,9 +8,6 @@ LDFLAGS += -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX}${EX7} -lnvram
 
 include $(SRCBASE)/router/.config
 
-ifeq ($(RTCONFIG_AMAS),y)
-LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
-endif
 
 ifeq ($(wildcard $(SRCBASE)/router/aura_sw/*.c),)
 all: 

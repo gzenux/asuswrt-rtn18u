@@ -809,14 +809,21 @@ function next_step(flag){
 		}
 
 		if(document.applyForm.dhcp_type[0].checked){	//DHCP
+			var modified = false;
 			if(parent.dual_ewan){
 				if(parent.cur_wan_unit == 0){
+					if(parent.document.QKform.wan0_proto.value != "dhcp" || verify_vlan_settings()){
+						modified = true;
+					}
 					document.applyForm.wan0_proto.value = "dhcp";
 					parent.document.QKform.wan0_proto.value = document.applyForm.wan0_proto.value;
 					parent.document.QKform.wan0_dhcpenable_x.value = 1;
 					parent.document.QKform.wan0_dnsenable_x.value = 1;
 				}
 				else{
+					if(parent.document.QKform.wan1_proto.value != "dhcp" || verify_vlan_settings()){
+						modified = true;
+					}
 					document.applyForm.wan1_proto.value = "dhcp";
 					parent.document.QKform.wan1_proto.value = document.applyForm.wan1_proto.value;
 					parent.document.QKform.wan1_dhcpenable_x.value = 1;
@@ -824,15 +831,16 @@ function next_step(flag){
 				}
 			}		
 			else{
+				if(parent.document.QKform.wan_proto.value != "dhcp" || verify_vlan_settings()){
+					modified = true;
+				}
 				document.applyForm.wan_proto.value = "dhcp";
 				parent.document.QKform.wan_proto.value = document.applyForm.wan_proto.value;
 				parent.document.QKform.wan_dhcpenable_x.value = 1;
 				parent.document.QKform.wan_dnsenable_x.value = 1;
 			}
 
-			//location.href = "QIS_verify_detect.htm";		// avoid redirect to internet_isp and internet_ip
-			//return true;
-			if(verify_vlan_settings()){
+			if(modified){
 				if(parent.dual_ewan){
 					if(parent.cur_wan_unit == 0)
 						parent.document.QKform.wan0_proto.value = document.applyForm.wan0_proto.value;
@@ -856,17 +864,20 @@ function next_step(flag){
 			if(parent.dual_ewan){
 				if(parent.cur_wan_unit == 0){
 					document.applyForm.wan0_proto.value = "static";
+					parent.document.QKform.wan0_proto.value = document.applyForm.wan0_proto.value;
 					parent.document.QKform.wan0_dhcpenable_x.value = 0;
 					parent.document.QKform.wan0_dnsenable_x.value = 0;
 				}
 				else{
 					document.applyForm.wan1_proto.value = "static";
+					parent.document.QKform.wan1_proto.value = document.applyForm.wan1_proto.value;
 					parent.document.QKform.wan1_dhcpenable_x.value = 0;
 					parent.document.QKform.wan1_dnsenable_x.value = 0;
 				}
 			}
 			else{
 				document.applyForm.wan_proto.value = "static";
+				parent.document.QKform.wan_proto.value = document.applyForm.wan_proto.value;
 				parent.document.QKform.wan_dhcpenable_x.value = 0;
 				parent.document.QKform.wan_dnsenable_x.value = 0;
 			}
@@ -875,15 +886,7 @@ function next_step(flag){
 			document.getElementById("dhcp_scenario_1").style.display = "none";
 			document.getElementById("dhcp_scenario_2").style.display = "none";
 		}
-		
-		if(parent.dual_ewan){
-			if(parent.cur_wan_unit == 0)
-				parent.document.QKform.wan0_proto.value = document.applyForm.wan0_proto.value;
-			else
-				parent.document.QKform.wan1_proto.value = document.applyForm.wan1_proto.value;
-		}
-		else
-			parent.document.QKform.wan_proto.value = document.applyForm.wan_proto.value;
+
 		location.href = document.applyForm.next_page.value;
 		return true;
 	}
@@ -964,13 +967,14 @@ function enable_ISP_special(){
 <input type="hidden" name="current_page" value="QIS_internet_type.htm">
 <input type="hidden" name="next_page" value="/qis/QIS_finish.htm">   
 <input type="hidden" name="prev_page" value="/qis/QIS_detect.htm">
+<input type="hidden" name="wan_unit" value="<% nvram_get("wan_unit"); %>">
 <input type="hidden" name="wan_proto" value="">
 <input type="hidden" name="switch_stb_x" value="">
 <input type="hidden" name="mr_enable_x" value="<% nvram_get("mr_enable_x"); %>">
 <input type="hidden" name="emf_enable" value="<% nvram_get("emf_enable"); %>">
 <input type="hidden" name="ttl_inc_enable" value="<% nvram_get("ttl_inc_enable"); %>">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_script" value="">
+<input type="hidden" name="action_script" value="restart_wan_if">
 <input type="hidden" name="action_wait" value="5">
 <input type="hidden" name="flag" value="">
 <input type="hidden" name="wan10_proto" value="<% nvram_get("wan10_proto"); %>">

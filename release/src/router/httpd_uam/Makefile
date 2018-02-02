@@ -20,9 +20,6 @@ LIBS +=  -lm -ldl
 endif
 endif
 
-ifeq ($(RTCONFIG_AMAS),y)
-LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
-endif
 
 OBJS_FB = captive_portal.o
 

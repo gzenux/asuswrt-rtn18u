@@ -305,7 +305,9 @@ endif
 
 ifeq ($(RTCONFIG_USB),y)
 OBJS += usb.o
+ifneq ($(RTCONFIG_NO_USBPORT),y)
 OBJS += usbled.o
+endif
 OBJS += usb_devices.o
 endif
 
@@ -619,7 +621,7 @@ CFLAGS += -I$(TOP)/libasuslog
 endif
 endif
 
-all: rc
+all: rc init.prep
 
 rc: $(OBJS)
 	@echo " [rc] CC $@"
@@ -776,7 +778,9 @@ endif
 	@cd $(INSTALLDIR)/sbin && ln -sf rc tcpcheck
 	@cd $(INSTALLDIR)/sbin && ln -sf rc auto_macclone
 ifeq ($(RTCONFIG_USB),y)
+ifneq ($(RTCONFIG_NO_USBPORT),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc usbled
+endif
 	@cd $(INSTALLDIR)/sbin && ln -sf rc get_apps_name
 ifeq ($(BCM_MMC),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc asus_mmc
@@ -845,6 +849,9 @@ endif
 
 ifeq ($(or $(CONFIG_BCMWL5),$(RTCONFIG_RALINK),$(RTCONFIG_QCA),$(RTCONFIG_REALTEK)),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc set_factory_mode
+endif
+ifeq ($(or $(RTCONFIG_OPENPLUS_TFAT),$(RTCONFIG_OPENPLUSPARAGON_NTFS),$(RTCONFIG_OPENPLUSTUXERA_NTFS),$(RTCONFIG_OPENPLUSPARAGON_HFS),$(RTCONFIG_OPENPLUSTUXERA_HFS)),y)
+	@cd $(INSTALLDIR)/sbin && ln -sf rc set_fs_coexist
 endif
 	@cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd
 ifeq ($(RTCONFIG_SSH),y)
@@ -971,7 +978,7 @@ ifeq ($(RTCONFIG_ADTBW),y)
 endif
 
 clean:
-	rm -f rc *.o .*.depend
+	rm -f rc *.o .*.depend *.prep
 
 size: rc
 	mipsel-uclibc-nm --print-size --size-sort rc
@@ -1237,6 +1244,9 @@ endif
 
 .%.depend: %.c
 	@$(CC) $(CFLAGS) -M $< > $@
+
+init.prep: init.c
+	@$(CC) $(CFLAGS) -E $< > $@
 
 ifeq ($(RTCONFIG_QCA),y)
 -include sysdeps/qca/Makefile.hook

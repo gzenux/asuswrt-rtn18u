@@ -20,6 +20,7 @@
 <script language="JavaScript" type="text/javascript" src="form.js"></script>
 <script language="JavaScript" type="text/javascript" src="validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="switcherplugin/jquery.iphone-switch.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style type="text/css">
 .ipsec_profile_panel {
 	width: 650px;
@@ -1511,7 +1512,7 @@ function switchMode(mode) {
 	var faq_text = ipsec_vpn_type_faq_array[$("select[name=ipsec_vpn_type]").val()][0];
 	var faq_num = ipsec_vpn_type_faq_array[$("select[name=ipsec_vpn_type]").val()][1];
 	$("#ipsec_vpn_type_faq").html(faq_text);
-	set_FAQ_link("ipsec_vpn_type_faq", faq_num, "IPSecAdv");
+	httpApi.faqURL("ipsec_vpn_type_faq", faq_num, "https://www.asus.com", "/support/FAQ/");
 
 	showhide("tr_SettingsMode", 1);
 	document.getElementById("selSwitchMode").value = "1";

@@ -396,6 +396,10 @@ config RTCONFIG_DBLOG
 	bool "System Diagnostic Support"
 	default n
 
+config RTCONFIG_NO_USBPORT
+	bool "No USB port"
+	default n
+
 config RTCONFIG_USB
 	bool "USB Support"
 	default y
@@ -519,7 +523,7 @@ config RTCONFIG_TFAT
 
 config RTCONFIG_OPENPLUS_TFAT
 	bool "Open + Tuxera FAT Support"
-	depends on RTCONFIG_OPEN_NTFS3G
+	depends on RTCONFIG_TFAT
 	default n
 
 config RTCONFIG_NTFS

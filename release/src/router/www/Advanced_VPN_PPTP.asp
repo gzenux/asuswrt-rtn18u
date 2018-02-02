@@ -20,6 +20,7 @@
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script language="JavaScript" type="text/javascript" src="/form.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 .contentM_qis{
 	position:absolute;
@@ -75,8 +76,9 @@ function initial(){
 	var pptpd_wins2_orig = '<% nvram_get("pptpd_wins2"); %>';
 	var pptpd_clients = '<% nvram_get("pptpd_clients"); %>';
 	
-	show_menu();		
-	addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "VPN"]);
+	show_menu();
+	// https://www.asus.com/US/support/FAQ/1033906
+	httpApi.faqURL("faq", "1033906", "https://www.asus.com", "/support/FAQ/");
 
 	formShowAndHide(document.form.pptpd_enable.value, "pptpd");	
 	if(wans_mode == "lb"){
@@ -174,8 +176,6 @@ function initial(){
 	}
 	$('#divSwitchMenu').html(gen_switch_menu(vpn_server_array, "PPTP"));
 
-	//set FAQ URL
-	set_FAQ_link("faq_port_forwarding", "1033906", "privateIP");//this id is include in string : #vpn_privateIP_hint#
 }
 
 var MAX_RETRY_NUM = 5;
