@@ -334,14 +334,14 @@ a{
 	width: 100%;
 }
 #resetModemContainer{
-	width: 90%;
-	height: 300px;	
+	width: 100%;
+	height: 350px;	
 	margin: auto;
-	margin-top: 100px;
+	margin-top: 50px;
 }
 #resetModem{
-	width: 95%;
-	height: 300px;
+	width: 90%;
+	height: 350px;
 	margin: auto;
 	background-size: contain;
 }

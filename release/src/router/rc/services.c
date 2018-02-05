@@ -193,9 +193,9 @@ int jffs2_fail;
 void
 sanity_logs()
 {
-#if defined(RTAC56U) || defined(RTAC56S)
-	logmessage("ATE", "valid user mode(%d)", !nvram_get_int(ATE_BRCM_FACTORY_MODE_STR()));
-#endif
+//#if defined(RTAC56U) || defined(RTAC56S)
+//	logmessage("ATE", "valid user mode(%d)", !nvram_get_int(ATE_BRCM_FACTORY_MODE_STR()));
+//#endif
 #if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_JFFSV1) || defined(RTCONFIG_BRCM_NAND_JFFS2)
 	logmessage("jffs2", "valid logs(%d)", !jffs2_fail);
 #endif
@@ -1178,6 +1178,13 @@ void start_dnsmasq(void)
 		fprintf(fp, "%s %s\n", lan_ipaddr, OLD_DUT_DOMAIN_NAME2);
 #ifdef RTCONFIG_IPV6
 		if (ipv6_enabled()) {
+			/* localhost ipv6 */
+			fprintf(fp, "::1 ip6-localhost ip6-loopback\n");
+			/* multicast ipv6 */
+			fprintf(fp, "fe00::0 ip6-localnet\n"
+				    "ff00::0 ip6-mcastprefix\n"
+				    "ff02::1 ip6-allnodes\n"
+				    "ff02::2 ip6-allrouters\n");
                        /* lan6 hostname.domain hostname */
                         value = (char*) ipv6_router_address(NULL);
 			if (*value && nvram_invmatch("lan_hostname", "")) {
@@ -1186,8 +1193,6 @@ void start_dnsmasq(void)
 					    nvram_safe_get("lan_domain"),
 					    nvram_safe_get("lan_hostname"));
 			}
-			/* localhost ipv6 */
-			fprintf(fp, "::1 localhost6.localdomain6 localhost6\n");
 		}
 #endif
 		append_custom_config("hosts", fp);
@@ -1315,7 +1320,7 @@ void start_dnsmasq(void)
 		if (is_routing_enabled())
 		fprintf(fp, "interface=%s\n"		// dns on VPN clients interfaces
 		    	"no-dhcp-interface=%s\n",	// no dhcp for VPN clients
-			"ppp1*", "ppp1*");
+			"pptp*", "pptp*");
 #endif
 	}
 
@@ -1326,7 +1331,9 @@ void start_dnsmasq(void)
 #endif /* __CONFIG_NORTON__ */
 
 #ifdef NORESOLV /* dnsmasq uses no resolv.conf */
-	fprintf(fp, "no-resolv\n");		// no resolv
+	fprintf(fp, is_routing_enabled() ?
+		"no-resolv\n" :			// no resolv, use only additional list
+		"resolv-file=%s\n", dmresolv);	// the real stuff is here
 #else
 #ifdef RTCONFIG_YANDEXDNS
 	if (nvram_get_int("yadns_enable_x") && nvram_get_int("yadns_mode") != YADNS_DISABLED) {
@@ -1983,6 +1990,8 @@ void stop_ipv6(void)
 {
 	char *lan_ifname = nvram_safe_get("lan_ifname");
 	char *wan_ifname = (char *) get_wan6face();
+	char prefix[sizeof("ffff::/xxx")];
+	int i;
 
 #ifdef RTCONFIG_6RELAYD
 	stop_6relayd();
@@ -1990,9 +1999,13 @@ void stop_ipv6(void)
 	stop_dhcp6c();
 	stop_ipv6_tunnel();
 
+	eval("ip", "-6", "route", "flush", "default");
+	for (i = 1; i < 8; i++) {
+		snprintf(prefix, sizeof(prefix), "%04x::/%d", (0xfe0000 >> i) & 0xffff, i);
+		eval("ip", "-6", "route", "flush", "root", prefix, "table", "main");
+	}
 	eval("ip", "-6", "addr", "flush", "scope", "global", "dev", lan_ifname);
 	eval("ip", "-6", "addr", "flush", "scope", "global", "dev", wan_ifname);
-	eval("ip", "-6", "route", "flush", "scope", "global");
 	eval("ip", "-6", "neigh", "flush", "dev", lan_ifname);
 }
 #endif
@@ -2636,6 +2649,10 @@ int start_networkmap(int bootwait)
 
 #ifdef RTCONFIG_DISABLE_NETWORKMAP
 	if (nvram_match("networkmap_enable", "0"))
+		return 0;
+#endif
+#ifdef RTCONFIG_WIFI_SON
+	if (sw_mode() == SW_MODE_AP && !nvram_match("cfg_master", "1"))
 		return 0;
 #endif
 
@@ -3748,6 +3765,7 @@ start_acsd()
 	)
 		return 0;
 #endif
+
 	stop_acsd();
 
 	if (!restore_defaults_g && strlen(nvram_safe_get("acs_ifnames")))
@@ -4091,16 +4109,16 @@ void
 start_httpd(void)
 {
 	char *httpd_argv[] = { "httpd",
-	/*	"-p", nvram_safe_get("http_lanport"),*/
 		NULL, NULL,	/* -i ifname */
+		NULL, NULL,	/* -p port */
 		NULL };
 	int httpd_index = 1;
 #ifdef RTCONFIG_HTTPS
 	char *https_argv[] = { "httpds", "-s",
-		"-p", nvram_safe_get("https_lanport"),
 		NULL, NULL,	/* -i ifname */
+		NULL, NULL,	/* -p port */
 		NULL };
-	int https_index = 4;
+	int https_index = 2;
 	int enable;
 #endif
 	char *cur_dir;
@@ -4156,7 +4174,12 @@ start_httpd(void)
 
 	enable = nvram_get_int("http_enable");
 	if (enable != 0) {
-		logmessage(LOGNAME, "start httpd - SSL");
+		pid = nvram_get_int("https_lanport") ? : 443;
+		if (pid != 443) {
+			https_argv[https_index++] = "-p";
+			https_argv[https_index++] = nvram_safe_get("https_lanport");
+		}
+		logmessage(LOGNAME, "start https:%d", pid);
 		_eval(https_argv, NULL, 0, &pid);
 #if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
 		sleep(1);
@@ -4167,7 +4190,12 @@ start_httpd(void)
 #endif
 #endif
 	{
-		logmessage(LOGNAME, "start httpd");
+		pid = nvram_get_int("http_lanport") ? : 80;
+		if (pid != 80) {
+			httpd_argv[httpd_index++] = "-p";
+			httpd_argv[httpd_index++] = nvram_safe_get("http_lanport");
+		}
+		logmessage(LOGNAME, "start httpd:%d", pid);
 		_eval(httpd_argv, NULL, 0, &pid);
 #if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
 		sleep(1);
@@ -4358,7 +4386,7 @@ void start_upnp(void)
 				} else
 #endif
 				{
-					fprintf(f, "%s://%s:%d/\n", "http", lanip, /*nvram_get_int("http_lanport") ? :*/ 80);
+					fprintf(f, "%s://%s:%d/\n", "http", lanip, nvram_get_int("http_lanport") ? : 80);
 				}
 
 				char uuid[45];
@@ -5543,8 +5571,12 @@ void start_chg_swmode(void)
 		nvram_set("lan_dnsenable_x", "1");
 	}
 	else if (sw_mode==1) {
-		nvram_set("lan_proto", "static");
-		nvram_set("lan_dnsenable_x", "0");
+		nvram_set("lan_proto", nvram_default_get("lan_proto"));
+		nvram_set("lan_ipaddr", nvram_default_get("lan_ipaddr"));
+		nvram_set("lan_ipaddr_rt", nvram_default_get("lan_ipaddr_rt"));
+		nvram_set("dhcp_start", nvram_default_get("dhcp_start"));
+		nvram_set("dhcp_end", nvram_default_get("dhcp_end"));
+		nvram_set("lan_dnsenable_x", nvram_default_get("lan_dnsenable_x"));
 	}
 
 	nvram_commit();
@@ -7962,7 +7994,9 @@ stop_services_mfg(void)
 	stop_lteled();
 #endif
 #endif
+#ifndef RTCONFIG_NO_USBPORT
 	stop_usbled();
+#endif
 #endif
 	stop_rstats();
 #ifdef RTCONFIG_JFFS2USERICON
@@ -8035,8 +8069,6 @@ stop_services_mfg(void)
 #if defined(RTCONFIG_BT_CONN)
 #if defined(RTCONFIG_LP5523)
 	lp55xx_leds_proc(LP55XX_ALL_LEDS_OFF, LP55XX_ACT_NONE);
-#elif defined(MAPAC1750)
-	set_rgbled(RGBLED_NORMAL_MODE);
 #endif /* RTCONFIG_LP5523 */
 	stop_bluetooth_service();
 #endif	/* RTCONFIG_BT_CONN */
@@ -8480,7 +8512,7 @@ start_qtn_monitor()
 }
 #endif
 
-#ifdef RTCONFIG_USB
+#if defined(RTCONFIG_USB) && !defined(RTCONFIG_NO_USBPORT)
 int
 start_usbled(void)
 {
@@ -8758,7 +8790,9 @@ void factory_reset(void)
 #else
 	stop_usb(0);
 #endif
+#ifndef RTCONFIG_NO_USBPORT
 	stop_usbled();
+#endif
 #endif
 #endif
 
@@ -8903,7 +8937,9 @@ again:
 #else
 		stop_usb(0);
 #endif
+#ifndef RTCONFIG_NO_USBPORT
 		stop_usbled();
+#endif
 #endif
 #endif
 //#if defined(RTCONFIG_JFFS2LOG) && defined(RTCONFIG_JFFS2)
@@ -9022,7 +9058,9 @@ again:
 #else
 			stop_usb(0);
 #endif
+#ifndef RTCONFIG_NO_USBPORT
 			stop_usbled();
+#endif
 			remove_storage_main(1);
 			remove_usb_module();
 #endif
@@ -9103,7 +9141,9 @@ again:
 #else
 				stop_usb(0);
 #endif
+#ifndef RTCONFIG_NO_USBPORT
 				stop_usbled();
+#endif
 				remove_storage_main(1);
 				remove_usb_module();
 #endif
@@ -9281,7 +9321,9 @@ again:
 #else
 			stop_usb(0);
 #endif
+#ifndef RTCONFIG_NO_USBPORT
 			stop_usbled();
+#endif
 			remove_storage_main(1);
 			remove_usb_module();
 #endif
@@ -9382,7 +9424,9 @@ again:
 #else
 				stop_usb(0);
 #endif
+#ifndef RTCONFIG_NO_USBPORT
 				stop_usbled();
+#endif
 				remove_storage_main(1);
 				remove_usb_module();
 #endif
@@ -10774,7 +10818,7 @@ check_ddr_done:
 
 	}
 #ifdef RTCONFIG_TUNNEL
-	else if (strcmp(script, "aae") == 0)
+	else if (strcmp(script, "aae") == 0 || strcmp(script, "mastiff") == 0)
 	{
 		if(action&RC_SERVICE_STOP){
 			stop_mastiff();
@@ -11478,8 +11522,6 @@ check_ddr_done:
 		// force to rebuild firewall to avoid some loopback issue
 		if (nvram_match("fw_nat_loopback", "2"))
 			start_firewall(wan_primary_ifunit(), 0);
-		// restart VPN related services
-		bwdpi_restart_vpn_services();
 #endif
 	}
 #if defined(RTCONFIG_BWDPI)
@@ -11492,9 +11534,6 @@ check_ddr_done:
 			if (nvram_match("fw_nat_loopback", "2"))
 				start_firewall(wan_primary_ifunit(), 0);
 		}
-
-		// restart VPN related services
-		bwdpi_restart_vpn_services();
 	}
 	else if (strcmp(script, "wrs_force") == 0)
 	{
@@ -11852,21 +11891,6 @@ check_ddr_done:
 		// TODO: function to force ppp connection
 		start_upnp();
 	}
-#if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
-	else if (strcmp(script, "pptpd") == 0)
-	{
-		if (action & RC_SERVICE_STOP)
-		{
-			stop_pptpd();
-		}
-		if (action & RC_SERVICE_START)
-		{
-			start_pptpd();
-			start_firewall(wan_primary_ifunit(), 0);
-		}
-	}
-#endif
-
 #ifdef RTCONFIG_SNMPD
 	else if (strcmp(script, "snmpd") == 0)
 	{
@@ -11892,16 +11916,13 @@ check_ddr_done:
 	}
 #endif
 #if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
-	else if (strcmp(script, "vpnd") == 0)
-	{
+	else if (strcmp(script, "vpnd") == 0 || strcmp(script, "pptpd") == 0) {
 		if (action & RC_SERVICE_STOP){
 			stop_pptpd();
 		}
 		if (action & RC_SERVICE_START){
-			stop_upnp();
 			start_pptpd();
 			start_firewall(wan_primary_ifunit(), 0);
-			start_upnp();
 		}
 	}
 #endif
@@ -12797,8 +12818,6 @@ void gen_lldpd_if(char *bind_ifnames)
 	{		
 		/* for lan_ifnames */
 		foreach (word, nvram_safe_get("lan_ifnames"), next) {
-			if (strstr(nvram_safe_get("dpsta_ifnames"), word))
-				continue;
 
 			if (i == 0)
 				i = 1;
@@ -12864,23 +12883,15 @@ void gen_lldpd_desc(char *bind_desc)
 void start_amas_lldpd(void)
 {
 	char bind_ifnames[128] = {0};
-	char bind_desc[128] = {0};
 
 	memset(bind_ifnames, 0x00, sizeof(bind_ifnames));
-	memset(bind_desc, 0x00, sizeof(bind_desc));
 
 	if(nvram_match("stop_amas_lldpd", "1")) {
 		_dprintf("stop_amas_lldpd = 1, don't start amas lldpd.\n");
 		return;
 	}
 
-//	if (!nvram_match("x_Setting", "1")) {
-//		_dprintf("Default status, don't start amas lldpd.\n");
-//		return;
-//	}
-
 	gen_lldpd_if(&bind_ifnames[0]);
-	gen_lldpd_desc(&bind_desc[0]);
 
 	if (strlen(bind_ifnames) == 0) {
 		_dprintf("rc: ==> not binding interface for lldpd\n");
@@ -12890,21 +12901,20 @@ void start_amas_lldpd(void)
 	_dprintf("rc: ==> binding interface(%s) for lldpd\n", bind_ifnames);
 
 	stop_amas_lldpd();
-	if (strlen(bind_desc) == 0) 
-		eval("lldpd", "-L", "/usr/sbin/lldpcli", "-I", bind_ifnames);
-	else {
-		if(nvram_get_int("lldpd_dbg") == 1) {
-				char exec_lldpd[1024] = {0};
-				sprintf(exec_lldpd, "lldpd -L /usr/sbin/lldpcli -I %s -S %s -dddd", bind_ifnames, bind_desc);
-				dbG("exec lldpd debug mode(%s)\n", exec_lldpd);
-				system(exec_lldpd);
-		}
-		else
-				eval("lldpd", "-L", "/usr/sbin/lldpcli", "-I", bind_ifnames, "-S", bind_desc);
+
+	if(nvram_get_int("lldpd_dbg") == 1) {
+			char exec_lldpd[1024] = {0};
+			sprintf(exec_lldpd, "lldpd -L /usr/sbin/lldpcli -I %s -dddd", bind_ifnames);
+			dbG("exec lldpd debug mode(%s)\n", exec_lldpd);
+			system(exec_lldpd);
 	}
+	else
+			eval("lldpd", "-L", "/usr/sbin/lldpcli", "-I", bind_ifnames);
+
 	sleep(2);
 
 	eval("lldpcli", "configure", "lldp", "tx-interval", "10");
+	eval("lldpcli", "configure", "lldp", "tx-hold", "2");
 
 	if(dpsta_mode()
 #ifdef RTCONFIG_DPSTA
@@ -15403,20 +15413,22 @@ void send_event_to_cfgmnt(int event_id)
 {
 	char msg[64] = {0};
 
-	snprintf(msg, sizeof(msg), RC_GENERIC_MSG, event_id);
-	send_cfgmnt_event(msg);
+	if(nvram_get_int("x_Setting") == 1) {
+		snprintf(msg, sizeof(msg), RC_GENERIC_MSG, event_id);
+		send_cfgmnt_event(msg);
+	}
 }
 #endif
 
 #ifdef RTCONFIG_USB_SWAP
-int start_usb_swap(path)
+int start_usb_swap(char *path)
 {
 	int ret;
 	ret = eval("/usr/sbin/usb_swap.sh", path);
 	return ret;
 }
 
-int stop_usb_swap(path)
+int stop_usb_swap(char *path)
 {
 	int ret;
 	ret = eval("/usr/sbin/usb_swap.sh", path, "0");
@@ -15453,64 +15465,5 @@ void reset_led(void)
 	if(brightness_level < 0 || brightness_level > 3)
 		brightness_level = 2;
 	setCentralLedLv(brightness_level);
-}
-#endif
-
-#if defined(RTCONFIG_BWDPI)
-#if defined(RTCONFIG_VPN_FUSION)
-static void parse_vpn_fusion_profile()
-{
-	char *nv = NULL, *nvp = NULL, *b = NULL;
-	nv = nvp = strdup(nvram_safe_get("vpnc_clientlist"));
-	char *desc, *proto, *server, *username, *passwd, *active, *vpnc_idx;
-
-	while (nv && (b = strsep(&nvp, "<")) != NULL)
-	{
-		//proto, server, active and vpnc_idx are mandatory
-		if (vstrsep(b, ">", &desc, &proto, &server, &username, &passwd, &active, &vpnc_idx) < 4)
-			continue;
-
-		if (active) {
-			stop_vpnc_by_unit(atoi(vpnc_idx));
-			start_vpnc_by_unit(atoi(vpnc_idx));
-			printf("%s : resatrt vpn fusion %s\n", __FUNCTION__, vpnc_idx);
-		}
-	}
-	free(nv);
-}
-#endif // RTCONFIG_VPN_FUSION
-
-void bwdpi_restart_vpn_services()
-{
-	// vpn server
-#if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
-	if (nvram_get_int("pptpd_enable")) {
-		stop_pptpd();
-		start_pptpd();
-		printf("%s : restart_vpnd\n", __FUNCTION__);
-	}
-
-#endif
-
-	// OpenVPN client and servers
-#if defined(RTCONFIG_OPENVPN)
-	stop_ovpn_all();
-	start_ovpn_eas();
-	printf("%s : restart openvpn servers and clients\n", __FUNCTION__);
-#endif
-
-	// vpn client
-#if defined(RTCONFIG_VPNC)
-	if (!nvram_match("vpnc_proto", "openvpn") && !nvram_match("vpnc_proto", "disable")) {
-		stop_vpnc();
-		start_vpnc();
-		printf("%s : restart vpn client - pptp/l2tp\n", __FUNCTION__);
-	}
-#endif // RTCONFIG_VPNC
-
-	// vpn fusion
-#if defined(RTCONFIG_VPN_FUSION)
-	parse_vpn_fusion_profile();
-#endif
 }
 #endif

@@ -410,8 +410,8 @@ function applyRule(){
 			else {
 				var wl_parameter = {
 					"original" : {
-						"ssid" : '<% nvram_get("wl_ssid"); %>',
-						"psk" : '<% nvram_get("wl_wpa_psk"); %>'
+						"ssid" : decodeURIComponent('<% nvram_char_to_ascii("", "wl_ssid"); %>'),
+						"psk" : decodeURIComponent('<% nvram_char_to_ascii("", "wl_wpa_psk"); %>')
 					},
 					"current": {
 						"ssid" : document.form.wl_ssid.value,
@@ -421,12 +421,13 @@ function applyRule(){
 				if(!AiMesh_confirm_msg("Wireless_SSID_PSK", wl_parameter))
 					return false;
 			}
-
 			var radio_value = (document.form.wl_closed[0].checked) ? 1 : 0;
 			if(document.form.wps_enable.value == 1) {
-				if(!AiMesh_confirm_msg("Wireless_Hide_WPS", radio_value))
-					return false;
-				document.form.wps_enable.value = "0";
+				if(radio_value) {
+					if(!AiMesh_confirm_msg("Wireless_Hide_WPS", radio_value))
+						return false;
+					document.form.wps_enable.value = "0";
+				}
 			}
 			else {
 				if(!AiMesh_confirm_msg("Wireless_Hide", radio_value))

@@ -276,6 +276,9 @@ extern int wanport_status(int wan_unit);
 
 /* board API under sysdeps directory */
 extern void set_factory_mode();
+#if defined(RTCONFIG_OPENPLUS_TFAT) || defined(RTCONFIG_OPENPLUSPARAGON_NTFS) || defined(RTCONFIG_OPENPLUSTUXERA_NTFS) || defined(RTCONFIG_OPENPLUSPARAGON_HFS) || defined(RTCONFIG_OPENPLUSTUXERA_HFS)
+extern void set_fs_coexist();
+#endif
 extern int _dump_powertable();
 extern void ate_commit_bootlog(char *err_code);
 extern int setAllLedOn(void);
@@ -576,6 +579,9 @@ extern void wl_disband5grp();
 extern int setWanLedMode1(void);
 extern int setWanLedMode2(void);
 extern void tweak_smp_affinity(int enable_samba);
+#ifdef HND_ROUTER
+extern void tweak_usb_affinity(int enable);
+#endif
 #endif
 #ifdef WLCLMLOAD
 extern int download_clmblob_files();
@@ -1145,8 +1151,10 @@ extern int ejusb_main(int argc, char *argv[]);
 extern int __ejusb_main(const char *port_path, int unplug);
 extern void webdav_account_default(void);
 extern void remove_storage_main(int shutdn);
+#ifndef RTCONFIG_NO_USBPORT
 extern int start_usbled(void);
 extern int stop_usbled(void);
+#endif
 extern void restart_nas_services(int stop, int start);
 extern void stop_nas_services(int force);
 extern int sd_partition_num();
@@ -1946,6 +1954,7 @@ extern int factory_debug();
 #if !(defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM))
 extern char *ATE_BRCM_PREFIX(void);
 extern int ATE_BRCM_SET(const char *name, const char *value);
+extern int ATE_BRCM_UNSET(const char *name);
 extern void ATE_BRCM_COMMIT(void);
 #endif
 #endif
@@ -2036,8 +2045,8 @@ extern void start_erp_monitor();
 #endif
 
 #ifdef RTCONFIG_USB_SWAP	
-extern int stop_usb_swap(path);
-extern int start_usb_swap(path);
+extern int stop_usb_swap(char *path);
+extern int start_usb_swap(char *path);
 #endif	
 
 #ifdef RTCONFIG_HD_SPINDOWN
@@ -2050,6 +2059,11 @@ void stop_usb_idle(void);
 extern int adtbw_main(int argc, char **argv);
 extern void stop_adtbw();
 extern void start_adtbw();
+#endif
+
+// natnl_api.c
+#ifdef RTCONFIG_TUNNEL
+extern void start_aae();
 #endif
 
 #endif	/* __RC_H__ */

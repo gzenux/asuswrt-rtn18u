@@ -21,6 +21,7 @@
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <script>
 var wollist_array = "<% nvram_get("wollist"); %>";
 var manually_wol_list_array = new Array();
@@ -34,6 +35,8 @@ Object.prototype.getKey = function(value) {
 };
 function initial(){
 	show_menu();
+	//	http://www.asus.com/support/FAQ/1009775
+	httpApi.faqURL("faq3", "1009775", "https://www.asus.com", "/support/FAQ/");	// id in #smart_access3#
 
 	var wollist_row = wollist_array.split('&#60');
 	for(var i = 1; i < wollist_row.length; i += 1) {
@@ -143,25 +146,25 @@ function showwollist(){
 			}
 			code += '<table style="width:100%;"><tr><td style="width:40%;height:56px;border:0px;float:right;">';	
 			if(clientList[clientMac] == undefined) {
-				code += '<div class="clientIcon type0" onClick="popClientListEditTable(&quot;' + clientMac + '&quot;, this, &quot;' + clientName + '&quot;, &quot;&quot;, &quot;WOL&quot;)"></div>';
+				code += '<div class="clientIcon type0" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + '' + '\', \'\', \'WOL\')"></div>';
 			}
 			else {
 				if(usericon_support) {
 					userIconBase64 = getUploadIcon(clientMac.replace(/\:/g, ""));
 				}
 				if(userIconBase64 != "NoIcon") {
-					code += '<div style="text-align:center;" onClick="popClientListEditTable(&quot;' + clientMac + '&quot;, this, &quot;' + clientName + '&quot;, &quot;&quot;, &quot;WOL&quot;)"><img class="imgUserIcon_card" src="' + userIconBase64 + '"></div>';
+					code += '<div style="text-align:center;" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + '' + '\', \'\', \'WOL\')"><img class="imgUserIcon_card" src="' + userIconBase64 + '"></div>';
 				}
 				else if(deviceType != "0" || deviceVender == "") {
-					code += '<div class="clientIcon type' + deviceType + '" onClick="popClientListEditTable(&quot;' + clientMac + '&quot;, this, &quot;' + clientName + '&quot;, &quot;&quot;, &quot;WOL&quot;)"></div>';
+					code += '<div class="clientIcon type' + deviceType + '" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + '' + '\', \'\', \'WOL\')"></div>';
 				}
 				else if(deviceVender != "" ) {
 					var venderIconClassName = getVenderIconClassName(deviceVender.toLowerCase());
 					if(venderIconClassName != "" && !downsize_4m_support) {
-						code += '<div class="venderIcon ' + venderIconClassName + '" onClick="popClientListEditTable(&quot;' + clientMac + '&quot;, this, &quot;' + clientName + '&quot;, &quot;&quot;, &quot;WOL&quot;)"></div>';
+						code += '<div class="venderIcon ' + venderIconClassName + '" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + '' + '\', \'\', \'WOL\')"></div>';
 					}
 					else {
-						code += '<div class="clientIcon type' + deviceType + '" onClick="popClientListEditTable(&quot;' + clientMac + '&quot;, this, &quot;' + clientName + '&quot;, &quot;&quot;, &quot;WOL&quot;)"></div>';
+						code += '<div class="clientIcon type' + deviceType + '" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + '' + '\', \'\', \'WOL\')"></div>';
 					}
 				}
 			}

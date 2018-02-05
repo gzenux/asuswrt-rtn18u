@@ -16,15 +16,11 @@ ifeq ($(RTCONFIG_QTN),y)
 LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
 endif
 
-ifeq ($(RTCONFIG_AMAS),y)
-LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
-endif
-
 OBJS = dblog.o dblog_syslog.o dblog_wifi.o dblog_dm.o dblog_ms.o dblog_amas.o respipc.o
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./prebuild$(BCMEX)$(EXHND)),)
 all:
-	@-cp -f ./prebuild/dblog .
+	@-cp -f ./prebuild$(BCMEX)$(EXHND)/dblog .
 else
 all: dblog
 endif

@@ -20,6 +20,7 @@
 <script type="text/javascript" language="JavaScript" src="/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 #ClientList_Block_PC{
 	border:1px outset #999;
@@ -114,6 +115,8 @@ var sortCol, sortMethod;
 
 function initial(){
 	show_menu();
+	//id="faq" href="https://www.asus.com/US/support/FAQ/1000906"
+	httpApi.faqURL("faq", "1000906", "https://www.asus.com", "/support/FAQ/");
 	//Viz 2011.10{ for LAN ip in DHCP pool or Static list
 	showtext(document.getElementById("LANIP"), '<% nvram_get("lan_ipaddr"); %>');
 	if((inet_network(document.form.lan_ipaddr.value)>=inet_network(document.form.dhcp_start.value))&&(inet_network(document.form.lan_ipaddr.value)<=inet_network(document.form.dhcp_end.value))){
@@ -154,21 +157,17 @@ function initial(){
 		document.getElementById("dnssec_tr").style.display = "";
 	}
 
-	//Viz keep this, disabled temporarily. if(!tmo_support){
-			document.form.sip_server.disabled = true;
-			document.form.sip_server.parentNode.parentNode.style.display = "none";
-	//}else{
-	//		document.form.sip_server.disabled = false;
-	//		document.form.sip_server.parentNode.parentNode.style.display = "";
-	//}
-
-	addOnlineHelp(document.getElementById("faq"), ["set", "up", "specific", "IP", "address"]);
+	document.form.sip_server.disabled = true;
+	document.form.sip_server.parentNode.parentNode.style.display = "none";	
 
 	if(vpn_fusion_support) {
 		vpnc_dev_policy_list_array = parse_vpnc_dev_policy_list('<% nvram_char_to_ascii("","vpnc_dev_policy_list"); %>');
 		vpnc_dev_policy_list_array_ori = vpnc_dev_policy_list_array.slice();
 	}
 
+	if(lyra_hide_support){
+		$("#dhcpEnable").hide();
+	}
 }
 
 function addRow(obj, head){
@@ -921,7 +920,10 @@ function parse_vpnc_dev_policy_list(_oriNvram) {
       <div class="formfontdesc"><#LANHostConfig_DHCPServerConfigurable_sectiondesc#></div>
       <div id="router_in_pool" class="formfontdesc" style="color:#FFCC00;display:none;"><#LANHostConfig_DHCPServerConfigurable_sectiondesc2#><span id="LANIP"></span></div>
       <div id="VPN_conflict" class="formfontdesc" style="color:#FFCC00;display:none;"><span id="VPN_conflict_span"></span></div>
-      <div class="formfontdesc" style="margin-top:-10px;display:none;">
+			<div class="formfontdesc" style="margin-top:-10px;">
+				<a id="faq" href="" target="_blank" style="font-family:Lucida Console;text-decoration:underline;"><#LANHostConfig_ManualDHCPList_groupitemdesc#>&nbsp;FAQ</a>
+			</div>
+      <div class="formfontdesc" style="margin-top:-10px">
          <br>You can enter up to 128 static DHCP reservations.  If filled, the Name field content will be pushed to the
          client as the hostname.  If an invalid name is entered (such as one with spaces), then the name will only
          be used as a description on the webui itself (for example, "My Laptop").
@@ -933,7 +935,7 @@ function parse_vpnc_dev_policy_list(_oriNvram) {
 			  </tr>
 			  </thead>
 
-			  <tr>
+			  <tr id="dhcpEnable">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,1);"><#LANHostConfig_DHCPServerConfigurable_itemname#></a></th>
 				<td>
 				  <input type="radio" value="1" name="dhcp_enable_x" class="content_input_fd" onClick="return change_common_radio(this, 'LANHostConfig', 'dhcp_enable_x', '1')" <% nvram_match("dhcp_enable_x", "1", "checked"); %>><#checkbox_Yes#>
