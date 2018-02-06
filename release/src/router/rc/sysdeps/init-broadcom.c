@@ -1905,7 +1905,7 @@ reset_mssid_hwaddr(int unit)
 	int idx, subunit;
 	int max_mssid = num_of_mssid_support(unit);
 	char tmp[100], prefix[]="wlXXXXXXX_";
-	int unit_total = num_of_wl_if ();
+	int unit_total = num_of_wl_if();
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 	int psr = (is_psr(unit)
 			|| dpsr_mode()

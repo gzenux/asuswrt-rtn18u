@@ -1115,6 +1115,8 @@ extern int mssid_mac_validate(const char *macaddr);
 extern int setup_dnsmq(int mode);
 #endif
 
+// ssh.c
+
 // usb.c
 #if defined(RTCONFIG_OPENPLUS_TFAT) \
 		|| defined(RTCONFIG_OPENPLUSPARAGON_NTFS) || defined(RTCONFIG_OPENPLUSTUXERA_NTFS) \
@@ -1933,6 +1935,7 @@ enum LED_STATUS
 	LED_AP_WPS_START
 };
 #endif
+
 #ifdef RTCONFIG_TUNNEL
 extern void start_mastiff();
 extern void stop_mastiff();

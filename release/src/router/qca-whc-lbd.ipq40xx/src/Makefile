@@ -14,14 +14,16 @@ LIBS += $(LBD_LIBS)
 all: lbd$(EXEEXT) install
 
 lbd$(EXEEXT): $(TARTGET_OBJECTS)
-	$(LINK) -L$(TOP)/hive_lib -L$(TOP)/qca-whc-lbd.ipq40xx/ipkg-ipq806x/qca-whc-lbd/lib -o $@ $(TARTGET_OBJECTS) -Xlinker --start-group $(LIBS) -lm -ljansson -Xlinker --end-group
+	$(LINK) -L$(STAGEDIR)/usr/lib -L$(TOP)/qca-whc-lbd.ipq40xx/ipkg-ipq806x/qca-whc-lbd/lib -o $@ $(TARTGET_OBJECTS) -Xlinker --start-group $(LIBS) -lm -ljansson -Xlinker --end-group
 
 .c.o:
 	$(COMPILE) -c $<
 
 install:
 #	@cp lbd$(EXEEXT) $(INSTALL_ROOT)/sbin
-	@cp lbd$(EXEEXT) $(TOP)/hive_bin
+	[ -d $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/sbin ] || install -d $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/sbin
+	install -m 755 lbd$(EXEEXT) $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/sbin
+	$(STRIP) $(INSTALLDIR)/qca-whc-lbd.ipq40xx/usr/sbin/*
 
 clean:
 	@rm -f *.o *~ lbd$(EXEEXT)

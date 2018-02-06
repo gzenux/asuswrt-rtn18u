@@ -18480,6 +18480,7 @@ static int ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 #endif	/* RTCONFIG_BCM5301X_TRAFFIC_MONITOR */
 				if (!netdev_calc(ifname, ifname_desc, (long unsigned int *) &rx, (long unsigned int *) &tx, ifname_desc2, (long unsigned int *) &rx2, (long unsigned int *) &tx2, nv_lan_ifname, nv_lan_ifnames)) continue;
 
+
 loopagain:
 				if (!strncmp(ifname_desc, "WIRELESS0", 9)) {
 					wl0_valid = 1;
@@ -18515,6 +18516,7 @@ loopagain:
 					}
 						comma = ',';
 				}
+
 				if(strlen(ifname_desc2)) {
 					strcpy(ifname_desc, ifname_desc2);
 					rx = rx2;
@@ -19031,7 +19033,6 @@ ej_cpu_core_num(int eid, webs_t wp, int argc, char_t **argv){
 
 	websWrite(wp, "%d", count);
 	return 0;
-
 }
 
 static int
@@ -21600,7 +21601,7 @@ ej_httpd_cert_info(int eid, webs_t wp, int argc, char **argv)
 	int le_enable = nvram_get_int("le_enable");
 	int http_enable = nvram_get_int("http_enable");
 
-	if(http_enable == 0)    //http only
+	if(http_enable == 0)	//http only
 	{
 		if(le_enable == 1)
 			get_path_le_domain_cert(cert_path, sizeof(cert_path));

@@ -6,10 +6,6 @@ LDFLAGS += -L$(TOP)/nvram -lnvram
 endif
 LDFLAGS +=-L$(TOP)/shared$(RPEX) -lshared
 
-ifeq ($(RTCONFIG_AMAS),y)
-LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
-endif
-
 EXEC = flash
 OBJS = flash_mtd.o
 

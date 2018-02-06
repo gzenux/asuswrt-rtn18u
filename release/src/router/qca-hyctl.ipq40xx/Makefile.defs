@@ -19,7 +19,7 @@ CFLAGS += -I. -I $(GWINCLUDE) \
           -I $(KERNELPATH)/include -I $(HYFIDIR) -I $(HYFIMCDIR)\
           -I $(HYTOP)/src -I $(HYFIBRLIBDIR)
 
-LDFLAGS += -L $(GWLIB) -L$(TOP)/hive_lib
+LDFLAGS += -L $(GWLIB) -L$(STAGEDIR)/usr/lib
 
 LIBS += -lhyfi-bridge 
 
