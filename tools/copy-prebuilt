@@ -8,7 +8,7 @@
 #        REPO will contain the location of your local repository
 
 MODEL=$1
-REPO=/home/merlin/amng
+REPO=$(dirname $(dirname "$0"))
 
 if [ "$MODEL" == "RT-AC88U" ] || [ "$MODEL" == "RT-AC3100" ] || [ "$MODEL" == "RT-AC5300" ]
 then
@@ -35,13 +35,22 @@ then
 	cp -a release/src/router/Beceem_BCMS250/prebuild/* $REPO/release/src/router/Beceem_BCMS250$ARCH/prebuild/
 	cp -a release/src/router/tuxera/broadcom$ARCH$SDK/* $REPO/release/src/router/tuxera/broadcom$ARCH$SDK/
 
-elif [ "$MODEL" == "RT-AC56U" ] || [ "$MODEL" == "RT-AC68U" ] || [ "$MODEL" == "RT-AC87U" ]
+elif [ "$MODEL" == "RT-AC56U" ] || [ "$MODEL" == "RT-AC68U" ] || [ "$MODEL" == "RT-AC87U" ] || [ "$MODEL" == "RT-N18U" ]
 then
 	SDK=""
 	ARCH="_arm"
 	HND=""
 
-	cp release/src/router/ctf_arm/bcm6/* $REPO/release/src/router/ctf_arm/bcm6/
+	if [ "$MODEL" == "RT-N18U" ]; then
+		ARMCPUSMP="_up"
+	else
+		ARMCPUSMP=""
+	fi
+
+	cp release/src/router/ctf_arm/bcm6$ARMCPUSMP/* $REPO/release/src/router/ctf_arm/bcm6$ARMCPUSMP/
+	cp release/src/router/dpsta/bcm6$ARMCPUSMP/* $REPO/release/src/router/dpsta/bcm6$ARMCPUSMP/
+	cp release/src/router/ufsd/broadcom$ARCH$ARMCPUSMP/* $REPO/release/src/router/ufsd/broadcom$ARCH$ARMCPUSMP/
+	cp release/src/router/et_arm/prebuilt/* $REPO/release/src/router/et_arm/prebuilt/
 	cp release/src/router/wl_arm/prebuilt/* $REPO/release/src/router/wl_arm/prebuilt/$MODEL/
 	cp release/src-rt-6.x.4708/wl/exe/prebuilt/* $REPO/release/src-rt-6.x.4708/wl/exe/prebuilt/
 	cp -a release/src/router/Beceem_BCMS250/prebuild/* $REPO/release/src/router/Beceem_BCMS250$ARCH/prebuild/
