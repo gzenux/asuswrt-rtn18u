@@ -1,0 +1,22 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+
+384.3-beta2
+ - NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+
+ - NOTE: This firmware merged Asuswrt-Merlin's updates to revision
+         384.3-beta2.
+
+
+384.3-beta1
+ - NOTE: This firmware applied Asuswrt-Merlin's changes to revision
+         384.3-beta1 with the following additional changes.
+
+ - NEW: Merged RT-N18U GPL release 382_39935
+ - CHANGED: Hide the 5GHz wireless temperature if the device is
+            not supported.
+ - FIX: Wireless LED control does not work on Stealth Mode
+ - FIX: Duplicate RTCONFIG_WIFI_SON section which is mis-merged by
+        Asuswrt-Merlin in nat_setting().
+ - FIX: Hardcode WAN interface as eth0 for Adaptive QoS upstream
+        data gathering.
