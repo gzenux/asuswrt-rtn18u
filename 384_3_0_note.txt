@@ -1,0 +1,38 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+  NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+
+384.3
+  Changelog for RT-N18U:
+   - NEW: Merged RT-N18U GPL release 382_39935
+   - CHANGED: Hide the 5GHz wireless temperature if the device is
+              not supported.
+   - FIXED: Wireless LED control does not work on Stealth Mode.
+   - FIXED: Duplicate RTCONFIG_WIFI_SON section which is
+            mis-merged by Asuswrt-Merlin in nat_setting().
+   - FIXED: Hardcode WAN interface as eth0 for Adaptive QoS
+            upstream data gathering.
+
+  Changelog from Asuswrt-Merlin:
+   - NOTE: AiMesh is currently not supported.  Feasability of
+           supporting it is still under evaluation.
+   - NEW: Merged with GPL 384_10007
+   - NEW: nano can now be configured through /jffs/configs/nanorc
+   - CHANGED: Updated nano to 2.9.3.
+   - FIXED: Some routers coming from 380.xx would incorrectly
+            report a new firmware available at boot time.
+   - FIXED: Some broken clients (like Samsung TVs) try to use
+            reserved hostnames - ignore these.  (theMIRon)
+   - FIXED: Added missing IPv6 local hostnames (theMIRon)
+   - FIXED: Issues withh DNS & broadcast relay for pptp
+            clients (theMIRon)
+   - FIXED: Fixed CVE-2018-5721 in httpd (Merlin & theMIROn)
+   - FIXED: helper.js wasn't properly handling parentheses
+            (John9527)
+   - FIXED: NAT acceleration of PPPoE for some models (fix
+            backported from 382_50010)
+   - FIXED: Networkmap-related issues on some models (missing
+            tx/rx rate and such).
+   - FIXED: Network Service Filter wasn't working when in
+            Blacklist mode.
+   - FIXED: Repeater mode (backport from 384_20287)
