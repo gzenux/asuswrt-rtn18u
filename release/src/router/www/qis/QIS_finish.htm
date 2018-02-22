@@ -1399,6 +1399,10 @@ function QKfinish_load_body(){
 	else{
 		parent.set_step("t3");
 		parent.document.getElementById("LoadingBar").style.visibility = 'hidden';
+		if(parent.gobi_support){
+			document.getElementById("timeObject").style.display = "none";
+			document.getElementById('svc_hint_div').style.display = "none";
+		}
 	}
 
 	if(!isWLclient() && !parent.sysReboot) setTimeout(function(){

@@ -4191,7 +4191,7 @@ escan_open_eventfd()
 	memset(&sockaddr, 0, sizeof(sockaddr));
 	sockaddr.sin_family = AF_INET;
 	sockaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	sockaddr.sin_port = htons(EAPD_WKSP_DCS_UDP_SPORT);
+	sockaddr.sin_port = htons(EAPD_WKSP_WLEVENT_UDP_SPORT);
 
 	if ((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		dbg("Unable to create loopback socket\n");
@@ -4381,10 +4381,8 @@ get_scan_escan(char *scan_buf, uint buf_len)
 	}
 
 exit:
-	if (d_info->event_fd != -1) {
-		close(d_info->event_fd);
-		d_info->event_fd = -1;
-	}
+	close(fd);
+	d_info->event_fd == -1;
 
 	/* free scan results */
 	result = escan_bss_head;

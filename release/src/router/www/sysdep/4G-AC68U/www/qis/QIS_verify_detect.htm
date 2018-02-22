@@ -162,7 +162,7 @@ function getWANStatus(){
 					if(successcase > 1){
 						if(parent.gobi_support)
 						{
-							if(usb_wanstate == 2 && usb_wansbstate == 0 && usb_wanauxstate == 0){
+							if(usb_wanstate == 2 && usb_wansbstate == 0 && usb_wanauxstate != 1){
 								redirect_page("wireless");
 							}
 							else{

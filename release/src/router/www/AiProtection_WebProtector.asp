@@ -235,6 +235,15 @@ function addRow_main(obj, length){
 	var blank_category = 0;
 	var apps_filter_row =  apps_filter.split("<");
 	var apps_filter_col = "";
+	var upper = 16;
+
+	//check max limit of rule list
+	if(apps_filter.split("<").length >= upper){
+		alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
+		document.form.PC_devicename.focus();
+		document.form.PC_devicename.select();
+		return false;
+	}
 		
 	if(document.form.PC_devicename.value == ""){
 		alert("<#JS_fieldblank#>");
@@ -321,6 +330,7 @@ function genMain_table(){
 
 	var apps_filter_row = apps_filter.split("<");
 	var code = "";	
+	var clientListEventData = [];
 	code += '<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="FormTable_table" id="mainTable_table">';
 	code += '<thead><tr>';
 	code += '<td colspan="5"><#ConnectedClient#>&nbsp;(<#List_limit#>&nbsp;16)</td>';
@@ -368,10 +378,35 @@ function genMain_table(){
 		for(var k=0;k< apps_filter_row.length;k++){
 			var apps_filter_col = apps_filter_row[k].split('>');
 			
+			/* for exception */
+			if(apps_filter_col.length < 6){
+				if(apps_filter_col.length == 5){
+					apps_filter_col.push("0,0,0");
+				}
+				else if(apps_filter_col.length == 4){
+					apps_filter_col.push("0,0");
+					apps_filter_col.push("0,0,0");
+				}
+				else if(apps_filter_col.length == 3){
+					if(apps_filter_col[1].length != 17){	// check MAC address integrity
+						continue;
+					}
+					else{
+						apps_filter_col.push("0,0,0,0,0");
+						apps_filter_col.push("0,0");
+						apps_filter_col.push("0,0,0");
+					}
+				}
+
+				apps_filter_col[0] = "0";
+			}
+			/*End exception*/
+
 			//user icon
 			var userIconBase64 = "NoIcon";
 			var clientName, clientMac, clientIP, deviceType, deviceVender;
 			var clientMac = apps_filter_col[1].toUpperCase();
+			var clientIconID = "clientIcon_" + clientMac.replace(/\:/g, "");
 			var clientObj = clientList[clientMac];
 			if(clientObj) {
 				clientName = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
@@ -398,25 +433,25 @@ function genMain_table(){
 			code +='<td title="' + clientMac + '">';
 			code += '<table style="width:100%;"><tr><td style="width:40%;height:56px;border:0px;float:right;margin-right:20px;">';
 			if(clientObj == undefined) {
-				code += '<div class="clientIcon type0" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + clientName + '\', \'' + clientIP + '\', \'WebProtector\')"></div>';
+				code += '<div id="' + clientIconID + '" class="clientIcon type0"></div>';
 			}
 			else {
 				if(usericon_support) {
 					userIconBase64 = getUploadIcon(clientMac.replace(/\:/g, ""));
 				}
 				if(userIconBase64 != "NoIcon") {
-					code += '<div style="text-align:center;" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + clientName + '\', \'' + clientIP + '\', \'WebProtector\')"><img class="imgUserIcon_card" src="' + userIconBase64 + '"></div>';
+					code += '<div id="' + clientIconID + '" style="text-align:center;"><img class="imgUserIcon_card" src="' + userIconBase64 + '"></div>';
 				}
 				else if(deviceType != "0" || deviceVender == "") {
-					code += '<div class="clientIcon type' + deviceType + '" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + clientName + '\', \'' + clientIP + '\', \'WebProtector\')"></div>';
+					code += '<div id="' + clientIconID + '" class="clientIcon type' + deviceType + '"></div>';
 				}
 				else if(deviceVender != "" ) {
 					var venderIconClassName = getVenderIconClassName(deviceVender.toLowerCase());
 					if(venderIconClassName != "" && !downsize_4m_support) {
-						code += '<div class="venderIcon ' + venderIconClassName + '" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + clientName + '\', \'' + clientIP + '\', \'WebProtector\')"></div>';
+						code += '<div id="' + clientIconID + '" class="venderIcon ' + venderIconClassName + '"></div>';
 					}
 					else {
-						code += '<div class="clientIcon type' + deviceType + '" onClick="popClientListEditTable(\'' + clientMac + '\', this, \'' + clientName + '\', \'' + clientIP + '\', \'WebProtector\')"></div>';
+						code += '<div id="' + clientIconID + '" class="clientIcon type' + deviceType + '"></div>';
 					}
 				}
 			}
@@ -458,12 +493,20 @@ function genMain_table(){
 			code += '</td>';
 			code += '<td><input class="remove_btn" type="button" onclick="deleteRow_main(this);"></td>';
 			code += '</tr>';
+			clientListEventData.push({"mac" : clientMac, "name" : clientName, "ip" : clientIP, "callBack" : "WebProtector"});
 		}
 	}
 	
 	code += '</tbody>';	
 	code += '</table>';
 	document.getElementById('mainTable').innerHTML = code;
+	for(var i = 0; i < clientListEventData.length; i += 1) {
+		var clientIconID = "clientIcon_" + clientListEventData[i].mac.replace(/\:/g, "");
+		var clientIconObj = $("#mainTable").children("#mainTable_table").find("#" + clientIconID + "")[0];
+		var paramData = JSON.parse(JSON.stringify(clientListEventData[i]));
+		paramData["obj"] = clientIconObj;
+		$("#mainTable").children("#mainTable_table").find("#" + clientIconID + "").click(paramData, popClientListEditTable);
+	}
 	showDropdownClientList('setClientIP', 'mac', 'all', 'ClientList_Block_PC', 'pull_arrow', 'all');
 }
 

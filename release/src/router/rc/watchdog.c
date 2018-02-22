@@ -6841,6 +6841,9 @@ wdp:
 #ifdef RTCONFIG_LANTIQ
 	wave_monitor_check();
 #endif
+#ifdef RTCONFIG_ALPINE
+	system_check();
+#endif
 //#if defined(RTCONFIG_JFFS2LOG) && defined(RTCONFIG_JFFS2)
 #if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
 	syslog_commit_check();

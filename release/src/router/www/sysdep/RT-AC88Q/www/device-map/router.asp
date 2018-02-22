@@ -708,23 +708,28 @@ function show_LAN_info(v){
 		document.getElementById("macaddr_wl5_2").style.display = "none";
 		document.getElementById("macaddr_wl60").style.display = "";
 	}
-	if(smart_connect_support && (parent.isSwMode("rt") || parent.isSwMode("ap"))){
+	if(parent.smart_connect_support && (parent.isSwMode("rt") || parent.isSwMode("ap"))){
+		var macaddr_wl5_title = (parent.wl_info.band5g_2_support) ? "5GHz-1 " : "5GHz ";
 		if(v == '1'){
 			showtext(document.getElementById("MAC_wl2"), '<% nvram_get("wl0_hwaddr"); %>');
 			showtext(document.getElementById("MAC_wl5"), '<% nvram_get("wl1_hwaddr"); %>');
-			showtext(document.getElementById("MAC_wl5_2"), '<% nvram_get("wl2_hwaddr"); %>');
-			document.getElementById("macaddr_wl5_title").innerHTML = "5GHz-1 ";
+			document.getElementById("macaddr_wl5_title").innerHTML = macaddr_wl5_title;
 			document.getElementById("macaddr_wl2").style.display = "";
 			document.getElementById("macaddr_wl5").style.display = "";
-			document.getElementById("macaddr_wl5_2").style.display = "";
+			if(parent.wl_info.band5g_2_support) {
+				showtext(document.getElementById("MAC_wl5_2"), '<% nvram_get("wl2_hwaddr"); %>');
+				document.getElementById("macaddr_wl5_2").style.display = "";
+			}
 			parent.document.getElementById("statusframe").height = 760;
 		}else if(document.form.wl_unit.value != '0' && v == '2'){
 			document.getElementById("macaddr_wl2").style.display = "none";
 			showtext(document.getElementById("MAC_wl5"), '<% nvram_get("wl1_hwaddr"); %>');
-			showtext(document.getElementById("MAC_wl5_2"), '<% nvram_get("wl2_hwaddr"); %>');
-			document.getElementById("macaddr_wl5_title").innerHTML = "5GHz-1 ";
+			document.getElementById("macaddr_wl5_title").innerHTML = macaddr_wl5_title;
 			document.getElementById("macaddr_wl5").style.display = "";
-			document.getElementById("macaddr_wl5_2").style.display = "";
+			if(parent.wl_info.band5g_2_support) {
+				showtext(document.getElementById("MAC_wl5_2"), '<% nvram_get("wl2_hwaddr"); %>');
+				document.getElementById("macaddr_wl5_2").style.display = "";
+			}
 		}else{
 			parent.document.getElementById("statusframe").height = 735;
 		}

@@ -9891,6 +9891,10 @@ static void sysinit(void)
 	f_write_string("/proc/sys/net/ipv4/netfilter/ip_conntrack_tcp_timeout_established", "2400", 0, 0);
 #endif
 
+#if defined(RTCONFIG_ALPINE)
+	f_write_string("/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established", "2400", 0, 0);
+#endif
+
 #if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
 	// for the nvram file's commit, if don't set this & the commit will cause the abnormal nvram file.
 	_dprintf("init: set drop_caches be 1 at ALPINE & LANTIQ...\n");

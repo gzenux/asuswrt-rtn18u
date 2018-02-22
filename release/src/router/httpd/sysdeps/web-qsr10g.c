@@ -985,10 +985,8 @@ int ej_wl_channel_list_5g_40m(int eid, webs_t wp, int argc, char_t **argv)
 	static char list_40m[1024] = {0};
 	int retval;
 
-	_dprintf("Raymond: [%s][%d]\n", __func__, __LINE__);
 	if(strlen(list_40m) == 0) get_wl_channel_list_by_bw_core(1, list_40m, 40);
 	retval = websWrite(wp, "%s", list_40m);
-	_dprintf("Raymond: [%s][%d]\n", __func__, __LINE__);
 	return retval;
 }
 
@@ -997,10 +995,8 @@ int ej_wl_channel_list_5g_80m(int eid, webs_t wp, int argc, char_t **argv)
 	static char list_80m[1024] = {0};
 	int retval;
 
-	_dprintf("Raymond: [%s][%d]\n", __func__, __LINE__);
 	if(strlen(list_80m) == 0) get_wl_channel_list_by_bw_core(1, list_80m, 80);
 	retval = websWrite(wp, "%s", list_80m);
-	_dprintf("Raymond: [%s][%d]\n", __func__, __LINE__);
 	return retval;
 }
 

@@ -676,7 +676,6 @@ void websApply(webs_t wp, char_t *url)
 #endif
 }
 
-
 /*
  * Example:
  * lan_ipaddr=192.168.1.1
@@ -2666,9 +2665,7 @@ int nvram_check_and_set(char *name, char *value)
 static int is_passwd_default(){
 	char *http_passwd = nvram_safe_get("http_passwd");
 #ifdef RTCONFIG_NVRAM_ENCRYPT
-	int declen = pw_dec_len(http_passwd);
-	char dec_passwd[declen];
-	memset(dec_passwd, 0, sizeof(dec_passwd));
+	char dec_passwd[NVRAM_ENC_LEN];
 	pw_dec(http_passwd, dec_passwd);
 	http_passwd = dec_passwd;
 #endif
@@ -2684,7 +2681,7 @@ static int validate_apply(webs_t wp, json_object *root) {
 	char *value;
 	char name[64];
 	char tmp[3500], prefix[32];
-	char dec_passwd[1024];
+	char dec_passwd[4096];
 #ifdef RTCONFIG_NVRAM_ENCRYPT
 	char dec_passwd2[128];
 	char dec_passwd3[128];
@@ -4056,23 +4053,23 @@ static int ej_update_variables(int eid, webs_t wp, int argc, char_t **argv) {
 #endif
 
 			if (strlen(action_script) > 0) {
-				char *p1, *p2;
+				char *p1, p2[sizeof(notify_cmd)];
 
-				memset(notify_cmd, 0, sizeof(notify_cmd));
 				if((p1 = strstr(action_script, "_wan_if")))
 				{
-					p1 += 7;
-					strncpy(notify_cmd, action_script, p1 - action_script);
-					p2 = notify_cmd + strlen(notify_cmd);
-					sprintf(p2, " %s%s", wan_unit, p1);
+					p1 += sizeof("_wan_if") - 1;
+					strlcpy(p2, action_script, MIN(p1 - action_script + 1, sizeof(p2)));
+					snprintf(notify_cmd, sizeof(notify_cmd), "%s %s%s", p2, wan_unit, p1);
 				}
+
 #if defined(RTCONFIG_POWER_SAVE)
 				else if (!strcmp(action_script, "pwrsave")) {
+					notify_cmd[0] = '\0';
 					set_power_save_mode();
 				}
 #endif
 				else
-					strncpy(notify_cmd, action_script, 128);
+					strlcpy(notify_cmd, action_script, sizeof(notify_cmd));
 
 				if(strcmp(action_script, "saveNvram"))
 				{
@@ -10519,48 +10516,31 @@ wps_finish:
 		nvram_set("wtf_rulelist", wtf_rulelist);
 		nvram_set("wtf_username", "");
 		nvram_set("wtf_passwd", "");
-		nvram_set("wtf_login", wtf_login);
-		nvram_set("wtf_account_type", "");
-		nvram_set("wtf_max_clients", "");
-		nvram_set("wtf_days_left", "");
-		nvram_set("wtf_game_list", "");
-		nvram_set("wtf_server_list", "");
-		nvram_set("wtf_session_hash", "");
 		nvram_commit();
-		/*--*/
-
+		unlink("/tmp/wtf_status");
 		notify_rc("stop_wtfast");
 		_dprintf("httpd: wtfast_logout\n");
 	}
 	else if (!strcmp(action_mode, "wtfast_login")){
 		char *wtf_username, *wtf_passwd, *wtf_login, *wtf_account_type, *wtf_max_clients, *wtf_days_left;
 		char *wtf_game_list, *wtf_server_list, *wtf_session_hash;
+		char *wtf_status;
+		FILE *fp;
 
 		wtf_username = get_cgi_json("wtf_username", root);
 		wtf_passwd = get_cgi_json("wtf_passwd", root);
-		wtf_login = get_cgi_json("wtf_login", root);
-		wtf_account_type = get_cgi_json("wtf_account_type", root);
-		wtf_max_clients = get_cgi_json("wtf_max_clients", root);
-		wtf_days_left = get_cgi_json("wtf_days_left", root);
-		wtf_game_list = get_cgi_json("wtf_game_list", root);
-		wtf_server_list = get_cgi_json("wtf_server_list", root);
-		wtf_session_hash = get_cgi_json("wtf_session_hash", root);
 
 		nvram_set("wtf_username", wtf_username);
 		nvram_set("wtf_passwd", wtf_passwd);
-		nvram_set("wtf_login", wtf_login);
-		nvram_set("wtf_account_type", wtf_account_type);
-		nvram_set("wtf_max_clients", wtf_max_clients);
-		nvram_set("wtf_days_left", wtf_days_left);
-		nvram_set("wtf_game_list", wtf_game_list);
-		nvram_set("wtf_server_list", wtf_server_list);
-		nvram_set("wtf_session_hash", wtf_session_hash);
-		//nvram_set("wtf_release", "stage");//for download new firmware
-		/*--*/
+		wtf_status = get_cgi_json("wtf_status", root);
+		if((fp = fopen("/tmp/wtf_status", "w")) != NULL) {
+			fprintf(fp, "%s", wtf_status);
+			fclose(fp);
+		}
 
 		notify_rc("start_wtfast");
 		_dprintf("httpd: wtfast_login\n");
- 	}
+	}
 #endif
 #ifdef RTCONFIG_DISK_MONITOR
 	else if (!strcmp(action_mode, "change_diskmon_unit"))
@@ -19422,41 +19402,48 @@ ej_findasus(int eid, webs_t wp, int argc, char **argv) {
 #ifdef RTCONFIG_WTFAST
 static int
 ej_wtfast_status(int eid, webs_t wp, int argc, char **argv) {
-	char wtfast_status[4096] = {0};
-	char tmp[1024] = {0};
-	char val[512] = {0};
+	int ret = 0;
+	ret = dump_file(wp, "/tmp/wtf_status");
+	if(!ret){
+		char wtfast_status[4096] = {0};
+		char tmp[1024] = {0};
+		char val[512] = {0};
 
-	strcat(wtfast_status, "{");
+		strcat(wtfast_status, "{");
 
-	sprintf(tmp, "\"eMail\":\"%s\",", nvram_get("wtf_username"));
-	strcat(wtfast_status, tmp);
+		sprintf(tmp, "\"eMail\":\"\",");
+		strcat(wtfast_status, tmp);
 
-	sprintf(tmp, "\"Account_Type\":\"%s\",", nvram_get("wtf_account_type"));
-	strcat(wtfast_status, tmp);
+		sprintf(tmp, "\"Account_Type\":\"\",");
+		strcat(wtfast_status, tmp);
 
-	sprintf(tmp, "\"Max_Computers\": %d,", nvram_get_int("wtf_max_clients"));
-	strcat(wtfast_status, tmp);
+		sprintf(tmp, "\"Max_Computers\": 0,");
+		strcat(wtfast_status, tmp);
 
-	memset(val, 0, 512);
-	sprintf(tmp, "\"Server_List\":[],");
-	strcat(wtfast_status, tmp);
+		memset(val, 0, 512);
+		sprintf(tmp, "\"Server_List\":[],");
+		strcat(wtfast_status, tmp);
 
-	sprintf(tmp, "\"Game_List\":[],");
-	strcat(wtfast_status, tmp);
+		sprintf(tmp, "\"Game_List\":[],");
+		strcat(wtfast_status, tmp);
 
-	sprintf(tmp, "\"Days_Left\": %d,", nvram_get_int("wtf_days_left"));
-	strcat(wtfast_status, tmp);
+		sprintf(tmp, "\"Days_Left\": 0,");
+		strcat(wtfast_status, tmp);
 
-	sprintf(tmp, "\"Login_status\": %d,", nvram_get_int("wtf_login"));
-	strcat(wtfast_status, tmp);
+		sprintf(tmp, "\"Login_status\": 0,");
+		strcat(wtfast_status, tmp);
 
-	sprintf(tmp, "\"Session_Hash\":\"%s\"", nvram_get("wtf_session_hash"));
-	strcat(wtfast_status, tmp);
+		sprintf(tmp, "\"Session_Hash\":\"\"");
+		strcat(wtfast_status, tmp);
 
-	strcat(wtfast_status, "}");
+		strcat(wtfast_status, "}");
 
-	return websWrite(wp, "%s", wtfast_status);
+		return websWrite(wp, "%s", wtfast_status);
+	}
+
+	return ret;
 }
+
 #endif
 
 static int
