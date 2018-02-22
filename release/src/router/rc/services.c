@@ -653,6 +653,9 @@ void create_passwd(void)
 	FILE *f;
 	mode_t m;
 	char *http_user;
+#ifdef RTCONFIG_NVRAM_ENCRYPT
+	char dec_passwd[64];
+#endif
 
 #ifdef RTCONFIG_SAMBASRV	//!!TB
 	char *smbd_user;
@@ -677,13 +680,15 @@ void create_passwd(void)
 		++p;
 	}
 
-	if (((p = nvram_get("http_passwd")) == NULL) || (*p == 0)) p = "admin";
+	if (((p = nvram_get("http_passwd")) == NULL) || (*p == 0)){
+		p = "admin";
+	}
 #ifdef RTCONFIG_NVRAM_ENCRYPT
-	int declen = pw_dec_len(p);
-	char dec_passwd[declen];
-	memset(dec_passwd, 0, sizeof(dec_passwd));
-	pw_dec(p, dec_passwd);
-	p = dec_passwd;
+	else{
+		memset(dec_passwd, 0, sizeof(dec_passwd));
+		pw_dec(p, dec_passwd);
+		p = dec_passwd;
+	}
 #endif
 	if (((http_user = nvram_get("http_username")) == NULL) || (*http_user == 0)) http_user = "admin";
 
@@ -1128,14 +1133,10 @@ void start_dnsmasq(void)
 	if ((fp = fopen("/etc/hosts", "w")) != NULL) {
 		/* loclhost ipv4 */
 		fprintf(fp, "127.0.0.1 localhost.localdomain localhost\n");
+		/* default names */
 		fprintf(fp, "%s %s\n", lan_ipaddr, DUT_DOMAIN_NAME);
 		fprintf(fp, "%s %s\n", lan_ipaddr, OLD_DUT_DOMAIN_NAME1);
 		fprintf(fp, "%s %s\n", lan_ipaddr, OLD_DUT_DOMAIN_NAME2);
-		/* productid/samba name */
-		if (is_valid_hostname(value = nvram_safe_get("computer_name")) ||
-		    is_valid_hostname(value = get_productid()))
-			fprintf(fp, "%s %s.%s %s\n", lan_ipaddr,
-				    value, nvram_safe_get("lan_domain"), value);
 		/* lan hostname.domain hostname */
 		if (nvram_invmatch("lan_hostname", "")) {
 			fprintf(fp, "%s %s.%s %s\n", lan_ipaddr,
@@ -1143,10 +1144,21 @@ void start_dnsmasq(void)
 				    nvram_safe_get("lan_domain"),
 				    nvram_safe_get("lan_hostname"));
 		}
+		/* productid/samba name */
+		if (is_valid_hostname(value = nvram_safe_get("computer_name")) ||
+		    is_valid_hostname(value = get_productid())) {
+			fprintf(fp, "%s %s.%s %s\n", lan_ipaddr,
+				    value, nvram_safe_get("lan_domain"), value);
+		}
 #ifdef RTCONFIG_IPV6
 		if (ipv6_enabled()) {
 			/* localhost ipv6 */
-			fprintf(fp, "::1 localhost6.localdomain6 localhost6\n");
+			fprintf(fp, "::1 ip6-localhost ip6-loopback\n");
+			/* multicast ipv6 */
+			fprintf(fp, "fe00::0 ip6-localnet\n"
+				    "ff00::0 ip6-mcastprefix\n"
+				    "ff02::1 ip6-allnodes\n"
+				    "ff02::2 ip6-allrouters\n");
 			/* lan6 hostname.domain hostname */
 			value = (char*) ipv6_router_address(NULL);
 			if (*value && nvram_invmatch("lan_hostname", "")) {
@@ -8621,7 +8633,7 @@ void handle_notifications(void)
 	char env_unit[32];
 #endif
 
-#if defined(RTCONFIG_LANTIQ)
+#if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
 	f_write_string("/proc/sys/vm/drop_caches", "1", 0, 0);
 #endif
 	// handle command one by one only

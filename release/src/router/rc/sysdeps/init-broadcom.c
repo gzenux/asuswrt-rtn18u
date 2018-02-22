@@ -731,6 +731,9 @@ void generate_switch_para(void)
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")&&!nvram_match("switch_wantag", "hinet")) ? SWCFG_DEFAULT : cfg;
 
 			wan_phyid = ports[0];	// record the phy num of the wan port on the case
+			nvram_unset("mvlan_vid0");
+			nvram_unset("mvlan_vid1");
+			nvram_unset("mvlan");
 #ifdef RTCONFIG_DUALWAN
 #ifdef RTCONFIG_AMAS			
 			if(nvram_get_int("re_mode")==1) {
@@ -743,7 +746,10 @@ void generate_switch_para(void)
 				switch_gen_config(lan, ports, cfg, 0, NULL);
 				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-				nvram_set("wanports", wan);								
+				nvram_set("wanports", wan);
+				nvram_set("mvlan_vid0", "1");
+				nvram_set("mvlan_vid1", "2");
+				nvram_set("mvlan", "1");
 			}
 			else
 #endif			
@@ -840,7 +846,10 @@ void generate_switch_para(void)
 				switch_gen_config(lan, ports, cfg, 0, NULL);
 				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-				nvram_set("wanports", wan);								
+				nvram_set("wanports", wan);
+				nvram_set("mvlan_vid0", "1");
+				nvram_set("mvlan_vid1", "2");
+				nvram_set("mvlan", "1");
 			}
 			else
 #endif
@@ -2867,7 +2876,7 @@ int wl_max_no_vifs(int unit)
 #define BSD_STA_SELECT_POLICY_FLAG_NON_VHT	0x00000008	/* NON VHT STA */
 #define BSD_IF_QUALIFY_POLICY_NVRAM		"bsd_if_qualify_policy"
 #define BSD_QUALIFY_POLICY_FLAG_NON_VHT		0x00000004	/* NON VHT STA */
-#if defined(RTAC5300) || defined(GTAC5300)
+#if defined(RTAC5300) || defined(GTAC5300) || defined(RTAC3200)
 #define BSD_STA_SELECT_POLICY_NVRAM_X		"bsd_sta_select_policy_x"
 #define BSD_IF_QUALIFY_POLICY_NVRAM_X		"bsd_if_qualify_policy_x"
 #endif
@@ -2881,7 +2890,7 @@ int get_bsd_nonvht_status(int unit)
 	unsigned int flags;
 
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
-#if defined(RTAC5300) || defined(GTAC5300)
+#if defined(RTAC5300) || defined(GTAC5300) || defined(RTAC3200)
 	if (nvram_get_int("smart_connect_x") == 2) // 5GHz Only
 		str = nvram_get(strcat_r(prefix, BSD_STA_SELECT_POLICY_NVRAM_X, tmp));
 	else
@@ -2893,7 +2902,7 @@ int get_bsd_nonvht_status(int unit)
 		if ((num == 11) && (flags & BSD_STA_SELECT_POLICY_FLAG_NON_VHT))
 			return 1;
 	}
-#if defined(RTAC5300) || defined(GTAC5300)
+#if defined(RTAC5300) || defined(GTAC5300) || defined(RTAC3200)
 	if (nvram_get_int("smart_connect_x") == 2) // 5GHz Only
 		str = nvram_get(strcat_r(prefix, BSD_IF_QUALIFY_POLICY_NVRAM_X, tmp));
 	else
@@ -3786,9 +3795,7 @@ void generate_wl_para(char *ifname, int unit, int subunit)
 		nvram_set_int(strcat_r(prefix, "wmf_ucigmp_query", tmp), 1);
 		nvram_set_int(strcat_r(prefix, "wmf_mdata_sendup", tmp), 1);
 #ifdef RTCONFIG_BCMARM
-#ifndef HND_ROUTER
-		nvram_set_int(strcat_r(prefix, "wmf_ucast_upnp", tmp), 1);
-#endif
+		nvram_set_int(strcat_r(prefix, "wmf_ucast_upnp", tmp), 0);
 		nvram_set_int(strcat_r(prefix, "wmf_igmpq_filter", tmp), 1);
 #endif
 		nvram_set_int(strcat_r(prefix, "acs_fcs_mode", tmp), i ? 1 : 0);

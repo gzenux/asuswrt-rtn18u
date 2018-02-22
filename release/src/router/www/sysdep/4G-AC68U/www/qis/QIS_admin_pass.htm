@@ -389,7 +389,6 @@ function submitForm(){
 	else if(parent.flag_manual == "modem")
 		document.form.action = "/qis/QIS_modem.htm";
 	else if(parent.document.QKform.sw_mode.value == "1"){
-		//document.form.action = "/qis/QIS_detect.htm";
 		if(!parent.dual_ewan){
 			if(parent.gobi_support){
 				getDualWANState();
@@ -432,18 +431,18 @@ function submitForm(){
 					document.form.action = "/qis/QIS_internet_account.htm";
 				}
 			}
-			else if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
+			else if(wanstate  == 2 && wansbstate == 0 && wanauxstate != 1){
 				if(parent.gobi_support)
 				{
 					if((wan_wanstate == 2 && wan_wansbstate == 0 && wan_wanauxstate == 0) &&
-					   (usb_wanstate == 2 && usb_wansbstate == 0 && usb_wanauxstate == 0)){
+					   (usb_wanstate == 2 && usb_wansbstate == 0 && usb_wanauxstate != 1)){
 						document.form.action = "/qis/QIS_wireless.htm";
 					}
 					else if((wan_wanstate == 2 && wan_wansbstate == 0 && wan_wanauxstate == 0) && 
-						     parent.hadPlugged("modem")){
+						     parent.hadModem){
 						document.form.action = "/qis/QIS_detect.htm";
 					}
-					else if((usb_wanstate == 2 && usb_wansbstate == 0 && usb_wanauxstate == 0) &&
+					else if((usb_wanstate == 2 && usb_wansbstate == 0 && usb_wanauxstate != 1) &&
 							(autodet_state == "2" || autodet_state == "6") && wan_wanauxstate != "1"){
 						if(autodet_state == "6")
 							document.form.action = "/qis/QIS_internet_account.htm";
@@ -461,7 +460,7 @@ function submitForm(){
 				parent.changeSubnet = true;
 				document.form.action = "/qis/QIS_wireless.htm";
 			}
-			else if(autodet_state == "4" && parent.hadPlugged("modem")){ // ethernet did not plug
+			else if(autodet_state == "4" && parent.hadModem){ // ethernet did not plug
 				if(parent.gobi_support){
 					document.form.action = "/qis/QIS_detect.htm";
 				}

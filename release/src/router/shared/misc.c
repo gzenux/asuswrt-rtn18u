@@ -1143,7 +1143,7 @@ int test_and_get_free_uint_network(int t_class, uint32_t *exp_ip, uint32_t exp_c
 
 	/* TODO: Get known networks of another features. */
 	nr = ARRAY_SIZE(known_network_tbl);
-	memset(known_network_tbl, 0, nr);
+	memset(known_network_tbl, 0, sizeof(known_network_tbl));
 	get_known_networks(--nr, known_network_tbl, excl);   /* leave last elements */
 
 	for (i = 0, kn = &known_network_tbl[0];
