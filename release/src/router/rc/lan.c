@@ -237,7 +237,7 @@ start_emf(char *lan_ifname)
 	return;
 #endif /* HND_ROUTER && MCPD_PROXY */
 
-#if defined(RTCONFIG_BCMARM) && !defined(HND_ROUTER)
+#if 0	//defined(RTCONFIG_BCMARM) && !defined(HND_ROUTER)
 	char path[PATH_MAX], sval[16];
 
 	if (lan_ifname == NULL)
@@ -2339,10 +2339,6 @@ void start_lan(void)
 							   ETHER_ADDR_LEN) == 0) {
 							ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 							memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
-#ifdef RTCONFIG_AMAS
-							if(nvram_get_int("re_mode") == 1)
-								ifr.ifr_hwaddr.sa_data[0] = ifr.ifr_hwaddr.sa_data[0] | 0x02;
-#endif
 							ioctl(s, SIOCSIFHWADDR, &ifr);
 						}
 						close(s);
