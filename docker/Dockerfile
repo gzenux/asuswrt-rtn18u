@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
 	sharutils shtool \
 	texinfo tofrodos \
 	u-boot-tools uuid-dev \
-	xsltproc \
+	xsltproc xutils-dev \
 	libglib2.0-dev liblzma-dev liblzo2-dev \
 	libncurses5-dev \
 	libstdc++5
@@ -34,12 +34,26 @@ RUN apt-get update && apt-get install -y \
 	libncurses5:i386
 
 
-# Add user and switch to the user
+# get arguments
 ARG UID=1000
 ARG USER=user
 ARG HOME=/home/${USER}
+
+# set environment variables
+ENV LANG en_US.UTF-8
+ENV USER ${USER}
+
+
+# generate locale
+RUN locale-gen en_US.UTF-8 zh_TW.UTF-8
+
+# use bash as default shell
+RUN echo "dash dash/sh boolean false" | debconf-set-selections && dpkg-reconfigure -f noninteractive dash
+
+# Add user and switch to the user
 RUN mkdir -p $(dirname ${HOME}) && useradd -m -u ${UID} -d ${HOME} ${USER} && passwd -d ${USER} && \
 gpasswd -a ${USER} sudo && sed -i 's:%sudo\tALL=(ALL\:ALL) ALL:%sudo\tALL=NOPASSWD\: ALL:g' /etc/sudoers
+
 
 USER ${USER}
 WORKDIR ${HOME}
