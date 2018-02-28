@@ -1,6 +1,18 @@
 Asuswrt-Merlin 384 Changelog
 ============================
 
+General changes in the 384/NG branch vs 380.xx:
+   - Clear your browser cache after flashing your first 384 build.
+   - It's generally recommended to do a factory default reset
+     when coming from 380 to 384/NG.
+   - HDD spindown settings moved to the System settings page
+   - SSL certificate management moved to the DDNS page for models
+     that support Let's Encrypt
+   - Nvram settings now have maximum lengths enforced, to protect
+     against buffer overruns.  This means that some very long
+     lists of settings might no longer be possible on 384.xx.
+
+
 384.4 (xx-xxx-2018)
    - NEW: Merged with GPL 384_20379 (with some binary components
           from 382_50010 and 384_20308 depending on models)
@@ -8,6 +20,23 @@ Asuswrt-Merlin 384 Changelog
    - NEW: Added support for the RT-AC87U.
    - NEW: Added IPSEC support to the RT-AC86U.
    - CHANGED: Tightened security around some config files.
+   - CHANGED: Allow guest networks settings for AP isolation
+              and SSID broadcast to be set separately from
+              their parent interface (John Bacho)
+   - CHANGED: Samba protocol support can now be set to
+              SMBv1, SMBv2, or SMBv1 + SMBv2 (the new default).
+              This will result in a performance drop on all
+              models but the RT-AC86U, but will be more secure.
+              Ideally, people should change it to SMBv2 only,
+              and then reboot all their client devices to start
+              using only the new protocol.
+   - FIXED: Resetting an OpenVPN client to default settings
+            might revert back after a reboot.
+   - FIXED: log flood from lldpd about "unable to send packet
+            on real device" (moved to debug level)
+   - REMOVED: Telnet server.  Please use SSH for console-based
+              management.
+   - REMOVED: Disabled SNMP support on the RT-AC86U (incompatible)
 
 
 384.3 (14-Feb-2018)
