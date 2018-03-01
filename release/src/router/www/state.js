@@ -152,7 +152,7 @@ var cookie = {
 };
 
 var Session = Session || (function(){
- 	var win = window.top || window;
+	var win = window.top || window;
 	try{
 		var store = (win.name ? JSON.parse(win.name) : {});
 		function Save() {

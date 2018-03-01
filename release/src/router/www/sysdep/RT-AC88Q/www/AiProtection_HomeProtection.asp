@@ -127,6 +127,7 @@ function initial(){
 	getEventTime();
 	getEventData();
 	check_weakness();
+	$("#all_security_btn").hide();
 }
 
 function getEventTime(){
@@ -997,7 +998,7 @@ function shadeHandle(flag){
 							<input class="button_gen" type="button" onclick="close_weakness_status();" value="<#CTL_close#>">
 						</td>
 						<td>
-							<input class="button_gen_long" type="button" onclick="enable_whole_security();" value="<#CTL_secure#>">
+							<input id="all_security_btn" class="button_gen_long" type="button" onclick="enable_whole_security();" value="<#CTL_secure#>">
 						</td>
 					</tr>
 				</table>

@@ -664,6 +664,9 @@ void create_passwd(void)
 	FILE *f;
 	mode_t m;
 	char *http_user;
+#ifdef RTCONFIG_NVRAM_ENCRYPT
+	char dec_passwd[64];
+#endif
 
 #ifdef RTCONFIG_SAMBASRV	//!!TB
 	char *smbd_user;
@@ -688,13 +691,15 @@ void create_passwd(void)
 		++p;
 	}
 
-	if (((p = nvram_get("http_passwd")) == NULL) || (*p == 0)) p = "admin";
+	if (((p = nvram_get("http_passwd")) == NULL) || (*p == 0)){
+		p = "admin";
+	}
 #ifdef RTCONFIG_NVRAM_ENCRYPT
-	int declen = pw_dec_len(p);
-	char dec_passwd[declen];
-	memset(dec_passwd, 0, sizeof(dec_passwd));
-	pw_dec(p, dec_passwd);
-	p = dec_passwd;
+	else{
+		memset(dec_passwd, 0, sizeof(dec_passwd));
+		pw_dec(p, dec_passwd);
+		p = dec_passwd;
+	}
 #endif
 	if (((http_user = nvram_get("http_username")) == NULL) || (*http_user == 0)) http_user = "admin";
 
@@ -1188,8 +1193,8 @@ void start_dnsmasq(void)
 				    "ff00::0 ip6-mcastprefix\n"
 				    "ff02::1 ip6-allnodes\n"
 				    "ff02::2 ip6-allrouters\n");
-                       /* lan6 hostname.domain hostname */
-                        value = (char*) ipv6_router_address(NULL);
+			/* lan6 hostname.domain hostname */
+			value = (char*) ipv6_router_address(NULL);
 			if (*value && nvram_invmatch("lan_hostname", "")) {
 				fprintf(fp, "%s %s.%s %s\n", value,
 					    nvram_safe_get("lan_hostname"),

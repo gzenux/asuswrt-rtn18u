@@ -2720,8 +2720,7 @@ int nvram_check_and_set(char *name, char *value)
 static int is_passwd_default(){
 	char *http_passwd = nvram_safe_get("http_passwd");
 #ifdef RTCONFIG_NVRAM_ENCRYPT
-	int declen = pw_dec_len(http_passwd);
-	char dec_passwd[declen];
+	char dec_passwd[NVRAM_ENC_LEN];
 	pw_dec(http_passwd, dec_passwd);
 	http_passwd = dec_passwd;
 #endif
@@ -4130,6 +4129,7 @@ static int ej_update_variables(int eid, webs_t wp, int argc, char_t **argv) {
 					strlcpy(p2, action_script, MIN(p1 - action_script + 1, sizeof(p2)));
 					snprintf(notify_cmd, sizeof(notify_cmd), "%s %s%s", p2, wan_unit, p1);
 				}
+
 #if defined(RTCONFIG_POWER_SAVE)
 				else if (!strcmp(action_script, "pwrsave")) {
 					notify_cmd[0] = '\0';
@@ -18500,7 +18500,6 @@ static int ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 					ifino->last_rx = curr_rx;
 					ifino->last_tx = curr_tx;
 				}
-
 
 loopagain:
 				if (!strncmp(ifname_desc, "WIRELESS0", 9)) {

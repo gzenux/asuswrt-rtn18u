@@ -390,6 +390,15 @@ endif
 	@echo '#define RT_BUILD_NAME "$(BUILD_NAME)"' >> router/shared/version.h
 	@echo '#define RT_BUILD_INFO "$(BUILD_TIME) $(BUILD_USER)@$(BUILD_INFO)"' >> router/shared/version.h
 	@echo '#endif' >> router/shared/version.h
+ifneq ($(NVRAM_ENCRYPT),$(filter $(NVRAM_ENCRYPT),n))
+	@echo '#ifdef RTCONFIG_NVRAM_ENCRYPT' >> router/shared/version.h
+ifeq ($(NVRAM_ENCRYPT),y)
+	@echo '#define ENC_SP_EXTENDNO "39937"' >> router/shared/version.h
+else
+	@echo '#define ENC_SP_EXTENDNO "$(NVRAM_ENCRYPT)"' >> router/shared/version.h
+endif
+	@echo '#endif' >> router/shared/version.h
+endif
 	@echo '$(BUILD_NAME) $(SERIALNO)-$(EXTENDNO)$(BUILDREV) $(BUILD_TIME)' > router/shared/version
 	@echo 'EXTENDNO=$(EXTENDNO)$(BUILDREV)' > router/extendno.conf
 
@@ -2566,7 +2575,7 @@ define RouterOptions
 		sed -i "/RTCONFIG_LYRA_HIDE/d" $(1); \
 		echo "RTCONFIG_LYRA_HIDE=y" >>$(1); \
 	fi; \
-	if [ "$(NVRAM_ENCRYPT)" = "y" ]; then \
+	if [ "$(NVRAM_ENCRYPT)" != "n" ] && [ "$(NVRAM_ENCRYPT)" != "" ]; then \
 		sed -i "/RTCONFIG_NVRAM_ENCRYPT/d" $(1); \
 		echo "RTCONFIG_NVRAM_ENCRYPT=y" >>$(1); \
 	fi; \

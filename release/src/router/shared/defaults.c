@@ -3062,7 +3062,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "sb_flash_update", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* 0: need to update 1: updated*/
 #endif
 #ifdef RTCONFIG_NVRAM_ENCRYPT
-	{ "nvram_encrypt", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+	{ "nvram_encrypt", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 #endif
 
 #ifdef RTCONFIG_HD_SPINDOWN

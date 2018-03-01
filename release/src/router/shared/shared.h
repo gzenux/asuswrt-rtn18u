@@ -2189,6 +2189,8 @@ extern void erase_symbol(char *old, char *sym);
 
 /* pwenc.c */
 #ifdef RTCONFIG_NVRAM_ENCRYPT
+#define NVRAM_ENC_LEN	1024
+#define NVRAM_ENC_MAXLEN	4096
 extern int pw_enc(const char *input, char *output);
 extern int pw_dec(const char *input, char *output);
 extern int pw_enc_blen(const char *input);
