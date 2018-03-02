@@ -38,14 +38,17 @@ RUN apt-get update && apt-get install -y \
 ARG UID=1000
 ARG USER=user
 ARG HOME=/home/${USER}
+ARG LANG=en_US.UTF-8
+ARG LANGUAGES="zh_TW.UTF-8 ${LANG}"
 
 # set environment variables
-ENV LANG en_US.UTF-8
 ENV USER ${USER}
+ENV LANG ${LANG}
+ENV LANGUAGE ${LANG}
 
 
 # generate locale
-RUN locale-gen en_US.UTF-8 zh_TW.UTF-8
+RUN locale-gen $LANGUAGES
 
 # use bash as default shell
 RUN echo "dash dash/sh boolean false" | debconf-set-selections && dpkg-reconfigure -f noninteractive dash
