@@ -1,0 +1,38 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+  NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+
+384.4-beta1
+  Changelog for RT-N18U:
+   - NEW: Merged RT-N18U GPL release 382_50018
+   - NOTE: Starting from GPL release 382_50018, NVRAM_ENCRYPT
+           option is enabled to enhance the security of nvram.
+           Settings stored in nvram will be encrypted after
+           upgraded to this version. Downgrade to previous RT-N18U
+           firmware will no longer be able to access device and
+           must require restore to default by pressing H/W
+           reset button. It's recommended to backup the settings
+           before upgrading to this version.
+   - FIXED: Network client count list always shows empty in network
+            map page.
+
+  Changelog from Asuswrt-Merlin:
+   - NEW: Merged with GPL 384_20379 (with some binary components
+          from 382_50010 and 384_20308 depending on models)
+   - CHANGED: Tightened security around some config files.
+   - CHANGED: Allow guest networks settings for AP isolation
+              and SSID broadcast to be set separately from
+              their parent interface (John Bacho)
+   - CHANGED: Samba protocol support can now be set to
+              SMBv1, SMBv2, or SMBv1 + SMBv2 (the new default).
+              This will result in a performance drop on all
+              models but the RT-AC86U, but will be more secure.
+              Ideally, people should change it to SMBv2 only,
+              and then reboot all their client devices to start
+              using only the new protocol.
+   - FIXED: Resetting an OpenVPN client to default settings
+            might revert back after a reboot.
+   - FIXED: log flood from lldpd about "unable to send packet
+            on real device" (moved to debug level)
+   - REMOVED: Telnet server.  Please use SSH for console-based
+              management.
