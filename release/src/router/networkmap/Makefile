@@ -138,8 +138,10 @@ ifneq ($(AC2900),y)
 	install -D asusdiscovery $(INSTALLDIR)/usr/sbin/asusdiscovery
 	$(STRIP) $(INSTALLDIR)/usr/sbin/asusdiscovery
 #ifneq ($(wildcard $(SRCBASE)/router/networkmap/*.c),)
+ifneq ($(RTN18U),y)
 	install -D arpstorm $(INSTALLDIR)/usr/sbin/arpstorm
 	$(STRIP) $(INSTALLDIR)/usr/sbin/arpstorm
+endif
 #endif
 endif
 	install -d $(INSTALLDIR)/usr/networkmap
