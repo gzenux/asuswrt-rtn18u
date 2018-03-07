@@ -11461,15 +11461,19 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	}
 #endif
 
+//#ifdef CONFIG_BCMWL5
+//	if (fw_check() != 0)
+//		goto err;
+//#endif
 #ifdef RTAC68U
 	if (!nvram_match("cpurev", "c0") &&
-	    (nvram_match("bl_version", "2.1.2.2") || nvram_match("bl_version", "2.1.2.6"))) {
+		(nvram_match("bl_version", "2.1.2.2") || nvram_match("bl_version", "2.1.2.6"))) {
 		unlink("/tmp/linux.trx");
 		eval("/usr/sbin/webs_update.sh");
 
 		if (nvram_get_int("webs_state_update") &&
-		    !nvram_get_int("webs_state_error") &&
-		    strlen(nvram_safe_get("webs_state_info"))) {
+			!nvram_get_int("webs_state_error") &&
+			strlen(nvram_safe_get("webs_state_info"))) {
 			_dprintf("retrieve firmware information\n");
 
 			if (!nvram_get_int("webs_state_flag"))
@@ -11492,6 +11496,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 		} else _dprintf("could not retrieve firmware information!\n");
 	}
 #endif
+
 	upgrade_err = check_imagefile(upload_fifo);
 
 	if (upgrade_err) /* 0: legal image, 1: illegal image 2: new trx format validation failure */
@@ -14490,11 +14495,10 @@ do_appGet_image_path_cgi(char *url, FILE *stream)
 
 	websWrite(stream,"{\n" );
 
-	if(nvram_match("odmpid", "RT-AC66U_B1") || nvram_match("odmpid", "RT-AC1750_B1")|| nvram_match("odmpid", "RT-N66U_C1")|| nvram_match("odmpid", "RT-AC1900U")){
+	if (nvram_match("odmpid", "RT-AC66U_B1") || nvram_match("odmpid", "RT-AC1750_B1") || nvram_match("odmpid", "RT-N66U_C1") || nvram_match("odmpid", "RT-AC1900U") || nvram_match("odmpid", "RP-AC1900") ) {
 		snprintf(file_path, sizeof(file_path), "/images/RT-AC66U_V2");
 		snprintf(file_path1, sizeof(file_path), "/images/RT-AC66U_V2");
-	}
-	else{
+	} else {
 		snprintf(file_path, sizeof(file_path), "/images");
 		snprintf(file_path1, sizeof(file_path), "/images/New_ui");
 	}

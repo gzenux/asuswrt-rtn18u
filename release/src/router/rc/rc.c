@@ -455,9 +455,6 @@ static int rctest_main(int argc, char *argv[])
 #ifdef RTCONFIG_BWDPI
 				if (nvram_get_int("qos_type") == 1) {
 					start_dpi_engine_service();
-					// force to rebuild firewall to avoid some loopback issue
-					if (nvram_match("fw_nat_loopback", "2"))
-						start_firewall(wan_primary_ifunit(), 0);
 				}
 
 				else
@@ -845,6 +842,12 @@ static const applets_t applets[] = {
 	{ "disk_remove",		diskremove_main			},
 #endif
 	{ "firmware_check",		firmware_check_main             },
+#if 0	// require newer binary blobs
+#ifdef RTAC68U
+	{ "firmware_enc_crc",		firmware_enc_crc_main		},
+	{ "fw_check",			fw_check_main			},
+#endif
+#endif
 #ifdef BUILD_READMEM
 	{ "readmem",			readmem_main			},
 #endif
