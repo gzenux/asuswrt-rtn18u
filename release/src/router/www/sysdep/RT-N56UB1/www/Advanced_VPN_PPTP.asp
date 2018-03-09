@@ -58,10 +58,13 @@ function initial(){
 	var pptpd_wins1_orig = '<% nvram_get("pptpd_wins1"); %>';
 	var pptpd_wins2_orig = '<% nvram_get("pptpd_wins2"); %>';
 	var pptpd_clients = '<% nvram_get("pptpd_clients"); %>';
-	
+
 	show_menu();
+	// search for "ASUSWRT VPN" FAQ
+	document.getElementById("faq").href = "https://www.asus.com"+get_supportsite_lang()+"search/results.aspx?SearchKey=ASUSWRT%20VPN&SearchType=FAQ&PDLineFilter=1849";
 	// https://www.asus.com/US/support/FAQ/1033906
-	httpApi.faqURL("faq", "1033906", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");
+
 	//if support pptpd and openvpnd then show switch button
 	if(pptpd_support && openvpnd_support) {
 		document.getElementById("divSwitchMenu").style.display = "";

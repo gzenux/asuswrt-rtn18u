@@ -127,6 +127,8 @@ function initial(){
 	var currentdigest = "<% nvram_get("vpn_server_digest"); %>";
 
 	show_menu();
+	// https://www.asus.com/US/support/FAQ/1033906
+	httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");
 
 	//if support pptpd and openvpnd then show switch button
 	if(pptpd_support && openvpnd_support) {
@@ -213,28 +215,16 @@ function show_warning_message(){
 				setTimeout("get_real_ip();", 3000);
 		}
 		else if(realip_state != "2"){
-			if(validator.isPrivateIP(wanlink_ipaddr())){
-				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
+			if(validator.isPrivateIP(wanlink_ipaddr()))
 				document.getElementById("privateIP_notes").style.display = "";
-				//      http://www.asus.com/support/FAQ/1033906
-				httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");      //this id is include in string : #vpn_privateIP_hint#
-			}
 		}
 		else{
-			if(!external_ip){
-				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
+			if(!external_ip)
 				document.getElementById("privateIP_notes").style.display = "";
-				//      http://www.asus.com/support/FAQ/1033906
-				httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");      //this id is include in string : #vpn_privateIP_hint#
-			}
 		}
 	}
-	else if(validator.isPrivateIP(wanlink_ipaddr())){
-		document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
+	else if(validator.isPrivateIP(wanlink_ipaddr()))
 		document.getElementById("privateIP_notes").style.display = "";
-		//      http://www.asus.com/support/FAQ/1033906
-		httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");      //this id is include in string : #vpn_privateIP_hint#
-	}
 }
 
 function get_real_ip(){
@@ -1368,7 +1358,7 @@ function updateVpnServerClientAccess() {
 									<div class="formfonttitle"><#BOP_isp_heart_item#> - OpenVPN</div>
 									<div id="divSwitchMenu" style="margin-top:-40px;float:right;"></div>
 									<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-									<div id="privateIP_notes" class="formfontdesc" style="display:none;color:#FFCC00;"></div>
+									<div id="privateIP_notes" class="formfontdesc" style="display:none;color:#FC0;"><#vpn_privateIP_hint#></div>
 									<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 										<thead>
 										<tr>

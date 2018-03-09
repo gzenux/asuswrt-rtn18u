@@ -74,10 +74,12 @@ function initial(){
 	var pptpd_wins1_orig = '<% nvram_get("pptpd_wins1"); %>';
 	var pptpd_wins2_orig = '<% nvram_get("pptpd_wins2"); %>';
 	var pptpd_clients = '<% nvram_get("pptpd_clients"); %>';
-	
+
 	show_menu();
+	// search for "ASUSWRT VPN" FAQ
+	document.getElementById("faq").href = "https://www.asus.com"+get_supportsite_lang()+"search/results.aspx?SearchKey=ASUSWRT%20VPN&SearchType=FAQ&PDLineFilter=1849";
 	// https://www.asus.com/US/support/FAQ/1033906
-	httpApi.faqURL("faq", "1033906", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");
 
 	//if support pptpd and openvpnd then show switch button
 	if(pptpd_support && openvpnd_support) {
@@ -87,7 +89,8 @@ function initial(){
 	formShowAndHide(document.form.pptpd_enable.value, document.form.VPNServer_mode.value);	
 	if(wans_mode == "lb"){
 		var wan0_ipaddr = wanlink_ipaddr();
-		var wan1_ipaddr = secondary_wanlink_ipaddr();		document.getElementById("wan_ctrl").style.display = "none";
+		var wan1_ipaddr = secondary_wanlink_ipaddr();
+		document.getElementById("wan_ctrl").style.display = "none";
 		document.getElementById("dualwan_ctrl").style.display = "";	
 		document.getElementById("dualwan_ctrl").innerHTML = "<#PPTP_desc2#> <span class=\"formfontdesc\">Primary WAN IP : " + wan0_ipaddr + " </sapn><span class=\"formfontdesc\">Secondary WAN IP : " + wan1_ipaddr + "</sapn>";
 		//check DUT is belong to private IP. //realip doesn't support lb
