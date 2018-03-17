@@ -50,6 +50,9 @@ function manifest_get(response, status, xhr)
 				$("#txt_stable_version").html(gFwObj.stable.trx_name);
 				$(".cta > .stable_hidden").attr("href", gFwObj.stable.trx_url);
 				$(".stable_hidden").removeClass("stable_hidden");
+			} else {
+				// stable release not available
+				$("#txt_stable_version").html("N/A");
 			}
 			if(gFwObj.beta != null) {
 				str = gFwObj.beta.firmver;
@@ -82,6 +85,9 @@ function manifest_get(response, status, xhr)
 				$("#txt_beta_version").html(gFwObj.beta.trx_name);
 				$(".cta > .beta_hidden").attr("href", gFwObj.beta.trx_url);
 				$(".beta_hidden").removeClass("beta_hidden");
+			} else {
+				// beta release not available
+				$("#txt_beta_version").html("N/A");
 			}
 		}
 	}
@@ -125,6 +131,9 @@ function manifest_parse()
 		gFwObj.stable = null; // reset invalid stable release
 	if(gFwObj.beta.firmver == null || gFwObj.beta.buildno == null || gFwObj.beta.firmver == "0.0")
 		gFwObj.beta = null; // reset invalid beta release
+
+	if(gFwObj.stable != null && gFwObj.beta != null && (parseFloat(gFwObj.beta.firmver) <= parseFloat(gFwObj.stable.firmver)))
+		gFwObj.beta = null;
 
 	return (gFwObj.stable != null || gFwObj.beta != null);
 }
