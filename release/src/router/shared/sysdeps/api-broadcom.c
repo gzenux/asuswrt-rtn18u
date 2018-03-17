@@ -1071,6 +1071,16 @@ int check_imageheader(char *buf, long *filelen)
 	else return 0;
 }
 
+/* wrapper for check_imagefile */
+int check_imagefile_merlin(char *fname)
+{
+	extern int check_imagefile(char *);
+	int ret = check_imagefile(fname);
+
+	/* avoid the case of new trx format validation failure */
+	return (ret == 2) ? 0: ret;
+}
+
 #ifdef RTCONFIG_QTN
 char *wl_vifname_qtn(int unit, int subunit)
 {

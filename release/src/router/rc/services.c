@@ -13393,7 +13393,7 @@ firmware_check_main(int argc, char *argv[])
 //	fw_check_pre();
 //#endif
 
-	if(!check_imagefile(argv[1])) {
+	if(!check_imagefile_merlin(argv[1])) {
 		_dprintf("FW OK\n");
 		nvram_set("firmware_check", "1");
 	}

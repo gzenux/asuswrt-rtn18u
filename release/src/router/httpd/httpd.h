@@ -266,7 +266,7 @@ extern int http_port;
 
 /* api-*.c */
 extern int check_imageheader(char *buf, long *filelen);
-extern int check_imagefile(char *fname);
+extern int check_imagefile_merlin(char *fname);
 extern unsigned int get_radio_status(char *ifname);
 
 /* aspbw.c */

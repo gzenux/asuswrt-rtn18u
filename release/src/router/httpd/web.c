@@ -11497,7 +11497,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	}
 #endif
 
-	upgrade_err = check_imagefile(upload_fifo);
+	upgrade_err = check_imagefile_merlin(upload_fifo);
 
 	if (upgrade_err) /* 0: legal image, 1: illegal image 2: new trx format validation failure */
 		goto err;

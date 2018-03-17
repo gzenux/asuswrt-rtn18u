@@ -330,7 +330,7 @@ extern int getMN(void);
 extern int getflashMN(char *modelname, int length);
 #endif
 #endif
-extern int check_imagefile(char *fname);
+extern int check_imagefile_merlin(char *fname);
 #ifdef RTCONFIG_ATEUSB3_FORCE
 extern int getForceU3(void);
 extern int setForceU3(const char *val);
