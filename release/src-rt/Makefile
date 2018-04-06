@@ -51,8 +51,8 @@ export BCM_CHIP := 4908
 export HND_SRC := $(shell pwd | sed 's/\(.*src-rt-.*hnd\).*/\1/')
 export SRCBASE := $(shell pwd | sed 's/\(.*src-rt-.*hnd\).*/\1\/bcmdrivers\/broadcom\/net\/wl\/bcm9$(BCM_CHIP)\/main\/src/')
 export SRC_ROOT := $(HND_SRC)/../src
-export BUSYBOX := busybox-1.24.1
-export BUSYBOX_DIR := $(SRCBASE)/router/busybox-1.24.1/busybox-1.24.1
+export BUSYBOX := busybox
+export BUSYBOX_DIR := $(SRCBASE)/router/busybox
 else
 export SRCBASE := $(shell pwd)
 ifeq ($(or $(BCM7),$(BCM_7114),$(BCM9)),y)
@@ -2259,6 +2259,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_AIHOME_TUNNEL/d" $(1); \
 		echo "RTCONFIG_AIHOME_TUNNEL=y" >>$(1); \
 	fi; \
+	if [ "$(UTF8_SSID)" = "y" ]; then \
+		sed -i "/RTCONFIG_UTF8_SSID/d" $(1); \
+		echo "RTCONFIG_UTF8_SSID=y" >>$(1); \
+	fi; \
 	if [ "$(REBOOT_SCHEDULE)" = "y" ]; then \
 		sed -i "/RTCONFIG_REBOOT_SCHEDULE/d" $(1); \
 		echo "RTCONFIG_REBOOT_SCHEDULE=y" >>$(1); \
@@ -2602,6 +2606,10 @@ define RouterOptions
 	if [ "$(LIBASUSLOG)" = "y" ]; then \
 		sed -i "/RTCONFIG_LIBASUSLOG\>/d" $(1); \
 		echo "RTCONFIG_LIBASUSLOG=y" >>$(1); \
+	fi; \
+	if [ "$(PORT2_DEVICE)" = "y" ]; then \
+		sed -i "/RTCONFIG_PORT2_DEVICE/d" $(1); \
+		echo "RTCONFIG_PORT2_DEVICE=y" >>$(1); \
 	fi; \
 	)
 	$(call platformRouterOptions, $(1))

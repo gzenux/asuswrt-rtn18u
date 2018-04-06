@@ -347,6 +347,9 @@ add_custom(int unit, char *p[])
 
 	while(p[i]) {
 		size += strlen(p[i]) + 1;
+		if(strchr(p[i], ' ')) {
+			size += 2;
+		}
 		i++;
 	}
 
@@ -358,12 +361,22 @@ add_custom(int unit, char *p[])
 
 	i = 0;
 	while(p[i]) {
+		//_dprintf("p[%d]: [%s]\n", i, p[i]);
 		if(*param)
 			strlcat(param, " ", sizeParam);
 
-		strlcat(param, p[i], sizeParam);
+		if(strchr(p[i], ' ')) {
+			strlcat(param, "\"", sizeParam);
+			strlcat(param, p[i], sizeParam);
+			strlcat(param, "\"", sizeParam);
+		}
+		else {
+			strlcat(param, p[i], sizeParam);
+		}
+
 		i++;
 	}
+	_dprintf("add [%s]\n", param);
 
 	get_ovpn_custom(OVPN_TYPE_CLIENT, unit, custom, sizeof (custom));
 
@@ -422,12 +435,9 @@ add_option (char *p[], int line, int unit)
 	{
 		nvram_pf_set(prefix, "port", p[1]);
 	}
-	else if (streq (p[0], "resolv-retry") && p[1])
+	else if (streq (p[0], "connect-retry-max") && p[1])
 	{
-		if (streq (p[1], "infinite"))
-			nvram_pf_set(prefix, "retry", "-1");
-		else
-			nvram_pf_set(prefix, "retry", p[1]);
+		nvram_pf_set(prefix, "connretry", p[1]);
 	}
 	else if (streq (p[0], "comp-lzo"))
 	{

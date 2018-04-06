@@ -244,7 +244,7 @@ function addRow_main(obj, length){
 		document.form.PC_devicename.select();
 		return false;
 	}
-		
+
 	if(document.form.PC_devicename.value == ""){
 		alert("<#JS_fieldblank#>");
 		document.form.PC_devicename.focus();
@@ -276,7 +276,7 @@ function addRow_main(obj, length){
 	}
 	
 	if(blank_category == 0){
-		alert("The Content Category can not be empty");
+		alert("<#AiProtection_Category_Alert#>");
 		return false;
 	}
 
@@ -377,7 +377,7 @@ function genMain_table(){
 	else{
 		for(var k=0;k< apps_filter_row.length;k++){
 			var apps_filter_col = apps_filter_row[k].split('>');
-			
+
 			/* for exception */
 			if(apps_filter_col.length < 6){
 				if(apps_filter_col.length == 5){
@@ -556,7 +556,7 @@ function edit_table(){
 		}		
 		
 		if(blank_category == 0){
-				alert("The Content Category can not be empty");
+				alert("<#AiProtection_Category_Alert#>");
 				return false;
 		}
 	}
