@@ -114,7 +114,7 @@ function generate_account_table(){
 	var code = "";
 	code += '<tr>';
 	//code += '<th style="width:35px;"><input id="account_all" type="checkbox" onclick="enable_account(this);"></th>';
-	code += '<th style="width:350px;"><#Username#></th>';
+	code += "<th style='width:350px;'><#Username#></th>";
 	code += '<th style="width:350px;"><#Description#></th>';
 	code += '<th style="width:60px;"><#CTL_modify#></th>';
 	code += '<th style="width:60px;"><#CTL_del#></th>';

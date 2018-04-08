@@ -144,7 +144,7 @@ function show_addTable(type, flag){
 	//generate group table
 	code += '<tr>';
 	code += '<th style="width:35px;"><input type="checkbox" onclick="enable_account_all(this);" value=""></th>';
-	code += '<th style="width:94%;"><#Username#></th>';
+	code += "<th style='width:94%;'><#Username#></th>";
 	code += '</tr>';
 	for(i=0;i<info.account.length;i++){
 		var account_index = info.account[i];

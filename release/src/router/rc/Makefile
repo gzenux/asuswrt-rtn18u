@@ -1221,7 +1221,7 @@ ifneq ($(wildcard ./prebuild/roamast-broadcom.o),)
 roamast-broadcom.o:
 	@-cp -f ./prebuild/roamast-broadcom.o .
 endif
-ifneq ($(wildcard ./prebuild/roamast-latiq.o),)
+ifneq ($(wildcard ./prebuild/roamast-lantiq.o),)
 roamast-lantiq.o:
 	@-cp -f ./prebuild/roamast-lantiq.o .
 endif

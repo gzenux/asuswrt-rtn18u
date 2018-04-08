@@ -190,6 +190,8 @@ int set_wps_enable(int unit){
 		return 0;
 	}
 
+	set_wps_idle(unit);
+
 	if(enable != 0 && enable != 1)
 		enable = 0;
 
@@ -218,6 +220,7 @@ int write_wps_config(int configured){
 
 	fprintf(fp, "Object_0=Device.WiFi.Radio.X_LANTIQ_COM_Vendor.WPS\n");
 	fprintf(fp, "ConfigState_0=%s\n", (configured == 1)?"Configured":"Unconfigured");
+	fprintf(fp, "Status_0=Idle\n");
 	if(configured == 0)
 		fprintf(fp, "WPSAction_0=ResetWPS\n");
 
@@ -226,6 +229,31 @@ int write_wps_config(int configured){
 	return 0;
 }
 
+int set_wps_idle(int unit)
+{
+	char cmd[256];
+	FILE *fp = fopen(WPS_CONFIG_FILE, "w+");
+
+	if(!fp){
+		_dprintf("[%s][%d]: cannot open the WPS config file.\n",
+			__func__, __LINE__);
+		return -1;
+	}
+	fprintf(fp, "Object_0=Device.WiFi.Radio.X_LANTIQ_COM_Vendor.WPS\n");
+	fprintf(fp, "Status_0=Idle\n");
+	fclose(fp);
+
+	_dprintf("[%s][%d]: set_wps_idle:[%d]\n",
+			__func__, __LINE__, unit);
+
+	snprintf(cmd, sizeof(cmd),
+		"/usr/sbin/fapi_wlan_cli setWps -i%d -f%s",
+		wl_wave_unit(unit), WPS_CONFIG_FILE);
+
+	system(cmd);
+
+	return 0;
+}
 int set_wps_config(int unit, int configured){
 	int retVal;
 #ifdef NOT_SHELL_FAPI

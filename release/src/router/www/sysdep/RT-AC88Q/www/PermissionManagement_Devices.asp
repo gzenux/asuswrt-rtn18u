@@ -127,7 +127,7 @@ function generate_device_table(){
 	code += '<tr>';
 	code += '<th style="width:450px;"><#ShareNode_DeviceName_itemname#></th>';
 	code += '<th style="width:150px;"><#MAC_Address#></th>';
-	code += '<th style="width:200px;"><#Device_type#></th>';
+	code += "<th style='width:200px;'><#Device_type#></th>";
 	code += '<th style="width:200px;"><#Description#></th>';
 	//code += '<th style="width:350px;">Group Name</th>';
 	code += '<th style="width:60px;"><#CTL_modify#></th>';

@@ -3525,10 +3525,10 @@ fi; \
 	fi; \
 	sed -i "/CONFIG_JFFS_NVRAM/d" $(1); \
 	if [ "$(JFFS_NVRAM)" = "y" ]; then \
-                echo "CONFIG_JFFS_NVRAM=y" >>$(1); \
+		echo "CONFIG_JFFS_NVRAM=y" >>$(1); \
 	else \
 		echo "# CONFIG_JFFS_NVRAM is not set" >>$(1); \
-        fi; \
+	fi; \
 	sed -i "/CONFIG_RTAC3200/d" $(1); \
 	if [ "$(BUILD_NAME)" = "RT-AC3200" ]; then \
 		echo "CONFIG_RTAC3200=y" >>$(1); \
@@ -3546,6 +3546,12 @@ fi; \
 		echo "CONFIG_RTAC88U=y" >>$(1); \
 	else \
 		echo "# CONFIG_RTAC88U is not set" >>$(1); \
+	fi; \
+	sed -i "/CONFIG_RTN53/d" $(1); \
+	if [ "$(BUILD_NAME)" = "RT-N53" ]; then \
+		echo "CONFIG_RTN53=y" >>$(1); \
+	else \
+		echo "# CONFIG_RTN53 is not set" >>$(1); \
 	fi; \
 	if [ "$(GMAC3)" = "y" ]; then \
 		sed -i "/CONFIG_BCM_GMAC3/d" $(1); \

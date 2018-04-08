@@ -4821,6 +4821,25 @@ void init_sig_swled()
 #endif
 
 #if defined(RTAC1200G) || defined(RTAC1200GP)
+void wdg_heartbeat(int sig)
+{
+	if(factory_debug())
+		return;
+
+	if(sig == SIGUSR1) {
+		wdg_timer_alive++;
+	}
+	else if(sig == SIGALRM) {
+		if(wdg_timer_alive) {
+			wdg_timer_alive = 0;
+		}
+		else {
+			_dprintf("[%s] Watchdog's heartbeat is stop! Recover...\n", __FUNCTION__);
+			kill_pidfile_s("/var/run/watchdog.pid", SIGHUP);
+		}
+	}
+}
+
 void init_sig_wmon() 
 {
 	int sig;
@@ -7118,27 +7137,6 @@ void watchdog02(int sig)
 	return;
 }
 #endif /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
-
-#if defined(RTAC1200G) || defined(RTAC1200GP)
-void wdg_heartbeat(int sig)
-{
-	if(factory_debug())
-		return;
-
-	if(sig == SIGUSR1) {
-		wdg_timer_alive++;
-	}
-	else if(sig == SIGALRM) {
-		if(wdg_timer_alive) {
-			wdg_timer_alive = 0;
-		}
-		else {
-			_dprintf("[%s] Watchdog's heartbeat is stop! Recover...\n", __FUNCTION__);
-			kill_pidfile_s("/var/run/watchdog.pid", SIGHUP);
-		}
-	}
-}
-#endif
 
 int
 watchdog_main(int argc, char *argv[])

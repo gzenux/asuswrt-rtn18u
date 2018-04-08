@@ -2074,7 +2074,24 @@ static void shutdn(int rb)
 
 static void handle_fatalsigs(int sig)
 {
-	_dprintf("fatal sig=%d\n", sig);
+	char *message = NULL;
+
+	switch (sig) {
+		case SIGILL: message = "Illegal instruction"; break;
+		case SIGABRT: message = "Abort"; break;
+		case SIGFPE: message = "Floating exception"; break;
+		case SIGPIPE: message = "Broken pipe"; break;
+		case SIGBUS: message = "Bus error"; break;
+		case SIGSYS: message = "Bad system call"; break;
+		case SIGTRAP: message = "Trace trap"; break;
+		case SIGPWR: message = "Power failure"; break;
+	}
+
+	if (message)
+		dbg("%s\n", message);
+	else
+		dbg("Caught fatal signal %d\n", sig);
+
 	shutdn(-1);
 }
 
@@ -5002,7 +5019,7 @@ int init_nvram(void)
 
 		wl_ifaces[WL_2G_BAND] = "ath0";
 		wl_ifaces[WL_5G_BAND] = "ath1";
-		if(get_wans_dualwan() & WANSCAP_LAN) {
+		if (sw_mode() == SW_MODE_ROUTER && get_wans_dualwan() & WANSCAP_LAN) {
 			int wans = get_wans_dualwan();
 
 			strcpy(lan_ifs, lan_2);
@@ -8697,7 +8714,14 @@ NO_USB_CAP:
 #ifdef RTAC68U
 	if (!is_n66u_v2())
 #endif
+
+#ifdef RTCONFIG_LANTIQ
+	if(strcmp(nvram_safe_get("blver"), "0.0.3.12") == 0){
+		add_rc_support("bwdpi");
+	}
+#else
 	add_rc_support("bwdpi");
+#endif
 
 	/* modify logic for AiProtection switch */
 	// DON'T USE the logic of nvram_match, it's the wrong logic in this case!!
@@ -10617,6 +10641,11 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 			}
 #endif
 
+#if defined(RT4GAC53U)
+			if (is_router_mode() && (get_wans_dualwan() & WANSCAP_USB))
+				set_gpio(4, 1);
+#endif
+
 #if defined(MAPAC2200)
 			{
 				char *dpdt_ant[] = {"dpdt_ant", NULL};
@@ -10721,9 +10750,7 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 						nvram_set_int("dev_fail_count", dev_fail_count);
 						nvram_commit();
 						dbG("device failed %d times, reboot...\n",dev_fail_count);
-						sleep(1);
-						sync(); sync(); sync();
-						reboot(RB_AUTOBOOT);
+						kill(1, SIGTERM);
 					}
 					else {
 						nvram_set("dev_fail_count", "0");
@@ -10852,8 +10879,7 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 						ate_run_in_preconfig();
 					}
 #endif
-					sync(); sync(); sync();
-					reboot(RB_AUTOBOOT);
+					kill(1, SIGTERM);
 				}
 				else {
 					dbG("System boot up success %d times\n", boot_check);
