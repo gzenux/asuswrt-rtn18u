@@ -152,6 +152,7 @@ static char *defenv[] = {
 };
 
 extern int set_tcode_misc();
+extern int g_upgrade;
 
 #ifdef RTCONFIG_WPS
 static void
@@ -1677,6 +1678,14 @@ misc_defaults(int restore_defaults)
 
 #ifdef RTCONFIG_TUNNEL
 	nvram_set("aae_support", "1");
+#define AAE_ENABLE_AIHOME 2
+#define AAE_EANBLE_AICLOUD 4
+#ifdef RTCONFIG_AIHOME_TUNNEL
+	nvram_set_int("aae_enable", (nvram_get_int("aae_enable") | AAE_ENABLE_AIHOME));
+#endif
+#ifdef RTCONFIG_AICLOUD_TUNNEL
+	nvram_set_int("aae_enable", (nvram_get_int("aae_enable") | AAE_EANBLE_AICLOUD));
+#endif
 #endif
 
 	nvram_unset("wps_reset");
@@ -1750,11 +1759,18 @@ restore_defaults(void)
 	restore_defaults_g = restore_defaults;
 
 	if (restore_defaults) {
+#if defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER)
+		unlink(NAND_FILE);
+#endif
 #ifdef RTCONFIG_WPS
 		wps_restore_defaults();
 #endif
 		virtual_radio_restore_defaults();
 	}
+#if defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER)
+	else
+		confmtd_restore();
+#endif
 
 #ifdef RTCONFIG_USB
 #ifndef RTCONFIG_PERMISSION_MANAGEMENT
@@ -2057,7 +2073,24 @@ static void shutdn(int rb)
 
 static void handle_fatalsigs(int sig)
 {
-	_dprintf("fatal sig=%d\n", sig);
+	char *message = NULL;
+
+	switch (sig) {
+		case SIGILL: message = "Illegal instruction"; break;
+		case SIGABRT: message = "Abort"; break;
+		case SIGFPE: message = "Floating exception"; break;
+		case SIGPIPE: message = "Broken pipe"; break;
+		case SIGBUS: message = "Bus error"; break;
+		case SIGSYS: message = "Bad system call"; break;
+		case SIGTRAP: message = "Trace trap"; break;
+		case SIGPWR: message = "Power failure"; break;
+	}
+
+	if (message)
+		dbg("%s\n", message);
+	else
+		dbg("Caught fatal signal %d\n", sig);
+
 	shutdn(-1);
 }
 
@@ -3967,6 +4000,7 @@ int init_nvram(void)
 		add_rc_support("noaidisk");
 		add_rc_support("noitunes");
 		add_rc_support("nodm");
+		add_rc_support("manual_stb");
 
 		if (nvram_get("wl_mssid") && nvram_match("wl_mssid", "1"))
 			add_rc_support("mssid");
@@ -4088,6 +4122,7 @@ int init_nvram(void)
 		add_rc_support("noaidisk");
 		add_rc_support("noitunes");
 		add_rc_support("nodm");
+		add_rc_support("manual_stb");
 
 		if (nvram_get("wl_mssid") && nvram_match("wl_mssid", "1"))
 			add_rc_support("mssid");
@@ -4266,6 +4301,7 @@ int init_nvram(void)
 		add_rc_support("2.4G 5G update");
 		add_rc_support("qcawifi");
 		add_rc_support("11AC");
+		add_rc_support("manual_stb");
 		// the following values is model dep. so move it from default.c to here
 		nvram_set("wl0_HT_TxStream", "3");
 		nvram_set("wl0_HT_RxStream", "3");
@@ -4988,7 +5024,7 @@ int init_nvram(void)
 
 		wl_ifaces[WL_2G_BAND] = "ath0";
 		wl_ifaces[WL_5G_BAND] = "ath1";
-		if(get_wans_dualwan() & WANSCAP_LAN) {
+		if (sw_mode() == SW_MODE_ROUTER && get_wans_dualwan() & WANSCAP_LAN) {
 			int wans = get_wans_dualwan();
 
 			strcpy(lan_ifs, lan_2);
@@ -8416,6 +8452,10 @@ int init_nvram(void)
 	//nvram_set("vpnc_proto", "disable");
 #endif
 
+#ifdef RTCONFIG_UTF8_SSID
+	add_rc_support("utf8_ssid");
+#endif
+
 #ifdef RTCONFIG_USB
 #ifdef RTCONFIG_USB_PRINTER
 	add_rc_support("printer");
@@ -8549,7 +8589,14 @@ int init_nvram(void)
 #ifdef RTAC68U
 	if (!is_n66u_v2())
 #endif
+
+#ifdef RTCONFIG_LANTIQ
+	if(strcmp(nvram_safe_get("blver"), "0.0.3.12") == 0){
+		add_rc_support("bwdpi");
+	}
+#else
 	add_rc_support("bwdpi");
+#endif
 
 	/* modify logic for AiProtection switch */
 	// DON'T USE the logic of nvram_match, it's the wrong logic in this case!!
@@ -8893,13 +8940,16 @@ int init_nvram(void)
 	add_rc_support("bcmwifi");
 #endif
 
+#ifdef RTCONFIG_DFS_US
+	add_rc_support("dfs");
+#endif
+
 #ifdef RTCONFIG_LYRA_HIDE
 	add_rc_support("lyra_hide");
 #endif
 
-#ifdef RTCONFIG_DFS_US
-	add_rc_support("dfs");
-
+#ifdef RTCONFIG_PORT2_DEVICE
+	add_rc_support("port2_device");
 #endif
 
 	return 0;
@@ -9638,8 +9688,6 @@ static void sysinit(void)
 	if (mkdir(RAMFS_CONFMTD_DIR"/crash_logs", 0777) < 0 && errno != EEXIST) {
 		perror("/tmp/confmtd/crash_logs not created.");
 	}
-
-	 confmtd_restore();
 #endif
 
 #ifdef HND_ROUTER
@@ -9954,10 +10002,7 @@ static void sysinit(void)
 
 #ifdef RTCONFIG_GMAC3
 #ifdef RTCONFIG_BCM_7114
-#ifdef RTCONFIG_AMAS
-	nvram_set("stop_gmac3", "1"); //disable gmac3, if enable AMAS. (It will cause lldpd can't be send.)
-#endif	
-	if (nvram_match("stop_gmac3", "1")
+	if (nvram_match("stop_gmac3_new", "1")
 #ifdef RTCONFIG_DPSTA
 		|| dpsta_mode()
 #endif
@@ -10500,6 +10545,11 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 			}
 #endif
 
+#if defined(RT4GAC53U)
+			if (is_router_mode() && (get_wans_dualwan() & WANSCAP_USB))
+				set_gpio(4, 1);
+#endif
+
 #if defined(MAPAC2200)
 			{
 				char *dpdt_ant[] = {"dpdt_ant", NULL};
@@ -10604,9 +10654,7 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 						nvram_set_int("dev_fail_count", dev_fail_count);
 						nvram_commit();
 						dbG("device failed %d times, reboot...\n",dev_fail_count);
-						sleep(1);
-						sync(); sync(); sync();
-						reboot(RB_AUTOBOOT);
+						kill(1, SIGTERM);
 					}
 					else {
 						nvram_set("dev_fail_count", "0");
@@ -10735,8 +10783,7 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 						ate_run_in_preconfig();
 					}
 #endif
-					sync(); sync(); sync();
-					reboot(RB_AUTOBOOT);
+					kill(1, SIGTERM);
 				}
 				else {
 					dbG("System boot up success %d times\n", boot_check);
@@ -10866,7 +10913,7 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 			break;
 		}
 
-		if (!nvram_get_int("asus_mfg")) {
+		if (!(g_reboot || g_upgrade) && !nvram_get_int("asus_mfg")) {
 			chld_reap(0);	/* Periodically reap zombies. */
 			check_services();
 		}

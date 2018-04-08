@@ -54,7 +54,6 @@
 #include <alpine.h>
 #include <iwlib.h>
 //#include <stapriv.h>
-#include <ethutils.h>
 #include <shared.h>
 #include <sys/mman.h>
 #ifndef O_BINARY

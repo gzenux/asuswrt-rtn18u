@@ -624,13 +624,12 @@ var cp_freewifi_support = isSupport("cp_freewifi");
 var cp_advanced_support = isSupport("cp_advanced");
 var fbwifi_support = isSupport("fbwifi");
 var noiptv_support = isSupport("noiptv");
-var nz_isp_support = isSupport("nz_isp");
 var app_support = isSupport("app");
 var letsencrypt_support = isSupport("letsencrypt");
 var pm_support = isSupport("permission_management");
-var hive_hide_support = isSupport("hive_hide");
 var wifiproxy_support = isSupport("wifiproxy");
 var lyra_hide_support = isSupport("lyra_hide");
+var port2_device = isSupport("port2_device");
 var hdspindown_support = isSupport("hdspindown");
 var amesh_support = uiSupport("amas");
 var ifttt_support = isSupport("ifttt");
@@ -641,6 +640,7 @@ var vpn_fusion_support = isSupport("vpn_fusion");
 var cfg_sync_support = isSupport("cfg_sync");
 var meoVoda_support = isSupport("meoVoda");
 var movistarTriple_support = isSupport("movistarTriple");
+var utf8_ssid_support = isSupport("utf8_ssid");
 
 var QISWIZARD = "QIS_wizard.htm";
 
@@ -3352,7 +3352,7 @@ function set_variable(_variable, _val){
 }
 
 function isPortConflict(_val){
-	if(_val == '80')
+	if(_val == '<% nvram_get("http_lanport"); %>')
 		return "<#portConflictHint#> HTTP LAN port.";
 	else if(_val == '<% nvram_get("dm_http_port"); %>')
 		return "<#portConflictHint#> Download Master.";

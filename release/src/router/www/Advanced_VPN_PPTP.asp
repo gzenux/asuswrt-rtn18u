@@ -570,7 +570,7 @@ function showpptpd_clientlist(){
 				}
 				else if(j == 1){
 					overlib_str1[i] += pptpd_clientlist_col[1];
-					code +='<td width="30%" title="'+overlib_str1[i]+'" style="text-align:center;">-</td>';
+					code +='<td width="30%" title="'+overlib_str1[i]+'" style="text-align:center;pointer-events:none;">-</td>';
 				} 
 			}
 			

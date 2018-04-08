@@ -3803,6 +3803,7 @@ stop_misc(void)
 	if (pids("ntpclient"))
 		killall_tk("ntpclient");
 
+	stop_hotplug2();
 #ifdef RTCONFIG_BCMWL6
 #ifdef BCM_ASPMD
 	stop_aspmd();
@@ -3849,9 +3850,49 @@ stop_misc(void)
 	stop_lltdc();
 #endif
 	stop_networkmap();
-
 #ifdef RTCONFIG_NEW_USER_LOW_RSSI
 	stop_roamast();
+#endif
+#ifdef RTCONFIG_MDNS
+	stop_mdns();
+#endif
+#if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
+	stop_erp_monitor();
+#endif
+#ifdef RTCONFIG_CROND
+	stop_cron();
+#endif
+#ifdef RTCONFIG_NOTIFICATION_CENTER
+	stop_notification_center();
+#endif
+#ifdef RTCONFIG_PROTECTION_SERVER
+	stop_ptcsrv();
+#endif
+#ifdef RTCONFIG_SYSSTATE
+	stop_sysstate();
+#endif
+	stop_logger();
+	stop_ots();
+#ifdef RTCONFIG_DISK_MONITOR
+        stop_diskmon();
+#endif
+#ifdef RTCONFIG_TUNNEL
+	stop_mastiff();
+#endif
+#ifdef RTCONFIG_BWDPI
+	stop_bwdpi_check();
+#endif
+#ifdef RTCONFIG_CFGSYNC
+	stop_cfgsync();
+#endif
+#ifdef RTCONFIG_AMAS
+	stop_amas_bhctrl();
+	stop_amas_lanctrl();
+	stop_amas_wlcconnect();
+	stop_amas_lldpd();
+#ifdef RTCONFIG_BCMWL6
+	stop_obd();
+#endif
 #endif
 }
 
@@ -3966,16 +4007,16 @@ void
 start_httpd(void)
 {
 	char *httpd_argv[] = { "httpd",
-	/*	"-p", nvram_safe_get("http_lanport"),*/
 		NULL, NULL,	/* -i ifname */
+		NULL, NULL,	/* -p port */
 		NULL };
 	int httpd_index = 1;
 #ifdef RTCONFIG_HTTPS
 	char *https_argv[] = { "httpds", "-s",
-		"-p", nvram_safe_get("https_lanport"),
 		NULL, NULL,	/* -i ifname */
+		NULL, NULL,	/* -p port */
 		NULL };
-	int https_index = 4;
+	int https_index = 2;
 	int enable;
 #endif
 	char *cur_dir;
@@ -4024,7 +4065,12 @@ start_httpd(void)
 
 	enable = nvram_get_int("http_enable");
 	if (enable != 0) {
-		logmessage(LOGNAME, "start httpd - SSL");
+		pid = nvram_get_int("https_lanport") ? : 443;
+		if (pid != 443) {
+			https_argv[https_index++] = "-p";
+			https_argv[https_index++] = nvram_safe_get("https_lanport");
+		}
+		logmessage(LOGNAME, "start https:%d", pid);
 		_eval(https_argv, NULL, 0, &pid);
 #if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
 		sleep(1);
@@ -4035,7 +4081,12 @@ start_httpd(void)
 #endif
 #endif
 	{
-		logmessage(LOGNAME, "start httpd");
+		pid = nvram_get_int("http_lanport") ? : 80;
+		if (pid != 80) {
+			httpd_argv[httpd_index++] = "-p";
+			httpd_argv[httpd_index++] = nvram_safe_get("http_lanport");
+		}
+		logmessage(LOGNAME, "start httpd:%d", pid);
 		_eval(httpd_argv, NULL, 0, &pid);
 #if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
 		sleep(1);
@@ -4229,7 +4280,7 @@ void start_upnp(void)
 				} else
 #endif
 				{
-					fprintf(f, "%s://%s:%d/\n", "http", lanip, /*nvram_get_int("http_lanport") ? :*/ 80);
+					fprintf(f, "%s://%s:%d/\n", "http", lanip, nvram_get_int("http_lanport") ? : 80);
 				}
 
 				char uuid[45];
@@ -4734,6 +4785,9 @@ void restart_mdns(void)
 	char itune_service_config[80];
 	sprintf(afpd_service_config, "%s/%s", AVAHI_SERVICES_PATH, AVAHI_AFPD_SERVICE_FN);
 	sprintf(itune_service_config, "%s/%s", AVAHI_SERVICES_PATH, AVAHI_ITUNE_SERVICE_FN);
+
+	if (g_reboot || g_upgrade)
+		return;
 
 	if (nvram_match("timemachine_enable", "1") == f_exists(afpd_service_config)){
 		if(nvram_match("daapd_enable", "1") == f_exists(itune_service_config)){
@@ -7690,9 +7744,6 @@ stop_services(void)
 #ifdef RTCONFIG_CLOUDCHECK
 	stop_cloudcheck();
 #endif
-#ifdef RTCONFIG_TUNNEL
-	stop_mastiff();
-#endif
 #ifdef RTCONFIG_KEY_GUARD
 	stop_keyguard();
 #endif
@@ -7714,6 +7765,9 @@ stop_services(void)
 #endif
 #ifdef RTCONFIG_CFGSYNC
 	stop_cfgsync();
+#endif
+#ifdef RTCONFIG_NEW_USER_LOW_RSSI
+	stop_roamast();
 #endif
 }
 
@@ -7895,6 +7949,12 @@ stop_services_mfg(void)
 #endif
 #ifdef RTCONFIG_NOTIFICATION_CENTER
 	stop_notification_center();
+#endif
+#ifdef RTCONFIG_TUNNEL
+	stop_mastiff();
+#endif
+#ifdef RTCONFIG_NEW_USER_LOW_RSSI
+	stop_roamast();
 #endif
 }
 
@@ -9081,11 +9141,6 @@ again:
 			stop_dpi_engine_service(1);
 #endif
 			stop_misc();
-			stop_logger();
-			stop_upnp();
-#if defined(RTCONFIG_MDNS)
-			stop_mdns();
-#endif
 			stop_all_webdav();
 #ifdef RTCONFIG_CAPTIVE_PORTAL
 			stop_uam_srv();
@@ -9114,7 +9169,6 @@ again:
 			remove_storage_main(1);
 			remove_usb_module();
 #endif
-
 #endif
 			remove_conntrack();
 			stop_udhcpc(-1);
@@ -9124,27 +9178,12 @@ again:
 #endif
 			stop_dhcp6c();
 #endif
-
 #ifdef RTCONFIG_TR069
 			stop_tr();
 #endif
 			stop_jffs2(1);
-#ifdef RTCONFIG_JFFS2USERICON
-			stop_lltdc();
-#endif
-			stop_networkmap();
-
 #ifdef RTCONFIG_QCA_PLC_UTILS
 			reset_plc();
-#endif
-#ifdef RTCONFIG_CFGSYNC
-			stop_cfgsync();
-#endif
-#ifdef RTCONFIG_AMAS
-			stop_amas_lldpd();
-#if defined(RTCONFIG_BCMWL6)		
-			stop_obd();			
-#endif
 #endif
 			// TODO free necessary memory here
 		}

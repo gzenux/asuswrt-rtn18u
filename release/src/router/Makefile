@@ -2286,9 +2286,6 @@ infosvr-install:
 
 httpd: shared nvram$(BCMEX)$(EX7) libdisk $(if $(RTCONFIG_HTTPS),mssl) $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_BWDPI),bwdpi_source) json-c $(if $(RTCONFIG_CFGSYNC), $(CFGSYNC_PKG))
 	@$(SEP)
-ifeq ($(HND_ROUTER),y)
-	cd httpd && rm -f wlioctl.h && ln -sf $(SRCBASE)/../../dhd/src/include/wlioctl.h  wlioctl.h && rm -f bcmwifi_rates.h && ln -sf $(SRCBASE)/../../dhd/src/shared/bcmwifi/include/bcmwifi_rates.h bcmwifi_rates.h && rm -f wlioctl_defs.h && ln -sf $(SRCBASE)/../../dhd/components/shared/devctrl_if/wlioctl_defs.h wlioctl_defs.h
-endif
 	$(MAKE) -C httpd
 
 httpd-install:
@@ -5031,7 +5028,7 @@ libxml2/stamp-h1:
 	touch $@
 
 libxml2: libxml2/stamp-h1
-	$(MAKE) -j 8 -C libxml2 all
+	$(MAKE) -j 8 -C libxml2 all && $(MAKE) $@-stage
 
 libxml2-install: libxml2
 	@$(SEP)
@@ -5201,16 +5198,16 @@ neon/stamp-h1 neon/config.h:
 		--prefix=/usr \
 		--bindir=/usr/sbin \
 		--libdir=/usr/lib \
-		--enable-shared --disable-static --disable-nls --with-zlib --with-ssl=openssl \
-		--with-libs=$(TOP)/openssl:$(TOP)/libxml2 \
-		CFLAGS='-I$(STAGEDIR)/usr/include -I$(TOP)/openssl/include' \
-		LDFLAGS='-L$(TOP)/libxml2/.libs -L$(STAGEDIR)/usr/lib -L$(TOP)/openssl' \
+		--enable-shared --disable-static --disable-nls --with-zlib --with-ssl=openssl --with-libxml2 \
+		--with-libs=$(STAGEDIR)/usr \
+		CFLAGS='-g -O2 -I$(STAGEDIR)/usr/include' \
+		LDFLAGS='-L$(STAGEDIR)/usr/lib' \
 		LIBS='-lxml2 -lssl -lcrypto -lpthread -ldl -lm' \
-		XML2_CONFIG='$(TOP)/libxml2/xml2-config'
+		XML2_CONFIG='$(STAGEDIR)/usr/bin/xml2-config --prefix=$(STAGEDIR)/usr'
 	cp -f neon/config.h neon/src/config.h
 	touch $@
 
-neon: libxml2 neon/stamp-h1 neon/config.h
+neon: libxml2 openssl neon/stamp-h1 neon/config.h
 	$(MAKE) -C neon && $(MAKE) $@-stage
 
 neon-install: neon
@@ -5537,9 +5534,10 @@ netatalk-3.0.5-clean:
 
 hndck:
 	echo $(obj-y)
+
 expat-2.0.1/stamp-h1:
 	cd $(TOP)/expat-2.0.1 && \
-	$(CONFIGURE) --build=i686-linux --prefix=/usr
+	$(CONFIGURE) --prefix=/usr
 	touch $@
 
 expat-2.0.1: expat-2.0.1/stamp-h1

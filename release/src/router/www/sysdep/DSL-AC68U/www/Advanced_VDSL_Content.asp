@@ -1016,7 +1016,7 @@ function ppp_echo_control(flag){
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="restart_dslwan_if 0">
 <input type="hidden" name="action_wait" value="5">
-<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
+<input type="hidden" name="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="dsl_unit" value="8" />
 <input type="hidden" name="dsl_subunit" value="" />
 <input type="hidden" name="dsl_enable" value="" />

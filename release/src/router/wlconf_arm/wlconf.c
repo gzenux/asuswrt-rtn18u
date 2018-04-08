@@ -284,6 +284,53 @@ wlconf_set_preauth(char *name, int bsscfg_idx, int preauth)
 }
 
 static void
+wlconf_dfs_pref_chan_options(char *name)
+{
+	char val[32], *next;
+	wl_dfs_forced_t *dfs_frcd = NULL;
+	uint ioctl_size;
+	chanspec_t chanspec;
+	int ret;
+	wl_dfs_forced_t inp;
+
+	dfs_frcd = (wl_dfs_forced_t *) malloc(WL_DFS_FORCED_PARAMS_MAX_SIZE);
+	if (!dfs_frcd) {
+		return;
+	}
+
+	memset(dfs_frcd, 0, WL_DFS_FORCED_PARAMS_MAX_SIZE);
+	memset(&inp, 0, sizeof(wl_dfs_forced_t));
+
+	inp.version = DFS_PREFCHANLIST_VER;
+	wl_iovar_getbuf(name, "dfs_channel_forced", &inp, sizeof(wl_dfs_forced_t),
+		dfs_frcd, WL_DFS_FORCED_PARAMS_MAX_SIZE);
+
+	if (dfs_frcd->version != DFS_PREFCHANLIST_VER) {
+		free(dfs_frcd);
+		return;
+	}
+
+	dfs_frcd->chspec_list.num = 0;
+	foreach(val, nvram_safe_get("wl_dfs_pref"), next) {
+		if (atoi(val)) {
+			chanspec = wf_chspec_aton(val);
+			/* Maximum 6 entries supported in UI */
+			if (dfs_frcd->chspec_list.num > 6)
+				return;
+			dfs_frcd->chspec_list.list[dfs_frcd->chspec_list.num++] = chanspec;
+		}
+	}
+
+	ioctl_size = WL_DFS_FORCED_PARAMS_FIXED_SIZE +
+		(dfs_frcd->chspec_list.num * sizeof(chanspec_t));
+	dfs_frcd->version = DFS_PREFCHANLIST_VER;
+	WL_IOVAR_SET(name, "dfs_channel_forced", dfs_frcd, ioctl_size);
+
+	free(dfs_frcd);
+	return;
+}
+
+static void
 wlconf_set_radarthrs(char *name, char *prefix)
 {
 	wl_radar_thr_t  radar_thr;
@@ -1730,7 +1777,7 @@ wlconf(char *name)
 	if (restore_defaults) {
 		wlconf_set_current_txparam_into_nvram(name, prefix);
 	}
-#ifdef BCMDBG
+
 	/* Apply message level */
 	if (nvram_invmatch("wl_msglevel", "")) {
 		val = (int)strtoul(nvram_get("wl_msglevel"), NULL, 0);
@@ -1745,7 +1792,6 @@ wlconf(char *name)
 		else
 			WL_IOCTL(name, WLC_SET_MSGLEVEL, &val, sizeof(val));
 	}
-#endif
 
 	/* Bring the interface down */
 	WL_IOCTL(name, WLC_DOWN, NULL, sizeof(val));
@@ -2306,7 +2352,7 @@ wlconf(char *name)
 		}
 		val = atoi(nvram_safe_get(strcat_r(prefix, "tpc_db", tmp)));
 		WL_IOCTL(name, WLC_SEND_PWR_CONSTRAINT, &val, sizeof(val));
-
+		wlconf_dfs_pref_chan_options(name);
 	} else if (nvram_match(tmp, "d")) {
 		val = 0;
 		WL_IOCTL(name, WLC_SET_RADAR, &val, sizeof(val));

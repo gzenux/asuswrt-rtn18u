@@ -152,7 +152,7 @@ var Get_Component_WirelessInput = function(wlArray){
 	var container = $("<div>");
 
 	wlArray.forEach(function(wl, idx){
-		var wirelessAP = httpApi.nvramGet(["wl" + wl.ifname + "_ssid", "wl" + wl.ifname + "_wpa_psk"]);
+		var wirelessAP = httpApi.nvramCharToAscii(["wl" + wl.ifname + "_ssid", "wl" + wl.ifname + "_wpa_psk"]);
 		// Do not use default value.
 		if(systemVariable.isDefault){
 			wirelessAP["wl" + wl.ifname + "_ssid"] = "";
@@ -186,7 +186,7 @@ var Get_Component_WirelessInput = function(wlArray){
 						$(".wlInput")[idx*2+1].focus();
 					}
 				})
-				.val(wirelessAP["wl" + wl.ifname + "_ssid"])
+				.val(decodeURIComponent(wirelessAP["wl" + wl.ifname + "_ssid"]))
 			)
 			.appendTo(__container)
 
@@ -221,7 +221,7 @@ var Get_Component_WirelessInput = function(wlArray){
 						}
 					}
 				})
-				.val(wirelessAP["wl" + wl.ifname + "_wpa_psk"])
+				.val(decodeURIComponent(wirelessAP["wl" + wl.ifname + "_wpa_psk"]))
 			)
 			.appendTo(__container);
 

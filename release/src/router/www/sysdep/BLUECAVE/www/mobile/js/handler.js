@@ -1410,7 +1410,7 @@ goTo.IPTV = function(){
 					qisPostData.switch_wan0prio = "0";
 					qisPostData.switch_wan1tagid = "600";
 					qisPostData.switch_wan1prio = "0";
-					qisPostData.switch_wan2tagid = "0";
+					qisPostData.switch_wan2tagid = "";
 					qisPostData.switch_wan2prio = "0";
 
 					$("#iptv_stb").show();
@@ -1423,9 +1423,9 @@ goTo.IPTV = function(){
 					qisPostData.switch_stb_x = "0";
 					qisPostData.switch_wan0tagid = "500";
 					qisPostData.switch_wan0prio = "0";
-					qisPostData.switch_wan1tagid = "0";
+					qisPostData.switch_wan1tagid = "";
 					qisPostData.switch_wan1prio = "0";
-					qisPostData.switch_wan2tagid = "0";
+					qisPostData.switch_wan2tagid = "";
 					qisPostData.switch_wan2prio = "0";
 
 					$("#iptv_stb").hide();
@@ -1455,7 +1455,7 @@ goTo.IPTV = function(){
 					qisPostData.switch_wan0prio = "0";
 					qisPostData.switch_wan1tagid = "20";
 					qisPostData.switch_wan1prio = "4";
-					qisPostData.switch_wan2tagid = "0";
+					qisPostData.switch_wan2tagid = "";
 					qisPostData.switch_wan2prio = "0";
 
 					$("#iptv_stb").show();
@@ -1468,7 +1468,7 @@ goTo.IPTV = function(){
 					qisPostData.switch_stb_x = "3";
 					qisPostData.switch_wan0tagid = "1103";
 					qisPostData.switch_wan0prio = "1";
-					qisPostData.switch_wan1tagid = "0";
+					qisPostData.switch_wan1tagid = "";
 					qisPostData.switch_wan1prio = "0";
 					qisPostData.switch_wan2tagid = "1107";
 					qisPostData.switch_wan2prio = "1";
@@ -1483,7 +1483,7 @@ goTo.IPTV = function(){
 					qisPostData.switch_stb_x = "3";
 					qisPostData.switch_wan0tagid = "621";
 					qisPostData.switch_wan0prio = "0";
-					qisPostData.switch_wan1tagid = "0";
+					qisPostData.switch_wan1tagid = "";
 					qisPostData.switch_wan1prio = "0";
 					qisPostData.switch_wan2tagid = "821";
 					qisPostData.switch_wan2prio = "0";
@@ -1498,7 +1498,7 @@ goTo.IPTV = function(){
 					qisPostData.switch_stb_x = "3";
 					qisPostData.switch_wan0tagid = "11";
 					qisPostData.switch_wan0prio = "0";
-					qisPostData.switch_wan1tagid = "0";
+					qisPostData.switch_wan1tagid = "";
 					qisPostData.switch_wan1prio = "0";
 					qisPostData.switch_wan2tagid = "14";
 					qisPostData.switch_wan2prio = "0";
@@ -1575,9 +1575,9 @@ goTo.IPTV = function(){
 					qisPostData.switch_stb_x = "0";
 					qisPostData.switch_wan0tagid = "10";
 					qisPostData.switch_wan0prio = "0";
-					qisPostData.switch_wan1tagid = "0";
+					qisPostData.switch_wan1tagid = "";
 					qisPostData.switch_wan1prio = "0";
-					qisPostData.switch_wan2tagid = "0";
+					qisPostData.switch_wan2tagid = "";
 					qisPostData.switch_wan2prio = "0";
 
 					$("#iptv_stb").hide();

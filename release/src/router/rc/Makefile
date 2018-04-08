@@ -615,10 +615,10 @@ OBJS += amas_wlcconnect.o
 OBJS += amas_bhctrl.o
 endif
 OBJS += amas_lanctrl.o
+endif
 ifeq ($(RTCONFIG_LIBASUSLOG),y)
 LDFLAGS += -L$(TOP)/libasuslog -lasuslog
 CFLAGS += -I$(TOP)/libasuslog
-endif
 endif
 
 all: rc init.prep
@@ -1210,7 +1210,7 @@ ifneq ($(wildcard ./prebuild/roamast-broadcom.o),)
 roamast-broadcom.o:
 	@-cp -f ./prebuild/roamast-broadcom.o .
 endif
-ifneq ($(wildcard ./prebuild/roamast-latiq.o),)
+ifneq ($(wildcard ./prebuild/roamast-lantiq.o),)
 roamast-lantiq.o:
 	@-cp -f ./prebuild/roamast-lantiq.o .
 endif
