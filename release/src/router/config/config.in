@@ -1409,6 +1409,10 @@ config RTCONFIG_IFTTT
 	bool "IFTTT support"
 	default n
 
+config RTCONFIG_UTF8_SSID
+	bool "UTF8_SSID support"
+	default n
+
 config RTCONFIG_ERP_TEST
 	bool "erp test"
 	default n
@@ -1703,6 +1707,10 @@ config RTCONFIG_SW_DEVLED
 
 config RTCONFIG_LYRA_HIDE
 	bool "Hide UI item for Lyra"
+	default n
+
+config RTCONFIG_PORT2_DEVICE
+	bool "2 Port device"
 	default n
 
 config RTCONFIG_NVRAM_ENCRYPT

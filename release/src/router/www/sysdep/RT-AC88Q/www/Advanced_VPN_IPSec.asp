@@ -1045,7 +1045,7 @@ function validForm() {
 	if(getRadioItemCheck(document.form.ipsec_auth_method) == "1") {
 		if(!validator.isEmpty(document.form.ipsec_preshared_key))
 			return false;
-		if(!Block_chars(document.form.ipsec_preshared_key, [">", "<", "#", "null"]))
+		if(!Block_chars(document.form.ipsec_preshared_key, [">", "<", "&", "\"", "null"]))
 			return false;
 		if(is_KR_sku){
 			if(!validator.psk_KR(document.form.ipsec_preshared_key))
@@ -1887,7 +1887,7 @@ function addRow_Group(upper) {
 			valid_password.focus();
 			return false;
 		}
-		else if(!Block_chars(valid_password, ["<", ">", "&"])) {
+		else if(!Block_chars(valid_password, ["<", ">", "&", "\""])) {
 			return false;
 		}
 		else if(valid_password.value.length > 0 && valid_password.value.length < 5) {
@@ -2723,7 +2723,7 @@ function changeExchangeMode() {
 <input type="hidden" name="action_wait" value="">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
-<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
+<input type="hidden" name="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 <input type="hidden" name="clear_file_name" value="ipsec">
 </form>

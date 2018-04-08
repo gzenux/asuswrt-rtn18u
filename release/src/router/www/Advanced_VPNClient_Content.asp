@@ -1807,7 +1807,7 @@ function save_ipsec_profile_panel() {
 
 		if(!validator.isEmpty(document.ipsec_form.ipsec_preshared_key))
 			return false;
-		if(!Block_chars(document.ipsec_form.ipsec_preshared_key, [">", "<", "#", "null"]))
+		if(!Block_chars(document.ipsec_form.ipsec_preshared_key, [">", "<", "&", "\"", "null"]))
 			return false;
 		if(is_KR_sku){
 			if(!validator.psk_KR(document.ipsec_form.ipsec_preshared_key))

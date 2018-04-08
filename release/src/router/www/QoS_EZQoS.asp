@@ -1402,7 +1402,7 @@ function setGroup(name){
 					<input type="hidden" name="action_mode" value="apply">
 					<input type="hidden" name="action_script" value="saveNvram">
 					<input type="hidden" name="action_wait" value="1">
-					<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
+					<input type="hidden" name="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 					<input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 					<input type="hidden" name="bwdpi_app_rulelist_edit" value="<% nvram_get("bwdpi_app_rulelist"); %>">
 					<tr>

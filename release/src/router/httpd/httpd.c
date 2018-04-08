@@ -246,7 +246,7 @@ int reget_passwd = 0;
 int x_Setting = 0;
 int skip_auth = 0;
 char url[128];
-int http_port = SERVER_PORT;
+int http_port = 0;
 char *http_ifname = NULL;
 time_t login_dt=0;
 char login_url[128];
@@ -1372,7 +1372,7 @@ void http_login(unsigned int ip, char *url) {
 	char login_ipstr[32], login_timestampstr[32];
 
 	if ((http_port != SERVER_PORT
-/*	  && http_port != nvram_get_int("http_lanport")*/
+	  && http_port != nvram_get_int("http_lanport")
 #ifdef RTCONFIG_HTTPS
 	  && http_port != SERVER_PORT_SSL
 	  && http_port != nvram_get_int("https_lanport")
@@ -1402,7 +1402,7 @@ void http_login(unsigned int ip, char *url) {
 int http_login_check(void)
 {
 	if ((http_port != SERVER_PORT
-/*	  && http_port != nvram_get_int("http_lanport")*/
+	  && http_port != nvram_get_int("http_lanport")
 #ifdef RTCONFIG_HTTPS
 	  && http_port != SERVER_PORT_SSL
 	  && http_port != nvram_get_int("https_lanport")
@@ -1462,14 +1462,16 @@ void http_logout(unsigned int ip, char *cookies, int fromapp_flag)
 
 int is_auth(void)
 {
-	if (http_port==SERVER_PORT ||
-/*	    http_port==nvram_get_int("http_lanport") ||*/
+	if (http_port == SERVER_PORT ||
+	    http_port == nvram_get_int("http_lanport") ||
 #ifdef RTCONFIG_HTTPS
-	    http_port==SERVER_PORT_SSL ||
-	    http_port==nvram_get_int("https_lanport") ||
+	    http_port == SERVER_PORT_SSL ||
+	    http_port == nvram_get_int("https_lanport") ||
 #endif
-		strcmp(nvram_get_x("PrinterStatus", "usb_webhttpcheck_x"), "1")==0) return 1;
-	else return 0;
+	    strcmp(nvram_get_x("PrinterStatus", "usb_webhttpcheck_x"), "1") == 0)
+		return 1;
+	else
+		return 0;
 }
 
 int is_firsttime(void)

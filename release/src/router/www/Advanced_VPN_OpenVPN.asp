@@ -696,7 +696,7 @@ function showopenvpnd_clientlist(){
 				}
 				else if(j ==1){
 					overlib_str3[i] += vpn_server_clientlist_col[1];
-					code +='<td width="35%" title="'+overlib_str3[i]+'">'+ vpn_server_clientlist_col[1] +'</td>';
+					code +='<td width="35%" title="'+overlib_str3[i]+'" style="text-align:center;pointer-events:none;">-</td>';
 				} 
 			}
 			
@@ -1153,7 +1153,7 @@ function updateVpnServerClientAccess() {
 		<input type="hidden" name="action_mode" value="apply">
 		<input type="hidden" name="action_script" value="saveNvram">
 		<input type="hidden" name="action_wait" value="1">
-		<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
+		<input type="hidden" name="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 		<input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 		<input type="hidden" name="vpn_crt_server1_ca" value="" disabled>
 		<input type="hidden" name="vpn_crt_server1_crt" value="" disabled>
@@ -1233,7 +1233,7 @@ function updateVpnServerClientAccess() {
 		<input type="hidden" name="action_mode" value="apply">
 		<input type="hidden" name="action_script" value="saveNvram">
 		<input type="hidden" name="action_wait" value="1">
-		<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
+		<input type="hidden" name="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 		<input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 		<input type="hidden" name="vpn_crt_server1_static" value="<% nvram_get("vpn_crt_server1_static"); %>" disabled>
 		<tr>

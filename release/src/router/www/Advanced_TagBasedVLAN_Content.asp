@@ -419,7 +419,7 @@ function show_binding_list(){
 	code +='<table width="97%" cellspacing="0" cellpadding="4" align="center" class="list_table" id="binding_inf_table">';
 	
 	if(bind_interface_array.length == 0)
-		code +='<tr><td style="color:#FFCC00;" colspan="3"><#TBVLAN_NoBindingInf#></td>';
+		code +="<tr><td style='color:#FFCC00;' colspan='3'><#TBVLAN_NoBindingInf#></td>";
 	else{
 		Object.keys(bind_interface_array).forEach(function(key){
 			code +='<tr id="row'+key+'">';
