@@ -429,11 +429,6 @@ void start_ovpn_client(int clientNum)
 	}
 	vpnlog(VPN_LOG_EXTRA,"Done writing certs/keys");
 
-	// Run postconf custom script on it if it exists
-	sprintf(buffer, "openvpnclient%d", clientNum);
-	sprintf(buffer2, "/etc/openvpn/client%d/config.ovpn", clientNum);
-	run_postconf(buffer, buffer2);
-
 	// Create firewall rules
 	vpnlog(VPN_LOG_EXTRA,"Creating firewall rules");
 	mkdir("/etc/openvpn/fw", 0700);
@@ -472,6 +467,11 @@ void start_ovpn_client(int clientNum)
 	fclose(fp);
 	vpnlog(VPN_LOG_EXTRA,"Done creating firewall rules");
 
+	// Run postconf custom script on it if it exists
+	sprintf(buffer, "openvpnclient%d", clientNum);
+	sprintf(buffer2, "/etc/openvpn/client%d/config.ovpn", clientNum);
+	run_postconf(buffer, buffer2);
+
 	// Run the firewall rules
 	vpnlog(VPN_LOG_EXTRA,"Running firewall rules");
 	sprintf(buffer, "/etc/openvpn/fw/client%d-fw.sh", clientNum);
@@ -497,36 +497,29 @@ void start_ovpn_client(int clientNum)
 
 	// watchdog
 	sprintf(buffer, "/etc/openvpn/client%d/vpnc-watchdog%d.sh", clientNum, clientNum);
-	if (fp = fopen(buffer, "w")) {
+	if ((fp = fopen(buffer, "w"))) {
+		char taskname[20];
+
 		chmod(buffer, S_IRUSR|S_IWUSR|S_IXUSR);
 		fprintf(fp, "#!/bin/sh\n"
-			    "while :\n"
-			    "do\n"
-			    "if [ -z $(pidof vpnclient%d) ]\n"
-			    "then\n"
-			    "service restart_vpnclient%d\n"
-			    "exit\n"
-			    "fi\n"
-			    "sleep 60\n"
-			    "done\n",
-			    clientNum, clientNum);
+		            "if [ -z $(pidof vpnclient%d) ]\n"
+		            "then\n"
+		            "   service restart_vpnclient%d\n"
+		            "fi\n",
+		            clientNum, clientNum);
 		fclose(fp);
-		argv[0] = buffer;
-		argv[1] = NULL;
-		_eval(argv, NULL, 0, &pid);
 
-	        sprintf(buffer, "/var/run/vpnc-watchdog%d.pid", clientNum);
-
-	        if (fp = fopen(buffer, "w")) {
-		        fprintf(fp, "%d", pid);
-		        fclose(fp);
-
-			vpnlog(VPN_LOG_EXTRA,"VPN watchdog started.");
-		} else {
-			kill(pid, SIGTERM);
-		}
-
+		argv[0] = "cru";
+		argv[1] = "a";
+		sprintf(taskname, "CheckVPNClient%d", clientNum);
+		argv[2] = taskname;
+		sprintf(buffer2, "*/2 * * * * %s", buffer);
+		argv[3] = buffer2;
+		argv[4] = NULL;
+		_eval(argv, NULL, 0, NULL);
+		vpnlog(VPN_LOG_EXTRA,"Done adding cron job");
 	}
+
 
 	vpnlog(VPN_LOG_INFO,"VPN GUI client backend complete.");
 }
@@ -545,10 +538,16 @@ void stop_ovpn_client(int clientNum)
 
 	vpnlog(VPN_LOG_INFO,"Stopping VPN GUI client backend.");
 
-	// Stop watchdog
-	vpnlog(VPN_LOG_EXTRA, "Stopping OpenVPN watchdog.");
-	sprintf(buffer, "/var/run/vpnc-watchdog%d.pid", clientNum);
-	kill_pidfile_s_rm(buffer, SIGTERM);
+	// Remove cron job
+	vpnlog(VPN_LOG_EXTRA,"Removing cron job");
+	argv[0] = "cru";
+	argv[1] = "d";
+	sprintf(buffer, "CheckVPNClient%d", clientNum);
+	argv[2] = buffer;
+	argv[3] = NULL;
+	_eval(argv, NULL, 0, NULL);
+	vpnlog(VPN_LOG_EXTRA,"Done removing cron job");
+
 
 	// Stop the VPN client
 	vpnlog(VPN_LOG_EXTRA,"Stopping OpenVPN client.");
@@ -1332,11 +1331,6 @@ void start_ovpn_server(int serverNum)
 	eval("/usr/bin/unix2dos", buffer);
 	vpnlog(VPN_LOG_EXTRA,"Done writing client config file");
 
-	// Run postconf custom script on it if it exists
-	sprintf(buffer, "openvpnserver%d", serverNum);
-	sprintf(buffer2, "/etc/openvpn/server%d/config.ovpn", serverNum);
-	run_postconf(buffer, buffer2);
-
 	// Create firewall rules
 	vpnlog(VPN_LOG_EXTRA,"Creating firewall rules");
 	mkdir("/etc/openvpn/fw", 0700);
@@ -1377,6 +1371,11 @@ void start_ovpn_server(int serverNum)
 	fclose(fp);
 	vpnlog(VPN_LOG_EXTRA,"Done creating firewall rules");
 
+	// Run postconf custom script on it if it exists
+	sprintf(buffer, "openvpnserver%d", serverNum);
+	sprintf(buffer2, "/etc/openvpn/server%d/config.ovpn", serverNum);
+	run_postconf(buffer, buffer2);
+
 	// Run the firewall rules
 	vpnlog(VPN_LOG_EXTRA,"Running firewall rules");
 	sprintf(buffer, "/etc/openvpn/fw/server%d-fw.sh", serverNum);
@@ -1396,45 +1395,40 @@ void start_ovpn_server(int serverNum)
 	{
 		vpnlog(VPN_LOG_ERROR,"Starting VPN instance failed...");
 		stop_ovpn_server(serverNum);
+		nvram_pf_set(prefix, "state", "-1");
 		return;
 	}
 	vpnlog(VPN_LOG_EXTRA,"Done starting openvpn");
-
-	// watchdog
-	sprintf(buffer, "/etc/openvpn/server%d/vpns-watchdog%d.sh", serverNum, serverNum);
-	if (fp = fopen(buffer, "w")) {
-		chmod(buffer, S_IRUSR|S_IWUSR|S_IXUSR);
-		fprintf(fp, "#!/bin/sh\n"
-			    "while :\n"
-			    "do\n"
-			    "if [ -z $(pidof vpnserver%d) ]\n"
-			    "then\n"
-			    "service restart_vpnserver%d\n"
-			    "exit\n"
-			    "fi\n"
-			    "sleep 60\n"
-			    "done\n",
-			    serverNum, serverNum);
-		fclose(fp);
-
-		argv[0] = buffer;
-		argv[1] = NULL;
-		_eval(argv, NULL, 0, &pid);
-                sprintf(buffer, "/var/run/vpns-watchdog%d.pid", serverNum);
-
-                if (fp = fopen(buffer, "w")) {
-                        fprintf(fp, "%d", pid);
-                        fclose(fp);
-			vpnlog(VPN_LOG_EXTRA,"VPN watchdog started.");
-                } else {
-			kill(pid, SIGTERM);
-                }
-	}
 
 	if ( cryptMode == SECRET )
 	{
 		nvram_pf_set(prefix, "state", "2");	//running
 		nvram_pf_set(prefix, "errno", "0");
+	}
+
+	// watchdog
+	sprintf(buffer, "/etc/openvpn/server%d/vpns-watchdog%d.sh", serverNum, serverNum);
+	if ((fp = fopen(buffer, "w"))) {
+		char taskname[20];
+
+		chmod(buffer, S_IRUSR|S_IWUSR|S_IXUSR);
+		fprintf(fp, "#!/bin/sh\n"
+		            "if [ -z $(pidof vpnserver%d) ]\n"
+		            "then\n"
+		            "   service restart_vpnserver%d\n"
+		            "fi\n",
+		            serverNum, serverNum);
+		fclose(fp);
+
+		argv[0] = "cru";
+		argv[1] = "a";
+		sprintf(taskname, "CheckVPNServer%d", serverNum);
+		argv[2] = taskname;
+		sprintf(buffer2, "*/2 * * * * %s", buffer);
+		argv[3] = buffer2;
+		argv[4] = NULL;
+		_eval(argv, NULL, 0, NULL);
+		vpnlog(VPN_LOG_EXTRA,"Done adding cron job");
 	}
 
 	vpnlog(VPN_LOG_INFO,"VPN GUI server backend complete.");
@@ -1454,10 +1448,15 @@ void stop_ovpn_server(int serverNum)
 
 	vpnlog(VPN_LOG_INFO,"Stopping VPN GUI server backend.");
 
-        // Stop watchdog
-        vpnlog(VPN_LOG_EXTRA, "Stopping OpenVPN watchdog.");
-        sprintf(buffer, "/var/run/vpns-watchdog%d.pid", serverNum);
-        kill_pidfile_s_rm(buffer, SIGTERM);
+	// Remove cron job
+	vpnlog(VPN_LOG_EXTRA,"Removing cron job");
+	argv[0] = "cru";
+	argv[1] = "d";
+	sprintf(buffer, "CheckVPNServer%d", serverNum);
+	argv[2] = buffer;
+	argv[3] = NULL;
+	_eval(argv, NULL, 0, NULL);
+	vpnlog(VPN_LOG_EXTRA,"Done removing cron job");
 
 	// Stop the VPN server
 	vpnlog(VPN_LOG_EXTRA,"Stopping OpenVPN server.");

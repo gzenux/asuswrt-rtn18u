@@ -483,7 +483,7 @@ static int build_temp_rootfs(const char *newroot)
 		"usb-common\\|"			/* usb-common.ko, kernel 3.2 or above */
 #endif
 #endif
-		"nvram_linux\\)";		/* nvram_linux.ko */
+		"nvram_linux\\)'";		/* nvram_linux.ko */
 
 	if (!newroot || *newroot == '\0')
 		newroot = TMP_ROOTFS_MNT_POINT;
@@ -1111,7 +1111,9 @@ void gen_apmode_dnsmasq(void)
 	fprintf(fp,"dhcp-range=guest,%s2,%s254,%s,%ds\n",
                                         glan,glan, nvram_safe_get("lan_netmask_rt"), 86400);
 	fprintf(fp,"dhcp-option=lan,3,%s\n",APMODE_BRGUEST_IP);
-	fprintf(fp,"dhcp-option=lan,252,\n");
+	if (nvram_get_int("dhcpd_filter_wpad")) {
+		fprintf(fp,"dhcp-option=lan,252,\n");
+	}
 	fprintf(fp,"dhcp-authoritative\n");
  	fprintf(fp,"listen-address=127.0.0.1,%s\n",nvram_safe_get("lan_ipaddr"));
  	fprintf(fp,"no-dhcp-interface=%s\n",nvram_safe_get("lan_ifname"));
@@ -1516,8 +1518,9 @@ void start_dnsmasq(void)
 		}
 #endif
 		/* Shut up WPAD info requests */
-		fprintf(fp, "dhcp-option=lan,252,\"\\n\"\n");
-
+		if (nvram_get_int("dhcpd_filter_wpad")) {
+			fprintf(fp, "dhcp-option=lan,252,\"\\n\"\n");
+		}
 #if defined(RTCONFIG_TR069) && !defined(RTCONFIG_TR181)
 		if (ether_atoe(get_lan_hwaddr(), hwaddr)) {
 			snprintf(buffer, sizeof(buffer), "%02X%02X%02X", hwaddr[0], hwaddr[1], hwaddr[2]);
@@ -3301,7 +3304,7 @@ start_ddns(void)
 		_eval(argv, NULL, 0, &pid);
 	} else {	// Custom DDNS
 		// Block until it completes and updates the DDNS update results in nvram
-		run_custom_script_blocking("ddns-start", wan_ip);
+		run_custom_script_blocking("ddns-start", wan_ip, NULL);
 		return 0;
 	}
 
@@ -8622,7 +8625,7 @@ stop_usbled(void)
 void start_cron(void)
 {
 	stop_cron();
-	eval("crond");
+	eval("crond", "-l", "9");
 }
 
 
@@ -8912,7 +8915,7 @@ void factory_reset(void)
 void handle_notifications(void)
 {
 	char nv[256], nvtmp[32], *cmd[8], *script;
-	char *nvp, *b, *nvptr;
+	char *nvp, *b, *nvptr, *actionstr;
 	int action = 0;
 	int count;
 	int i;
@@ -8951,22 +8954,28 @@ again:
 
 	if(strncmp(cmd[0], "start_", 6)==0) {
 		action |= RC_SERVICE_START;
+		actionstr = "start";
 		script = &cmd[0][6];
 	}
 	else if(strncmp(cmd[0], "stop_", 5)==0) {
 		action |= RC_SERVICE_STOP;
+		actionstr = "stop";
 		script = &cmd[0][5];
 	}
 	else if(strncmp(cmd[0], "restart_", 8)==0) {
 		action |= (RC_SERVICE_START | RC_SERVICE_STOP);
+		actionstr = "restart";
 		script = &cmd[0][8];
 	}
 	else {
 		action = 0;
+		actionstr = "";
 		script = cmd[0];
 	}
 
 	TRACE_PT("running: %d %s\n", action, script);
+
+	run_custom_script_blocking("service-event", actionstr, script);
 
 #ifdef RTCONFIG_USB_MODEM
 	if(!strcmp(script, "simauth")
