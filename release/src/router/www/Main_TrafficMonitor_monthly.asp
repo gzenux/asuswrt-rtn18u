@@ -88,7 +88,7 @@ function redraw()
 	grid += "<th><#tm_transmission#></th>";
 	grid += "<th><#Total#></th></tr>";
 
-	for (i = 0; i < monthly_history.length-1; ++i) {
+	for (i = 0; i < monthly_history.length; ++i) {
 		h = monthly_history[i];
 		yr = (((h[0] >> 16) & 0xFF) + 1900);
 		mo = ((h[0] >>> 8) & 0xFF);
