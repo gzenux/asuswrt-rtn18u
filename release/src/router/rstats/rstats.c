@@ -1098,7 +1098,7 @@ loopagain:
 
 		// todo: split, delay
 
-		if (nvram_get_int("ntp_ready") && strcmp(tmp->desc, "INTERNET")==0) {
+		if (nvram_get_int("ntp_ready") && strncmp(tmp->desc, "INTERNET", 8)==0) {
 			/* Skip this if the time&date is not set yet */
 			/* Skip non-INTERNET interface only 	     */
 			tms = localtime(&now);
