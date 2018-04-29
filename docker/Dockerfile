@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 	flex \
 	g++-multilib gawk gengetopt git gperf gtk-doc-tools \
 	intltool \
-	libtool lzma lzma-dev \
+	libtool libtool-bin lzma lzma-dev \
 	mtd-utils \
 	python \
 	sharutils shtool \
