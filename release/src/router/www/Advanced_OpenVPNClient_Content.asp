@@ -22,6 +22,7 @@
 
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style type="text/css">
 .contentM_qis{
 	width:740px;
@@ -945,7 +946,7 @@ function showConnStatus() {
 			setTimeout("getConnStatus()",2000);
 			break;
 		case "2":	// COnnected
-			code = "Connected (Local: "+ localip + " - Public: " + remoteip + ")";
+			code = "Connected (Local: "+ localip + " - Public: " + remoteip + ") <a href='#' style='padding-left:12px;text-decoration:underline;' onclick='refreshVPNIP();'>Refresh</a>";
 			break;
 		case "-1":
 			switch (client_errno) {
@@ -988,6 +989,10 @@ function defaultSettings() {
 	}
 }
 
+function refreshVPNIP() {
+	httpApi.nvramSet({"action_mode": "refresh_vpn_ip"}, function(){setTimeout("getConnStatus()", 2000);});
+}
+
 </script>
 </head>
 
@@ -1000,7 +1005,7 @@ function defaultSettings() {
 			<tr>
 				<div style="margin-left:30px; margin-top:10px;">
 					<p><#vpn_openvpn_KC_Edit1#> <span style="color:#FFCC00;">----- BEGIN xxx ----- </span>/<span style="color:#FFCC00;"> ----- END xxx -----</span> <#vpn_openvpn_KC_Edit2#>
-					<p>Limit: 3499 characters per field
+					<p>Limit: 7999 characters per field
 				</div>
 				<div style="margin:5px;*margin-left:-5px;"><img style="width: 730px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
 			</tr>			
@@ -1016,37 +1021,37 @@ function defaultSettings() {
 										<tr>
 											<th>Static Key</th>
 											<td>
-												<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_static" name="edit_vpn_crt_client_static" cols="65" maxlength="3499"></textarea>
+												<textarea rows="8" class="textarea_ssh_table" spellcheck="false" id="edit_vpn_crt_client_static" name="edit_vpn_crt_client_static" cols="65" maxlength="7999"></textarea>
 											</td>
 										</tr>
 										<tr>
 											<th id="manualCa">Certificate Authority</th>
 											<td>
-												<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_ca" name="edit_vpn_crt_client_ca" cols="65" maxlength="3499"></textarea>
+												<textarea rows="8" class="textarea_ssh_table" spellcheck="false" id="edit_vpn_crt_client_ca" name="edit_vpn_crt_client_ca" cols="65" maxlength="7999"></textarea>
 											</td>
 										</tr>
 										<tr>
 											<th id="manualCert">Client Certificate</th>
 											<td>
-												<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_crt" name="edit_vpn_crt_client_crt" cols="65" maxlength="3499"></textarea>
+												<textarea rows="8" class="textarea_ssh_table" spellcheck="false" id="edit_vpn_crt_client_crt" name="edit_vpn_crt_client_crt" cols="65" maxlength="7999"></textarea>
 											</td>
 										</tr>
 										<tr>
 											<th id="manualKey">Client Key</th>
 											<td>
-												<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_key" name="edit_vpn_crt_client_key" cols="65" maxlength="3499"></textarea>
+												<textarea rows="8" class="textarea_ssh_table" spellcheck="false" id="edit_vpn_crt_client_key" name="edit_vpn_crt_client_key" cols="65" maxlength="7999"></textarea>
 											</td>
 										</tr>
 										<tr>
 											<th id="manualKey">Certificate Revocation List<br><br><i>(Optional)</i></th>
 											<td>
-												<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_crl" name="edit_vpn_crt_client_crl" cols="65" maxlength="3499"></textarea>
+												<textarea rows="8" class="textarea_ssh_table" spellcheck="false" id="edit_vpn_crt_client_crl" name="edit_vpn_crt_client_crl" cols="65" maxlength="7999"></textarea>
 											</td>
 										</tr>
 										<tr>
 											<th id="manualKey">Extra Chain Certificates<br><br><i>(Optional)</i></th>
 											<td>
-												<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_extra" name="edit_vpn_crt_client_extra" cols="65" maxlength="3499"></textarea>
+												<textarea rows="8" class="textarea_ssh_table" spellcheck="false" id="edit_vpn_crt_client_extra" name="edit_vpn_crt_client_extra" cols="65" maxlength="7999"></textarea>
 											</td>
 										</tr>
 									</table>
@@ -1505,7 +1510,7 @@ function defaultSettings() {
 					</thead>
 					<tr>
 						<td>
-							<textarea rows="8" class="textarea_ssh_table" style="width:99%;" id="vpn_client_custom_x" cols="55" maxlength="2047"></textarea>
+							<textarea rows="8" class="textarea_ssh_table" spellcheck="false" style="width:99%;" id="vpn_client_custom_x" cols="55" maxlength="2047"></textarea>
 						</td>
 					</tr>
 					</table>

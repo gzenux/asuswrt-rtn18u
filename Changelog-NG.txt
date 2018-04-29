@@ -14,15 +14,16 @@ General changes in the 384/NG branch vs 380.xx:
 
 
 384.5 (xx-xxx-2018)
-   - NEW: Merged withh GPL 384_20648 (with RT-AC68U binary blobs)
-   - NEW: Merged RT-AC86U binary blobs and SDK from 384_20467
+   - NEW: Merged withh GPL 384_20648
+   - NEW: Merged RT-AC68U, RT-AC5300 binary blobs from 384_20648
+   - NEW: Merged RT-AC86U SDK and binary blobs from 384_20648
    - NEW: service-event script, executed before any service
            call is made.  First argument is the event (typically
            stop, start or restart), second argument is the target
            (wireless, httpd, etc...).
            Note that this script will block the execution of
            the event until it returns.
-   - CHANGED: Updated OpenVPN to 2.4.5.
+   - CHANGED: Updated OpenVPN to 2.4.6.
    - CHANGED: Updated Dropbear to 2018.76.
    - CHANGED: Updated Openssl to 1.0.2o.
    - CHANGED: Updated miniupnpd to 20180412.
@@ -48,6 +49,8 @@ General changes in the 384/NG branch vs 380.xx:
                 three types of access: LAN only, WAN only (will
                 block access to the LAN, including the router
                 itself) and LAN + WAN.
+              o Keys and certificates can now be up to 7999
+                characters long.
 
    - CHANGED: Revised OpenVPN client options:
               o Reorganized settings into groups
@@ -63,6 +66,10 @@ General changes in the 384/NG branch vs 380.xx:
                 attempts, and affects connection failures.
                 Resolution failures will now retry for an infinite
                 period of time (the default OpenVPN value).
+              o Added "refresh" link which can be clicked to
+                re-query the public IP endpoint of the tunnel
+              o Keys and certificates can now be up to 7999
+                characters long.
 
    - CHANGED: Removed option to resolve names on the
               Log -> Connections page (making that page work

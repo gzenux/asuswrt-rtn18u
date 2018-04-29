@@ -496,9 +496,6 @@ function refresh_ipsec_data() {
 		url: '/ajax_ipsec.asp',
 		dataType: 'script',
 		timeout: 1500,
-		error: function(xhr){
-			setTimeout("refresh_ipsec_data();",1500);
-		},
 		success: function() {
 			ipsec_connect_status_array = [];
 			for(var i = 0; i < ipsec_connect_status.length; i += 1) {
@@ -568,7 +565,7 @@ function refresh_ipsec_data() {
                 <div>&nbsp;</div>
                 <div class="formfonttitle">VPN - Status</div>
                 <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-				<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" id="pptpserver" class="FormTable"></br>
+				<table width="100%" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" id="pptpserver" class="FormTable">
 					<thead>
 						<tr>
 							<td>PPTP VPN Server<span id="pptp_Block_Running" style="background: transparent;"></span></td>
@@ -581,8 +578,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="server1" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="server1" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
 							<td>OpenVPN Server 1<span id="server1_Block_Running" style="background: transparent;"></span></td>
@@ -595,8 +591,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="server2" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="server2" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
 							<td>OpenVPN Server 2<span id="server2_Block_Running" style="background: transparent;"></span></td>
@@ -609,8 +604,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="ipsecsrv" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="ipsecsrv" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
                                                         <td>IPSec Server<span id="ipsec_srv_Block_Running" style="background: transparent;"></span></td>
@@ -622,8 +616,7 @@ function refresh_ipsec_data() {
 						</td>
 					</tr>
                                 </table>
-				<br>
-				<table width="100%" id="client1" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="client1" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
 							<td>OpenVPN <span id="client1_Block_Running" style="background: transparent;"></span></td>
@@ -636,8 +629,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="client2" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="client2" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
 							<td>OpenVPN <span id="client2_Block_Running" style="background: transparent;"></span></td>
@@ -650,8 +642,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="client3" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="client3" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
 							<td>OpenVPN <span id="client3_Block_Running" style="background: transparent;"></span></td>
@@ -664,8 +655,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="client4" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="client4" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
 							<td>OpenVPN <span id="client4_Block_Running" style="background: transparent;"></span></td>
@@ -678,8 +668,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="client5" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
+				<table width="100%" id="client5" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 					<thead>
 						<tr>
 							<td>OpenVPN <span id="client5_Block_Running" style="background: transparent;"></span></td>
@@ -692,8 +681,7 @@ function refresh_ipsec_data() {
 					</tr>
 
 				</table>
-				<br>
-				<table width="100%" id="vpnc" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+				<table width="100%" id="vpnc" style="margin-bottom:20px;" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 					<thead>
 						<tr>
 							<td>PPTP/L2TP Clients<span id="vpnc_Block_Running" style="background: transparent;"></span></td>
