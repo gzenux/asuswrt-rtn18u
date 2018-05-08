@@ -1889,7 +1889,7 @@ endif
 
 	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/usbkbd.*o $(PLATFORMDIR)/extras/ || true
 	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/usbmouse.*o $(PLATFORMDIR)/extras/ || true
-	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/hid*.*o $(PLATFORMDIR)/extras/ || true
+#	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/hid*.*o $(PLATFORMDIR)/extras/ || true
 	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/ipw.*o $(PLATFORMDIR)/extras/ || true
 	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/audio.*o $(PLATFORMDIR)/extras/ || true
 	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/ov51*.*o $(PLATFORMDIR)/extras/ || true
@@ -1902,10 +1902,10 @@ endif
 	@rm -rf $(TARGETDIR)/lib/modules/*/kernel/drivers/sound || true
 	@mv $(TARGETDIR)/lib/modules/*/kernel/sound/* $(PLATFORMDIR)/extras/ || true
 	@rm -rf $(TARGETDIR)/lib/modules/*/kernel/sound || true
-	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/input/* $(PLATFORMDIR)/extras/ || true
-	@rm -rf $(TARGETDIR)/lib/modules/*/kernel/drivers/input || true
-	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/hid/* $(PLATFORMDIR)/extras/ || true
-	@rm -rf $(TARGETDIR)/lib/modules/*/kernel/drivers/hid || true
+#	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/input/* $(PLATFORMDIR)/extras/ || true
+#	@rm -rf $(TARGETDIR)/lib/modules/*/kernel/drivers/input || true
+#	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/hid/* $(PLATFORMDIR)/extras/ || true
+#	@rm -rf $(TARGETDIR)/lib/modules/*/kernel/drivers/hid || true
 	@cp -f $(TARGETDIR)/lib/modules/*/kernel/drivers/net/bcm57*.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_PPTP),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/pptp.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_L2TP),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/pppol2tp.*o $(PLATFORMDIR)/extras/ || true
@@ -2815,6 +2815,7 @@ iptables-1.4.21-install:
 ifeq ($(RTCONFIG_IPV6),y)
 	cd $(INSTALLDIR)/iptables-1.4.21/usr/sbin && \
 		ln -sf xtables-multi ip6tables-restore && \
+		ln -sf xtables-multi ip6tables-save && \
 		ln -sf xtables-multi ip6tables
 	install -D iptables-1.4.21/libiptc/.libs/libip6tc.so $(INSTALLDIR)/iptables-1.4.21/usr/lib/libip6tc.so
 	cd $(INSTALLDIR)/iptables-1.4.21/usr/lib && \
@@ -2882,6 +2883,7 @@ iptables-1.4.x-install:
 ifeq ($(RTCONFIG_IPV6),y)
 	cd $(INSTALLDIR)/iptables-1.4.x/usr/sbin && \
 		ln -sf xtables-multi ip6tables-restore && \
+		ln -sf xtables-multi ip6tables-save && \
 		ln -sf xtables-multi ip6tables
 	install -D iptables-1.4.x/libiptc/.libs/libip6tc.so $(INSTALLDIR)/iptables-1.4.x/usr/lib/libip6tc.so
 	cd $(INSTALLDIR)/iptables-1.4.x/usr/lib && \
