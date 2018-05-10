@@ -856,7 +856,7 @@ int pw_enc(const char *input, char *output)
 
 	n = base64_encode(plain_text, encoded, aesencLen);
 
-	strncpy(output, encoded, n+1);
+	strlcpy(output, encoded, n+1);
 	return 0;
 }
 
@@ -916,7 +916,7 @@ int pw_dec(const char *input, char *output)
 	}
 
 	if(crc_str != NULL && crc_dec_str != NULL && !strcmp(crc_str, crc_dec_str)){
-		strncpy(output, (char *)output_buf+CRC_LEN, n+1-CRC_LEN);
+		strlcpy(output, (char *)output_buf+CRC_LEN, n+1-CRC_LEN);
 		ret = 1;
 	}
 	else{
