@@ -1090,10 +1090,6 @@ int init_enc_nvram(void)
 				enc_nvram(t->name, value, output);
 			}
 			nvram_set(t->name, output);
-		}else{
-			if(len > 23 && len < NVRAM_ENC_MAXLEN && dec_nvram(t->name, value, output)){
-				nvram_set(t->name, output);
-			}
 		}
 	}
 
