@@ -1188,6 +1188,13 @@ static inline int dpsr_mode()
 	return ((sw_mode() == SW_MODE_AP) && (nvram_get_int("wlc_dpsta") == 2));
 }
 
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+static inline int psr_mode()
+{
+        return (sw_mode() == SW_MODE_AP && nvram_get_int("wlc_psta") == 2 && !nvram_get_int("wlc_dpsta"));
+}
+#endif
+
 static inline int get_wps_multiband(void)
 {
 #if defined(RTCONFIG_WPSMULTIBAND)

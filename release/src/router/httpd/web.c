@@ -1828,12 +1828,13 @@ ej_wl_get_guestnetwork(int eid, webs_t wp, int argc, char_t **argv)
 		ret += webWriteNvram2(wp, strcat_r(word2, "_bw_ul", tmp));	// gn_array[][20]
 		ret += websWrite(wp, "\", \"");
 		ret += webWriteNvram2(wp, strcat_r(word2, "_guest_num", tmp));	// gn_array[][21], original 18 in ac88q branch
+		ret += websWrite(wp, "\", \"");
+		ret += webWriteNvram2(wp, strcat_r(word2, "_closed", tmp));	// gn_array[][22]
 		ret += websWrite(wp, "\"]");
 	}
 	ret += websWrite(wp, "]");
 	return ret;
 }
-
 
 /*
  * retreive and convert wan values for specified wan_unit
@@ -4078,8 +4079,12 @@ static int ej_update_variables(int eid, webs_t wp, int argc, char_t **argv) {
 			memset(new_action_script, 0, sizeof(new_action_script));
 			memset(new_action_wait, 0, sizeof(new_action_wait));
 			if( (has_modify & 1) == 0){
-				if( ((has_modify & NVRAM_MODIFIED_DUALWAN_REBOOT) == NVRAM_MODIFIED_DUALWAN_REBOOT) ||
-					(((has_modify & NVRAM_MODIFIED_DUALWAN_ADDUSB) == NVRAM_MODIFIED_DUALWAN_ADDUSB) && usb_modem_plug) ){
+				if( ((has_modify & NVRAM_MODIFIED_DUALWAN_REBOOT) == NVRAM_MODIFIED_DUALWAN_REBOOT) 
+#ifdef RTCONFIG_USB
+				|| (((has_modify & NVRAM_MODIFIED_DUALWAN_ADDUSB) == NVRAM_MODIFIED_DUALWAN_ADDUSB) && usb_modem_plug) 
+#endif
+				)
+				{
 					if(!strstr(action_script, "reboot")){
 						sprintf(new_action_script, "%s reboot", action_script);
 						action_script = (char *)new_action_script;
@@ -4087,6 +4092,7 @@ static int ej_update_variables(int eid, webs_t wp, int argc, char_t **argv) {
 						action_wait = (char *)new_action_wait;
 					}
 				}
+#ifdef RTCONFIG_USB
 				else if( (((has_modify & NVRAM_MODIFIED_DUALWAN_ADDUSB) == NVRAM_MODIFIED_DUALWAN_ADDUSB) && !usb_modem_plug) ||
 						 ((has_modify & NVRAM_MODIFIED_DUALWAN_REMOVEUSB) == NVRAM_MODIFIED_DUALWAN_REMOVEUSB)/* ||
 						 ((has_modify & NVRAM_MODIFIED_DUALWAN_EXCHANGE) == NVRAM_MODIFIED_DUALWAN_EXCHANGE) */){
@@ -4095,6 +4101,7 @@ static int ej_update_variables(int eid, webs_t wp, int argc, char_t **argv) {
 					strcpy(new_action_wait, "10");
 					action_wait = (char *)new_action_wait;
 				}
+#endif
 			}
 #endif
 
@@ -5537,6 +5544,26 @@ static int login_state_hook(int eid, webs_t wp, int argc, char_t **argv){
 
 	return 0;
 }
+
+static int ej_is_logined_hook(int eid, webs_t wp, int argc, char_t **argv){
+	unsigned int ip, login_ip;
+	char ip_str[16], login_ip_str[16];
+	struct in_addr now_ip_addr, login_ip_addr;
+
+	ip = getpeerip(wp);
+	now_ip_addr.s_addr = ip;
+	strlcpy(ip_str, inet_ntoa(now_ip_addr), sizeof(ip_str));
+
+	login_ip = (unsigned int)atoll(nvram_safe_get("login_ip"));
+	login_ip_addr.s_addr = login_ip;
+	strlcpy(login_ip_str, inet_ntoa(login_ip_addr), sizeof(login_ip_str));
+
+	if(strcmp(login_ip_str, "0.0.0.0") && strcmp(login_ip_str, ip_str))
+		return websWrite(wp, "\"0\"");
+	else
+		return websWrite(wp, "\"1\"");
+}
+
 #ifdef RTCONFIG_FANCTRL
 static int get_fanctrl_info(int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -7385,11 +7412,11 @@ static int get_amas_re_client_info(struct json_object *json_object_ptr) { //get 
 				snprintf(band_buf, sizeof(band_buf), "%s", key);
 				json_object_object_foreach(bandObj, key, val) {
 					amas_re_client_attr = json_object_new_object();
-					if(!strcmp(band_buf, "2G"))
+					if(!strcmp(band_buf, "2G") || !strcmp(band_buf, "2G_1") || !strcmp(band_buf, "2G_2") || !strcmp(band_buf, "2G_3"))
 						json_object_object_add(amas_re_client_attr, "isWL", json_object_new_string("1"));
-					else if(!strcmp(band_buf, "5G"))
+					else if(!strcmp(band_buf, "5G") || !strcmp(band_buf, "5G_1") || !strcmp(band_buf, "5G_2") || !strcmp(band_buf, "5G_3"))
 						json_object_object_add(amas_re_client_attr, "isWL", json_object_new_string("2"));
-					else if(!strcmp(band_buf, "5G1"))
+					else if(!strcmp(band_buf, "5G1")|| !strcmp(band_buf, "5G1_1") || !strcmp(band_buf, "5G1_2") || !strcmp(band_buf, "5G1_3"))
 						json_object_object_add(amas_re_client_attr, "isWL", json_object_new_string("3"));
 					else
 						json_object_object_add(amas_re_client_attr, "isWL", json_object_new_string("0"));
@@ -7438,11 +7465,11 @@ static int get_amas_re_client_detail_info(struct json_object *json_object_ptr) {
 					json_object_object_get_ex(val, "rssi", &amas_re_get_rssi);
 					if(amas_re_get_rssi != NULL) {
 						amas_re_client_detail_attr = json_object_new_object();
-						if(!strcmp(band_buf, "2G"))
+						if(!strcmp(band_buf, "2G") || !strcmp(band_buf, "2G_1") || !strcmp(band_buf, "2G_2") || !strcmp(band_buf, "2G_3"))
 							json_object_object_add(amas_re_client_detail_attr, "isWL", json_object_new_string("1"));
-						else if(!strcmp(band_buf, "5G"))
+						else if(!strcmp(band_buf, "5G") || !strcmp(band_buf, "5G_1") || !strcmp(band_buf, "5G_2") || !strcmp(band_buf, "5G_3"))
 							json_object_object_add(amas_re_client_detail_attr, "isWL", json_object_new_string("2"));
-						else if(!strcmp(band_buf, "5G1"))
+						else if(!strcmp(band_buf, "5G1")|| !strcmp(band_buf, "5G1_1") || !strcmp(band_buf, "5G1_2") || !strcmp(band_buf, "5G1_3"))
 							json_object_object_add(amas_re_client_detail_attr, "isWL", json_object_new_string("3"));
 						else
 							json_object_object_add(amas_re_client_detail_attr, "isWL", json_object_new_string("0"));
@@ -9682,7 +9709,8 @@ int ej_shown_language_css(int eid, webs_t wp, int argc, char **argv){
 
 	memset(lang, 0, 4);
 	strcpy(lang, nvram_safe_get("preferred_lang"));
-	if(!strncmp(nvram_safe_get("territory_code"), "JP", 2) && strcmp(nvram_safe_get(ATE_FACTORY_MODE_STR()), "1")){
+
+	if(get_lang_num() == 1){
 		websWrite(wp, "<li style=\"visibility:hidden;\"><dl><a href=\"#\"><dt id=\"selected_lang\"></dt></a>\\n");
 	}
 	else{
@@ -14482,7 +14510,7 @@ do_qis_default(char *url, FILE *stream)
 	flag = websGetVar(wp, "flag","");
 	
 	if(flag != NULL || strcmp(flag, "") != 0){
-		sprintf(redirect_url, "QIS_wizard.htm?flag=%s", flag);
+		snprintf(redirect_url, sizeof(redirect_url), "QIS_wizard.htm?flag=%s", flag);
 		websRedirect(stream, redirect_url);
 	}
 	else
@@ -14972,7 +15000,7 @@ struct mime_handler mime_handlers[] = {
 	{ "upgrade.cgi*", "text/html", no_cache_IE7, do_upgrade_post, do_upgrade_cgi, do_auth},
 	{ "upload.cgi*", "text/html", no_cache_IE7, do_upload_post, do_upload_cgi, do_auth },
 #if defined(RTCONFIG_AIHOME_TUNNEL)
-	{ "enable_ASUS_EULA.cgi*", "text/html", no_cache_IE7, do_upload_post, do_enable_ASUS_EULA_cgi, do_auth },
+	{ "enable_ASUS_EULA.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_enable_ASUS_EULA_cgi, do_auth },
 #endif
 #ifdef RTCONFIG_HTTPS
 	{ "upload_cert_key.cgi*", "text/html", no_cache_IE7, do_upload_cert_key, do_upload_cert_key_cgi, do_auth },
@@ -19374,7 +19402,7 @@ ej_get_upload_icon(int eid, webs_t wp, int argc, char **argv) {
 static int
 ej_get_upload_icon_count_list(int eid, webs_t wp, int argc, char **argv) {
 	int file_count = 0;
-	DIR * dirp;
+	DIR *dirp;
 	struct dirent * entry;
 	char allMacList[1500];
 	memset(allMacList, 0, 1500);
@@ -19387,7 +19415,9 @@ ej_get_upload_icon_count_list(int eid, webs_t wp, int argc, char **argv) {
 		mkdir(JFFS_USERICON, 0755);
 
 	//Write /jffs/usericon/ file count and list
-	dirp = opendir(JFFS_USERICON); /* There should be error handling after this */
+	if ((dirp = opendir(JFFS_USERICON)) == NULL)
+		return 0;
+
 	while ((entry = readdir(dirp)) != NULL) {
 		if (entry->d_type == DT_REG) { /* If the entry is a regular file */
 			strcat(allMacList, entry->d_name);
@@ -22198,6 +22228,7 @@ struct ej_handler ej_handlers[] = {
 	{ "get_parameter", ej_get_parameter},
 	{ "get_ascii_parameter", ej_get_ascii_parameter},
 	{ "login_state_hook", login_state_hook},
+	{ "is_logined_hook", ej_is_logined_hook},
 #ifdef RTCONFIG_FANCTRL
 	{ "get_fanctrl_info", get_fanctrl_info},
 #endif

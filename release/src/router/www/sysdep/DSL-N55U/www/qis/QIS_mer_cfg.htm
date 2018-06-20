@@ -79,6 +79,13 @@ function QKfinish_load_body(){
 		ISP_List_IPTV = RAW_ISP_PTM_List_IPTV;
 	}
 
+	if( document.form.dslx_transmode.value != document.form.dsltmp_transmode.value )
+	{
+		document.form.dslx_transmode.value = document.form.dsltmp_transmode.value;
+		parent.restartDSLSetting = true;
+		document.form.action_script.value = "restart_dsl_setting;".concat(document.form.action_script.value);
+	}
+
 	showHideIPTVList(false);
 	if(haveIPTVService()) {
 		showhide("iptv_manual_setting", 1);
@@ -87,6 +94,7 @@ function QKfinish_load_body(){
 		showhide("iptv_manual_setting", 0);
 	}
 	showhide("STBPortMsg", 0);
+
 }
 
 function submitForm(){
@@ -108,6 +116,7 @@ function submitForm(){
 		document.form.dslx_dhcp_clientid.value = "";
 		document.form.dslx_dhcp_hostname.value = "";
 	}
+
 	document.form.next_page.value = "/qis/QIS_wireless.htm";
 	if(document.form.dsltmp_cfg_iptv_enable.value == "1"){
 		if(valid_ISP())
@@ -351,6 +360,7 @@ function gotoHome() {
 <input type="hidden" name="dslx_dhcp_hostname" value="">
 <input type="hidden" name="dsltmp_qis_pppoe_relay" value="0">
 <input type="hidden" name="dsltmp_transmode" value="">
+<input type="hidden" name="dslx_transmode" value="<% nvram_get("dslx_transmode"); %>">
 <div class="QISmain">
 	<table width="730px">
 		<tr>

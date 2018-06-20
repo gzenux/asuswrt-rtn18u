@@ -571,6 +571,7 @@ obj-$(RTCONFIG_SOC_IPQ8064) += taskset
 # IPQ4019 ILQ 1.1
 #obj-$(RTCONFIG_SOC_IPQ40XX) += qca-nss-drv.ipq40xx
 #obj-$(RTCONFIG_SOC_IPQ40XX) += qca-nss-gmac.ipq40xx
+obj-$(RTCONFIG_SOC_IPQ40XX) += qca-edma.ipq40xx
 obj-$(RTCONFIG_SOC_IPQ40XX) += qca-wifi.ipq40xx
 obj-$(RTCONFIG_SOC_IPQ40XX) += qca-wifi-fw.ipq40xx
 obj-$(RTCONFIG_PCIE_QCA9984) += qca-wifi-fw.qca9984
@@ -1791,10 +1792,12 @@ endif
 
 ifeq ($(RTCONFIG_QCA),y)
 	#FIXME
-ifeq ($(MAPAC1300)$(MAPAC2200)$(VZWAC1300),y)
+ifeq ($(MAPAC1300)$(MAPAC2200)$(VZWAC1300)$(MAPAC3000),y)
 	cd $(TARGETDIR)/usr/lib && \
 		ln -sf ../../lib/ld-uClibc.so.0 ld-uClibc.so.1 && \
 		ln -sf ../../lib/libc.so.0 libc.so.1 && \
+		ln -sf ../../lib/libm.so.0 libm.so.1 && \
+		ln -sf ../../lib/libnsl.so.0 libnsl.so.1 && \
 		ln -sf ../../lib/libdl.so.0 libdl.so.1 && \
 		ln -sf ../../lib/libpthread.so.0 libpthread.so.1
 endif
@@ -2866,7 +2869,7 @@ miniupnpd: $(IPTABLES) miniupnpd/config.h
 		IPTABLESPATH=$(TOP)/$(IPTABLES) \
 		EXTRACFLAGS="-Os $(EXTRACFLAGS) -idirafter$(KERNEL_HEADER_DIR) -ffunction-sections -fdata-sections" \
 		LDFLAGS="$(EXTRALDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(IPTC_LIBDIR)" \
-		LDLIBS="-Wl,--as-needed $(IPTC_LIBS)"
+		LDLIBS="-Wl,--as-needed -lrt $(IPTC_LIBS)"
 
 miniupnpd-clean:
 	-@$(MAKE) -C miniupnpd -f Makefile.asus clean
@@ -2879,7 +2882,7 @@ miniupnpd_1.4: $(IPTABLES) shared/version.h
 		IPTABLESPATH=$(TOP)/$(IPTABLES) \
 		EXTRACFLAGS="-Os $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
 		LDFLAGS="$(EXTRALDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(IPTC_LIBDIR)" \
-		LDLIBS="-Wl,--as-needed $(IPTC_LIBS)"
+		LDLIBS="-Wl,--as-needed -lrt $(IPTC_LIBS)"
 
 miniupnpd_1.4-clean:
 	-@$(MAKE) -C miniupnpd_1.4 -f Makefile.asus clean
@@ -3023,10 +3026,10 @@ libusb10-clean:
 	@rm -f libusb10/stamp-h1
 
 libusb/stamp-h1:
-	cd libusb && CFLAGS="-Wall -Os $(EXTRACFLAGS)" LDFLAGS="$(EXTRALDFLAGS)" \
+	cd libusb && CFLAGS="-Wall -Os $(EXTRACFLAGS)" LIBS="-lpthread -ldl -lc $(EXTRALDFLAGS)" \
 	$(CONFIGURE) --prefix=/usr \
 		LIBUSB_1_0_CFLAGS="-I$(TOP)/libusb10/libusb" \
-		LIBUSB_1_0_LIBS="-L$(TOP)/libusb10/libusb/.libs -lusb-1.0 -lpthread -ldl $(EXTRALDFLAGS)\
+		LIBUSB_1_0_LIBS="-L$(TOP)/libusb10/libusb/.libs -lusb-1.0 \
 		-Wl,-R/lib:/usr/lib:/opt/usr/lib:/usr/local/share"
 	-@$(MAKE) -C libusb clean
 	touch $@
@@ -3045,10 +3048,10 @@ libusb-clean:
 	-@$(MAKE) -C libusb clean
 	@rm -f libusb/stamp-h1
 
-usb-modeswitch-1.2.3: libusb-0.1.12
-	$(MAKE) -C $@ CC=$(CC) CFLAGS="-Os $(EXTRACFLAGS) -I$(TOP)/libusb-0.1.12" LIBS="\
-		-Wl,-R/lib:/usr/lib:/opt/usr/lib:/usr/local/share -lpthread -ldl\
-		-L$(TOP)/libusb-0.1.12/.libs -lusb"
+usb-modeswitch-1.2.3: libusb
+	$(MAKE) -C $@ CC=$(CC) CFLAGS="-Os $(EXTRACFLAGS) -I$(TOP)/libusb/libusb" LIBS="\
+		-Wl,-R/lib:/usr/lib:/opt/usr/lib:/usr/local/share -lpthread -ldl \
+		-L$(TOP)/libusb/libusb/.libs -lusb -L$(TOP)/libusb10/libusb/.libs -lusb-1.0"
 
 usb-modeswitch-1.2.3-install: usb-modeswitch-1.2.3
 	install -D usb-modeswitch-1.2.3/usb_modeswitch $(INSTALLDIR)/usb-modeswitch-1.2.3/usr/sbin/usb_modeswitch
@@ -3838,19 +3841,17 @@ iperf-clean:
 	[ ! -f iperf/Makefile ] || $(MAKE) -C iperf distclean
 	@rm -f iperf/Makefile
 
-lldpd-0.9.8: lldpd-0.9.8/Makefile
+lldpd-0.9.8: $(if $(RTCONFIG_AMAS),json-c,) jansson-2.7 lldpd-0.9.8/Makefile
 	$(MAKE) -C $@
 
-lldpd-0.9.8/Makefile: lldpd-0.9.8-configure
-ifeq ($(HND_ROUTER),y)
-	(cd lldpd-0.9.8 ; LDFLAGS="-L$(TOP)/lldpd-0.9.8/lib -lm -L$(STAGEDIR)/usr/lib -ljansson $(if $(RTCONFIG_AMAS),-L$(TOP)/json-c/.libs,)" \
-	$(CONFIGURE) $(if $(RTCONFIG_AMAS),JSONC_CFLAGS='-I$(TOP)/json-c' JSONC_LIBS='-L$(TOP)/josn-c/.libs -ljson-c',) --prefix= --bindir=/usr/sbin --libdir=/usr/lib --with-privsep-user=admin --with-privsep-group=root --with-privsep-path=/var/run/lldpd $(if $(RTCONFIG_AMAS),--with-json=yes,))
-else	
-	(cd lldpd-0.9.8 ; LDFLAGS="-L$(TOP)/lldpd-0.9.8/lib -lm -L$(STAGEDIR)/usr/lib -ljansson $(if $(RTCONFIG_AMAS),-L$(TOP)/json-c/.libs,)" \
-	$(CONFIGURE) $(if $(RTCONFIG_AMAS),JSONC_CFLAGS='-I$(TOP)/json-c' JSONC_LIBS='-L$(TOP)/josn-c/.libs -ljson-c',) --prefix= --enable-oldies --bindir=/usr/sbin --libdir=/usr/lib --with-privsep-user=admin --with-privsep-group=root --with-privsep-path=/var/run/lldpd $(if $(RTCONFIG_AMAS),--with-json=yes,))
-endif
-lldpd-0.9.8-configure:
-	cd lldpd-0.9.8 && ./autogen.sh
+lldpd-0.9.8/Makefile:
+	cd lldpd-0.9.8 && autoreconf -i -f && \
+	$(CONFIGURE) --prefix= --bindir=/usr/sbin --libdir=/usr/lib \
+	CFLAGS="-g -O2 -I$(STAGEDIR)/usr/include" \
+	LDFLAGS="-L$(TOP)/lldpd-0.9.8/lib -lm -L$(STAGEDIR)/usr/lib -ljansson $(if $(RTCONFIG_AMAS),-L$(TOP)/json-c/.libs,)" \
+	--with-privsep-user=nobody --with-privsep-group=root --with-privsep-path=/var/run/lldpd \
+	$(if $(HND_ROUTER),,--enable-oldies) \
+	$(if $(RTCONFIG_AMAS),--with-json=yes,)
 
 lldpd-0.9.8-install: lldpd-0.9.8
 	install -D lldpd-0.9.8/src/client/.libs/lldpcli $(INSTALLDIR)/lldpd-0.9.8/usr/sbin/lldpcli
@@ -3861,7 +3862,8 @@ lldpd-0.9.8-install: lldpd-0.9.8
 lldpd-0.9.8-clean:
 	[ ! -f lldpd-0.9.8/Makefile ] || $(MAKE) -C lldpd-0.9.8 clean
 	@rm -f lldpd-0.9.8/Makefile
-	@cd lldpd-0.9.8/libevent && make clean
+	[ ! -f lldpd-0.9.8/libevent/Makefile ] || $(MAKE) -C lldpd-0.9.8/libevent clean
+	@rm -f lldpd-0.9.8/libevent/Makefile
 
 libevent-2.0.21: libevent-2.0.21/Makefile
 	$(MAKE) -j 8 -C $@ && $(MAKE) $@-stage && sed 's|/usr/lib|$(STAGEDIR)/usr/lib|g' -i $(STAGEDIR)/usr/lib/libevent.la
@@ -4433,7 +4435,7 @@ endif
 
 wps$(BCMEX)$(EX7)-clean:
 ifeq ($(RTCONFIG_WPS),y)
-	[ ! -f wps$(BCMEX)$(EX7)/Makefile ] || $(MAKE) -C wps$(BCMEX)$(EX7) clean
+	[ ! -f wps$(BCMEX)$(EX7)/Makefile ] || $(MAKE) -C wps$(BCMEX)$(EX7) clean || true
 else
 	# Prevent to use generic rules"
 	@true
@@ -6201,6 +6203,7 @@ qca-hostap-collard.10.4: qca-wifi.collard-10.4 libnl-bf openssl
 qca-hostap: qca-wifi
 	$(MAKE) -C $@
 
+.PHONY: qca-hostap.ipq40xx qca-nss-drv.ipq40xx qca-nss-gmac.ipq40xx qca-rfs.ipq40xx qca-ssdk.ipq40xx qca-ssdk-shell.ipq40xx
 qca-hostap.ipq40xx: qca-wifi.ipq40xx libnl-bf openssl
 	$(MAKE) -C $@ && $(MAKE) $@-stage
 
@@ -6579,7 +6582,11 @@ jansson-2.7-clean:
 	[ ! -f jansson-2.7/Makefile ] || $(MAKE) -C jansson-2.7 clean
 	@rm -f jansson-2.7/Makefile
 
-qca-whc-lbd.ipq40xx: jansson-2.7
+qca-whc-lbd.ipq40xx: jansson-2.7 qca-libhyficommon.ipq40xx qca-wifi.ipq40xx kernel_header
+	[ -f $@/compile ] || $(MAKE) -C $@ && $(MAKE) -C $@ stage
+
+qca-whc-lbd.ipq40xx-install: qca-whc-lbd.ipq40xx/compile
+	$(MAKE) -C qca-whc-lbd.ipq40xx install
 
 libffi-3.0.11/Makefile: libffi-3.0.11/configure
 	cd libffi-3.0.11 && $(CONFIGURE) --prefix=$(STAGEDIR)/usr/local
@@ -6912,14 +6919,14 @@ amas-utils-install:
 json-c/stamp-h1:
 ifeq ($(RTCONFIG_LANTIQ),y)
 	cd $(TOP)/json-c && \
-	$(CONFIGURE) --enable-shared --disable-static \
+	$(CONFIGURE) --prefix=/usr --enable-shared --disable-static \
 	ac_cv_func_realloc_0_nonnull=yes ac_cv_func_malloc_0_nonnull=yes ac_cv_have_decl__isnan=no \
 	CFLAGS="-Os -Wno-error $(EXTRACFLAGS)" \
 	LDFLAGS="$(EXTRALDFLAGS) -Wl,--as-needed -lm"
 	touch $@
 else
 	cd $(TOP)/json-c && \
-	$(CONFIGURE) --enable-shared --disable-static \
+	$(CONFIGURE) --prefix=/usr --enable-shared --disable-static \
 	ac_cv_func_realloc_0_nonnull=yes ac_cv_func_malloc_0_nonnull=yes \
 	CFLAGS="-Os -Wno-error $(EXTRACFLAGS)" \
 	LDFLAGS="$(EXTRALDFLAGS) -Wl,--as-needed -lm"
@@ -6927,7 +6934,7 @@ else
 endif
 
 json-c: json-c/stamp-h1
-	$(MAKE) -C $@
+	$(MAKE) -C $@ && $(MAKE) $@-stage
 
 json-c-install: json-c
 	install -D json-c/.libs/libjson-c.so.2.0.2 $(INSTALLDIR)/json-c/usr/lib/libjson-c.so.2.0.2

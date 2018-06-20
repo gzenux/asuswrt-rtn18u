@@ -63,6 +63,7 @@
 #include "natpmp.h"
 #endif
 #include "commonrdr.h"
+#include "upnputils.h"
 
 #ifndef DEFAULT_CONFIG
 #define DEFAULT_CONFIG "/etc/miniupnpd.conf"
@@ -529,33 +530,30 @@ sigusr1(int sig)
 
 /* record the startup time, for returning uptime */
 static void
-set_startup_time(int sysuptime)
+set_startup_time(void)
 {
-	startup_time = time(NULL);
-	if(sysuptime)
+	startup_time = upnp_time();
+	if(GETFLAG(SYSUPTIMEMASK))
 	{
 		/* use system uptime instead of daemon uptime */
 #if defined(__linux__)
-		char buff[64];
-		int uptime = 0, fd;
-		fd = open("/proc/uptime", O_RDONLY);
-		if(fd < 0)
+		unsigned long uptime = 0;
+		FILE * f = fopen("/proc/uptime", "r");
+		if(f == NULL)
 		{
 			syslog(LOG_ERR, "open(\"/proc/uptime\" : %m");
 		}
 		else
 		{
-			memset(buff, 0, sizeof(buff));
-			if(read(fd, buff, sizeof(buff) - 1) < 0)
+			if(fscanf(f, "%lu", &uptime) != 1)
 			{
-				syslog(LOG_ERR, "read(\"/proc/uptime\" : %m");
+				syslog(LOG_ERR, "fscanf(\"/proc/uptime\") : %m");
 			}
 			else
 			{
-				uptime = atoi(buff);
-				syslog(LOG_INFO, "system uptime is %d seconds", uptime);
+				syslog(LOG_INFO, "system uptime is %lu seconds", uptime);
 			}
-			close(fd);
+			fclose(f);
 			startup_time -= uptime;
 		}
 #elif defined(SOLARIS_KSTATS)
@@ -1070,7 +1068,7 @@ init(int argc, char * * argv, struct runtime_vars * v)
 		return 1;
 	}	
 
-	set_startup_time(GETFLAG(SYSUPTIMEMASK));
+	set_startup_time();
 
 	/* presentation url */
 	if(presurl)
@@ -1311,11 +1309,6 @@ main(int argc, char * * argv)
 	/* main loop */
 	while(!quitting)
 	{
-		/* Correct startup_time if it was set with a RTC close to 0 */
-		if((startup_time<60*60*24) && (time(NULL)>60*60*24))
-		{
-			set_startup_time(GETFLAG(SYSUPTIMEMASK));
-		} 
 		/* Check if we need to send SSDP NOTIFY messages and do it if
 		 * needed */
 		if(gettimeofday(&timeofday, 0) < 0)

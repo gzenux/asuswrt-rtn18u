@@ -375,5 +375,6 @@ extern void page_default_redirect(int fromapp_flag, char* url);
 extern int wave_app_flag;
 extern int wave_handle_app_flag(char *name, int wave_app_flag);
 #endif
+extern int get_lang_num();
 
 #endif /* _httpd_h_ */

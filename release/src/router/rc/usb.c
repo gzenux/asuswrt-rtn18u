@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
+#include <proto/ethernet.h>
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
@@ -328,7 +329,14 @@ void add_usb_host_module(void)
 }
 
 #ifdef RTCONFIG_USB_MODEM
-void add_usb_modem_modules(void){
+static int usb_modem_modules_loaded = 0;
+
+void add_usb_modem_modules(void)
+{
+	if (usb_modem_modules_loaded)
+		return;
+	usb_modem_modules_loaded = 1;
+
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(4,1,0)
 	modprobe("mii"); // for usbnet.
 #endif
@@ -394,6 +402,8 @@ void remove_usb_modem_modules(void)
 #endif
 	modprobe_r("sr_mod");
 	modprobe_r("cdrom");
+
+	usb_modem_modules_loaded = 0;
 }
 
 #ifdef RTCONFIG_INTERNAL_GOBI
@@ -3269,13 +3279,13 @@ void start_dms(void)
 	char dbdir[100];
 	char *argv[] = { MEDIA_SERVER_APP, "-f", "/etc/"MEDIA_SERVER_APP".conf", "-R", NULL, NULL, NULL };
 	static int once = 1;
-	int i, j;
-	char serial[18];
+	unsigned char ea[ETHER_ADDR_LEN];
+	char serial[18], uuid[37];
 	char *nv, *nvp, *b, *c;
 	char *nv2, *nvp2;
 	unsigned char type = 0;
 	char types[5];
-	int index = 4;
+	int j, index = 4;
 
 	if (getpid() != 1) {
 		notify_rc("start_dms");
@@ -3335,10 +3345,12 @@ void start_dms(void)
 
 			nvram_set("dms_dbcwd", dbdir);
 
-			strcpy(serial, nvram_safe_get("lan_hwaddr"));
-			if (strlen(serial))
-				for (i = 0; i < strlen(serial); i++)
-					serial[i] = tolower(serial[i]);
+			if (!ether_atoe(get_lan_hwaddr(), ea))
+				f_read("/dev/urandom", ea, sizeof(ea));
+			snprintf(serial, sizeof(serial), "%02x:%02x:%02x:%02x:%02x:%02x",
+				 ea[0], ea[1], ea[2], ea[3], ea[4], ea[5]);
+			snprintf(uuid, sizeof(uuid), "428d29a2-a33d-4f26-87d3-%02x%02x%02x%02x%02x%02x",
+				 ea[0], ea[1], ea[2], ea[3], ea[4], ea[5]);
 
 			fprintf(f,
 				"network_interface=%s\n"
@@ -3415,9 +3427,16 @@ void start_dms(void)
 
 			fprintf(f,
 				"serial=%s\n"
+				"uuid=%s\n"
 				"model_number=%s.%s\n",
-				serial,
+				serial, uuid,
 				rt_version, rt_serialno);
+
+			nv = nvram_safe_get("dms_sort");
+			if (!*nv || isdigit(*nv))
+				nv = (!*nv || atoi(nv)) ? "+upnp:class,+upnp:originalTrackNumber,+dc:title" : NULL;
+			if (nv)
+				fprintf(f, "force_sort_criteria=%s\n", nv);
 
 			fclose(f);
 		}
@@ -3634,6 +3653,7 @@ stop_mt_daapd()
 // !!TB - webdav
 
 //#ifdef RTCONFIG_WEBDAV
+#if 0
 void write_webdav_permissions()
 {
 	FILE *fp;
@@ -3698,6 +3718,7 @@ void write_webdav_server_pem()
 		system("cp -f /etc/server.pem /tmp/lighttpd/");
 	}
 }
+#endif
 
 void start_webdav(void)	// added by Vanic
 {
@@ -3745,7 +3766,7 @@ ifdef RTCONFIG_TUNNEL
 	chmod("/tmp/lighttpd/www", 0777);
 
 	/* tmp/lighttpd/permissions */
-	write_webdav_permissions();
+	//write_webdav_permissions();
 
 	/* WebDav SSL support */
 	//write_webdav_server_pem();

@@ -444,8 +444,12 @@ function getWANStatus(){
 					document.getElementById("pppoe_detected").style.display = "";
 				}
 			}*/
-			else
+			else if(wanstate == 4 && wansbstate == 3 && wanauxstate == 0 && autodet_state == "3"){
+				redirect_page("QIS_resetModem");
+			}
+			else{
 				redirect_page("internet_type");
+			}
 		}
 	});
 }

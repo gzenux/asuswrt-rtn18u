@@ -103,6 +103,9 @@ endif
 ifneq ($(RTCONFIG_FANCTRL),y)
 	rm -rf $(INSTALLDIR)/www/Advanced_PerformanceTuning_Content.asp
 	rm -rf $(INSTALLDIR)/www/fan.svg
+	rm -rf $(INSTALLDIR)/www/images/btnPressed.png
+	rm -rf $(INSTALLDIR)/www/images/btnReleased.png
+	rm -rf $(INSTALLDIR)/www/images/position.png
 endif
 ifeq ($(RTCONFIG_SFP),y)
 	rm -rf $(INSTALLDIR)/www/images/PrinterServer
@@ -359,9 +362,9 @@ ifneq ($(RTCONFIG_ACCEL_PPTPD), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_VPN_PPTP.asp
 	rm -rf $(INSTALLDIR)/www/ajax_vpnserver_client_status.xml
 endif
-ifneq ($(RTCONFIG_VPNC), y)	
+ifneq ($(RTCONFIG_VPNC), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_VPNClient_Content.asp
-endif	
+endif
 endif
 ifneq ($(RTCONFIG_TIMEMACHINE),y)
 	rm -rf $(INSTALLDIR)/www/Advanced_TimeMachine.asp
@@ -412,11 +415,6 @@ endif
 	rm -rf $(INSTALLDIR)/www/getIPSEvent.asp
 	rm -rf $(INSTALLDIR)/www/getNonIPSChart.asp
 	rm -rf $(INSTALLDIR)/www/tm_eula.htm
-	rm -rf $(INSTALLDIR)/www/JP_tm_eula.htm
-	rm -rf $(INSTALLDIR)/www/tm_eula_TC.htm
-	rm -rf $(INSTALLDIR)/www/tm_eula_SC.htm
-	rm -rf $(INSTALLDIR)/www/tm_eula_FR.htm
-	rm -rf $(INSTALLDIR)/www/tm_eula_RU.htm
 	rm -rf $(INSTALLDIR)/www/js/Chart.js
 	rm -rf $(INSTALLDIR)/www/images/New_ui/HomeProtection.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/TimeLimits.png
@@ -425,9 +423,9 @@ endif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/AiProtection_02.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/AiProtection_03.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/Home_Protection_Scenario.png
-	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo.png	
-	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo_power.png	
-	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo_1.png	
+	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo_power.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo_1.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/sample_35.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/app_icons
 ifneq ($(RTCONFIG_ROG),y)
@@ -458,7 +456,7 @@ ifneq ($(RTCONFIG_SAMBACLIENT),y)
 endif
 endif
 
-ifneq ($(RTCONFIG_SNMPD), y)	
+ifneq ($(RTCONFIG_SNMPD), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_SNMP_Content.asp
 endif
 
@@ -557,7 +555,7 @@ endif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/logout.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/logout_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/upgrade.svg
-	rm -rf $(INSTALLDIR)/www/images/New_ui/upgrade_hover.svg	
+	rm -rf $(INSTALLDIR)/www/images/New_ui/upgrade_hover.svg
 endif
 ifneq ($(RTCONFIG_IPSEC), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_VPN_IPSec.asp
@@ -574,7 +572,7 @@ endif
 ifneq ($(RTCONFIG_CAPTIVE_PORTAL), y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/captive_portal
 	rm -rf $(INSTALLDIR)/www/ajax_captive_portal.asp
-	
+
 	rm -rf $(INSTALLDIR)/www/Captive_Portal.asp
 	rm -rf $(INSTALLDIR)/www/Captive_Portal.css
 	rm -rf $(INSTALLDIR)/www/Captive_Portal_Preview.asp

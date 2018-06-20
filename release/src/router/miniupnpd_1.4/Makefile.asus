@@ -21,7 +21,7 @@ BASEOBJS = miniupnpd.o upnphttp.o upnpdescgen.o upnpsoap.o \
            upnpreplyparse.o minixml.o \
 		   upnpredirect.o getifaddr.o daemonize.o upnpglobalvars.o \
            options.o upnppermissions.o minissdp.o natpmp.o \
-           upnpevents.o
+           upnpevents.o upnputils.o
 
 LNXOBJS = linux/getifstats.o
 NETFILTEROBJS = netfilter/iptcrdr.o
@@ -111,14 +111,15 @@ depend:	config.h
 miniupnpd.o: config.h upnpglobalvars.h upnppermissions.h miniupnpdtypes.h
 miniupnpd.o: upnphttp.h upnpdescgen.h miniupnpdpath.h getifaddr.h upnpsoap.h
 miniupnpd.o: options.h minissdp.h upnpredirect.h daemonize.h upnpevents.h
-miniupnpd.o: natpmp.h commonrdr.h
+miniupnpd.o: natpmp.h commonrdr.h upnputils.h
 upnphttp.o: config.h upnphttp.h upnpdescgen.h miniupnpdpath.h upnpsoap.h
 upnphttp.o: upnpevents.h
-upnpdescgen.o: config.h upnpdescgen.h miniupnpdpath.h upnpglobalvars.h
-upnpdescgen.o: upnppermissions.h miniupnpdtypes.h upnpdescstrings.h
+upnpdescgen.o: config.h getifaddr.h upnpredirect.h upnpdescgen.h
+upnpdescgen.o: miniupnpdpath.h upnpglobalvars.h upnppermissions.h
+upnpdescgen.o: miniupnpdtypes.h upnpdescstrings.h version.h
 upnpsoap.o: config.h upnpglobalvars.h upnppermissions.h miniupnpdtypes.h
 upnpsoap.o: upnphttp.h upnpsoap.h upnpreplyparse.h upnpredirect.h getifaddr.h
-upnpsoap.o: getifstats.h
+upnpsoap.o: getifstats.h upnputils.h
 upnpreplyparse.o: upnpreplyparse.h minixml.h
 minixml.o: minixml.h
 upnpredirect.o: config.h upnpredirect.h upnpglobalvars.h upnppermissions.h
@@ -130,17 +131,20 @@ upnpglobalvars.o: miniupnpdtypes.h
 options.o: options.h config.h upnppermissions.h upnpglobalvars.h
 options.o: miniupnpdtypes.h
 upnppermissions.o: config.h upnppermissions.h
-minissdp.o: config.h upnpdescstrings.h miniupnpdpath.h upnphttp.h
+minissdp.o: config.h upnpdescstrings.h version.h miniupnpdpath.h upnphttp.h
 minissdp.o: upnpglobalvars.h upnppermissions.h miniupnpdtypes.h minissdp.h
 minissdp.o: codelength.h
 natpmp.o: config.h natpmp.h upnpglobalvars.h upnppermissions.h
-natpmp.o: miniupnpdtypes.h getifaddr.h upnpredirect.h commonrdr.h
+natpmp.o: miniupnpdtypes.h getifaddr.h upnpredirect.h commonrdr.h upnputils.h
 upnpevents.o: config.h upnpevents.h miniupnpdpath.h upnpglobalvars.h
-upnpevents.o: upnppermissions.h miniupnpdtypes.h upnpdescgen.h
-linux/getifstats.o: getifstats.h config.h
+upnpevents.o: upnppermissions.h miniupnpdtypes.h upnpdescgen.h upnputils.h
+upnputils.o: config.h upnputils.h upnpglobalvars.h upnppermissions.h
+upnputils.o: miniupnpdtypes.h
+linux/getifstats.o: getifstats.h config.h upnputils.h
 netfilter/iptcrdr.o: netfilter/iptcrdr.h commonrdr.h config.h
 netfilter/iptcrdr.o: upnpglobalvars.h upnppermissions.h miniupnpdtypes.h
 testupnpdescgen.o: config.h upnpdescgen.h
-upnpdescgen.o: config.h version.h upnpdescgen.h miniupnpdpath.h upnpglobalvars.h
-upnpdescgen.o: upnppermissions.h miniupnpdtypes.h upnpdescstrings.h
+upnpdescgen.o: config.h getifaddr.h upnpredirect.h upnpdescgen.h
+upnpdescgen.o: miniupnpdpath.h upnpglobalvars.h upnppermissions.h
+upnpdescgen.o: miniupnpdtypes.h upnpdescstrings.h version.h
 testgetifstats.o: getifstats.h

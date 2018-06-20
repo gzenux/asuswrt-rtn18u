@@ -24,6 +24,7 @@
 #include "upnpredirect.h"
 #include "getifaddr.h"
 #include "getifstats.h"
+#include "upnputils.h"
 
 static void
 BuildSendAndCloseSoapResp(struct upnphttp * h,
@@ -218,7 +219,7 @@ GetStatusInfo(struct upnphttp * h, const char * action)
 	if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN) < 0) {
 		status = "Disconnected";
 	}
-	uptime = (time(NULL) - startup_time);
+	uptime = upnp_get_uptime();
 	bodylen = snprintf(body, sizeof(body), resp,
 		action, "urn:schemas-upnp-org:service:WANIPConnection:1",
 		status, (long)uptime, action);	
