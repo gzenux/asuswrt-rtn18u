@@ -2114,6 +2114,7 @@ function check_wireless(){
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 <input type="hidden" name="wl_auth_mode_x" value="<% nvram_get("wl0_auth_mode_x"); %>">
 <input type="hidden" name="wl_wep_x" value="<% nvram_get("wl0_wep_x"); %>">
+<input type="hidden" name="wl_key_type" value="<% nvram_get("wl_key_type"); %>"><!-- for ralink platform-->
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="">

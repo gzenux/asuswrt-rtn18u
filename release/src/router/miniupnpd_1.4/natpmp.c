@@ -19,6 +19,7 @@
 #include "getifaddr.h"
 #include "upnpredirect.h"
 #include "commonrdr.h"
+#include "upnputils.h"
 
 #ifdef ENABLE_NATPMP
 
@@ -139,7 +140,7 @@ void ProcessIncomingNATPMPPacket(int s)
 	resplen = 8;
 	resp[1] = 128 + req[1];	/* response OPCODE is request OPCODE + 128 */
 	/* setting response TIME STAMP */
-	*((uint32_t *)(resp+4)) = htonl(time(NULL) - startup_time);
+	*((uint32_t *)(resp+4)) = htonl(upnp_time() - startup_time);
 	if(req[0] > 0) {
 		/* invalid version */
 		syslog(LOG_WARNING, "unsupported NAT-PMP version : %u",
@@ -239,7 +240,7 @@ void ProcessIncomingNATPMPPacket(int s)
 				}
 				{ /* do the redirection */
 					char desc[64];
-					unsigned timestamp = (unsigned)(time(NULL) - startup_time)
+					unsigned timestamp = (unsigned)(upnp_time() - startup_time)
 					                      + lifetime;
 					snprintf(desc, sizeof(desc), "NAT-PMP %u", timestamp);
 					/* TODO : check return code */
@@ -347,7 +348,7 @@ void SendNATPMPPublicAddressChangeNotification(int * sockets, int n_sockets)
 	notif[1] = 128;
 	notif[2] = 0;
 	notif[3] = 0;
-	*((uint32_t *)(notif+4)) = htonl(time(NULL) - startup_time);
+	*((uint32_t *)(notif+4)) = htonl(upnp_time() - startup_time);
 #ifndef MULTIPLE_EXTERNAL_IP
 	FillPublicAddressResponse(notif, 0);
 	if(notif[3])

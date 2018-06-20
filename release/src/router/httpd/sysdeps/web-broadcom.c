@@ -4815,6 +4815,7 @@ ej_wl_auth_psta(int eid, webs_t wp, int argc, char_t **argv)
 	int retval = 0, psta = 0;
 	struct ether_addr bssid;
 	unsigned char bssid_null[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+	wlc_ssid_t ssid = { 0, "" };
 	int psta_debug = 0;
 
 	if (nvram_match("psta_debug", "1"))
@@ -4834,6 +4835,11 @@ ej_wl_auth_psta(int eid, webs_t wp, int argc, char_t **argv)
 		goto PSTA_ERR;
 
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+
+        if (wl_ioctl(name, WLC_GET_SSID, &ssid, sizeof(ssid)))
+                goto PSTA_ERR;
+        else if (!nvram_match(strcat_r(prefix, "ssid", tmp), (const char *) ssid.SSID))
+                goto PSTA_ERR;
 
 	if (wl_ioctl(name, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN) != 0)
 		goto PSTA_ERR;

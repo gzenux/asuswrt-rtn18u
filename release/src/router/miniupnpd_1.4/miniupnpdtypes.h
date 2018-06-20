@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include <netinet/in.h>
+#include <net/if.h>
 
 /* structure for storing lan addresses
  * with ascii representation and mask */

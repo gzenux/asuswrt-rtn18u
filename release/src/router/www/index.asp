@@ -2066,6 +2066,7 @@ function closeClientDetailView() {
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 <input type="hidden" name="wl_auth_mode_x" value="<% nvram_get("wl0_auth_mode_x"); %>">
 <input type="hidden" name="wl_wep_x" value="<% nvram_get("wl0_wep_x"); %>">
+<input type="hidden" name="wl_key_type" value="<% nvram_get("wl_key_type"); %>"><!-- for ralink platform-->
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="">
@@ -2408,7 +2409,8 @@ function closeClientDetailView() {
 						<div id="first_wan_title"><#dualwan_primary#>:</div>
 						<div id="primary_pap_concurrent" style="display:none">
 							<div style="padding: 3px 0">2.4 GHz Parent-AP</div>
-							<div id="speed_info_primary">Link Rate:</div>
+							<div id="speed_info_primary" style="display:none">Link Rate:</div>
+							<div id="rssi_info_primary" style="display:none">RSSI:</div>
 						</div>
 						<div style="padding:5px"><strong id="primary_status"></strong></div>
 					</td>
@@ -2419,7 +2421,8 @@ function closeClientDetailView() {
 						<div id="second_wan_title"><#dualwan_secondary#>:</div>
 						<div id="secondary_pap_concurrent" style="display:none">
 							<div style="padding: 3px 0">5 GHz Parent-AP</div>
-							<div id="speed_info_secondary">Link Rate:</div>
+							<div id="speed_info_secondary" style="display:none">Link Rate:</div>
+							<div id="rssi_info_secondary" style="display:none">RSSI:</div>
 						</div>
 						<div style="padding:5px"><strong id="secondary_status"></strong></div>
 					</td>

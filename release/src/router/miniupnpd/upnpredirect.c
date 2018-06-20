@@ -24,6 +24,7 @@
 #include "upnpglobalvars.h"
 #include "upnpevents.h"
 #include "portinuse.h"
+#include "upnputils.h"
 #if defined(USE_NETFILTER)
 #include "netfilter/iptcrdr.h"
 #endif
@@ -173,7 +174,7 @@ int reload_from_lease_file()
 		syslog(LOG_WARNING, "could not unlink file %s : %m", lease_file);
 	}
 
-	current_time = time(NULL);
+	current_time = upnp_time();
 	while(fgets(line, sizeof(line), fd)) {
 		syslog(LOG_DEBUG, "parsing lease file line '%s'", line);
 		proto = line;
@@ -310,7 +311,7 @@ upnp_redirect(const char * rhost, unsigned short eport,
 #endif /* CHECK_PORTINUSE */
 	} else {
 redirect:
-		timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;
+		timestamp = (leaseduration > 0) ? upnp_time() + leaseduration : 0;
 		syslog(LOG_INFO, "redirecting port %hu to %s:%hu protocol %s for: %s",
 			eport, iaddr, iport, protocol, desc);
 		return upnp_redirect_internal(rhost, eport, iaddr, iport, proto,
@@ -382,7 +383,7 @@ upnp_get_redirection_infos(unsigned short eport, const char * protocol,
 	                      0, 0);
 	if(r == 0 &&
 	   timestamp > 0 &&
-	   timestamp > (unsigned int)(current_time = time(NULL))) {
+	   timestamp > (unsigned int)(current_time = upnp_time())) {
 		*leaseduration = timestamp - current_time;
 	} else {
 		*leaseduration = 0;
@@ -415,7 +416,7 @@ upnp_get_redirection_infos_by_index(int index,
 		return -1;
 	else
 	{
-		current_time = time(NULL);
+		current_time = upnp_time();
 		*leaseduration = (timestamp > (unsigned int)current_time)
 		                 ? (timestamp - current_time)
 		                 : 0;
@@ -497,7 +498,7 @@ get_upnp_rules_state_list(int max_rules_number_target)
 	tmp = malloc(sizeof(struct rule_state));
 	if(!tmp)
 		return 0;
-	current_time = time(NULL);
+	current_time = upnp_time();
 	nextruletoclean_timestamp = 0;
 	while(get_redirect_rule_by_index(i, /*ifname*/0, &tmp->eport, 0, 0,
 	                              &iport, &proto, 0, 0, 0,0, &timestamp,

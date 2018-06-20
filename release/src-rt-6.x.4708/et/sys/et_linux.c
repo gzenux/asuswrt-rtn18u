@@ -131,7 +131,7 @@
 	 ((((struct ethervlan_header *)(evh))->ether_type == HTON16(ETHER_TYPE_IP)) || \
 	 (((struct ethervlan_header *)(evh))->ether_type == HTON16(ETHER_TYPE_IPV6))))
 #endif /* PLC */
-#define PKTCMC  32
+#define PKTCMC  2
 struct pktc_data {
 	void	*chead;		/* chain head */
 	void	*ctail;		/* chain tail */

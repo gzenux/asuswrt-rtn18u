@@ -233,6 +233,14 @@ char *get_modelid(int model)
 	char *pid = "unknown";
 	const struct model_s *p;
 
+#ifdef RT4GAC68U
+	pid = nvram_safe_get("productid");
+	if(!strcmp(pid, "4G-AC68U"))
+		return "4G-AC68U";
+	else
+		pid = "unknown";
+#endif
+
 	for (p = &model_list[0]; p->pid; ++p) {
 		if (model == p->model) {
 			pid = p->pid;
