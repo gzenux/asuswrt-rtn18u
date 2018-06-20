@@ -18,6 +18,7 @@
 #include "../upnpglobalvars.h"
 #include "../upnputils.h"
 
+
 #ifdef ENABLE_UPNPPINHOLE
 
 #include <iptables.h>

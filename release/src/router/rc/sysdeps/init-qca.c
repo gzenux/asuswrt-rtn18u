@@ -1834,15 +1834,28 @@ void init_syspara(void)
 	nvram_set("wl1_txbf_en", "0");
 
 #ifdef RTCONFIG_ODMPID
-	FRead(modelname, OFFSET_ODMPID, sizeof(modelname));
-	modelname[sizeof(modelname) - 1] = '\0';
+#ifdef RTCONFIG_32BYTES_ODMPID
+	FRead(modelname, OFFSET_32BYTES_ODMPID, 32);
+	modelname[31] = '\0';
 	if (modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff
 	    && is_valid_hostname(modelname)
 	    && strcmp(modelname, "ASUS")) {
 		nvram_set("odmpid", modelname);
 	} else
 #endif
-		nvram_unset("odmpid");
+	{
+		FRead(modelname, OFFSET_ODMPID, 16);
+		modelname[15] = '\0';
+		if (modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff
+		    && is_valid_hostname(modelname)
+		    && strcmp(modelname, "ASUS")) {
+			nvram_set("odmpid", modelname);
+		} else
+			nvram_unset("odmpid");
+	}
+#else
+	nvram_unset("odmpid");
+#endif
 
 	nvram_set("firmver", rt_version);
 	nvram_set("productid", rt_buildname);

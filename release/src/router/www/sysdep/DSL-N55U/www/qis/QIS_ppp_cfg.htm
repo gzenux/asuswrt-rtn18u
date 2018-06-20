@@ -136,6 +136,13 @@ function QKfinish_load_body(){
 		ISP_List_IPTV = RAW_ISP_PTM_List_IPTV;
 	}
 
+	if( document.form.dslx_transmode.value != document.form.dsltmp_transmode.value )
+	{
+		document.form.dslx_transmode.value = document.form.dsltmp_transmode.value;
+		parent.restartDSLSetting = true;
+		document.form.action_script.value = "restart_dsl_setting;".concat(document.form.action_script.value);
+	}
+
 	showHideIPTVList(false);
 	if(haveIPTVService()) {
 		showhide("iptv_manual_setting", 1);		
@@ -146,6 +153,7 @@ function QKfinish_load_body(){
 	showhide("STBPortMsg", 0);
 	
 	DE_ISP_note_detect();
+
 }
 
 function DE_ISP_note_detect(){
@@ -438,6 +446,7 @@ function gotoHome() {
 <input type="hidden" name="dsltmp_qis_dsl_pvc_set" value="1">
 <input type="hidden" name="dsltmp_qis_pppoe_relay" value="0">
 <input type="hidden" name="dsltmp_transmode" value="">
+<input type="hidden" name="dslx_transmode" value="<% nvram_get("dslx_transmode"); %>">
 <div class="QISmain">
 	<table width="730px">
 		<tr>

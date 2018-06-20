@@ -165,6 +165,19 @@ int ntp_main(int argc, char *argv[])
 		{
 			alarm(SECONDS_TO_WAIT);
 		}
+		else if ((sw_mode() == SW_MODE_REPEATER
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+				|| psr_mode() || mediabridge_mode()
+#elif defined(RTCONFIG_REALTEK)
+				|| mediabridge_mode()
+#endif
+#ifdef RTCONFIG_DPSTA
+				|| dpsta_mode()
+#endif
+			 ) && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED)
+		{
+			alarm(SECONDS_TO_WAIT);
+		}
 		else if (sig_cur == SIGCHLD && nvram_get_int("ntp_ready") != 0 )
 		{ //handle the delayed ntpclient process
 			set_alarm();

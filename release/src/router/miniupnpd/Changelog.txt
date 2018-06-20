@@ -125,6 +125,9 @@ VERSION 2.0 : released on 2016/04/19
   better bind socket to right interface(s),
     using struct ip_mreqn, SO_BINDTODEVICE
 
+2018/03/13:
+  Use monotonic clock for timeouts, etc.
+
 2015/04/30:
   Adding linux/nftables support
 

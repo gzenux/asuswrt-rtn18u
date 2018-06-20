@@ -12,6 +12,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -103,6 +104,7 @@ set_non_blocking(int fd)
 	return 1;
 }
 
+#ifdef ENABLE_PCP
 struct lan_addr_s *
 get_lan_for_peer(const struct sockaddr * peer)
 {
@@ -183,4 +185,40 @@ get_lan_for_peer(const struct sockaddr * peer)
 #endif /* DEBUG */
 	return lan_addr;
 }
+#endif
 
+time_t upnp_time(void)
+{
+#if defined(CLOCK_MONOTONIC_FAST) || defined(CLOCK_MONOTONIC)
+#if defined(CLOCK_MONOTONIC_FAST)
+#define UPNP_CLOCKID CLOCK_MONOTONIC_FAST
+#else
+#define UPNP_CLOCKID CLOCK_MONOTONIC
+#endif
+	struct timespec ts;
+	if (clock_gettime(UPNP_CLOCKID, &ts) < 0)
+		return time(NULL);
+	else
+		return ts.tv_sec;
+#else
+	return time(NULL);
+#endif
+}
+
+time_t upnp_get_uptime(void)
+{
+#if defined(CLOCK_UPTIME_FAST) || defined(CLOCK_UPTIME)
+#if defined(CLOCK_UPTIME_FAST)
+#define UPNP_CLOCKID_UPTIME CLOCK_UPTIME_FAST
+#else
+#define UPNP_CLOCKID_UPTIME CLOCK_UPTIME
+#endif
+	if(GETFLAG(SYSUPTIMEMASK))
+	{
+		struct timespec ts;
+		if (clock_gettime(UPNP_CLOCKID_UPTIME, &ts) >= 0)
+			return ts.tv_sec;
+	}
+#endif
+	return upnp_time() - startup_time;
+}

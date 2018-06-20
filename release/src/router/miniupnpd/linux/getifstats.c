@@ -13,6 +13,7 @@
 
 #include "../config.h"
 #include "../getifstats.h"
+#include "../upnputils.h"
 
 #ifdef GET_WIRELESS_STATS
 #include <unistd.h>

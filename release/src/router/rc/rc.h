@@ -611,7 +611,7 @@ extern void setLANLedOff(void);
 extern void hnd_mfg_init();
 extern void hnd_mfg_services();
 #endif
-extern void mtd_erase_image_update();
+extern int mtd_erase_image_update();
 extern int wait_to_forward_state(char *ifname);
 #endif
 #ifdef RTCONFIG_BCMWL6
@@ -834,6 +834,9 @@ extern void gen_qca_wifi_cfgs(void);
 #endif
 #ifdef HND_ROUTER
 extern void wait_lan_port_to_forward_state(void);
+#endif
+#if defined(RTCONFIG_RALINK) && defined(RTCONFIG_WLMODULE_MT7615E_AP)
+extern void start_wds_ra();
 #endif
 
 // firewall.c
@@ -1080,12 +1083,6 @@ extern int radio_main(int argc, char *argv[]);
 // ntp.c
 extern int ntp_main(int argc, char *argv[]);
 
-// btnsetup.c
-extern int ots_main(int argc, char *argv[]);
-extern void stop_ots(void);
-extern int start_ots(void);
-extern int rand_seed_by_time(void);
-
 // common.c
 extern void killall_tk_period_wait(const char *name, int wait);
 extern void usage_exit(const char *cmd, const char *help) __attribute__ ((noreturn));
@@ -1128,6 +1125,7 @@ extern int mssid_mac_validate(const char *macaddr);
 #ifdef CONFIG_BCMWL5
 extern int setup_dnsmq(int mode);
 #endif
+extern int rand_seed_by_time(void);
 
 // ssh.c
 

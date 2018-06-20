@@ -151,7 +151,7 @@ tomato_save(const char *fname)
 			n = 0;
 			while (upnp_get_redirection_infos_by_index(n, &eport, proto, &iport, iaddr, sizeof(iaddr), desc, sizeof(desc), rhost, sizeof(rhost), &leaseduration) == 0)
 			{
-				timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;
+				timestamp = (leaseduration > 0) ? upnp_time() + leaseduration : 0;
 				fprintf(f, "%s %u %s %u [%s] %u\n", proto, eport, iaddr, iport, desc, timestamp);
 				++n;
 			}
@@ -183,7 +183,7 @@ tomato_load(void)
 
 	if ((f = fopen("/etc/upnp/data", "r")) != NULL)
 	{
-		current_time = time(NULL);
+		current_time = upnp_time();
 		s[sizeof(s) - 1] = 0;
 		while (fgets(s, sizeof(s) - 1, f)) {
 			if (sscanf(s, "%3s %hu %31s %hu [%*[^]]] %u", proto, &eport, iaddr, &iport, &timestamp) >= 4)
