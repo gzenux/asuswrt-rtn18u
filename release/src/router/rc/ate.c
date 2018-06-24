@@ -2004,6 +2004,8 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		puts(get_label_mac());
 		return 0;
 	}
+/* disable get_IpAddr_Lan()/set_IpAddr_Lan() for models which missing updated ate-broadcom.o */
+#ifndef RTN18U
 	else if (!strcmp(command, "Set_IpAddr_Lan")) {
 		if(value == NULL || strlen(value) <= 0){
 			printf("ATE_ERROR_INCORRECT_PARAMETER\n");
@@ -2015,6 +2017,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 	else if (!strcmp(command, "Get_IpAddr_Lan")) {
 		get_IpAddr_Lan();
 	}
+#endif
 	else
 	{
 		puts("ATE_UNSUPPORT");
