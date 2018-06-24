@@ -125,7 +125,7 @@ static int nvram_dec_all(char* buf_ap, char* buf)
 	struct nvram_tuple *t;
 	extern struct nvram_tuple router_defaults[];
 	char *ptr, *item, *value;
-	char name[128], nv[128];
+	char name[128], nv[NVRAM_ENC_MAXLEN+sizeof(name)+1];
 	int len;
 	char output[NVRAM_ENC_MAXLEN];
 	memset(output, 0, sizeof(output));
