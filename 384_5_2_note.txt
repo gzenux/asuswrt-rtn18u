@@ -1,0 +1,23 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+   NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+CAUTION:
+    1. If your device uses stock firmware with version 382_50018
+       or later, please downgrade the stock firmware to 382_39935
+       or before by using ASUS Firmware Restoration utility
+       (https://www.asus.com/support/FAQ/1030652) and then upload
+       this firmware via Web UI.
+    2. Upgrade to this firmware from earlier version (<= 384.4_2)
+       will cause the router being not accessible without
+       resetting by hardware button. Please backup the router
+       settings before upgrade the firmware.
+    3. The online upgrade feature is broken between 384.4_3 and
+       384.5-beta2 due to spwenc.o source replacement. Please do
+       not restore the configuration exported from these versions.
+
+384.5_2
+  Changelog for RT-N18U:
+   - NEW: Merged RT-N18U GPL release 382_50470
+
+  Changelog from Asuswrt-Merlin:
+   - No Updates Available.
