@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ static int read_leases(time_t now, FILE *leasestream)
 	    if ((lease = lease6_allocate(&addr.addr.addr6, lease_type)))
 	      {
 		lease_set_iaid(lease, strtoul(s, NULL, 10));
-		domain = get_domain6((struct in6_addr *)lease->hwaddr);
+		domain = get_domain6(&lease->addr6);
 	      }
 	  }
 #endif

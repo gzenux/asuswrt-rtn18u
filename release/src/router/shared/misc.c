@@ -1465,8 +1465,7 @@ void reset_ipv6_linklocal_addr(const char *ifname, int flush)
 
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-	mac = (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) ?
-		NULL : ifr.ifr_hwaddr.sa_data;
+	mac = (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) ? NULL : ifr.ifr_hwaddr.sa_data;
 	close(fd);
 
 	if (mac == NULL)
@@ -1482,8 +1481,10 @@ void reset_ipv6_linklocal_addr(const char *ifname, int flush)
 
 	if (flush)
 		eval("ip", "-6", "addr", "flush", "dev", (char *) ifname);
-	if (inet_ntop(AF_INET6, &addr, buf, sizeof(buf)))
-		eval("ip", "-6", "addr", "add", buf, "dev", (char *) ifname);
+	if (inet_ntop(AF_INET6, &addr, buf, sizeof(buf))) {
+		strlcat(buf, "/64", sizeof(buf));
+		eval("ip", "-6", "addr", "add", buf, "dev", (char *) ifname, "scope", "link");
+	}
 }
 
 int with_ipv6_linklocal_addr(const char *ifname)
@@ -1510,8 +1511,8 @@ const char *ipv6_gateway_address(void)
 	FILE *fp;
 	struct in6_addr addr;
 	char dest[41], nexthop[41], dev[17];
-	int mask, prefix, metric, flags;
-	int maxprefix, minmetric = minmetric;
+	int mask, prefix, maxprefix, flags;
+	unsigned int metric, minmetric = minmetric;
 
 	fp = fopen("/proc/net/ipv6_route", "r");
 	if (fp == NULL) {
@@ -1523,7 +1524,7 @@ const char *ipv6_gateway_address(void)
 	while (fscanf(fp, "%32s%x%*s%*x%32s%x%*x%*x%x%16s\n",
 		      &dest[7], &prefix, &nexthop[7], &metric, &flags, dev) == 6) {
 		/* Skip interfaces that are down and host routes */
-		if ((flags & (RTF_UP | RTF_HOST)) != RTF_UP)
+		if ((flags & (RTF_UP | RTF_HOST | RTF_REJECT)) != RTF_UP)
 			continue;
 
 		/* Skip dst not in "::/0 - 2000::/3" */
@@ -1545,7 +1546,7 @@ const char *ipv6_gateway_address(void)
 				continue;
 			inet_ntop(AF_INET6, &addr, buf, sizeof(buf));
 		} else
-			snprintf(buf, sizeof(buf), "::");
+			strlcpy(buf, "::", sizeof(buf));
 		maxprefix = prefix;
 		minmetric = metric;
 
@@ -1554,7 +1555,7 @@ const char *ipv6_gateway_address(void)
 	}
 	fclose(fp);
 
-	return *buf ? buf : NULL;
+	return (maxprefix < 0) ? NULL : buf;
 }
 #endif
 
