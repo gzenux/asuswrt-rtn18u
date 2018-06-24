@@ -339,7 +339,11 @@ extern void add_ifttt_flag(void);
 #ifdef RTCONFIG_HTTPS
 extern int gen_ddns_hostname(char *ddns_hostname);
 extern int check_model_name(void);
+#if defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300) || defined(RTAC86U)  // kludge
+extern char *pwenc(char *input, char *output, int len);
+#else
 extern char *pwenc(char *input, char *output);
+#endif
 #endif
 
 #if defined(RTCONFIG_IFTTT) || defined(RTCONFIG_ALEXA)
@@ -383,5 +387,6 @@ extern void page_default_redirect(int fromapp_flag, char* url);
 extern int wave_app_flag;
 extern int wave_handle_app_flag(char *name, int wave_app_flag);
 #endif
+extern int get_lang_num();
 
 #endif /* _httpd_h_ */
