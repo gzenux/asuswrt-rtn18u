@@ -444,8 +444,7 @@ var httpApi ={
 	},
 
 	"faqURL": function(_Objid, _faqNum, _URL1, _URL2){
-		// https://www.asus.com/tw/support/FAQ/1000906
-		var pLang = httpApi.nvramGet(["preferred_lang"]).preferred_lang;		
+		var pLang = httpApi.nvramGet(["preferred_lang"]).preferred_lang;
 		var faqLang = {
 			EN : "",
 			TW : "/tw",
@@ -475,21 +474,14 @@ var httpApi ={
 		}
 		var temp_URL_lang = _URL1+faqLang[pLang]+_URL2+_faqNum;
 		var temp_URL_global = _URL1+_URL2+_faqNum;
-		//console.log(temp_URL_lang);
+		document.getElementById(_Objid).href = temp_URL_global;
 		$.ajax({
 			url: temp_URL_lang,
-			type: 'GET',
-			timeout: 1500,
-			error: function(response){
-				//console.log(response);
-				document.getElementById(_Objid).href = temp_URL_global;
-			},
-			success: function(response) {				
-				//console.log(response);
-				if(response.search("QAPage") >= 0)
+			dataType: "jsonp",
+			statusCode: {
+				200: function(response) {
 					document.getElementById(_Objid).href =  temp_URL_lang;
-				else
-					document.getElementById(_Objid).href = temp_URL_global;		
+				}
 			}
 		});
 	},

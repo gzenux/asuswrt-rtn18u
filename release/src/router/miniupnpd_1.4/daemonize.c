@@ -70,7 +70,7 @@ writepidfile(const char * fname, int pid)
 	if(!fname || (strlen(fname) == 0))
 		return -1;
 	
-	if( (pidfile = open(fname, O_WRONLY|O_CREAT|O_EXCL, 0666)) < 0)
+	if( (pidfile = open(fname, O_WRONLY|O_CREAT, 0644)) < 0)
 	{
 		syslog(LOG_ERR, "Unable to open pidfile for writing %s: %m", fname);
 		return -1;

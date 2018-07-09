@@ -889,7 +889,9 @@ void config_switch(void)
 	dbG("link up wan port(s)\n");
 	eval("rtkswitch", "114");	// link up wan port(s)
 
+#if !defined(RTCONFIG_SOC_IPQ40XX)
 	enable_jumbo_frame();
+#endif
 
 #if defined(RTCONFIG_BLINK_LED)
 	if (is_swports_bled("led_lan_gpio")) {
@@ -1901,6 +1903,18 @@ void init_syspara(void)
 		nvram_set("cfg_group_fac", cfg_group_buf);
 	}
 #endif /* RTCONFIG_CFGSYNC */
+
+ 	{
+                char ipaddr_lan[16];
+                FRead(ipaddr_lan, OFFSET_IPADDR_LAN, sizeof(ipaddr_lan));
+                ipaddr_lan[sizeof(ipaddr_lan)-1] = '\0';
+                if((unsigned char)(ipaddr_lan[0]) != 0xff)
+                {
+                        nvram_set("IpAddr_Lan", ipaddr_lan);
+                } else {
+                        nvram_unset("IpAddr_Lan");
+                }
+        }
 }
 
 #ifdef RTCONFIG_ATEUSB3_FORCE

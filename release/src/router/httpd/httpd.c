@@ -87,9 +87,6 @@ typedef unsigned int __u32;   // 1225 ham
 #define SERVER_PORT_SSL	443
 #endif
 #include "bcmnvram_f.h"
-#ifdef RTCONFIG_TCODE
-#include "tcode.h"
-#endif
 
 /* A multi-family sockaddr. */
 typedef union {
@@ -218,9 +215,6 @@ struct language_table language_tables[] = {
 	{NULL, NULL}
 };
 
-int check_lang_support(char *lang);
-int change_preferred_lang();
-int get_lang_num();
 #endif //TRANSLATE_ON_FLY
 
 /* Forwards. */
@@ -818,7 +812,7 @@ int wave_handle_flag(char *url)
 }
 #endif
 
-static int auto_set_lang = 0; //Prevent to check language every request
+int auto_set_lang = 0; //Prevent to check language every request
 static void
 handle_request(void)
 {
@@ -1524,141 +1518,6 @@ char *config_model_name(char *source, char *find,  char *rep){
  *     <0:	invalid parameter.
  *     >0:	lang can be supported.
  */
-int check_lang_support(char *lang)
-{
-	struct tcode_lang_s *p_lang_list = tcode_lang_list;
-	char tcode[7], *odmpid;
-	int model;
-	int ret = 1;
-
-	model = get_model();
-	odmpid = nvram_safe_get("odmpid");
-
-#ifdef RTCONFIG_TCODE
-	if(!find_word(nvram_safe_get("rc_support"), "tcode") || snprintf(tcode, sizeof(tcode), "%s", nvram_safe_get("territory_code")) <= 0)
-		return 1;
-
-	for(; p_lang_list->model != 0; p_lang_list++) {
-		/* specific model */
-		if( p_lang_list->model == model &&
-			(!p_lang_list->odmpid || !strcmp(p_lang_list->odmpid, odmpid)) &&
-			(!strncmp(p_lang_list->tcode, tcode, 2) || !strcmp(p_lang_list->tcode, "GLOBAL"))){
-			if(strstr(p_lang_list->support_lang, lang))
-				ret = 1;
-			else
-				ret = 0;
-			break;
-		}
-		/* generic models */
-		else if(p_lang_list->model == MODEL_GENERIC &&
-				(!strncmp(p_lang_list->tcode, tcode, 2) || !strcmp(p_lang_list->tcode, "GLOBAL"))){
-			if(strstr(p_lang_list->support_lang, lang))
-				ret = 1;
-			else
-				ret = 0;
-			break;
-		}
-	}
-#endif
-
-	return ret;
-}
-
-int change_preferred_lang()
-{
-	struct tcode_lang_s *p_lang_list = tcode_lang_list;
-	char tcode[7], *odmpid;
-	int model;
-	int ret = 1;
-
-	model = get_model();
-	odmpid = nvram_safe_get("odmpid");
-
-	if(is_firsttime() && !auto_set_lang){
-#ifdef RTCONFIG_TCODE
-		if(!find_word(nvram_safe_get("rc_support"), "tcode") || snprintf(tcode, sizeof(tcode), "%s", nvram_safe_get("territory_code")) <= 0)
-			return 1;
-
-		for(; p_lang_list->model != 0; p_lang_list++) {
-			/* specific model */
-			if( p_lang_list->model == model &&
-				(!p_lang_list->odmpid || !strcmp(p_lang_list->odmpid, odmpid)) &&
-				(!strncmp(p_lang_list->tcode, tcode, 2) || !strcmp(p_lang_list->tcode, "GLOBAL"))){
-				if(p_lang_list->auto_change)
-					ret = 1;
-				else
-					ret = 0;
-				break;
-			}
-			/* generic models */
-			else if(p_lang_list->model == MODEL_GENERIC &&
-					(!strncmp(p_lang_list->tcode, tcode, 2) || !strcmp(p_lang_list->tcode, "GLOBAL"))){
-				if(p_lang_list->auto_change)
-					ret = 1;
-				else
-					ret = 0;
-				break;
-			}
-		}
-#endif
-	}
-	else
-		ret = 0;
-
-	return ret;
-}
-
-int get_lang_num(){
-	int num = 0;
-#ifdef RTCONFIG_TCODE
-	struct tcode_lang_s *p_lang_list = tcode_lang_list;
-	char tcode[7], *odmpid;
-	int model;
-	char *delim = " ";
-	char *lang_list, *p, *substr = NULL;
-
-	model = get_model();
-	odmpid = nvram_safe_get("odmpid");
-
-	if(!find_word(nvram_safe_get("rc_support"), "tcode") ||
-		snprintf(tcode, sizeof(tcode), "%s", nvram_safe_get("territory_code")) <= 0 ||
-		!strcmp(nvram_safe_get(ATE_FACTORY_MODE_STR()), "1"))
-		return 9999;
-
-		for(; p_lang_list->model != 0; p_lang_list++) {
-			/* specific model */
-			if( p_lang_list->model == model &&
-				(!p_lang_list->odmpid || !strcmp(p_lang_list->odmpid, odmpid)) &&
-				(!strncmp(p_lang_list->tcode, tcode, 2) || !strcmp(p_lang_list->tcode, "GLOBAL"))){
-				p = lang_list = strdup(p_lang_list->support_lang);
-				substr = strsep(&p, delim);
-				while(substr){
-					num++;
-					substr = strsep(&p, delim);
-				}
-				free(lang_list);
-				break;
-			}
-			/* generic models */
-			else if(p_lang_list->model == MODEL_GENERIC &&
-					(!strncmp(p_lang_list->tcode, tcode, 2) || !strcmp(p_lang_list->tcode, "GLOBAL"))){
-				p = lang_list = strdup(p_lang_list->support_lang);
-				substr = strsep(&p, delim);
-				while(substr){
-					num++;
-					substr = strsep(&p, delim);
-				}
-				free(lang_list);
-				break;
-			}
-		}
-#endif
-
-	return num;
-
-}
-
-
 
 #ifdef RTCONFIG_AUTODICT
 int

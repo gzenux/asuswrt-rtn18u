@@ -118,7 +118,7 @@ function initial(){
 		var KnownApps = document.form.KnownApps;
 		KnownApps.options[1].selected = 1;
 		change_wizard(KnownApps, 'KnownApps');
-		if(addRow_Group(32, $("#vts_rulelist_0")[0])) applyRule();
+		if(addRow_Group(64, $("#vts_rulelist_0")[0])) applyRule();
 	}
 
 	if(based_modelid == "GT-AC5300" || based_modelid == "GT-AC9600")
@@ -576,7 +576,7 @@ function gen_vts_ruleTable_Block(_tableID) {
 				break;
 		}
 	}
-	html += '<td colspan="7">' + wan_title + '<#IPConnection_VSList_title#>&nbsp;(<#List_limit#>&nbsp;32)</td>';
+	html += '<td colspan="7">' + wan_title + '<#IPConnection_VSList_title#>&nbsp;(<#List_limit#>&nbsp;64)</td>';
 	html += '</tr>';
 	html += '</thead>';
 
@@ -598,7 +598,7 @@ function gen_vts_ruleTable_Block(_tableID) {
 	html += '<input type="text" maxlength="30" class="input_15_table" name="vts_target_x_' + wan_idx + '" id="vts_target_x_' + wan_idx + '" onKeyPress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off"/>';
 	html += '</td>';
 	html += '<td width="16%">';
-	html += '<input type="text" maxlength="" class="input_12_table" name="vts_port_x_' + wan_idx + '" id="vts_port_x_' + wan_idx + '" onkeypress="return validator.isPortRange(this, event)" autocorrect="off" autocapitalize="off"/>';
+	html += '<input type="text" maxlength="60" class="input_12_table" name="vts_port_x_' + wan_idx + '" id="vts_port_x_' + wan_idx + '" onkeypress="return validator.isPortRange(this, event)" autocorrect="off" autocapitalize="off"/>';
 	html += '</td>';
 	html += '<td width="18%">';
 	html += "<div style='display:inline-flex;'>";
@@ -619,7 +619,7 @@ function gen_vts_ruleTable_Block(_tableID) {
 	html += '</select>';
 	html += '</td>';	
 	html += '<td width="6%">';
-	html += '<input type="button" class="add_btn" onClick="addRow_Group(32, this);" name="vts_rulelist_' + wan_idx + '" id="vts_rulelist_' + wan_idx + '" value="">';
+	html += '<input type="button" class="add_btn" onClick="addRow_Group(64, this);" name="vts_rulelist_' + wan_idx + '" id="vts_rulelist_' + wan_idx + '" value="">';
 	html += '</td>';
 	html += '</tr>';
 	html += '</table>';
