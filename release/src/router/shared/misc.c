@@ -1465,8 +1465,7 @@ void reset_ipv6_linklocal_addr(const char *ifname, int flush)
 
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-	mac = (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) ?
-		NULL : ifr.ifr_hwaddr.sa_data;
+	mac = (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) ? NULL : ifr.ifr_hwaddr.sa_data;
 	close(fd);
 
 	if (mac == NULL)
@@ -1482,8 +1481,10 @@ void reset_ipv6_linklocal_addr(const char *ifname, int flush)
 
 	if (flush)
 		eval("ip", "-6", "addr", "flush", "dev", (char *) ifname);
-	if (inet_ntop(AF_INET6, &addr, buf, sizeof(buf)))
-		eval("ip", "-6", "addr", "add", buf, "dev", (char *) ifname);
+	if (inet_ntop(AF_INET6, &addr, buf, sizeof(buf))) {
+		strlcat(buf, "/64", sizeof(buf));
+		eval("ip", "-6", "addr", "add", buf, "dev", (char *) ifname, "scope", "link");
+	}
 }
 
 int with_ipv6_linklocal_addr(const char *ifname)
@@ -1510,8 +1511,8 @@ const char *ipv6_gateway_address(void)
 	FILE *fp;
 	struct in6_addr addr;
 	char dest[41], nexthop[41], dev[17];
-	int mask, prefix, metric, flags;
-	int maxprefix, minmetric = minmetric;
+	int mask, prefix, maxprefix, flags;
+	unsigned int metric, minmetric = minmetric;
 
 	fp = fopen("/proc/net/ipv6_route", "r");
 	if (fp == NULL) {
@@ -1523,7 +1524,7 @@ const char *ipv6_gateway_address(void)
 	while (fscanf(fp, "%32s%x%*s%*x%32s%x%*x%*x%x%16s\n",
 		      &dest[7], &prefix, &nexthop[7], &metric, &flags, dev) == 6) {
 		/* Skip interfaces that are down and host routes */
-		if ((flags & (RTF_UP | RTF_HOST)) != RTF_UP)
+		if ((flags & (RTF_UP | RTF_HOST | RTF_REJECT)) != RTF_UP)
 			continue;
 
 		/* Skip dst not in "::/0 - 2000::/3" */
@@ -1545,7 +1546,7 @@ const char *ipv6_gateway_address(void)
 				continue;
 			inet_ntop(AF_INET6, &addr, buf, sizeof(buf));
 		} else
-			snprintf(buf, sizeof(buf), "::");
+			strlcpy(buf, "::", sizeof(buf));
 		maxprefix = prefix;
 		minmetric = metric;
 
@@ -1554,7 +1555,7 @@ const char *ipv6_gateway_address(void)
 	}
 	fclose(fp);
 
-	return *buf ? buf : NULL;
+	return (maxprefix < 0) ? NULL : buf;
 }
 #endif
 
@@ -1562,7 +1563,7 @@ int wl_client(int unit, int subunit)
 {
 	char *mode = nvram_safe_get(wl_nvname("mode", unit, subunit));
 
-	return ((strcmp(mode, "sta") == 0) || (strcmp(mode, "wet") == 0));
+	return ((strcmp(mode, "sta") == 0) || (strcmp(mode, "wet") == 0) || (strcmp(mode, "psta") == 0) || (strcmp(mode, "psr") == 0));
 }
 
 int foreach_wif(int include_vifs, void *param,
@@ -2756,7 +2757,7 @@ int is_dpsta(int unit)
 	char ifname[80], name[80], *next;
 	int idx = 0;
 
-	if (nvram_get_int("wlc_dpsta") == 1) {
+	if (dpsta_mode()) {
 		foreach (ifname, nvram_safe_get("wl_ifnames"), next) {
 			if (idx == unit) break;
 			idx++;
@@ -2771,16 +2772,6 @@ int is_dpsta(int unit)
 	return 0;
 }
 #endif
-
-int is_dpsr(int unit)
-{
-	if (nvram_get_int("wlc_dpsta") == 2) {
-		if ((num_of_wl_if() == 2) || !unit || unit == nvram_get_int("dpsta_band"))
-			return 1;
-	}
-
-	return 0;
-}
 
 int is_psta(int unit)
 {
@@ -2805,11 +2796,10 @@ int is_psr(int unit)
 #ifdef RTCONFIG_DPSTA
 		is_dpsta(unit) ||
 #endif
-		is_dpsr(unit) ||
 #if defined(RTCONFIG_AMAS) && defined(RTCONFIG_DPSTA)
 		dpsta_mode() ||
 #endif
-		((nvram_get_int("wlc_band") == unit) && !dpsr_mode()
+		((nvram_get_int("wlc_band") == unit)
 #ifdef RTCONFIG_DPSTA
 		&& !dpsta_mode()
 #endif
@@ -3702,12 +3692,9 @@ char *if_nametoalias(char *name, char *alias, int alias_len)
 
 			if (!strcmp(ifname, name)) {
 #if defined(CONFIG_BCMWL5) || defined(RTCONFIG_BCMARM)
-				if (nvram_get_int("sw_mode") == SW_MODE_REPEATER
-#ifdef RTCONFIG_PROXYSTA
-					|| dpsr_mode()
-#ifdef RTCONFIG_DPSTA
+				if (repeater_mode()
+#if defined(RTCONFIG_PROXYSTA) && defined(RTCONFIG_DPSTA)
 					|| dpsta_mode()
-#endif
 #endif
 					)
 					snprintf(alias, alias_len, "%s", unit ? (unit == 2 ? "5G1" : "5G") : "2G");

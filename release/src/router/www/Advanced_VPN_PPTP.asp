@@ -77,8 +77,8 @@ function initial(){
 	var pptpd_clients = '<% nvram_get("pptpd_clients"); %>';
 	
 	show_menu();
-	// https://www.asus.com/US/support/FAQ/1033906
-	httpApi.faqURL("faq", "1033906", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("faq", "114892", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");
 
 	formShowAndHide(document.form.pptpd_enable.value, "pptpd");	
 	if(wans_mode == "lb"){

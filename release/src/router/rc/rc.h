@@ -255,6 +255,8 @@ extern int ate_run_arpstrom(void);
 extern int setCentralLedLv(int lv);
 #endif
 extern int ate_get_fw_upgrade_state(void);
+extern void set_IpAddr_Lan(const char *);
+extern void get_IpAddr_Lan();
 
 /* tcode_rc.c */
 #ifdef RTCONFIG_TCODE
@@ -614,6 +616,9 @@ extern int wait_to_forward_state(char *ifname);
 extern int hw_vht_cap();
 #endif
 extern int wl_control_channel(int unit);
+#ifdef RTCONFIG_DPSTA
+void set_dpsta_ifnames();
+#endif
 #endif
 
 #ifdef RTCONFIG_WIFI_SON
@@ -708,6 +713,9 @@ extern int stop_vlan(void);
 extern int config_vlan(void);
 extern void config_loopback(void);
 #ifdef RTCONFIG_IPV6
+extern int _ipv6_route_add(const char *name, int metric, const char *dst, const char *gateway, int flags);
+extern int ipv6_route_add(const char *name, int metric, const char *dst, const char *gateway);
+extern int ipv6_route_del(const char *name, int metric, const char *dst, const char *gateway);
 extern int ipv6_mapaddr4(struct in6_addr *addr6, int ip6len, struct in_addr *addr4, int ip4mask);
 #endif
 
@@ -907,6 +915,7 @@ extern void update_vpnc_state(char *prefix, int state, int reason);
 extern void rc_ipsec_config_init();
 extern void rc_set_ipsec_stack_block_size();
 extern void run_ipsec_firewall_scripts();
+extern void rc_ipsec_nvram_convert_check();
 #endif
 
 // network.c
@@ -1235,6 +1244,10 @@ extern int vpnc_set_dev_policy_rule();
 #endif
 #endif
 #endif
+
+// ovpn.c
+extern int ovpn_up_main(int argc, char **argv);
+extern int ovpn_down_main(int argc, char **argv);
 
 // openvpn.c
 #ifdef RTCONFIG_OPENVPN
