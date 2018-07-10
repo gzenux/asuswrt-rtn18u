@@ -110,7 +110,7 @@ lease_file_add(unsigned short eport,
 	}
 
 	/* convert our time to unix time
-     * if LEASEFILE_USE_REMAINING_TIME is defined, only the remaining time is stored */
+	 * if LEASEFILE_USE_REMAINING_TIME is defined, only the remaining time is stored */
 	if (timestamp != 0) {
 		timestamp -= upnp_time();
 #ifndef LEASEFILE_USE_REMAINING_TIME

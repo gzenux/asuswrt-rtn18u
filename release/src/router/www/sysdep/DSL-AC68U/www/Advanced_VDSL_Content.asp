@@ -190,8 +190,10 @@ function add_pvc_0() {
 	document.form.dsl_proto.options.add(var_item2);	
 
 	document.form.dsl_proto.value = "<% nvram_get("dsl8_proto"); %>";
-	change_dsl_type("<% nvram_get("dsl8_proto"); %>");
-	fixed_change_dsl_type("<% nvram_get("dsl8_proto"); %>");
+	if(document.form.dsl_proto.value == "")
+		document.form.dsl_proto.value = "dhcp";
+	change_dsl_type(document.form.dsl_proto.value);
+	fixed_change_dsl_type(document.form.dsl_proto.value);
 }
 
 function del_pvc_0(){
@@ -675,6 +677,7 @@ function change_dsl_type(dsl_type){
 		showhide("PPPsetting",1);
 		inputCtrl(document.form.wan_ppp_echo, 1);
 		ppp_echo_control();
+		inputCtrl(document.form.dhcpc_mode, 0);
 	}
 	else if(dsl_type == "static"){
 		inputCtrl(document.form.dslx_dnsenable[0], 0);
@@ -693,6 +696,7 @@ function change_dsl_type(dsl_type){
 		showhide("PPPsetting",0);
 		inputCtrl(document.form.wan_ppp_echo, 0);
 		ppp_echo_control(0);
+		inputCtrl(document.form.dhcpc_mode, 0);
 	}
 	else if(dsl_type == "dhcp"){
 		inputCtrl(document.form.dslx_dnsenable[0], 1);
@@ -712,6 +716,7 @@ function change_dsl_type(dsl_type){
 		showhide("PPPsetting",0);
 		inputCtrl(document.form.wan_ppp_echo, 0);
 		ppp_echo_control(0);
+		inputCtrl(document.form.dhcpc_mode, 1);
 	}
 	else if(dsl_type == "bridge") {
 		inputCtrl(document.form.dslx_dnsenable[0], 0);
@@ -730,6 +735,7 @@ function change_dsl_type(dsl_type){
 		showhide("PPPsetting",0);
 		inputCtrl(document.form.wan_ppp_echo, 0);
 		ppp_echo_control(0);
+		inputCtrl(document.form.dhcpc_mode, 0);
 	}
 	else {
 		alert("error");
@@ -1374,6 +1380,17 @@ function ppp_echo_control(flag){
 											<td>
 												<input type="text" name="dslx_hwaddr" class="input_20_table" maxlength="17" value="<% nvram_get("dslx_hwaddr"); %>" onKeyPress="return validator.isHWAddr(this,event)" autocorrect="off" autocapitalize="off">
 												<input type="button" class="button_gen_long" onclick="showMAC();" value="<#BOP_isp_MACclone#>">
+											</td>
+										</tr>
+										<tr>
+											<th>
+												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,30);"><#DHCP_query_freq#></a>
+											</th>
+											<td>
+												<select name="dhcpc_mode" class="input_option">
+													<option value="0" <% nvram_match(" dhcpc_mode", "0","selected"); %>><#DHCPnormal#></option>
+													<option value="1" <% nvram_match(" dhcpc_mode", "1","selected"); %>><#DHCPaggressive#></option>
+												</select>
 											</td>
 										</tr>
 									</table>

@@ -270,6 +270,7 @@ enum {
 #define RTF_REINSTATE   0x0008  /* reinstate route after tmout	*/
 #define RTF_DYNAMIC     0x0010  /* created dyn. (by redirect)	*/
 #define RTF_MODIFIED    0x0020  /* modified dyn. (by redirect)	*/
+#define RTF_REJECT      0x0200  /* Reject route			*/
 #endif
 #ifndef RTF_DEFAULT
 #define	RTF_DEFAULT	0x00010000	/* default - learned via ND	*/
@@ -1201,14 +1202,9 @@ static inline int client_mode()
 #ifdef RTCONFIG_DPSTA
 static inline int dpsta_mode()
 {
-	return ((sw_mode() == SW_MODE_AP) && (nvram_get_int("wlc_dpsta") == 1));
+	return ((sw_mode() == SW_MODE_AP) && (nvram_get_int("wlc_psta") == 2) && (nvram_get_int("wlc_dpsta") == 1));
 }
 #endif
-
-static inline int dpsr_mode()
-{
-	return ((sw_mode() == SW_MODE_AP) && (nvram_get_int("wlc_dpsta") == 2));
-}
 
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 static inline int psr_mode()
@@ -1697,7 +1693,6 @@ extern int get_wifi_unit(char *wif);
 #ifdef RTCONFIG_DPSTA
 extern int is_dpsta(int unit);
 #endif
-extern int is_dpsr(int unit);
 extern int is_psta(int unit);
 extern int is_psr(int unit);
 extern int psta_exist(void);
@@ -2266,6 +2261,7 @@ enum {
 	CKN_STR4096 = 4096,
 	CKN_STR5500 = 5500,
 	CKN_STR7999 = 7999,
+	CKN_STR8192 = 8192,
 	CKN_STR_MAX = 65535
 };
 

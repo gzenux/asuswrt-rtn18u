@@ -1391,35 +1391,44 @@ void config_ipv6(int enable, int incl_wan)
 {
 	DIR *dir;
 	struct dirent *dirent;
-	int service;
-	int match;
 	char word[256], *next;
+	int service, match;
+
+	if (enable) {
+		enable_ipv6("default");
+		enable_ipv6("all");
+	} else {
+		disable_ipv6("default");
+		disable_ipv6("all");
+	}
 
 	if ((dir = opendir("/proc/sys/net/ipv6/conf")) != NULL) {
 		while ((dirent = readdir(dir)) != NULL) {
-			if (!strcmp(dirent->d_name, ".") || !strcmp(dirent->d_name, ".."))
+			if (dirent->d_name[0] == '.' ||
+			    strcmp(dirent->d_name, "all") == 0 ||
+			    strcmp(dirent->d_name, "default") == 0)
 				continue;
-			if (incl_wan)
-				goto ALL;
-			match = 0;
-			foreach (word, nvram_safe_get("wan_ifnames"), next) {
-				if (!strcmp(dirent->d_name, word))
-				{
-					match = 1;
-					break;
-				}
-			}
-			if (match) continue;
-ALL:
-			if (enable)
-				enable_ipv6(dirent->d_name);
-			else
-				disable_ipv6(dirent->d_name);
 
-			if (enable && strcmp(dirent->d_name, "all") &&
-				strcmp(dirent->d_name, "default") &&
-				!with_ipv6_linklocal_addr(dirent->d_name))
-				reset_ipv6_linklocal_addr(dirent->d_name, 0);
+			if (!incl_wan) {
+				match = 0;
+				foreach (word, nvram_safe_get("wan_ifnames"), next) {
+					if (strcmp(dirent->d_name, word) == 0) {
+						match = 1;
+						break;
+					}
+				}
+				if (match)
+					continue;
+			}
+
+			if (enable) {
+				enable_ipv6(dirent->d_name);
+				if (!with_ipv6_linklocal_addr(dirent->d_name)) {
+					reset_ipv6_linklocal_addr(dirent->d_name, 0);
+					enable_ipv6(dirent->d_name);
+				}
+			} else
+				disable_ipv6(dirent->d_name);
 		}
 		closedir(dir);
 	}
@@ -1450,8 +1459,10 @@ ALL:
 
 void start_lan_ipv6(void)
 {
-	char *lan_ifname = strdup(nvram_safe_get("lan_ifname"));
+	char lan_ifname[16];
 	int unit, ipv6_service = 0;
+
+	strlcpy(lan_ifname, nvram_safe_get("lan_ifname"), sizeof(lan_ifname));
 
 	for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit)
 		if (get_ipv6_service_by_unit(unit) != IPV6_DISABLED) {
@@ -1468,7 +1479,9 @@ void start_lan_ipv6(void)
 
 void stop_lan_ipv6(void)
 {
-	char *lan_ifname = strdup(nvram_safe_get("lan_ifname"));
+	char lan_ifname[16];
+
+	strlcpy(lan_ifname, nvram_safe_get("lan_ifname"), sizeof(lan_ifname));
 
 	stop_ipv6();
 	set_intf_ipv6_dad(lan_ifname, 0, 0);
@@ -1849,7 +1862,6 @@ void start_lan(void)
 	char list[255];
 #endif
 #ifdef RTCONFIG_DPSTA
-	int s = 0;
 	int dpsta = 0;
 	dpsta_enable_info_t info = { 0 };
 #endif
@@ -1886,7 +1898,12 @@ void start_lan(void)
 #endif
 	)
 	{
-		nvram_set("wlc_mode", "0");
+#ifdef RTCONFIG_QTN
+		if (mediabridge_mode() && nvram_get_int("wlc_band") == 1)
+			nvram_set_int("wlc_mode", 1);
+		else
+#endif
+		nvram_set_int("wlc_mode", 0);
 		nvram_set("btn_ez_radiotoggle", "0"); // reset to default
 	}
 
@@ -2007,6 +2024,7 @@ void start_lan(void)
 			eval("igs", "add", "bridge", lan_ifname);
 		}
 #endif
+
 		inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
 
 		if ((lan_ifnames = strdup(nvram_safe_get("lan_ifnames"))) != NULL) {
@@ -2316,19 +2334,20 @@ void start_lan(void)
 					dpsta++;
 
 					/* Assign hw address */
-					if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) >= 0) {
-						strncpy(ifr.ifr_name, "dpsta", IFNAMSIZ);
-						if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0 &&
-						    memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
-							   ETHER_ADDR_LEN) == 0) {
-							ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-							memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
-							ioctl(s, SIOCSIFHWADDR, &ifr);
-						}
-						close(s);
+					strncpy(ifr.ifr_name, "dpsta", IFNAMSIZ);
+					if (ioctl(sfd, SIOCGIFHWADDR, &ifr) == 0 &&
+					    memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
+						   ETHER_ADDR_LEN) == 0) {
+						ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+						memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
+#ifdef RTCONFIG_AMAS
+						if(nvram_get_int("re_mode") == 1)
+							ifr.ifr_hwaddr.sa_data[0] = ifr.ifr_hwaddr.sa_data[0] | 0x02;
+#endif
+						ioctl(sfd, SIOCSIFHWADDR, &ifr);
 					}
 
-					if(dpsta)
+					if (dpsta)
 						add_to_list(ifname, list, sizeof(list));
 				}
 #endif
@@ -2380,7 +2399,7 @@ void start_lan(void)
 #endif
 
 #if defined(RTCONFIG_AMAS) && defined(RTCONFIG_DPSTA)
-				if (dpsta_mode())
+				if (dpsta_mode() && nvram_get_int("re_mode") == 1)
 				foreach (word, nvram_safe_get("wl_ifnames"), next)
 					if (!strcmp(ifname, word))
 						match = 1;
@@ -2499,6 +2518,7 @@ gmac3_no_swbr:
 		ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	else
 		ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, nvram_default_get("lan_ipaddr"), nvram_default_get("lan_netmask"));
+
 #ifdef RTCONFIG_WIFI_SON
 	if(/*nvram_get_int("wl0.1_bss_enabled") &&*/ (sw_mode() == SW_MODE_ROUTER ||(sw_mode() == SW_MODE_AP && nvram_match("cfg_master", "1"))))
 	{
@@ -2523,6 +2543,9 @@ gmac3_no_swbr:
 	gen_qca_wifi_cfgs();
 #ifdef RTCONFIG_WIFI_SON
 	hyfi_process();
+#endif
+#if defined(RTCONFIG_SOC_IPQ40XX)
+	enable_jumbo_frame();
 #endif
 #endif
 
@@ -2644,10 +2667,11 @@ gmac3_no_swbr:
 #ifdef RTCONFIG_WIRELESSREPEATER
 #ifdef RTCONFIG_REALTEK
 /* [MUST]: Need to discuss to add new mode for Media Bridge */
-	if(repeater_mode() || mediabridge_mode()) {
+	if(repeater_mode() || mediabridge_mode())
 #else
-	if(sw_mode() == SW_MODE_REPEATER) {
+	if(sw_mode() == SW_MODE_REPEATER)
 #endif
+	{
 		// Drop the DHCP server from PAP.
 		repeater_pap_disable();
 
@@ -2657,10 +2681,11 @@ gmac3_no_swbr:
 #endif
 #ifdef RTCONFIG_REALTEK
 /* [MUST]: Need to discuss to add new mode for Media Bridge */
-	if(!(access_point_mode())) {
+	if(!(access_point_mode()))
 #else
-	if(sw_mode() != SW_MODE_AP) {
+	if(sw_mode() != SW_MODE_AP)
 #endif
+	{
 		redirect_setting();
 _dprintf("nat_rule: stop_nat_rules 1.\n");
 		stop_nat_rules();
@@ -2828,8 +2853,6 @@ void stop_lan(void)
 	set_intf_ipv6_dad(lan_ifname, 0, 0);
 	config_ipv6(0, 1);
 #endif
-
-	ifconfig("lo", 0, NULL, NULL);
 
 	ifconfig(lan_ifname, 0, NULL, NULL);
 
@@ -3726,6 +3749,9 @@ static int radio_join(int idx, int unit, int subunit, void *param)
 	int i;
 	char s[32], f[64];
 	char ifname[16];
+#ifdef CONFIG_BCMWL5
+	char *amode, sec[16];
+#endif
 
 	int *unit_filter = param;
 	if (*unit_filter >= 0 && *unit_filter != unit) return 0;
@@ -3757,30 +3783,31 @@ static int radio_join(int idx, int unit, int subunit, void *param)
 		int stacheck;
 
 		while (get_radio(unit, 0) && wl_client(unit, subunit)) {
-
 			if (check_wl_client(ifname, unit, subunit)) {
 				stacheck = stacheck_connect;
 			}
 			else {
 #ifdef CONFIG_BCMWL5
-				eval("wl", "-i", ifname, "disassoc");
-#if 1
-				char *amode, sec[16];
+				if (!strlen(nvram_safe_get(wl_nvname("ssid", unit, subunit)))
+					|| nvram_match("x_Setting", "0") || nvram_match("w_Setting", "0")) {
+					eval("wl", "-i", ifname, "disassoc");
+					break;
+				} else if (!strcmp(nvram_safe_get(wl_nvname("mode", unit, subunit)), "wet")) {
+					eval("wl", "-i", ifname, "disassoc");
 
-				snprintf(sec, sizeof(sec), "%s", nvram_safe_get(wl_nvname("akm", unit, subunit)));
+					snprintf(sec, sizeof(sec), "%s", nvram_safe_get(wl_nvname("akm", unit, subunit)));
 
-				if (strstr(sec, "psk2")) amode = "wpa2psk";
-				else if (strstr(sec, "psk")) amode = "wpapsk";
-				else if (strstr(sec, "wpa2")) amode = "wpa2";
-				else if (strstr(sec, "wpa")) amode = "wpa";
-				else if (nvram_get_int(wl_nvname("auth", unit, subunit))) amode = "shared";
-				else amode = "open";
+					if (strstr(sec, "psk2")) amode = "wpa2psk";
+					else if (strstr(sec, "psk")) amode = "wpapsk";
+					else if (strstr(sec, "wpa2")) amode = "wpa2";
+					else if (strstr(sec, "wpa")) amode = "wpa";
+					else if (nvram_get_int(wl_nvname("auth", unit, subunit))) amode = "shared";
+					else amode = "open";
 
-				eval("wl", "-i", ifname, "join", nvram_safe_get(wl_nvname("ssid", unit, subunit)),
-					"imode", "bss", "amode", amode);
-#else
-				eval("wl", "-i", ifname, "join", nvram_safe_get(wl_nvname("ssid", unit, subunit)));
-#endif
+					eval("wl", "-i", ifname, "join", nvram_safe_get(wl_nvname("ssid", unit, subunit)),
+						"imode", "bss", "amode", amode);
+				} else
+					break;
 #elif RTCONFIG_RALINK
 // add ralink client mode code here.
 #elif defined(RTCONFIG_QCA)
@@ -4122,10 +4149,13 @@ lan_up(char *lan_ifname)
 			|| mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
-			|| dpsta_mode()
+			|| (dpsta_mode() && nvram_get_int("re_mode") == 0)
 #endif
-		    ) && nvram_get_int("wlc_state") == WLC_STATE_CONNECTED))
-	{
+		    ) && nvram_get_int("wlc_state") == WLC_STATE_CONNECTED)
+#if defined(RTCONFIG_AMAS) && defined(RTCONFIG_DPSTA)
+		|| (dpsta_mode() && nvram_get_int("re_mode") == 1)
+#endif
+	) {
 		route_add(lan_ifname, 0, "0.0.0.0", nvram_safe_get("lan_gateway"), "0.0.0.0");
 
 		refresh_ntpc();
@@ -4292,7 +4322,7 @@ lan_down(char *lan_ifname)
 #if defined(RTCONFIG_WIRELESSREPEATER) || defined(RTCONFIG_PROXYSTA)
 	if (sw_mode() == SW_MODE_REPEATER) {
 		snprintf(prefix, sizeof(prefix), "wl%d_", nvram_get_int("wlc_band"));
-		inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
+		inet_aton("0.0.0.0", (struct in_addr *)&ip);
 #ifdef __CONFIG_DHDAP__
 		is_dhd = !dhd_probe(nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
 		if (is_dhd)
@@ -4602,7 +4632,12 @@ void start_lan_wl(void)
 #endif
 	)
 	{
-		nvram_set("wlc_mode", "0");
+#ifdef RTCONFIG_QTN
+		if (mediabridge_mode() && nvram_get_int("wlc_band") == 1)
+			nvram_set_int("wlc_mode", 1);
+		else
+#endif
+		nvram_set_int("wlc_mode", 0);
 		nvram_set("btn_ez_radiotoggle", "0"); // reset to default
 	}
 
@@ -4976,12 +5011,13 @@ void start_lan_wl(void)
 						    memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
 							   ETHER_ADDR_LEN) == 0) {
 							ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+							ether_atoe(get_lan_hwaddr(), (unsigned char *) ifr.ifr_hwaddr.sa_data);
 							ioctl(s, SIOCSIFHWADDR, &ifr);
 						}
 						close(s);
 					}
 
-					if(dpsta)
+					if (dpsta)
 						add_to_list(ifname, list2, sizeof(list2));
 				}
 #endif
@@ -5012,7 +5048,7 @@ void start_lan_wl(void)
 #endif
 
 #if defined(RTCONFIG_AMAS) && defined(RTCONFIG_DPSTA)
-				if (dpsta_mode())
+				if (dpsta_mode() && nvram_get_int("re_mode") == 1)
 				foreach (word, nvram_safe_get("wl_ifnames"), next)
 					if (!strcmp(ifname, word))
 						match = 1;
@@ -5123,6 +5159,9 @@ gmac3_no_swbr:
 #endif
 #if defined(RTCONFIG_RALINK) && defined(RTCONFIG_WLMODULE_MT7615E_AP)
 	start_wds_ra();
+#endif
+#if defined(RTCONFIG_QCA) && defined(RTCONFIG_SOC_IPQ40XX)
+	enable_jumbo_frame();
 #endif
 
 	free(lan_ifname);
@@ -5925,22 +5964,20 @@ void start_lan_wlport(void)
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 		&& !psr_mode()
 #ifdef RTCONFIG_DPSTA
-		&& !dpsta_mode()
+		&& !(dpsta_mode() && nvram_get_int("re_mode") == 0)
 #endif
 #endif
 	) return;
 
 	foreach(word, nvram_safe_get("wl_ifnames"), next) {
-		unit = -1;
 		wl_ioctl(word, WLC_GET_INSTANCE, &unit, sizeof(unit));
 		snprintf(wlvif, sizeof(wlvif), "wl%d.1", unit);
 		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 
-		if (is_ure(unit) || is_psta(unit))
+		if (is_ure(unit) || is_psr(unit))
 			eval("wl", "-i", wlvif, "bss", "up");
-		else if (nvram_match(strcat_r(prefix, "radio", tmp), "1"))
+		else if (!is_psta(unit) && nvram_match(strcat_r(prefix, "radio", tmp), "1"))
 			set_radio(1, unit, 0);
-
 	}
 #else
 #ifdef RTCONFIG_PROXYSTA
@@ -5974,7 +6011,7 @@ void start_lan_wlport(void)
 
 void stop_lan_wlport(void)
 {
-	char word[256], *next;
+	char word[256], *next, tmp[100], prefix[sizeof("wlXXXXXX_")];
 	int unit;
 #ifndef CONFIG_BCMWL5
 	int subunit;
@@ -5990,21 +6027,20 @@ void stop_lan_wlport(void)
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 		&& !psr_mode()
 #ifdef RTCONFIG_DPSTA
-		&& !dpsta_mode()
+		&& !(dpsta_mode() && nvram_get_int("re_mode") == 0)
 #endif
 #endif
 	) return;
 
 	foreach(word, nvram_safe_get("wl_ifnames"), next) {
-		unit = -1;
 		wl_ioctl(word, WLC_GET_INSTANCE, &unit, sizeof(unit));
 		snprintf(wlvif, sizeof(wlvif), "wl%d.1", unit);
+		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 
-		if (is_ure(unit) || is_psta(unit))
+		if (is_ure(unit) || is_psr(unit))
 			eval("wl", "-i", wlvif, "bss", "down");
-		else
+		else if (!is_psta(unit) && nvram_match(strcat_r(prefix, "radio", tmp), "1"))
 			set_radio(0, unit, 0);
-
 	}
 #else
 #ifdef RTCONFIG_PROXYSTA

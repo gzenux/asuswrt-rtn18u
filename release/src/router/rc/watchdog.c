@@ -2910,7 +2910,13 @@ void btn_check(void)
 		}
 	}
 #elif defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER)
-	if (!LED_status &&
+	if (!nvram_get_int("AllLED") && LED_status_first)
+	{
+		LED_status_first = 0;
+		LED_status_changed = 1;
+		LED_status_on = 0;
+	}
+	else if (!LED_status &&
 	    (LED_status != LED_status_old))
 	{
 		LED_status_changed = 1;
@@ -2932,12 +2938,18 @@ void btn_check(void)
 #if defined(RTAC68U)
 		if (((!nvram_match("cpurev", "c0") || nvram_get_int("PA") == 5023) && LED_status == LED_status_on) ||
 		      (nvram_match("cpurev", "c0") && nvram_get_int("PA") != 5023 && LED_status_on))
-#elif defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER)
-		if (LED_status_on)
-#endif
 			nvram_set_int("AllLED", 1);
 		else
 			nvram_set_int("AllLED", 0);
+#elif defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER)
+		if (!LED_status && (LED_status != LED_status_old)) {
+			if (LED_status_on)
+				nvram_set_int("AllLED", 1);
+			else
+				nvram_set_int("AllLED", 0);
+			nvram_commit();
+		}
+#endif
 #if defined(RTAC68U)
 		if (((!nvram_match("cpurev", "c0") || nvram_get_int("PA") == 5023) && LED_status == LED_status_on) ||
 		      (nvram_match("cpurev", "c0") && nvram_get_int("PA") != 5023 && LED_status_on))
@@ -3064,7 +3076,6 @@ void btn_check(void)
 
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 	if ((psta_exist() || psr_exist())
-		&& !dpsr_mode()
 #ifdef RTCONFIG_DPSTA
 		&& !dpsta_mode()
 #endif
@@ -3228,13 +3239,9 @@ void btn_check(void)
 
 			if (is_wps_stopped() || --wsc_timeout == 0)
 			{
-#if defined(HND_ROUTER) && defined(RTCONFIG_PROXYSTA)
-				if (!nvram_get_int("wps_band_x") && (is_dpsr(nvram_get_int("wps_band_x"))
-#ifdef RTCONFIG_DPSTA
-					|| is_dpsta(nvram_get_int("wps_band_x"))
-#endif
-				))
-				eval("wl", "spatial_policy", "1");
+#if defined(HND_ROUTER) && defined(RTCONFIG_PROXYSTA) && defined(RTCONFIG_DPSTA)
+				if (!nvram_get_int("wps_band_x") && is_dpsta(nvram_get_int("wps_band_x")))
+					eval("wl", "spatial_policy", "1");
 #endif
 				wsc_timeout = 0;
 
@@ -5679,16 +5686,6 @@ static void auto_firmware_check()
 	}
 #endif
 
-#if 0
-#if defined(RTAC68U)
-	else if (After(get_blver(nvram_safe_get("bl_version")), get_blver("2.1.2.1")) && !nvram_get_int("PA") && !nvram_match("cpurev", "c0"))
-	{
-		periodic_check = 1;
-		nvram_set_int("fw_check_period", 10);
-	}
-#endif
-#endif
-
 	if (bootup_check || periodic_check)
 #ifdef RTCONFIG_FORCE_AUTO_UPGRADE
 		period = (period + 1) % 20;
@@ -5736,19 +5733,14 @@ static void auto_firmware_check()
 				run_custom_script("update-notification", NULL);
 			}
 
-#if defined(RTAC68U) || defined(RTCONFIG_FORCE_AUTO_UPGRADE)
-#if defined(RTAC68U) && !defined(RTAC68A)
-			if (!After(get_blver(nvram_safe_get("bl_version")), get_blver("2.1.2.1")) || nvram_get_int("PA") || nvram_match("cpurev", "c0"))
-				return;
-#endif
-
+#ifdef RTCONFIG_FORCE_AUTO_UPGRADE
 			if (nvram_get("login_ip") && !nvram_match("login_ip", ""))
 				return;
 
 			if (nvram_match("x_Setting", "0"))
 				return;
 
-			if (!nvram_get_int("webs_state_flag"))
+			if (nvram_get_int("webs_state_flag") != 2)
 			{
 				dbg("no need to upgrade firmware\n");
 				return;
@@ -5763,11 +5755,6 @@ static void auto_firmware_check()
 				dbg("error execute upgrade script\n");
 				goto ERROR;
 			}
-
-#ifndef RTCONFIG_FORCE_AUTO_UPGRADE
-			nvram_set("restore_defaults", "1");
-			ResetDefault();
-#endif
 
 #ifdef RTCONFIG_DUAL_TRX
 			int count = 80;
@@ -5785,7 +5772,7 @@ static void auto_firmware_check()
 		}
 		else
 			dbg("could not retrieve firmware information!\n");
-#if defined(RTAC68U) || defined(RTCONFIG_FORCE_AUTO_UPGRADE)
+#ifdef RTCONFIG_FORCE_AUTO_UPGRADE
 ERROR:
 		nvram_set_int("auto_upgrade", 0);
 #endif

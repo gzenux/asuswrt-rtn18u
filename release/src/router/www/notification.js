@@ -125,6 +125,7 @@ var notification = {
 
 			for(i=0; i<notification.array.length; i++){
 				if(notification.array[i] != null && notification.array[i] != "off"){
+					if( i == 3 && band2g_support && notification.array[2] != null && notification.array[2] != "off") continue;
 						txt += '<tr><td><table id="notiDiv_table3" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#232629">';
 		  			txt += '<tr><td><table id="notiDiv_table5" border="0" cellpadding="5" cellspacing="0" bgcolor="#232629" width="100%">';
 		  			txt += '<tr><td valign="TOP" width="100%"><div style="white-space:pre-wrap;font-size:13px;color:white;cursor:text">' + notification.desc[i] + '</div>';

@@ -731,6 +731,10 @@ static const applets_t applets[] = {
 	{ "ovpnc-route-up",	vpnc_ovpn_route_up_main			},
 #endif
 #endif
+#ifdef RTCONFIG_OPENVPN
+	{ "ovpn-up",			ovpn_up_main				},
+	{ "ovpn-down",			ovpn_down_main			},
+#endif
 #ifdef RTCONFIG_EAPOL
 	{ "wpa_cli",			wpacli_main			},
 #endif

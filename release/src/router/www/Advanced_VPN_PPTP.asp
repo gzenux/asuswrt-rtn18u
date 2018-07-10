@@ -76,9 +76,7 @@ function initial(){
 	var pptpd_clients = '<% nvram_get("pptpd_clients"); %>';
 
 	show_menu();
-	// search for "ASUSWRT VPN" FAQ
-	document.getElementById("faq").href = "https://www.asus.com"+get_supportsite_lang()+"search/results.aspx?SearchKey=ASUSWRT%20VPN&SearchType=FAQ&PDLineFilter=1849";
-	// https://www.asus.com/US/support/FAQ/1033906
+	httpApi.faqURL("faq", "114892", "https://www.asus.com", "/support/FAQ/");
 	httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");
 
 	//if support pptpd and openvpnd then show switch button

@@ -501,7 +501,7 @@ wl_defaults(void)
 #endif
 		/* including primary ssid */
 		max_mssid = num_of_mssid_support(unit);
-#ifdef RTCONFIG_PSR_GUEST
+#if defined(RTCONFIG_PSR_GUEST) && !defined(HND_ROUTER)
 		max_mssid++;
 #endif
 
@@ -536,9 +536,9 @@ wl_defaults(void)
 			else if (is_psr(unit) && (subunit == 1)) {
 #ifdef RTCONFIG_DPSTA
 #ifdef RTCONFIG_AMAS
-					nvram_set(strcat_r(prefix, "bss_enabled", tmp), ((!dpsta_mode() && !dpsr_mode()) || is_dpsta(unit) || is_dpsr(unit) || dpsta_mode()) ? "1" : "0");
+					nvram_set(strcat_r(prefix, "bss_enabled", tmp), (!dpsta_mode() || is_dpsta(unit) || (dpsta_mode() && nvram_get_int("re_mode") == 1)) ? "1" : "0");
 #else
-					nvram_set(strcat_r(prefix, "bss_enabled", tmp), ((!dpsta_mode() && !dpsr_mode()) || is_dpsta(unit) || is_dpsr(unit)) ? "1" : "0");
+					nvram_set(strcat_r(prefix, "bss_enabled", tmp), (!dpsta_mode() || is_dpsta(unit) ) ? "1" : "0");
 #endif
 #else
 					nvram_set(strcat_r(prefix, "bss_enabled", tmp), "1");
@@ -1693,9 +1693,16 @@ misc_defaults(int restore_defaults)
 
 	nvram_unset("wps_reset");
 #if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN)
+#if !(defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER))
 	nvram_set_int("AllLED", 1);
 #endif
+#endif
 	nvram_unset("reload_svc_radio");
+
+#ifdef RTCONFIG_DPSTA
+	set_dpsta_ifnames();
+#endif
+
 #ifdef RTCONFIG_AMAS
 	nvram_unset("amesh_found_cap");
 	nvram_unset("amesh_led");
@@ -2745,12 +2752,6 @@ int init_nvram(void)
 #ifdef RTCONFIG_GMAC3
 	char *hw_name = "et0";
 #endif
-#ifdef RTCONFIG_DPSTA
-	char word[256], *next;
-	char list[128];
-	int idx;
-	char uif_list[128];	/* for upstream all ifnames */
-#endif
 
 #if defined (CONFIG_BCMWL5) && defined(RTCONFIG_TCODE)
 	refresh_cfe_nvram();
@@ -2883,24 +2884,6 @@ int init_nvram(void)
 #ifdef RTCONFIG_WIRELESSREPEATER
 	if (sw_mode() != SW_MODE_REPEATER)
 		nvram_set("ure_disable", "1");
-#endif
-
-#ifdef RTCONFIG_DPSTA
-	memset(list, 0, sizeof(list));
-	memset(uif_list, 0, sizeof(uif_list));
-
-	if (dpsta_mode()) {
-		idx = 0;
-		foreach (word, nvram_safe_get("wl_ifnames"), next) {
-			if ((num_of_wl_if() == 2) || !idx || idx == nvram_get_int("dpsta_band"))
-				add_to_list(word, list, sizeof(list));
-			add_to_list(word, uif_list, sizeof(uif_list));
-			idx++;
-		}
-	}
-
-	nvram_set("dpsta_ifnames", list);
-	nvram_set("dpsta_all_ifnames", uif_list);
 #endif
 
 	/* initialize this value to check fw upgrade status */
@@ -8397,6 +8380,10 @@ int init_nvram(void)
 	config_tcode(2);
 #endif
 
+#ifdef RTCONFIG_DPSTA
+	set_dpsta_ifnames();
+#endif
+
 #ifdef RTCONFIG_YANDEXDNS
 #ifdef RTCONFIG_TCODE
 	if (!nvram_contains_word("rc_support", "yadns") &&
@@ -8478,9 +8465,6 @@ int init_nvram(void)
 #endif
 
 #ifdef RTCONFIG_OPENVPN
-#ifdef RTAC68U
-	if (!is_n66u_v2())
-#endif
 	add_rc_support("openvpnd");
 	//nvram_set("vpnc_proto", "disable");
 #endif

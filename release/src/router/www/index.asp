@@ -151,6 +151,7 @@
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script language="JavaScript" type="text/javascript" src="/form.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/asus_eula.js"></script>
 <script>
 //if(usb_support) addNewScript("/disk_functions.js");
 
@@ -240,7 +241,7 @@ function initial(){
 	var isIE6 = navigator.userAgent.search("MSIE 6") > -1;
 	if(isIE6)
 		alert("<#ALERT_TO_CHANGE_BROWSER#>");
-	
+
 	if(dualWAN_support && sw_mode == 1){
 		check_dualwan(wans_flag);
 	}
@@ -362,7 +363,7 @@ function initial(){
 		
 		check_usb3();
 	}
-	
+
 	showMapWANStatus(sw_mode);
 
 	if(sw_mode != "1"){
@@ -456,8 +457,20 @@ function initial(){
 
 	orig_NM_container_height = parseInt($(".NM_radius_bottom_container").css("height"));
 	
+	setTimeout(check_eula, 100);
 }
 
+function check_eula(){
+	var asus_status = httpApi.nvramGet(["ASUS_EULA", "ASUS_EULA_time", "ddns_enable_x", "ddns_server_x"], true);
+	var tm_status = httpApi.nvramGet(["TM_EULA", "TM_EULA_time"], true);
+
+	if( (asus_status.ASUS_EULA == "1" && asus_status.ASUS_EULA_time == "") ||
+		(asus_status.ASUS_EULA == "0" && asus_status.ddns_enable_x == "1" && asus_status.ddns_server_x == "WWW.ASUS.COM") )
+		ASUS_EULA.check("asus");
+
+	if(tm_status.TM_EULA == "1" &&  tm_status.TM_EULA_time == "")
+		ASUS_EULA.check("tm");
+}
 function show_smart_connect_status(){
 	document.getElementById("SmartConnectName").style.display = "";
 	document.getElementById("SmartConnectStatus").style.display = "";

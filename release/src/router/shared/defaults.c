@@ -600,7 +600,7 @@ struct nvram_tuple router_defaults[] = {
 #else
 	{ "wlc_list", "", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wlc_band", "", CKN_STR2, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
-	{ "wlc_ssid", "8f3610e3c9feabed953a6", CKN_STR32, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+	{ "wlc_ssid", "", CKN_STR32, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wlc_wep", "", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wlc_key", "", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wlc_wep_key", "", CKN_STR32, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
@@ -1697,7 +1697,7 @@ struct nvram_tuple router_defaults[] = {
 
 	// VSList
 	{ "vts_enable_x", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
-	{ "vts_rulelist", "", CKN_STR2048, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+	{ "vts_rulelist", "", CKN_STR8192, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 #if defined(RTCONFIG_MULTIWAN_CFG)
 	/* If dualwan are enabled and wans_mode = lb,
 	 * vts_rulelist defines virtual server of primary WAN and

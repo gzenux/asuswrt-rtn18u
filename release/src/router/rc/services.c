@@ -743,9 +743,6 @@ void create_passwd(void)
 			"%s:x:100:100:nas:/dev/null:/dev/null\n"
 #endif	//!!TB
 			"nobody:x:65534:65534:nobody:/dev/null:/dev/null\n"
-#ifdef RTCONFIG_IPSEC
-			"admin:x:0:0:%s:/root:/dev/null\n"
-#endif
 #ifdef RTCONFIG_TOR
 		"tor:x:65533:65533:tor:/dev/null:/dev/null\n"
 #endif
@@ -753,9 +750,6 @@ void create_passwd(void)
 #ifdef RTCONFIG_SAMBASRV	//!!TB
 			, smbd_user
 #endif	//!!TB
-#ifdef RTCONFIG_IPSEC
-			,http_user
-#endif
 			);
 	f_write_string("/etc/passwd", s, 0, 0644);
 	fappend_file("/etc/passwd", "/etc/passwd.custom");
@@ -772,6 +766,9 @@ void create_passwd(void)
 #ifdef RTCONFIG_SAMBASRV	//!!TB
 		"nas:*:100:\n"
 #endif
+#ifdef RTCONFIG_OPENVPN
+		"openvpn:*:200:\n"	/* OpenVPN GID */
+#endif
 		"nobody:*:65534:\n"
 #ifdef RTCONFIG_TOR
 		"tor:*:65533:\n"
@@ -786,6 +783,9 @@ void create_passwd(void)
 		"root:x:0:\n"
 #ifdef RTCONFIG_SAMBASRV	//!!TB
 		"nas:x:100:\n"
+#endif
+#ifdef RTCONFIG_OPENVPN
+		"openvpn:x:200:\n"	/* OpenVPN GID */
 #endif
 		"nobody:x:65534:\n"
 #ifdef RTCONFIG_TOR
@@ -1946,6 +1946,7 @@ void start_ipv6(void)
 			nvram_set(ipv6_nvname("ipv6_rtr_addr"), "");
 		} else
 			add_ip6_lanaddr();
+		nvram_set(ipv6_nvname("ipv6_llremote"), "");
 		nvram_set(ipv6_nvname("ipv6_get_dns"), "");
 		nvram_set(ipv6_nvname("ipv6_get_domain"), "");
 		break;
@@ -1954,6 +1955,7 @@ void start_ipv6(void)
 		nvram_set(ipv6_nvname("ipv6_prefix"), "");
 		nvram_set(ipv6_nvname("ipv6_prefix_length"), "");
 		nvram_set(ipv6_nvname("ipv6_rtr_addr"), "");
+		nvram_set(ipv6_nvname("ipv6_llremote"), "");
 		nvram_set(ipv6_nvname("ipv6_get_dns"), "");
 		nvram_set(ipv6_nvname("ipv6_get_domain"), "");
 		break;
@@ -1963,6 +1965,7 @@ void start_ipv6(void)
 		nvram_set(ipv6_nvname("ipv6_prefix_length"), nvram_safe_get(ipv6_nvname("ipv6_prefix_length_s")));
 		nvram_set(ipv6_nvname("ipv6_rtr_addr"), nvram_safe_get(ipv6_nvname("ipv6_rtr_addr_s")));
 		add_ip6_lanaddr();
+		nvram_set(ipv6_nvname("ipv6_llremote"), "");
 		break;
 	case IPV6_6IN4:
 		nvram_set(ipv6_nvname("ipv6_prefix"), nvram_safe_get(ipv6_nvname("ipv6_prefix_s")));
@@ -1992,13 +1995,14 @@ void stop_ipv6(void)
 	stop_dhcp6c();
 	stop_ipv6_tunnel();
 
-	eval("ip", "-6", "route", "flush", "default");
-	for (i = 1; i < 8; i++) {
-		snprintf(prefix, sizeof(prefix), "%04x::/%d", (0xfe0000 >> i) & 0xffff, i);
-		eval("ip", "-6", "route", "flush", "root", prefix, "table", "main");
-	}
+	eval("ip", "-6", "route", "flush", "::/0");
 	eval("ip", "-6", "addr", "flush", "scope", "global", "dev", lan_ifname);
 	eval("ip", "-6", "addr", "flush", "scope", "global", "dev", wan_ifname);
+	for (i = 1; i < 8; i++) {
+		snprintf(prefix, sizeof(prefix), "%04x::/%d", (0xfe00 << (8 - i)) & 0xffff, i);
+		eval("ip", "-6", "route", "flush", "root", prefix, "dev", lan_ifname, "table", "main");
+		eval("ip", "-6", "route", "flush", "root", prefix, "dev", wan_ifname, "table", "main");
+	}
 	eval("ip", "-6", "neigh", "flush", "dev", lan_ifname);
 }
 #endif
@@ -3108,7 +3112,7 @@ start_ddns(void)
 	char *passwd;
 	char *host;
 	char *service;
-	char usrstr[64];
+	char usrstr[32 + 32 + sizeof(":")];
 	int wild = nvram_get_int("ddns_wildcard_x");
 	int unit, asus_ddns = 0;
 	char tmp[32], prefix[] = "wanXXXXXXXXXX_";
@@ -3412,6 +3416,52 @@ asusddns_reg_domain(int reg)
 	return 0;
 }
 
+int
+asusddns_unregister(void)
+{
+	char wan_ifname[16];
+	char *nserver;
+	int unit;
+
+	unit = wan_primary_ifunit();
+#if defined(RTCONFIG_DUALWAN)
+	if (nvram_match("wans_mode", "lb")) {
+		int ddns_wan_unit = nvram_get_int("ddns_wan_unit");
+
+		if (ddns_wan_unit >= WAN_UNIT_FIRST && ddns_wan_unit < WAN_UNIT_MAX) {
+			unit = ddns_wan_unit;
+		} else {
+			int u = get_first_configured_connected_wan_unit();
+			if (u < WAN_UNIT_FIRST || u >= WAN_UNIT_MAX)
+				return -2;
+
+			unit = u;
+		}
+	}
+#endif
+
+	memset(wan_ifname, sizeof(wan_ifname), 0);
+	snprintf(wan_ifname, sizeof(wan_ifname),  get_wan_ifname(unit));
+	nvram_set("ddns_return_code", "ddns_unregister");
+
+	if (pids("ez-ipupdate"))
+	{
+		killall("ez-ipupdate", SIGINT);
+		sleep(1);
+	}
+
+	nserver = nvram_invmatch("ddns_serverhost_x", "") ?
+		    nvram_safe_get("ddns_serverhost_x") :
+		    "nwsrv-ns1.asus.com";
+_dprintf("%s: do ez-ipupdate to unregister! unit = %d wan_ifname = %s nserver = %s hostname = %s\n", __FUNCTION__, unit, wan_ifname, nserver, nvram_safe_get("ddns_hostname_x"));
+
+	nvram_unset("asusddns_reg_result");
+	eval("ez-ipupdate",
+	     "-S", "dyndns", "-i", wan_ifname, "-h", nvram_safe_get("ddns_hostname_x"),
+	     "-A", "3", "-s", nserver);
+
+	return 0;
+}
 void
 stop_syslogd(void)
 {
@@ -3750,12 +3800,7 @@ start_acsd()
 	int ret = 0;
 
 #ifdef RTCONFIG_PROXYSTA
-	if (psta_exist()
-		|| dpsr_mode()
-#if !defined(RTCONFIG_AMAS) && defined(RTCONFIG_DPSTA)
-		|| dpsta_mode()
-#endif
-	)
+	if (psta_exist())
 		return 0;
 #endif
 
@@ -8154,6 +8199,10 @@ stop_services_mfg(void)
 #ifdef RTCONFIG_NEW_USER_LOW_RSSI
 	stop_roamast();
 #endif
+#ifdef RTCONFIG_GETREALIP
+	killall_tk("getrealip.sh");
+	killall_tk("ministun");
+#endif
 }
 
 // 2008.10 magic
@@ -11444,6 +11493,10 @@ check_ddr_done:
 	{
 		asusddns_reg_domain(1);
 	}
+	else if(strcmp(script, "asusddns_unregister") == 0)
+	{
+		asusddns_unregister();
+	}
 	else if (strcmp(script, "httpd") == 0)
 	{
 		if(action & RC_SERVICE_STOP) stop_httpd();
@@ -12843,7 +12896,7 @@ void gen_lldpd_if(char *bind_ifnames)
 
 	/* prepare binding interface list */
 #if defined(RTCONFIG_BCMARM) && defined(RTCONFIG_PROXYSTA) && defined(RTCONFIG_DPSTA)
-	if (dpsta_mode()) {
+	if (dpsta_mode() && nvram_get_int("re_mode") == 1) {
 		/* for lan_ifnames */
 		foreach (word, nvram_safe_get("lan_ifnames"), next) {
 
