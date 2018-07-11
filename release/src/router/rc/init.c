@@ -501,7 +501,7 @@ wl_defaults(void)
 #endif
 		/* including primary ssid */
 		max_mssid = num_of_mssid_support(unit);
-#ifdef RTCONFIG_PSR_GUEST
+#if defined(RTCONFIG_PSR_GUEST) && !defined(HND_ROUTER)
 		max_mssid++;
 #endif
 
@@ -536,9 +536,9 @@ wl_defaults(void)
 			else if (is_psr(unit) && (subunit == 1)) {
 #ifdef RTCONFIG_DPSTA
 #ifdef RTCONFIG_AMAS
-					nvram_set(strcat_r(prefix, "bss_enabled", tmp), ((!dpsta_mode() && !dpsr_mode()) || is_dpsta(unit) || is_dpsr(unit) || dpsta_mode()) ? "1" : "0");
+					nvram_set(strcat_r(prefix, "bss_enabled", tmp), (!dpsta_mode() || is_dpsta(unit) || (dpsta_mode() && nvram_get_int("re_mode") == 1)) ? "1" : "0");
 #else
-					nvram_set(strcat_r(prefix, "bss_enabled", tmp), ((!dpsta_mode() && !dpsr_mode()) || is_dpsta(unit) || is_dpsr(unit)) ? "1" : "0");
+					nvram_set(strcat_r(prefix, "bss_enabled", tmp), (!dpsta_mode() || is_dpsta(unit) ) ? "1" : "0");
 #endif
 #else
 					nvram_set(strcat_r(prefix, "bss_enabled", tmp), "1");
@@ -6675,11 +6675,6 @@ int init_nvram(void)
 			nvram_set("sta_phy_ifnames", "dpsta");
 		}
 #endif
-#if 0
-		else if (dpsr_mode()) {
-			nvram_set("sta_phy_ifnames", "eth1 eth2");
-		}
-#endif
 		else
 		{
 			nvram_set("sta_phy_ifnames", "eth1 eth2");		
@@ -6886,11 +6881,6 @@ int init_nvram(void)
 			nvram_set("sta_phy_ifnames", "dpsta");
 		}
 #endif
-#if 0
-		else if (dpsr_mode()) {
-			nvram_set("sta_phy_ifnames", "eth6 eth7 eth8");
-		}
-#endif
 		else
 		{
 			nvram_set("sta_phy_ifnames", "eth6 eth7 eth8");
@@ -7029,11 +7019,6 @@ int init_nvram(void)
 #ifdef RTCONFIG_DPSTA
 		if (dpsta_mode() && nvram_get_int("re_mode") == 1) {
 			nvram_set("sta_phy_ifnames", "dpsta");
-		}
-#endif
-#if 0
-		else if (dpsr_mode()) {
-			nvram_set("sta_phy_ifnames", "eth5 eth6");
 		}
 #endif
 		else
@@ -7307,11 +7292,6 @@ int init_nvram(void)
 				nvram_set("sta_phy_ifnames", "dpsta");
 			}
 #endif
-#if 0
-			else if (dpsr_mode()) {
-				nvram_set("sta_phy_ifnames", "eth1 eth2 eth3");
-			}
-#endif
 			else
 			{
 				nvram_set("sta_phy_ifnames", "eth1 eth2 eth3");
@@ -7330,11 +7310,6 @@ int init_nvram(void)
 #ifdef RTCONFIG_DPSTA
 			if (dpsta_mode() && nvram_get_int("re_mode") == 1) {
 				nvram_set("sta_phy_ifnames", "dpsta");
-			}
-#endif
-#if 0
-			else if (dpsr_mode()) {
-				nvram_set("sta_phy_ifnames", "eth1 eth2");
 			}
 #endif
 			else
@@ -8475,9 +8450,6 @@ int init_nvram(void)
 #endif
 
 #ifdef RTCONFIG_OPENVPN
-#ifdef RTAC68U
-	if (!is_n66u_v2())
-#endif
 	add_rc_support("openvpnd");
 	//nvram_set("vpnc_proto", "disable");
 #endif
@@ -10094,9 +10066,10 @@ static void sysinit(void)
 
 #ifdef RTCONFIG_GMAC3
 	int gmac3 = 0;
-	if (!nvram_match("stop_gmac3_ran0418", "1")
-#if defined(RTCONFIG_AMAS) && defined(RTCONFIG_DPSTA)
-		&& !(dpsta_mode() && nvram_get_int("re_mode") == 1)
+
+	if (!nvram_match("disable_gmac3_force", "1")
+#ifdef RTCONFIG_DPSTA
+		&& !dpsta_mode()
 #endif
 	)
 		gmac3 = 1;
