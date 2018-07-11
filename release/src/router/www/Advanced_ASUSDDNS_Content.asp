@@ -77,7 +77,7 @@ var ASUS_EULA_time_str = '<% nvram_get("ASUS_EULA_time"); %>';
 function init(){
 	show_menu();
 	httpApi.faqURL("faq", "1034294", "https://www.asus.com", "/support/FAQ/");
-    ddns_load_body();
+	ddns_load_body();
 	update_ddns_wan_unit_option();
 
 	if(no_phddns){

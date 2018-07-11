@@ -1098,6 +1098,11 @@ char *get_default_ssid(int unit, int subunit)
 			sprintf((char *)ssidbase, "Spirit_%02X", mac_binary[5]);
 		else
 #endif
+#ifdef RTAC68U
+		if (is_dpsta_repeater())
+			sprintf((char *)ssidbase, "%s_RP_%02X", SSID_PREFIX, mac_binary[5]);
+		else
+#endif
 			sprintf((char *)ssidbase, "%s_%02X", SSID_PREFIX, mac_binary[5]);
 	} else {
 		macp = get_lan_hwaddr();
@@ -1111,7 +1116,11 @@ char *get_default_ssid(int unit, int subunit)
 	switch (unit) {
 	case WL_2G_BAND:
 #if defined(RTCONFIG_NEWSSID_REV2)
-		if (band_num > 1)
+		if ((band_num > 1)
+#ifdef RTAC68U
+			&& !is_dpsta_repeater()
+#endif
+		)
 #endif
 			strlcat(ssid, "_2G", sizeof(ssid));
 		break;
@@ -1137,7 +1146,11 @@ char *get_default_ssid(int unit, int subunit)
 #endif
 
 	/* Handle guest network SSID. */
-	if (subunit) {
+	if (subunit
+#ifdef RTAC68U
+		&& !is_dpsta_repeater()
+#endif
+	) {
 #if defined(RTCONFIG_SSID_AMAPS)
 		/* RTCONFIG_SSID_AMAPS use the same guest network SSID rule as SINGLE_SSID */
 		snprintf(ssid, sizeof(ssid), "%s_AMAPS_Guest", SSID_PREFIX);

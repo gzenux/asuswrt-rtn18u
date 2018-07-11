@@ -5340,8 +5340,10 @@ show_message("asusddns_update: %d\n", retval);
     }
   }
 
+#ifdef ASUS_DDNS
   exit_main:
   show_message("exit_main\n");
+#endif
 
 #ifdef IF_LOOKUP
   if(sock > 0) { close(sock); }

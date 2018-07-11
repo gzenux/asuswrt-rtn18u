@@ -2837,6 +2837,23 @@ function refreshStatus(xhr){
 				}
 				document.getElementById("connect_status").className = (NM_connect_status.primary.hasInternet || NM_connect_status.secondary.hasInternet) ? "connectstatuson" : "connectstatusoff";
 				wanConnectStatus = NM_connect_status.primary.hasInternet || NM_connect_status.secondary.hasInternet;
+				if((based_modelid == "GT-AC5300" || based_modelid == "GT-AC9600" || based_modelid == "GT-AX6000") && location.pathname == "/GameDashboard.asp"){
+					var connect_state = NM_connect_status.primary.hint;
+					if(!NM_connect_status.primary.hasInternet){
+						var connect_state = NM_connect_status.primary.hint
+					}
+					else if(NM_connect_status.secondary.hasInternet){
+						var connect_state = NM_connect_status.secondary.hint
+					}
+				
+					$("#wan_state").html(connect_state);
+					if(NM_connect_status.primary.hasInternet || NM_connect_status.secondary.hasInternet){
+						$("#wan_state_icon").addClass("wan_icon_connect");
+					}
+					else{
+						$("#wan_state_icon").addClass("wan_icon_disconnect");
+					}
+				}
 			}
 			else{
 				var NM_connect_status = new NM_connect_obj(link_status, link_sbstatus, link_auxstatus, 0);
@@ -3050,7 +3067,7 @@ function refreshStatus(xhr){
 	// usb.storage
 	if(usb_support){
 		if(allUsbStatus != allUsbStatusTmp && allUsbStatusTmp != ""){
-			if(current_url==ABS_INDEXPAGE||current_url=="")
+			if(location.pathname == ABS_INDEXPAGE || location.pathname == "/")
 				location.href = ABS_INDEXPAGE;
 		}
 

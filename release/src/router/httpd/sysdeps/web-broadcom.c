@@ -141,7 +141,7 @@ ej_wl_sta_status(int eid, webs_t wp, char *name)
 #include <bcmparams.h>		/* for DEV_NUMIFS */
 
 /* The below macros handle endian mis-matches between wl utility and wl driver. */
-#if !defined(RTCONFIG_BCMWL6) || defined(RTCONFIG_BCM_7114) || defined(RTCONFIG_BCM7)
+#if !defined(htod16) || !defined(htod32) || !defined(dtoh32) || !defined(dtoh16) || !defined(dtohchanspec)
 static bool g_swap = FALSE;
 #ifndef htod16
 #define htod16(i) (g_swap?bcmswap16(i):(uint16)(i))

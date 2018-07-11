@@ -875,6 +875,7 @@ handle_request(void)
 			break;
 		}
 #ifdef TRANSLATE_ON_FLY
+#if defined(RTAC5300) || defined(RTAC3100) || defined (RTN18U) // kludge
 		else if ( strncasecmp( cur, "Accept-Language:", 16) == 0 ) {
 			if(change_preferred_lang()){
 				char *p;
@@ -953,6 +954,98 @@ handle_request(void)
 			}
 			#endif
 		}
+#else // Kludge
+		else if ( strncasecmp( cur, "Accept-Language:",16) ==0) {
+			char *p;
+			struct language_table *pLang;
+			char lang_buf[256];
+			memset(lang_buf, 0, sizeof(lang_buf));
+			alang = &cur[16];
+			strncpy(lang_buf, alang, sizeof(lang_buf)-1);
+			p = lang_buf;
+			while (p != NULL)
+			{
+				p = strtok (p, "\r\n ,;");
+				if (p == NULL)  break;
+				//2008.11 magic{
+				int i, len=strlen(p);
+
+				for (i=0;i<len;++i)
+					if (isupper(p[i])) {
+						p[i]=tolower(p[i]);
+					}
+
+				//2008.11 magic}
+				for (pLang = language_tables; pLang->Lang != NULL; ++pLang)
+				{
+					p = strtok (p, "\r\n ,;");
+					if (p == NULL)  break;
+					//2008.11 magic{
+					int i, len=strlen(p);
+
+					for (i=0;i<len;++i)
+						if (isupper(p[i])) {
+							p[i]=tolower(p[i]);
+						}
+
+					//2008.11 magic}
+					for (pLang = language_tables; pLang->Lang != NULL; ++pLang)
+					{
+						if (strcasecmp(p, pLang->Lang)==0)
+						{
+							char dictname[32];
+							_dprintf("handle_request: pLang->Lang = %s\n", pLang->Lang);
+							if (!check_lang_support(pLang->Target_Lang))
+								break;
+
+							snprintf(dictname,sizeof(dictname),"%s.dict", pLang->Target_Lang);
+							if(!check_if_file_exist(dictname))
+							{
+								break;
+							}
+
+							snprintf(Accept_Language,sizeof(Accept_Language),"%s",pLang->Target_Lang);
+							break;
+						}
+					}
+
+					if (Accept_Language[0] != 0) {
+						break;
+					}
+					p+=strlen(p)+1;
+				}
+
+				if (Accept_Language[0] != 0) {
+					nvram_set("preferred_lang", Accept_Language);
+				}
+
+				auto_set_lang = 1; //Prevent to check language every request
+			}
+
+			#ifdef RTCONFIG_DSL_TCLINUX
+			if(is_firsttime()){
+				if(nvram_match("preferred_lang", "CZ") || nvram_match("preferred_lang", "DE")) {
+					int do_restart = 0;
+					if( nvram_match("dslx_annex", "4")
+						&& nvram_match("dsltmp_adslsyncsts", "down")
+					){
+						_dprintf("DSL: auto switch to annex b/j\n");
+						nvram_set("dslx_annex", "6");
+						do_restart = 1;
+					}
+					if(nvram_match("preferred_lang", "DE")
+						&& nvram_match("dslx_vdsl_profile", "0")) {
+						_dprintf("DSL: auto switch to 17a multi mode\n");
+						nvram_set("dslx_vdsl_profile", "1");
+						do_restart = 1;
+					}
+					if (do_restart)
+						notify_rc("restart_dsl_setting");
+				}
+			}
+			#endif
+		}
+#endif
 #endif
 		else if ( strncasecmp( cur, "Authorization:", 14 ) == 0 )
 		{
@@ -1519,6 +1612,39 @@ char *config_model_name(char *source, char *find,  char *rep){
  *     <0:	invalid parameter.
  *     >0:	lang can be supported.
  */
+#if !defined (RTAC5300) && !defined (RTAC3100) && !defined (RTN18U)	// Kludge
+int check_lang_support(char *lang)
+{
+	int r = 1;
+
+	if (!lang)
+		return -1;
+
+#if defined(RTCONFIG_TCODE)
+	if (!find_word(nvram_safe_get("rc_support"), "tcode") || !nvram_get("territory_code"))
+		return 1;
+	if (!strncmp(nvram_get("territory_code"), "UK", 2) ||
+	    !strncmp(nvram_get("territory_code"), "NE", 2)) {
+		if (!strcmp(lang, "DA") || !strcmp(lang, "EN") ||
+		    !strcmp(lang, "FI") || !strcmp(lang, "NO") ||
+		    !strcmp(lang, "SV")) {
+			r = 1;
+		} else {
+			r = 0;
+		}
+	} else {
+		if (!strcmp(lang, "DA") || !strcmp(lang, "FI") ||
+		    !strcmp(lang, "NO") || !strcmp(lang, "SV")) {
+			r = 0;
+		} else {
+			r = 1;
+		}
+	}
+#endif
+
+	return r;
+}
+#endif
 
 #ifdef RTCONFIG_AUTODICT
 int

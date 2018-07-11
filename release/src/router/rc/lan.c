@@ -229,7 +229,8 @@ start_emf(char *lan_ifname)
 	return;
 #endif
 
-#if (defined(HND_ROUTER) && defined(MCPD_PROXY))
+#ifdef HND_ROUTER
+#ifdef MCPD_PROXY
 	/* Disable EMF.
 	 * Since Runner is involved in Ethernet side when MCPD is enabled
 	 */
@@ -237,14 +238,13 @@ start_emf(char *lan_ifname)
 		nvram_set_int("emf_enable", 0);
 		nvram_commit();
 	}
-
+#endif
 #ifdef RTCONFIG_PROXYSTA
 	eval("bcmmcastctl", "mode", "-i",  "br0",  "-p", "1",  "-m", (psta_exist() || psr_exist()) ? "0" : "2");
 	eval("bcmmcastctl", "mode", "-i",  "br0",  "-p", "2",  "-m", (psta_exist() || psr_exist()) ? "0" : "2");
 #endif
-
 	return;
-#endif /* HND_ROUTER && MCPD_PROXY */
+#endif
 
 	if (!nvram_get_int("emf_enable"))
 		return;
@@ -289,6 +289,11 @@ start_emf(char *lan_ifname)
 
 static void stop_emf(char *lan_ifname)
 {
+#if defined(HND_ROUTER) && defined(RTCONFIG_PROXYSTA)
+	eval("bcmmcastctl", "mode", "-i",  "br0",  "-p", "1",  "-m", "0");
+	eval("bcmmcastctl", "mode", "-i",  "br0",  "-p", "2",  "-m", "0");
+#endif
+
 	/* Stop the EMF for this LAN */
 	eval("emf", "stop", lan_ifname);
 	/* Remove Bridge from igs */
@@ -2340,10 +2345,6 @@ void start_lan(void)
 						   ETHER_ADDR_LEN) == 0) {
 						ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 						memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
-#ifdef RTCONFIG_AMAS
-						if(nvram_get_int("re_mode") == 1)
-							ifr.ifr_hwaddr.sa_data[0] = ifr.ifr_hwaddr.sa_data[0] | 0x02;
-#endif
 						ioctl(sfd, SIOCSIFHWADDR, &ifr);
 					}
 
@@ -2617,7 +2618,6 @@ gmac3_no_swbr:
 			&& !(dpsta_mode() && nvram_get_int("re_mode") == 0)
 #endif
 	) {
-		// only none routing mode need lan_proto=dhcp
 		hostname = nvram_safe_get("computer_name");
 		char *dhcp_argv[] = { "udhcpc",
 					"-i", "br0",
@@ -2756,6 +2756,10 @@ _dprintf("nat_rule: stop_nat_rules 1.\n");
 	}
 #endif
 
+#ifdef RTCONFIG_CFGSYNC
+	update_macfilter_relist();
+#endif
+
 	_dprintf("%s %d\n", __FUNCTION__, __LINE__);
 }
 
@@ -2830,6 +2834,7 @@ void stop_lan(void)
 	if (is_routing_enabled())
 	{
 		stop_wanduck();
+
 		del_lan_routes(lan_ifname);
 	}
 #ifdef RTCONFIG_WIRELESSREPEATER
@@ -5156,6 +5161,9 @@ gmac3_no_swbr:
 #endif
 #ifdef RTCONFIG_BCMWL6
 	set_acs_ifnames();
+#endif
+#ifdef RTCONFIG_CFGSYNC
+	update_macfilter_relist();
 #endif
 #if defined(RTCONFIG_RALINK) && defined(RTCONFIG_WLMODULE_MT7615E_AP)
 	start_wds_ra();

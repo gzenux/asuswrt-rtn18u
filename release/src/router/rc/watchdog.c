@@ -5976,13 +5976,18 @@ void onboarding_check()
 #ifdef RTCONFIG_CFGSYNC
 void cfgsync_check()
 {
+#ifdef RTCONFIG_SW_HW_AUTH
 	if (nvram_match("x_Setting", "1") && 
-		((!pids("cfg_client") && nvram_get_int("re_mode") == 1) || 
-		(!pids("cfg_server") && nvram_get_int("cfg_master") == 1)))
+		(
+#ifdef RTCONFIG_DPSTA
+		(!pids("cfg_client") && dpsta_mode() && nvram_get_int("re_mode") == 1) ||
+#endif
+		(!pids("cfg_server") && (is_router_mode() || access_point_mode()))))
 	{
 		_dprintf("start cfgsync\n");
 		notify_rc("start_cfgsync");
 	}
+#endif	/* RTCONFIG_SW_HW_AUTH */
 }
 #endif /* RTCONFIG_CFGSYNC */
 
@@ -7090,7 +7095,8 @@ wdp:
 	cfgsync_check();
 #endif
 #ifdef RTCONFIG_TUNNEL
-	mastiff_check();
+	if(!nvram_get_int("aae_disable_force"))
+		mastiff_check();
 #endif
 }
 

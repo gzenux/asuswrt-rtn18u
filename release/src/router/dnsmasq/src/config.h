@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #define TIMEOUT 10 /* drop UDP queries after TIMEOUT seconds */
 #define FORWARD_TEST 50 /* try all servers every 50 queries */
 #define FORWARD_TIME 20 /* or 20 seconds */
+#define UDP_TEST_TIME 60 /* How often to reset our idea of max packet size. */
 #define SERVERS_LOGGED 30 /* Only log this many servers when logging state */
 #define LOCALS_LOGGED 8 /* Only log this many local addresses when logging state */
 #define RANDOM_SOCKS 64 /* max simultaneous random ports */
@@ -122,6 +123,9 @@ HAVE_AUTH
 HAVE_DNSSEC
    include DNSSEC validator.
 
+HAVE_DUMPFILE
+   include code to dump packets to a libpcap-format file for debugging.
+
 HAVE_LOOP
    include functionality to probe for and remove DNS forwarding loops.
 
@@ -137,14 +141,12 @@ NO_DHCP6
 NO_SCRIPT
 NO_LARGEFILE
 NO_AUTH
+NO_DUMPFILE
 NO_INOTIFY
    these are available to explicitly disable compile time options which would 
    otherwise be enabled automatically (HAVE_IPV6, >2Gb file sizes) or 
    which are enabled  by default in the distributed source tree. Building dnsmasq
    with something like "make COPTS=-DNO_SCRIPT" will do the trick.
-
-NO_NETTLE_ECC
-   Don't include the ECDSA cypher in DNSSEC validation. Needed for older Nettle versions.
 NO_GMP
    Don't use and link against libgmp, Useful if nettle is built with --enable-mini-gmp.
 
@@ -173,6 +175,7 @@ RESOLVFILE
 #define HAVE_AUTH
 #define HAVE_IPSET 
 #define HAVE_LOOP
+#define HAVE_DUMPFILE
 
 /* Build options which require external libraries.
    
@@ -374,6 +377,10 @@ HAVE_SOCKADDR_SA_LEN
 #undef HAVE_LOOP
 #endif
 
+#ifdef NO_DUMPFILE
+#undef HAVE_DUMPFILE
+#endif
+
 #if defined (HAVE_LINUX_NETWORK) && !defined(NO_INOTIFY)
 #define HAVE_INOTIFY
 #endif
@@ -462,8 +469,11 @@ static char *compile_opts =
 #ifndef HAVE_INOTIFY
 "no-"
 #endif
-"inotify";
-
+"inotify "
+#ifndef HAVE_DUMPFILE
+"no-"
+#endif
+"dumpfile";
 
 #endif
 

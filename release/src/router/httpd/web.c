@@ -2709,7 +2709,11 @@ int nvram_check(char *name, char *value, struct nvram_tuple *t, char *output)
 	}
 #elif defined(RTCONFIG_HTTPS)
 	else if(!strcmp(name, "PM_SMTP_AUTH_PASS")){
+#if defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300) || defined(RTAC86U) || defined(RTN18U)  // kludge
 		pwenc(value, output, t->len);
+#else
+		pwenc(value, output);
+#endif
 	}
 #endif
 	return ret;
@@ -9852,12 +9856,11 @@ int ej_shown_language_css(int eid, webs_t wp, int argc, char **argv){
 
 	memset(lang, 0, 4);
 	strcpy(lang, nvram_safe_get("preferred_lang"));
-#if 0
-	if(get_lang_num() == 1){
+
+	if(0){
 		websWrite(wp, "<li style=\"visibility:hidden;\"><dl><a href=\"#\"><dt id=\"selected_lang\"></dt></a>\\n");
 	}
 	else{
-#endif
 		websWrite(wp, "<li><dl><a href=\"#\"><dt id=\"selected_lang\"></dt></a>\\n");
 		while (1) {
 			memset(buffer, 0, sizeof(buffer));
@@ -9890,9 +9893,7 @@ int ej_shown_language_css(int eid, webs_t wp, int argc, char **argv){
 			else
 				break;
 		}
-#if 0
 	}
-#endif
 	websWrite(wp, "</dl></li>\\n");
 	fclose(fp);
 

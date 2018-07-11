@@ -738,19 +738,19 @@ void create_passwd(void)
 	chmod("/etc/shadow", 0600);
 
 	sprintf(s,
-			"%s:x:0:0:%s:/root:/bin/sh\n"
+		"%s:x:0:0:%s:/root:/bin/sh\n"
 #ifdef RTCONFIG_SAMBASRV	//!!TB
-			"%s:x:100:100:nas:/dev/null:/dev/null\n"
+		"%s:x:100:100:nas:/dev/null:/dev/null\n"
 #endif	//!!TB
-			"nobody:x:65534:65534:nobody:/dev/null:/dev/null\n"
+		"nobody:x:65534:65534:nobody:/dev/null:/dev/null\n"
 #ifdef RTCONFIG_TOR
 		"tor:x:65533:65533:tor:/dev/null:/dev/null\n"
 #endif
-			, http_user, http_user
+		, http_user, http_user
 #ifdef RTCONFIG_SAMBASRV	//!!TB
-			, smbd_user
+		, smbd_user
 #endif	//!!TB
-			);
+		);
 	f_write_string("/etc/passwd", s, 0, 0644);
 	fappend_file("/etc/passwd", "/etc/passwd.custom");
 	fappend_file("/etc/passwd", "/jffs/configs/passwd.add");
@@ -767,7 +767,7 @@ void create_passwd(void)
 		"nas:*:100:\n"
 #endif
 #ifdef RTCONFIG_OPENVPN
-		"openvpn:*:200:\n"	/* OpenVPN GID */
+		"openvpn:x:200:\n"	/* OpenVPN GID */
 #endif
 		"nobody:*:65534:\n"
 #ifdef RTCONFIG_TOR
@@ -793,9 +793,6 @@ void create_passwd(void)
 #endif
 		,0 , 0644);
 	fappend_file("/etc/group", "/etc/group.custom");
-#ifdef RTCONFIG_OPENVPN
-	fappend_file("/etc/group", "/etc/group.openvpn");
-#endif
 	fappend_file("/etc/group", "/jffs/configs/group.add");
 	run_postconf("group","/etc/group");
 }
@@ -1700,6 +1697,8 @@ void start_dnsmasq(void)
 			fprintf(fp, "dnssec-no-timecheck\n");
 	}
 #endif
+	if (nvram_match("dns_norebind", "1"))
+		fprintf(fp, "stop-dns-rebind\n");
 
 	append_custom_config("dnsmasq.conf",fp);
 	fclose(fp);
@@ -2030,6 +2029,9 @@ int no_need_to_start_wps(void)
 		return 1;
 #else
 	if ((sw_mode() != SW_MODE_ROUTER) &&
+#ifdef RTCONFIG_DPSTA
+                !(dpsta_mode() && nvram_get_int("re_mode") == 0) &&
+#endif
 		(sw_mode() != SW_MODE_AP))
 		return 1;
 #endif
@@ -3798,6 +3800,10 @@ int
 start_acsd()
 {
 	int ret = 0;
+#ifdef RTCONFIG_BCM_7114
+	char *acsd_argv[] = {"/usr/sbin/acsd", NULL};
+	int pid;
+#endif
 
 #ifdef RTCONFIG_PROXYSTA
 	if (psta_exist())
@@ -3807,7 +3813,11 @@ start_acsd()
 	stop_acsd();
 
 	if (!restore_defaults_g && strlen(nvram_safe_get("acs_ifnames")))
+#ifndef RTCONFIG_BCM_7114
 		ret = eval("/usr/sbin/acsd");
+#else
+		ret = _eval(acsd_argv, NULL, 0, &pid);
+#endif
 
 	return ret;
 }
@@ -7616,14 +7626,14 @@ start_services(void)
 #endif
 #ifdef RTCONFIG_AMAS
 	start_amas_wlcconnect();
-	start_amas_bhctrl();	
+	start_amas_bhctrl();
 	start_amas_lanctrl();
 #endif
-#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)	
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 	start_psta_monitor();
 #endif
 #if defined(RTCONFIG_AMAS) && defined(RTCONFIG_BCMWL6)
-	start_obd();	
+	start_obd();
 #endif
 	start_snooper();
 #if 0
@@ -8170,11 +8180,11 @@ stop_services_mfg(void)
 
 #ifdef RTCONFIG_AMAS
 	stop_amas_wlcconnect();
-	stop_amas_bhctrl();		
+	stop_amas_bhctrl();
 	stop_amas_lanctrl();
 	stop_amas_lldpd();
 #endif
-#ifdef RTCONFIG_WIRELESSREPEATER	
+#ifdef RTCONFIG_WIRELESSREPEATER
 	stop_wlcconnect();
 #endif
 
@@ -8550,27 +8560,6 @@ start_obd(void)
 	_eval(obd_argv, NULL, 0, &pid);
 #else
 	return;
-#endif
-}
-
-static int no_need_obd(void)
-{
-#ifdef RTCONFIG_DISABLE_REPEATER_UI
-	return -1;
-#else
-	if (g_reboot || g_upgrade)
-		return -1;
-
-//	if (ATE_BRCM_FACTORY_MODE())
-//		return -1;
-
-	if (!is_router_mode() || (nvram_get_int("obd_Setting") == 1) || (nvram_get_int("x_Setting") == 1))
-		return -1;
-
-	if (nvram_get_int("wlready") == 0)
-		return -1;
-
-	return pids("obd");
 #endif
 }
 #endif
@@ -11812,21 +11801,27 @@ check_ddr_done:
 #if defined(RTCONFIG_AMAS) && defined(CONFIG_BCMWL5)
 	else if (strcmp(script, "wps_enr")==0)
 	{
-		if (is_router_mode()) {
-			int unit = nvram_get_int("wps_band_x");
-			char tmp[100], prefix[] = "wlXXXXXXXXXX_";
-			char *ifname;
+		if (is_router_mode()
+#ifdef RTCONFIG_DPSTA
+			|| (dpsta_mode() && nvram_get_int("re_mode") == 0)
+#endif
+		) {
+			if (is_router_mode()) {
+				int unit = nvram_get_int("wps_band_x");
+				char tmp[100], prefix[] = "wlXXXXXXXXXX_";
+				char *ifname;
 
-			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
-			nvram_set(strcat_r(prefix, "mode", tmp), "psta");
-			ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
-			eval("wlconf", ifname, "down");
-			eval("wlconf", ifname, "up");
-			eval("wlconf", ifname, "start");
-			eval("wl", "-i", ifname, "disassoc");
+				snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+				nvram_set(strcat_r(prefix, "mode", tmp), "psta");
+				ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+				eval("wlconf", ifname, "down");
+				eval("wlconf", ifname, "up");
+				eval("wlconf", ifname, "start");
+				eval("wl", "-i", ifname, "disassoc");
+			}
+
 			start_wps();
 			sleep(1);
-
 			start_wps_enr();
 		}
 	}
@@ -12781,6 +12776,7 @@ stop_wlcconnect(void)
 #ifdef RTCONFIG_AMAS
 void start_amas_wlcconnect(void)
 {
+#ifdef RTCONFIG_SW_HW_AUTH
 #ifndef DISABLE_REPEATER_UI
 	char *amas_wlcconnect_argv[] = {"amas_wlcconnect", NULL};
 	pid_t pid;
@@ -12801,7 +12797,7 @@ void start_amas_wlcconnect(void)
 
 	_eval(amas_wlcconnect_argv, NULL, 0, &pid);
 #endif
-	return;
+#endif /* RTCONFIG_SW_HW_AUTH */
 }
 
 void stop_amas_wlcconnect(void)
@@ -12819,6 +12815,7 @@ void stop_amas_wlcconnect(void)
 
 void start_amas_bhctrl(void)
 {
+#ifdef RTCONFIG_SW_HW_AUTH
 #ifndef DISABLE_REPEATER_UI
 	char *amas_bhctrl_argv[] = {"amas_bhctrl", NULL};
 	pid_t pid;
@@ -12839,7 +12836,7 @@ void start_amas_bhctrl(void)
 
 	_eval(amas_bhctrl_argv, NULL, 0, &pid);
 #endif
-	return;
+#endif /* RTCONFIG_SW_HW_AUTH */
 }
 
 void stop_amas_bhctrl(void)
@@ -12856,6 +12853,7 @@ void stop_amas_bhctrl(void)
 }
 void start_amas_lanctrl(void)
 {
+#ifdef RTCONFIG_SW_HW_AUTH
 	char *amas_lanctrl_argv[] = {"amas_lanctrl", NULL};
 	pid_t pid;
 
@@ -12874,6 +12872,7 @@ void start_amas_lanctrl(void)
 	killall("amas_lanctrl", SIGTERM);
 
 	_eval(amas_lanctrl_argv, NULL, 0, &pid);
+#endif /* RTCONFIG_SW_HW_AUTH */
 }
 
 void stop_amas_lanctrl(void)
@@ -15465,10 +15464,11 @@ overwrite_fbwifi_ssid(void) {
 #ifdef RTCONFIG_CFGSYNC
 int start_cfgsync(void)
 {
+	int ret = 0;
+#ifdef RTCONFIG_SW_HW_AUTH
 	char *cfg_server_argv[] = {"cfg_server", NULL};
 	char *cfg_client_argv[] = {"cfg_client", NULL};
 	pid_t pid;
-	int ret = 0;
 
 #ifdef RTCONFIG_MASTER_DET
 	if (nvram_match("cfg_master", "1") && (is_router_mode() || access_point_mode()))
@@ -15497,7 +15497,7 @@ int start_cfgsync(void)
 		ret = _eval(cfg_client_argv, NULL, 0, &pid);
 	}
 #endif
-
+#endif	/* RTCONFIG_SW_HW_AUTH */
 	return ret;
 }
 

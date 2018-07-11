@@ -6675,9 +6675,6 @@ int init_nvram(void)
 			nvram_set("sta_phy_ifnames", "dpsta");
 		}
 #endif
-		else if (dpsr_mode()) {
-			nvram_set("sta_phy_ifnames", "eth1 eth2");
-		}
 		else
 		{
 			nvram_set("sta_phy_ifnames", "eth1 eth2");		
@@ -6884,9 +6881,6 @@ int init_nvram(void)
 			nvram_set("sta_phy_ifnames", "dpsta");
 		}
 #endif
-		else if (dpsr_mode()) {
-			nvram_set("sta_phy_ifnames", "eth6 eth7 eth8");
-		}
 		else
 		{
 			nvram_set("sta_phy_ifnames", "eth6 eth7 eth8");
@@ -7027,9 +7021,6 @@ int init_nvram(void)
 			nvram_set("sta_phy_ifnames", "dpsta");
 		}
 #endif
-		else if (dpsr_mode()) {
-			nvram_set("sta_phy_ifnames", "eth5 eth6");
-		}
 		else
 		{
 			nvram_set("sta_phy_ifnames", "eth5 eth6");
@@ -7301,9 +7292,6 @@ int init_nvram(void)
 				nvram_set("sta_phy_ifnames", "dpsta");
 			}
 #endif
-			else if (dpsr_mode()) {
-				nvram_set("sta_phy_ifnames", "eth1 eth2 eth3");
-			}
 			else
 			{
 				nvram_set("sta_phy_ifnames", "eth1 eth2 eth3");
@@ -7324,9 +7312,6 @@ int init_nvram(void)
 				nvram_set("sta_phy_ifnames", "dpsta");
 			}
 #endif
-			else if (dpsr_mode()) {
-				nvram_set("sta_phy_ifnames", "eth1 eth2");
-			}
 			else
 			{
 				nvram_set("sta_phy_ifnames", "eth1 eth2");
@@ -10081,16 +10066,14 @@ static void sysinit(void)
 
 #ifdef RTCONFIG_GMAC3
 	int gmac3 = 0;
-#ifdef RTCONFIG_BCM_7114
-	if (!nvram_match("stop_gmac3_new", "1")
-#if 0
-		&& !(nvram_get("switch_wantag") && !nvram_match("switch_wantag", "") && !nvram_match("switch_wantag", "none"))
+
+	if (!nvram_match("disable_gmac3_force", "1")
+#ifdef RTCONFIG_DPSTA
+		&& !dpsta_mode()
 #endif
 	)
-	gmac3 = 1;
-#else
-	nvram_set("gmac3_enable", "0");
-#endif
+		gmac3 = 1;
+
 	nvram_set_int("gmac3_enable", gmac3 ? 1 : 0);
 	nvram_set_int("bhdr_enable", gmac3 ? 1 : 0);
 #endif

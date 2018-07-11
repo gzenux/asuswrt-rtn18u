@@ -40,8 +40,15 @@ var aimesh_node_client_upload_icon = new Array();
 function initial(){
 	if(parent.$('link[rel=stylesheet][href~="/device-map/amesh.css"]').length > 0)
 		parent.$('link[rel=stylesheet][href~="/device-map/amesh.css"]').remove();
-	if(parent.$('link[rel=stylesheet][href~="/device-map/amesh.css"]').length == 0)
-		parent.$('head').append('<link rel="stylesheet" href="/device-map/amesh.css" type="text/css" />');
+
+	var add_css_status = setInterval(add_css, 300);
+	function add_css() {
+		if(parent.$('link[rel=stylesheet][href~="/device-map/amesh.css"]').length > 0)
+			clearInterval(add_css_status);
+		else
+			parent.addNewCSS("/device-map/amesh.css");
+	}
+
 	ajax_onboarding();
 	interval_ajax_onboarding_status = setInterval(ajax_onboarding, 5000);
 
@@ -485,15 +492,24 @@ function connectingDevice(_reMac, _newReMac) {
 	onboarding_flag = true;
 }
 function ajax_get_onboardinglist_status() {
-	var accelerate_count = function() {
+	var accelerate_count = function(_device_id) {
 		if(interval_ajax_get_onboardinglist_status) {
 			clearInterval(interval_ajax_get_onboardinglist_status);
 			interval_ajax_get_onboardinglist_status = false;
 		}
-		interval_ajax_get_onboardinglist_status = setInterval(ajax_get_onboardinglist_status, 100);
-		processCount++;
-		if(processCount >= 100)
-			processCount = 100;
+
+		var process_accumulate_status = setInterval(process_accumulate, 100);
+		function process_accumulate() {
+			if(processCount >= 100) {
+				processCount = 100;
+				clearInterval(process_accumulate_status);
+				ajax_get_onboardinglist_status();
+			}
+			else {
+				processCount++;
+				$('#ready_onBoarding_block').find("#" + _device_id + "").find(".processText").html("" + processCount + " %");
+			}
+		}
 	};
 	$.ajax({
 		url: '/ajax_onboarding.asp',
@@ -521,14 +537,17 @@ function ajax_get_onboardinglist_status() {
 					}
 				}
 				else if(get_onboardingstatus.cfg_obstatus == "1") {//for onboarding abnormal
-					accelerate_count();
-					cfg_obresult = 4;
+					if(processCount < 100) {
+						accelerate_count(device_id);
+						cfg_obresult = 4;
+					}
 				}
 			}
 			else {
 				//for onboarding finish
 				if(get_onboardingstatus.cfg_obstatus == "1" && (get_onboardingstatus.cfg_obresult == "2" || get_onboardingstatus.cfg_obresult == "4" || get_onboardingstatus.cfg_obresult == "5") && get_onboardingstatus.cfg_newre != "") {
-					accelerate_count();
+					if(processCount < 100)
+						accelerate_count(device_id);
 				}
 			}
 
@@ -693,7 +712,7 @@ function show_connect_msg(_reMac, _newReMac, _model_name, _rssi) {
 				$connectHtml.attr({"onselectstart" : "return false"});
 				$connectHtml.appendTo(parent.$('body'));
 
-				var result_text = "Please waiting for other AiMesh node pairing finish.";/* untranslated */
+				var result_text = "<#AiMesh_Pairing#>";
 				
 				var $amesh_hint_text = $('<div>');
 				$amesh_hint_text.addClass("amesh_hint_text");
@@ -745,7 +764,7 @@ function show_connect_msg(_reMac, _newReMac, _model_name, _rssi) {
 
 				var $amesh_quality_text = $('<div>');
 				$amesh_quality_text.addClass("amesh_hint_text amesh_quality_text quality_weak");
-				$amesh_quality_text.html("The Wi-Fi signal quality is weak.<br>Please move your AiMesh node in an open and spacious location will make it easier communicate with other.");/* untranslated */
+				$amesh_quality_text.html("<#AiMesh_info_weak#>");
 				$connectHtml.append($amesh_quality_text);
 
 				var $amesh_action_bg = $('<div>');
@@ -799,7 +818,7 @@ function show_connect_msg(_reMac, _newReMac, _model_name, _rssi) {
 				var $amesh_wait_search_text = $('<div>');
 				$amesh_wait_search_text.addClass("amesh_hint_text amesh_quality_text wait_search");
 				$amesh_wait_search_text.css("display", "none");
-				$amesh_wait_search_text.html("Please waiting for this node (" + _newReMac + ") ready.");/* untranslated */
+				$amesh_wait_search_text.html("<#AiMesh_info_waiting#>");/* _newReMac is here in string tag */
 				$amesh_action_bg.append($amesh_wait_search_text);
 
 				if(_reMac == "" && _model_name == "New Node" && _rssi == "-1" && Session.get("AiMesh_id") != "") {
@@ -875,17 +894,28 @@ function show_connect_result(_status, _newReMac, _model_name) {
 			return $textBg;
 		};
 
-		$aimesh_illustration_bg.append(gen_icon("modem"));
-		$aimesh_illustration_bg.append(gen_icon("ethernet"));
-		$aimesh_illustration_bg.append(gen_icon("router_back"));
-		$aimesh_illustration_bg.append(gen_icon("router_back_right"));
-		$aimesh_illustration_bg.append(gen_icon("ethernet_lan"));
-		$aimesh_illustration_bg.append(gen_icon("ethernet_wan"));
-		$aimesh_illustration_bg.append(gen_text("LAN - WAN", "lan_to_wan"));
-		$aimesh_illustration_bg.append(gen_text("Modem", "modem"));
-		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Router#>", "backhaul_router"));
-		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "backhaul_node"));
-
+		if(!dsl_support){
+			$aimesh_illustration_bg.append(gen_icon("modem"));
+			$aimesh_illustration_bg.append(gen_icon("ethernet"));
+			$aimesh_illustration_bg.append(gen_icon("router_back"));
+			$aimesh_illustration_bg.append(gen_icon("router_back_right"));
+			$aimesh_illustration_bg.append(gen_icon("ethernet_lan"));
+			$aimesh_illustration_bg.append(gen_icon("ethernet_wan"));
+			$aimesh_illustration_bg.append(gen_text("LAN - WAN", "lan_to_wan"));
+			$aimesh_illustration_bg.append(gen_text("Modem", "modem"));
+			$aimesh_illustration_bg.append(gen_text("<#AiMesh_Router#>", "backhaul_router"));
+			$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "backhaul_node"));
+		}
+		else{
+			$aimesh_illustration_bg.append(gen_icon("router_back for_dsl"));
+			$aimesh_illustration_bg.append(gen_icon("router_back_right for_dsl"));
+			$aimesh_illustration_bg.append(gen_icon("ethernet_lan for_dsl"));
+			$aimesh_illustration_bg.append(gen_icon("ethernet_wan for_dsl"));
+			$aimesh_illustration_bg.append(gen_text("LAN - WAN", "lan_to_wan for_dsl"));
+			$aimesh_illustration_bg.append(gen_text("AiMesh xDSL modem router", "backhaul_router for_dsl"));	/*Untranslated*/
+			$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "backhaul_node for_dsl"));
+		}
+		
 		var $amesh_clear_bg = $('<div>');
 		$amesh_clear_bg.css("clear", "both");
 		$aimesh_illustration_bg.append($amesh_clear_bg);
@@ -893,12 +923,12 @@ function show_connect_result(_status, _newReMac, _model_name) {
 	else {
 		//var fail_status = ["Init", "Start", "Success", "WPS Success", "WPS Fail", "Terminate"];
 		var result_text = "";
-		result_text += "Unable to add AiMesh node <span style='color:#569AC7;'>" + _model_name + " (" + _newReMac + ")</span> to your AiMesh system because of following situations. Please check and try it again.";/* untranslated */
+		result_text += "<#AiMesh_info_unabled#>";/* _model_name & _newReMac is here in string tag */
 		result_text += "<ol style='margin:0;padding-left:17px;'>";
-		result_text += "<li>Someone else is setting up AiMesh system at the same time. Wait 1 min and try it again.</li>";/* untranslated */
-		result_text += "<li>your AiMesh router and node within 3 meters when setup process.</li>";/* untranslated */
+		result_text += "<li><#AiMesh_info_unabled1#></li>";
+		result_text += "<li><#AiMesh_info_unabled2#></li>";
 		result_text += "<li>Your AiMesh node is powered on.</li>";/* untranslated */
-		result_text += "<li>Your AiMesh node is upgraded to AiMesh-supported firmware.</li>";/* untranslated */
+		result_text += "<li><#AiMesh_info_unabled4#></li>";
 		result_text += "<li>Your AiMesh node is reset to default.</li>";/* untranslated */
 		result_text += "</ol>";
 		//result_text += "<br><br>Status: " + fail_status[parseInt(_status)];
@@ -949,10 +979,12 @@ function show_search_fail_result() {
 	result_text += "<div style='margin-left: 20px;'>2. <#AiMesh_FindNode_Not_advA2#></div>";
 	result_text += "<div style='margin-left: 20px;'>3. <#AiMesh_FindNode_Not_advA3#></div>";
 	result_text += "<div style='margin-left: 20px;'>4. <#AiMesh_FindNode_Not_advA4#></div>";
-	result_text += "b. <#AiMesh_FindNode_Not_advB#>";
-	result_text += "<div style='margin-left: 20px;'>1. <#AiMesh_FindNode_Not_advB1#></div>";
-	result_text += "<div style='margin-left: 20px;'>2. <#AiMesh_FindNode_Not_advB2#></div>";
-	result_text += "<div style='margin-left: 20px;'>3. <#AiMesh_FindNode_Not_advB3#></div>";
+	if(!dsl_support){
+		result_text += "b. <#AiMesh_FindNode_Not_advB#>";
+		result_text += "<div style='margin-left: 20px;'>1. <#AiMesh_FindNode_Not_advB1#></div>";
+		result_text += "<div style='margin-left: 20px;'>2. <#AiMesh_FindNode_Not_advB2#></div>";
+		result_text += "<div style='margin-left: 20px;'>3. <#AiMesh_FindNode_Not_advB3#></div>";
+	}
 
 	var $amesh_hint_text = $('<div>');
 	$amesh_hint_text.addClass("amesh_hint_text");
@@ -977,15 +1009,24 @@ function show_search_fail_result() {
 		return $textBg;
 	};
 
-	$aimesh_illustration_bg.append(gen_icon("modem"));
-	$aimesh_illustration_bg.append(gen_icon("ethernet"));
-	$aimesh_illustration_bg.append(gen_icon("router"));
-	$aimesh_illustration_bg.append(gen_icon("router_right"));
-	$aimesh_illustration_bg.append(gen_icon("wifi"));
-	$aimesh_illustration_bg.append(gen_text("Modem", "modem"));
-	$aimesh_illustration_bg.append(gen_text("<#AiMesh_Router#>", "router"));
-	$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "node"));
-
+	if(!dsl_support){
+		$aimesh_illustration_bg.append(gen_icon("modem"));
+		$aimesh_illustration_bg.append(gen_icon("ethernet"));
+		$aimesh_illustration_bg.append(gen_icon("router"));
+		$aimesh_illustration_bg.append(gen_icon("router_right"));
+		$aimesh_illustration_bg.append(gen_icon("wifi"));
+		$aimesh_illustration_bg.append(gen_text("Modem", "modem"));
+		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Router#>", "router"));
+		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "node"));
+	}
+	else{
+		$aimesh_illustration_bg.append(gen_icon("router for_dsl"));
+		$aimesh_illustration_bg.append(gen_icon("router_right for_dsl"));
+		$aimesh_illustration_bg.append(gen_icon("wifi for_dsl"));
+		$aimesh_illustration_bg.append(gen_text("AiMesh xDSL modem router", "router for_dsl"));    /*Untranslated*/	
+		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "node for_dsl"));
+	}
+	
 	var $amesh_clear_bg = $('<div>');
 	$amesh_clear_bg.css("clear", "both");
 	$aimesh_illustration_bg.append($amesh_clear_bg);
@@ -1196,7 +1237,7 @@ function searchReadyOnBoarding() {
 		});
 	}
 	else {
-		var confirm_flag = confirm("WPS will be enabled when searching for AiMesh node.");/* untranslated */
+		var confirm_flag = confirm("<#AiMesh_FindNode_confirm_WPS#>");
 		if(confirm_flag) {
 			wps_enable_status = "1"
 			document.wps_form.submit();
@@ -1630,16 +1671,27 @@ function show_change_type_hint() {
 		return $textBg;
 	};
 
-	$aimesh_illustration_bg.append(gen_icon("modem"));
-	$aimesh_illustration_bg.append(gen_icon("ethernet"));
-	$aimesh_illustration_bg.append(gen_icon("router_back"));
-	$aimesh_illustration_bg.append(gen_icon("router_back_right"));
-	$aimesh_illustration_bg.append(gen_icon("ethernet_lan"));
-	$aimesh_illustration_bg.append(gen_icon("ethernet_wan"));
-	$aimesh_illustration_bg.append(gen_text("LAN - WAN", "lan_to_wan"));
-	$aimesh_illustration_bg.append(gen_text("Modem", "modem"));
-	$aimesh_illustration_bg.append(gen_text("<#AiMesh_Router#>", "backhaul_router"));
-	$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "backhaul_node"));
+	if(!dsl_support){
+		$aimesh_illustration_bg.append(gen_icon("modem"));
+		$aimesh_illustration_bg.append(gen_icon("ethernet"));
+		$aimesh_illustration_bg.append(gen_icon("router_back"));
+		$aimesh_illustration_bg.append(gen_icon("router_back_right"));
+		$aimesh_illustration_bg.append(gen_icon("ethernet_lan"));
+		$aimesh_illustration_bg.append(gen_icon("ethernet_wan"));
+		$aimesh_illustration_bg.append(gen_text("LAN - WAN", "lan_to_wan"));
+		$aimesh_illustration_bg.append(gen_text("Modem", "modem"));
+		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Router#>", "backhaul_router"));
+		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "backhaul_node"));
+	}
+	else{
+		$aimesh_illustration_bg.append(gen_icon("router_back for_dsl"));
+		$aimesh_illustration_bg.append(gen_icon("router_back_right for_dsl"));
+		$aimesh_illustration_bg.append(gen_icon("ethernet_lan for_dsl"));
+		$aimesh_illustration_bg.append(gen_icon("ethernet_wan for_dsl"));
+		$aimesh_illustration_bg.append(gen_text("LAN - WAN", "lan_to_wan for_dsl"));
+		$aimesh_illustration_bg.append(gen_text("AiMesh xDSL modem router", "backhaul_router for_dsl"));    /*Untranslated*/
+		$aimesh_illustration_bg.append(gen_text("<#AiMesh_Node#>", "backhaul_node for_dsl"));
+	}
 
 	var $amesh_clear_bg = $('<div>');
 	$amesh_clear_bg.css("clear", "both");

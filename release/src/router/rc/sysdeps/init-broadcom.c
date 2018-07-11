@@ -1670,11 +1670,10 @@ void init_switch()
 			int eth_devs[6] = { 0, 2, 1, 4, 3 };
 			char *regs[5] = { "0x3102", "0x3100", "0x3106", "0x3104", "0x310e" };
 			char *wan2vals[5][5] = { { "0xef", "0xdf", "0x1cf", "0xef", "0x1cf" },
-			                         { "0xe2", "0xdd", "0x1cd", "0xed", "0x1cd" },
-			                         { "0xee", "0xd1", "0x1ce", "0xee", "0x1ce" },
-			                         { "0xe7", "0xd7", "0x1c8", "0xe7", "0x1c7" },
-			                         { "0xeb", "0xdb", "0x1cb", "0xe4", "0x1cb" }
-			                       };
+						 { "0xe2", "0xdd", "0x1cd", "0xed", "0x1cd" },
+						 { "0xee", "0xd1", "0x1ce", "0xee", "0x1ce" },
+						 { "0xe7", "0xd7", "0x1c8", "0xe7", "0x1c7" },
+						 { "0xeb", "0xdb", "0x1cb", "0xe4", "0x1cb" } };
 			char buf[64], *ptr;
 			int i, len, eth_dev, wancfg = 0;
 			int tmp_type;
@@ -1730,11 +1729,10 @@ void init_switch()
 			int ports[6] = { 7, 3, 2, 1, 0 };
 			char *regs[4] = { "0x3106", "0x3104", "0x3102", "0x3100" };
 			char *wan2vals[5][4] = { { "0x1cf", "0xef", "0xef", "0xdf" },
-			                         { "0x1c8", "0xe7", "0xe7", "0xd7" },
-			                         { "0x1cb", "0xe4", "0xeb", "0xdb" },
-			                         { "0x1cd", "0xed", "0xe2", "0xdd" },
-			                         { "0x1ce", "0xee", "0xee", "0xd1" }
-			                       };
+						 { "0x1c8", "0xe7", "0xe7", "0xd7" },
+						 { "0x1cb", "0xe4", "0xeb", "0xdb" },
+						 { "0x1cd", "0xed", "0xe2", "0xdd" },
+						 { "0x1ce", "0xee", "0xee", "0xd1" } };
 			char buf[64], *ptr;
 			int i, len, wancfg;
 			int tmp_type;
@@ -1845,9 +1843,6 @@ void init_switch()
 	|| sw_mode() == SW_MODE_REPEATER
 #endif
 	|| nvram_get_int("cstats_enable") == 1
-//#ifdef RTCONFIG_USB_MODEM
-//	|| nvram_get_int("ctf_disable_modem")
-//#endif
 	) {
 		nvram_set("ctf_disable", "1");
 	}
@@ -3054,7 +3049,7 @@ void generate_wl_para(char *ifname, int unit, int subunit)
 #ifdef BCM_BSD
 		if (((unit == 0) && nvram_get_int("smart_connect_x") == 1) ||
 		    ((unit == 1) && nvram_get_int("smart_connect_x") == 2)) {
-			int wlif_count = num_of_wl_if ();
+			int wlif_count = num_of_wl_if();
 			for (i = unit + 1; i < wlif_count; i++) {
 				snprintf(prefix2, sizeof(prefix2), "wl%d_", i);
 				nvram_set(strcat_r(prefix2, "ssid", tmp2), nvram_safe_get(strcat_r(prefix, "ssid", tmp)));
@@ -3947,10 +3942,8 @@ void generate_wl_para(char *ifname, int unit, int subunit)
 		{
 			nvram_set(strcat_r(prefix, "preauth", tmp), nvram_safe_get(strcat_r(prefix2, "preauth", tmp2)));
 			nvram_set(strcat_r(prefix, "bss_maxassoc", tmp), nvram_safe_get(strcat_r(prefix2, "bss_maxassoc", tmp2)));
-/*			Do not override guest settings for ssid broadcast and ap isolate
-			nvram_set(strcat_r(prefix, "closed", tmp), nvram_safe_get(strcat_r(prefix2, "closed", tmp2)));
-			nvram_set(strcat_r(prefix, "ap_isolate", tmp), nvram_safe_get(strcat_r(prefix2, "ap_isolate", tmp2)));
-*/
+// 			Do not override guest settings for ap isolate
+//			nvram_set(strcat_r(prefix, "ap_isolate", tmp), nvram_safe_get(strcat_r(prefix2, "ap_isolate", tmp2)));
 
 			nvram_set(strcat_r(prefix, "net_reauth", tmp), nvram_safe_get(strcat_r(prefix2, "net_reauth", tmp2)));
 			nvram_set(strcat_r(prefix, "radius_ipaddr", tmp), nvram_safe_get(strcat_r(prefix2, "radius_ipaddr", tmp2)));
@@ -5061,7 +5054,7 @@ _dprintf("*** Multicast IPTV: config Singtel TR069 on wan port ***\n");
 #endif
 			sprintf(port_id, "%d", wan_vid);
 			/* handle vlan + pppoe w/o bridge case. Using vconfig instead */
-			if (nvram_match("switch_wantag", "movistar") || nvram_match("switch_wantag", "unifi_biz") || (nvram_match("switch_wantag", "none") && switch_stb == 0 && !wan_vid)) {
+			if (nvram_match("switch_wantag", "movistar") || nvram_match("switch_wantag", "unifi_biz") || nvram_match("switch_wantag", "stuff_fibre") || (nvram_match("switch_wantag", "none") && switch_stb == 0 && !wan_vid)) {
 				eval("vconfig", "add", "eth0", port_id);
 				sprintf(wan_dev, "vlan%d", wan_vid);
 				eval("ifconfig", wan_dev, "allmulti", "up");
@@ -5280,6 +5273,12 @@ _dprintf("*** Multicast IPTV: config Singtel TR069 on wan port ***\n");
 				eval("brctl", "addif", "br1", vlanDev1);
 			}
 		} else if (nvram_match("switch_stb_x", "5") && nvram_match("switch_wantag", "none")) {
+			if (model == MODEL_RTAC86U) {
+				sprintf(ethPort1, "eth3");
+				sprintf(vlanDev1, "eth3.v0");
+				sprintf(ethPort2, "eth4");
+				sprintf(vlanDev2, "eth4.v0");
+			}
 			/* Just forward packets between wan & vlanDev1, no tag */
 			eval("brctl", "delif", "br0", ethPort1);
 			eval("brctl", "delif", "br0", ethPort2);
@@ -5308,6 +5307,12 @@ _dprintf("*** Multicast IPTV: config Singtel TR069 on wan port ***\n");
 				eval("brctl", "addif", "br1", vlanDev2);
 			}
 			else if (nvram_match("switch_wantag", "none")) {
+				if (model == MODEL_RTAC86U) {
+					sprintf(ethPort3, "eth1");
+					sprintf(vlanDev3, "eth1.v0");
+					sprintf(ethPort4, "eth2");
+					sprintf(vlanDev4, "eth2.v0");
+				}
 				/* Just forward packets between wan & vlanDev1, no tag */
 				eval("brctl", "delif", "br0", ethPort3);
 				eval("brctl", "delif", "br0", ethPort4);
@@ -6883,7 +6888,7 @@ void set_acs_ifnames()
 #endif
 #ifdef RTCONFIG_DPSTA
 	char wlvif[] = "wlxxxx";
- #endif
+#endif
 
 	wl_check_5g_band_group();
 

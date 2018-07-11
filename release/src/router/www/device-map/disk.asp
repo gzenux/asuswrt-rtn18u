@@ -217,6 +217,7 @@ function switchUSBType(){
 				<input type="hidden" name="action_script" value="reboot">
 				<input type="hidden" name="action_wait" value="<% get_default_reboot_time(); %>">
 				<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
+
 				<div align="center" class="left" style="width:120px; float:left; cursor:pointer;margin-top:-7px;" id="reduce_usb3_enable">
 					<select class="input_option" name="usb_usb3" >
 						<option value="0" <% nvram_match("usb_usb3", "0", "selected"); %>>USB 2.0</option>

@@ -2857,8 +2857,8 @@ void create_custom_passwd(void)
 	if (fps)
 		fclose(fps);
 
-	chmod("/etc/passwd.custom", 0644);
 	chmod("/etc/shadow.custom", 0600);
+	chmod("/etc/passwd.custom", 0644);
 
 	/* write /etc/group.custom & /etc/ghsadow.custom */
 	fps = fopen("/etc/gshadow.custom", "w+");
@@ -2906,7 +2906,7 @@ void create_custom_passwd(void)
 	if (fpp)
 		fclose(fpp);
 
-	chmod("/etc/gshadow.custom", 0644);
+	chmod("/etc/gshadow.custom", 0600);
 	chmod("/etc/group.custom", 0644);
 
 	/* free list */
@@ -2944,6 +2944,7 @@ void create_custom_passwd(void)
 		fprintf(fp, "%s:x:%d:%d::/dev/null:/dev/null\n", account_list[i], n, n);
 	}
 	fclose(fp);
+
 	chmod("/etc/passwd.custom", 0644);
 
 	/* write /etc/group.custom  */
@@ -2959,7 +2960,9 @@ void create_custom_passwd(void)
 		fprintf(fp, "%s:x:%d:\n", account_list[i], n);
 	}
 	fclose(fp);
+
 	chmod("/etc/group.custom", 0644);
+
 	free_2_dimension_list(&acc_num, &account_list);
 }
 #endif
@@ -3519,6 +3522,12 @@ void start_dms(void)
 				serial, uuid,
 				rt_serialno);
 
+			nv = nvram_safe_get("dms_sort");
+			if (!*nv || isdigit(*nv))
+				nv = (!*nv || atoi(nv)) ? "+upnp:class,+upnp:originalTrackNumber,+dc:title" : NULL;
+			if (nv)
+				fprintf(f, "force_sort_criteria=%s\n", nv);
+
 			append_custom_config(MEDIA_SERVER_APP".conf",f);
 
 			nv = nvram_safe_get("dms_sort");
@@ -3796,7 +3805,6 @@ void write_webdav_permissions()
 
 	fclose(fp);
 }
-#endif
 
 void write_webdav_server_pem()
 {
@@ -3809,6 +3817,7 @@ void write_webdav_server_pem()
 		eval("gencert.sh", t);
 	}
 }
+#endif
 //#endif	// RTCONFIG_WEBDAV
 
 void start_webdav(void)	// added by Vanic
@@ -3860,7 +3869,7 @@ ifdef RTCONFIG_TUNNEL
 	//write_webdav_permissions();
 
 	/* WebDav SSL support */
-	write_webdav_server_pem();
+	//write_webdav_server_pem();
 	if(f_size(LIGHTTPD_CERTKEY) != f_size(HTTPD_KEY) + f_size(HTTPD_CERT))
 	{
 		char buf[256];
