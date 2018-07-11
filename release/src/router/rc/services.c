@@ -1366,9 +1366,12 @@ void start_dnsmasq(void)
 	if (*value) {
 		fprintf(fp, "domain=%s\n"
 			    "expand-hosts\n", value);	// expand hostnames in hosts file
-		if (nvram_get_int("lan_dns_fwd_local") != 1)
-			fprintf(fp, "bogus-priv\n"
-			            "local=/%s/\n", value);	// Don't forward local queries upstream
+	}
+	if (nvram_get_int("lan_dns_fwd_local") != 1) {
+		fprintf(fp, "bogus-priv\n"			// don't forward private reverse lookups upstream
+		            "domain-needed\n");			// don't forward plain name queries upstream
+		if (*value)
+			fprintf(fp, "local=/%s/\n", value);	// don't forward local domain queries upstream
 	}
 
 	if ((is_routing_enabled() && nvram_get_int("dhcp_enable_x"))
