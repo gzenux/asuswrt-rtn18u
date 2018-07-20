@@ -817,7 +817,7 @@ void start_ovpn_server(int serverNum)
 		if (nvram_match("ddns_server_x","WWW.NAMECHEAP.COM"))
 			fprintf(fp_client, "remote %s.%s %d\n", nvram_safe_get("ddns_hostname_x"), nvram_safe_get("ddns_username_x"), nvi);
 		else
-			fprintf(fp_client, "remote %s %d\n", nvram_safe_get("ddns_hostname_x"), nvram_get_int(buffer));
+			fprintf(fp_client, "remote %s %d\n", nvram_safe_get("ddns_hostname_x"), nvi);
 	}
 	else
 	{
