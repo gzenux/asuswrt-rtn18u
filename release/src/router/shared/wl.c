@@ -430,6 +430,23 @@ dhd_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val)
 }
 #endif
 
+#ifdef RTN18U
+int with_non_dfs_chspec(char *wif)
+{
+	return 0;
+}
+
+chanspec_t select_chspec_with_band_bw(char *wif, int band, int bw, chanspec_t chanspec)
+{
+	return 0;
+}
+
+void wl_reset_ssid(char *wif)
+{
+	return;
+}
+#endif
+
 /*
 void
 wl_printlasterror(char *name)
