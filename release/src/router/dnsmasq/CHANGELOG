@@ -37,8 +37,15 @@ version 2.80
 	without DNSSEC RRs to queries with the do-bit set, but only when
 	DNSSEC validation was not enabled.
 	Thanks to Petr Menšík for spotting this.
-	
-	
+
+	Fix missing fatal errors with some malformed options
+	(server, local, address, rebind-domain-ok, ipset, alias).
+	Thanks to Eugene Lozovoy for spotting the problem.
+
+	Fix crash on startup with a --synth-domain which has no prefix.
+	Introduced in 2.79. Thanks to Andreas Engel for the bug report.
+
+
 version 2.79
 	Fix parsing of CNAME arguments, which are confused by extra spaces.
 	Thanks to Diego Aguirre for spotting the bug.
