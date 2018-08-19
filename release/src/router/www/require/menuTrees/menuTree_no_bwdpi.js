@@ -155,8 +155,8 @@ define(function(){
 				index: "menu_LAN",
 				tab: [
 					{url: "Advanced_LAN_Content.asp", tabName: "<#menu5_2_1#>"},
-					{url: "DNSFilter.asp", tabName: "DNSFilter"},
 					{url: "Advanced_DHCP_Content.asp", tabName: "<#menu5_2_2#>"},
+					{url: "DNSFilter.asp", tabName: "DNSFilter"},
 					{url: "Advanced_MultiSubnet_Content.asp", tabName: "<#menu5_2_2#>"},
 					{url: "Advanced_GWStaticRoute_Content.asp", tabName: "<#menu5_2_3#>"},
 					{url: "Advanced_IPTV_Content.asp", tabName: "IPTV"},
@@ -603,6 +603,7 @@ define(function(){
 					retArray.push("Advanced_WWPS_Content.asp");
 					retArray.push("Advanced_WMode_Content.asp");
 					retArray.push("Advanced_WSecurity_Content.asp");
+					retArray.push("DNSFilter.asp");
 				}
 				else if(isSwMode("ap")){
 					retArray.push("GameBoost.asp");
@@ -624,6 +625,7 @@ define(function(){
 					retArray.push("Captive_Portal_Advanced.asp");
 					//short term solution for only router mode support Facebook Wi-Fi
 					retArray.push("Guest_network_fbwifi.asp");
+					retArray.push("DNSFilter.asp");
 				}
 				else if(isSwMode("mb")){
 					retArray.push("GameBoost.asp");
@@ -639,6 +641,7 @@ define(function(){
 					retArray.push("Main_IPTStatus_Content.asp");
 					retArray.push("Main_ConnStatus_Content.asp");
 					retArray.push("Advanced_Smart_Connect.asp");
+					retArray.push("DNSFilter.asp");
 				}
 
 				/* System Status Changed */
