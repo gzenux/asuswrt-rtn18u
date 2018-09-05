@@ -6833,7 +6833,7 @@ libical-2.0.0-install:
 		ln -sf libicalvcal.so.2.0.0 libicalvcal.so.2
 
 libconfuse/Makefile:
-	cd libconfuse && $(CONFIGURE) \
+	cd libconfuse && autoreconf -i -f && $(CONFIGURE) \
 		CFLAGS="$(EXTRACFLAGS) -Os -I$(STAGEDIR)/usr/include -ffunction-sections -fdata-sections -fPIC -I$(TOP)/libiconv-1.14/include" \
 		LDFLAGS="$(LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libiconv-1.14/lib/.libs -liconv" \
 		--prefix=/usr --disable-shared \
