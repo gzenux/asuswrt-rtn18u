@@ -3920,7 +3920,7 @@ lldpd-0.9.8/Makefile:
 	CFLAGS="-g -O2 -I$(STAGEDIR)/usr/include" \
 	LDFLAGS="-L$(TOP)/lldpd-0.9.8/lib -lm -L$(STAGEDIR)/usr/lib -ljansson $(if $(RTCONFIG_AMAS),-L$(TOP)/json-c/.libs,)" \
 	--with-privsep-user=nobody --with-privsep-group=root --with-privsep-path=/var/run/lldpd \
-	$(if $(HND_ROUTER),,--enable-oldies) \
+	$(if $(RTCONFIG_HND_ROUTER),,--enable-oldies) \
 	$(if $(RTCONFIG_AMAS),--with-json=yes,)
 
 lldpd-0.9.8-install: lldpd-0.9.8
@@ -6865,8 +6865,8 @@ inadyn/Makefile:
 		OpenSSL_CFLAGS="-I$(TOP)/openssl" \
 		OpenSSL_LIBS="-L$(TOP)/openssl -lcrypto" \
 		CFLAGS="$(EXTRACFLAGS) -Os -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/shared/bcmwifi/include -DTYPEDEF_FLOAT_T -I$(STAGEDIR)/usr/include -ffunction-sections -fdata-sections -fPIC -DASUSWRT $(if $(RTCONFIG_LETSENCRYPT),-DASUS_LE,)" \
-		LDFLAGS="$(LDFLAGS) $(shell if [[ "$(HND_ROUTER)" = "y" ]] ; then echo "-L$(TOP)/wlcsm -lwlcsm"; else echo ""; fi) -L$(TOP)/nvram$(BCMEX)$(EX7) -lnvram -L$(TOP)/shared -lshared -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		--prefix=/usr -enable-openssl
+		LDFLAGS="$(LDFLAGS) $(shell if [[ "$(HND_ROUTER)" = "y" ]] ; then echo "-L$(TOP)/wlcsm -lwlcsm"; else echo ""; fi) -L$(TOP)/nvram$(BCMEX)$(EX7) -lnvram -L$(TOP)/shared -lshared $(if $(RTCONFIG_QTN),-L$(TOP)/libqcsapi_client -lqcsapi_client) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		--prefix="" --enable-openssl
 
 inadyn: shared nvram${BCMEX}$(EX7) libconfuse inadyn/Makefile
 	@$(SEP)

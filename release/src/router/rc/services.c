@@ -3091,7 +3091,7 @@ ddns_updated_main(int argc, char *argv[])
 	nvram_set("ddns_hostname_old", nvram_safe_get("ddns_hostname_x"));
 	nvram_set("ddns_updated", "1");
 
-	logmessage("ddns", "ddns update ok");
+//	logmessage("ddns", "ddns update ok");
 
 #ifdef RTCONFIG_LETSENCRYPT
 	if (nvram_match("le_rc_notify", "1")) {
@@ -3125,8 +3125,7 @@ start_ddns(void)
 	char *service, *loglevel;
 	int wild = nvram_get_int("ddns_wildcard_x");
 	int unit, asus_ddns = 0;
-	char tmp[32], prefix[] = "wanXXXXXXXXXX_";
-	char getwancmd[40];
+	char tmp[512], prefix[] = "wanXXXXXXXXXX_";
 	time_t now;
 	pid_t pid;
 
@@ -3168,7 +3167,6 @@ start_ddns(void)
 	passwd = nvram_safe_get("ddns_passwd_x");
 	host = nvram_safe_get("ddns_hostname_x");
 	unlink("/tmp/ddns.cache");
-	system("rm -f /tmp/inadyn/cache/*"); /* */
 
 	if (strcmp(server, "WWW.DYNDNS.ORG")==0)
 		service = "default@dyndns.org";
@@ -3261,6 +3259,7 @@ start_ddns(void)
 		if( (fp = fopen(INADYNCONF, "w"))) {
 			chmod(INADYNCONF, 0600);
 			fprintf(fp, "ca-trust-file = /etc/ssl/certs/ca-certificates.crt\n");
+			fprintf(fp, "iterations = 1\n");
 
 			if (asus_ddns == 11) {
 				fprintf(fp, "custom namecheap {\n");
@@ -3272,6 +3271,7 @@ start_ddns(void)
 				fprintf(fp, "custom selfhost {\n");
 				fprintf(fp, "ddns-server = carol.selfhost.de\n");
 				fprintf(fp, "ddns-path =\"/update?username=%%u&password=%%p&myip=%%i&hostname=1\"\n");
+				fprintf(fp, "hostname = %s\n", host);
 			} else if (asus_ddns == 1) {
 //				char *nserver = nvram_invmatch("ddns_serverhost_x", "") ?
 //				nvram_safe_get("ddns_serverhost_x") :
@@ -3283,8 +3283,10 @@ start_ddns(void)
 				fprintf(fp, "hostname = %s\n", host);
 			}
 
-			fprintf(fp, "username = %s\n", user);
-			fprintf(fp, "password = %s\n", passwd);
+			str_escape_quotes(tmp, user, sizeof(tmp));
+			fprintf(fp, "username = \"%s\"\n", tmp);
+			str_escape_quotes(tmp, passwd, sizeof(tmp));
+			fprintf(fp, "password = \"%s\"\n", tmp);
 
 			if (nvram_get_int("ddns_ipcheck") == 0)	// Internal (local)
 #ifdef HND_ROUTER
@@ -3314,10 +3316,9 @@ start_ddns(void)
 			else
 				loglevel = "notice";
 
-			snprintf(getwancmd, sizeof(getwancmd), "nvram get %sipaddr", prefix);
-			char *argv[] = { "/usr/sbin/inadyn", "-1",
+			char *argv[] = { "/usr/sbin/inadyn",
 			                 "-e", "/sbin/ddns_updated",
-			                 "-f", "/etc/inadyn.conf",
+					"--exec-nochg", "/sbin/ddns_updated",
 			                 "--cache-dir=/tmp/inadyn.cache",
 			                 "-l", loglevel,
 			                 NULL };
@@ -3345,6 +3346,9 @@ stop_ddns(void)
 		eval("iptables-restore", "/tmp/filter_rules");
 		nvram_unset("ddns_tunbkrnet");
 	}
+
+	system("rm -f /tmp/inadyn.cache/*"); /* */
+
 #ifdef RTCONFIG_OPENVPN
 	update_ovpn_profie_remote();
 #endif
@@ -3429,7 +3433,7 @@ asusddns_reg_domain(int reg)
 	) {
 		logmessage("asusddns", "clear ddns cache file for server/hostname change");
 		unlink("/tmp/ddns.cache");
-		system("rm -f /tmp/inadyn/cache/*"); /* */
+		system("rm -f /tmp/inadyn.cache/*"); /* */
 	}
 	else if (!(fp = fopen("/tmp/ddns.cache", "r")) && (ddns_cache = nvram_get("ddns_cache"))) {
 		if ((fp = fopen("/tmp/ddns.cache", "w+"))) {
@@ -3473,7 +3477,6 @@ asusddns_reg_domain(int reg)
 
 		char *argv[] = { "/usr/sbin/inadyn", "-1",
 				"-e", "/sbin/ddns_updated",
-				"-f", "/etc/inadyn.conf",
 				"--cache-dir=/tmp/inadyn.cache",
 				"-l", loglevel,
 			NULL };
@@ -3555,7 +3558,6 @@ _dprintf("%s: do inadyn to unregister! unit = %d wan_ifname = %s nserver = %s ho
 
 		char *argv[] = { "/usr/sbin/inadyn", "-1",
 				"-e", "/sbin/ddns_updated",
-				"-f", "/etc/inadyn.conf",
 				"--cache-dir=/tmp/inadyn.cache",
 				"-l", loglevel,
 			NULL };

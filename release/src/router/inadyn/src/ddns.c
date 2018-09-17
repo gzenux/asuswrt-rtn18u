@@ -652,8 +652,13 @@ static int update_alias_table(ddns_t *ctx)
 		for (i = 0; i < info->alias_count; i++) {
 			ddns_alias_t *alias = &info->alias[i];
 
-			if (!alias->update_required)
+			if (!alias->update_required) {
+#ifdef ASUSWRT
+				if (script_nochg_exec)
+					os_shell_execute(script_nochg_exec, alias->address, alias->name);
+#endif
 				continue;
+			}
 
 			TRY(send_update(ctx, info, alias, &anychange));
 
@@ -704,9 +709,11 @@ static int get_encoded_user_passwd(void)
 
 		info->creds.encoded = 0;
 
-		/* Concatenate username and password with a ':', without
+		/*
+		 * Concatenate username and password with a ':', without
 		 * snprintf(), since that can cause information loss if
-		 * the password has "\=" or similar in it, issue #57 */
+		 * the password has "\=" or similar in it, issue #57
+		 */
 		strlcpy(buf, info->creds.username, len);
 		strlcat(buf, ":", len);
 		strlcat(buf, info->creds.password, len);
@@ -721,7 +728,7 @@ static int get_encoded_user_passwd(void)
 			break;
 		}
 
-		logit(LOG_DEBUG, "Base64 encode %s for %s ...", buf, info->system->name);
+//		logit(LOG_DEBUG, "Base64 encode %s for %s ...", buf, info->system->name);
 		rc2 = base64_encode((unsigned char *)encode, &dlen, (unsigned char *)buf, strlen(buf));
 		if (rc2) {
 			logit(LOG_WARNING, "Failed base64 encoding user:pass for %s!", info->system->name);
@@ -738,6 +745,7 @@ static int get_encoded_user_passwd(void)
 		info = conf_info_iterator(0);
 	}
 
+	memset(buf, 0, len);
 	free(buf);
 
 	return rc;

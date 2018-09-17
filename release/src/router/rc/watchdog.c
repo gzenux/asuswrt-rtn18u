@@ -5015,9 +5015,9 @@ void regular_ddns_check(void)
 {
 #ifdef RPAC68U
 /* The workaround solution avoiding watchdog segfault on RP-AC68U. */
-	int r, wan_unit = rtk_wan_primary_ifunit(), last_unit = nvram_get_int("ddns_last_wan_unit");
+	int wan_unit = rtk_wan_primary_ifunit();
 #else
-	int r, wan_unit = wan_primary_ifunit(), last_unit = nvram_get_int("ddns_last_wan_unit");
+	int wan_unit = wan_primary_ifunit();
 #endif
 	char prefix[sizeof("wanX_YYY")];
 	struct in_addr ip_addr;
@@ -5052,29 +5052,20 @@ void regular_ddns_check(void)
 	if (!nvram_match("wans_mode", "lb") && !is_wan_connect(wan_unit))
 		return;
 
-	snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
-	ip_addr.s_addr = *(unsigned long *)hostinfo -> h_addr_list[0];
-	//_dprintf("%s ?= %s\n", nvram_pf_get(prefix, "ipaddr"), inet_ntoa(ip_addr));
-	if (nvram_pf_match(prefix, "ipaddr", inet_ntoa(ip_addr)))
-		return;
+	// Only check nvram IP for internal IP check mode
+	if (nvram_get_int("ddns_ipcheck") == 0) {
+		snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
+		ip_addr.s_addr = *(unsigned long *)hostinfo -> h_addr_list[0];
+		//_dprintf("%s ?= %s\n", nvram_pf_get(prefix, "ipaddr"), inet_ntoa(ip_addr));
+		if (nvram_pf_match(prefix, "ipaddr", inet_ntoa(ip_addr)))
+			return;
 
-	//_dprintf("WAN IP change!\n");
-	nvram_set("ddns_update_by_wdog", "1");
-	if (wan_unit != last_unit) {
-		unlink("/tmp/ddns.cache");
-		system("rm -f /tmp/inadyn/cache/*"); /* */
+		logmessage("watchdog", "DDNS hostname does not match current IP - launching DDNS update");
 	}
-	logmessage("watchdog", "Hostname/IP mapping error! Restart ddns.");
-	if (last_unit != wan_unit)
-		r = notify_rc("restart_ddns");
-	else
-		r = notify_rc("start_ddns");
 
-	if (!r)
-		nvram_set_int("ddns_last_wan_unit", wan_unit);
+	nvram_set("ddns_update_by_wdog", "1");
 
-
-	return;
+	notify_rc("start_ddns");
 }
 
 void ddns_check(void)
@@ -5087,8 +5078,10 @@ void ddns_check(void)
 #endif
 
 	//_dprintf("ddns_check... %d\n", ddns_check_count);
-	if (!nvram_match("ddns_enable_x", "1"))
-		return;
+
+	// First time called (i.e. after boot)
+	if (last_unit == -1)
+		last_unit = wan_unit;
 
 #if defined(RTCONFIG_DUALWAN)
 	if (nvram_match("wans_mode", "lb")) {
@@ -5122,7 +5115,7 @@ void ddns_check(void)
 			return;
 	}
 
-	if (nvram_match("ddns_regular_check", "1")&& !nvram_match("ddns_server_x", "WWW.ASUS.COM")) {
+	if (nvram_match("ddns_regular_check", "1")/*&& !nvram_match("ddns_server_x", "WWW.ASUS.COM")*/) {
 		int period = nvram_get_int("ddns_regular_period");
 		if (period < 30) period = 60;
 		if (ddns_check_count >= (period*2)) {
@@ -5133,7 +5126,7 @@ void ddns_check(void)
 		ddns_check_count++;
 	}
 
-	if (wan_unit == last_unit && nvram_match("ddns_updated", "1")) //already updated success
+	if ((wan_unit == last_unit) && nvram_match("ddns_updated", "1")) //already updated success
 		return;
 
 	if (wan_unit == last_unit) {
@@ -5155,8 +5148,8 @@ void ddns_check(void)
 	nvram_set("ddns_update_by_wdog", "1");
 	if (wan_unit != last_unit) {
 		unlink("/tmp/ddns.cache");
-		system("rm -f /tmp/inadyn/cache/*"); /* */
 	}
+	system("rm -f /tmp/inadyn.cache/*"); /* */
 	logmessage("watchdog", "start ddns.");
 	if (last_unit != wan_unit)
 		r = notify_rc("restart_ddns");
@@ -5166,7 +5159,6 @@ void ddns_check(void)
 	if (!r)
 		nvram_set_int("ddns_last_wan_unit", wan_unit);
 
-	return;
 }
 
 void networkmap_check()
@@ -7035,7 +7027,7 @@ wdp:
 		nvram_set("ddns_updated", "0");
 	}
 
-	ddns_check();
+	if (nvram_match("ddns_enable_x", "1")) ddns_check();
 	networkmap_check();
 	httpd_check();
 	dnsmasq_check();

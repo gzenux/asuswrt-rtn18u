@@ -18,6 +18,12 @@
 
 #include <openvpn_config.h>
 #include <openvpn_control.h>
+#include <openssl/ssl.h>
+
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 
 // Line number as text string
 #define __LINE_T__ __LINE_T_(__LINE__)
@@ -620,11 +626,11 @@ void start_ovpn_server(int serverNum)
 	int nvi, ip[4], nm[4];
 	int pid;
 	int taskset_ret;
-	char fpath[128];
 	int valid = 0;
 	int userauth = 0, useronly = 0;
 	int i, len;
 	char prefix[16];
+	DH *dhparams = NULL;
 
 	snprintf(prefix, sizeof (prefix), "vpn_server%d_", serverNum);
 
@@ -1078,8 +1084,8 @@ void start_ovpn_server(int serverNum)
 		     !ovpn_key_exists(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CERT))
 		{
 
-			sprintf(fpath, "/tmp/genvpncert.sh");
-			fp = fopen(fpath, "w");
+			sprintf(buffer, "/tmp/genvpncert.sh");
+			fp = fopen(buffer, "w");
 			if(fp) {
 				fprintf(fp, "#!/bin/sh\n");
 				//fprintf(fp, ". /rom/easy-rsa/vars\n");
@@ -1106,29 +1112,29 @@ void start_ovpn_server(int serverNum)
 				fprintf(fp, "/rom/easy-rsa/pkitool client\n");
 
 				fclose(fp);
-				chmod(fpath, 0700);
-				eval(fpath);
-				unlink(fpath);
+				chmod(buffer, 0700);
+				eval(buffer);
+				unlink(buffer);
 			}
 
 			//set certification and key to nvram
-			sprintf(fpath, "/etc/openvpn/server%d/ca.key", serverNum);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CA_KEY, NULL, fpath);
+			sprintf(buffer, "/etc/openvpn/server%d/ca.key", serverNum);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CA_KEY, NULL, buffer);
 
-			sprintf(fpath, "/etc/openvpn/server%d/ca.crt", serverNum);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CA, NULL, fpath);
+			sprintf(buffer, "/etc/openvpn/server%d/ca.crt", serverNum);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CA, NULL, buffer);
 
-			sprintf(fpath, "/etc/openvpn/server%d/server.key", serverNum);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_KEY, NULL, fpath);
+			sprintf(buffer, "/etc/openvpn/server%d/server.key", serverNum);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_KEY, NULL, buffer);
 
-			sprintf(fpath, "/etc/openvpn/server%d/server.crt", serverNum);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CERT, NULL, fpath);
+			sprintf(buffer, "/etc/openvpn/server%d/server.crt", serverNum);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CERT, NULL, buffer);
 
-			sprintf(fpath, "/etc/openvpn/server%d/client.key", serverNum);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_KEY, NULL, fpath);
+			sprintf(buffer, "/etc/openvpn/server%d/client.key", serverNum);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_KEY, NULL, buffer);
 
-			sprintf(fpath, "/etc/openvpn/server%d/client.crt", serverNum);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_CERT, NULL, fpath);
+			sprintf(buffer, "/etc/openvpn/server%d/client.crt", serverNum);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_CERT, NULL, buffer);
 		}
 		else {
 				sprintf(buffer, "/etc/openvpn/server%d/ca.key", serverNum);
@@ -1203,28 +1209,47 @@ void start_ovpn_server(int serverNum)
 		// Only do this if we do not have both userauth and useronly enabled at the same time
 		if ( !(userauth && useronly) )
 		{
+			BIO              *certbio = NULL;
+			X509                *cert = NULL;
+			X509_STORE         *store = NULL;
+			X509_STORE_CTX  *vrfy_ctx = NULL;
+
 			/*
 			   See if stored client cert was signed with our stored CA.  If not, it means
 			   the CA was changed by the user and the current client crt/key no longer match,
 			   so we should not insert them in the exported client ovp file.
 			*/
-			fp = fopen("/tmp/test.crt", "w");
-			fprintf(fp, "%s", get_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_CERT, buffer2, sizeof(buffer2)));
-			fclose(fp);
 
-			sprintf(buffer, "/usr/sbin/openssl verify -CAfile /etc/openvpn/server%d/ca.crt /tmp/test.crt > /tmp/output.txt", serverNum);
-			system(buffer);
-			f_read_string("/tmp/output.txt", buffer, 64);
-	                unlink("/tmp/test.crt");
+			valid = 0;
+			OpenSSL_add_all_algorithms();
 
-			if (!strncmp(buffer,"/tmp/test.crt: OK",17))
-				valid = 1;
+			get_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_CERT, buffer2, sizeof(buffer2));
+
+			if ((certbio = BIO_new(BIO_s_mem())) ) {
+				if ((store = X509_STORE_new())) {
+					if ((vrfy_ctx = X509_STORE_CTX_new())) {
+						BIO_puts(certbio, buffer2);
+						if ( (cert = PEM_read_bio_X509(certbio, NULL, 0, NULL))) {	// client cert
+							sprintf(buffer, "/etc/openvpn/server%d/ca.crt", serverNum);
+							if (X509_STORE_load_locations(store, buffer, NULL) == 1) {	// CA cert
+								X509_STORE_CTX_init(vrfy_ctx, store, cert, NULL);
+								valid = X509_verify_cert(vrfy_ctx);
+							}
+							X509_free(cert);
+						}
+						X509_STORE_CTX_free(vrfy_ctx);
+					}
+					X509_STORE_free(store);
+				}
+				BIO_free_all(certbio);
+			}
+			EVP_cleanup();
+			//logmessage("openvpn", "Valid crt = %d", valid);
 
 			fprintf(fp_client, "<cert>\n");
-			if ((valid == 1) && ovpn_key_exists(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_CERT)) {
-				fprintf(fp_client, "%s", get_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_CLIENT_CERT, buffer2, sizeof(buffer2)));
-				len = strlen(buffer2);
-				if ((len) && (buffer2[len-1] != '\n'))
+			if (valid == 1) {
+				fprintf(fp_client, "%s", buffer2);
+				if (buffer2[strlen(buffer2)-1] != '\n')
 					fprintf(fp_client, "\n");       // Append newline if missing
 			} else {
 				fprintf(fp_client, "    paste client certificate data here\n");
@@ -1243,36 +1268,40 @@ void start_ovpn_server(int serverNum)
 			fprintf(fp_client, "</key>\n");
 		}
 
+		// DH
+		sprintf(buffer, "/etc/openvpn/server%d/dh.pem", serverNum);
 		valid = 0;
 
 		if ( ovpn_key_exists(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_DH))
 		{
-			sprintf(buffer, "/etc/openvpn/server%d/dh.pem", serverNum);
 			fp = fopen(buffer, "w");
 			chmod(buffer, S_IRUSR|S_IWUSR);
 			fprintf(fp, "%s", get_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_DH, buffer2, sizeof(buffer2)));
 			fclose(fp);
-			valid = 1;	// Tentative state
+
 			if (strncmp(buffer2, "none", 4))	// If not set to "none" then validate it
 			{
-				// Validate DH strength
-				sprintf(buffer, "/usr/sbin/openssl dhparam -in /etc/openvpn/server%d/dh.pem -text | grep \"DH Parameters:\" > /tmp/output.txt", serverNum);
-				system(buffer);
-				if (f_read_string("/tmp/output.txt", buffer, 64) > 0) {
-					if (sscanf(strstr(buffer,"DH Parameters"),"DH Parameters: (%d bit)", &i)) {
-						if (i < 1024) {
-							logmessage("openvpn","WARNING: DH for server %d is too weak (%d bit, must be at least 1024 bit). Using a pre-generated 2048-bit PEM.", serverNum, i);
-							valid = 0;      // Not valid after all, must regenerate
-						}
+				fp = fopen(buffer, "r");
+				if (fp) {
+					dhparams = PEM_read_DHparams(fp, NULL, 0, NULL);
+					if (dhparams) {
+						valid = BN_num_bits(dhparams->p);
+						//logmessage("openssl", "DH size: %d", valid);
+						OPENSSL_free(dhparams);
 					}
+					fclose(fp);
 				}
+				if ((valid != 0) && (valid < 1024)) {
+					logmessage("openvpn","WARNING: DH for server %d is too weak (%d bit, must be at least 1024 bit). Using a pre-generated 2048-bit PEM.", serverNum, i);
+				}
+			} else {
+				valid = 1024;
 			}
 		}
-		if (valid == 0)
+		if (valid < 1024)
 		{	// Provide a 2048-bit PEM, from RFC 3526.
-			sprintf(fpath, "/etc/openvpn/server%d/dh.pem", serverNum);
-			eval("cp", "/etc/ssl/certs/dh2048.pem", fpath);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_DH, NULL, fpath);
+			eval("cp", "/etc/ssl/certs/dh2048.pem", buffer);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_DH, NULL, buffer);
 		}
 	}
 
@@ -1289,10 +1318,10 @@ void start_ovpn_server(int serverNum)
 		}
 		else
 		{	//generate openvpn static key
-			sprintf(fpath, "/etc/openvpn/server%d/static.key", serverNum);
-			eval("openvpn", "--genkey", "--secret", fpath);
+			sprintf(buffer, "/etc/openvpn/server%d/static.key", serverNum);
+			eval("openvpn", "--genkey", "--secret", buffer);
 			sleep(2);
-			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_STATIC, NULL, fpath);
+			set_ovpn_key(OVPN_TYPE_SERVER, serverNum, OVPN_SERVER_STATIC, NULL, buffer);
 		}
 
 		if(cryptMode == TLS)
