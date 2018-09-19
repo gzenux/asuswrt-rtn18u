@@ -6859,7 +6859,7 @@ libconfuse-clean:
 	rm libconfuse/Makefile
 
 inadyn/Makefile:
-	cd inadyn && $(CONFIGURE) \
+	cd inadyn && autoreconf -i -f && $(CONFIGURE) \
 		confuse_CFLAGS="-I$(TOP)/libconfuse/src" \
 		confuse_LIBS="-L$(TOP)/libconfuse/src/.libs -lconfuse" \
 		OpenSSL_CFLAGS="-I$(TOP)/openssl" \
