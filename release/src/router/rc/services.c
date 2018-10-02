@@ -1709,6 +1709,10 @@ void start_dnsmasq(void)
 	if (nvram_match("dns_norebind", "1"))
 		fprintf(fp, "stop-dns-rebind\n");
 
+	/* Protect against VU#598349 */
+	fprintf(fp,"dhcp-name-match=set:wpad-ignore,wpad\n"
+		   "dhcp-ignore-names=tag:wpad-ignore\n");
+
 	append_custom_config("dnsmasq.conf",fp);
 	fclose(fp);
 
@@ -3194,19 +3198,16 @@ start_ddns(void)
 		service = "default@no-ip.com";
 	else if (strcmp(server, "WWW.NAMECHEAP.COM")==0) {
 		service = "namecheap";
-		asus_ddns = 11;
+		asus_ddns = 10;
 	}
         else if (strcmp(server, "CUSTOM")==0)
                 service = "";
 	else if (strcmp(server, "FREEDNS.AFRAID.ORG") == 0)
 		service = "default@freedns.afraid.org";
-	else if (strcmp(server, "WWW.SELFHOST.DE") == 0) {
-		service = "selfhost";
-		asus_ddns = 12;
-	}
+	else if (strcmp(server, "WWW.SELFHOST.DE") == 0)
+		service = "default@selfhost.de";
 	else if (strcmp(server, "WWW.ASUS.COM")==0) {
 		service = "update@asus.com";
-		asus_ddns = 1;
 		user = get_lan_hwaddr();
 		passwd = nvram_safe_get("secret_code");
 	}
@@ -3240,7 +3241,7 @@ start_ddns(void)
 	nvram_unset("ddns_status");
 	nvram_unset("ddns_updated");
 
-	_dprintf("asus_ddns : %d\n",asus_ddns);
+//	_dprintf("asus_ddns : %d\n",asus_ddns);
 
 	if (asus_ddns == 2) { //Peanuthull DDNS
 		if( (fp = fopen("/etc/phddns.conf", "w")) != NULL ) {
@@ -3258,32 +3259,18 @@ start_ddns(void)
 	else if (*service) {	// Inadyn
 		if( (fp = fopen(INADYNCONF, "w"))) {
 			chmod(INADYNCONF, 0600);
-			fprintf(fp, "ca-trust-file = /etc/ssl/certs/ca-certificates.crt\n");
 			fprintf(fp, "iterations = 1\n");
 
-			if (asus_ddns == 11) {
+			if (asus_ddns == 10) {
 				fprintf(fp, "custom namecheap {\n");
 				fprintf(fp, "ddns-server = dynamicdns.park-your-domain.com\n");
 				// We store the domain.tld in the username nvram
 				fprintf(fp, "ddns-path = \"/update?domain=%%u&password=%%p&host=\"\n");
-				fprintf(fp, "hostname = %s\n", host);
-			} else if (asus_ddns == 12) {
-				fprintf(fp, "custom selfhost {\n");
-				fprintf(fp, "ddns-server = carol.selfhost.de\n");
-//				fprintf(fp, "ddns-path = \"/update?username=%%u&password=%%p&myip=%%i&hostname=1\"\n");
-				fprintf(fp, "ddns-path = \"/nic/update?hostname=%%h&myip=%%i\"\n");
-				fprintf(fp, "hostname = %s\n", host);
-			} else if (asus_ddns == 1) {
-//				char *nserver = nvram_invmatch("ddns_serverhost_x", "") ?
-//				nvram_safe_get("ddns_serverhost_x") :
-//					"nwsrv-ns1.asus.com";
-				fprintf(fp, "provider update@asus.com {\n");
-				fprintf(fp, "hostname = %s\n", host);
 			} else {
 				fprintf(fp, "provider %s {\n", service);
-				fprintf(fp, "hostname = %s\n", host);
 			}
 
+			fprintf(fp, "hostname = %s\n", host);
 			str_escape_quotes(tmp, user, sizeof(tmp));
 			fprintf(fp, "username = \"%s\"\n", tmp);
 			str_escape_quotes(tmp, passwd, sizeof(tmp));
@@ -3320,7 +3307,6 @@ start_ddns(void)
 			char *argv[] = { "/usr/sbin/inadyn",
 			                 "-e", "/sbin/ddns_updated",
 					"--exec-nochg", "/sbin/ddns_updated",
-			                 "--cache-dir=/tmp/inadyn.cache",
 			                 "-l", loglevel,
 			                 NULL };
 
@@ -3478,7 +3464,6 @@ asusddns_reg_domain(int reg)
 
 		char *argv[] = { "/usr/sbin/inadyn", "-1",
 				"-e", "/sbin/ddns_updated",
-				"--cache-dir=/tmp/inadyn.cache",
 				"-l", loglevel,
 			NULL };
 		_eval(argv, NULL, 0, &pid);
@@ -3559,7 +3544,6 @@ _dprintf("%s: do inadyn to unregister! unit = %d wan_ifname = %s nserver = %s ho
 
 		char *argv[] = { "/usr/sbin/inadyn", "-1",
 				"-e", "/sbin/ddns_updated",
-				"--cache-dir=/tmp/inadyn.cache",
 				"-l", loglevel,
 			NULL };
 		_eval(argv, NULL, 0, &pid);
