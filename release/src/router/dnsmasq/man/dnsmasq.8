@@ -27,7 +27,7 @@ TFTP server to allow net/PXE boot of DHCP hosts and also supports BOOTP. The PXE
 .PP
 The dnsmasq DHCPv6 server provides the same set of features as the
 DHCPv4 server, and in addition, it includes router advertisements and
-a neat feature which allows nameing for clients which use DHCPv4 and
+a neat feature which allows naming for clients which use DHCPv4 and
 stateless autoconfiguration only for IPv6 configuration. There is support for doing address allocation (both DHCPv6 and RA) from subnets which are dynamically delegated via DHCPv6 prefix delegation.
 .PP
 Dnsmasq is coded with small embedded systems in mind. It aims for the smallest possible memory footprint compatible with the supported functions,  and allows unneeded functions to be omitted from the compiled binary.  
@@ -156,7 +156,7 @@ can be over-ridden with this switch.
 .TP
 .B \-g, --group=<groupname> 
 Specify the group which dnsmasq will run
-as. The defaults to "dip", if available, to facilitate access to
+as. The default is "dip", if available, to facilitate access to
 /etc/ppp/resolv.conf which is not normally world readable.
 .TP
 .B \-v, --version
@@ -231,7 +231,7 @@ options always override the others. The comments about interface labels for
 .B --listen-address
 apply here.
 .TP
-.B --auth-server=<domain>,<interface>|<ip-address>
+.B --auth-server=<domain>,[<interface>|<ip-address>...]
 Enable DNS authoritative mode for queries arriving at an interface or address. Note that the interface or address
 need not be mentioned in 
 .B --interface
@@ -244,7 +244,7 @@ specified interface. The <domain> is the "glue record". It should
 resolve in the global DNS to an A and/or AAAA record which points to
 the address dnsmasq is listening on. When an interface is specified,
 it may be qualified with "/4" or "/6" to specify only the IPv4 or IPv6
-addresses associated with the interface.
+addresses associated with the interface. Since any defined authoritative zones are also available as part of the normal recusive DNS service supplied by dnsmasq, it can make sense to have an --auth-server declaration with no interfaces or address, but simply specifying the glue record. 
 .TP
 .B --local-service
 Accept DNS queries only from hosts whose address is on a local subnet,
@@ -510,7 +510,12 @@ upstream nameserver by a more specific \fB--server\fP directive. As for
 \fB--server\fP, one or more domains with no address returns a
 no-such-domain answer, so \fB--address=/example.com/\fP is equivalent to
 \fB--server=/example.com/\fP and returns NXDOMAIN for example.com and
-all its subdomains.
+all its subdomains. An address specified as '#' translates to the NULL
+address of 0.0.0.0 and its IPv6 equivalent of :: so
+\fB--address=/example.com/#\fP will return NULL addresses for example.com and
+its subdomains. This is partly syntactic sugar for \fB--address=/example.com/0.0.0.0\fP
+and \fB--address=/example.com/::\fP but is also more efficient than including both
+as seperate configuration lines. Note that NULL addresses normally work in the same way as localhost, so beware that clients looking up these names are likely to end up talking to themselves.
 .TP
 .B --ipset=/<domain>[/<domain>...]/<ipset>[,<ipset>...]
 Places the resolved IP addresses of queries for one or more domains in
@@ -822,7 +827,8 @@ authoritative zones as dnsmasq.
 .B --auth-peer=<ip-address>[,<ip-address>[,<ip-address>...]]
 Specify the addresses of secondary servers which are allowed to
 initiate zone transfer (AXFR) requests for zones for which dnsmasq is
-authoritative. If this option is not given, then AXFR requests will be
+authoritative. If this option is not given but --auth-sec-servers is,
+then AXFR requests will be
 accepted from any secondary. Specifying
 .B --auth-peer
 without

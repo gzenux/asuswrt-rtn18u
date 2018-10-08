@@ -700,39 +700,9 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 	client_hostname = daemon->dhcp_buff;
     }
 
-  if (client_hostname)
-    {
-      struct dhcp_match_name *m;
-      size_t nl = strlen(client_hostname); 
-      
-      if (option_bool(OPT_LOG_OPTS))
-	my_syslog(MS_DHCP | LOG_INFO, _("%u client provides name: %s"), ntohl(mess->xid), client_hostname);
+  if (client_hostname && option_bool(OPT_LOG_OPTS))
+    my_syslog(MS_DHCP | LOG_INFO, _("%u client provides name: %s"), ntohl(mess->xid), client_hostname);
 
-
-      for (m = daemon->dhcp_name_match; m; m = m->next)
-	{
-	  size_t ml = strlen(m->name);
-	  char save = 0;
-	  
-	  if (nl < ml)
-	    continue;
-	  if (nl > ml)
-	    {
-	      save = client_hostname[ml];
-	      client_hostname[ml] = 0;
-	    }
-
-	  if (hostname_isequal(client_hostname, m->name) &&
-	      (save == 0 || m->wildcard))
-	    {
-	      m->netid->next = netid;
-	      netid = m->netid;
-	    }
-
-	  if (save != 0)
-	    client_hostname[ml] = save;
-	}
-    }
   
   if (have_config(config, CONFIG_NAME))
     {
@@ -745,11 +715,15 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
     }
   else if (client_hostname)
     {
+      struct dhcp_match_name *m;
+      size_t nl;
+
       domain = strip_hostname(client_hostname);
       
-      if (strlen(client_hostname) != 0)
+      if ((nl = strlen(client_hostname)) != 0)
 	{
 	  hostname = client_hostname;
+	  
 	  if (!config)
 	    {
 	      /* Search again now we have a hostname. 
@@ -766,6 +740,30 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  known_id.next = netid;
 		  netid = &known_id;
 		}
+	    }
+
+	  for (m = daemon->dhcp_name_match; m; m = m->next)
+	    {
+	      size_t ml = strlen(m->name);
+	      char save = 0;
+	      
+	      if (nl < ml)
+		continue;
+	      if (nl > ml)
+		{
+		  save = client_hostname[ml];
+		  client_hostname[ml] = 0;
+		}
+	      
+	      if (hostname_isequal(client_hostname, m->name) &&
+		  (save == 0 || m->wildcard))
+		{
+		  m->netid->next = netid;
+		  netid = m->netid;
+	    }
+	      
+	      if (save != 0)
+		client_hostname[ml] = save;
 	    }
 	}
     }
@@ -949,7 +947,7 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 			mess->siaddr = a_record_from_hosts(boot->tftp_sname, now);
 		      
 		      if (boot->file)
-			strncpy((char *)mess->file, boot->file, sizeof(mess->file)-1);
+			safe_strncpy((char *)mess->file, boot->file, sizeof(mess->file));
 		    }
 		  
 		  option_put(mess, end, OPTION_MESSAGE_TYPE, 1, 
@@ -2360,7 +2358,7 @@ static void do_options(struct dhcp_context *context,
 	      in_list(req_options, OPTION_SNAME))
 	    option_put_string(mess, end, OPTION_SNAME, boot->sname, 1);
 	  else
-	    strncpy((char *)mess->sname, boot->sname, sizeof(mess->sname)-1);
+	    safe_strncpy((char *)mess->sname, boot->sname, sizeof(mess->sname));
 	}
       
       if (boot->file)
@@ -2370,7 +2368,7 @@ static void do_options(struct dhcp_context *context,
 	      in_list(req_options, OPTION_FILENAME))
 	    option_put_string(mess, end, OPTION_FILENAME, boot->file, 1);
 	  else
-	    strncpy((char *)mess->file, boot->file, sizeof(mess->file)-1);
+	    safe_strncpy((char *)mess->file, boot->file, sizeof(mess->file));
 	}
       
       if (boot->next_server.s_addr) 
@@ -2387,14 +2385,14 @@ static void do_options(struct dhcp_context *context,
       if ((!req_options || !in_list(req_options, OPTION_FILENAME)) &&
 	  (opt = option_find2(OPTION_FILENAME)) && !(opt->flags & DHOPT_FORCE))
 	{
-	  strncpy((char *)mess->file, (char *)opt->val, sizeof(mess->file)-1);
+	  safe_strncpy((char *)mess->file, (char *)opt->val, sizeof(mess->file));
 	  done_file = 1;
 	}
       
       if ((!req_options || !in_list(req_options, OPTION_SNAME)) &&
 	  (opt = option_find2(OPTION_SNAME)) && !(opt->flags & DHOPT_FORCE))
 	{
-	  strncpy((char *)mess->sname, (char *)opt->val, sizeof(mess->sname)-1);
+	  safe_strncpy((char *)mess->sname, (char *)opt->val, sizeof(mess->sname));
 	  done_server = 1;
 	}
       
