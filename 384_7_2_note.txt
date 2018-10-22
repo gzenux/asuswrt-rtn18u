@@ -1,0 +1,83 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+   NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+CAUTION:
+    1. If your device uses stock firmware with version 382_50018
+       or later, please downgrade the stock firmware to 382_39935
+       or before by using ASUS Firmware Restoration utility
+       (https://www.asus.com/support/FAQ/1030652) and then upload
+       this firmware via Web UI.
+    2. Upgrade to this firmware from earlier version (<= 384.4_2)
+       will cause the router being not accessible without
+       resetting by hardware button. Please backup the router
+       settings before upgrade the firmware.
+    3. The online upgrade feature is broken between 384.4_3 and
+       384.5-beta2 due to spwenc.o source replacement. Please do
+       not restore the configuration exported from these versions.
+
+384.7_2
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - FIXED: Namecheap DDNS service not working
+  - FIXED: CVE-2018-15599 security issue in Dropbear
+  - FIXED: Potential buffer overrun in httpd
+
+
+384.7
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - NOTE: Important changes to DDNS, please read below.
+
+  - NOTE: Important changes to DNSFilter, please read below.
+
+  - NEW: Merged with GPL 384_21152.
+  - NEW: Replaced old ez-ipupdate DDNS client with In-a-Dyn.
+         A plugin was developed to fully support Asus's DDNS
+         service.
+         Custom services can now be configured through ddns-start,
+         inadyn.conf, inadyn.conf.add or inadyn.postconf.  See the
+         In-a-Dyn documentation as many custom services can be
+         defined for it.
+  - NEW: Added support for freedns.afraid.org DDNS service to webui.
+  - NEW: Added option to retrieve WAN IP from either the local
+         interface (like before) or through a remote server
+         (which works through double NAT) for DDNS.
+  - NEW: Added option to disable checks on unsigned DNSSEC replies.
+         Disabling these will speed up lookups, but it will also
+         remove part of the security benefits of DNSSEC, so it
+         should not be used unless you have a very specific reason
+         to do so.
+  - NEW: Added Quad9 to DNSFilter supported services.
+  - CHANGED: Updated curl to 7.61.1.
+  - CHANGED: Updated wget to 1.19.5.
+  - CHANGED: Updated openssl to 1.0.2p.
+  - CHANGED: Updated dnsmasq to v2.80test8 (themiron).
+  - CHANGED: Updated nano to 3.1.
+  - CHANGED: All DDNS services now use HTTPS.
+  - CHANGED: Replaced Google Domains DDNS script with In-a-Dyn's own
+             plugin.
+  - CHANGED: Moved DNSFilter to the LAN section, to make it clear
+             that it's unrelated to Trend Micro's engine.
+  - CHANGED: Report hostname and IP on Wireless Log page if the
+             info is missing from dnsmasq but available from
+             networkmap.
+  - FIXED: Invalid dnsmasq config when setting DNSFilter to Router
+           mode and having IPv6 enabled (themiron).
+  - FIXED: client table would be shown twice on the VPN Status
+           page if the only connections to an OVPN server
+           were invalid clients (like a port scanner)
+  - FIXED: DDNS forced updates after "x" days wouldn't be
+           initiated.
+  - FIXED: CERT VU#598349 vulnerability (DHCP client could
+           claim the special "wpad" hostname)
+  - REMOVED: Ez-ipupdate DDNS client (replaced with In-a-Dyn).
+             Update your scripts if you were relying on it.
+  - REMOVED: Norton Safe DNSFilter services (being discontinued
+             by Symantec in November).  Configured clients will
+             be automatically migrated to OpenDNS Family - make
+             sure to edit your DNSFIlter settings if you desire
+             to use a different service.
