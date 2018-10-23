@@ -869,7 +869,7 @@ void start_ovpn_server(int serverNum)
 	strlcpy(buffer, nvram_pf_safe_get(prefix, "comp"), sizeof (buffer));
 	if (strcmp(buffer, "-1")) {
                 if (!strcmp(buffer, "lz4") || !strcmp(buffer, "lz4-v2")) {
-			fprintf(fp, "compress %s\n", bnuffer);
+			fprintf(fp, "compress %s\n", buffer);
 			fprintf(fp_client, "compress %s\n", buffer);
 		} else if (!strcmp(buffer, "yes")) {
 			fprintf(fp, "compress lzo\n");
