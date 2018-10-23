@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 [[ $UID == 0 ]] && {
-	exec "$@"
+	OptUSER=""
 } || {
 	# Add user and switch to the user
 	{
@@ -12,5 +12,6 @@ set -Eeuo pipefail
 		gpasswd -a $USER sudo
 		sed -i 's:%sudo\tALL=(ALL\:ALL) ALL:%sudo\tALL=NOPASSWD\: ALL:g' /etc/sudoers
 	} &> /dev/null
-	exec sudo -su $USER exec "$@"
+	OptUSER="-u $USER"
 }
+exec sudo -s ${OptUSER} exec "$@"
