@@ -5,7 +5,7 @@ ImageName=asuswrt
 ImageTag=latest
 HostName=${ImageName}
 WorkDir="/work/${ImageName}"
-DockerfileDir=$(readlink -f "$(dirname $BASH_SOURCE)")
+DockerfileDir=$(dirname "$(readlink -f $BASH_SOURCE)")
 
 function usage() {
 	cat <<EOF >&2
