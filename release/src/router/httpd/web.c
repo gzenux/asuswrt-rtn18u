@@ -2589,7 +2589,7 @@ int validate_instance(webs_t wp, char *name, json_object *root)
 			value = get_cgi_json(strcat_r(prefix, name+15, tmp),root);
 			if(value) {
 				ovpn_key_t key_type;
-				char buf[4096];
+				char buf[8000];
 
 				if(!strcmp(name+15, "static")) {
 					key_type = OVPN_SERVER_STATIC;
@@ -2644,7 +2644,7 @@ int validate_instance(webs_t wp, char *name, json_object *root)
 			value = get_cgi_json(strcat_r(prefix, name+15, tmp),root);
 			if(value) {
 				ovpn_key_t key_type;
-				char buf[4096];
+				char buf[8000];
 
 				if(!strcmp(name+15, "static")) {
 					key_type = OVPN_CLIENT_STATIC;
@@ -3023,7 +3023,7 @@ static int validate_apply(webs_t wp, json_object *root) {
 #ifdef RTCONFIG_OPENVPN
 			else if(!strncmp(name, "vpn_crt_server_", 15) && unit!=-1) {
 				ovpn_key_t key_type;
-				char buf[4096];
+				char buf[8000];
 
 				snprintf(prefix, sizeof(prefix), "vpn_crt_server%d_", unit);
 				(void)strcat_r(prefix, name+15, tmp);
@@ -3064,7 +3064,7 @@ static int validate_apply(webs_t wp, json_object *root) {
 			}
 			else if(!strncmp(name, "vpn_crt_client_", 15) && unit!=-1) {
 				ovpn_key_t key_type;
-				char buf[4096];
+				char buf[8000];
 
 				snprintf(prefix, sizeof(prefix), "vpn_crt_client%d_", unit);
 				(void)strcat_r(prefix, name+15, tmp);
