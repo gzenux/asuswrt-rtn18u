@@ -25,8 +25,14 @@ CAUTION:
          data)
   - NEW: Added "extend" support to SNMP.
   - NEW: Added CleanBrowsing to DNSFilter supported services.
+  - CHANGED: Updated dnsmasq to 2.80-7-g24b8760 (themiron)
   - CHANGED: Removed watchdog from OpenVPN clients, to avoid
              conflicting with more advanced configurations.
+  - CHANGED: Vsftpd TLS mode will now reuse the web server
+             certificate (including any Let's Encrypt generated
+             one).
+  - CHANGED: SSL crypto/cipher hardening for httpd (themiron)
+  - CHANGED: Syslog will now ignore bwdpi debug output (themiron)
   - FIXED: CVE-2018-15599 in dropbear
   - FIXED: Namecheap DDNS service not updating
 
