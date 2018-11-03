@@ -5736,7 +5736,7 @@ avahi-0.6.31/Makefile:
 		--disable-gtk3 --with-xml=expat \
 		--disable-silent-rules \
 		LIBDAEMON_LIBS="-L$(STAGEDIR)/usr/lib -ldaemon -L$(TOP)/nvram$(BCMEX)${EX7} ${EXTRA_NV_LDFLAGS} -lnvram -L$(TOP)/shared -lshared $(if $(RTCONFIG_QTN),-L$(TOP)/libqcsapi_client -lqcsapi_client)" \
-		LIBDAEMON_CFLAGS="-I$(STAGEDIR)/usr/include" --disable-autoipd --disable-stack-protector --with-avahi-user="admin" --with-avahi-group="root" \
+		LIBDAEMON_CFLAGS="-I$(STAGEDIR)/usr/include" --disable-autoipd --disable-stack-protector --with-avahi-user="nobody" --with-avahi-group="nobody" \
 	)
 	touch $@
 
