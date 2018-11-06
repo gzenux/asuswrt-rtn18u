@@ -353,7 +353,7 @@ void start_jffs2(void)
 	run_userfile("/jffs", ".asusrouter", "/jffs", 3);
 
 #ifdef CONFIG_BCMWL5
-#if !defined(RTAC3200) && !defined(RTAC56U) && !defined(RTAC87U)	//kludge
+#if !defined(RTAC3200) && !defined(RTAC56U) && !defined(RTAC87U) && !defined(RTN18U)	//kludge
 	check_asus_jffs();
 #endif
 #endif
