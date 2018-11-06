@@ -731,6 +731,7 @@ ifneq ($(HND_ROUTER),y)
 obj-y += etc
 endif
 # obj-y += vlan # use Busybox vconfig
+#obj-y += utils
 obj-y += ntpclient
 
 ifeq ($(RTCONFIG_REALTEK),y)
@@ -776,7 +777,7 @@ obj-y += fapi_wlan_common-1.0.0.1
 obj-y += libfapi-0.1
 obj-y += taskset
 else
-obj-y += utils$(BCMEX)$(EX7) utils
+obj-y += utils$(BCMEX)$(EX7)
 obj-$(RTCONFIG_EMF) += emf$(BCMEX)$(EX7)
 obj-$(RTCONFIG_EMF) += igs$(BCMEX)$(EX7)
 obj-y += wlconf$(BCMEX)$(EX7)
@@ -1046,6 +1047,7 @@ obj-$(RTCONFIG_TUNNEL) += asusnatnl
 ifeq ($(RTCONFIG_AMAS),y)
 #amas-utils
 obj-y += amas-utils
+
 endif
 #For timemachine
 obj-$(RTCONFIG_TIMEMACHINE) += openssl
@@ -1056,7 +1058,7 @@ obj-$(RTCONFIG_TIMEMACHINE) += netatalk-3.0.5
 ifeq ($(or $(RTCONFIG_TIMEMACHINE),$(RTCONFIG_MDNS)),y)
 obj-y += libdaemon
 obj-y += expat-2.0.1
-obj-y += avahi-0.6.31
+obj-y += avahi
 else
 ifeq ($(or $(RTCONFIG_MEDIA_SERVER),$(RTCONFIG_BWDPI)),y)
 obj-y += mDNSResponder
@@ -3227,11 +3229,6 @@ lsof-install:
 lsof-clean:
 	( cd lsof ; ./Configure -clean )
 	@rm -f lsof/Makefile
-
-ifneq ($(BCMEX),)	
-utils utils-install:
-	@$(SEP)
-endif
 
 mtd-utils: e2fsprogs lzo zlib
 ifeq ($(ALPINE)$(LANTIQ),y)
@@ -5721,6 +5718,47 @@ expat-2.0.1-clean:
 	-@$(MAKE) -C expat-2.0.1 clean
 	@rm -f expat-2.0.1/stamp-h1
 
+avahi: expat-2.0.1 libdaemon avahi/Makefile
+	@$(SEP)
+	@$(MAKE) $(PARALLEL_BUILD) -C $@
+
+avahi/Makefile: avahi/configure
+	cd avahi && $(CONFIGURE) \
+		LDFLAGS="$(LDFLAGS) -L$(STAGEDIR)/usr/lib -ldl -lpthread $(EXTRA_LDFLAGS)" \
+		CFLAGS="-Os $(CFLAGS) -I$(STAGEDIR)/usr/include" \
+		--prefix=/usr --sysconfdir=/tmp localstatedir=/var --with-distro=none \
+		--disable-nls --disable-glib --disable-gobject \
+		--enable-introspection=no \
+		--disable-qt3 --disable-qt4 --disable-gtk --disable-gtk3 \
+		--disable-dbus \
+		--disable-gdbm \
+		--disable-python --disable-pygtk --disable-python-dbus \
+		--disable-mono --disable-monodoc \
+		--disable-autoipd \
+		--disable-doxygen-doc --disable-manpages --disable-xmltoman \
+		--with-xml=expat \
+		--with-avahi-user="nobody" --with-avahi-group="nobody" \
+		--disable-dependency-tracking \
+		--disable-stack-protector \
+		avahi_runtime_dir=/var/run \
+		servicedir=/tmp/avahi/services \
+		LIBDAEMON_LIBS="-L$(STAGEDIR)/usr/lib -ldaemon" \
+		LIBDAEMON_CFLAGS="-I$(STAGEDIR)/usr/include"
+
+avahi-install: avahi
+	install -D avahi/avahi-daemon/.libs/avahi-daemon $(INSTALLDIR)/avahi/usr/sbin/avahi-daemon
+	install -D avahi/avahi-common/.libs/libavahi-common.so.3.5.3 $(INSTALLDIR)/avahi/usr/lib/libavahi-common.so.3.5.3
+	install -D avahi/avahi-core/.libs/libavahi-core.so.7.0.2 $(INSTALLDIR)/avahi/usr/lib/libavahi-core.so.7.0.2
+	$(STRIP) $(INSTALLDIR)/avahi/usr/sbin/avahi-daemon
+	$(STRIP) $(INSTALLDIR)/avahi/usr/lib/libavahi-common.so.3.5.3
+	$(STRIP) $(INSTALLDIR)/avahi/usr/lib/libavahi-core.so.7.0.2
+	cd $(INSTALLDIR)/avahi/usr/lib && ln -sf libavahi-common.so.3.5.3 libavahi-common.so.3
+	cd $(INSTALLDIR)/avahi/usr/lib && ln -sf libavahi-core.so.7.0.2 libavahi-core.so.7
+
+avahi-clean:
+	[ ! -f avahi/Makefile ] || $(MAKE) -C avahi distclean
+	@rm -f avahi/Makefile
+
 #avahi-0.6.31
 avahi-0.6.31: shared nvram$(BCMEX)$(EX7) expat-2.0.1 libdaemon avahi-0.6.31/Makefile
 	@$(SEP)
@@ -7714,10 +7752,6 @@ mmc-utils:
 	$(MAKE) -C mmc-utils
 
 .PHONY : mmc-utils
-
-objy:
-	@echo EX7= $(EX7)
-	@echo objy=$(obj-y)
 
 mtd:
 	$(MAKE) -C mtd
