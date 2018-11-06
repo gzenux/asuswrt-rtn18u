@@ -17,7 +17,10 @@ CAUTION:
 
 384.7_x
   Changelog for RT-N18U:
-  - No Updates Available.
+  - NEW: Partially merged GPL 384_32797 from asuswrt-merlin,
+         the following parts are merged:
+           accel-pptp/avahi/libdisk/ntpclient/nvram_arm/pppd/
+           rp-l2tp/strongswan
 
   Changelog from Asuswrt-Merlin:
   - NEW: Add LZ4 V2 option to OpenVPN compression
