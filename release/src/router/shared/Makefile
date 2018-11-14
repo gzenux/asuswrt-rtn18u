@@ -50,6 +50,8 @@ CFLAGS += -I$(TOP)/shared/sysdeps/lantiq -I$(TOP)/wireless_tools -I$(TOP)/fapi_w
 CFLAGS += -I$(TOP)/wlc_nt
 endif
 
+
+
 ifeq ($(RTCONFIG_BCMWL6),y)
 CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include
 CFLAGS += -I$(SRCBASE)/common/include

@@ -771,7 +771,7 @@ else ifeq ($(RTCONFIG_LANTIQ),y)
 obj-$(RTCONFIG_BT_CONN) += btconfig
 # obj-y += ppacmd
 obj-y += libhelper-1.4.0.2
-obj-y += fapi_wlan_common-1.0.0.1
+obj-y += fapi_wlan_common-05.04.00.131
 obj-y += libnl-bf
 obj-y += openssl
 obj-y += hostapd-2.6
@@ -6641,20 +6641,20 @@ libhelper-1.4.0.2-install:
 	mkdir -p $(TARGETDIR)/usr/lib
 	install -D libhelper-1.4.0.2/libhelper.so $(TARGETDIR)/usr/lib/
 
-libfapi-0.1: fapi_wlan_common-1.0.0.1
+libfapi-0.1: fapi_wlan_common-05.04.00.131
 	cd libfapi-0.1; make clean; make
 
 libfapi-0.1-install:
 	cd libfapi-0.1; make clean; make
 	install -D libfapi-0.1/libfapi.so $(TARGETDIR)/usr/lib/
 
-fapi_wlan_common-1.0.0.1: libhelper-1.4.0.2
-	cd fapi_wlan_common-1.0.0.1; make clean; make
+fapi_wlan_common-05.04.00.131: readline-6.2 libhelper-1.4.0.2
+	cd fapi_wlan_common-05.04.00.131; make clean; make
 
-fapi_wlan_common-1.0.0.1-install:
+fapi_wlan_common-05.04.00.131-install:
 	mkdir -p $(TARGETDIR)/usr/lib
-	install -D fapi_wlan_common-1.0.0.1/libfapiwlancommon.so $(TARGETDIR)/usr/lib/
-	install -D fapi_wlan_common-1.0.0.1/ipkg-lantiq/fapi_wlan_common/usr/lib/fapi_wlan_beerock_cli $(TARGETDIR)/usr/lib/
+	install -D fapi_wlan_common-05.04.00.131/libfapiwlancommon.so $(TARGETDIR)/usr/lib/
+	install -D fapi_wlan_common-05.04.00.131/fapi_wlan_beerock_cli $(TARGETDIR)/usr/lib/
 
 hostapd-2.6: libnl-bf openssl
 	cd hostapd-2.6/hostapd;	make clean; make $(PARALLEL_BUILD) hostapd; make $(PARALLEL_BUILD) hostapd_cli

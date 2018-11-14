@@ -475,8 +475,6 @@ function applyRule(){
 			updateDateTime();
 		}
 
-		var action_script_tmp = "";
-
 		if(hdspindown_support) {
 			var excluded = "";
 			if (document.form.usb_idle_exclude_a.checked)
@@ -503,7 +501,10 @@ function applyRule(){
 			action_script_tmp += "restart_usb_idle;";
 		}
 
-		action_script_tmp += "restart_time;";
+		showLoading();
+
+		var action_script_tmp = "restart_time;restart_upnp;";
+
 		if(restart_httpd_flag) {
 			action_script_tmp += "restart_httpd;";
 
@@ -516,14 +517,18 @@ function applyRule(){
 			}
 		}
 
-		action_script_tmp += "restart_upnp;";
 		if(restart_firewall_flag)
 			action_script_tmp += "restart_firewall;";
+
 		if(pwrsave_support)
 			action_script_tmp += "pwrsave;";
-		document.form.action_script.value = action_script_tmp;
 
-		showLoading();
+		if(needReboot){
+			action_script_tmp = "reboot";
+			document.form.action_wait.value = httpApi.hookGet("get_default_reboot_time");
+		}
+
+		document.form.action_script.value = action_script_tmp;
 		document.form.submit();
 	}
 }
@@ -1610,7 +1615,7 @@ function warn_jffs_format(){
 		<td bgcolor="#4D595D" valign="top">
 			<div>&nbsp;</div>
 			<div class="formfonttitle"><#menu5_6#> - <#menu5_6_2#></div>
-			<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
+			<div style="margin:10px 0 10px 5px;" class="splitLine"></div>
 			<div class="formfontdesc"><#System_title#></div>
 
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">

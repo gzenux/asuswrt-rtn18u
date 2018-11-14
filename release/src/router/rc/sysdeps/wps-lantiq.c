@@ -419,7 +419,7 @@ int set_wps_idle(int unit)
 			__func__, __LINE__, unit);
 
 	snprintf(cmd, sizeof(cmd),
-		"/usr/sbin/fapi_wlan_cli setWps -i%d -f%s",
+		"/usr/sbin/fapi_wlan_cli setWpsTR181 -i%d -f%s",
 		wl_wave_unit(unit), WPS_CONFIG_FILE);
 
 	system(cmd);

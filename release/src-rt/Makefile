@@ -2433,6 +2433,18 @@ define RouterOptions
 	if [ "$(LAN50)" = "y" ]; then \
 		sed -i "/RTCONFIG_DEFLAN50/d" $(1); \
 		echo "RTCONFIG_DEFLAN50=y" >>$(1); \
+		sed -i "/RTCONFIG_ALL_DEF_LAN50/d" $(1); \
+		echo "# RTCONFIG_ALL_DEF_LAN50 is not set" >>$(1); \
+	elif [ "$(LAN50)" = "all" ] ; then \
+		sed -i "/RTCONFIG_DEFLAN50/d" $(1); \
+		echo "# RTCONFIG_DEFLAN50 is not set" >>$(1); \
+		sed -i "/RTCONFIG_ALL_DEF_LAN50/d" $(1); \
+		echo "RTCONFIG_ALL_DEF_LAN50=y" >>$(1); \
+	else \
+		sed -i "/RTCONFIG_DEFLAN50/d" $(1); \
+		echo "# RTCONFIG_DEFLAN50 is not set" >>$(1); \
+		sed -i "/RTCONFIG_ALL_DEF_LAN50/d" $(1); \
+		echo "# RTCONFIG_ALL_DEF_LAN50 is not set" >>$(1); \
 	fi; \
 	if [ "$(PERMISSION_MANAGEMENT)" = "y" ]; then \
 		sed -i "/RTCONFIG_PERMISSION_MANAGEMENT/d" $(1); \
@@ -2624,6 +2636,10 @@ define RouterOptions
 	if [ "$(PORT2_DEVICE)" = "y" ]; then \
 		sed -i "/RTCONFIG_PORT2_DEVICE/d" $(1); \
 		echo "RTCONFIG_PORT2_DEVICE=y" >>$(1); \
+	fi; \
+	if [ "$(ETHOBD)" = "y" ]; then \
+		sed -i "/RTCONFIG_ETHOBD/d" $(1); \
+		echo "RTCONFIG_ETHOBD=y" >>$(1); \
 	fi; \
 	)
 	$(call platformRouterOptions, $(1))
