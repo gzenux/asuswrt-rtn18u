@@ -349,13 +349,13 @@ static int usb_modem_modules_loaded = 0;
 
 void add_usb_modem_modules(void)
 {
+	if (usb_modem_modules_loaded)
+		return;
+	usb_modem_modules_loaded = 1;
 #ifdef RTAC68U
 	if (!hw_usb_cap())
 		return;
 #endif
-	if (usb_modem_modules_loaded)
-		return;
-	usb_modem_modules_loaded = 1;
 
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(4,1,0)
 	modprobe("mii"); // for usbnet.
@@ -2902,7 +2902,7 @@ void create_custom_passwd(void)
 				memset(char_user, 0, sizeof(char_user));
 				ascii_to_char_safe(char_user, follow_account->name, sizeof(char_user));
 
-				fprintf(fps, "%s:%s:0:0:99999:7:0:0\n", char_user, output);
+				fprintf(fps, "%s:%s:0:0:99999:7:0:0:\n", char_user, output);
 				fprintf(fpp, "%s:x:%d:%s::/dev/null:/dev/null\n", char_user, uid, PMS_GRP_DGID);
 				uid++;
 			}
@@ -3117,7 +3117,7 @@ start_samba(void)
 #else
 	char *cpu_list = "1";
 #endif
-#if (defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_SAMBA36X)) && defined(SMP)
+#if (defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064))
 	int cpu_num = sysconf(_SC_NPROCESSORS_CONF);
 	int taskset_ret = -1;
 #endif
@@ -3263,7 +3263,7 @@ start_samba(void)
 #endif
 
 #if defined(SMP)
-#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_SAMBA36X)
+#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064)
 #if 0
 	if(cpu_num > 1)
 		taskset_ret = cpu_eval(NULL, "1", "ionice", "-c1", "-n0", smbd_cmd, "-D", "-s", "/etc/smb.conf");
@@ -3284,7 +3284,7 @@ start_samba(void)
 #ifdef RTCONFIG_ALPINE
 		cpu_eval(NULL, "3", smbd_cmd, "-D", "-s", "/etc/smb.conf");
 #elif defined(RTCONFIG_LANTIQ)
-		cpu_eval(NULL, "2", smbd_cmd, "-D", "-s", "/etc/smb.conf");
+		cpu_eval(NULL, "1", smbd_cmd, "-D", "-s", "/etc/smb.conf");
 #else
 		xstart(smbd_cmd, "-D", "-s", "/etc/smb.conf");
 #endif
@@ -3585,12 +3585,6 @@ void start_dms(void)
 				fprintf(f, "force_sort_criteria=%s\n", nv);
 
 			append_custom_config(MEDIA_SERVER_APP".conf",f);
-
-			nv = nvram_safe_get("dms_sort");
-			if (!*nv || isdigit(*nv))
-				nv = (!*nv || atoi(nv)) ? "+upnp:class,+upnp:originalTrackNumber,+dc:title" : NULL;
-			if (nv)
-				fprintf(f, "force_sort_criteria=%s\n", nv);
 
 			fclose(f);
 		}

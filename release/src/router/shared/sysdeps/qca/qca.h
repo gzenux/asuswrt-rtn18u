@@ -399,9 +399,10 @@ enum ASUS_IOCTL_SUBCMD {
 
 #define OFFSET_DEV_FLAGS		(MTD_FACTORY_BASE_ADDRESS + 0x0ffa0)	//device dependent flags
 #ifdef RTCONFIG_32BYTES_ODMPID
-#define OFFSET_32BYTES_ODMPID		(MTD_FACTORY_BASE_ADDRESS + 0x0ff70)	/* 32 bytes */
-#endif
+#define OFFSET_ODMPID			(MTD_FACTORY_BASE_ADDRESS + 0x0ff70)	/* 32 bytes */
+#else
 #define OFFSET_ODMPID			(MTD_FACTORY_BASE_ADDRESS + 0x0ffb0)	//the shown model name (for Bestbuy and others)
+#endif
 #define OFFSET_FAIL_RET			(MTD_FACTORY_BASE_ADDRESS + 0x0ffc0)
 #define OFFSET_FAIL_BOOT_LOG		(MTD_FACTORY_BASE_ADDRESS + 0x0ffd0)	//bit operation for max 100
 #define OFFSET_FAIL_DEV_LOG		(MTD_FACTORY_BASE_ADDRESS + 0x0ffe0)	//bit operation for max 100
@@ -447,6 +448,9 @@ extern void switch_fini(void);
 extern int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
 extern int qc98xx_verify_checksum(void *eeprom);
 extern int calc_qca_eeprom_csum(void *ptr, unsigned int eeprom_size);
+#if defined(RTAC58U)
+extern int check_mid(char *mid);
+#endif
 /* for ATE Get_WanLanStatus command */
 #if defined(RTCONFIG_SWITCH_RTL8370M_PHY_QCA8033_X2) || \
     defined(RTCONFIG_SWITCH_RTL8370MB_PHY_QCA8033_X2)

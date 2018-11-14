@@ -117,7 +117,7 @@ OBJS += web-qca.o
 else ifeq ($(CONFIG_ALPINE),y)
 OBJS += web-alpine.o
 else ifeq ($(CONFIG_LANTIQ),y)
-OBJS += web-lantiq.o
+OBJS += $(if $(wildcard sysdeps/web-lantiq.c),web-lantiq.o,prebuild/web-lantiq.o)
 else
 OBJS += web-broadcom.o
 ifeq ($(RTCONFIG_QTN),y)

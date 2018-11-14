@@ -1203,14 +1203,6 @@ static void __load_wifi_driver(int testmode)
 #if defined(RTCONFIG_PCIE_QCA9888) && defined(RTCONFIG_SOC_IPQ40XX)
 		eval("iwpriv", (char*) VPHY_5G2, "setCountryID", code_str);
 #endif
-		strncpy(code_str, nvram_safe_get("wl1_txpower"), sizeof(code_str)-1);
-		eval("iwpriv", (char*) VPHY_5G, "txpwrpc", code_str);
-#if defined(RTCONFIG_PCIE_QCA9888) && defined(RTCONFIG_SOC_IPQ40XX)
-		strncpy(code_str, nvram_safe_get("wl2_txpower"), sizeof(code_str)-1);
-		eval("iwpriv", (char*) VPHY_5G2, "txpwrpc", code_str);
-#endif
-		/* add acs channel weight */
-		acs_ch_weight_param();
 
 #if defined(RTCONFIG_HAS_5G_2)
 		strlcpy(country, nvram_safe_get("wl2_country_code"), sizeof(country));
@@ -1220,6 +1212,14 @@ static void __load_wifi_driver(int testmode)
 
 #endif
 
+		if (find_word(nvram_safe_get("rc_support"), "pwrctrl")) {
+			eval("iwpriv", (char*) VPHY_2G, "txpwrpc", nvram_safe_get("wl0_txpower"));
+			eval("iwpriv", (char*) VPHY_5G, "txpwrpc", nvram_safe_get("wl1_txpower"));
+#if defined(RTCONFIG_HAS_5G_2)
+			eval("iwpriv", (char*) VPHY_5G2, "txpwrpc", nvram_safe_get("wl2_txpower"));
+#endif
+		}
+
 #if defined(RTCONFIG_WIGIG)
 		/* country code of 802.11ad Wigig can be handled by hostapd too. */
 		strlcpy(country, nvram_safe_get("wl3_country_code"), sizeof(country));
@@ -1227,6 +1227,9 @@ static void __load_wifi_driver(int testmode)
 			country_to_code("DB", 60, code_str, sizeof(code_str));
 		eval("iw", "reg", "set", code_str);
 #endif
+
+		/* add acs channel weight */
+		acs_ch_weight_param();
 
 		if(nvram_get_int("x_Setting")) {
 #if defined(RTCONFIG_WIFI_SON)
@@ -1320,9 +1323,6 @@ void init_wl(void)
 	char *wl_ifnames;
 #ifdef RTCONFIG_WIRELESSREPEATER
 	int wlc_band;
-#if defined(RTCONFIG_CONCURRENTREPEATER)
-	int wlc_express = nvram_get_int("wlc_express");
-#endif
 #endif
 
 #if defined(MAPAC1300) || defined(MAPAC2200) || defined(VZWAC1300)
@@ -1432,6 +1432,17 @@ void init_wl(void)
 			}
 		}
 #endif
+#ifdef RTCONFIG_AMAS
+		if((sw_mode() == SW_MODE_AP && nvram_match("re_mode", "1")))
+		{
+			int i;
+			_dprintf("=>init_wl: create sta vaps: %d\n", MAX_NR_WL_IF);
+			for (i = 0; i < MAX_NR_WL_IF; i++) {
+				doSystem("wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+					get_staifname(i), get_vphyifname(i));
+			}
+		}
+#endif	/* RTCONFIG_AMAS */
 	}
 
 #ifdef RTCONFIG_WIFI_SON
@@ -1565,6 +1576,18 @@ void fini_wl(void)
 		}
 	}
 #endif
+#ifdef RTCONFIG_AMAS
+	eval("killall", "-SIGTERM", "wpa_supplicant");
+	if((sw_mode() == SW_MODE_AP && nvram_match("re_mode", "1")))
+	{
+		int i;
+		_dprintf("=>fini_wl: destroy sta vap: %d\n", MAX_NR_WL_IF);
+		for (i = 0; i < MAX_NR_WL_IF; i++) {
+			ifconfig(get_staifname(i), 0, NULL, NULL);
+			doSystem("wlanconfig %s destroy", get_staifname(i));
+		}
+	}
+#endif	/* RTCONFIG_AMAS */
 
 	create_node=0;
 
@@ -1665,6 +1688,7 @@ void init_syspara(void)
 #ifdef RTCONFIG_CFGSYNC
 	char cfg_group_buf[CFGSYNC_GROUPID_LEN+1];
 #endif /* RTCONFIG_CFGSYNC */
+	char ipaddr_lan[16];
 
 	set_basic_fw_name();
 
@@ -1698,6 +1722,11 @@ void init_syspara(void)
 		nvram_set("wl_mssid", "0");
 	else
 		nvram_set("wl_mssid", "1");
+#if defined(RTAC58U)
+	if (check_mid("Hydra")) {
+		nvram_set("wl_mssid", "1"); // Hydra's MAC may not be multible of 4
+	}
+#endif
 #endif
 
 #if defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_QCA_VAP_LOCALMAC)
@@ -1836,28 +1865,15 @@ void init_syspara(void)
 	nvram_set("wl1_txbf_en", "0");
 
 #ifdef RTCONFIG_ODMPID
-#ifdef RTCONFIG_32BYTES_ODMPID
-	FRead(modelname, OFFSET_32BYTES_ODMPID, 32);
-	modelname[31] = '\0';
+	FRead(modelname, OFFSET_ODMPID, sizeof(modelname));
+	modelname[sizeof(modelname) - 1] = '\0';
 	if (modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff
 	    && is_valid_hostname(modelname)
 	    && strcmp(modelname, "ASUS")) {
 		nvram_set("odmpid", modelname);
 	} else
 #endif
-	{
-		FRead(modelname, OFFSET_ODMPID, 16);
-		modelname[15] = '\0';
-		if (modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff
-		    && is_valid_hostname(modelname)
-		    && strcmp(modelname, "ASUS")) {
-			nvram_set("odmpid", modelname);
-		} else
-			nvram_unset("odmpid");
-	}
-#else
-	nvram_unset("odmpid");
-#endif
+		nvram_unset("odmpid");
 
 	nvram_set("firmver", rt_version);
 	nvram_set("productid", rt_buildname);
@@ -1904,17 +1920,12 @@ void init_syspara(void)
 	}
 #endif /* RTCONFIG_CFGSYNC */
 
- 	{
-                char ipaddr_lan[16];
-                FRead(ipaddr_lan, OFFSET_IPADDR_LAN, sizeof(ipaddr_lan));
-                ipaddr_lan[sizeof(ipaddr_lan)-1] = '\0';
-                if((unsigned char)(ipaddr_lan[0]) != 0xff)
-                {
-                        nvram_set("IpAddr_Lan", ipaddr_lan);
-                } else {
-                        nvram_unset("IpAddr_Lan");
-                }
-        }
+	FRead(ipaddr_lan, OFFSET_IPADDR_LAN, sizeof(ipaddr_lan));
+	ipaddr_lan[sizeof(ipaddr_lan)-1] = '\0';
+	if ((unsigned char)(ipaddr_lan[0]) != 0xff && !illegal_ipv4_address(ipaddr_lan))
+		nvram_set("IpAddr_Lan", ipaddr_lan);
+	else
+		nvram_unset("IpAddr_Lan");
 }
 
 #ifdef RTCONFIG_ATEUSB3_FORCE
@@ -2284,7 +2295,13 @@ int wl_exist(char *ifname, int band)
 {
 	int ret = 0, r, flags = 0;
 
-	switch (band) {
+	if (!ifname || band < WL_2G_BAND || band >= WL_NR_BANDS) {
+		dbg("%s: invalid parameter? (ifname %p, band %d)\n", __func__, ifname, band);
+		return 0;
+	}
+
+	/* "band" ranges from 1~3 (ate.c), but WL_2G_BAND is 0 */
+	switch (band-1) {
 	case WL_2G_BAND:	/* fall-through */
 	case WL_5G_BAND:	/* fall-through */
 	case WL_5G_2_BAND:
