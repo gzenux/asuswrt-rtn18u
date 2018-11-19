@@ -82,7 +82,6 @@ struct AiMesh_whitelist {
 extern struct AiMesh_whitelist AiMesh_whitelists[];
 #endif
 
-#ifndef RTN18U // lacking binary support
 struct stb_port {
         char *value;
         char *name;
@@ -122,7 +121,6 @@ struct iptv_profile {
         char *mr_altnet_x;
         char *ttl_inc_enable;
 };
-#endif
 
 #ifdef RTCONFIG_ODMPID
 struct REPLACE_ODMPID_S {

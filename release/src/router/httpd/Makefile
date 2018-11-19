@@ -149,6 +149,10 @@ OBJS += pwenc.o
 endif
 
 OBJS += $(if $(wildcard web_hook.c), web_hook.o, prebuild/web_hook.o)
+ifeq ($(RTN18U),y)
+# kludge to support missing funcitons in pre-built web_hook.o
+OBJS += web_rtn18u.o
+endif
 
 LIBS = -L$(TOP)/nvram${BCMEX}$(EX7) -lnvram -L$(TOP)/shared -lshared
 ifeq ($(HND_ROUTER),y)

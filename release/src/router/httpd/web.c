@@ -287,10 +287,8 @@ extern void unescape(char *s);
 
 void response_nvram_config(webs_t wp, char *config_name, json_object *res, json_object *root);
 
-#ifndef RTN18U // lacking binary support
 extern int ej_get_iptvSettings(int eid, webs_t wp, int argc, char_t **argv);
 extern int config_iptv_vlan(char *isp);
-#endif
 
 #if 0
 static int nvram_check_and_set(char *name, char *value);
@@ -3277,11 +3275,9 @@ static int validate_apply(webs_t wp, json_object *root) {
 				}
 #endif
 
-#ifndef RTN18U // lacking binary support
 				if(!strcmp(name, "switch_wantag") && strcmp(value, "manual")){
 					config_iptv_vlan(value);
 				}
-#endif
 
 				if(!strncmp(name, "TM_EULA", 1) && !strncmp(value, "1", 1)){
 					time_t now;
@@ -23479,9 +23475,7 @@ struct ej_handler ej_handlers[] = {
 	{ "generate_trans_id", ej_generate_trans_id},
 #endif
 	{ "get_sw_mode", ej_get_sw_mode},
-#ifndef RTN18U // lacking binary support
 	{ "get_iptvSettings", ej_get_iptvSettings },
-#endif
 	{ NULL, NULL }
 };
 
