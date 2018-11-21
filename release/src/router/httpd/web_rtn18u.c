@@ -2,6 +2,7 @@
 
 #include <httpd.h>
 #include <json.h>
+#include <bcmnvram.h>
 
 
 static struct stb_port stb_x_options[] = {
@@ -12,8 +13,12 @@ static struct stb_port stb_x_options[] = {
 	{ .name = "LAN4", .value = "4" },
 	{ .name = "LAN1 & LAN2", .value = "5" },
 	{ .name = "LAN3 & LAN4", .value = "6" },
+#if 0 /* option disabled */
+	{ .name = "", .value = "7" },
+	{ .name = "", .value = "8" },
+#endif /* option disabled */
 };
-static unsigned int num_stb_x_option = sizeof(stb_x_options)/sizeof(*stb_x_options);
+static unsigned int num_stb_x_option = 7; //sizeof(stb_x_options)/sizeof(*stb_x_options);
 
 static struct iptv_profile isp_profiles[] = {
 	{
@@ -25,9 +30,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "none",
 		.switch_stb_x = "0",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "", .switch_wan0prio = "0",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -44,9 +49,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "unifi_biz",
 		.switch_stb_x = "0",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "500", .switch_wan0prio = "0",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -63,9 +68,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "unifi_home",
 		.switch_stb_x = "4",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "500", .switch_wan0prio = "0",
+		.switch_wan1tagid = "600", .switch_wan1prio = "0",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -82,9 +87,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "singtel_mio",
 		.switch_stb_x = "6",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "10", .switch_wan0prio = "0",
+		.switch_wan1tagid = "20", .switch_wan1prio = "4",
+		.switch_wan2tagid = "30", .switch_wan2prio = "4",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -101,9 +106,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "singtel_others",
 		.switch_stb_x = "4",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "10", .switch_wan0prio = "0",
+		.switch_wan1tagid = "20", .switch_wan1prio = "4",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -120,9 +125,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "m1_fiber",
 		.switch_stb_x = "3",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "1103", .switch_wan0prio = "1",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "1107", .switch_wan2prio = "1",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -139,9 +144,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "maxis_fiber",
 		.switch_stb_x = "3",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "621", .switch_wan0prio = "0",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "821,822", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -158,9 +163,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "maxis_fiber_sp",
 		.switch_stb_x = "3",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "11", .switch_wan0prio = "0",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "14", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -177,13 +182,13 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "1",
 		.switch_wantag = "movistar",
 		.switch_stb_x = "8",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "6", .switch_wan0prio = "0",
+		.switch_wan1tagid = "2", .switch_wan1prio = "0",
+		.switch_wan2tagid = "3", .switch_wan2prio = "0",
 		.mr_enable_x = "1",
 		.emf_enable = "1",
 		.wan_vpndhcp = "0",
-		.quagga_enable = "0",
+		.quagga_enable = "1",
 		.mr_altnet_x = "172.0.0.0/8",
 		.ttl_inc_enable = "0"
 	},
@@ -196,9 +201,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "meo",
 		.switch_stb_x = "4",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "12", .switch_wan0prio = "0",
+		.switch_wan1tagid = "12", .switch_wan1prio = "0",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "1",
 		.emf_enable = "1",
 		.wan_vpndhcp = "0",
@@ -215,9 +220,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "vodafone",
 		.switch_stb_x = "3",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "100", .switch_wan0prio = "1",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "105", .switch_wan2prio = "1",
 		.mr_enable_x = "1",
 		.emf_enable = "1",
 		.wan_vpndhcp = "0",
@@ -234,9 +239,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "hinet",
 		.switch_stb_x = "4",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "", .switch_wan0prio = "0",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -253,9 +258,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "stuff_fibre",
 		.switch_stb_x = "0",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "10", .switch_wan0prio = "0",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -263,6 +268,46 @@ static struct iptv_profile isp_profiles[] = {
 		.mr_altnet_x = "",
 		.ttl_inc_enable = "0"
 	},
+#if 0 /* profile disabled */
+	{
+		.profile_name = "Maxis-Fiber-IPTV",
+		.iptv_port = "",
+		.voip_port = "",
+		.bridge_port = "",
+		.iptv_config = "0",
+		.voip_config = "0",
+		.switch_wantag = "maxis_fiber_iptv",
+		.switch_stb_x = "7",
+		.switch_wan0tagid = "621", .switch_wan0prio = "0",
+		.switch_wan1tagid = "823", .switch_wan1prio = "0",
+		.switch_wan2tagid = "821,822", .switch_wan2prio = "0",
+		.mr_enable_x = "",
+		.emf_enable = "",
+		.wan_vpndhcp = "",
+		.quagga_enable = "0",
+		.mr_altnet_x = "",
+		.ttl_inc_enable = "0"
+	},
+	{
+		.profile_name = "Maxis-Fiber-Special-IPTV",
+		.iptv_port = "",
+		.voip_port = "",
+		.bridge_port = "",
+		.iptv_config = "0",
+		.voip_config = "0",
+		.switch_wantag = "maxis_fiber_sp_iptv",
+		.switch_stb_x = "7",
+		.switch_wan0tagid = "11", .switch_wan0prio = "0",
+		.switch_wan1tagid = "15", .switch_wan1prio = "0",
+		.switch_wan2tagid = "14", .switch_wan2prio = "0",
+		.mr_enable_x = "",
+		.emf_enable = "",
+		.wan_vpndhcp = "",
+		.quagga_enable = "0",
+		.mr_altnet_x = "",
+		.ttl_inc_enable = "0"
+	},
+#endif /* profile disabled */
 	{
 		.profile_name = "manual",
 		.iptv_port = "LAN4",
@@ -272,9 +317,9 @@ static struct iptv_profile isp_profiles[] = {
 		.voip_config = "0",
 		.switch_wantag = "manual",
 		.switch_stb_x = "0",
-		.switch_wan0tagid = "", .switch_wan0prio = "",
-		.switch_wan1tagid = "", .switch_wan1prio = "",
-		.switch_wan2tagid = "", .switch_wan2prio = "",
+		.switch_wan0tagid = "", .switch_wan0prio = "0",
+		.switch_wan1tagid = "", .switch_wan1prio = "0",
+		.switch_wan2tagid = "", .switch_wan2prio = "0",
 		.mr_enable_x = "",
 		.emf_enable = "",
 		.wan_vpndhcp = "",
@@ -288,12 +333,6 @@ static unsigned int num_isp_profile = sizeof(isp_profiles)/sizeof(*isp_profiles)
 
 int ej_get_iptvSettings(int eid, webs_t wp, int argc, char **argv)
 {
-	/*
-	 * {
-	 *   "stb_x_options": [ { "name": "none", "value": "0" }, { "name": "LAN1", "value": "1" }, { "name": "LAN2", "value": "2" }, { "name": "LAN3", "value": "3" }, { "name": "LAN4", "value": "4" }, { "name": "LAN1 & LAN2", "value": "5" }, { "name": "LAN3 & LAN4", "value": "6" } ],
-	 *   "isp_profiles": [ { "profile_name": "none", "iptv_port": "", "voip_port": "", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "none", "switch_stb_x": "0", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Unifi-Business", "iptv_port": "", "voip_port": "", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "unifi_biz", "switch_stb_x": "0", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Unifi-Home", "iptv_port": "LAN4", "voip_port": "", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "unifi_home", "switch_stb_x": "4", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Singtel-MIO", "iptv_port": "LAN4", "voip_port": "LAN3", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "singtel_mio", "switch_stb_x": "6", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Singtel-Others", "iptv_port": "LAN4", "voip_port": "", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "singtel_others", "switch_stb_x": "4", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "M1-Fiber", "iptv_port": "", "voip_port": "LAN3", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "m1_fiber", "switch_stb_x": "3", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Maxis-Fiber", "iptv_port": "", "voip_port": "LAN3", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "maxis_fiber", "switch_stb_x": "3", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Maxis-Fiber-Special", "iptv_port": "", "voip_port": "LAN3", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "maxis_fiber_sp", "switch_stb_x": "3", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Movistar Triple VLAN", "iptv_port": "", "voip_port": "", "bridge_port": "", "iptv_config": "1", "voip_config": "1", "switch_wantag": "movistar", "switch_stb_x": "8", "mr_enable_x": "1", "emf_enable": "1", "wan_vpndhcp": "0", "quagga_enable": "0", "mr_altnet_x": "172.0.0.0\/8", "ttl_inc_enable": "0" }, { "profile_name": "Meo", "iptv_port": "", "voip_port": "", "bridge_port": "LAN4", "iptv_config": "0", "voip_config": "0", "switch_wantag": "meo", "switch_stb_x": "4", "mr_enable_x": "1", "emf_enable": "1", "wan_vpndhcp": "0", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "1" }, { "profile_name": "Vodafone(Portugal)", "iptv_port": "LAN3", "voip_port": "", "bridge_port": "LAN4", "iptv_config": "0", "voip_config": "0", "switch_wantag": "vodafone", "switch_stb_x": "3", "mr_enable_x": "1", "emf_enable": "1", "wan_vpndhcp": "0", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Hinet MOD", "iptv_port": "LAN4", "voip_port": "", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "hinet", "switch_stb_x": "4", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "Stuff-Fibre", "iptv_port": "", "voip_port": "", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "stuff_fibre", "switch_stb_x": "0", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" }, { "profile_name": "manual", "iptv_port": "LAN4", "voip_port": "LAN3", "bridge_port": "", "iptv_config": "0", "voip_config": "0", "switch_wantag": "manual", "switch_stb_x": "0", "mr_enable_x": "", "emf_enable": "", "wan_vpndhcp": "", "quagga_enable": "0", "mr_altnet_x": "", "ttl_inc_enable": "0" } ]
-	 * }
-	 */
 	int i;
 	struct iptv_profile *isp_profile = NULL;
 	struct json_object *item = NULL;
@@ -338,5 +377,19 @@ int ej_get_iptvSettings(int eid, webs_t wp, int argc, char **argv)
 
 int config_iptv_vlan(char *isp)
 {
+	int i;
+	struct iptv_profile *isp_profile = NULL;
+
+	for(i = 0; i < num_isp_profile && strcmp(isp_profiles[i].switch_wantag, isp); i++);
+	if(i == num_isp_profile || !strcmp(isp, "manual"))
+		return -1;
+	else
+		isp_profile = &isp_profiles[i];
+
+	if(strcmp(isp, "none"))
+		nvram_set("switch_stb_x", isp_profile->switch_stb_x);
+	nvram_set("switch_wan0tagid", isp_profile->switch_wan0tagid); nvram_set("switch_wan0prio", isp_profile->switch_wan0prio);
+	nvram_set("switch_wan1tagid", isp_profile->switch_wan1tagid); nvram_set("switch_wan1prio", isp_profile->switch_wan1prio);
+	nvram_set("switch_wan2tagid", isp_profile->switch_wan2tagid); nvram_set("switch_wan2prio", isp_profile->switch_wan2prio);
 	return 0;
 }
