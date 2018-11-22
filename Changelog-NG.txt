@@ -1,6 +1,64 @@
 Asuswrt-Merlin 384/NG Changelog
 ===============================
 
+384.8 (xx-xxx-xxxx)
+  - NOTE: Asus has put the RT-AC56U on their End of Life
+          list, meaning no further firmware releases from
+          them.  Since it's impossible for me to support
+          models without matching GPL releases from Asus,
+          I also have to retire the RT-AC56U.  384.6 is
+          the final release for that model.
+
+  - NOTE: The RT-AC3200 and RT-AC56U are not supported by this
+          release, Asus hasn't released any updated code yet for
+          these models.
+
+  - NEW: Added RT-AX88U support (based on GPL 384_4730).
+  - NEW: Merged with GPL + binary blobs from 384_32799 (all
+         supported models except RT-AX88U)
+  - NEW: Add LZ4 V2 option to OpenVPN compression
+         (more effective at handling already compressed
+         data)
+  - NEW: Added "extend" support to SNMP.
+  - NEW: Added CleanBrowsing to DNSFilter supported services.
+  - NEW: Webui HTTP LAN port can now be changed from the default 80.
+  - CHANGED: Updated dnsmasq to 2.80-7-g24b8760 (themiron)
+  - CHANGED: Removed watchdog from OpenVPN clients, to avoid
+             conflicting with more advanced configurations.
+  - CHANGED: Vsftpd TLS mode will now reuse the web server
+             certificate (including any Let's Encrypt generated
+             one).
+  - CHANGED: SSL crypto/cipher hardening for httpd (themiron)
+  - CHANGED: Syslog will now ignore bwdpi debug output (themiron)
+  - CHANGED: Reworked Wireless Log page, adding a new button to
+             view low-level details (what stock firmware shows
+             on its Wireless Log page), and removed redundant
+             option to display DFS channel details.
+  - CHANGED: Updated nettle to 3.4
+  - CHANGED: Updated net-snmp to 5.8
+  - CHANGED: Migrated /jffs/ssl/* content to /jffs/.cert (to
+             share the same folder used by Asus stock)
+  - CHANGED: Re-enabled WTFast on non-HND models (curl-related
+             crash has been fixed).  This is still untested.
+  - FIXED: UOPNP port forwarding not working in CGNAT/double NAT
+           scenario even if proper ports were forwarded upstream.
+  - FIXED: Pages based on table.js (like the port trigger one)
+           would fail to work properly under Firefox
+           (Michael Ziminsky)
+  - FIXED: Dnsmasq issues when running in non-router mode
+           (John Bacho)
+  - FIXED: Routing issues when in non-router mode (John Bacho)
+  - FIXED: Bug in curl that could cause some applications to
+           crash on non-HND models
+  - FIXED: IFTTT failing to start on non-HND models (caused by
+           curl issue).
+  - FIXED: Webui could complain about port 8080 being reserved for
+           http WAN port (which is no longer supported)
+  - FIXED: Cannot change image for device with a vendor name
+           containing an apostrophe (like Micro-Star int'l)
+           (Asus bug)
+
+
 384.7_2 (21-Oct-2018)
   - FIXED: Namecheap DDNS service not working
   - FIXED: CVE-2018-15599 security issue in Dropbear
