@@ -1,0 +1,441 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+   NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+CAUTION:
+    1. If your device uses stock firmware with version 382_50018
+       or later, please downgrade the stock firmware to 382_39935
+       or earlier version by using ASUS Firmware Restoration
+       utility (https://www.asus.com/support/FAQ/1030652) and then
+       upload this firmware via Web UI.
+    2. Upgrade to this firmware from earlier version (<= 384.4_2)
+       will cause the router being not accessible without
+       resetting by hardware button. Please backup the router
+       settings before upgrade the firmware.
+    3. The online upgrade feature is broken between 384.4_3 and
+       384.5-beta2 due to spwenc.o source replacement. Please do
+       not restore the configuration exported from these versions.
+
+384.8 (beta1)
+  Changelog for RT-N18U:
+  - NOTE: The IPTV profile data have been moved into binary blobs
+          but Asus hasn't released any updated for this model.
+          Currently lacking function calls are re-implemented but
+          they are untested.
+  - NEW: Merged GPL 384_32797 from asuswrt-merlin.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Add LZ4 V2 option to OpenVPN compression
+         (more effective at handling already compressed
+         data)
+  - NEW: Added "extend" support to SNMP.
+  - NEW: Added CleanBrowsing to DNSFilter supported services.
+  - NEW: Webui HTTP LAN port can now be changed from the default 80.
+  - CHANGED: Updated dnsmasq to 2.80-7-g24b8760 (themiron)
+  - CHANGED: Removed watchdog from OpenVPN clients, to avoid
+             conflicting with more advanced configurations.
+  - CHANGED: Vsftpd TLS mode will now reuse the web server
+             certificate (including any Let's Encrypt generated
+             one).
+  - CHANGED: SSL crypto/cipher hardening for httpd (themiron)
+  - CHANGED: Syslog will now ignore bwdpi debug output (themiron)
+  - CHANGED: Reworked Wireless Log page, adding a new button to
+             view low-level details (what stock firmware shows
+             on its Wireless Log page), and removed redundant
+             option to display DFS channel details.
+  - CHANGED: Updated nettle to 3.4
+  - CHANGED: Updated net-snmp to 5.8
+  - CHANGED: Migrated /jffs/ssl/* content to /jffs/.cert (to
+             share the same folder used by Asus stock)
+  - FIXED: UOPNP port forwarding not working in CGNAT/double NAT
+           scenario even if proper ports were forwarded upstream.
+  - FIXED: Pages based on table.js (like the port trigger one)
+           would fail to work properly under Firefox
+           (Michael Ziminsky)
+  - FIXED: Dnsmasq issues when running in non-router mode
+           (John Bacho)
+  - FIXED: Routing issues when in non-router mode (John Bacho)
+  - FIXED: Bug in curl that could cause some applications to
+           crash on non-HND models
+  - FIXED: IFTTT failing to start on non-HND models (caused by
+           curl issue).
+  - FIXED: Webui could complain about port 8080 being reserved for
+           http WAN port (which is no longer supported)
+  - FIXED: Cannot change image for device with a vendor name
+           containing an apostrophe (like Micro-Star int'l)
+           (Asus bug)
+
+
+384.7_2
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - FIXED: Namecheap DDNS service not working
+  - FIXED: CVE-2018-15599 security issue in Dropbear
+  - FIXED: Potential buffer overrun in httpd
+
+
+384.7
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - NOTE: Important changes to DDNS, please read below.
+
+  - NOTE: Important changes to DNSFilter, please read below.
+
+  - NEW: Merged with GPL 384_21152.
+  - NEW: Replaced old ez-ipupdate DDNS client with In-a-Dyn.
+         A plugin was developed to fully support Asus's DDNS
+         service.
+         Custom services can now be configured through ddns-start,
+         inadyn.conf, inadyn.conf.add or inadyn.postconf.  See the
+         In-a-Dyn documentation as many custom services can be
+         defined for it.
+  - NEW: Added support for freedns.afraid.org DDNS service to webui.
+  - NEW: Added option to retrieve WAN IP from either the local
+         interface (like before) or through a remote server
+         (which works through double NAT) for DDNS.
+  - NEW: Added option to disable checks on unsigned DNSSEC replies.
+         Disabling these will speed up lookups, but it will also
+         remove part of the security benefits of DNSSEC, so it
+         should not be used unless you have a very specific reason
+         to do so.
+  - NEW: Added Quad9 to DNSFilter supported services.
+  - CHANGED: Updated curl to 7.61.1.
+  - CHANGED: Updated wget to 1.19.5.
+  - CHANGED: Updated openssl to 1.0.2p.
+  - CHANGED: Updated dnsmasq to v2.80test8 (themiron).
+  - CHANGED: Updated nano to 3.1.
+  - CHANGED: All DDNS services now use HTTPS.
+  - CHANGED: Replaced Google Domains DDNS script with In-a-Dyn's own
+             plugin.
+  - CHANGED: Moved DNSFilter to the LAN section, to make it clear
+             that it's unrelated to Trend Micro's engine.
+  - CHANGED: Report hostname and IP on Wireless Log page if the
+             info is missing from dnsmasq but available from
+             networkmap.
+  - FIXED: Invalid dnsmasq config when setting DNSFilter to Router
+           mode and having IPv6 enabled (themiron).
+  - FIXED: client table would be shown twice on the VPN Status
+           page if the only connections to an OVPN server
+           were invalid clients (like a port scanner)
+  - FIXED: DDNS forced updates after "x" days wouldn't be
+           initiated.
+  - FIXED: CERT VU#598349 vulnerability (DHCP client could
+           claim the special "wpad" hostname)
+  - REMOVED: Ez-ipupdate DDNS client (replaced with In-a-Dyn).
+             Update your scripts if you were relying on it.
+  - REMOVED: Norton Safe DNSFilter services (being discontinued
+             by Symantec in November).  Configured clients will
+             be automatically migrated to OpenDNS Family - make
+             sure to edit your DNSFIlter settings if you desire
+             to use a different service.
+
+
+384.6
+  Changelog for RT-N18U:
+   - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+   - NEW: Merged with GPL 384_21045/382_50624.
+   - NEW: Added support for the "-p" option to netstat.
+   - NEW: Added setting to enable DNS rebind protection, on the
+          DHCP page.  This works by rejecting upstream server
+          responses that would point at a private IP.
+   - CHANGED: Updated nano to 2.9.8
+   - CHANGED: Updated curl to 7.60.0 (contains security fixes)
+   - CHANGED: Allow selecting text (for copy/paste operations)
+              on AiProtection pages.
+   - CHANGED: Added AES-*-GCM ciphers to the OpenVPN legacy
+              ciphers (so they can be explicitely used without
+              using NCP).
+   - CHANGED: Updated dnsmasq to 2.80test2-17-g51e4eee (themiron)
+   - CHANGED: Since dnsmasq 2.80, dnsmasq now ensures that unsigned
+              DNS replies received with DNSSEC enabled are legitimate.
+              If your upstream DNS doesn't support DNSSEC, this means
+              all replies from signed zones will be considered
+              invalid.  Make sure you only enable DNSSEC if your
+              upstream DNS servers do support it.  This behaviour is
+              a bit slower, but far more secure than the old default.
+   - CHANGED: Network Tools -> Netstat output also report program/PID
+   - CHANGED: Updated CA bundle to June 20th version.
+   - FIXED: IPv6-related issues on non-HND platform (themiron)
+   - FIXED: USB modem support code failing to properly pass
+            parameters to the kernel module (themiron)
+
+
+384.5_3
+  Changelog for RT-N18U:
+   - NEW: Merged RT-N18U GPL release 382_50624
+   - FIXED: The SSH authorized keys is stripped/corrupted when
+            the router is restored the settings which exported
+            from itself.
+
+  Changelog from Asuswrt-Merlin:
+   - No Updates Available.
+
+
+384.5_2
+  Changelog for RT-N18U:
+   - NEW: Merged RT-N18U GPL release 382_50470
+
+  Changelog from Asuswrt-Merlin:
+   - No Updates Available.
+
+
+384.5
+  Changelog for RT-N18U:
+   - CHANGED: Replaced prebuilt spwenc.o by the source. It causes
+              the router being not accessible due to the different
+              passwrod encrypt algorithm between each other. Please
+              backup the router settings before updating firmware
+              across this version.
+   - CHANGED: The monthly traffic monitor shows data up to current
+              month(M) instead of previous month(M-1).
+   - FIXED: The online upgrade feature is broken due to spwenc.o
+            source replacement with RTCONFIG_NVRAM_ENCRYPT enabled.
+   - FIXED: rstats: take all INTERNET interfaces into account
+            instead of only the first one. This fixed the issue
+            that there is always no traffic be monitored when only
+            the secondary WAN is activated in dual WAN mode.
+   - FIXED: Reverted prebuilt wlceventd from RT-N18U GPL 382_39935.
+            Asuswrt-Merlin's prebuilt version cannot run in RT-N18U
+            because NOTIFICATION_CENTER (which including libnt.so
+            and other libraries) option is not enabled on RT-N18U.
+   - FIXED: Reverted protect_srv from RT-N18U GPL 382_50276. The
+            reason is the same as previous item.
+
+  Changelog from Asuswrt-Merlin:
+   - NEW: Merged withh GPL 384_20648
+   - NEW: service-event script, executed before any service
+           call is made.  First argument is the event (typically
+           stop, start or restart), second argument is the target
+           (wireless, httpd, etc...).
+           Note that this script will block the execution of
+           the event until it returns.
+   - NEW: Added USB HID modules (for use with devices such
+          as UPS)
+   - NEW: Added ip6tables-save command.
+   - CHANGED: Updated OpenVPN to 2.4.6.
+   - CHANGED: Updated Dropbear to 2018.76.
+   - CHANGED: Updated Openssl to 1.0.2o.
+   - CHANGED: Updated miniupnpd to version 2.1 (20180508).
+   - CHANGED: Updated nano to 2.9.5.
+   - CHANGED: Moved RT-AC86U to the same Busybox version (1.25.1)
+              as other models.
+   - CHANGED: Revised OpenVPN server options:
+              o Removed "TLS Reneg time" (rarely used, can manually
+                be set as a custom option)
+              o Removed "Server Poll" (which didn't work
+                properly), and reimplemented watchdog service,
+                hardcoded to 2 mins frequency.
+              o Removed "Push LAN" and "Redirect Gateway",
+                replaced with new Client Access setting
+              o Removed Firewall setting (firewall rules are now
+                always created, and the broken External mode
+                was fixed and integrated into the new Client
+                Access setting).  You can now use the postconf
+                script to override it.
+              o Removed option to respond to DNS queries - enabling
+                the option to Push DNS will also handle it
+              o Added new Client Access setting to select between
+                three types of access: LAN only, WAN only (will
+                block access to the LAN, including the router
+                itself) and LAN + WAN.
+              o Keys and certificates can now be up to 7999
+                characters long.
+   - CHANGED: Revised OpenVPN client options:
+              o Reorganized settings into groups
+              o Removed "Poll Interval" (which didn't work
+                properly), and reimplemented watchdog service,
+                with a hardcoded frequency of 2 mins.
+              o Removed Firewall setting (firewall rules are now
+                always created).  You can now use the postconf
+                script to override it.
+              o Modified behaviour of Connection Retry.  Instead
+                of taking a value in seconds that only affected
+                resolution failure, it now takes a number of
+                attempts, and affects connection failures.
+                Resolution failures will now retry for an infinite
+                period of time (the default OpenVPN value).
+              o Added "refresh" link which can be clicked to
+                re-query the public IP endpoint of the tunnel
+              o Keys and certificates can now be up to 7999
+                characters long.
+   - CHANGED: Removed option to resolve names on the
+              Log -> Connections page.
+              That functionality was added to the
+              Network Tools -> Netstat page instead.
+   - CHANGED: Re-designed Log -> Connections page into a table
+              with sortable fields - click on a column header to
+              sort on that field.
+   - CHANGED: From now on, setting the router to act as a master
+              browser or a WINS server will also require you to
+              enable sharing.  This will ensure that users
+              understand that enabling either of these settings
+              requires disk sharing to also be enabled (which it
+              was already silently doing before).
+   - CHANGED: Moved "Beta firmware" option to the Tools -> Other
+              Settings page
+   - CHANGED: Improved layout of the Firmware Update page
+   - CHANGED: WPAD behaviour (sending a carriage return on
+              DHCP option 252) can now be controlled in the
+              Tweaks section.
+   - CHANGED: Blocking custom scripts such as service-event
+              and pre-mount will now wait a maximum of 120
+              seconds before resuming normal operations, to
+              prevent accidental lockouts.
+   - CHANGED: Autofill start/end time for DST when selecting
+              a timezone (LostFreq)
+   - FIXED: Some dnsmasq issues related to DNSSEC were fixed,
+            including CVE-2017-15107. (backported from
+            dnsmasq 2.79 by John Bacho)
+   - FIXED: Restoring an OpenVPN instance to default values
+            would fail to disable its Start with WAN setting.
+   - FIXED: Minidlna web status page could no longer be enabled.
+   - FIXED: CVE-2017-9022, CVE-2017-9023 and CVE-2017-11185 in
+            Strongswan (odkrys)
+   - FIXED: Various issues with download traffic in Traditional
+            QoS (Cédric Dufour)
+   - FIXED: TCP timeout values couldn't be changed on the
+            Tools -> Other Settings page.
+   - FIXED: Security issue related to webui logging in (Asus bug)
+
+
+384.4_3
+  Changelog for RT-N18U:
+   - CHANGED: Replaced prebuilt spwenc.o by the source. It causes
+              the router being not accessible due to the different
+              passwrod encrypt algorithm between each other. Please
+              backup the router settings before updating firmware
+              across this version.
+   - CHANGED: The monthly traffic monitor shows data up to current
+              month(M) instead of previous month(M-1).
+   - FIXED: rstats: take all INTERNET interfaces into account
+            instead of only the first one. This fixed the issue
+            that there is always no traffic be monitored when only
+            the secondary WAN is activated in dual WAN mode.
+   - FIXED: Reverted prebuilt wlceventd from RT-N18U GPL 382_39935.
+            Asuswrt-Merlin's prebuilt version cannot run in RT-N18U
+            because NOTIFICATION_CENTER (which including libnt.so
+            and other libraries) option is not enabled on RT-N18U.
+   - FIXED: Reverted protect_srv from RT-N18U GPL 382_50018. The
+            reason is the same as previous item.
+
+  Changelog from Asuswrt-Merlin:
+   - No Updates Available.
+
+
+384.4_2
+  Changelog for RT-N18U:
+   - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+   - CHANGED: Added visual warning when manually enabling webui
+              access on WAN.  Doing so carries serious potential
+              security risks, as Asuswrt's web server code should
+              not be considered hardened enough for this.
+   - FIXED: Security issue in httpd (CVE-2018-8879).
+   - FIXED: Potential security issue in httpd related to QiS.
+   - FIXED: Minor webui issue in the QoS overhead menu.
+
+
+384.4
+  Changelog for RT-N18U:
+   - NEW: Merged RT-N18U GPL release 382_50018
+   - NOTE: Starting from GPL release 382_50018, NVRAM_ENCRYPT
+           option is enabled to enhance the security of nvram.
+           Settings stored in nvram will be encrypted after
+           upgraded to this version. Downgrade to previous RT-N18U
+           firmware will no longer be able to access device and
+           must require restore to default by pressing H/W
+           reset button. It's recommended to backup the settings
+           before upgrading to this version.
+   - CHANGED: Simplify the link generation for FAQ 1033906 in VPN
+              OpenVPN page.
+   - FIXED: Invalid FAQ link of private ip hint and change VPN FAQ
+            link as searching 'ASUSWRT VPN' on ASUS website in VPN
+            PPTP page.
+   - FIXED: Network client count list always shows empty in network
+            map page.
+
+  Changelog from Asuswrt-Merlin:
+   - NEW: Merged with GPL 384_20379 (with some binary components
+          from 382_50010 and 384_20308 depending on models)
+   - NEW: Support the new Entware 64-bit repo on the RT-AC86U.
+          To switch to the new repository, re-run the
+          entware-setup.sh script.  You will need to reinstall
+          your apps (your old config files are backed up on
+          your USB disk).
+   - CHANGED: Tightened security around some config files.
+   - CHANGED: Allow guest networks settings for AP isolation
+              and SSID broadcast to be set separately from
+              their parent interface (John Bacho)
+   - CHANGED: Samba protocol support can now be set to
+              SMBv1, SMBv2, or SMBv1 + SMBv2 (the new default).
+              This will result in a performance drop on all
+              models but the RT-AC86U, but will be more secure.
+              Ideally, people should change it to SMBv2 only,
+              and then reboot all their client devices to start
+              using only the new protocol.
+   - CHANGED: Re-added some of the logging sd-idle used to do
+              in 380.xx.
+   - CHANGED: Switched to the new Entware repo for armv7 models.
+              To upgrade, run the following commands TWICE:
+
+              opkg update; opkg upgrade
+
+   - FIXED: Resetting an OpenVPN client to default settings
+            might revert back after a reboot.
+   - FIXED: log flood from lldpd about "unable to send packet
+            on real device" (moved to debug level)
+   - FIXED: Potential racing condition that could lead to two
+            instances of miniupnpd running at boot time.
+   - FIXED: Single-char hostnames were rejected by DHCP static
+            leasees page. (theMIROn)
+   - FIXED: AiCloud could sometime generate a new SSL certificate
+            that would overwrite the one stored in jffs.  Now,
+            AiCloud can also use the same one uploaded by the
+            user for the main webui, or the Let's Encrypt one.
+   - REMOVED: Telnet server.  Please use SSH for console-based
+              management.
+   - REMOVED: Merlin NAT loopback mode (was increasingly
+              problematic as the firmware firewall handling became
+              more complex)
+
+
+384.3
+  Changelog for RT-N18U:
+   - NEW: Merged RT-N18U GPL release 382_39935
+   - CHANGED: Hide the 5GHz wireless temperature if the device is
+              not supported.
+   - FIXED: Wireless LED control does not work on Stealth Mode.
+   - FIXED: Duplicate RTCONFIG_WIFI_SON section which is
+            mis-merged by Asuswrt-Merlin in nat_setting().
+   - FIXED: Hardcode WAN interface as eth0 for Adaptive QoS
+            upstream data gathering.
+
+  Changelog from Asuswrt-Merlin:
+   - NOTE: AiMesh is currently not supported.  Feasability of
+           supporting it is still under evaluation.
+   - NEW: Merged with GPL 384_10007
+   - NEW: nano can now be configured through /jffs/configs/nanorc
+   - CHANGED: Updated nano to 2.9.3.
+   - FIXED: Some routers coming from 380.xx would incorrectly
+            report a new firmware available at boot time.
+   - FIXED: Some broken clients (like Samsung TVs) try to use
+            reserved hostnames - ignore these.  (theMIRon)
+   - FIXED: Added missing IPv6 local hostnames (theMIRon)
+   - FIXED: Issues withh DNS & broadcast relay for pptp
+            clients (theMIRon)
+   - FIXED: Fixed CVE-2018-5721 in httpd (Merlin & theMIROn)
+   - FIXED: helper.js wasn't properly handling parentheses
+            (John9527)
+   - FIXED: NAT acceleration of PPPoE for some models (fix
+            backported from 382_50010)
+   - FIXED: Networkmap-related issues on some models (missing
+            tx/rx rate and such).
+   - FIXED: Network Service Filter wasn't working when in
+            Blacklist mode.
+   - FIXED: Repeater mode (backport from 384_20287)
