@@ -1,0 +1,70 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+   NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+CAUTION:
+    1. If your device uses stock firmware with version 382_50018
+       or later, please downgrade the stock firmware to 382_39935
+       or earlier version by using ASUS Firmware Restoration
+       utility (https://www.asus.com/support/FAQ/1030652) and then
+       upload this firmware via Web UI.
+    2. Upgrade to this firmware from earlier version (<= 384.4_2)
+       will cause the router being not accessible without
+       resetting by hardware button. Please backup the router
+       settings before upgrade the firmware.
+    3. The online upgrade feature is broken between 384.4_3 and
+       384.5-beta2 due to spwenc.o source replacement. Please do
+       not restore the configuration exported from these versions.
+
+384.8-beta2
+  Changelog for RT-N18U:
+  - NOTE: The IPTV profile data have been moved into binary blobs
+          but Asus hasn't released any updated for this model.
+          Currently lacking function calls are re-implemented but
+          they are untested.
+  - NEW: Merged GPL 384_32797 from asuswrt-merlin.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Add LZ4 V2 option to OpenVPN compression
+         (more effective at handling already compressed
+         data)
+  - NEW: Added "extend" support to SNMP.
+  - NEW: Added CleanBrowsing to DNSFilter supported services.
+  - NEW: Webui HTTP LAN port can now be changed from the default 80.
+  - NEW: Added support for the Netfilter TEE target.
+  - CHANGED: Removed watchdog from OpenVPN clients, to avoid
+             conflicting with more advanced configurations.
+  - CHANGED: Vsftpd TLS mode will now reuse the web server
+             certificate (including any Let's Encrypt generated
+             one).
+  - CHANGED: SSL crypto/cipher hardening for httpd (themiron)
+  - CHANGED: Syslog will now ignore bwdpi debug output (themiron)
+  - CHANGED: Reworked Wireless Log page, adding a new button to
+             view low-level details (what stock firmware shows
+             on its Wireless Log page), and removed redundant
+             option to display DFS channel details.
+  - CHANGED: Updated dnsmasq to 2.80-7-g24b8760 (themiron)
+  - CHANGED: Updated nettle to 3.4
+  - CHANGED: Updated net-snmp to 5.8
+  - CHANGED: Updated openssl to 1.0.2q
+  - CHANGED: Migrated /jffs/ssl/* content to /jffs/.cert (to
+             share the same folder used by Asus stock)
+  - CHANGED: Updated CA bundle to October 17th 2018 version.
+  - FIXED: UOPNP port forwarding not working in CGNAT/double NAT
+           scenario even if proper ports were forwarded upstream.
+  - FIXED: Pages based on table.js (like the port trigger one)
+           would fail to work properly under Firefox
+           (Michael Ziminsky)
+  - FIXED: Dnsmasq issues when running in non-router mode
+           (John Bacho)
+  - FIXED: Routing issues when in non-router mode (John Bacho)
+  - FIXED: Bug in curl that could cause some applications to
+           crash on non-HND models
+  - FIXED: IFTTT failing to start on non-HND models (caused by
+           curl issue).
+  - FIXED: Webui could complain about port 8080 being reserved for
+           http WAN port (which is no longer supported)
+  - FIXED: Cannot change image for device with a vendor name
+           containing an apostrophe (like Micro-Star int'l)
+           (Asus bug)
+  - FIXED: OpenVPN client download was capped by Adaptive QOS
+           upload limit (fix devised by FreshJR)
