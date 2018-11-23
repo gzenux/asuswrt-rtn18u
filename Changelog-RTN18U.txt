@@ -15,7 +15,7 @@ CAUTION:
        384.5-beta2 due to spwenc.o source replacement. Please do
        not restore the configuration exported from these versions.
 
-384.8 (beta1)
+384.8-beta2
   Changelog for RT-N18U:
   - NOTE: The IPTV profile data have been moved into binary blobs
           but Asus hasn't released any updated for this model.
@@ -30,7 +30,7 @@ CAUTION:
   - NEW: Added "extend" support to SNMP.
   - NEW: Added CleanBrowsing to DNSFilter supported services.
   - NEW: Webui HTTP LAN port can now be changed from the default 80.
-  - CHANGED: Updated dnsmasq to 2.80-7-g24b8760 (themiron)
+  - NEW: Added support for the Netfilter TEE target.
   - CHANGED: Removed watchdog from OpenVPN clients, to avoid
              conflicting with more advanced configurations.
   - CHANGED: Vsftpd TLS mode will now reuse the web server
@@ -42,10 +42,13 @@ CAUTION:
              view low-level details (what stock firmware shows
              on its Wireless Log page), and removed redundant
              option to display DFS channel details.
+  - CHANGED: Updated dnsmasq to 2.80-7-g24b8760 (themiron)
   - CHANGED: Updated nettle to 3.4
   - CHANGED: Updated net-snmp to 5.8
+  - CHANGED: Updated openssl to 1.0.2q
   - CHANGED: Migrated /jffs/ssl/* content to /jffs/.cert (to
              share the same folder used by Asus stock)
+  - CHANGED: Updated CA bundle to October 17th 2018 version.
   - FIXED: UOPNP port forwarding not working in CGNAT/double NAT
            scenario even if proper ports were forwarded upstream.
   - FIXED: Pages based on table.js (like the port trigger one)
@@ -63,6 +66,8 @@ CAUTION:
   - FIXED: Cannot change image for device with a vendor name
            containing an apostrophe (like Micro-Star int'l)
            (Asus bug)
+  - FIXED: OpenVPN client download was capped by Adaptive QOS
+           upload limit (fix devised by FreshJR)
 
 
 384.7_2
