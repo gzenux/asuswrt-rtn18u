@@ -15,7 +15,7 @@ CAUTION:
        384.5-beta2 due to spwenc.o source replacement. Please do
        not restore the configuration exported from these versions.
 
-384.8-beta2
+384.8
   Changelog for RT-N18U:
   - NOTE: The IPTV profile data have been moved into binary blobs
           but Asus hasn't released any updated for this model.
@@ -49,6 +49,8 @@ CAUTION:
   - CHANGED: Migrated /jffs/ssl/* content to /jffs/.cert (to
              share the same folder used by Asus stock)
   - CHANGED: Updated CA bundle to October 17th 2018 version.
+  - CHANGED: Support search domains pushed by a remote OpenVPN
+             server
   - FIXED: UOPNP port forwarding not working in CGNAT/double NAT
            scenario even if proper ports were forwarded upstream.
   - FIXED: Pages based on table.js (like the port trigger one)
