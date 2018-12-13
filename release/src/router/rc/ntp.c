@@ -192,9 +192,12 @@ int ntp_main(int argc, char *argv[])
 		{
 			alarm(SECONDS_TO_WAIT);
 		}
-		else if (sig_cur == SIGCHLD && nvram_get_int("ntp_ready") != 0 )
+		else if (sig_cur == SIGCHLD)
 		{ //handle the delayed ntpclient process
-			set_alarm();
+			if (nvram_get_int("ntp_ready") != 0)
+				set_alarm();
+			else
+				alarm(SECONDS_TO_WAIT);
 		}
 		else
 		{
@@ -224,10 +227,8 @@ int ntp_main(int argc, char *argv[])
 
 				strlcpy(server, nvram_safe_get("ntp_server0"), sizeof(server));
 			}
-			sleep(SECONDS_TO_WAIT);
 #else
 			_eval(args, NULL, 0, &pid);
-			sleep(SECONDS_TO_WAIT);
 
 			if (strlen(nvram_safe_get("ntp_server0")))
 				strlcpy(server, nvram_safe_get("ntp_server0"), sizeof (server));
