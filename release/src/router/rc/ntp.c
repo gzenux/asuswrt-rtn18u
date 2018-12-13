@@ -212,8 +212,6 @@ int ntp_main(int argc, char *argv[])
 			if(strcmp(server, DEFAULT_NTP_SERVER)) //customer setting
 			{
 				_eval(args, NULL, 0, &pid);
-
-				strlcpy(server, DEFAULT_NTP_SERVER, sizeof(server));
 			}
 			else
 			{
@@ -224,9 +222,8 @@ int ntp_main(int argc, char *argv[])
 					_eval(args, NULL, 0, &pid);
 					server_idx++;
 				}
-
-				strlcpy(server, nvram_safe_get("ntp_server0"), sizeof(server));
 			}
+			strlcpy(server, nvram_safe_get("ntp_server0"), sizeof(server));
 #else
 			_eval(args, NULL, 0, &pid);
 
