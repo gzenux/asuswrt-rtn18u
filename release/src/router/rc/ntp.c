@@ -147,8 +147,6 @@ int ntp_main(int argc, char *argv[])
 	pid_t pid;
 	char *args[] = {"ntpclient", "-h", server, "-i", "3", "-l", "-s", NULL};
 
-	strlcpy(server, nvram_safe_get("ntp_server0"), sizeof(server));
-
 	fp = fopen("/var/run/ntp.pid", "w");
 	if (fp == NULL)
 		exit(0);
@@ -203,6 +201,20 @@ int ntp_main(int argc, char *argv[])
 		{
 			stop_ntpc();
 
+			if (strlen(nvram_safe_get("ntp_server0"))) {
+				strlcpy(server, nvram_safe_get("ntp_server0"), sizeof(server));
+			} else {
+#if 1 // try simultaneously
+				strlcpy(server, DEFAULT_NTP_SERVER, sizeof(server));
+				nvram_set("ntp_server0", DEFAULT_NTP_SERVER);
+#else
+				if (strlen(nvram_safe_get("ntp_server1")))
+					strlcpy(server, nvram_safe_get("ntp_server1"), sizeof(server));
+				else
+					strlcpy(server, "", sizeof(server));
+#endif
+			}
+
 			nvram_set("ntp_server_tried", server);
 			if (nvram_match("ntp_ready", "0") || nvram_match("ntp_debug", "1") ||
 				!strstr(nvram_safe_get("time_zone_x"), "DST"))
@@ -223,17 +235,8 @@ int ntp_main(int argc, char *argv[])
 					server_idx++;
 				}
 			}
-			strlcpy(server, nvram_safe_get("ntp_server0"), sizeof(server));
 #else
 			_eval(args, NULL, 0, &pid);
-
-			if (strlen(nvram_safe_get("ntp_server0")))
-				strlcpy(server, nvram_safe_get("ntp_server0"), sizeof (server));
-			else if (strlen(nvram_safe_get("ntp_server1")))
-				strlcpy(server, nvram_safe_get("ntp_server1"), sizeof(server));
-			else
-				strlcpy(server, "", sizeof(server));
-			args[2] = server;
 #endif
 
 			set_alarm();
