@@ -17,7 +17,11 @@ CAUTION:
 
 384.8_2
   Changelog for RT-N18U:
-  - No Updates Available.
+  - CHANGED: Do not alternate between customized ntp server (from
+             webui) and built-in list - only use built-in list if
+             the ntp server is not customized.
+  - FIXED: Ntpclient command storm happened when no any
+           network time is available.
 
   Changelog from Asuswrt-Merlin:
   - CHANGED: Updated miniupnpd to 20181205.
