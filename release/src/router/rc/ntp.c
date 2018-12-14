@@ -39,12 +39,13 @@
 
 #define SECONDS_TO_WAIT 3
 #define NTP_RETRY_INTERVAL 30
+#define TRY_SIMULTANEOUSLY 1
 
 static char server[32];
 static int sig_cur = -1;
 static int server_idx = 0;
 
-#if 1 // try simultaneously
+#if TRY_SIMULTANEOUSLY // try simultaneously
 #define DEFAULT_NTP_SERVER "pool.ntp.org"
 static char* server_list[] = {
 	DEFAULT_NTP_SERVER,
@@ -204,7 +205,7 @@ int ntp_main(int argc, char *argv[])
 			if (strlen(nvram_safe_get("ntp_server0"))) {
 				strlcpy(server, nvram_safe_get("ntp_server0"), sizeof(server));
 			} else {
-#if 1 // try simultaneously
+#if TRY_SIMULTANEOUSLY // try simultaneously
 				strlcpy(server, DEFAULT_NTP_SERVER, sizeof(server));
 				nvram_set("ntp_server0", DEFAULT_NTP_SERVER);
 #else
@@ -220,7 +221,7 @@ int ntp_main(int argc, char *argv[])
 				!strstr(nvram_safe_get("time_zone_x"), "DST"))
 				logmessage("ntp", "start NTP update");
 
-#if 1 // try simultaneously
+#if TRY_SIMULTANEOUSLY // try simultaneously
 			if(strcmp(server, DEFAULT_NTP_SERVER)) //customer setting
 			{
 				_eval(args, NULL, 0, &pid);
