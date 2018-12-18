@@ -3326,7 +3326,7 @@ TRACE_PT("writing Parental Control\n");
 
 #ifdef RTCONFIG_SSH
 		// Open ssh to WAN
-		if (nvram_get_int("sshd_enable") > 0)
+		if (nvram_get_int("sshd_enable") == 1)
 		{
 			if (nvram_match("sshd_bfp", "1"))
 			{
@@ -4464,7 +4464,8 @@ TRACE_PT("writing Parental Control\n");
 #endif
 		}
 #ifdef RTCONFIG_SSH
-		if (nvram_get_int("sshd_enable") > 0) {
+		if (nvram_get_int("sshd_enable") == 1)
+		{
 			if (nvram_match("sshd_bfp", "1"))
 			{
 				fprintf(fp, "-N SSHBFP\n");
