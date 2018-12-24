@@ -206,12 +206,14 @@ function initial(){
 		document.getElementById("ap_table").style.display = "";
 		if(sw_mode == 3)
 			document.getElementById('RemoteAPtd').style.display = "none";
-		
-		if((sw_mode == 2 || sw_mode == 3 || sw_mode == 4) && decodeURIComponent("<% nvram_char_to_ascii("WLANConfig11b", "wlc_ssid"); %>").length >= 28){
-			showtext(document.getElementById("RemoteAP"), decodeURIComponent("<% nvram_char_to_ascii("WLANConfig11b", "wlc_ssid"); %>").substring(0, 26)+"...");
-			document.getElementById("RemoteAPtd").title = decodeURIComponent("<% nvram_char_to_ascii("WLANConfig11b", "wlc_ssid"); %>");
+	
+		var wlc_ssid = decodeURIComponent("<% nvram_char_to_ascii("WLANConfig11b", "wlc_ssid"); %>");
+		var _wlc_ssid = wlc_ssid.replace(/\</g, "&lt;").replace(/\>/g, "&gt;");   //replace < to &lt and > to &gt	
+		if((sw_mode == 2 || sw_mode == 3 || sw_mode == 4) && wlc_ssid.length >= 28){
+			showtext(document.getElementById("RemoteAP"), _wlc_ssid.substring(0, 26)+"...");
+			document.getElementById("RemoteAPtd").title = wlc_ssid;
 		}else				
-			showtext(document.getElementById("RemoteAP"), decodeURIComponent("<% nvram_char_to_ascii("WLANConfig11b", "wlc_ssid"); %>"));
+			showtext(document.getElementById("RemoteAP"), _wlc_ssid);
 				
 		if(lanproto == "static")
 			showtext(document.getElementById("LanProto"), "<#BOP_ctype_title5#>");

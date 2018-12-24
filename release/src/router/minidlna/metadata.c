@@ -491,9 +491,9 @@ libjpeg_error_handler(j_common_ptr cinfo)
 	return;
 }
 
-#if defined MS_IPK || defined RTCONFIG_WEBDAV
+#if defined MS_IPK || defined RTCONFIG_WEBDAV || defined MS_LIMIT
 //- 20130708 Sungmin add
-static int
+int
 thumb_cache_exists(const char *orig_path, char **cache_file)
 {
 	if( asprintf(cache_file, "%s/art_cache%s", db_path, orig_path) < 0 )

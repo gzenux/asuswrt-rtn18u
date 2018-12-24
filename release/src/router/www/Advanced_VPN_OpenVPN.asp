@@ -140,6 +140,7 @@ function initial(){
 	setRadioValue(document.form.vpn_server_x_eas, ((document.form.vpn_serverx_eas.value.indexOf(''+(openvpn_unit)) >= 0) ? "1" : "0"));
 	setRadioValue(document.form.vpn_server_x_dns, ((document.form.vpn_serverx_dns.value.indexOf(''+(openvpn_unit)) >= 0) ? "1" : "0"));
 	update_visibility();
+	update_cipher();
 	/*Advanced Setting end */
 
 	//check DUT is belong to private IP.
@@ -158,19 +159,19 @@ function show_warning_message(){
 		}
 		else if(realip_state != "2"){
 			if(validator.isPrivateIP(wanlink_ipaddr())){
-				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
+				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 				document.getElementById("privateIP_notes").style.display = "";
 			}
 		}
 		else{
 			if(!external_ip){
-				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
+				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 				document.getElementById("privateIP_notes").style.display = "";
 			}
 		}
 	}
 	else if(validator.isPrivateIP(wanlink_ipaddr())){
-		document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
+		document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 		document.getElementById("privateIP_notes").style.display = "";
 	}
 }
@@ -1025,6 +1026,13 @@ function update_vpn_client_state() {
 		}
 	});	
 }
+
+function update_cipher() {
+	$("#cipher_hint").css("display", "none");
+	var cipher = document.form.vpn_server_cipher.value;
+	if(cipher == "default")
+		$("#cipher_hint").css("display", "");
+}
 </script>
 </head>
 <body onload="initial();">
@@ -1500,7 +1508,8 @@ function update_vpn_client_state() {
 											<tr>
 												<th><#vpn_openvpn_Encrypt#></th>
 												<td>
-													<select name="vpn_server_cipher" class="input_option"></select>
+													<select name="vpn_server_cipher" class="input_option" onChange="update_cipher();"></select>
+													<span id="cipher_hint" style="color:#FC0">(Default : BF-CBC)</span>
 												</td>
 											</tr>
 											<tr>

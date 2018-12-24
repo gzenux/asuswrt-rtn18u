@@ -566,7 +566,7 @@ void stop_usb_program(int mode)
 #endif
 
 #if defined(RTCONFIG_APP_PREINSTALLED) || defined(RTCONFIG_APP_NETINSTALLED)
-#if defined(RTCONFIG_APP_PREINSTALLED) && defined(RTCONFIG_CLOUDSYNC)
+#if defined(RTCONFIG_CLOUDSYNC)
 	if(pids("inotify") || pids("asuswebstorage") || pids("webdav_client") || pids("dropbox_client") || pids("ftpclient") || pids("sambaclient") || pids("usbclient")){
 		_dprintf("%s: stop_cloudsync.\n", __FUNCTION__);
 		stop_cloudsync(-1);
@@ -603,6 +603,11 @@ void stop_usb(int f_force)
 {
 #endif
 	int disabled = !nvram_get_int("usb_enable");
+
+#if defined(RTCONFIG_USB_MODEM) && (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+	_dprintf("stop_usb: save the modem data.\n");
+	eval("/usr/sbin/modem_status.sh", "bytes+");
+#endif
 
 	stop_usb_program(0);
 
@@ -1099,7 +1104,7 @@ int umount_mountpoint(struct mntent *mnt, uint flags)
 	//run_userfile(mnt->mnt_dir, ".autostop", mnt->mnt_dir, 5);
 	//run_nvscript("script_autostop", mnt->mnt_dir, 5);
 #if defined(RTCONFIG_APP_PREINSTALLED) || defined(RTCONFIG_APP_NETINSTALLED)
-#if defined(RTCONFIG_APP_PREINSTALLED) && defined(RTCONFIG_CLOUDSYNC)
+#if defined(RTCONFIG_CLOUDSYNC)
 	char word[PATH_MAX], *next_word;
 	char *b, *nvp, *nv;
 	int type = 0, enable = 0;
@@ -1521,7 +1526,7 @@ done:
 		if (nvram_get_int("usb_automount"))
 			run_nvscript("script_usbmount", mountpoint, 3);
 
-#if defined(RTCONFIG_APP_PREINSTALLED) && defined(RTCONFIG_CLOUDSYNC)
+#if defined(RTCONFIG_CLOUDSYNC)
 		char word[PATH_MAX], *next_word;
 		char *cloud_setting, *b, *nvp, *nv;
 		int type = 0, rule = 0, enable = 0;
@@ -3004,7 +3009,7 @@ void start_cloudsync(int fromUI)
 
 	cloud_setting = nvram_safe_get("cloud_sync");
 
-	nv = nvp = strdup(nvram_safe_get("cloud_sync"));
+	nv = nvp = strdup(cloud_setting);
 	if(nv){
 		while((b = strsep(&nvp, "<")) != NULL){
 			count = 0;

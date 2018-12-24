@@ -1072,6 +1072,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "sr_rulelist", "" },
 	{ "dr_enable_x", "1" }, // oleg patch
 	{ "mr_enable_x", "0" }, // oleg patch
+	{ "mr_qleave_x", "0" },
 	{ "mr_altnet_x", "" },
 
 	// Domain Name
@@ -1155,6 +1156,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_pppoe_mtu", "1492" },	/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_pppoe_service", "" },	/* PPPoE service name */
 	{ "wan_pppoe_ac", "" },		/* PPPoE access concentrator name */
+	{ "wan_pppoe_hostuniq", ""},	/* PPPoE host-uniq */
 	{ "wan_pppoe_options_x", "" },	// oleg patch
 	{ "wan_pptp_options_x", "" },	// oleg patch
 #ifdef RTCONFIG_DSL
@@ -1292,6 +1294,7 @@ struct nvram_tuple router_defaults[] = {
 //	{ "dslx_pppoe_mru", "" },
 	{ "dslx_pppoe_service", "" },
 	{ "dslx_pppoe_ac", "" },
+	{ "dslx_pppoe_hostuniq", "" },
 	{ "dslx_pppoe_options", "" },
 	{ "dslx_hwaddr", "" },
 //
@@ -1585,6 +1588,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "TM_EULA", "0" },			// EULA of Trend Micro
 	{ "apps_analysis", "0" },		// Apps Analysis in Adaptive QoS Live
 	{ "bwdpi_wh_enable", "0" },		// web history
+	{ "bwdpi_wh_stamp", "0" },		// web history timestamp
 	{ "sig_update_t", "0" },		// signature upgrade timestamp
 #endif
 #endif	/* RTCONFIG_PARENTALCTRL */
@@ -1616,17 +1620,13 @@ struct nvram_tuple router_defaults[] = {
 
 	// UrlList
 	{ "url_enable_x", "0" },
-	{ "url_date_x", "1111111" },
-	{ "url_time_x", "00002359" },
-	{ "url_enable_x_1", "0" },
-	{ "url_time_x_1", "00002359" },
 	{ "url_rulelist", "" },
+	{ "url_sched", "000000"},
 
 	// KeywordList
 	{ "keyword_enable_x", "0" },
-	{ "keyword_date_x", "1111111" },
-	{ "keyword_time_x", "00002359" },
 	{ "keyword_rulelist", "" },
+	{ "keyword_sched", "000000"},
 
 	// LWFilterListi
 	{ "fw_lw_enable_x", "0" },
@@ -1839,8 +1839,10 @@ struct nvram_tuple router_defaults[] = {
 	{ "usb_path1_diskmon_freq_time", "" },
 	{ "usb_path2_diskmon_freq", "0" },
 	{ "usb_path2_diskmon_freq_time", "" },
+#if !defined(RT4GAC55U) && !defined(RT4GAC68U)
 	{ "usb_path3_diskmon_freq", "0" },
 	{ "usb_path3_diskmon_freq_time", "" },
+#endif
 	{ "diskformat_file_system", "tfat" }, //tfat, tntfs, thfsplus
 	{ "diskformat_label", "" },
 #ifndef RTCONFIG_BCMARM
@@ -1981,6 +1983,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "telnetd_enable", "0" },
 #ifdef RTCONFIG_SSH
 	{ "sshd_enable", "0" },		/* 0: disabled 1: enabled 2: enabled for LAN only */
+	{ "sshd_timeout", "20" },
 	{ "sshd_port", "22" },
 	{ "sshd_pass", "1" },
 	{ "sshd_authkeys", "" },
@@ -1988,6 +1991,8 @@ struct nvram_tuple router_defaults[] = {
 #ifdef RTCONFIG_POWER_SAVE
 	{ "pwrsave_mode", "0"},	/* 1: auto (ondemand), 2: power save, otherwise: performance */
 #endif
+	{ "enable_acc_restriction", "0" },
+	{ "restrict_rulelist", "" },
 
 #ifdef RTCONFIG_USB_MODEM
 	{ "usb_qmi", "1" },
@@ -2132,7 +2137,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpn_server_firewall",	"auto"		},
 	{ "vpn_server_crypt",		"tls"		},
 	{ "vpn_server_comp",		"adaptive"	},
-	{ "vpn_server_cipher",		"default"	},
+	{ "vpn_server_cipher",		"AES-128-CBC"	},
 	{ "vpn_server_dhcp",		"1"		},
 	{ "vpn_server_r1",		"192.168.1.50"	},
 	{ "vpn_server_r2",		"192.168.1.55"	},
@@ -2158,7 +2163,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpn_server1_firewall",	"auto"		},
 	{ "vpn_server1_crypt",		"tls"		},
 	{ "vpn_server1_comp",		"adaptive"	},
-	{ "vpn_server1_cipher",		"default"	},
+	{ "vpn_server1_cipher",		"AES-128-CBC"	},
 	{ "vpn_server1_dhcp",		"1"		},
 	{ "vpn_server1_r1",		"192.168.1.50"	},
 	{ "vpn_server1_r2",		"192.168.1.55"	},
@@ -2195,7 +2200,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpn_server2_firewall",	"auto"		},
 	{ "vpn_server2_crypt",		"tls"		},
 	{ "vpn_server2_comp",		"adaptive"	},
-	{ "vpn_server2_cipher",		"default"	},
+	{ "vpn_server2_cipher",		"AES-128-CBC"	},
 	{ "vpn_server2_dhcp",		"1"		},
 	{ "vpn_server2_r1",		"192.168.1.50"	},
 	{ "vpn_server2_r2",		"192.168.1.55"	},
@@ -3150,6 +3155,9 @@ struct nvram_tuple router_state_defaults[] = {
 	{ "dsllog_latnup", "" },
 	{ "dsllog_satndown", "" },
 	{ "dsllog_satnup", "" },
+	{ "dsllog_sysvid", "2605443544e00" },
+	{ "dsllog_sysvmid", "00000000000000000000000000000000" },
+	{ "dsllog_modemvid", "26005443434E5A01" },
 #endif
 
 #endif
@@ -5056,7 +5064,12 @@ nvram_default_get(const char *name)
 	}
 #endif
 #ifdef RTCONFIG_TCODE
-	if (strncmp(name, "lan_", 4) == 0 || strncmp(name, "dhcp_", 5) == 0) {
+	if (strncmp(name, "lan_", 4) == 0 || strncmp(name, "dhcp_", 5) == 0
+#if defined(RTAC58U)
+	 || strcmp(name, "http_username") == 0
+	 || strcmp(name, "http_passwd") == 0
+#endif
+	) {
 		char *value = tcode_default_get(fixed_name);
 		if (value) {
 			return value;

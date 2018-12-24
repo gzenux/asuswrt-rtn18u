@@ -12,7 +12,6 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <stdarg.h>
-#include <math.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
@@ -99,6 +98,8 @@ static int send_ptcsrv_event(void *data, char *socketpath)
 		return 0;
 	}
 	
+	fcntl(sockfd, F_SETFL, O_NONBLOCK);
+	
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, socketpath, sizeof(addr.sun_path)-1);
@@ -123,12 +124,13 @@ static int send_ptcsrv_event(void *data, char *socketpath)
 	return 1;
 }
 
-void SEND_PTCSRV_EVENT(int s_type, const char *addr, const char *msg)
+void SEND_PTCSRV_EVENT(int s_type, int status, const char *addr, const char *msg)
 {
 	/* Do Initial first */
 	PTCSRV_STATE_REPORT_T *state_t = initial_ptcsrv_event();
 	
 	state_t->s_type = s_type;
+	state_t->status = status;
 	snprintf(state_t->addr, sizeof(state_t->addr), addr);
 	snprintf(state_t->msg, sizeof(state_t->msg), msg);
 	

@@ -230,6 +230,7 @@ extern int getPSK(void);
 extern int start_envrams(void);
 extern int chk_envrams_proc(void);
 #endif
+extern int ate_run_arpstrom(void);
 
 /* tcode_rc.c */
 #ifdef RTCONFIG_TCODE
@@ -407,6 +408,8 @@ extern void reset_psr_hwaddr();
 extern void ldo_patch();
 extern int wl_channel_valid(char *wif, int channel);
 extern int wl_subband(char *wif, int idx);
+extern void check_4366_dummy(void);
+extern void check_4366_fabid(void);
 #endif
 extern void wl_dfs_radarthrs_config(char *ifname, int unit);
 #ifdef RTCONFIG_BCM_7114
@@ -479,6 +482,7 @@ extern void fa_nvram_adjust();
 // format.c
 extern void adjust_url_urlelist();
 extern void adjust_ddns_config();
+extern void adjust_access_restrict_config();
 
 // interface.c
 extern int _ifconfig(const char *name, int flags, const char *addr, const char *netmask, const char *dstaddr, int mtu);
@@ -525,11 +529,6 @@ extern void wan6_up(const char *wan_ifname);
 extern void wan6_down(const char *wan_ifname);
 extern void start_wan6(void);
 extern void stop_wan6(void);
-#endif
-#if defined(RTCONFIG_WANRED_LED)
-extern int test_gateway(char *gw, char *wan_ifname);
-#else
-static inline int test_gateway(char *gw, char *wan_ifname) { return 0; }
 #endif
 extern int do_dns_detect(int wan_unit);
 
@@ -952,6 +951,7 @@ extern int write_vpn_resolv(FILE*);
 //static inline void start_vpn_eas() { }
 //#define write_vpn_resolv(f) (0)
 extern void create_openvpn_passwd();
+extern void update_ovpn_profie_remote();
 #endif
 
 // wanduck.c

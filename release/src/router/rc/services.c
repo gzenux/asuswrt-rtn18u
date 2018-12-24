@@ -814,7 +814,7 @@ static void link_up(void)
 int restart_dnsmasq(int need_link_DownUp)
 {
 	if (need_link_DownUp) {
-#if (defined(PLN12) || defined(PLAC56) || defined(PLAC66))
+#if (defined(PLN11) || defined(PLN12) || defined(PLAC56) || defined(PLAC66))
 		nvram_set("plc_ready", "0");
 #endif
 		link_down();
@@ -827,7 +827,7 @@ int restart_dnsmasq(int need_link_DownUp)
 
 	if (need_link_DownUp) {
 		link_up();
-#if (defined(PLN12) || defined(PLAC56) || defined(PLAC66))
+#if (defined(PLN11) || defined(PLN12) || defined(PLAC56) || defined(PLAC66))
 		nvram_set("plc_ready", "1");
 #endif
 	}
@@ -2255,6 +2255,10 @@ ddns_updated_main(int argc, char *argv[])
 
 	logmessage("ddns", "ddns update ok");
 
+#ifdef RTCONFIG_OPENVPN
+	update_ovpn_profie_remote();
+#endif
+
 	_dprintf("done\n");
 
 	return 0;
@@ -2444,6 +2448,10 @@ stop_ddns(void)
 		killall("ez-ipupdate", SIGINT);
 	if (pids("phddns"))
 		killall("phddns", SIGINT);
+
+#ifdef RTCONFIG_OPENVPN
+	update_ovpn_profie_remote();
+#endif
 }
 
 int
@@ -2627,7 +2635,7 @@ _dprintf("%s:\n", __FUNCTION__);
 	start_klogd();
 
 #if defined(DUMP_PREV_OOPS_MSG) && defined(RTCONFIG_BCMARM)
-#if defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300)|| defined(RTAC5300R)
+#if defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300)|| defined(RTAC5300R) || defined(RTCONFIG_BCM9)
 	eval("et", "dump", "oops");
 #else
 	eval("et", "dump_oops");
@@ -3087,11 +3095,6 @@ void start_upnp(void)
 
 #if defined(RTCONFIG_RGMII_BRCM5301X)
 				strcpy(et0macaddr, nvram_safe_get("lan_hwaddr"));
-#elif defined(RTCONFIG_GMAC3)
-				if (nvram_match("gmac3_enable", "1"))
-					strcpy(et0macaddr, nvram_safe_get("et2macaddr"));
-				else
-					strcpy(et0macaddr, nvram_safe_get("et0macaddr"));
 #else
 				strcpy(et0macaddr, get_lan_hwaddr());
 #endif
@@ -3452,14 +3455,7 @@ int generate_mdns_config(void)
 
 	sprintf(avahi_config, "%s/%s", AVAHI_CONFIG_PATH, AVAHI_CONFIG_FN);
 
-#if defined(RTCONFIG_GMAC3)
-	if (nvram_match("gmac3_enable", "1"))
-		strcpy(et0macaddr, nvram_safe_get("et2macaddr"));
-	else
-		strcpy(et0macaddr, nvram_safe_get("et0macaddr"));
-#else
 	strcpy(et0macaddr, get_lan_hwaddr());
-#endif
 
 	/* Generate avahi configuration file */
 	if (!(fp = fopen(avahi_config, "w"))) {
@@ -3762,7 +3758,7 @@ reset_plc(void)
 	if (nvram_match("plc_ready", "0"))
 		return;
 
-#if defined(PLN12)
+#if defined(PLN11) || defined(PLN12)
 	if (!get_qca8337_PHY_power(1))
 		doSystem("swconfig dev %s port 1 set power 1", MII_IFNAME);
 #elif defined(PLAC56)
@@ -5708,7 +5704,9 @@ stop_services(void)
 #ifdef RTCONFIG_SSH
 	stop_sshd();
 #endif
-
+#ifdef RTCONFIG_PROTECTION_SERVER
+	stop_ptcsrv();
+#endif
 #ifdef RTCONFIG_SNMPD
 	stop_snmpd();
 #endif
@@ -6261,7 +6259,7 @@ void handle_notifications(void)
 	int action = 0;
 	int count;
 	int i;
-#ifdef RTCONFIG_USB_MODEM
+#if defined(RTCONFIG_USB_MODEM) || defined(RTCONFIG_DUALWAN)
 	int unit;
 #endif
 
@@ -7084,7 +7082,6 @@ again:
 #ifdef RTCONFIG_DUALWAN
 	else if(!strcmp(script, "multipath")){
 		char mode[4], if_now[16], if_next[16];
-		int unit;
 		int unit_now = wan_primary_ifunit();
 		int unit_next = (unit_now+1)%WAN_UNIT_MAX;
 		int state_now = is_wan_connect(unit_now);
@@ -7753,27 +7750,17 @@ check_ddr_done:
 	}
 	else if(!strncmp(script, "modemscan", 9)){
 		char *at_cmd[] = {"/usr/sbin/modem_status.sh", "scan", NULL};
-		int usb_unit;
+
 #ifdef RTCONFIG_DUALWAN
-		char word[256], *next;
-
-		usb_unit = 0;
-		foreach(word, nvram_safe_get("wans_dualwan"), next){
-			if(!strcmp(word, "usb")){
-				break;
-			}
-
-			++usb_unit;
-		}
+		unit = get_usbif_dualwan_unit();
 #else
-		usb_unit = 1;
+		unit = 1;
 #endif
 
-		if(usb_unit != WAN_UNIT_MAX){
+		if(unit >= 0){
 			nvram_set("usb_modem_act_scanning", "3");
 
-			stop_wan_if(usb_unit);
-			start_wan_if(usb_unit);
+			stop_wan_if(unit);
 
 			_eval(at_cmd, ">/tmp/modem_action.ret", 0, NULL);
 		}

@@ -165,7 +165,7 @@ ifeq ($(CONFIG_BCMWL5),y)
 ifneq ($(RTCONFIG_DSL),y)
 CFLAGS += -DTRX_NEW
 endif
-OBJS += $(if $(wildcard private.c),private.o,prebuild/private.o)
+OBJS += private.o
 OBJS += wlif_utils.o UdpLib.o bcmutils.o
 OBJS += bcmwifi_channels.o
 endif
@@ -203,6 +203,11 @@ install: all
 
 clean:
 	rm -f *.o *.so *.a .*.depend *.prep sysdeps/*.o sysdeps/broadcom/*.o sysdeps/ralink/*.o sysdeps/qtn/*.o
+
+private.o:
+ifneq ($(wildcard ./prebuild/private.o),)
+	@-cp -f ./prebuild/private.o .
+endif
 
 %.o: %.c .%.depend
 	@echo " [shared] CC $@"

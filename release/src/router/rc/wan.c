@@ -510,7 +510,6 @@ if(debug) printf("test 25. cmd2=%s.\n", cmd2);
 if(debug) printf("test 26. route flush cache.\n");
 	system("ip route flush cache");
 
-	logmessage("wan", "finish adding multi routes");
 	file_unlock(lock);
 	return 0;
 }
@@ -655,7 +654,7 @@ start_ecmh(const char *wan_ifname)
 	if (!wan_ifname || (strlen(wan_ifname) <= 0))
 		return;
 
-	if (!nvram_match("mr_enable_x", "1"))
+	if (!nvram_get_int("mr_enable_x"))
 		return;
 
 	switch (service) {
@@ -685,7 +684,7 @@ start_igmpproxy(char *wan_ifname)
 {
 	FILE *fp;
 	static char *igmpproxy_conf = "/tmp/igmpproxy.conf";
-	char *altnet = nvram_safe_get("mr_altnet_x");
+	char *altnet;
 
 #ifdef RTCONFIG_DSL
 #ifdef RTCONFIG_DUALWAN
@@ -719,7 +718,7 @@ start_igmpproxy(char *wan_ifname)
 			"-a", nvram_get("lan_ifname") ? : "br0");
 	}
 
-	if (!nvram_match("mr_enable_x", "1"))
+	if (!nvram_get_int("mr_enable_x"))
 		return;
 
 	_dprintf("start igmpproxy [%s]\n", wan_ifname);
@@ -729,19 +728,14 @@ start_igmpproxy(char *wan_ifname)
 		return;
 	}
 
-	fprintf(fp, "# automagically generated from web settings\n");
-#ifdef RTCONFIG_MULTICAST_IPTV
-	if ( !(nvram_get_int("switch_stb_x") > 6 &&
-		nvram_match("switch_wantag", "movistar")) )
+	altnet = nvram_safe_get("mr_altnet_x");
+
+	if (nvram_get_int("mr_qleave_x"))
 		fprintf(fp, "quickleave\n\n");
-#else
-		fprintf(fp, "quickleave\n\n");
-#endif
-		fprintf(fp, "phyint %s upstream  ratelimit 0  threshold 1\n"
-		"\taltnet %s\n\n"
-		"phyint %s downstream  ratelimit 0  threshold 1\n\n",
-		wan_ifname,
-		*altnet ? altnet : "0.0.0.0/0",
+	fprintf(fp,
+		"phyint %s upstream ratelimit 0 threshold 1 altnet %s\n"
+		"phyint %s downstream ratelimit 0 threshold 1\n",
+		wan_ifname, *altnet ? altnet : "0.0.0.0/0",
 		nvram_get("lan_ifname") ? : "br0");
 
 	fclose(fp);
@@ -2658,7 +2652,7 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 		start_igmpproxy(wan_ifname);
 	}
 #ifdef RTCONFIG_QUAGGA
-	if (wan_unit == WAN_UNIT_IPTV) {
+	if( (wan_unit == WAN_UNIT_IPTV) || (wan_unit == WAN_UNIT_VOIP) ){
 		stop_quagga();
 		start_quagga();
 	}
@@ -2701,7 +2695,11 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 #ifdef RTCONFIG_USB_MODEM
 #ifdef RTCONFIG_INTERNAL_GOBI
 	if(dualwan_unit__usbif(wan_unit)){
+		nvram_set("freeze_duck", "5");
+		eval("/usr/sbin/modem_status.sh", "rate");
+		eval("/usr/sbin/modem_status.sh", "band");
 		eval("/usr/sbin/modem_status.sh", "operation");
+		eval("/usr/sbin/modem_status.sh", "provider");
 #if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
 		eval("/usr/sbin/modem_status.sh", "get_dataset");
 		eval("/usr/sbin/modem_status.sh", "bytes");
@@ -2751,15 +2749,16 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	stop_upnp();
 	start_upnp();
 
-	stop_ddns();
-	start_ddns();
-
 	/* Sync time */
 	refresh_ntpc();
 
 #ifdef RTCONFIG_OPENVPN
 	start_vpn_eas();
 #endif
+
+	stop_ddns();
+	start_ddns();
+
 #ifdef RTCONFIG_VPNC
 	if((nvram_match("vpnc_proto", "pptp") || nvram_match("vpnc_proto", "l2tp")) && nvram_match("vpnc_auto_conn", "1"))
 		start_vpnc();
@@ -2882,8 +2881,15 @@ wan_down(char *wan_ifname)
 #endif
 
 #ifdef RTCONFIG_INTERNAL_GOBI
-	if(dualwan_unit__usbif(wan_unit))
+	if(dualwan_unit__usbif(wan_unit)){
+		nvram_unset("usb_modem_act_tx");
+		nvram_unset("usb_modem_act_rx");
+		nvram_unset("usb_modem_act_band");
+		nvram_unset("usb_modem_act_operation");
+		nvram_unset("usb_modem_act_provider");
+
 		nvram_unset("usb_modem_act_startsec");
+	}
 #endif
 
 	adjust_netdev_if_of_wan_bled(0, wan_unit, wan_ifname);
@@ -3336,16 +3342,11 @@ void convert_wan_nvram(char *prefix, int unit)
 		nvram_set(strcat_r(prefix, "hwaddr", tmp), macbuf);
 		logmessage("wan", "mac clone: [%s] == [%s]\n", tmp, macbuf);
 	}
-#ifdef CONFIG_BCMWL5
-#ifdef RTCONFIG_RGMII_BRCM5301X
+#if defined(CONFIG_BCMWL5) && defined(RTCONFIG_RGMII_BRCM5301X)
 	else{
 		/* QTN */
 		if(strcmp(prefix, "wan1_") == 0){
-#ifdef RTCONFIG_GMAC3
-			strcpy(hwaddr_5g, nvram_get_int("gmac3_enable")? nvram_safe_get("et2macaddr"): nvram_safe_get("et1macaddr"));
-#else
-			strcpy(hwaddr_5g, nvram_safe_get("et1macaddr"));
-#endif
+			strcpy(hwaddr_5g, get_wan_mac_name());
 			inc_mac(hwaddr_5g, 7);
 			nvram_set(strcat_r(prefix, "hwaddr", tmp), hwaddr_5g);
 			logmessage("wan", "[%s] == [%s]\n", tmp, hwaddr_5g);
@@ -3355,11 +3356,8 @@ void convert_wan_nvram(char *prefix, int unit)
 		}
 	}
 #else
-	else nvram_set(strcat_r(prefix, "hwaddr", tmp), nvram_safe_get("et0macaddr"));
-#endif	/* RTCONFIG_RGMII_BRCM5301X */
-#else
 	else nvram_set(strcat_r(prefix, "hwaddr", tmp), get_wan_hwaddr());
-#endif	/* CONFIG_BCMWL5 */
+#endif /* CONFIG_BCMWL5 && RTCONFIG_RGMII_BRCM5301X */
 
 #if defined(RTCONFIG_DUALWAN)
 	if (!mac_clone && unit > 0) {
@@ -3378,7 +3376,7 @@ void convert_wan_nvram(char *prefix, int unit)
 	if (nvram_get_int("switch_stb_x") > 6 &&
 	    unit > 9) {
 		unsigned char ea[6];
-		ether_atoe(nvram_safe_get("et0macaddr"), ea);	/* FIXME: Don't use et[01]macaddr directly. */
+		ether_atoe(nvram_safe_get(strcat_r(prefix, "hwaddr", tmp)), ea);
 		ea[5] = (ea[5] & 0xf0) | ((ea[5] + unit - 9) & 0x0f);
 		ether_etoa(ea, macbuf);
 		nvram_set(strcat_r(prefix, "hwaddr", tmp), macbuf);

@@ -242,6 +242,9 @@ SEP=echo "\033[41;1m   $@   \033[0m"
 obj-$(RTCONFIG_NOTIFICATION_CENTER) += sqlite
 obj-$(RTCONFIG_NOTIFICATION_CENTER) += nt_center
 
+obj-y += busybox
+obj-y += shared
+
 obj-$(RTCONFIG_PROTECTION_SERVER) += protect_srv
 
 obj-$(RTCONFIG_QTN) += libqcsapi_client
@@ -250,8 +253,6 @@ obj-$(RTCONFIG_DMALLOC) += dmalloc
 
 obj-$(RTCONFIG_DHDAP) += dhd $(if $(RTCONFIG_BCM7),pciefd)
 obj-$(RTCONFIG_BCM_7114) += dhd_monitor
-obj-y += busybox
-obj-y += shared
 obj-y += nvram$(BCMEX)
 obj-$(RTCONFIG_BCMARM) += ctf_arm
 obj-$(RTAC53U) += ctf_5358
@@ -283,6 +284,11 @@ else ifeq ($(RTCONFIG_QCA),y)
 obj-y += wireless_tools
 obj-y += libnl-tiny-0.1
 obj-y += swconfig
+ifeq ($(RTCONFIG_SOC_IPQ40XX),y)
+SWCONFIG_PKG := qca-swconfig.ipq40xx
+else
+SWCONFIG_PKG := swconfig
+endif
 
 # QCA9558.ILQ 2.0
 obj-$(RTCONFIG_SOC_QCA9557) += shortcut-fe
@@ -753,7 +759,7 @@ obj-y += asm1042
 endif
 
 ifeq ($(RTCONFIG_BCMARM),y)
-obj-prelibs =$(filter nvram$(BCMEX) libbcmcrypto shared netconf libupnp$(BCMEX)$(EX7) libz libbcm pciefd, $(obj-y))
+obj-prelibs =$(filter busybox% nvram$(BCMEX) libbcmcrypto shared netconf libupnp$(BCMEX)$(EX7) libz libbcm pciefd, $(obj-y))
 obj-postlibs := $(filter-out $(obj-prelibs), $(obj-y))
 endif
 
@@ -846,7 +852,7 @@ ifeq ($(RTCONFIG_RALINK),y)
 endif
 ifeq ($(RTCONFIG_QCA),y)
 ifeq ($(CONFIG_LINUX3_14),y)
-	cp $(LINUXDIR)/include/linux/switch.h $@/include/linux/
+	cp -fr $(LINUXDIR)/include/uapi/* $@/include/uapi/
 else
 	cp $(LINUXDIR)/include/net/switch.h $@/include/linux/
 endif
@@ -1393,14 +1399,20 @@ oldconfig oldconf: koldconf roldconf bboldconf
 # overrides and extra dependencies
 #
 
-busybox: dummy
-	@$(MAKE) -C busybox EXTRA_CFLAGS="-fPIC $(EXTRACFLAGS)"
+busybox: dummy $(if $(RTCONFIG_PROTECTION_SERVER),protect_srv-stage,)
+	@$(MAKE) -C busybox \
+		EXTRA_CFLAGS="-fPIC $(EXTRACFLAGS) -I$(STAGEDIR)/usr/include  \
+			$(if $(RTCONFIG_PROTECTION_SERVER),-DSECURITY_NOTIFY,)" \
+		EXTRA_LDFLAGS="-L$(STAGEDIR)/usr/lib" \
+		EXTRA_LDLIBS="$(if $(RTCONFIG_PROTECTION_SERVER),ptcsrv,)"
 
-# V=1
-
-busybox-install:
+busybox-install: $(if $(RTCONFIG_PROTECTION_SERVER),protect_srv-stage,)
 	rm -rf $(INSTALLDIR)/busybox
-	$(MAKE) -C busybox install EXTRA_CFLAGS="-fPIC $(EXTRACFLAGS)" CONFIG_PREFIX=$(INSTALLDIR)/busybox
+	$(MAKE) -C busybox install CONFIG_PREFIX=$(INSTALLDIR)/busybox \
+		EXTRA_CFLAGS="-fPIC $(EXTRACFLAGS) -I$(STAGEDIR)/usr/include  \
+			$(if $(RTCONFIG_PROTECTION_SERVER),-DSECURITY_NOTIFY,)" \
+		EXTRA_LDFLAGS="-L$(STAGEDIR)/usr/lib" \
+		EXTRA_LDLIBS="$(if $(RTCONFIG_PROTECTION_SERVER),ptcsrv,)"
 	chmod 4755 $(INSTALLDIR)/busybox/bin/busybox
 
 busybox-clean:
@@ -2581,8 +2593,14 @@ nt_center-clean:
 protect_srv/stamp-h1:
 	touch $@
 
-protect_srv: protect_srv/stamp-h1
-	$(MAKE) -C protect_srv
+protect_srv-stage:
+	$(MAKE) -C protect_srv/lib
+	install -D protect_srv/lib/libptcsrv.so $(STAGEDIR)/usr/lib/libptcsrv.so
+	install -D -m 644 -p protect_srv/include/protect_srv.h $(STAGEDIR)/usr/include/protect_srv.h
+	install -D -m 644 -p protect_srv/include/libptcsrv.h $(STAGEDIR)/usr/include/libptcsrv.h
+
+protect_srv: shared nvram$(BCMEX) protect_srv/stamp-h1
+	$(MAKE) -C $@ && $(MAKE) $@-stage
 
 protect_srv-install: protect_srv
 	install -d $(INSTALLDIR)/protect_srv/usr/lib/
@@ -2658,7 +2676,7 @@ libbcm-install:
 	install -D libbcm/libbcm.so $(INSTALLDIR)/libbcm/usr/lib/libbcm.so
 	$(STRIP) $(INSTALLDIR)/libbcm/usr/lib/libbcm.so
 
-.PHONY: libnl-tiny-0.1 swconfig
+.PHONY: libnl-tiny-0.1 $(SWCONFIG_PKG)
 libnl-tiny-0.1:
 	$(MAKE) -C $@
 
@@ -2670,13 +2688,13 @@ libnl-tiny-0.1-install: libnl-tiny-0.1
 	$(STRIP) $(INSTALLDIR)/libnl-tiny-0.1/usr/lib/libnl-tiny.so
 
 swconfig: libnl-tiny-0.1
-	$(MAKE) -C $@
+	$(MAKE) -C $(SWCONFIG_PKG)
 
 swconfig-clean:
-	$(MAKE) -C swconfig clean
+	$(MAKE) -C $(SWCONFIG_PKG) clean
 
 swconfig-install: swconfig
-	install -D swconfig/swconfig $(INSTALLDIR)/swconfig/usr/sbin/swconfig
+	install -D $(SWCONFIG_PKG)/swconfig $(INSTALLDIR)/swconfig/usr/sbin/swconfig
 	$(STRIP) $(INSTALLDIR)/swconfig/usr/sbin/swconfig
 
 iperf: iperf/Makefile
@@ -2764,19 +2782,18 @@ ntpclient: nvram$(BCMEX) shared
 
 rstats: nvram$(BCMEX) shared
 
-dropbear/config.h: dropbear/config.h.in
-	cd dropbear && CPPFLAGS="-Os -Wall $(EXTRACFLAGS) -DARGTYPE=3 -ffunction-sections -fdata-sections" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
+dropbear/config.h: dropbear/config.h.in $(if $(RTCONFIG_PROTECTION_SERVER),protect_srv-stage,)
+	cd dropbear && \
+		CPPFLAGS="-Os -Wall $(EXTRACFLAGS) -DARGTYPE=3 -ffunction-sections -fdata-sections -I$(STAGEDIR)/usr/include" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(STAGEDIR)/usr/lib" \
+		LIBS="$(if $(RTCONFIG_PROTECTION_SERVER),-lptcsrv)" \
 		$(CONFIGURE) --disable-zlib --disable-pam \
 		--enable-openpty --enable-syslog --enable-shadow --enable-bundled-libtom \
 		--disable-lastlog \
 		--disable-utmp --disable-utmpx \
 		--disable-wtmp --disable-wtmpx \
 		--disable-loginfunc \
-		--disable-pututline --disable-pututxline \
-		LDFLAGS="$(if $(RTCONFIG_PROTECTION_SERVER),-L$(TOP)/protect_srv/lib)" \
-		CFLAGS="$(if $(RTCONFIG_PROTECTION_SERVER),-I$(TOP)/protect_srv/include -DRTCONFIG_PROTECTION_SERVER)" \
-		LIBS="$(if $(RTCONFIG_PROTECTION_SERVER),-lptcsrv)" 
+		--disable-pututline --disable-pututxline
 
 dropbear: dropbear/config.h
 	@$(SEP)
@@ -3049,7 +3066,7 @@ endif
 minidlna: zlib sqlite ffmpeg libogg flac jpeg libexif libid3tag libvorbis
 	@$(SEP)
 	@cd minidlna && ./genosver.sh
-	@$(MAKE) -C minidlna CC=$(CC) $(if $(MEDIA_SERVER_STATIC),STATIC=1) minidlna
+	$(MAKE) -C minidlna CC=$(CC) $(if $(MEDIA_SERVER_STATIC),STATIC=1) $(if $(RTCONFIG_LIMIT_MEDIA_SERVER),MS_LIMIT=1) minidlna
 
 libgdbm/stamp-h1:
 	cd libgdbm && \
@@ -3114,13 +3131,12 @@ mDNSResponder:
 	@$(MAKE) -C mDNSResponder CC=$(CC) all
 
 
-igmpproxy/stamp-h1:
+igmpproxy/Makefile:
 	cd igmpproxy && CFLAGS="-O2 -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	$(CONFIGURE) --prefix=/usr --disable-dependency-tracking
-	#touch $@ # will be generated by configure.
 
-igmpproxy: igmpproxy/stamp-h1
+igmpproxy: igmpproxy/Makefile
 	@$(SEP)
 	@$(MAKE) -C igmpproxy/src
 
@@ -3129,8 +3145,8 @@ igmpproxy-install: igmpproxy
 	$(STRIP) $(INSTALLDIR)/igmpproxy/usr/sbin/igmpproxy
 
 igmpproxy-clean:
-	-@$(MAKE) -C igmpproxy/src clean
-	@rm -f igmpproxy/stamp-h1
+	[ ! -f igmpproxy/Makefile ] || $(MAKE) -C igmpproxy distclean
+	@rm -f igmpproxy/Makefile
 
 snooper:
 ifeq ($(RTCONFIG_QCA),y)

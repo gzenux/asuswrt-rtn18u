@@ -6,13 +6,13 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+#define TYPEDEF_BOOL
 #include <shared.h>
+#include <shutils.h>
+#include <bcmnvram.h>
 #include "httpd.h"
 #include "openvpn_options.h"
-#define TYPEDEF_BOOL
-#include <bcmnvram.h>
-#include <shared.h>
-#include "shutils.h"
+
 
 struct buffer
 alloc_buf (size_t size)

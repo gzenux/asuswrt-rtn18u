@@ -21,9 +21,6 @@ var is_admin_pswd_set = "<% nvram_get("dsltmp_qis_admin_passwd_set"); %>";
 var is_dsl_pvc_set = "<% nvram_get("dsltmp_qis_dsl_pvc_set"); %>";
 var is_reboot_flag_set = "<% nvram_get("dsltmp_qis_reboot"); %>";
 var transfer_mode = "<% nvram_get("dsltmp_transmode"); %>";
-var cfg_iptv_enable = "<%nvram_get("dsltmp_cfg_iptv_enable");%>";
-var cfg_iptv_rmvlan = "<%nvram_get("dsltmp_cfg_iptv_rmvlan");%>";
-var cfg_iptv_mr = "<%nvram_get("dsltmp_cfg_iptv_mr");%>";
 
 function disable_dsl_pvc() {
 	document.form.dsl0_enable.disabled = true;
@@ -138,17 +135,6 @@ function submitForm(){
 	if(is_reboot_flag_set == "1")
 		parent.sysReboot = true;
 
-	if(cfg_iptv_enable == "1") {
-		if(cfg_iptv_rmvlan != "")
-			document.form.dslx_rmvlan.value = cfg_iptv_rmvlan;
-		if(cfg_iptv_mr != "")
-			document.form.mr_enable_x.value = cfg_iptv_mr;
-	}
-	else {
-		document.form.dslx_rmvlan.value = "0";
-		document.form.mr_enable_x.value = "0";
-	}
-
 	document.form.next_page.value = "/qis/QIS_finish.htm";
 	document.form.submit();
 }
@@ -258,10 +244,6 @@ function gotoHome(){
 <input type="hidden" name="dslx_dns1" value="<% nvram_get("dsltmp_qis_dns1"); %>">
 <input type="hidden" name="dslx_dns2" value="<% nvram_get("dsltmp_qis_dns2"); %>">
 <input type="hidden" name="fw_pt_pppoerelay" value="<% nvram_get("dsltmp_qis_pppoe_relay"); %>">
-<!-- IPTV General start -->
-<input type="hidden" name="mr_enable_x" value="<% nvram_get("mr_enable_x"); %>">
-<input type="hidden" name="dslx_rmvlan" value="<% nvram_get("dslx_rmvlan"); %>">
-<!-- IPTV General end -->
 <!-- clear set flag after submit -->
 <input type="hidden" name="dsltmp_qis_admin_passwd_set" value="0">
 <input type="hidden" name="dsltmp_qis_dsl_pvc_set" value="0">

@@ -1094,6 +1094,11 @@ bool is_known_pipename(const char *cli_filename, struct ndr_syntax_id *syntax)
 	int i;
 	NTSTATUS status;
 
+	if (strchr(pipename, '/')) {
+		DEBUG(1, ("Refusing open on pipe %s\n", pipename));
+		return false;
+	}
+
 	if (strnequal(pipename, "\\PIPE\\", 6)) {
 		pipename += 5;
 	}

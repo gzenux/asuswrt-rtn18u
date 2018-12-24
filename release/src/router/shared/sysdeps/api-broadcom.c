@@ -603,6 +603,13 @@ void set_radio(int on, int unit, int subunit)
 char *get_lan_mac_name(void)
 {
 #ifdef RTCONFIG_BCMARM
+#ifdef RTCONFIG_GMAC3
+	char *et2macaddr;
+	if (!nvram_match("stop_gmac3", "1") && (et2macaddr = nvram_get("et2macaddr")) &&
+	    *et2macaddr && strcmp(et2macaddr, "00:00:00:00:00:00") != 0) {
+		return "et2macaddr";
+	}
+#endif
 	switch(get_model()) {
 		case MODEL_RTAC87U:
 		case MODEL_RTAC5300:
@@ -622,6 +629,13 @@ char *get_lan_mac_name(void)
 char *get_wan_mac_name(void)
 {
 #ifdef RTCONFIG_BCMARM
+#ifdef RTCONFIG_GMAC3
+	char *et2macaddr;
+	if (!nvram_match("stop_gmac3", "1") && (et2macaddr = nvram_get("et2macaddr")) &&
+	    *et2macaddr && strcmp(et2macaddr, "00:00:00:00:00:00") != 0) {
+		return "et2macaddr";
+	}
+#endif
 	switch(get_model()) {
 		case MODEL_RTAC87U:
 		case MODEL_RTAC5300:

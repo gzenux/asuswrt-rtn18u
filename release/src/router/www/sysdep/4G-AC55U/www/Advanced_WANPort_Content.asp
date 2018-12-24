@@ -78,7 +78,6 @@
 
 
 var wans_caps = '<% nvram_get("wans_cap"); %>';
-var wans_dualwan_orig = '<% nvram_get("wans_dualwan"); %>';
 var wans_routing_rulelist_array = '<% nvram_get("wans_routing_rulelist"); %>';
 var wans_flag;
 var switch_stb_x = '<% nvram_get("switch_stb_x"); %>';
@@ -104,6 +103,8 @@ var country = new Array("None", "China");
 var country_n_isp = new Array;
 country_n_isp[0] = new Array("");
 country_n_isp[1] = new Array("edu","telecom","mobile","unicom");
+var curState = (wans_dualwan_array[1] != "none")? "1":"0";
+var wans_lanport_orig = '<% nvram_get("wans_lanport"); %>';
 
 function initial(){
 	show_menu();
@@ -141,9 +142,7 @@ function initial(){
                 document.form.wans_lanport2.remove(0);   //Secondary LAN1
 	}
 
-	if(based_modelid == "4G-AC55U"){
-		update_detection_time();
-	}
+	update_detection_time();
 }
 
 function form_show(v){
@@ -163,7 +162,7 @@ function form_show(v){
 		document.form.wans_routing_enable[1].disabled = true;
 		document.getElementById('Routing_rules_table').style.display = "none";
 		document.getElementById('wans_RoutingRules_Block').style.display = "none";	
-		document.form.wans_primary.value = wans_dualwan_orig.split(" ")[0];	
+		document.form.wans_primary.value = wans_dualwan_array[0];	
 		appendLANoption1(document.form.wans_primary);
 		appendModeOption2("0");
 		document.form.wandog_enable_radio[1].checked = true;		
@@ -175,10 +174,10 @@ function form_show(v){
 		document.getElementById("wans_standby_tr").style.display = "none";
 		inputCtrl(document.form.wans_standby, 0);
 	}else{ //DualWAN enabled
-		document.form.wans_primary.value = wans_dualwan_orig.split(" ")[0];
-		if(wans_dualwan_orig.split(" ")[1] == "none"){
+		document.form.wans_primary.value = wans_dualwan_array[0];
+		if(wans_dualwan_array[1] == "none"){
 
-			if(wans_dualwan_orig.split(" ")[0] == "dsl"){
+			if(wans_dualwan_array[0] == "dsl"){
 				
 				if(wans_caps.search("wan") >= 0)
 					document.form.wans_second.value = "wan";
@@ -187,7 +186,7 @@ function form_show(v){
 				else
 					document.form.wans_second.value = "lan";
 			}
-			else if(wans_dualwan_orig.split(" ")[0] == "wan"){
+			else if(wans_dualwan_array[0] == "wan"){
 
 				if(wans_caps.search("usb") >= 0)
 					document.form.wans_second.value = "usb";
@@ -201,7 +200,7 @@ function form_show(v){
 			}
 		}	
 		else
-			document.form.wans_second.value = wans_dualwan_orig.split(" ")[1];
+			document.form.wans_second.value = wans_dualwan_array[1];
 		
 		appendLANoption1(document.form.wans_primary);
 		appendLANoption2(document.form.wans_second);
@@ -328,7 +327,7 @@ function applyRule(){
 			document.form.next_page.value = "Advanced_Modem_Content.asp";
 	} 
 
-	if(wans_dualwan_orig.split(" ")[1] == "none")
+	if(wans_dualwan_array[1] == "none")
 		document.form.wan_unit.value = 0;
 
 	if(document.form.wandog_enable_radio[0].checked == true){
@@ -367,6 +366,14 @@ function addWANOption(obj, wanscapItem){
 		}
 	}
 	
+	if(wans_dualwan_array[1] == "none" && obj.name == "wans_primary" && curState == "0"){
+		for(i=0; i<wanscapItem.length; i++){
+			if(wanscapItem[i] == "lan"){
+				wanscapItem.splice(i,1);
+			}
+		}
+	}
+
 	for(i=0; i<wanscapItem.length; i++){
 		if(wanscapItem[i].length > 0){
 			var wanscapName = wanscapItem[i].toUpperCase();
@@ -879,11 +886,9 @@ function hotstandby_act(enable){
 }
 
 function update_detection_time(){
-	if(based_modelid == "4G-AC55U"){
-		document.getElementById("fo_detection_time").innerHTML = parseInt(document.form.wandog_interval.value)*parseInt(document.form.wandog_maxfail.value);
-		if(document.form.wans_mode.value == "fb")
-			document.getElementById("fb_detection_time").innerHTML = parseInt(document.form.wandog_interval.value)*parseInt(document.form.wandog_fb_count.value);
-	}
+	document.getElementById("fo_detection_time").innerHTML = parseInt(document.form.wandog_interval.value)*parseInt(document.form.wandog_maxfail.value);
+	if(document.form.wans_mode.value == "fb")
+		document.getElementById("fb_detection_time").innerHTML = parseInt(document.form.wandog_interval.value)*parseInt(document.form.wandog_fb_count.value);
 }
 
 function update_consume_bytes(){
@@ -942,7 +947,7 @@ function remain_origins(){
 <input type="hidden" name="next_page" value="Advanced_WANPort_Content.asp">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_wait" value="5">
+<input type="hidden" name="action_wait" value="<% get_default_reboot_time(); %>">
 <input type="hidden" name="action_script" value="reboot">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
@@ -1019,20 +1024,38 @@ function remain_origins(){
 										<tr id="wans_mode_enable_tr">
 										<th><#dualwan_enable#></th>
 											<td>
-												<div class="left" style="width:94px; float:left; cursor:pointer;" id="radio_dualwan_enable"></div>
+												<div class="left" style="width:94px; float:left; cursor:pointer;" id="ad_radio_dualwan_enable"></div>
 												<div class="iphone_switch_container" style="height:32px; width:74px; position: relative; overflow: hidden">
 												<script type="text/javascript">
-													$('#radio_dualwan_enable').iphoneSwitch(wans_dualwan_orig.split(' ')[1] != 'none',
+													$('#ad_radio_dualwan_enable').iphoneSwitch(wans_dualwan_array[1] != 'none',
 														 function() {
+														 	curState = "1";
 															wans_flag = 1;
 															inputCtrl(document.form.wans_second, 1);
+															addWANOption(document.form.wans_primary, wans_caps_primary.split(" "));
 															form_show(wans_flag);
 														 },
 														 function() {
+														 	if(wans_dualwan_array[0] == "lan"){
+														 		var cur_parimary_wan = wans_dualwan_array[0].toUpperCase() + " Port " + wans_lanport_orig;
+														 		var confirm_str = "The current primary wan is \"" + cur_parimary_wan + "\". Disable dual wan will change primary wan to \"Ethernet WAN\", are you sure to do it?"; //untranslated
+															 	if(!confirm(confirm_str)){
+															 		curState = "1";
+																	$('#ad_radio_dualwan_enable').find('.iphone_switch').animate({backgroundPosition: 0}, "slow");
+																	return false;
+																}
+																else{
+																	document.form.wans_dualwan.value = 'wan none';
+																	wans_dualwan_array[0] = "wan";
+																}
+															}
+															curState = "0";
 															wans_flag = 0;
-															document.form.wans_dualwan.value = document.form.wans_primary.value + ' none';
-															form_show(wans_flag);
+															wans_dualwan_array[1] = "none"
+															document.form.wans_dualwan.value = wans_dualwan_array[0]+ " none";
 															document.form.wans_mode.value = "fo";
+															addWANOption(document.form.wans_primary, wans_caps_primary.split(" "));
+															form_show(wans_flag);
 														 }
 													);
 												</script>

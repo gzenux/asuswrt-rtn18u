@@ -619,7 +619,9 @@ gen_qca_wifi_cfgs(void)
 #if defined(RTCONFIG_WPS_ALLLED_BTN)
 	if (nvram_match("AllLED", "1")) {
 #endif
-#if defined(PLN12)
+#if defined(PLN11)
+	; /* do nothing */
+#elif defined(PLN12)
 	//fprintf(fp2, "[ -e /sys/class/net/%s ] && led_ctrl %d %d\n", WIF_2G, LED_2G_GREEN, led_onoff[0]);
 	//fprintf(fp2, "[ -e /sys/class/net/%s ] && led_ctrl %d %d\n", WIF_2G, LED_2G_ORANGE, led_onoff[0]);
 	fprintf(fp2, "[ -e /sys/class/net/%s ] && led_ctrl %d %d\n", WIF_2G, LED_2G_RED, led_onoff[0]);
@@ -651,12 +653,14 @@ gen_qca_wifi_cfgs(void)
 	fprintf(fp2, "fi\n");
 
 #if defined(RTAC58U) /* for RAM 128MB */
-	fprintf(fp2, "iwpriv wifi1 fc_buf_max 2048\n");
-	fprintf(fp2, "iwpriv wifi1 fc_q_max 256\n");
-	fprintf(fp2, "iwpriv wifi1 fc_q_min 16\n");
-	fprintf(fp2, "iwpriv wifi0 fc_buf_max 2048\n");
-	fprintf(fp2, "iwpriv wifi0 fc_q_max 256\n");
-	fprintf(fp2, "iwpriv wifi0 fc_q_min 16\n");
+	if (get_meminfo_item("MemTotal") <= 131072) {
+		fprintf(fp2, "iwpriv wifi1 fc_buf_max 4096\n");
+		fprintf(fp2, "iwpriv wifi1 fc_q_max 512\n");
+		fprintf(fp2, "iwpriv wifi1 fc_q_min 32\n");
+		fprintf(fp2, "iwpriv wifi0 fc_buf_max 4096\n");
+		fprintf(fp2, "iwpriv wifi0 fc_q_max 512\n");
+		fprintf(fp2, "iwpriv wifi0 fc_q_min 32\n");
+	}
 #endif
 
 	fclose(fp);
@@ -1729,22 +1733,20 @@ void start_lan(void)
 				if (vlan_enable() && check_if_exist_vlan_ifnames(ifname))
 					match = 1;
 #endif
-				if (!match)
-				{
+				if (!match
 #if defined(RTCONFIG_CHILLISPOT) || defined(RTCONFIG_COOVACHILLI)
-                                       if(is_add_if(ifname))
-                                           eval("brctl", "addif", lan_ifname, ifname);
-#else
+					&& is_add_if(ifname)
+#endif
+				) {
 					eval("brctl", "addif", lan_ifname, ifname);
-#endif
-#ifdef RTCONFIG_GMAC3
-gmac3_no_swbr:
-#endif
 #ifdef RTCONFIG_EMF
 					if (nvram_get_int("emf_enable"))
 						eval("emf", "add", "iface", lan_ifname, ifname);
 #endif
 				}
+#ifdef RTCONFIG_GMAC3
+gmac3_no_swbr:
+#endif
 				enable_wifi_bled(ifname);
 			}
 
@@ -2055,12 +2057,12 @@ void stop_lan(void)
 					goto gmac3_no_swbr;
 #endif
 				eval("brctl", "delif", lan_ifname, ifname);
-#ifdef RTCONFIG_GMAC3
-gmac3_no_swbr:
-#endif
 #ifdef RTCONFIG_EMF
 				if (nvram_get_int("emf_enable"))
 					eval("emf", "del", "iface", lan_ifname, ifname);
+#endif
+#ifdef RTCONFIG_GMAC3
+gmac3_no_swbr:
 #endif
 #if defined (RTCONFIG_WLMODULE_RT3352_INIC_MII)
 				{ // remove interface for iNIC packets
@@ -3138,14 +3140,13 @@ void stop_lan_wl(void)
 				goto gmac3_no_swbr;
 #endif
 			eval("brctl", "delif", lan_ifname, ifname);
-#ifdef RTCONFIG_GMAC3
-gmac3_no_swbr:
-#endif
 #ifdef RTCONFIG_EMF
 			if (nvram_get_int("emf_enable"))
 				eval("emf", "del", "iface", lan_ifname, ifname);
 #endif
-
+#ifdef RTCONFIG_GMAC3
+gmac3_no_swbr:
+#endif
 #if defined (RTCONFIG_WLMODULE_RT3352_INIC_MII)
 			{ // remove interface for iNIC packets
 				char *nic_if, *nic_ifs, *nic_lan_ifnames;
@@ -3457,22 +3458,20 @@ void start_lan_wl(void)
 				if (vlan_enable() && check_if_exist_vlan_ifnames(ifname))
 					match = 1;
 #endif
-				if (!match)
-				{
+				if (!match
 #if defined(RTCONFIG_CHILLISPOT) || defined(RTCONFIG_COOVACHILLI)
-                                       if(is_add_if(ifname))
-                                           eval("brctl", "addif", lan_ifname, ifname);
-#else
+					&& is_add_if(ifname)
+#endif
+				) {
 					eval("brctl", "addif", lan_ifname, ifname);
-#endif
-#ifdef RTCONFIG_GMAC3
-gmac3_no_swbr:
-#endif
 #ifdef RTCONFIG_EMF
 					if (nvram_get_int("emf_enable"))
 						eval("emf", "add", "iface", lan_ifname, ifname);
 #endif
 				}
+#ifdef RTCONFIG_GMAC3
+gmac3_no_swbr:
+#endif
 				enable_wifi_bled(ifname);
 			}
 			free(wl_ifnames);

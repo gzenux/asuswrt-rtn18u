@@ -12,6 +12,7 @@ modem_act_cellid = '<% nvram_get("usb_modem_act_cellid"); %>';
 modem_act_lac = '<% nvram_get("usb_modem_act_lac"); %>';
 modem_isp = '<% nvram_get("modem_isp"); %>';
 modem_spn = '<% nvram_get("modem_spn"); %>';
+modem_act_provider = '<% nvram_get("usb_modem_act_provider"); %>';
 rx_bytes = parseFloat('<% nvram_get("modem_bytes_rx"); %>');
 tx_bytes = parseFloat('<% nvram_get("modem_bytes_tx"); %>');
 tx_rate = parseFloat('<% nvram_get("usb_modem_act_tx"); %>');

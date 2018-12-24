@@ -156,6 +156,11 @@ start_pppd(int unit)
 				nvram_safe_get(strcat_r(prefix, "pppoe_ac", tmp)));
 		}
 
+		if (nvram_invmatch(strcat_r(prefix, "pppoe_hostuniq", tmp), "")) {
+			fprintf(fp, "host-uniq %s\n",
+				nvram_safe_get(strcat_r(prefix, "pppoe_hostuniq", tmp)));
+		}
+
 #ifdef RTCONFIG_DSL
 		if (nvram_match(strcat_r(prefix, "pppoe_auth", tmp), "pap")) {
 			fprintf(fp, "-chap\n"
@@ -269,7 +274,7 @@ start_pppd(int unit)
 			return -1;
 		}
 
-		fprintf(fp, "# automagically generated\n"
+		fprintf(fp,
 			"global\n\n"
 			"load-handler \"sync-pppd.so\"\n"
 			"load-handler \"cmd.so\"\n\n"

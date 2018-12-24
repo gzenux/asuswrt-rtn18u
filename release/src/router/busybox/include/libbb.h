@@ -87,7 +87,6 @@
 # endif
 #endif
 
-
 /* Some libc's forget to declare these, do it ourself */
 
 extern char **environ;

@@ -478,10 +478,12 @@ function check_ginp_try(obj){
 	if(obj.checked)
 	{
 		document.form.dslx_ginp_try_enable.value = 1;
+		document.form.dslx_ginp.value = 1;
 	}
 	else
 	{
 		document.form.dslx_ginp_try_enable.value = 0;
+		document.form.dslx_ginp.value = 0;
 	}
 }
 
@@ -527,6 +529,7 @@ function showSpecificSetting(idx) {
 <input type="hidden" name="dslx_modulation" value="<% nvram_get("dslx_modulation"); %>">
 <input type="hidden" name="dslx_annex" value="<% nvram_get("dslx_annex"); %>">
 <input type="hidden" name="dslx_vdsl_profile" value="<% nvram_get("dslx_vdsl_profile"); %>">
+<input type="hidden" name="dslx_ginp" value="<% nvram_get("dslx_ginp"); %>">
 <input type="hidden" name="dslx_ginp_try_enable" value="<% nvram_get("dslx_ginp_try_enable"); %>">
 <input type="hidden" name="dslx_ginp_try_enable_disp" value="0">
 <div class="QISmain">

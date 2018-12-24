@@ -110,6 +110,8 @@ var modem_act_cellid = '<% nvram_get("usb_modem_act_cellid"); %>';
 var modem_act_lac = '<% nvram_get("usb_modem_act_lac"); %>';
 var orig_modem_lte_band = '<% nvram_get("modem_lte_band"); %>';
 var modem_isp = '<% nvram_get("modem_isp"); %>';
+var modem_spn = '<% nvram_get("modem_spn"); %>';
+var modem_act_provider = '<% nvram_get("usb_modem_act_provider"); %>';
 var g3err_pin = '<% nvram_get("g3err_pin"); %>';
 var pin_remaining_count = '<% nvram_get("usb_modem_act_auth_pin"); %>';
 var puk_remaining_count = '<% nvram_get("usb_modem_act_auth_puk"); %>';
@@ -543,6 +545,17 @@ function applyRule(){
 	if(orig_modem_lte_band != document.form.modem_lte_band.value)
 		document.form.action_wait.value = "30";
 
+	if(document.form.modem_roaming.value == "1"){
+		if(document.form.modem_roaming_isp.value == "")
+			document.form.modem_roaming_mode.value = "0";
+		else
+			document.form.modem_roaming_mode.value = "1";
+	}
+	else{
+		document.form.modem_roaming_mode.value = "0";
+		document.form.modem_roaming_isp.value = "";
+	}
+
 	showLoading();
 	document.form.submit();
 }
@@ -641,16 +654,8 @@ function check_connect_status(){
 			if(mobile_state == 2 && mobile_sbstate == 0 && mobile_auxstate == 0){
 				document.getElementById("connection_status").innerHTML = "<#Connected#>";
 				document.getElementById("mconnect_status").innerHTML = "<#Connected#>";
-				if(roaming == "1"){
-					if(roaming_imsi.length > 0 && roaming_imsi != sim_imsi.substr(0, roaming_imsi.length))
-						document.getElementById("modem_roaming_status").innerHTML = "<#checkbox_Yes#>";
-				}
-				else
-					document.getElementById("modem_roaming_status").innerHTML = "<#checkbox_No#>";
 			}
 			else{
-				document.getElementById("connection_status").innerHTML = "<#Disconnected#>.";
-				document.getElementById("mconnect_status").innerHTML = "<#Disconnected#>.";
 				var sim_status = parseInt(sim_state);
 				if(sim_status == 2){
 					document.getElementById("connection_status").innerHTML = "<#Mobile_need_pin#>";
@@ -666,7 +671,7 @@ function check_connect_status(){
 				}
 				else if(sim_status == 5){
 					document.getElementById("connection_status").innerHTML = "<#Mobile_sim_lock#> <#Mobile_need_puk2#>";
-					document.getElementById("mconnect_status").innerHTML = "<#Mobile_sim_lock#> <#Mobile_need_puk2#>";	
+					document.getElementById("mconnect_status").innerHTML = "<#Mobile_sim_lock#> <#Mobile_need_puk2#>";
 				}
 				else if(sim_status == 6){
 					document.getElementById("connection_status").innerHTML = "<#Mobile_wait_sim#>";
@@ -674,15 +679,15 @@ function check_connect_status(){
 				}
 				else if(sim_status == -1){
 					document.getElementById("connection_status").innerHTML = "<#Mobile_sim_miss#>";
-					document.getElementById("mconnect_status").innerHTML = "<#Mobile_sim_miss#>";					
+					document.getElementById("mconnect_status").innerHTML = "<#Mobile_sim_miss#>";
 				}
-				else if(mobile_state == 1){
-					document.getElementById("connection_status").innerHTML = "<#Connecting_str#>";
-					document.getElementById("mconnect_status").innerHTML = "<#Connecting_str#>";					
+				else if(scan_end == "1" || scan_end == "2" || scan_end == "3"){
+					document.getElementById("connection_status").innerHTML = "Scanning";/*untranslated*/
+					document.getElementById("mconnect_status").innerHTML = "Scanning";
 				}
 				else{
-					document.getElementById("connection_status").innerHTML = "<#Mobile_fail_connect#>";
-					document.getElementById("mconnect_status").innerHTML = "<#Mobile_fail_connect#>";					
+					document.getElementById("connection_status").innerHTML = "<#Connecting_str#>";
+					document.getElementById("mconnect_status").innerHTML = "<#Connecting_str#>";
 				}
 			}
 
@@ -695,7 +700,7 @@ function check_connect_status(){
 function showUpDownRate(){
 	var Kbits = 1024;
 	var Mbits = 1024*1024;
-	var Gbits = 1024*1024*1024;	
+	var Gbits = 1024*1024*1024;
 
 	if(!isNaN(tx_rate)){
 		if(tx_rate < Kbits)
@@ -974,34 +979,35 @@ function check_sim_details(){
 				document.getElementById("wireless_status").style.display = "";
 		
 			if(sim_state == '1'){
-				document.getElementById("misp").innerHTML = '&nbsp;'+ modem_spn;
+				document.getElementById("msim_provider").innerHTML = modem_spn;
+				document.getElementById("misp").innerHTML = '&nbsp;'+ modem_act_provider;
 				switch(modem_operation)
 				{
 					case 'Edge':
 						document.getElementById("msignalsys").innerHTML  = '<img src="/images/mobile/E.png">';
 						break;
 					case 'GPRS':
-						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/G.png">';	
+						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/G.png">';
 						break;
 					case 'WCDMA':
 					case 'CDMA':
-					case 'EV-DO REV 0':	
-					case 'EV-DO REV A':		
+					case 'EV-DO REV 0':
+					case 'EV-DO REV A':
 					case 'EV-DO REV B':
-						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/3G.png">';	
-						break;	
-					case 'HSDPA':										
+						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/3G.png">';
+						break;
+					case 'HSDPA':
 					case 'HSUPA':
-						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/H.png">';	
-						break;	
-					case 'HSDPA+':										
+						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/H.png">';
+						break;
+					case 'HSDPA+':
 					case 'DC-HSDPA+':
-						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/H+.png">';	
-						break;		
+						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/H+.png">';
+						break;
 					case 'LTE':
-						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/LTE.png">';	
-						break;		
-					case 'GSM':	
+						document.getElementById("msignalsys").innerHTML = '<img src="/images/mobile/LTE.png">';
+						break;
+					case 'GSM':
 					default:
 						document.getElementById("msignalsys").innerHTML = '';
 						break;
@@ -1030,7 +1036,7 @@ function check_sim_details(){
 						document.getElementById("upTraffic").innerHTML = Math.round(tx_bytes/GBytes*1000)/1000 + "&nbsp;GBytes";
 				}
 
-				if(!isNaN(rx_bytes)){			
+				if(!isNaN(rx_bytes)){
 					if(rx_bytes < KBytes)
 						document.getElementById("downTraffic").innerHTML = rx_bytes + "&nbsp;Bytes";
 					else if(rx_bytes < MBytes)
@@ -1043,6 +1049,7 @@ function check_sim_details(){
 			}
 			else{
 				document.getElementById("msignalsys").innerHTML = '';
+				document.getElementById("msim_provider").innerHTML = '';
 				document.getElementById("misp").innerHTML = '';
 			}		
 
@@ -1053,7 +1060,12 @@ function check_sim_details(){
 				document.getElementById("connect_seconds").innerHTML = Math.floor(modemuptime % 60);
 			}
 
-			showUpDownRate();
+			//showUpDownRate();
+			if(!isNaN(tx_rate))
+				document.getElementById("upRate").innerHTML = tx_rate + "&nbsp;bps";
+
+			if(!isNaN(rx_rate))
+				document.getElementById("downRate").innerHTML = rx_rate + "&nbsp;bps";
 
 			if(modem_autoapn_imsi != "")
 				inputCtrl(document.form.modem_isp, 0);
@@ -1215,19 +1227,52 @@ function show_dateList(){
 }
 
 function show_roaming_isp_list(ispStr){
-	var optionText;
+	var option, optionText, i = 0;
 	ispList = ispStr.toArray();
 	ispList.sort();
+
 	if(ispList.length > 0){
 		if(document.form.modem_roaming_isp.options.length > 0)
 			free_options(document.form.modem_roaming_isp);
-		document.form.modem_roaming_isp.options.length = ispList.length;
-		for(var i = 0; i < ispList.length; i++){
-			optionText = ispList[i][0]+' ('+ispList[i][2]+')';
-			document.form.modem_roaming_isp.options[i] = new Option(optionText, ispList[i][0]);
-			if(orig_modem_roaming_isp == ispList[i][0] && orig_modem_mode == ispList[i][2])
-				document.form.modem_roaming_isp.selectedIndex = i;
+
+		option = new Option('<#Auto#>', "");
+		document.form.modem_roaming_isp.add(option);
+		if(orig_modem_roaming_isp == "")
+			document.form.modem_roaming_isp.selectedIndex = 0;
+		else{
+			var match = 0;
+			for(i = 0; i < ispList.length; i++){
+				if(orig_modem_roaming_isp == ispList[i][0])
+					match = 1;
+			}
+			if(match == 0){
+				optionText = orig_modem_roaming_isp+' ('+orig_modem_mode+')';
+				option = new Option(optionText, orig_modem_roaming_isp);
+				document.form.modem_roaming_isp.add(option);
+				document.form.modem_roaming_isp.selectedIndex = document.form.modem_roaming_isp.length - 1;
+			}
 		}
+
+		for(i = 0; i < ispList.length; i++){
+			optionText = ispList[i][0]+' ('+ispList[i][2]+')';
+			option = new Option(optionText, ispList[i][0]);
+			document.form.modem_roaming_isp.add(option);
+			if(orig_modem_roaming_isp == ispList[i][0] && orig_modem_mode == ispList[i][2])
+				document.form.modem_roaming_isp.selectedIndex = document.form.modem_roaming_isp.length - 1;
+		}
+
+		document.getElementById("modem_roaming_isp").style.display = "";
+		document.getElementById("isp_scan_button").value = "<#QIS_rescan#>";
+	}
+	else if(orig_modem_roaming_isp != ""){
+		if(document.form.modem_roaming_isp.options.length > 0)
+			free_options(document.form.modem_roaming_isp);
+		option = new Option('<#Auto#>', "");
+		document.form.modem_roaming_isp.add(option);
+		optionText = orig_modem_roaming_isp+' ('+orig_modem_mode+')';
+		option = new Option(optionText, orig_modem_roaming_isp);
+		document.form.modem_roaming_isp.add(option);
+		document.form.modem_roaming_isp.selectedIndex = 1;
 		document.getElementById("modem_roaming_isp").style.display = "";
 		document.getElementById("isp_scan_button").value = "<#QIS_rescan#>";
 	}
@@ -1272,7 +1317,7 @@ function detect_scan_result(){
 				else
 					setTimeout("detect_scan_result();", 5000);
 			}
-			else if( scan_end == '2' || scan_end == '1' ){
+			else if( scan_end == '2' || scan_end == '1' || scan_end == '3' ){
 				setTimeout("detect_scan_result();", 5000);
 			}
 			else{ //Never scan
@@ -1290,6 +1335,8 @@ function scan_isp(){
 	document.getElementById("isp_scan_button").style.display = "none";
 	document.getElementById("modem_roaming_isp").style.display = "none";
 	document.getElementById("warning_states").style.display = "none";
+	document.getElementById("connection_status").innerHTML = "Scanning";/*untranslated*/
+	document.getElementById("mconnect_status").innerHTML = "Scanning";
 	setTimeout("detect_scan_result();", 10000);
 	document.simact_form.action_mode.value = "scan_isp";
 	document.simact_form.submit();
@@ -1688,6 +1735,7 @@ function update_lte_fw(){
 <input type="hidden" name="g3err_pin" value="<% nvram_get("g3err_pin"); %>">
 <input type="hidden" name="wans_standby" value="<% nvram_get("wans_standby"); %>">
 <input type="hidden" name="simdetect" value="">
+<input type="hidden" name="modem_roaming_mode" value="<% nvram_get("modem_roaming_mode"); %>">
 
 <!---- connect status start  ---->
 <div id="mobile_status"  class="contentM_qis" style="box-shadow: 3px 3px 10px #000;">
@@ -1747,16 +1795,16 @@ function update_lte_fw(){
 						<td colspan="2"><#Mobile_internet_usage#></td>
 					</tr>
 					</thead>
-		  			<tr>
-		  				<th><#PPPConnection_x_WANLink_itemname#></th>
-		  				<td>
-		  					<div id="mconnect_status" style="cursor:auto;"></div>
-		  				</td>
-		  			</tr>
-		  			<th><#Mobile_network_op#></th>
-			 		<td><div id="msignalsys" style="cursor:auto;float:left;" class="img_wrap2"></div><div id="misp" style="float:left;margin-top:10px;"></div></td>
-			 		<tr><th><#Mobile_roaming_isp#></th><td><div id="modem_roaming_status"></div></td></tr>
-		  			<tr><th><#Mobile_data_usage#></th><td><span id="totalTraffic" style="color:#FFF;"></span></td></tr>
+					<tr><th><#PPPConnection_x_WANLink_itemname#></th><td><span id="mconnect_status" style="color:#FFF;"></span></td></tr>
+					<tr>
+						<th>SIM Provider</th><!--untranslated-->
+						<td><span id="msim_provider" style="color:#FFF;"></span></td>
+					</tr>
+					<tr>
+						<th>Network Provider</th><!--untranslated-->
+						<td><div id="msignalsys" style="cursor:auto;float:left;" class="img_wrap2"></div><div id="misp" style="float:left;margin-top:10px;"></div></td>
+					</tr>
+					<tr><th><#Mobile_data_usage#></th><td><span id="totalTraffic" style="color:#FFF;"></span></td></tr>
 					<tr><th><#Uplink_traffic#></th><td><span id="upTraffic" style="color:#FFF;"></span></td></tr>
 					<tr><th><#Downlink_traffic#></th><td><span id="downTraffic" style="color:#FFF;"></span></td></tr>
 					<tr><th><#Uplink_rate#></th><td><span id="upRate" style="color:#FFF;"></span></td></tr>
@@ -1936,14 +1984,7 @@ function update_lte_fw(){
 								<option value="0" <% nvram_match("modem_roaming", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
 							</select>
 						</td>
-					</tr>	
-					<!--tr id="modem_roaming_mode" style="display:none">
-						<th width="40%"><#Mobile_select_op#></th>
-						<td>
-							<input type="radio" value="1" name="modem_roaming_mode" class="input" <% nvram_match("modem_roaming_mode", "1", "checked"); %>><#Auto#>
-							<input type="radio" value="0" name="modem_roaming_mode" class="input" <% nvram_match("modem_roaming_mode", "0", "checked"); %>><#Manual_Setting_btn#>
-						</td>
-					</tr-->
+					</tr>
 
 					<tr id="roaming_isp" style="display:none">
 						<th width="40%"><#Mobile_roaming_isp#></th>

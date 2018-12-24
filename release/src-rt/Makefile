@@ -388,6 +388,8 @@ bin_file:
 	[ ! -e .bin/$(BUILD_NAME)/Makefile ] || $(MAKE) -C .bin/$(BUILD_NAME) O=$(SRCBASE)/image FW_FN=$(IMGNAME).img
 	if [ "$(BUILD_NAME)" = "RT-AC58U" ]; then \
 		[ ! -e .bin/$(BUILD_NAME)/Makefile ] || $(MAKE) -C .bin/$(BUILD_NAME) O=$(SRCBASE)/image FW_FN=$(IMGNAME).img CE=y; \
+		[ ! -e .bin/$(BUILD_NAME)/Makefile ] || $(MAKE) -C .bin/$(BUILD_NAME) O=$(SRCBASE)/image FW_FN=$(IMGNAME).img RTAC1300UHP=y; \
+		[ ! -e .bin/$(BUILD_NAME)/Makefile ] || $(MAKE) -C .bin/$(BUILD_NAME) O=$(SRCBASE)/image FW_FN=$(IMGNAME).img RTAC1300UHP=y CE=y; \
 	fi
 else
 bin_file:
@@ -591,6 +593,10 @@ define RouterOptions
 	if [ "$(PROXYSTA)" = "y" ]; then \
 		sed -i "/RTCONFIG_PROXYSTA/d" $(1); \
 		echo "RTCONFIG_PROXYSTA=y" >>$(1); \
+	fi; \
+	if [ "$(DISABLE_PROXYSTA_UI)" = "y" ] ; then \
+		sed -i "/RTCONFIG_DISABLE_PROXYSTA_UI/d" $(1); \
+		echo "RTCONFIG_DISABLE_PROXYSTA_UI=y" >>$(1); \
 	fi; \
 	if [ "$(CONCURRENTREPEATER)" = "y" ]; then \
 		sed -i "/RTCONFIG_CONCURRENTREPEATER/d" $(1); \
@@ -877,6 +883,10 @@ define RouterOptions
 		if [ "$(MEDIASRV)" = "y" ]; then \
 			sed -i "/RTCONFIG_MEDIA_SERVER/d" $(1); \
 			echo "RTCONFIG_MEDIA_SERVER=y" >>$(1); \
+			if [ "$(MEDIASRV_LIMIT)" = "y" ]; then \
+			sed -i "/RTCONFIG_LIMIT_MEDIA_SERVER/d" $(1); \
+			echo "RTCONFIG_LIMIT_MEDIA_SERVER=y" >>$(1); \
+			fi; \
 		fi; \
 		if [ "$(SMARTSYNCBASE)" = "y" ]; then \
 				sed -i "/RTCONFIG_SWEBDAVCLIENT/d" $(1); \
@@ -1999,7 +2009,7 @@ if [ "$(TUNEK)" != "n" ]; then \
 		sed -i "/CONFIG_BUG/d" $(1); \
 		echo "# CONFIG_BUG is not set" >>$(1); \
 	fi; \
-	if [ "$(PLN12)" = "y" ] || [ "$(PLAC56)" = "y" ]; then \
+	if [ "$(PLN11)" = "y" ] || [ "$(PLN12)" = "y" ] || [ "$(PLAC56)" = "y" ]; then \
 		sed -i "/CONFIG_USB/d" $(1); \
 		echo "# CONFIG_USB is not set" >>$(1); \
 		sed -i "/CONFIG_USB_SUPPORT/d" $(1); \
@@ -2283,23 +2293,19 @@ fi; \
 		sed -i "/CONFIG_RPS=y/d" $(1); \
 	fi; \
 	if [ "$(DUALWAN)" = "y" ]; then \
-		if [ "$(BCMWL6A)" = "y" ]; then \
+		if [ "$(CONFIG_LINUX26)" = "y" ] || [ "$(CONFIG_LINUX30)" = "y" ]; then \
 			sed -i "/CONFIG_IP_ADVANCED_ROUTER/d" $(1); \
 			echo "CONFIG_IP_ADVANCED_ROUTER=y" >>$(1); \
+			sed -i "/CONFIG_ASK_IP_FIB_HASH/d" $(1); \
 			echo "CONFIG_ASK_IP_FIB_HASH=y" >>$(1); \
+			sed -i "/CONFIG_IP_FIB_TRIE\b/d" $(1); \
 			echo "# CONFIG_IP_FIB_TRIE is not set" >>$(1); \
-			echo "CONFIG_IP_MULTIPLE_TABLES=y" >>$(1); \
-			echo "CONFIG_IP_ROUTE_MULTIPATH=y" >>$(1); \
-			echo "# CONFIG_IP_ROUTE_VERBOSE is not set" >>$(1); \
-			echo "CONFIG_IP_MROUTE_MULTIPLE_TABLES=y" >>$(1); \
-		fi ; \
-		if [ "$(CONFIG_BCMWL5)" != "y" ]; then \
-			sed -i "/CONFIG_IP_ADVANCED_ROUTER/d" $(1); \
-			echo "CONFIG_IP_ADVANCED_ROUTER=y" >>$(1); \
 			sed -i "/CONFIG_IP_MULTIPLE_TABLES/d" $(1); \
 			echo "CONFIG_IP_MULTIPLE_TABLES=y" >>$(1); \
 			sed -i "/CONFIG_IP_ROUTE_MULTIPATH/d" $(1); \
 			echo "CONFIG_IP_ROUTE_MULTIPATH=y" >>$(1); \
+			sed -i "/CONFIG_IP_ROUTE_MULTIPATH_CACHED/d" $(1); \
+			echo "# CONFIG_IP_ROUTE_MULTIPATH_CACHED is not set" >>$(1); \
 			sed -i "/CONFIG_IP_ROUTE_VERBOSE/d" $(1); \
 			echo "# CONFIG_IP_ROUTE_VERBOSE is not set" >>$(1); \
 			sed -i "/CONFIG_IP_MROUTE_MULTIPLE_TABLES/d" $(1); \
@@ -2345,6 +2351,10 @@ fi; \
 			echo "CONFIG_DUMP_PREV_OOPS_MSG=y" >>$(1); \
 			echo "CONFIG_DUMP_PREV_OOPS_MSG_BUF_ADDR=0xC0522000" >>$(1); \
 			echo "CONFIG_DUMP_PREV_OOPS_MSG_BUF_LEN=0x3000" >>$(1); \
+		elif [ "$(BCM9)" = "y" ]; then \
+			echo "CONFIG_DUMP_PREV_OOPS_MSG=y" >>$(1); \
+			echo "CONFIG_DUMP_PREV_OOPS_MSG_BUF_ADDR=0x87000000" >>$(1); \
+			echo "CONFIG_DUMP_PREV_OOPS_MSG_BUF_LEN=0x2000" >>$(1); \
 		elif [ "$(ARM)" = "y" ]; then \
 			echo "CONFIG_DUMP_PREV_OOPS_MSG=y" >>$(1); \
 			echo "CONFIG_DUMP_PREV_OOPS_MSG_BUF_ADDR=0xC0000000" >>$(1); \

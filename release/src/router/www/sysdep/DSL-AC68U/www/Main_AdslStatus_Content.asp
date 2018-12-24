@@ -85,6 +85,10 @@ var status_isVDSLmode = "<% nvram_get("dsllog_xdslmode"); %>";
 var adsl_boottime = boottime - adsl_timestamp;
 var dsl_type = "<% nvram_get("dsllog_adsltype"); %>".replace("_", " ");
 
+var SystemVendorID_orig = "<% nvram_get("dsllog_sysvid"); %>";
+var SystemVendorModelID_orig = "<% nvram_get("dsllog_sysvmid"); %>";
+var ModemVendorID_orig = "<% nvram_get("dsllog_modemvid"); %>";
+
 var log_Opmode;
 var log_AdslType;
 var log_SNRMarginDown;
@@ -104,6 +108,10 @@ var log_PowerDown;
 var log_PowerUp;
 var log_INPDown;
 var log_INPUp;
+var log_INPSHINEDown;
+var log_INPSHINEUp;
+var log_INPREINDown;
+var log_INPREINUp;
 var log_CRCDown;
 var log_CRCUp;
 var log_FarEndVendorID;
@@ -205,6 +213,10 @@ function update_log(){
 				document.getElementById("div_PowerUp").innerHTML = log_PowerUp;
 				document.getElementById("div_INPDown").innerHTML = log_INPDown;
 				document.getElementById("div_INPUp").innerHTML = log_INPUp;
+				document.getElementById("div_INPSHINEDown").innerHTML = log_INPSHINEDown;
+				document.getElementById("div_INPSHINEUp").innerHTML = log_INPSHINEUp;
+				document.getElementById("div_INPREINDown").innerHTML = log_INPREINDown;
+				document.getElementById("div_INPREINUp").innerHTML = log_INPREINUp;
 				document.getElementById("div_CRCDown").innerHTML = log_CRCDown;
 				document.getElementById("div_CRCUp").innerHTML = log_CRCUp;
 				}
@@ -258,6 +270,9 @@ function initial(){
 	display_vdsl_band_status();
 	showadslbootTime();
 	document.getElementById("div_AdslType").innerHTML = dsl_type;
+	document.getElementById("tr_SystemVendorID").style.display = (SystemVendorID_orig != "")? "":"none";
+	document.getElementById("tr_SystemVendorModelID").style.display = (SystemVendorModelID_orig != "")? "":"none";
+	document.getElementById("tr_ModemVendorID").style.display = (ModemVendorID_orig != "")? "":"none";
 	setTimeout("update_log();", 5000);
 }
 
@@ -386,6 +401,24 @@ function showadslbootTime(){
 									<div id="div_VDSL_CurrentProfile"><% nvram_get("dsllog_vdslcurrentprofile"); %></div>
 								</td>
 							</tr>
+							<tr id="tr_SystemVendorID" style="display:none;">
+								<th>System Vendor ID</th>
+								<td colspan="2">
+									<div><% nvram_get("dsllog_sysvid"); %></div>
+								</td>
+							</tr>
+							<tr id="tr_SystemVendorModelID" style="display:none;">
+								<th>System Vendor Model ID</th>
+								<td colspan="2">
+									<div><% nvram_get("dsllog_sysvmid"); %></div>
+								</td>
+							</tr>
+							<tr id="tr_ModemVendorID" style="display:none;">
+								<th>Modem Vendor ID</th>
+								<td colspan="2">
+									<div><% nvram_get("dsllog_modemvid"); %></div>
+								</td>
+							</tr>
 						</table>
 					</td>
 				</tr>
@@ -483,6 +516,24 @@ function showadslbootTime(){
 								</td>
 								<td>
 									<div id="div_INPUp"><% nvram_get("dsllog_inpup"); %></div>
+								</td>
+							</tr>
+							<tr>
+								<th>INP-SHINE</th>
+								<td>
+									<div id="div_INPSHINEDown"><% nvram_get("dsllog_inpshinedown"); %></div>
+								</td>
+								<td>
+									<div id="div_INPSHINEUp"><% nvram_get("dsllog_inpshineup"); %></div>
+								</td>
+							</tr>
+							<tr>
+								<th>INP-REIN</th>
+								<td>
+									<div id="div_INPREINDown"><% nvram_get("dsllog_inpreindown"); %></div>
+								</td>
+								<td>
+									<div id="div_INPREINUp"><% nvram_get("dsllog_inpreinup"); %></div>
 								</td>
 							</tr>
 							<tr>

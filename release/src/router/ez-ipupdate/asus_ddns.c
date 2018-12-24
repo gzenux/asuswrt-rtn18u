@@ -636,6 +636,7 @@ int asus_private(void)
 	/* Some model use LAN MAC address to register ASUSDDNS account.
 	 * To keep consistency, don't use get_wan_hwaddr() to rewrite below code.
 	 */
+/* Why not to use get_lan_hwaddr() ? */
 #ifdef RTCONFIG_RGMII_BRCM5301X
 	p = nvram_get ("et1macaddr");
 #else

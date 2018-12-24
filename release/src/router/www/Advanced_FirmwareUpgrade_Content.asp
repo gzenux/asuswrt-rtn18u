@@ -88,6 +88,7 @@ var webs_release_note= "";
 var varload = 0;
 var helplink = "";
 var dpi_engine_status = <%bwdpi_engine_status();%>;
+var sig_ver_ori = '<% nvram_get("bwdpi_sig_ver"); %>';
 function initial(){
 	show_menu();
 	if(bwdpi_support){
@@ -96,11 +97,11 @@ function initial(){
 		else
 			document.getElementById("sig_ver_field").style.display="none";
 			
-		var sig_ver = '<% nvram_get("bwdpi_sig_ver"); %>';
-		if(sig_ver == "")
+		var sig_ver_ori = '<% nvram_get("bwdpi_sig_ver"); %>';
+		if(sig_ver_ori == "")
 			document.getElementById("sig_ver_word").innerHTML = "1.008";
 		else
-			document.getElementById("sig_ver_word").innerHTML = sig_ver;
+			document.getElementById("sig_ver_word").innerHTML = sig_ver_ori;
 
 		var sig_update_t = "<% nvram_get("sig_update_t"); %>";
 		if(sig_update_t == "" || sig_update_t == "0")
@@ -471,7 +472,7 @@ function sig_check_status(){
 					if(sig_state_upgrade == 1){		//update complete
 						$("#sig_status").html("Signature update completely");	/* Untranslated */
 						document.getElementById("sig_update_scan").style.display = "none";
-						$("#sig_ver").html(sig_ver);
+						update_sig_ver();
 						document.getElementById("sig_check").disabled = false;
 					}
 					else{		//updating
@@ -480,6 +481,25 @@ function sig_check_status(){
 					}				
 				}			
 			}
+  		}
+  	});
+}
+
+function update_sig_ver(){
+	$.ajax({
+    	url: '/detect_firmware.asp',
+    	dataType: 'script',
+		timeout: 3000,
+    	error:	function(xhr){
+    		setTimeout('update_sig_ver();', 2000);
+    	},
+    	success: function(){
+    		if(sig_ver_ori == sig_ver){
+    			setTimeout('update_sig_ver();', 2000);
+    		}	
+    		else{
+    			$("#sig_ver_word").html(sig_ver);
+    		}			
   		}
   	});
 }

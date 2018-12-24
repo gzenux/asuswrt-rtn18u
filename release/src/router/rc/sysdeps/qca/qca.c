@@ -517,7 +517,7 @@ int gen_ath_config(int band, int is_iNIC,int subnet)
 	char *uuid = nvram_safe_get("uuid");
 #if defined(RTCONFIG_WIFI_QCA9990_QCA9990) || defined(RTCONFIG_WIFI_QCA9994_QCA9994) || defined(RTCONFIG_SOC_IPQ40XX)
 	int fc_buf_min = 1000;
-	int txbf, mumimo, ldpc = 1, tqam, tqam_intop;
+	int txbf, mumimo, ldpc = 3, tqam, tqam_intop;
 	unsigned int maxsta = 511;
 #else
 	unsigned int maxsta = 127;
@@ -1235,15 +1235,18 @@ int gen_ath_config(int band, int is_iNIC,int subnet)
 
 	val = nvram_pf_get_int(main_prefix, "channel");
 #ifdef RTCONFIG_QCA_TW_AUTO_BAND4
-	if(band) //5G, flush block-channel list
-		fprintf(fp3, "wifitool %s block_acs_channel 0\n",wif);
-#if defined(RTAC58U)
-	else
+	if (!subnet) // flush block-channel list
 	{
-		if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
+		if (band)
 			fprintf(fp3, "wifitool %s block_acs_channel 0\n",wif);
-	}
+#if defined(RTAC58U)
+		else
+		{
+			if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
+				fprintf(fp3, "wifitool %s block_acs_channel 0\n",wif);
+		}
 #endif
+	}
 #endif			
 	if(val)
 	{
@@ -1725,10 +1728,9 @@ next_mrate:
 	}
 #endif
 
-#if defined(RTAC58U)
-	/* improve Tx throughput */
-	if (band)
-		fprintf(fp2, "iwpriv %s ampdu 52\n", wif);
+#if defined(RTCONFIG_SOC_IPQ40XX)
+	if (!subnet)
+		fprintf(fp2, "iwpriv wifi%d dl_loglevel 5\n",band);	// disable log from target firmware
 #endif
 
 next:

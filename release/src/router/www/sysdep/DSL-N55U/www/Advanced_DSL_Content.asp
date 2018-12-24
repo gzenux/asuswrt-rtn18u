@@ -696,6 +696,14 @@ function validForm(){
 		if(!validator.string(document.form.dslx_pppoe_service)
 				|| !validator.string(document.form.dslx_pppoe_ac))
 			return false;
+
+		//pppoe hostuniq
+		if(!validator.hex(document.form.dslx_pppoe_hostuniq)) {
+			alert("Host-uniq should be hexadecimal digits.");
+			document.form.dslx_pppoe_hostuniq.focus();
+			document.form.dslx_pppoe_hostuniq.select();
+			return false;
+		}
 	}
 	
 	if(document.form.dslx_hwaddr.value.length > 0)
@@ -1487,6 +1495,14 @@ function pass_checked(obj){
 											</th>
 											<td>
 												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_ac" value="<% nvram_get("dslx_pppoe_ac"); %>" onkeypress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off"/>
+											</td>
+										</tr>
+										<tr>
+											<th>
+												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,18);">Host-Uniq (Hexadecimal)</a><!--untranslated-->
+											</th>
+											<td align="left">
+												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_hostuniq" value="<% nvram_get("dslx_pppoe_hostuniq"); %>" onkeypress="return validator.isString(this, event);" autocorrect="off" autocapitalize="off"/>
 											</td>
 										</tr>
 										<!-- 2008.03 James. patch for Oleg's patch. { -->
