@@ -215,7 +215,7 @@ function validForm(){
 				return true;		
 			}
 		}else{		
-			if(document.form.ddns_server_x.selectedIndex != 9 && document.form.ddns_hostname_x.value == ""){
+			if(document.form.ddns_server_x.value != "WWW.ORAY.COM" && document.form.ddns_hostname_x.value == ""){
 				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
 				document.form.ddns_hostname_x.focus();
 				document.form.ddns_hostname_x.select();

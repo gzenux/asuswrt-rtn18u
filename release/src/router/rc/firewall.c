@@ -42,6 +42,10 @@
 #include <netdb.h>	// for struct addrinfo
 #include <net/ethernet.h>
 
+#ifdef RTCONFIG_PROTECTION_SERVER
+#include <protect_srv.h>
+#endif
+
 #define WEBSTRFILTER 1
 #define CONTENTFILTER 1
 
@@ -1271,7 +1275,7 @@ void write_port_forwarding(FILE *fp, char *config, char *lan_ip)
 				else
 					snprintf(dstips, sizeof(dstips), "--to %s", dstip);
 
-#ifdef CONFIG_BCMWL5
+#if defined(CONFIG_BCMWL5) && !defined(RTCONFIG_BCMWL6)
 				//work around: mark l2tp/ipsec(port:500 and port:4500) vpn traffic to bypass ctf
 				if(!strcmp(c, "500"))
 					nvram_set("markIPsec1", "1");
@@ -2298,6 +2302,10 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	    ":logaccept - [0:0]\n"
 	    ":logdrop - [0:0]\n");
 
+#ifdef RTCONFIG_PROTECTION_SERVER
+	fprintf(fp, ":%s - [0:0]\n", PROTECT_SRV_RULE_CHAIN);
+#endif
+
 #ifdef RTCONFIG_IPV6
 	if (ipv6_enabled()) {
 		fprintf(fp_ipv6, "*filter\n"
@@ -2360,6 +2368,18 @@ TRACE_PT("writing Parental Control\n");
 #endif
 			fprintf(fp, "-A INPUT -i %s -p icmp --icmp-type 8 -j %s\n", wan_if, logdrop);
 		}
+
+#ifdef RTCONFIG_PROTECTION_SERVER
+#ifdef RTCONFIG_SSH
+			if (nvram_get_int("sshd_enable") != 0) {
+				fprintf(fp, "-A INPUT -p tcp -m multiport --dport %d -j %s\n", 
+					    nvram_get_int("sshd_port") ? : 22, PROTECT_SRV_RULE_CHAIN);
+			}
+#endif
+			if (nvram_get_int("telnetd_enable") != 0) {
+				fprintf(fp, "-A INPUT -p tcp -m multiport --dport 23 -j %s\n", PROTECT_SRV_RULE_CHAIN);
+			}
+#endif
 
 		/* Filter known SPI state */
 		fprintf(fp, "-A INPUT -m state --state RELATED,ESTABLISHED -j %s\n", logaccept);
@@ -3094,6 +3114,9 @@ TRACE_PT("write url filter\n");
 
 	//system("iptables -F");
 	eval("iptables-restore", "/tmp/filter_rules");
+#ifdef RTCONFIG_PROTECTION_SERVER
+	kill_pidfile_s(PROTECT_SRV_PID_PATH, SIGUSR1);
+#endif
 
 #ifdef RTCONFIG_IPV6
 	if (ipv6_enabled())
@@ -3169,6 +3192,10 @@ filter_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 	    ":logaccept - [0:0]\n"
 	    ":logdrop - [0:0]\n");
 
+#ifdef RTCONFIG_PROTECTION_SERVER
+	fprintf(fp, ":%s - [0:0]\n", PROTECT_SRV_RULE_CHAIN);
+#endif
+
 #ifdef RTCONFIG_IPV6
 	if (ipv6_enabled()) {
 		fprintf(fp_ipv6, "*filter\n"
@@ -3240,6 +3267,18 @@ TRACE_PT("writing Parental Control\n");
 				fprintf(fp, "-A INPUT -i %s -p icmp --icmp-type 8 -j %s\n", wan_if, logdrop);
 			}
 		}
+
+#ifdef RTCONFIG_PROTECTION_SERVER
+#ifdef RTCONFIG_SSH
+			if (nvram_get_int("sshd_enable") != 0) {
+				fprintf(fp, "-A INPUT -p tcp -m multiport --dport %d -j %s\n", 
+					    nvram_get_int("sshd_port") ? : 22, PROTECT_SRV_RULE_CHAIN);
+			}
+#endif
+			if (nvram_get_int("telnetd_enable") != 0) {
+				fprintf(fp, "-A INPUT -p tcp -m multiport --dport 23 -j %s\n", PROTECT_SRV_RULE_CHAIN);
+			}
+#endif
 
 		/* Filter known SPI state */
 		fprintf(fp, "-A INPUT -m state --state RELATED,ESTABLISHED -j %s\n", logaccept);
@@ -4077,6 +4116,9 @@ TRACE_PT("write url filter\n");
 
 	//system("iptables -F");
 	eval("iptables-restore", "/tmp/filter_rules");
+#ifdef RTCONFIG_PROTECTION_SERVER
+	kill_pidfile_s(PROTECT_SRV_PID_PATH, SIGUSR1);
+#endif
 
 #ifdef RTCONFIG_IPV6
 	if (ipv6_enabled())
@@ -4180,7 +4222,7 @@ mangle_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	}
 #endif
 
-#ifdef CONFIG_BCMWL5
+#if defined(CONFIG_BCMWL5) && !defined(RTCONFIG_BCMWL6)
 	//work around: mark l2tp/ipsec(port:500 and port:4500) vpn traffic to bypass ctf
 	if(nvram_match("markIPsec1", "1")) {
 		eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-p", "udp", "-m", "udp", 
@@ -4475,7 +4517,7 @@ mangle_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 #endif
 	}
 
-#ifdef CONFIG_BCMWL5
+#if defined(CONFIG_BCMWL5) && !defined(RTCONFIG_BCMWL6)
 	//work around: mark l2tp/ipsec(port:500 and port:4500) vpn traffic to bypass ctf
 	if(nvram_match("markIPsec1", "1")) {
 		eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-p", "udp", "-m", "udp", 

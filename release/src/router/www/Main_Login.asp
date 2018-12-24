@@ -217,7 +217,6 @@ var isIE9 = navigator.userAgent.search("MSIE 9") > -1;
 var remaining_time = 60 - login_info.lock_time;
 var countdownid, rtime_obj;
 var redirect_page = login_info.page;
-var cloud_file = '<% get_parameter("file"); %>';
 var isRouterMode = ('<% nvram_get("sw_mode"); %>' == '1') ? true : false;
 
 var header_info = [<% get_header_info(); %>];
@@ -427,11 +426,6 @@ function login(){
 	}
 	catch(e){
 		document.form.next_page.value = "index.asp";
-	}		
-
-	if(document.form.next_page.value == "cloud_sync.asp"){
-		document.form.cloud_file.disabled = false;
-		document.form.cloud_file.value = cloud_file;
 	}
 
 	document.form.submit();
@@ -467,7 +461,6 @@ function disable_button(val){
 <input type="hidden" name="current_page" value="Main_Login.asp">
 <input type="hidden" name="next_page" value="Main_Login.asp">
 <input type="hidden" name="login_authorization" value="">
-<input type="hidden" name="cloud_file" value="" disabled>
 <div class="div_table main_field_gap">
 	<div class="div_tr">
 		<div id="warming_field" style="display:none;" class="warming_desc">Note: the router you are using is not an ASUS device or has not been authorised by ASUS. ASUSWRT might not work properly on this device.</div>

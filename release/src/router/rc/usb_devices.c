@@ -2794,6 +2794,7 @@ hotplug_block(void)
 }
 #endif  /* RTCONFIG_BCMARM */
 
+#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064)
 /* Optimize performance */
 #define READ_AHEAD_KB_BUF       1024
 #define READ_AHEAD_CONF "/sys/block/%s/queue/read_ahead_kb"
@@ -2821,6 +2822,7 @@ static void optimize_block_device(const char *devname)
         }
 }
 #endif // RTCONFIG_USB
+#endif
 
 // 1: add, 0: remove.
 int check_hotplug_action(const char *action)

@@ -738,9 +738,7 @@ function addWANOption(obj, wanscapItem){
 }
 
 function changeWANProto(dual_wan, obj){	
-	console.log("parent.wans_flag ="+parent.wans_flag);
 	if(dual_wan == 1){	//dual WAN on
-		console.log("wans_second = "+document.internetForm.wans_second.value);
 		if(document.internetForm.wans_primary.value == document.internetForm.wans_second.value){
 			if(obj.name == "wans_primary"){
 				if(obj.value == "wan"){			

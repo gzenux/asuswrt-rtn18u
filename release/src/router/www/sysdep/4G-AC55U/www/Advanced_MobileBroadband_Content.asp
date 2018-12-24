@@ -103,6 +103,12 @@ var modem_act_imei = '<% nvram_get("usb_modem_act_imei"); %>';
 var modem_act_imsi = '<% nvram_get("usb_modem_act_imsi"); %>';
 var modem_act_iccid = '<% nvram_get("usb_modem_act_iccid"); %>';
 var modem_operation ='<% nvram_get("usb_modem_act_operation"); %>';
+var modem_act_rssi = '<% nvram_get("usb_modem_act_rssi"); %>';
+var modem_act_rsrp = '<% nvram_get("usb_modem_act_rsrp"); %>';
+var modem_act_rsrq = '<% nvram_get("usb_modem_act_rsrq"); %>';
+var modem_act_cellid = '<% nvram_get("usb_modem_act_cellid"); %>';
+var modem_act_lac = '<% nvram_get("usb_modem_act_lac"); %>';
+var orig_modem_lte_band = '<% nvram_get("modem_lte_band"); %>';
 var modem_isp = '<% nvram_get("modem_isp"); %>';
 var g3err_pin = '<% nvram_get("g3err_pin"); %>';
 var pin_remaining_count = '<% nvram_get("usb_modem_act_auth_pin"); %>';
@@ -166,6 +172,7 @@ if(dualWAN_support && wans_dualwan.search("usb") >= 0 ){
 }
 
 var confirmState;
+var show_wstatus = 0;
 
 function genWANSoption(){
 	for(i=0; i<wans_dualwan.split(" ").length; i++){
@@ -176,7 +183,7 @@ function genWANSoption(){
 			wans_dualwan_NAME = "Ethernet WAN";
 		else if(wans_dualwan_NAME == "LAN")
 			wans_dualwan_NAME = "Ethernet LAN";
-		if(wans_dualwan_NAME == "USB" && based_modelid == "4G-AC55U")
+		if(wans_dualwan_NAME == "USB" && (based_modelid == "4G-AC55U" || based_modelid == "4G-AC68U"))
 			wans_dualwan_NAME = "<#Mobile_title#>";
 		document.form.wan_unit.options[i] = new Option(wans_dualwan_NAME, i);
 	}
@@ -304,6 +311,7 @@ function show_sim_settings(show_flag){
 		document.getElementById("connection_table").style.display = '';
 		document.getElementById("traffic_table").style.display = '';
 		document.getElementById("apn_table").style.display = '';
+		change_apn_mode();
 		inputCtrl(document.form.modem_mode, 1);
 		inputCtrl(document.form.modem_pdp, 1);
 		document.form.modem_bytes_data_limit.disabled = false;
@@ -314,13 +322,6 @@ function show_sim_settings(show_flag){
 		inputCtrl(document.form.modem_roaming, 1);
 		ShowRoamingOpt(document.form.modem_roaming.value);
 		document.form.modem_roaming_isp.disabled = false;
-		inputCtrl(document.form.modem_country, 1);
-		if(modem_autoapn_imsi == "")
-			inputCtrl(document.form.modem_isp, 1);
-		inputCtrl(document.form.modem_apn, 1);
-		inputCtrl(document.form.modem_dialnum, 1);
-		inputCtrl(document.form.modem_user, 1);
-		inputCtrl(document.form.modem_pass, 1);
 	}
 	else{
 		document.getElementById("connection_table").style.display = 'none';
@@ -334,13 +335,6 @@ function show_sim_settings(show_flag){
 		document.form.modem_warning_unit.disabled = true;		
 		inputCtrl(document.form.modem_roaming, 0);
 		inputCtrl(document.form.modem_roaming_isp, 0);
-		//inputCtrl(document.form.modem_enable_option, 0);
-		inputCtrl(document.form.modem_country, 0);
-		inputCtrl(document.form.modem_isp, 0);
-		inputCtrl(document.form.modem_apn, 0);
-		inputCtrl(document.form.modem_dialnum, 0);
-		inputCtrl(document.form.modem_user, 0);
-		inputCtrl(document.form.modem_pass, 0);
 	}
 
 }
@@ -546,6 +540,9 @@ function applyRule(){
 		document.form.modem_isp.options[0] = new Option(valueStr, valueStr, false, true);
 	}
 
+	if(orig_modem_lte_band != document.form.modem_lte_band.value)
+		document.form.action_wait.value = "30";
+
 	showLoading();
 	document.form.submit();
 }
@@ -644,6 +641,12 @@ function check_connect_status(){
 			if(mobile_state == 2 && mobile_sbstate == 0 && mobile_auxstate == 0){
 				document.getElementById("connection_status").innerHTML = "<#Connected#>";
 				document.getElementById("mconnect_status").innerHTML = "<#Connected#>";
+				if(roaming == "1"){
+					if(roaming_imsi.length > 0 && roaming_imsi != sim_imsi.substr(0, roaming_imsi.length))
+						document.getElementById("modem_roaming_status").innerHTML = "<#checkbox_Yes#>";
+				}
+				else
+					document.getElementById("modem_roaming_status").innerHTML = "<#checkbox_No#>";
 			}
 			else{
 				document.getElementById("connection_status").innerHTML = "<#Disconnected#>.";
@@ -937,6 +940,39 @@ function check_sim_details(){
 			document.getElementById("modem_act_imsi").innerHTML = modem_act_imsi;
 			document.getElementById("modem_act_iccid").innerHTML = modem_act_iccid;
 
+			if(modem_act_cellid.length > 0 && !isNaN(modem_act_cellid) && modem_act_cellid != "0"){
+				document.getElementById("cellid_tr").style.display = "";
+				document.getElementById("modem_cellid").innerHTML = modem_act_cellid;
+				show_wstatus = 1;
+			}
+
+			if(modem_act_rssi.length > 0 && !isNaN(modem_act_rssi) && modem_act_rssi != "0"){
+				document.getElementById("rssi_tr").style.display = "";
+				document.getElementById("modem_rssi").innerHTML = modem_act_rssi;
+				show_wstatus = 1;
+			}
+
+			if(modem_act_rsrp.length > 0 && !isNaN(modem_act_rsrp) && modem_act_rsrp != "0"){
+				document.getElementById("rsrp_tr").style.display = "";
+				document.getElementById("modem_rsrp").innerHTML = modem_act_rsrp;
+				show_wstatus = 1;
+			}
+
+			if(modem_act_rsrq.length > 0 && !isNaN(modem_act_rsrq) && modem_act_rsrq != "0"){
+				document.getElementById("rsrq_tr").style.display = "";
+				document.getElementById("modem_rsrq").innerHTML = modem_act_rsrq;
+				show_wstatus = 1;
+			}
+
+			if(modem_act_lac.length > 0 && !isNaN(modem_act_lac) && modem_act_lac != "0"){
+				document.getElementById("lac_tr").style.display = "";
+				document.getElementById("modem_lac").innerHTML = modem_act_lac;
+				show_wstatus = 1;
+			}
+
+			if(show_wstatus)
+				document.getElementById("wireless_status").style.display = "";
+		
 			if(sim_state == '1'){
 				document.getElementById("misp").innerHTML = '&nbsp;'+ modem_spn;
 				switch(modem_operation)
@@ -1100,34 +1136,35 @@ function hide_status(){
 	$("#mobile_status").fadeOut(300);
 	stopCheck = 1;
 	update_usage_data();
+	hide_wstatus();
+}
+
+function hide_wstatus(){
+	show_wstatus = 0;
+	document.getElementById("cellid_tr").style.display = "none";
+	document.getElementById("rssi_tr").style.display = "none";
+	document.getElementById("rsrp_tr").style.display = "none";
+	document.getElementById("rsrq_tr").style.display = "none";
+	document.getElementById("lac_tr").style.display = "none";
+	document.getElementById("wireless_status").style.display = "none";
 }
 
 var scan_end = '<% nvram_get("usb_modem_act_scanning"); %>';
 var ispstr = '<% get_isp_scan_results(); %>';
 var ispList = "";
-var orig_modem_isp = '<% nvram_get("modem_isp"); %>';
-var orig_operation = '<% nvram_get("usb_modem_act_operation"); %>';
-switch(orig_operation)
+var orig_modem_roaming_isp = '<% nvram_get("modem_roaming_isp"); %>';
+var orig_modem_mode = '<% nvram_get("modem_mode"); %>';
+switch(orig_modem_mode)
 {
-	case 'GSM':
-	case 'Edge':
-	case 'GPRS':
-		orig_operation  = '2G';
+	case '2':
+		orig_modem_mode = "2G";
 		break;
-	case 'WCDMA':
-	case 'CDMA':
-	case 'EV-DO REV 0':	
-	case 'EV-DO REV A':		
-	case 'EV-DO REV B':
-		orig_operation  = '3G';
-		break;	
-	case 'HSDPA+':										
-	case 'DC-HSDPA+':
-		orig_operation  = 'H+';
-		break;		
-	case 'LTE':
-		orig_operation  = '4G';	
-		break;			
+	case '3':
+		orig_modem_mode = "3G";
+		break;
+	case '4':
+		orig_modem_mode = "4G";
+		break;
 	default:
 		break;
 }
@@ -1173,7 +1210,7 @@ function show_dateList(){
 		valuestr = (i+1).toString();
 		document.form.modem_bytes_data_cycle.options[i] = new Option(valuestr, valuestr);
 		if(orig_usage_date == valuestr)
-			document.form.modem_bytes_data_cycle.options[i].selected = "1";	
+			document.form.modem_bytes_data_cycle.selectedIndex = i;
 	}
 }
 
@@ -1184,18 +1221,36 @@ function show_roaming_isp_list(ispStr){
 	if(ispList.length > 0){
 		if(document.form.modem_roaming_isp.options.length > 0)
 			free_options(document.form.modem_roaming_isp);
-		document.form.modem_roaming_isp.options.length = ispList.length;				
+		document.form.modem_roaming_isp.options.length = ispList.length;
 		for(var i = 0; i < ispList.length; i++){
 			optionText = ispList[i][0]+' ('+ispList[i][2]+')';
 			document.form.modem_roaming_isp.options[i] = new Option(optionText, ispList[i][0]);
-			if(orig_modem_isp == ispList[i][0] && orig_operation == ispList[i][2])
-				document.form.modem_roaming_isp.options[i].selected = "1";
+			if(orig_modem_roaming_isp == ispList[i][0] && orig_modem_mode == ispList[i][2])
+				document.form.modem_roaming_isp.selectedIndex = i;
 		}
-		document.getElementById("modem_roaming_isp").style.display = "";	
-		document.getElementById("isp_scan_button").value = "<#QIS_rescan#>";	
+		document.getElementById("modem_roaming_isp").style.display = "";
+		document.getElementById("isp_scan_button").value = "<#QIS_rescan#>";
 	}
 	else
 		document.getElementById("modem_roaming_isp").style.display = "none";
+}
+
+function setRoamingModem_Mode(RoamingIsp){
+	var modem_mode_str = RoamingIsp.substr(-3, 2);
+	switch(modem_mode_str){
+		case "2G":
+			document.form.modem_mode.value = "2";
+			break;
+		case "3G":
+			document.form.modem_mode.value = "3";
+			break;
+		case "4G":
+			document.form.modem_mode.value = "4";
+			break;
+		default:
+			document.form.modem_mode.value = "0";
+			break;
+	}
 }
 
 function detect_scan_result(){
@@ -1204,7 +1259,7 @@ function detect_scan_result(){
 		dataType: 'script',
 		
 		error: function(xhr){
-			detect_scan_result();		
+			detect_scan_result();
 		},
 		success: function(response){
 			if( scan_end == '0'){
@@ -1218,7 +1273,7 @@ function detect_scan_result(){
 					setTimeout("detect_scan_result();", 5000);
 			}
 			else if( scan_end == '2' || scan_end == '1' ){
-				setTimeout("detect_scan_result();", 5000);	
+				setTimeout("detect_scan_result();", 5000);
 			}
 			else{ //Never scan
 				document.getElementById("loadingIcon").style.display = "none";
@@ -1226,8 +1281,8 @@ function detect_scan_result(){
 				document.getElementById("isp_scan_button").style.display = "";
 				document.getElementById("warning_states").style.display = "";
 			}
-		}	
-	});	
+		}
+	});
 }
 
 function scan_isp(){
@@ -1660,9 +1715,29 @@ function update_lte_fw(){
 					<tr><th>IMSI</th><td><div id="modem_act_imsi"><% nvram_get("usb_modem_act_imsi"); %></div></td></tr>
 					<tr><th>ICCID</th><td><div id="modem_act_iccid"><% nvram_get("usb_modem_act_iccid"); %></div></td></tr>
 		 		</table>
-		 		</div> 			 	
+		 		</div>
 	  		</td>
 		</tr>
+
+		<tr>
+			<td>
+				<div id="wireless_status" style="display:none;">
+				<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
+					<thead>
+					<tr>
+						<td colspan="2">Wireless Status</td>
+					</tr>
+					</thead>
+					<tr id="cellid_tr" style="display:none;"><th>Cell ID</th><td><div id="modem_cellid"><% nvram_get("usb_modem_act_cellid"); %></div></td></tr>
+		  			<tr id="rssi_tr" style="display:none;"><th>RSSI</th><td><span id="modem_rssi" style="color:#FFF;"><% nvram_get("usb_modem_act_rssi"); %></span>&nbsp;dBm</td></tr>
+		  			<tr id="rsrp_tr" style="display:none;"><th>RSRP</th><td><span id="modem_rsrp" style="color:#FFF;"><% nvram_get("usb_modem_act_rsrp"); %></span>&nbsp;dBm</td></tr>
+					<tr id="rsrq_tr" style="display:none;"><th>RSRQ</th><td><span id="modem_rsrq" style="color:#FFF;"><% nvram_get("usb_modem_act_rsrq"); %></span>&nbsp;dBm</td></tr>
+					<tr id="lac_tr" style="display:none;"><th>LAC</th><td><div id="modem_lac"><% nvram_get("usb_modem_act_lac"); %></div></td></tr>
+		 		</table>
+		 		</div>
+	  		</td>
+		</tr>
+
 		<tr>
 			<td>
 				<div id="internet_usage">
@@ -1680,21 +1755,22 @@ function update_lte_fw(){
 		  			</tr>
 		  			<th><#Mobile_network_op#></th>
 			 		<td><div id="msignalsys" style="cursor:auto;float:left;" class="img_wrap2"></div><div id="misp" style="float:left;margin-top:10px;"></div></td>
+			 		<tr><th><#Mobile_roaming_isp#></th><td><div id="modem_roaming_status"></div></td></tr>
 		  			<tr><th><#Mobile_data_usage#></th><td><span id="totalTraffic" style="color:#FFF;"></span></td></tr>
 					<tr><th><#Uplink_traffic#></th><td><span id="upTraffic" style="color:#FFF;"></span></td></tr>
 					<tr><th><#Downlink_traffic#></th><td><span id="downTraffic" style="color:#FFF;"></span></td></tr>
-					<tr><th><#Uplink_rate#></th><td><span id="upRate" style="color:#FFF;"></span></td></tr>					
+					<tr><th><#Uplink_rate#></th><td><span id="upRate" style="color:#FFF;"></span></td></tr>
 					<tr><th><#Downlink_rate#></th><td><span id="downRate" style="color:#FFF;"></span></td></tr>
 					<tr><th><#Connection_time#></th><td><span id="connect_days"></span> <#Day#> <span id="connect_hours"></span> <#Hour#> <span id="connect_minutes"></span> <#Minute#> <span id="connect_seconds"></span> <#Second#></td></span></td></tr>
 		 		</table>
-		 		</div>	 			 	
-	  		</td>		
+		 		</div>
+	  		</td>
 		</tr>
-	</table>		
+	</table>
 
 	<div style="margin-top:5px;padding-bottom:10px;width:100%;text-align:center;">
 		<input class="button_gen" type="button" onclick="hide_status();" value="<#CTL_close#>">	
-	</div>				
+	</div>
 </div>
 <!--===================================Ending of connect status ===========================================-->
 
@@ -1839,6 +1915,19 @@ function update_lte_fw(){
 						</td>
 					</tr>
 
+					<tr>
+						<th width="40%">LTE Band</th>
+						<td>
+							<select name="modem_lte_band" id="modem_lte_band" class="input_option">
+								<option value="auto" <% nvram_match("modem_lte_band", "auto", "selected"); %>>Auto</option>
+								<option value="B3" <% nvram_match("modem_lte_band", "B3", "selected"); %>>B3</option>
+								<option value="B7" <% nvram_match("modem_lte_band", "B7", "selected"); %>>B7</option>
+								<option value="B20" <% nvram_match("modem_lte_band", "B20", "selected"); %>>B20</option>
+								<option value="B38" <% nvram_match("modem_lte_band", "B38", "selected"); %>>B38</option>
+							</select>
+						</td>
+					</tr>
+
 					<tr id="modem_roaming_tr" style="display:none">
 						<th width="40%"><#Mobile_roaming#></th>
 						<td>
@@ -1859,12 +1948,12 @@ function update_lte_fw(){
 					<tr id="roaming_isp" style="display:none">
 						<th width="40%"><#Mobile_roaming_isp#></th>
 						<td>
-							<select id="modem_roaming_isp" name="modem_roaming_isp" class="input_option" style="display:none;"></select>					
+							<select id="modem_roaming_isp" name="modem_roaming_isp" class="input_option" style="display:none;" onchange="setRoamingModem_Mode(this.options[this.selectedIndex].text);"></select>
 							<input type="button" id = "isp_scan_button" name = "isp_scan_button" class="button_gen" onclick="scan_isp();" value="<#CTL_scan#>"/>
 							<img id="loadingIcon" style="display:none;" src="/images/InternetScan.gif">
 							<div id = "warning_states"><span>*<#Mobile_roaming_warning#></span></div>
 						</td>
-					</tr>				  		  				  
+					</tr>
 				</table>
 
 				<table id="traffic_table" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable" style="margin-top:8px">
@@ -2101,27 +2190,27 @@ function update_lte_fw(){
 				  					<tr id="puk_remaining_tr" style="display:none;">
 										<th><#Mobile_remaining_num#></th>
 										<td><span id="puk_remaining"></span></td>
-				  					</tr>			  											 		
+				  					</tr>
 						 		</table>
-						 		</div> 			 	
+						 		</div>
 					  		</td>
-						</tr>	
-					</table>		
+						</tr>
+					</table>
 
 					<div style="margin-top:5px;padding-bottom:10px;width:100%;text-align:center;">
-						<input id="sim_cancel_btn" class="button_gen" type="button" onclick="cancel_action();" value="<#CTL_Cancel#>">						
-						<input id="sim_ok_button" class="button_gen" type="button" onclick="" value="<#CTL_ok#>">	
+						<input id="sim_cancel_btn" class="button_gen" type="button" onclick="cancel_action();" value="<#CTL_Cancel#>">
+						<input id="sim_ok_button" class="button_gen" type="button" onclick="" value="<#CTL_ok#>">
 						<img id="loadingIcon_sim" style="margin-left:10px; display:none;" src="/images/InternetScan.gif">
-					</div>				
-				</div>	 
-				<!--===================================End of SIM Table ===========================================-->		
+					</div>
+				</div>
+				<!--===================================End of SIM Table ===========================================-->
 
 				<table id="sim_mgnt_table" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable" style="margin-top:8px">
 				  <thead>
 				  	<tr>
 						<td colspan="2">SIM <#Mobile_pin_management#></td>
 				  	</tr>
-				  </thead>		
+				  </thead>
 				  
 				  	<tr>
 						<th width="200"><#Mobile_usim_status#></th>
@@ -2135,9 +2224,9 @@ function update_lte_fw(){
 								<option value="1"><#WLANConfig11b_WirelessCtrl_button1name#></option>
 								<option value="0"><#WLANConfig11b_WirelessCtrl_buttonname#></option>
 							</select>
-							<span id="pin_verify_result" style="display: none;"></span>		
+							<span id="pin_verify_result" style="display: none;"></span>
 						</td>
-				  	</tr>	
+				  	</tr>
 
 				  	<tr id="pin_modify_tr" style="display:none;">
 						<th width="40%"><#Mobile_pin_modify#></th>
@@ -2145,7 +2234,7 @@ function update_lte_fw(){
 							<input class="button_gen" type="button" onclick="show_sim_table(1, 2);" value="<#CTL_modify#>">	
 							<span id="pin_modify_result" style="display: none"></span>
 						</td>
-				  	</tr>					  	
+				  	</tr>
 
 					<tr id="pin_code_tr" style="display:none;">
 						<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,2);"><#PIN_code#></a></th>
@@ -2157,24 +2246,24 @@ function update_lte_fw(){
 							<br><span id="pincode_status" style="display:none;"></span><span id="pin_remaining"></span>
 	
 						</td>
-					</tr>				  		  				  
-				</table>	
+					</tr>
+				</table>
 				<div class="apply_gen">
 					<input class="button_gen" onclick="applyRule()" type="button" value="<#CTL_apply#>"/>
 				</div>
 			</td>
 		</tr>
-		</tbody>	
+		</tbody>
 	  </table> 
 		</td>
 	</tr>
-	</table>				
+	</table>
 			<!--===================================End of Main Content===========================================-->
 	</td>
   <td width="10" align="center" valign="top">&nbsp;</td>
 	</tr>
 </table>
-</form>					
+</form>
 
 <div id="footer"></div>
 

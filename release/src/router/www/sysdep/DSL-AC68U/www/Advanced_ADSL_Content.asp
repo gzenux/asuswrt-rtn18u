@@ -22,6 +22,8 @@
 var log_xDSLmode;
 var log_lineState;
 var log_SNRMarginDown;
+var dslx_ginp_try_enable = "<%nvram_get("dslx_ginp_try_enable");%>";
+var dslx_ginp_try_enable_disp = "<%nvram_get("dslx_ginp_try_enable_disp");%>";
 
 function initial(){
 	show_menu();
@@ -29,6 +31,20 @@ function initial(){
 	hide_nonstd_vectoring(<% nvram_get("dslx_vdsl_vectoring"); %>);
 	hide_vdtxpwrtestmode("<% nvram_get("dslx_vdtxpwrtestmode"); %>");
 	setTimeout("update_current_SNR_margin();", 3000);
+
+	if(dslx_ginp_try_enable_disp == 1) {
+		document.getElementById('dslx_ginp_try_checkbox').style.display = "";
+		if(dslx_ginp_try_enable == 1) {
+			document.getElementById('dslx_ginp_try_checkbox').checked = true;
+		}
+		else {
+			document.getElementById('dslx_ginp_try_checkbox').checked = false;
+		}
+		check_ginp_try(document.getElementById('dslx_ginp_try_checkbox'));
+	}
+	else {
+		document.getElementById('dslx_ginp_try_checkbox').style.display = "none";
+	}
 }
 
 function update_current_SNR_margin(){
@@ -203,6 +219,35 @@ function hide_vdtxpwrtestmode(_value){
 document.getElementById("id_vdtxpwrtestmode").style.display = (_value == "1") ? "" : "none";
 }
 
+function get_dslx_ginp(){
+	var dslx_ginp="<%nvram_get("dslx_ginp");%>";
+	switch(dslx_ginp){
+		case "1":
+			return "<#btn_Enabled#>";
+		case "0":
+		default:
+			return "<#btn_Disabled#>";
+	}
+}
+
+function check_ginp_try(obj){
+	if(obj.checked)
+	{
+		document.form.dslx_ginp.style.display = "none";
+		document.form.dslx_ginp.disabled = true;
+		document.getElementById("dslx_ginp_read").style.display = "";
+		document.getElementById("dslx_ginp_read").innerHTML = get_dslx_ginp();
+		document.form.dslx_ginp_try_enable.value = 1;
+	}
+	else
+	{
+		document.form.dslx_ginp.style.display = "";
+		document.form.dslx_ginp.disabled = false;
+		document.getElementById("dslx_ginp_read").style.display = "none";
+		document.form.dslx_ginp_try_enable.value = 0;
+	}
+}
+
 </script>
 </head>
 
@@ -239,6 +284,7 @@ document.getElementById("id_vdtxpwrtestmode").style.display = (_value == "1") ? 
 <input type="hidden" name="action_wait" value="20">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
+<input type="hidden" name="dslx_ginp_try_enable" value="<% nvram_get("dslx_ginp_try_enable"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
   <tr>
@@ -337,6 +383,11 @@ document.getElementById("id_vdtxpwrtestmode").style.display = (_value == "1") ? 
 						<option value="1" <% nvram_match("dslx_ginp", "1", "selected"); %>><#btn_Enabled#></option>
 						<option value="0" <% nvram_match("dslx_ginp", "0", "selected"); %>><#btn_Disabled#></option>
 					</select>
+					<span id="dslx_ginp_read" style="display:none;color:#FFFFFF;"></span>
+					<span id="dslx_ginp_try_checkbox" style="display:none;">
+						<br/>
+						<input type="checkbox" onClick="check_ginp_try(this);" <% nvram_match("dslx_ginp_try_enable", "1", "checked"); %> >Try to connect with G.INP Enabled</input><!-- Untranslated -->
+					</span>
 				</td>
 			</tr>
 			

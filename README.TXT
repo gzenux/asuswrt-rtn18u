@@ -108,7 +108,7 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 	Qualcomm IPQ806x/IPQ40xx ARM SoC models
 	===============================
 
-		For example, BRT-AC828M2.
+		For example, BRT-AC828.
 
 		To install the tools:
 		    - extract tools/openwrt-gcc463.arm.tar.bz2 directory to /opt
@@ -153,9 +153,9 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 		make rt-ac55u
 		( make rt-ac55uhp )
 
-	g. brt-ac828m2 (/ rt-ac88q )
+	g. brt-ac828 (/ rt-ac88q )
 		cd release/src-qca-ipq8064
-		make brt-ac828m2
+		make brt-ac828
 
 	h. rt-ac58u (/ rt-ac42u )
 		cd release/src-qca-dakota

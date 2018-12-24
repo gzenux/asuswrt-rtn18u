@@ -63,7 +63,7 @@ function initial(){
 	var dhcp_staticlist_row = dhcp_staticlist_array.split('&#60');
 	for(var i = 1; i < dhcp_staticlist_row.length; i += 1) {
 		var dhcp_staticlist_col = dhcp_staticlist_row[i].split('&#62');
-		manually_dhcp_list_array[dhcp_staticlist_col[1]] = dhcp_staticlist_col[0];
+		manually_dhcp_list_array[dhcp_staticlist_col[1]] = dhcp_staticlist_col[0].toUpperCase();
 	}
 
 	//Viz 2011.10{ for LAN ip in DHCP pool or Static list
@@ -152,7 +152,7 @@ function addRow_Group(upper){
 				}
 			}
 		}
-		manually_dhcp_list_array[document.form.dhcp_staticip_x_0.value.toUpperCase()] = document.form.dhcp_staticmac_x_0.value;
+		manually_dhcp_list_array[document.form.dhcp_staticip_x_0.value.toUpperCase()] = document.form.dhcp_staticmac_x_0.value.toUpperCase();
 		document.form.dhcp_staticip_x_0.value = "";
 		document.form.dhcp_staticmac_x_0.value = "";
 		showdhcp_staticlist();		
@@ -190,7 +190,7 @@ function showdhcp_staticlist(){
 		var userIconBase64 = "NoIcon";
 		var clientName, deviceType, deviceVender;
 		Object.keys(manually_dhcp_list_array).forEach(function(key) {
-			var clientMac = manually_dhcp_list_array[key];
+			var clientMac = manually_dhcp_list_array[key].toUpperCase();
 			var clientIP = key;
 			if(clientList[clientMac]) {
 				clientName = (clientList[clientMac].nickName == "") ? clientList[clientMac].name : clientList[clientMac].nickName;

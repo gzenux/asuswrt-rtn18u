@@ -82,7 +82,7 @@ function showNomoISPList(country){
 	var showed_isp = "";
 	var first_element = 0;
 
-	code +="<select id='ISP' name='ISP' onChange='ShowPVC(this.value); showNomoISPServiceByIdx(this.value);' tabindex='3' class='input_option'>";
+	code +="<select id='ISP' name='ISP' onChange='ShowPVC(this.value); showNomoISPServiceByIdx(this.value); showSpecificSetting(this.value);' tabindex='3' class='input_option'>";
 	for(var i = 0; i < ISP_List.length; i++){
 		if(country == ISP_List[i][1]){
 			if(showed_isp == ISP_List[i][4]){	//same isp internet setting with additional service
@@ -433,6 +433,16 @@ function btnNext() {
 		document.form.dslx_vdsl_profile.value = "1";
 		parent.restartDSLSetting = true;
 	}
+	if( document.form.country.value == 'United Kingdom'
+		&& document.form.dsltmp_cfg_ispname.value=='Sky - Fibre Broadband'
+	){
+		document.form.dslx_ginp_try_enable_disp.value = "1";
+		parent.restartDSLSetting = true;
+	}
+	else {
+		document.form.dslx_ginp_try_enable_disp.value = "0";
+	}
+
 	if(parent.restartDSLSetting) {
 		document.form.action_script.value = "restart_dsl_setting;".concat(document.form.action_script.value);
 	}
@@ -461,6 +471,28 @@ function btnNext() {
 	{
 		alert("<#Connectiontype_unknown#>");
 		return;
+	}
+}
+
+function check_ginp_try(obj){
+	if(obj.checked)
+	{
+		document.form.dslx_ginp_try_enable.value = 1;
+	}
+	else
+	{
+		document.form.dslx_ginp_try_enable.value = 0;
+	}
+}
+
+function showSpecificSetting(idx) {
+	if(ISP_List[idx][4] == 'Sky - Fibre Broadband') {
+		document.getElementById('dslx_ginp_try_checkbox').style.display = "";
+		document.form.dslx_ginp_try_enable.value = 1;
+	}
+	else {
+		document.getElementById('dslx_ginp_try_checkbox').style.display = "none";
+		document.form.dslx_ginp_try_enable.value = 0;
 	}
 }
 
@@ -495,6 +527,8 @@ function btnNext() {
 <input type="hidden" name="dslx_modulation" value="<% nvram_get("dslx_modulation"); %>">
 <input type="hidden" name="dslx_annex" value="<% nvram_get("dslx_annex"); %>">
 <input type="hidden" name="dslx_vdsl_profile" value="<% nvram_get("dslx_vdsl_profile"); %>">
+<input type="hidden" name="dslx_ginp_try_enable" value="<% nvram_get("dslx_ginp_try_enable"); %>">
+<input type="hidden" name="dslx_ginp_try_enable_disp" value="0">
 <div class="QISmain">
 	<!--
 	<div class="formfonttitle" style="padding:0 0 0 10;" id="FailReason"><#Manual_Setting_Title#></div>
@@ -544,6 +578,9 @@ function btnNext() {
 			<th width="40%"><#HSDPAConfig_ISP_itemname#>:</th>
 			<td>
 				<div id="ISPList"></div>
+				<span id="dslx_ginp_try_checkbox" style="display:none;">
+					<input type="checkbox" onClick="check_ginp_try(this);" checked>Try to connect with G.INP Enabled</input> <!-- Untranslated -->
+				</span>
 			</td>
 		</tr>
 		<tr id="Service_tr">

@@ -271,6 +271,7 @@ extern asus_token_t* search_timeout_in_list(asus_token_t **prev, int fromapp_fla
 extern asus_token_t* add_token_to_list(char *token, int add_to_end);
 extern asus_token_t* create_list(char *token);
 extern void set_referer_host(void);
+extern int check_xxs_blacklist(char* para, int check_www);
 
 /* web-*.c */
 extern int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit);

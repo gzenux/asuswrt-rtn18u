@@ -441,6 +441,9 @@ int av_open_input_stream(AVFormatContext **ic_ptr,
     ic->start_time = AV_NOPTS_VALUE;
     av_strlcpy(ic->filename, filename, sizeof(ic->filename));
 
+    /* optimital for memery use */
+    ic->ms_flag = 1;
+
     /* allocate private data */
     if (fmt->priv_data_size > 0) {
         ic->priv_data = av_mallocz(fmt->priv_data_size);

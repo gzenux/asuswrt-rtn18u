@@ -64,6 +64,7 @@ ifeq ($(RTCONFIG_DSL_TCLINUX),y)
 OBJS += dumptcc.o
 OBJS += runtcc.o
 OBJS += monitor.o dla.o
+OBJS += ginptry.o
 endif
 
 ifneq ($(wildcard ./prebuild),)

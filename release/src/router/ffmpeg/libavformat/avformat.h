@@ -742,6 +742,11 @@ typedef struct AVFormatContext {
      * - decoding: Unused.
      */
     int64_t start_time_realtime;
+
+    /**
+     * The flag for minidlna to reduce memery use when scan the file
+     */
+    short int ms_flag;
 } AVFormatContext;
 
 typedef struct AVPacketList {
