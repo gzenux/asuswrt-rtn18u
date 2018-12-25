@@ -18,6 +18,8 @@
  *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+//kbuild:lib-$(CONFIG_VOLUMEID) += volume_id.o util.o
+
 #include "volume_id_internal.h"
 
 
@@ -88,11 +90,8 @@ static const probe_fptr raid2[] = {
 #endif
 };
 
-/* fill buffer with maximum */
-static const probe_fptr fs[] = {
-#if ENABLE_FEATURE_VOLUMEID_LINUXSWAP
-	volume_id_probe_linux_swap,
-#endif
+/* signature in the first block, only small buffer needed */
+static const probe_fptr fs1[] = {
 #if ENABLE_FEATURE_VOLUMEID_FAT
 	volume_id_probe_vfat,
 #endif
@@ -102,8 +101,21 @@ static const probe_fptr fs[] = {
 #if ENABLE_FEATURE_VOLUMEID_MAC
 	volume_id_probe_mac_partition_map,
 #endif
+#if ENABLE_FEATURE_VOLUMEID_SQUASHFS
+	volume_id_probe_squashfs,
+#endif
 #if ENABLE_FEATURE_VOLUMEID_XFS
 	volume_id_probe_xfs,
+#endif
+#if ENABLE_FEATURE_VOLUMEID_BCACHE
+	volume_id_probe_bcache,
+#endif
+};
+
+/* fill buffer with maximum */
+static const probe_fptr fs2[] = {
+#if ENABLE_FEATURE_VOLUMEID_LINUXSWAP
+	volume_id_probe_linux_swap,
 #endif
 #if ENABLE_FEATURE_VOLUMEID_EXT
 	volume_id_probe_ext,
@@ -128,6 +140,12 @@ static const probe_fptr fs[] = {
 #endif
 #if ENABLE_FEATURE_VOLUMEID_UFS
 	volume_id_probe_ufs,
+#endif
+#if ENABLE_FEATURE_VOLUMEID_F2FS
+	volume_id_probe_f2fs,
+#endif
+#if ENABLE_FEATURE_VOLUMEID_NILFS
+	volume_id_probe_nilfs,
 #endif
 #if ENABLE_FEATURE_VOLUMEID_NTFS
 	volume_id_probe_ntfs,
@@ -173,11 +191,19 @@ int FAST_FUNC volume_id_probe_all(struct volume_id *id, /*uint64_t off,*/ uint64
 			goto ret;
 	}
 
+	/* signature in the first block, only small buffer needed */
+	for (i = 0; i < ARRAY_SIZE(fs1); i++) {
+		if (fs1[i](id /*,off*/) == 0)
+			goto ret;
+		if (id->error)
+			goto ret;
+	}
+
 	/* fill buffer with maximum */
 	volume_id_get_buffer(id, 0, SB_BUFFER_SIZE);
 
-	for (i = 0; i < ARRAY_SIZE(fs); i++) {
-		if (fs[i](id /*,off*/) == 0)
+	for (i = 0; i < ARRAY_SIZE(fs2); i++) {
+		if (fs2[i](id /*,off*/) == 0)
 			goto ret;
 		if (id->error)
 			goto ret;
@@ -186,7 +212,6 @@ int FAST_FUNC volume_id_probe_all(struct volume_id *id, /*uint64_t off,*/ uint64
  ret:
 	volume_id_free_buffer(id);
 	return (- id->error); /* 0 or -1 */
-
 }
 
 /* open volume by device node */

@@ -4,11 +4,36 @@
  *
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 defects - none? */
 /* http://www.opengroup.org/onlinepubs/007904975/utilities/chown.html */
+
+//usage:#define chown_trivial_usage
+//usage:       "[-Rh"IF_DESKTOP("LHPcvf")"]... USER[:[GRP]] FILE..."
+//usage:#define chown_full_usage "\n\n"
+//usage:       "Change the owner and/or group of each FILE to USER and/or GRP\n"
+//usage:     "\n	-R	Recurse"
+//usage:     "\n	-h	Affect symlinks instead of symlink targets"
+//usage:	IF_DESKTOP(
+//usage:     "\n	-L	Traverse all symlinks to directories"
+//usage:     "\n	-H	Traverse symlinks on command line only"
+//usage:     "\n	-P	Don't traverse symlinks (default)"
+//usage:     "\n	-c	List changed files"
+//usage:     "\n	-v	List all files"
+//usage:     "\n	-f	Hide errors"
+//usage:	)
+//usage:
+//usage:#define chown_example_usage
+//usage:       "$ ls -l /tmp/foo\n"
+//usage:       "-r--r--r--    1 andersen andersen        0 Apr 12 18:25 /tmp/foo\n"
+//usage:       "$ chown root /tmp/foo\n"
+//usage:       "$ ls -l /tmp/foo\n"
+//usage:       "-r--r--r--    1 root     andersen        0 Apr 12 18:25 /tmp/foo\n"
+//usage:       "$ chown root.root /tmp/foo\n"
+//usage:       "ls -l /tmp/foo\n"
+//usage:       "-r--r--r--    1 root     root            0 Apr 12 18:25 /tmp/foo\n"
 
 #include "libbb.h"
 
@@ -87,10 +112,6 @@ int chown_main(int argc UNUSED_PARAM, char **argv)
 	int opt, flags;
 	struct param_t param;
 
-	/* Just -1 might not work: uid_t may be unsigned long */
-	param.ugid.uid = -1L;
-	param.ugid.gid = -1L;
-
 #if ENABLE_FEATURE_CHOWN_LONG_OPTIONS
 	applet_long_options = chown_longopts;
 #endif
@@ -101,8 +122,8 @@ int chown_main(int argc UNUSED_PARAM, char **argv)
 	/* This matches coreutils behavior (almost - see below) */
 	param.chown_func = chown;
 	if (OPT_NODEREF
-	    /* || (OPT_RECURSE && !OPT_TRAVERSE_TOP): */
-	    IF_DESKTOP( || (opt & (BIT_RECURSE|BIT_TRAVERSE_TOP)) == BIT_RECURSE)
+	/* || (OPT_RECURSE && !OPT_TRAVERSE_TOP): */
+	IF_DESKTOP( || (opt & (BIT_RECURSE|BIT_TRAVERSE_TOP)) == BIT_RECURSE)
 	) {
 		param.chown_func = lchown;
 	}

@@ -55,9 +55,6 @@ var kg_mac_row = kg_mac.split('>');
 
 function initial(){
 	show_menu();
-	document.getElementById("_AiProtection_HomeSecurity").innerHTML = '<table><tbody><tr><td><div class="_AiProtection_HomeSecurity"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
-	document.getElementById("_AiProtection_HomeSecurity").className = "menu_clicked";
-
 	show_rule(document.form.kg_enable.value);
 
 	gen_mainTable();
@@ -115,7 +112,7 @@ function gen_mainTable(){
 	code +='<thead><tr><td id="keylist" colspan="4">Key List&nbsp;(Max Limit：&nbsp;16)</td></tr></thead>';
 	code +='<tr><th width="5%" height="30px" title="<#select_all#>"><input id="selAll" type=\"checkbox\" onclick=\"selectAll(this, 0, 0);\" value=\"\"/></th>';
 	code +='<th width="40%">Key devices name</th>';
-	code +='<th width="30%">Mac address</th>';
+	code +='<th width="30%"><#MAC_Address#></th>';
 	code +='<th width="15%"><#list_add_delete#></th></tr>';
 
 	code +='<tr><td style="border-bottom:2px solid #000;" title="<#WLANConfig11b_WirelessCtrl_button1name#>/<#btn_disable#>"><input type=\"checkbox\" id="newrule_Enable" checked></td>';

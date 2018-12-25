@@ -4,8 +4,29 @@
  * Copyright (C) 1992  A. V. Le Blanc (LeBlanc@mcc.ac.uk)
  * Copyright (C) 2001,2002 Vladimir Oleynik <dzo@simtreas.ru> (initial bb port)
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+
+/* Looks like someone forgot to add this to config system */
+//usage:#ifndef ENABLE_FEATURE_FDISK_BLKSIZE
+//usage:# define ENABLE_FEATURE_FDISK_BLKSIZE 0
+//usage:# define IF_FEATURE_FDISK_BLKSIZE(a)
+//usage:#endif
+//usage:
+//usage:#define fdisk_trivial_usage
+//usage:       "[-ul" IF_FEATURE_FDISK_BLKSIZE("s") "] "
+//usage:       "[-C CYLINDERS] [-H HEADS] [-S SECTORS] [-b SSZ] DISK"
+//usage:#define fdisk_full_usage "\n\n"
+//usage:       "Change partition table\n"
+//usage:     "\n	-u		Start and End are in sectors (instead of cylinders)"
+//usage:     "\n	-l		Show partition table for each DISK, then exit"
+//usage:	IF_FEATURE_FDISK_BLKSIZE(
+//usage:     "\n	-s		Show partition sizes in kb for each DISK, then exit"
+//usage:	)
+//usage:     "\n	-b 2048		(for certain MO disks) use 2048-byte sectors"
+//usage:     "\n	-C CYLINDERS	Set number of cylinders/heads/sectors"
+//usage:     "\n	-H HEADS"
+//usage:     "\n	-S SECTORS"
 
 #ifndef _LARGEFILE64_SOURCE
 /* For lseek64 */
@@ -107,12 +128,30 @@ struct partition {
 	unsigned char size4[4];         /* nr of sectors in partition */
 } PACKED;
 
+/*
+ * per partition table entry data
+ *
+ * The four primary partitions have the same sectorbuffer (MBRbuffer)
+ * and have NULL ext_pointer.
+ * Each logical partition table entry has two pointers, one for the
+ * partition and one link to the next one.
+ */
+struct pte {
+	struct partition *part_table;   /* points into sectorbuffer */
+	struct partition *ext_pointer;  /* points into sectorbuffer */
+	sector_t offset_from_dev_start; /* disk sector number */
+	char *sectorbuffer;             /* disk sector contents */
+#if ENABLE_FEATURE_FDISK_WRITABLE
+	char changed;                   /* boolean */
+#endif
+};
+
 #define unable_to_open "can't open '%s'"
 #define unable_to_read "can't read from %s"
 #define unable_to_seek "can't seek on %s"
 
 enum label_type {
-	LABEL_DOS, LABEL_SUN, LABEL_SGI, LABEL_AIX, LABEL_OSF
+	LABEL_DOS, LABEL_SUN, LABEL_SGI, LABEL_AIX, LABEL_OSF, LABEL_GPT
 };
 
 #define LABEL_IS_DOS	(LABEL_DOS == current_label_type)
@@ -149,6 +188,14 @@ enum label_type {
 #define STATIC_OSF extern
 #endif
 
+#if ENABLE_FEATURE_GPT_LABEL
+#define LABEL_IS_GPT	(LABEL_GPT == current_label_type)
+#define STATIC_GPT static
+#else
+#define LABEL_IS_GPT	0
+#define STATIC_GPT extern
+#endif
+
 enum action { OPEN_MAIN, TRY_ONLY, CREATE_EMPTY_DOS, CREATE_EMPTY_SUN };
 
 static void update_units(void);
@@ -162,6 +209,7 @@ static sector_t read_int(sector_t low, sector_t dflt, sector_t high, sector_t ba
 #endif
 static const char *partition_type(unsigned char type);
 static void get_geometry(void);
+static void read_pte(struct pte *pe, sector_t offset);
 #if ENABLE_FEATURE_SUN_LABEL || ENABLE_FEATURE_FDISK_WRITABLE
 static int get_boot(enum action what);
 #else
@@ -173,24 +221,6 @@ static int get_boot(void);
 
 static sector_t get_start_sect(const struct partition *p);
 static sector_t get_nr_sects(const struct partition *p);
-
-/*
- * per partition table entry data
- *
- * The four primary partitions have the same sectorbuffer (MBRbuffer)
- * and have NULL ext_pointer.
- * Each logical partition table entry has two pointers, one for the
- * partition and one link to the next one.
- */
-struct pte {
-	struct partition *part_table;   /* points into sectorbuffer */
-	struct partition *ext_pointer;  /* points into sectorbuffer */
-	sector_t offset_from_dev_start; /* disk sector number */
-	char *sectorbuffer;             /* disk sector contents */
-#if ENABLE_FEATURE_FDISK_WRITABLE
-	char changed;                   /* boolean */
-#endif
-};
 
 /* DOS partition types */
 
@@ -393,8 +423,8 @@ static sector_t bb_BLKGETSIZE_sectors(int fd)
 	unsigned long longsectors;
 
 	if (ioctl(fd, BLKGETSIZE64, &v64) == 0) {
-		/* Got bytes, convert to 512 byte sectors */
-		v64 >>= 9;
+		/* Got bytes, convert to sectors */
+		v64 /= sector_size;
 		if (v64 != (sector_t)v64) {
  ret_trunc:
 			/* Not only DOS, but all other partition tables
@@ -539,7 +569,7 @@ read_line(const char *prompt)
 {
 	int sz;
 
-	sz = read_line_input(prompt, line_buffer, sizeof(line_buffer), NULL);
+	sz = read_line_input(NULL, prompt, line_buffer, sizeof(line_buffer), /*timeout*/ -1);
 	if (sz <= 0)
 		exit(EXIT_SUCCESS); /* Ctrl-D or Ctrl-C */
 
@@ -652,6 +682,9 @@ typedef struct sun_partition sun_partition;
 STATIC_OSF void bsd_select(void);
 STATIC_OSF void xbsd_print_disklabel(int);
 #include "fdisk_osf.c"
+
+STATIC_GPT void gpt_list_table(int xtra);
+#include "fdisk_gpt.c"
 
 #if ENABLE_FEATURE_SGI_LABEL || ENABLE_FEATURE_SUN_LABEL
 static uint16_t
@@ -831,6 +864,11 @@ menu(void)
 		puts("w\twrite table to disk and exit");
 	} else if (LABEL_IS_AIX) {
 		puts("o\tcreate a new empty DOS partition table");
+		puts("q\tquit without saving changes");
+		puts("s\tcreate a new empty Sun disklabel");  /* sun */
+	} else if (LABEL_IS_GPT) {
+		puts("o\tcreate a new empty DOS partition table");
+		puts("p\tprint the partition table");
 		puts("q\tquit without saving changes");
 		puts("s\tcreate a new empty Sun disklabel");  /* sun */
 	} else {
@@ -1064,11 +1102,11 @@ warn_geometry(void)
 		printf(" sectors");
 	if (!g_cylinders)
 		printf(" cylinders");
-	printf(
 #if ENABLE_FEATURE_FDISK_WRITABLE
-		" (settable in the extra functions menu)"
+	puts(" (settable in the extra functions menu)");
+#else
+	bb_putchar('\n');
 #endif
-		"\n");
 	return 1;
 }
 
@@ -1112,7 +1150,7 @@ read_extended(int ext)
 
 	p = pex->part_table;
 	if (!get_start_sect(p)) {
-		printf("Bad offset in primary extended partition\n");
+		puts("Bad offset in primary extended partition");
 		return;
 	}
 
@@ -1275,10 +1313,7 @@ get_partition_table_geometry(void)
 static void
 get_geometry(void)
 {
-	int sec_fac;
-
 	get_sectorsize();
-	sec_fac = sector_size / 512;
 #if ENABLE_FEATURE_SUN_LABEL
 	guess_device_type();
 #endif
@@ -1301,14 +1336,25 @@ get_geometry(void)
 	if (dos_compatible_flag)
 		sector_offset = g_sectors;
 
-	g_cylinders = total_number_of_sectors / (g_heads * g_sectors * sec_fac);
+	g_cylinders = total_number_of_sectors / g_heads / g_sectors;
 	if (!g_cylinders)
 		g_cylinders = user_cylinders;
 }
 
 /*
  * Opens disk_device and optionally reads MBR.
- *    FIXME: document what each 'what' value will do!
+ *    If what == OPEN_MAIN:
+ *      Open device, read MBR.  Abort program on short read.  Create empty
+ *      disklabel if the on-disk structure is invalid (WRITABLE mode).
+ *    If what == TRY_ONLY:
+ *      Open device, read MBR.  Return an error if anything is out of place.
+ *      Do not create an empty disklabel.  This is used for the "list"
+ *      operations: "fdisk -l /dev/sda" and "fdisk -l" (all devices).
+ *    If what == CREATE_EMPTY_*:
+ *      This means that get_boot() was called recursively from create_*label().
+ *      Do not re-open the device; just set up the ptes array and print
+ *      geometry warnings.
+ *
  * Returns:
  *   -1: no 0xaa55 flag present (possibly entire disk BSD)
  *    0: found or created label
@@ -1390,6 +1436,10 @@ static int get_boot(void)
 	if (check_aix_label())
 		return 0;
 #endif
+#if ENABLE_FEATURE_GPT_LABEL
+	if (check_gpt_label())
+		return 0;
+#endif
 #if ENABLE_FEATURE_OSF_LABEL
 	if (check_osf_label()) {
 		possibly_osf_label = 1;
@@ -1397,8 +1447,8 @@ static int get_boot(void)
 			current_label_type = LABEL_OSF;
 			return 0;
 		}
-		printf("This disk has both DOS and BSD magic.\n"
-			 "Give the 'b' command to go to BSD mode.\n");
+		puts("This disk has both DOS and BSD magic.\n"
+		     "Give the 'b' command to go to BSD mode.");
 	}
 #endif
 
@@ -1408,9 +1458,9 @@ static int get_boot(void)
 #else
 	if (!valid_part_table_flag(MBRbuffer)) {
 		if (what == OPEN_MAIN) {
-			printf("Device contains neither a valid DOS "
-				  "partition table, nor Sun, SGI or OSF "
-				  "disklabel\n");
+			puts("Device contains neither a valid DOS "
+			     "partition table, nor Sun, SGI, OSF or GPT "
+			     "disklabel");
 #ifdef __sparc__
 			IF_FEATURE_SUN_LABEL(create_sunlabel();)
 #else
@@ -1543,7 +1593,7 @@ read_int(sector_t low, sector_t dflt, sector_t high, sector_t base, const char *
 		}
 		if (value >= low && value <= high)
 			break;
-		printf("Value is out of range\n");
+		puts("Value is out of range");
 	}
 	return value;
 }
@@ -1588,7 +1638,7 @@ get_existing_partition(int warn, unsigned max)
 		printf("Selected partition %u\n", pno+1);
 		return pno;
 	}
-	printf("No partition is defined yet!\n");
+	puts("No partition is defined yet!");
 	return -1;
 
  not_unique:
@@ -1615,7 +1665,7 @@ get_nonexisting_partition(int warn, unsigned max)
 		printf("Selected partition %u\n", pno+1);
 		return pno;
 	}
-	printf("All primary partitions have been defined already!\n");
+	puts("All primary partitions have been defined already!");
 	return -1;
 
  not_unique:
@@ -1650,10 +1700,10 @@ toggle_dos_compatibility_flag(void)
 	dos_compatible_flag = 1 - dos_compatible_flag;
 	if (dos_compatible_flag) {
 		sector_offset = g_sectors;
-		printf("DOS Compatibility flag is set\n");
+		printf("DOS Compatibility flag is %sset\n", "");
 	} else {
 		sector_offset = 1;
-		printf("DOS Compatibility flag is not set\n");
+		printf("DOS Compatibility flag is %sset\n", "not ");
 	}
 }
 
@@ -1760,16 +1810,16 @@ change_sysid(void)
 		sys = read_hex(get_sys_types());
 
 		if (!sys && !LABEL_IS_SGI && !LABEL_IS_SUN) {
-			printf("Type 0 means free space to many systems\n"
-				   "(but not to Linux). Having partitions of\n"
-				   "type 0 is probably unwise.\n");
+			puts("Type 0 means free space to many systems\n"
+				"(but not to Linux). Having partitions of\n"
+				"type 0 is probably unwise.");
 			/* break; */
 		}
 
 		if (!LABEL_IS_SUN && !LABEL_IS_SGI) {
 			if (IS_EXTENDED(sys) != IS_EXTENDED(p->sys_ind)) {
-				printf("You cannot change a partition into"
-					   " an extended one or vice versa\n");
+				puts("You cannot change a partition into"
+					" an extended one or vice versa");
 				break;
 			}
 		}
@@ -1777,10 +1827,10 @@ change_sysid(void)
 		if (sys < 256) {
 #if ENABLE_FEATURE_SUN_LABEL
 			if (LABEL_IS_SUN && i == 2 && sys != SUN_WHOLE_DISK)
-				printf("Consider leaving partition 3 "
-					   "as Whole disk (5),\n"
-					   "as SunOS/Solaris expects it and "
-					   "even Linux likes it\n\n");
+				puts("Consider leaving partition 3 "
+					"as Whole disk (5),\n"
+					"as SunOS/Solaris expects it and "
+					"even Linux likes it\n");
 #endif
 #if ENABLE_FEATURE_SGI_LABEL
 			if (LABEL_IS_SGI &&
@@ -1789,10 +1839,10 @@ change_sysid(void)
 					(i == 8 && sys != 0)
 				)
 			) {
-				printf("Consider leaving partition 9 "
-					   "as volume header (0),\nand "
-					   "partition 11 as entire volume (6)"
-					   "as IRIX expects it\n\n");
+				puts("Consider leaving partition 9 "
+					"as volume header (0),\nand "
+					"partition 11 as entire volume (6)"
+					"as IRIX expects it\n");
 			}
 #endif
 			if (sys == origsys)
@@ -1886,7 +1936,7 @@ check_consistency(const struct partition *p, int partition)
 static void
 list_disk_geometry(void)
 {
-	ullong bytes = ((ullong)total_number_of_sectors << 9);
+	ullong bytes = ((ullong)total_number_of_sectors * sector_size);
 	long megabytes = bytes / 1000000;
 
 	if (megabytes < 10000)
@@ -1899,7 +1949,7 @@ list_disk_geometry(void)
 		   g_heads, g_sectors, g_cylinders);
 	if (units_per_sector == 1)
 		printf(", total %"SECT_FMT"u sectors",
-			total_number_of_sectors / (sector_size/512));
+			total_number_of_sectors);
 	printf("\nUnits = %s of %u * %u = %u bytes\n\n",
 		str_units(PLURAL),
 		units_per_sector, sector_size, units_per_sector * sector_size);
@@ -2014,7 +2064,7 @@ fix_partition_table_order(void)
 	int i,k;
 
 	if (!wrong_p_order(NULL)) {
-		printf("Ordering is already correct\n\n");
+		puts("Ordering is already correct\n");
 		return;
 	}
 
@@ -2042,8 +2092,7 @@ fix_partition_table_order(void)
 	if (i)
 		fix_chain_of_logicals();
 
-	printf("Done.\n");
-
+	puts("Done");
 }
 #endif
 
@@ -2057,8 +2106,12 @@ list_table(int xtra)
 		sun_list_table(xtra);
 		return;
 	}
-	if (LABEL_IS_SUN) {
+	if (LABEL_IS_SGI) {
 		sgi_list_table(xtra);
+		return;
+	}
+	if (LABEL_IS_GPT) {
+		gpt_list_table(xtra);
 		return;
 	}
 
@@ -2122,7 +2175,7 @@ list_table(int xtra)
 	 * if this is a sgi, sun or aix labeled disk... */
 	if (LABEL_IS_DOS && wrong_p_order(NULL)) {
 		/* FIXME */
-		printf("\nPartition table entries are not in disk order\n");
+		puts("\nPartition table entries are not in disk order");
 	}
 }
 
@@ -2136,7 +2189,7 @@ x_list_table(int extend)
 
 	printf("\nDisk %s: %u heads, %u sectors, %u cylinders\n\n",
 		disk_device, g_heads, g_sectors, g_cylinders);
-	printf("Nr AF  Hd Sec  Cyl  Hd Sec  Cyl      Start       Size ID\n");
+	puts("Nr AF  Hd Sec  Cyl  Hd Sec  Cyl      Start       Size ID");
 	for (i = 0; i < g_partitions; i++) {
 		pe = &ptes[i];
 		p = (extend ? pe->ext_pointer : pe->part_table);
@@ -2363,7 +2416,7 @@ add_partition(int n, int sys)
 			limit = first[i] - 1;
 	}
 	if (start > limit) {
-		printf("No free sectors available\n");
+		puts("No free sectors available");
 		if (n > 4)
 			g_partitions--;
 		return;
@@ -2434,9 +2487,9 @@ new_partition(void)
 		return;
 	}
 	if (LABEL_IS_AIX) {
-		printf("Sorry - this fdisk cannot handle AIX disk labels.\n"
+		puts("Sorry - this fdisk cannot handle AIX disk labels.\n"
 "If you want to add DOS-type partitions, create a new empty DOS partition\n"
-"table first (use 'o'). This will destroy the present disk contents.\n");
+"table first (use 'o'). This will destroy the present disk contents.");
 		return;
 	}
 
@@ -2444,7 +2497,7 @@ new_partition(void)
 		free_primary += !ptes[i].part_table->sys_ind;
 
 	if (!free_primary && g_partitions >= MAXIMUM_PARTS) {
-		printf("The maximum number of partitions has been created\n");
+		puts("The maximum number of partitions has been created");
 		return;
 	}
 
@@ -2452,8 +2505,8 @@ new_partition(void)
 		if (extended_offset)
 			add_logical();
 		else
-			printf("You must delete some partition and add "
-				 "an extended partition first\n");
+			puts("You must delete some partition and add "
+				 "an extended partition first");
 	} else {
 		char c, line[80];
 		snprintf(line, sizeof(line),
@@ -2487,6 +2540,35 @@ new_partition(void)
 }
 
 static void
+reread_partition_table(int leave)
+{
+	int i;
+
+	puts("Calling ioctl() to re-read partition table");
+	sync();
+	/* Users with slow external USB disks on a 320MHz ARM system (year 2011)
+	 * report that sleep is needed, otherwise BLKRRPART may fail with -EIO:
+	 */
+	sleep(1);
+	i = ioctl_or_perror(dev_fd, BLKRRPART, NULL,
+			"WARNING: rereading partition table "
+			"failed, kernel still uses old table");
+#if 0
+	if (dos_changed)
+		puts(
+		"\nWARNING: If you have created or modified any DOS 6.x\n"
+		"partitions, please see the fdisk manual page for additional\n"
+		"information");
+#endif
+
+	if (leave) {
+		if (ENABLE_FEATURE_CLEAN_UP)
+			close_dev_fd();
+		exit(i != 0);
+	}
+}
+
+static void
 write_table(void)
 {
 	int i;
@@ -2497,7 +2579,6 @@ write_table(void)
 				ptes[3].changed = 1;
 		for (i = 3; i < g_partitions; i++) {
 			struct pte *pe = &ptes[i];
-
 			if (pe->changed) {
 				write_part_table_flag(pe->sectorbuffer);
 				write_sector(pe->offset_from_dev_start, pe->sectorbuffer);
@@ -2505,47 +2586,20 @@ write_table(void)
 		}
 	}
 	else if (LABEL_IS_SGI) {
-		/* no test on change? the printf below might be mistaken */
+		/* no test on change? the "altered" msg below might be mistaken */
 		sgi_write_table();
 	}
 	else if (LABEL_IS_SUN) {
-		int needw = 0;
-
-		for (i = 0; i < 8; i++)
-			if (ptes[i].changed)
-				needw = 1;
-		if (needw)
-			sun_write_table();
+		for (i = 0; i < 8; i++) {
+			if (ptes[i].changed) {
+				sun_write_table();
+				break;
+			}
+		}
 	}
 
-	printf("The partition table has been altered!\n\n");
+	puts("The partition table has been altered.");
 	reread_partition_table(1);
-}
-
-static void
-reread_partition_table(int leave)
-{
-	int i;
-
-	printf("Calling ioctl() to re-read partition table\n");
-	sync();
-	/* sleep(2); Huh? */
-	i = ioctl_or_perror(dev_fd, BLKRRPART, NULL,
-			"WARNING: rereading partition table "
-			"failed, kernel still uses old table");
-#if 0
-	if (dos_changed)
-		printf(
-		"\nWARNING: If you have created or modified any DOS 6.x\n"
-		"partitions, please see the fdisk manual page for additional\n"
-		"information\n");
-#endif
-
-	if (leave) {
-		if (ENABLE_FEATURE_CLEAN_UP)
-			close_dev_fd();
-		exit(i != 0);
-	}
 }
 #endif /* FEATURE_FDISK_WRITABLE */
 
@@ -2687,8 +2741,8 @@ xselect(void)
 			user_sectors = g_sectors = read_int(1, g_sectors, 63, 0, "Number of sectors");
 			if (dos_compatible_flag) {
 				sector_offset = g_sectors;
-				printf("Warning: setting sector offset for DOS "
-					"compatiblity\n");
+				puts("Warning: setting sector offset for DOS "
+					"compatiblity");
 			}
 			update_units();
 			break;
@@ -2724,14 +2778,14 @@ is_ide_cdrom_or_tape(const char *device)
 	   the process hangs on the attempt to read a music CD.
 	   So try to be careful. This only works since 2.1.73. */
 
-	if (strncmp("/dev/hd", device, 7))
+	if (!is_prefixed_with(device, "/dev/hd"))
 		return 0;
 
 	snprintf(buf, sizeof(buf), "/proc/ide/%s/media", device+5);
 	procf = fopen_for_read(buf);
 	if (procf != NULL && fgets(buf, sizeof(buf), procf))
-		is_ide = (!strncmp(buf, "cdrom", 5) ||
-			  !strncmp(buf, "tape", 4));
+		is_ide = (is_prefixed_with(buf, "cdrom") ||
+			  is_prefixed_with(buf, "tape"));
 	else
 		/* Now when this proc file does not exist, skip the
 		   device when it is read-only. */
@@ -2789,13 +2843,37 @@ open_list_and_close(const char *device, int user_specified)
 	close_dev_fd();
 }
 
+/* Is it a whole disk? The digit check is still useful
+   for Xen devices for example. */
+static int is_whole_disk(const char *disk)
+{
+	unsigned len;
+	int fd = open(disk, O_RDONLY);
+
+	if (fd != -1) {
+		struct hd_geometry geometry;
+		int err = ioctl(fd, HDIO_GETGEO, &geometry);
+		close(fd);
+		if (!err)
+			return (geometry.start == 0);
+	}
+
+	/* Treat "nameN" as a partition name, not whole disk */
+	/* note: mmcblk0 should work from the geometry check above */
+	len = strlen(disk);
+	if (len != 0 && isdigit(disk[len - 1]))
+		return 0;
+
+	return 1;
+}
+
 /* for fdisk -l: try all things in /proc/partitions
    that look like a partition name (do not end in a digit) */
 static void
 list_devs_in_proc_partititons(void)
 {
 	FILE *procpt;
-	char line[100], ptname[100], devname[120], *s;
+	char line[100], ptname[100], devname[120];
 	int ma, mi, sz;
 
 	procpt = fopen_or_warn("/proc/partitions", "r");
@@ -2804,15 +2882,10 @@ list_devs_in_proc_partititons(void)
 		if (sscanf(line, " %u %u %u %[^\n ]",
 				&ma, &mi, &sz, ptname) != 4)
 			continue;
-		if (!strncmp(ptname, "mtdblock", 8))
-			continue;
-		for (s = ptname; *s; s++)
-			continue;
-		/* note: excluding '0': e.g. mmcblk0 is not a partition name! */
-		if (s[-1] >= '1' && s[-1] <= '9')
-			continue;
+
 		sprintf(devname, "/dev/%s", ptname);
-		open_list_and_close(devname, 0);
+		if (is_whole_disk(devname))
+			open_list_and_close(devname, 0);
 	}
 #if ENABLE_FEATURE_CLEAN_UP
 	fclose(procpt);
@@ -2947,8 +3020,8 @@ int fdisk_main(int argc UNUSED_PARAM, char **argv)
 				printf("\nThe current boot file is: %s\n",
 					sgi_get_bootfile());
 				if (read_maybe_empty("Please enter the name of the "
-						   "new boot file: ") == '\n')
-					printf("Boot file unchanged\n");
+						"new boot file: ") == '\n')
+					puts("Boot file unchanged");
 				else
 					sgi_set_bootfile(line_ptr);
 			}
@@ -3025,13 +3098,13 @@ int fdisk_main(int argc UNUSED_PARAM, char **argv)
 			verify();
 			break;
 		case 'w':
-			write_table();          /* does not return */
+			write_table();  /* does not return */
 			break;
 #if ENABLE_FEATURE_FDISK_ADVANCED
 		case 'x':
 			if (LABEL_IS_SGI) {
-				printf("\n\tSorry, no experts menu for SGI "
-					"partition tables available\n\n");
+				puts("\n\tSorry, no experts menu for SGI "
+					"partition tables available\n");
 			} else
 				xselect();
 			break;

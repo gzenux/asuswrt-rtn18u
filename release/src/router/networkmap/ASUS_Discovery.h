@@ -1,12 +1,12 @@
 //
-//  ASUS_Discovery.h
-//  asus
+//	ASUS_Discovery.h
+//	asus
 //
-//  Created by Junda Txia on 11/22/10.
-//  Copyright ASUSTek COMPUTER INC. 2011. All rights reserved.
+//	Created by Junda Txia on 11/22/10.
+//	Copyright ASUSTek COMPUTER INC. 2011. All rights reserved.
 //
 
-#include <arpa/inet.h>       //inet_addr function
+#include <arpa/inet.h>		 //inet_addr function
 
 #include "netinet/in.h"
 
@@ -14,37 +14,42 @@
 
 typedef struct _SearchRouterInfoStruct
 {
-    char routerProductID[32];
-    char routerIPAddress[32];
-    char routerSubMask[32];
-    unsigned char routerMacAddress[6];
-    unsigned char routerRealMacAddress[18];
-    char routerSSID[33];			/* maximum length of SSID is 32 characters. */
-    char routerFirmwareVersion[16];
-    char routerOperationMode;
-    char routerRegulation;
-    char routerPrinterInfo[128];
-    
-    // webdav
-    char webdavSupport;
-    char webdavEnableWebDav;
-    char webdavHttpType;
-    unsigned short webdavHttpPort;
-    unsigned short webdavHttpsPort;
-    char webdavEnableDDNS;
-    char webdavHostName[64];
-    unsigned int webdavWANIPAddr;
-    char webdavWANIPAddress[32];
-    char webdavWANState;
-    char webdavIsNotDefault;
-    
-    // tunnel
-    char tunnelSupport;
-    unsigned short tunnelAppHttpPort;
-    char tunnelAppAPILevel;
-    char tunnelEnableAAE;
-    char tunnelAAEDeviceID[64];
-    
+	char routerProductID[32];
+	char routerIPAddress[32];
+	char routerSubMask[32];
+	unsigned char routerMacAddress[6];
+	unsigned char routerRealMacAddress[18];
+	char routerSSID[33];			/* maximum length of SSID is 32 characters. */
+	char routerFirmwareVersion[16];
+	char routerOperationMode;
+	char routerRegulation;
+	char routerPrinterInfo[128];
+	
+	// webdav
+	char webdavSupport;
+	char webdavEnableWebDav;
+	char webdavHttpType;
+	unsigned short webdavHttpPort;
+	unsigned short webdavHttpsPort;
+	char webdavEnableDDNS;
+	char webdavHostName[64];
+	unsigned int webdavWANIPAddr;
+	char webdavWANIPAddress[32];
+	char webdavWANState;
+	char webdavIsNotDefault;
+	
+	// tunnel
+	char tunnelSupport;
+	unsigned short tunnelAppHttpPort;
+	char tunnelAppAPILevel;
+	char tunnelEnableAAE;
+	char tunnelAAEDeviceID[64];
+
+#if defined(RTCONFIG_CFGSYNC) && defined(RTCONFIG_MASTER_DET)
+	// master/slave
+	char isMaster;
+#endif
+	
 } SearchRouterInfoStruct;
 
 #define LISTEN_PORT 9990

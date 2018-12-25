@@ -1,12 +1,42 @@
+-include $(SRCBASE)/router/.config
+
+ifeq ($(HND_ROUTER),y)
+export LINUXDIR := $(SRCBASE)/kernel/linux-4.1
+else
 export LINUXDIR := $(SRCBASE)/linux/linux-2.6
+endif
+export BUILD := $(shell (gcc -dumpmachine))
 
 ifeq ($(RTCONFIG_BCMARM),y)
-ifeq ($(EXTRACFLAGS),)
-export EXTRACFLAGS := -DBCMWPA2 -DBCMARM -fno-delete-null-pointer-checks -marm
+
+ifeq ($(HND_ROUTER),y)
+export PRIVATE_EXTRACFLAGS := $(BRCM_COMMON_CFLAGS) -DHND_ROUTER -DLINUX26 -DLINUX_2_6_36 -DCONFIG_BCMWL5
+export EXTRACFLAGS := -march=armv7-a -marm -DHND_ROUTER -DCONFIG_BCMWL5 -D__ARM_ARCH_7A__
+else
+ ifeq ($(EXTRACFLAGS),)
+export EXTRACFLAGS := -DBCMWPA2 -DBCMARM -fno-delete-null-pointer-checks -marm 
+ endif
 endif
 
+ ifeq ($(HND_ROUTER),y)
+export PLATFORM_ARCH := arm-glibc
+export CROSS_COMPILE := /opt/toolchains/crosstools-arm-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/bin/arm-buildroot-linux-gnueabi-
+export CROSS_COMPILER := $(CROSS_COMPILE)
+export CONFIGURE := ./configure LD=$(CROSS_COMPILE)ld --host=arm-buildroot-linux-gnueabi
+export CONFIGURE_64 := ./configure LD=$(CROSS_COMPILE_64)ld --host=aarch64-buildroot-linux-gnu 
+export HOSTCONFIG := linux-armv4 -DOPENSSL_NO_HEARTBEATS -DL_ENDIAN no-engine -Os -march=armv7-a -fomit-frame-pointer -mabi=aapcs-linux -marm -ffixed-r8 -msoft-float -D__ARM_ARCH_7A__
+export HOSTCONFIG_64 := linux-aarch64 -DOPENSSL_NO_HEARTBEATS -DL_ENDIAN no-engine -Os -march=armv8-a -fomit-frame-pointer -mabi=lp64 -ffixed-r8 -D__ARM_ARCH_8A__ no-asm
+export BCMEX := _arm
+export ARCH := arm
+export HOST :=
+export TOOLS := /opt/toolchains/crosstools-arm-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25
+export RTVER := 0.9.32.1
+export BCMSUB := brcmarm
+export KERNEL_BINARY=$(LINUXDIR)/vmlinux
+export PRBM_EXT=_preb
+ else
 export KERNEL_BINARY=$(LINUXDIR)/arch/arm/boot/zImage
-export PLATFORM := arm-uclibc
+export PLATFORM_ARCH := arm-uclibc
 export CROSS_COMPILE := arm-brcm-linux-uclibcgnueabi-
 export CROSS_COMPILER := $(CROSS_COMPILE)
 export CONFIGURE := ./configure --host=arm-linux --build=$(BUILD)
@@ -18,20 +48,20 @@ export HOST := arm-linux
 export TOOLS := $(SRCBASE)/toolchains/hndtools-arm-linux-2.6.36-uclibc-4.5.3
 export RTVER := 0.9.32.1
 export BCMSUB := brcmarm
+ endif
 else ifeq ($(RTCONFIG_BCM_ARM_GCLIBC),y)
 export CROSS_COMPILE ?= arm-buildroot-linux-gnueabi-
 export CONFIGURE := ./configure arm-linux --build=$(BUILD)
 export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/../.. && pwd -P)
 export CFLAGS += -fno-strict-aliasing
 SUBMAKE_SETTINGS += ARCH=$(ARCH)
-EXTRA_LDFLAGS := "-lgcc_s -lwlcsm"
 else
-ifeq ($(EXTRACFLAGS),)
+ ifeq ($(EXTRACFLAGS),)
 export EXTRACFLAGS := -DBCMWPA2 -fno-delete-null-pointer-checks -mips32 -mtune=mips32
-endif
+ endif
 
 export KERNEL_BINARY=$(LINUXDIR)/arch/mips/brcm-boards/bcm947xx/compressed/zImage
-export PLATFORM := mipsel-uclibc
+export PLATFORM_ARCH := mipsel-uclibc
 export CROSS_COMPILE := mipsel-uclibc-
 export CROSS_COMPILER := $(CROSS_COMPILE)
 export READELF := mipsel-linux-readelf
@@ -41,8 +71,16 @@ export ARCH := mips
 export HOST := mipsel-linux
 export TOOLS := $(SRCBASE)/../../tools/brcm/hndtools-mipsel-linux
 export RTVER := 0.9.30.1
+export TEST := 3
 endif
-EXTRA_CFLAGS := -DLINUX26 -DCONFIG_BCMWL5 -DDEBUG_NOISY -DDEBUG_RCTEST -pipe -DTTEST
+
+ifneq ($(HND_ROUTER),y)
+ifeq ($(PLATFORM),)
+export PLATFORM := $(PLATFORM_ARCH)
+endif
+endif
+
+EXTRA_CFLAGS := -DLINUX26 -DCONFIG_BCMWL5 -DDEBUG_NOISY -DDEBUG_RCTEST -pipe -DTTEST 
 
 export CONFIG_LINUX26=y
 export CONFIG_BCMWL5=y
@@ -65,10 +103,12 @@ define platformKernelConfig
 		echo "# CONFIG_RGMII_BCM_FA is not set" >> $(1); \
 	fi; \
 	if [ "$(LACP)" = "y" ]; then \
-		sed -i "/CONFIG_LACP/d" $(1); \
-		echo "CONFIG_LACP=m" >>$(1); \
-		sed -i "/CONFIG_BCM_AGG/d" $(1); \
-		echo "CONFIG_BCM_AGG=y" >>$(1); \
+		if [ "$(HND_ROUTER)" != "y" ]; then \
+			sed -i "/CONFIG_LACP/d" $(1); \
+			echo "CONFIG_LACP=m" >>$(1); \
+			sed -i "/CONFIG_BCM_AGG/d" $(1); \
+			echo "CONFIG_BCM_AGG=y" >>$(1); \
+		fi; \
 	fi; \
 	if [ "$(BCMNAND)" = "y" ]; then \
 		sed -i "/CONFIG_MTD_NFLASH/d" $(1); \
@@ -90,13 +130,14 @@ define platformKernelConfig
 		echo "CONFIG_MTD_BRCMNAND=y" >>$(1); \
 	fi; \
 	if [ "$(ARM)" = "y" ]; then \
-		mkdir -p $(SRCBASE)/router/ctf_arm/linux; \
+		if [ "$(HND_ROUTER)" != "y" ]; then \
+			mkdir -p $(SRCBASE)/router/ctf_arm/linux; \
+		fi; \
 		if [ "$(BCM7)" = "y" ]; then \
 			if [ "$(ARMCPUSMP)" = "up" ]; then \
 				cp -f $(SRCBASE)/router/ctf_arm/bcm7_up/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
 			else \
 				cp -f $(SRCBASE)/router/ctf_arm/bcm7/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
-				cp -f $(SRCBASE)/router/dpsta/bcm7_3200/dpsta.o $(SRCBASE)/router/dpsta/linux; \
 			fi; \
 		elif [ "$(BCM_7114)" = "y" ]; then \
 			if [ "$(GMAC3)" = "y" ]; then \
@@ -104,20 +145,41 @@ define platformKernelConfig
 			else \
 				cp -f $(SRCBASE)/router/ctf_arm/bcm_7114/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
 			fi; \
-			cp -f $(SRCBASE)/router/dpsta/bcm7114/dpsta.o $(SRCBASE)/router/dpsta/linux; \
-		elif [ "$(BCM10)" = "y" ]; then \
-			if [ "$(ARMCPUSMP)" = "up" ]; then \
-				cp -f $(SRCBASE)/router/ctf_arm/bcm7_up/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
-			else \
-				cp -f $(SRCBASE)/router/ctf_arm/bcm7/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
-			fi; \
 		elif [ "$(BCM9)" = "y" ]; then \
-                                cp -f $(SRCBASE)/router/ctf_arm/bcm9/ctf.* $(SRCBASE)/router/ctf_arm/linux/;\
+                	cp -f $(SRCBASE)/router/ctf_arm/bcm9/ctf.* $(SRCBASE)/router/ctf_arm/linux/;\
+		elif [ "$(HND_ROUTER)" = "y" ]; then \
+			echo "do nothing"; \
 		else \
 			if [ "$(ARMCPUSMP)" = "up" ]; then \
 				cp -f $(SRCBASE)/router/ctf_arm/bcm6_up/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
 			else \
 				cp -f $(SRCBASE)/router/ctf_arm/bcm6/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
+			fi; \
+		fi; \
+		if [ "$(DPSTA)" = "y" ]; then \
+			mkdir -p $(SRCBASE)/router/dpsta/linux; \
+			if [ "$(BCM7)" = "y" ]; then \
+				cp -f $(SRCBASE)/router/dpsta/bcm7/dpsta.o $(SRCBASE)/router/dpsta/linux; \
+				cp -f $(SRCBASE)/router/dpsta/bcm7/dpsta.h $(SRCBASE)/router/dpsta; \
+				cp -f $(SRCBASE)/router/dpsta/bcm7/dpsta_linux.h $(SRCBASE)/router/dpsta; \
+			elif [ "$(BCM_7114)" = "y" ]; then \
+				cp -f $(SRCBASE)/router/dpsta/bcm7114/dpsta.o $(SRCBASE)/router/dpsta/linux; \
+				cp -f $(SRCBASE)/router/dpsta/bcm7114/dpsta.h $(SRCBASE)/router/dpsta; \
+				cp -f $(SRCBASE)/router/dpsta/bcm7114/dpsta_linux.h $(SRCBASE)/router/dpsta; \
+			elif [ "$(BCM9)" = "y" ]; then \
+				echo "do nothing"; \
+			elif [ "$(HND_ROUTER)" = "y" ]; then \
+				cp -f $(SRCBASE)/router/dpsta/hnd/dpsta.o $(SRCBASE)/router/dpsta/linux; \
+				cp -f $(SRCBASE)/router/dpsta/hnd/dpsta.h $(SRCBASE)/router/dpsta; \
+				cp -f $(SRCBASE)/router/dpsta/hnd/dpsta_linux.h $(SRCBASE)/router/dpsta; \
+			else \
+				if [ "$(ARMCPUSMP)" = "up" ]; then \
+					cp -f $(SRCBASE)/router/dpsta/bcm6_up/dpsta.o $(SRCBASE)/router/dpsta/linux; \
+				else \
+					cp -f $(SRCBASE)/router/dpsta/bcm6/dpsta.o $(SRCBASE)/router/dpsta/linux; \
+				fi; \
+				cp -f $(SRCBASE)/router/dpsta/bcm6/dpsta.h $(SRCBASE)/router/dpsta; \
+				cp -f $(SRCBASE)/router/dpsta/bcm6/dpsta_linux.h $(SRCBASE)/router/dpsta; \
 			fi; \
 		fi; \
 	fi; \
@@ -252,8 +314,6 @@ define platformKernelConfig
 				fi; \
 			fi; \
 			if [ -d $(SRCBASE)/router/wl_arm_7/prebuilt ]; then \
-				mkdir $(SRCBASE)/wl/linux ; \
-				cp $(SRCBASE)/router/wl_arm_7/prebuilt/wl*.o $(SRCBASE)/wl/linux ; \
 				mkdir -p $(SRCBASE)/../../dhd/src/dhd/linux ; \
 				cp $(SRCBASE)/router/wl_arm_7/prebuilt/dhd.o $(SRCBASE)/../../dhd/src/dhd/linux ; \
 			fi; \
@@ -265,6 +325,8 @@ define platformKernelConfig
 			if [ -d $(SRCBASE)/router/wl_arm_7114/prebuilt ]; then \
 				mkdir -p $(SRCBASE)/../dhd/src/dhd/linux ; \
 				cp $(SRCBASE)/router/wl_arm_7114/prebuilt/dhd.o $(SRCBASE)/../dhd/src/dhd/linux ; \
+				mkdir -p $(SRCBASE)/../dhd24/src/dhd/linux ; \
+				cp $(SRCBASE)/router/wl_arm_7114/prebuilt/dhd24.o $(SRCBASE)/../dhd24/src/dhd/linux ; \
 			fi; \
 			if [ -d $(SRCBASE)/router/et_arm_7114/prebuilt ]; then \
 				mkdir -p $(SRCBASE)/et/linux ; \
@@ -302,6 +364,61 @@ define platformKernelConfig
 			if [ -d $(SRCBASE)/router/et_arm_9/prebuilt ]; then \
 				mkdir -p $(SRCBASE)/et/linux ; \
 				cp $(SRCBASE)/router/et_arm_9/prebuilt/et.o $(SRCBASE)/et/linux ; \
+			fi; \
+		elif [ "$(HND_ROUTER)" = "y" ]; then \
+			echo "hnd_router platform work" ; \
+        		(cd rdp/; rm -f chkfile; ln -sf ../Makefile chkfile); \
+			if [ -d $(HND_SRC)/router/hnd_extra/prebuilt ]; then \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/dhd/src/dhd/linux/prebuilt/ ; \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/dhd/src/shared/bcmwifi/include/ ; \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/prebuilt/ ; \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/emf/linux/prebuilt/ ; \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/igs/linux/prebuilt/ ; \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/hnd/linux/prebuilt/ ; \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/exe/prebuilt/ ; \
+				mkdir -p $(HND_SRC)/rdp/projects/WL4908/target/bdmf ; \
+				mkdir -p $(HND_SRC)/rdp/projects/WL4908/target/rdpa ; \
+				mkdir -p $(HND_SRC)/rdp/projects/WL4908/target/rdpa_gpl ; \
+        			(cd rdp/projects/WL4908/target/bdmf; rm -f Makefile; ln -sf ../../../../drivers/bdmf/Makefile Makefile); \
+				(cd rdp/projects/WL4908/target/rdpa_gpl; rm -rf include; ln -sf ../../../../../rdp/drivers/rdpa_gpl/include include); \
+				(cd rdp/projects/WL4908/target/bdmf; rm -rf framework; ln -sf ../../../../../rdp/drivers/bdmf/framework framework); \
+				(cd rdp/projects/WL4908/target/bdmf; rm -rf system; ln -sf ../../../../../rdp/drivers/bdmf/system system); \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_enet.o $(HND_SRC)/bcmdrivers/opensource/net/enet/impl5/bcm_enet$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/wfd.o $(HND_SRC)/bcmdrivers/opensource/net/wfd/impl1/wfd$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcmpdc.o $(HND_SRC)/bcmdrivers/opensource/char/pdc/impl1/bcmpdc$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcmspu.o $(HND_SRC)/bcmdrivers/opensource/char/spudd/impl4/bcmspu$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_arm64_setup.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_arm_cpuidle.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_arm_irq.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_dt.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_legacy_io_map.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/blxargs.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/setup.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_usb.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/bcm_usb$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcm_thermal.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/bcm_thermal$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/rdp_fpm.o $(HND_SRC)/bcmdrivers/opensource/char/fpm/impl1/rdp_fpm$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/rdpa_cmd.o $(HND_SRC)/bcmdrivers/opensource/char/rdpa_drv/impl1/rdpa_cmd$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/rdpa_gpl_ext.o $(HND_SRC)/bcmdrivers/opensource/char/rdpa_gpl_ext/impl1/rdpa_gpl_ext$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/rdpa_mw.o $(HND_SRC)/bcmdrivers/opensource/char/rdpa_mw/impl1/rdpa_mw$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/wlcsm.o $(HND_SRC)/bcmdrivers/broadcom/char/wlcsm_ext/impl1/wlcsm$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/pktrunner.o $(HND_SRC)/bcmdrivers/broadcom/char/pktrunner/impl2/pktrunner$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcmvlan.o $(HND_SRC)/bcmdrivers/broadcom/char/vlan/impl1/bcmvlan$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/chipinfo.o $(HND_SRC)/bcmdrivers/broadcom/char/chipinfo/impl1/chipinfo$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/nciTMSkmod.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciTMSkmod$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/pktflow.o $(HND_SRC)/bcmdrivers/broadcom/char/pktflow/impl1/pktflow$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/pwrmngtd.o $(HND_SRC)/bcmdrivers/broadcom/char/pwrmngt/impl1/pwrmngtd$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bdmf.o $(HND_SRC)/rdp/projects/WL4908/target/bdmf/bdmf$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/rdpa.o $(HND_SRC)/rdp/projects/WL4908/target/rdpa/rdpa$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/rdpa_gpl.o $(HND_SRC)/rdp/projects/WL4908/target/rdpa_gpl/rdpa_gpl$(PRBM_EXT).o ; \
+				cp $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/prebuilt/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/prebuilt/wl_apsta.o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/wl $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/exe/prebuilt/ ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/hnd.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/hnd/linux/prebuilt/hnd.o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/dhd.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/dhd/src/dhd/linux/prebuilt/dhd.o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/emf.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/emf/linux/prebuilt/emf.o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/igs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/igs/linux/prebuilt/igs.o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/prebuilt/wl_apsta.o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/prebuilt/wl.o ; \
+				cp $(HND_SRC)/router/hnd_extra/prebuilt/bcmwifi_rates.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/dhd/src/shared/bcmwifi/include/bcmwifi_rates.h ; \
 			fi; \
 		else \
 			if [ -d $(SRCBASE)/wl/sysdeps/$(BUILD_NAME) ]; then \

@@ -1,0 +1,6 @@
+#if CDK_CONFIG_INCLUDE_BCM56840_A0 == 1
+#include "chip/bcm56840_a0_sym.c"
+#endif
+#if CDK_CONFIG_INCLUDE_BCM56840_B0 == 1
+#include "chip/bcm56840_b0_sym.c"
+#endif

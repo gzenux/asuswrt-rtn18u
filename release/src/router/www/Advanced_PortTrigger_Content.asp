@@ -12,18 +12,40 @@
 <title><#Web_Title#> - <#menu5_3_3#></title>
 <link rel="stylesheet" type="text/css" href="index_style.css"> 
 <link rel="stylesheet" type="text/css" href="form_style.css">
+<link rel="stylesheet" type="text/css" href="/js/table/table.css">
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/validator.js"></script>
+<script type="text/javascript" language="JavaScript" src="/js/table/table.js"></script>
+<script type="text/javascript" language="JavaScript" src="/js/jquery.js"></script>
 <script>
-var autofw_rulelist_array = '<% nvram_char_to_ascii("","autofw_rulelist"); %>';
+var autofw_rulelist_array = [];
 var wans_mode ='<% nvram_get("wans_mode"); %>';
 
 function initial(){
 	show_menu();
 	well_known_apps();
+	//parse nvram to array
+	var parseNvramToArray = function() {
+		var parseArray = [];
+		var oriNvram = '<% nvram_char_to_ascii("","autofw_rulelist"); %>';
+		var oriNvramRow = decodeURIComponent(oriNvram).split('<');
+		for(var i = 0; i < oriNvramRow.length; i += 1) {
+			if(oriNvramRow[i] != "") {
+				var oriNvramCol = oriNvramRow[i].split('>');
+				var eachRuleArray = new Array();
+				for(var j = 0; j < oriNvramCol.length; j += 1) {
+					eachRuleArray.push(oriNvramCol[j]);
+				}
+				parseArray.push(eachRuleArray);
+			}
+		}
+		return parseArray;
+	};
+
+	autofw_rulelist_array = parseNvramToArray();
 	showautofw_rulelist();
 	addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "port", "trigger"]);
 	//if(dualWAN_support && wans_mode == "lb")
@@ -39,20 +61,18 @@ function well_known_apps(){
 	}
 }
 function applyRule(){
-	var rule_num = document.getElementById('autofw_rulelist_table').rows.length;
-	var item_num = document.getElementById('autofw_rulelist_table').rows[0].cells.length;
+	//parse array to nvram
 	var tmp_value = "";
-
-	for(i=0; i<rule_num; i++){
-		tmp_value += "<"		
-		for(j=0; j<item_num-1; j++){	
-			tmp_value += document.getElementById('autofw_rulelist_table').rows[i].cells[j].innerHTML;
-			if(j != item_num-2)	
-				tmp_value += ">";
+	for(var i = 0; i < autofw_rulelist_array.length; i += 1) {
+		if(autofw_rulelist_array[i].length != 0) {
+			tmp_value += "<";
+			for(var j = 0; j < autofw_rulelist_array[i].length; j += 1) {
+				tmp_value += autofw_rulelist_array[i][j];
+				if( (j + 1) != autofw_rulelist_array[i].length)
+					tmp_value += ">";
+			}
 		}
 	}
-	if(tmp_value == "<"+"<#IPConnection_VSList_Norule#>" || tmp_value == "<")
-		tmp_value = "";	
 	
 	document.form.autofw_rulelist.value = tmp_value;
 
@@ -68,148 +88,135 @@ function change_wizard(o){
 	for(var i = 0; i < wItem.length; i++){
 		if(wItem[i][0] != null){
 			if(o.value == wItem[i][0]){
-				document.form.autofw_outport_x_0.value = wItem[i][1];
-				document.form.autofw_outproto_x_0.value = wItem[i][2];
-				document.form.autofw_inport_x_0.value = wItem[i][3];
-				document.form.autofw_inproto_x_0.value = wItem[i][4];
-				document.form.autofw_desc_x_0.value = wItem[i][0];				
+				var wellKnownApp = new Array();
+				wellKnownApp.push(wItem[i][0]);
+				wellKnownApp.push(wItem[i][1]);
+				wellKnownApp.push(wItem[i][2]);
+				wellKnownApp.push(wItem[i][3]);
+				wellKnownApp.push(wItem[i][4]);
+				var validDuplicateFlag = true;
+				if(tableApi._attr.hasOwnProperty("ruleDuplicateValidation")) {
+					var currentEditRuleArray = wellKnownApp;
+					var filterCurrentEditRuleArray = autofw_rulelist_array;
+
+					validDuplicateFlag = tableRuleDuplicateValidation[tableApi._attr.ruleDuplicateValidation](currentEditRuleArray, filterCurrentEditRuleArray);
+					if(!validDuplicateFlag) {
+						document.form.TriggerKnownApps.selectedIndex = 0;
+						alert("<#JS_duplicate#>");
+						return false;
+					}
+					autofw_rulelist_array.push(currentEditRuleArray);
+					showautofw_rulelist();
+				}			
 				break;
 			}
 		}
 	}
-}
-
-//new table start 2 // jerry5 added.
-function addRow(obj, head){
-	if(head == 1)
-		autofw_rulelist_array += "<"
-	else
-		autofw_rulelist_array += ">"
-			
-	autofw_rulelist_array += obj.value;
-	obj.value = "";
-}
-
-function validForm(){
-
-	if(!Block_chars(document.form.autofw_desc_x_0, ["<" ,">"])){
-				return false;		
-	}	
-
-	if(document.form.autofw_outport_x_0.value==""){
-		alert("<#JS_fieldblank#>");
-		document.form.autofw_outport_x_0.focus();
-		document.form.autofw_outport_x_0.select();
-		return false;
-	
-	}
-	if(document.form.autofw_inport_x_0.value==""){
-		alert("<#JS_fieldblank#>");
-		document.form.autofw_inport_x_0.focus();
-		document.form.autofw_inport_x_0.select();
-		return false;
-	
-	}
-	
-	if(!validator.numberRange(document.form.autofw_outport_x_0, 1, 65535)
-		|| !validator.numberRange(document.form.autofw_inport_x_0, 1, 65535)){		
-			return false;
-	}
-	
-	return true;	
-}
-
-function addRow_Group(upper){
-	if(validForm()){
-		if('<% nvram_get("autofw_enable_x"); %>' != "1")
-			document.form.autofw_enable_x[0].checked = true;
-		
-		var rule_num = document.getElementById('autofw_rulelist_table').rows.length;
-		var item_num = document.getElementById('autofw_rulelist_table').rows[0].cells.length;		
-		if(rule_num >= upper){
-			alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
-			return;
-		}
-			
-		//Viz check same rule  //match(out port+out_proto+in port+in_proto) is not accepted
-		if(item_num >=2){
-			for(i=0; i<rule_num; i++){
-					if(document.form.autofw_outport_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[1].innerHTML 
-						&& document.form.autofw_outproto_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[2].innerHTML
-						&& document.form.autofw_inport_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[3].innerHTML
-						&& document.form.autofw_inproto_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[4].innerHTML){
-						alert("<#JS_duplicate#>");						
-						document.form.autofw_outport_x_0.focus();
-						document.form.autofw_outport_x_0.select();
-						return;
-					}				
-			}
-		}		
-		
-		addRow(document.form.autofw_desc_x_0 ,1);
-		addRow(document.form.autofw_outport_x_0, 0);
-		addRow(document.form.autofw_outproto_x_0, 0);
-		document.form.autofw_outproto_x_0.value="TCP";
-		addRow(document.form.autofw_inport_x_0, 0);
-		addRow(document.form.autofw_inproto_x_0, 0);
-		document.form.autofw_inproto_x_0.value="TCP";
-		showautofw_rulelist();
-	}	
-}
-
-function edit_Row(r){ 	
-	var i=r.parentNode.parentNode.rowIndex;
-  	
-	document.form.autofw_desc_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[0].innerHTML;
-	document.form.autofw_outport_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[1].innerHTML; 
-	document.form.autofw_outproto_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[2].innerHTML; 
-	document.form.autofw_inport_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[3].innerHTML;
-	document.form.autofw_inproto_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[4].innerHTML;
-	
-  del_Row(r);	
-}
-
-function del_Row(r){
-  var i=r.parentNode.parentNode.rowIndex;
-  document.getElementById('autofw_rulelist_table').deleteRow(i);
-  
-  var autofw_rulelist_value = "";
-	for(k=0; k<document.getElementById('autofw_rulelist_table').rows.length; k++){
-		for(j=0; j<document.getElementById('autofw_rulelist_table').rows[k].cells.length-1; j++){
-			if(j == 0)	
-				autofw_rulelist_value += "&#60";
-			else
-				autofw_rulelist_value += "&#62";
-			autofw_rulelist_value += document.getElementById('autofw_rulelist_table').rows[k].cells[j].innerHTML;		
-		}
-	}
-	
-	autofw_rulelist_array = autofw_rulelist_value;
-	if(autofw_rulelist_array == "")
-		showautofw_rulelist();
+	document.form.TriggerKnownApps.selectedIndex = 0;
 }
 
 function showautofw_rulelist(){
-	var autofw_rulelist_row = decodeURIComponent(autofw_rulelist_array).split('<');
-	var code = "";
 
-	code +='<table width="100%" cellspacing="0" cellpadding="4" align="center" class="list_table" id="autofw_rulelist_table">';
-	if(autofw_rulelist_row.length == 1)
-		code +='<tr><td style="color:#FFCC00;" colspan="6"><#IPConnection_VSList_Norule#></td></tr>';
-	else{
-		for(var i = 1; i < autofw_rulelist_row.length; i++){
-			code +='<tr id="row'+i+'">';
-			var autofw_rulelist_col = autofw_rulelist_row[i].split('>');
-			var wid=[22, 21, 10, 21, 10];
-				for(var j = 0; j < autofw_rulelist_col.length; j++){
-					code +='<td width="'+wid[j]+'%">'+ autofw_rulelist_col[j] +'</td>';		//IP  width="98"
+	//set table Struct
+	var tableStruct = {
+		data: autofw_rulelist_array,
+		container: "tableContainer",
+		title: "<#IPConnection_TriggerList_groupitemdesc#>",
+		capability: {
+			add: true,
+			del: true,
+			clickEdit: true
+		},
+		header: [ 
+			{
+				"title" : "<#IPConnection_autofwDesc_itemname#>",
+				"width" : "26%"
+			},
+			{
+				"title" : "<#IPConnection_autofwOutPort_itemname#>",
+				"width" : "22%"
+			},
+			{
+				"title" : "<#IPConnection_VServerProto_itemname#>",
+				"width" : "10%"
+			},
+			{
+				"title" : "<#IPConnection_autofwInPort_itemname#>",
+				"width" : "22%"
+			},
+			{
+				"title" : "<#IPConnection_VServerProto_itemname#>",
+				"width" : "10%"
+			}
+		],
+		createPanel: {
+			inputs : [
+				{
+					"editMode" : "text",
+					"title" : "<#IPConnection_autofwDesc_itemname#>",
+					"maxlength" : "18",
+					"valueMust" : false,
+					"validator" : "description"
+				},
+				{
+					"editMode" : "text",
+					"title" : "<#IPConnection_autofwOutPort_itemname#>",
+					"maxlength" : "11",
+					"validator" : "portRange"
+				},
+				{
+					"editMode" : "select",
+					"title" : "<#IPConnection_VServerProto_itemname#>",
+					"option" : {"TCP" : "TCP", "UDP" : "UDP"}
+				},
+				{
+					"editMode" : "text",
+					"title" : "<#IPConnection_autofwInPort_itemname#>",
+					"maxlength" : "11",
+					"validator" : "portRange"
+				},
+				{
+					"editMode" : "select",
+					"title" : "<#IPConnection_VServerProto_itemname#>",
+					"option" : {"TCP" : "TCP", "UDP" : "UDP"}
+				},
+			],
+			maximum: 32
+		},
+
+		clickRawEditPanel: {
+			inputs : [
+				{
+					"editMode" : "text",
+					"maxlength" : "18",
+					"valueMust" : false,
+					"validator" : "description"
+				},
+				{
+					"editMode" : "text",
+					"maxlength" : "11",
+					"validator" : "portRange"
+				},
+				{
+					"editMode" : "select",
+					"option" : {"TCP" : "TCP", "UDP" : "UDP"}
+				},
+				{
+					"editMode" : "text",
+					"maxlength" : "11",
+					"validator" : "portRange"
+				},
+				{
+					"editMode" : "select",
+					"option" : {"TCP" : "TCP", "UDP" : "UDP"}
 				}
-				code +='<td width="16%"><!--input class="edit_btn" onclick="edit_Row(this);" value=""/-->';
-				code +='<input class="remove_btn" onclick="del_Row(this);" value=""/></td></tr>';
-		}
+			]
+		},
+
+		ruleDuplicateValidation : "triggerPort"
 	}
-  code +='</table>';
-	document.getElementById("autofw_rulelist_Block").innerHTML = code;
+
+	tableApi.genTableAPI(tableStruct);
 }
 
 function changeBgColor(obj, num){
@@ -315,52 +322,7 @@ function trigger_validate_duplicate(o, v, l, off){
           	</tr>
           </table>
           
-          <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0"  class="FormTable_table">
-	  	  		<thead>
-           		<tr>
-            		<td colspan="6" id="autofw_rulelist"><#IPConnection_TriggerList_groupitemdesc#>&nbsp;(<#List_limit#>&nbsp;32)</td>
-          		</tr>
-		  			</thead>
-		  
-    	      <tr>
-				<th><#IPConnection_autofwDesc_itemname#></th>
-            	<th><#IPConnection_autofwOutPort_itemname#></th>
-            	<th><#IPConnection_VServerProto_itemname#></th>
-            	<th><#IPConnection_autofwInPort_itemname#></th>
-            	<th><#IPConnection_VServerProto_itemname#></th>            
-            	<th><#list_add_delete#></th>
-  	        </tr>
-          
-	          <tr>
-          		<td width="22%">
-              		<input type="text" maxlength="18" class="input_15_table" name="autofw_desc_x_0" onKeyPress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off">
-            	</td>
-            	<td width="21%">            		
-              		<input type="text" maxlength="11" class="input_12_table"  name="autofw_outport_x_0" onKeyPress="return validator.isPortRange(this,event)" autocorrect="off" autocapitalize="off">
-            	</td>
-            	<td width="10%">
-              		<select name="autofw_outproto_x_0" class="input_option">
-              			<option value="TCP">TCP</option>
-              			<option value="UDP">UDP</option>
-              		</select>
-              		</div>
-            	</td>
-            	<td width="21%">
-              		<input type="text" maxlength="11" class="input_12_table" name="autofw_inport_x_0" onKeyPress="return validator.isPortRange(this,event)" autocorrect="off" autocapitalize="off">
-            	</td>
-            	<td width="10%">
-              		<select name="autofw_inproto_x_0" class="input_option">
-              			<option value="TCP">TCP</option>
-              			<option value="UDP">UDP</option>
-              		</select>
-            	</td>
-								<td width="16%">
-									<input type="button" class="add_btn" onClick="addRow_Group(32);" name="" value="">
-								</td>
-							</tr>
-							</table>		
-							
-							<div id="autofw_rulelist_Block"></div>
+          <div id="tableContainer"></div>
 
 			<div class="apply_gen">
 				<input name="button" type="button" class="button_gen" onclick="applyRule();" value="<#CTL_apply#>"/>

@@ -12,7 +12,7 @@ CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/common/include -
 CFLAGS	+= $(if $(WLAN_ComponentIncPath),$(WLAN_ComponentIncPath),$(addprefix -I,$(wildcard $(SRCBASE)/shared/bcmwifi/include)))
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -O2
-LDFLAGS += -L$(TOP)/nvram$(BCMEX) -lnvram
+LDFLAGS += -L$(TOP)/nvram$(BCMEX)${EX7} ${EXTRA_NV_LDFLAGS} -lnvram
 LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += $(EXTRALDFLAGS)
 
@@ -27,6 +27,31 @@ CFLAGS	+= -DBCMINTERNAL
 endif
 CFLAGS	+= -DBCMDBG
 #endif
+
+ifeq ($(RTCONFIG_NOTIFICATION_CENTER),y)
+CFLAGS  += -I$(TOP)/json-c
+CFLAGS  += -I$(TOP)/sqlite
+CFLAGS  += -I$(TOP)/nt_center/lib
+CFLAGS  += -I$(TOP)/nt_center/actMail
+CFLAGS  += -I$(TOP)/wlc_nt
+CFLAGS  += -DASUSWRT_SDK
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+LDFLAGS += -L$(TOP)/sqlite/.libs -lsqlite3 -lpthread -L$(TOP)/nt_center/lib -lnt -lm
+LDFLAGS += -L$(TOP)/wlc_nt -lwlc_nt_client
+else
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
+endif
+
+ifeq ($(RTCONFIG_CFGSYNC),y)
+CFLAGS  += -I$(TOP)/cfg_mnt
+LDFLAGS += -L$(TOP)/cfg_mnt -lcfgmnt
+endif
+
+ifeq ($(RTCONFIG_SW_HW_AUTH), y)
+CFLAGS += -I$(TOP)/sw-hw-auth
+endif
 
 vpath %.c $(SRCBASE)/shared $(WLAN_ComponentSrcDirs)
 

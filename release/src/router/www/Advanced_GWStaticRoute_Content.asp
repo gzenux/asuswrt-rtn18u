@@ -33,10 +33,10 @@ function applyRule(){
 	var tmp_value = "";
 
 	for(i=0; i<rule_num; i++){
-		tmp_value += "<"		
-		for(j=0; j<item_num-1; j++){	
+		tmp_value += "<";
+		for(j=0; j<item_num-1; j++){
 			tmp_value += document.getElementById('sr_rulelist_table').rows[i].cells[j].innerHTML;
-			if(j != item_num-2)	
+			if(j != item_num-2)
 				tmp_value += ">";
 		}
 	}
@@ -45,6 +45,8 @@ function applyRule(){
 
 	document.form.sr_rulelist.value = tmp_value;
 
+	if(based_modelid == "MAP-AC1300" || based_modelid == "MAP-AC2200" || based_modelid == "VZW-AC1300" || based_modelid == "MAP-AC1750")
+		alert("By applying new LAN settings, please reboot all Lyras connected to main Lyra manually.");
 	showLoading();
 	document.form.submit();
 }

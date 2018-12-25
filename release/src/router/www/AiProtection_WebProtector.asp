@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<title><#Web_Title#> - Web Protector</title>
+<title><#Web_Title#> - <#AiProtection_filter#></title>
 <link rel="stylesheet" type="text/css" href="index_style.css"> 
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <link rel="stylesheet" type="text/css" href="device-map/device-map.css">
@@ -70,9 +70,6 @@ var curState = '<% nvram_get("wrs_enable"); %>';
 
 function initial(){
 	show_menu();
-	//show_inner_tab();
-	document.getElementById("_AiProtection_HomeSecurity").innerHTML = '<table><tbody><tr><td><div class="_AiProtection_HomeSecurity"></div></td><td><div style="width:120px;"><#AiProtection_title#></div></td></tr></tbody></table>';
-	document.getElementById("_AiProtection_HomeSecurity").className = "menu_clicked";
 	translate_category_id();
 	genMain_table();
 	if('<% nvram_get("wrs_enable"); %>' == 1)
@@ -330,7 +327,7 @@ function genMain_table(){
 	code += '<th width="5%" height="30px" title="<#select_all#>">';
 	code += '<input id="selAll" type="checkbox" onclick="selectAll(this, 0);" value="">';
 	code += '</th>';
-	code += '<th width="40%">Client Name (MAC address)</th>';/*untranslated*/
+	code += '<th width="40%"><#Client_Name#> (<#PPPConnection_x_MacAddressForISP_itemname#>)</th>';
 	code += '<th width="40%"><#AiProtection_filter_category#></th>';
 	code += '<th width="10%"><#list_add_delete#></th>';
 	code += '</tr>';
@@ -610,8 +607,11 @@ function applyRule(){
 			document.form.action_wait.value = "<% nvram_get("reboot_time"); %>";
 		}	
 	}
-	showLoading();	
-	document.form.submit();
+
+	if(reset_wan_to_fo(document.form, document.form.wrs_enable.value)) {
+		showLoading();
+		document.form.submit();
+	}
 }
 
 function translate_category_id(){
@@ -713,11 +713,37 @@ function show_tm_eula(){
 	if(document.form.preferred_lang.value == "JP"){
 		$.get("JP_tm_eula.htm", function(data){
 			document.getElementById('agreement_panel').innerHTML= data;
+			adjust_TM_eula_height("agreement_panel");
 		});
 	}
+	else if(document.form.preferred_lang.value == "TW"){
+		$.get("tm_eula_TC.htm", function(data){
+			document.getElementById('agreement_panel').innerHTML= data;
+			adjust_TM_eula_height("agreement_panel");
+		});
+	}
+	else if(document.form.preferred_lang.value == "CN"){
+		$.get("tm_eula_SC.htm", function(data){
+			document.getElementById('agreement_panel').innerHTML= data;
+			adjust_TM_eula_height("agreement_panel");
+		});
+	}
+	else if(document.form.preferred_lang.value == "FR"){
+		$.get("tm_eula_FR.htm", function(data){
+			document.getElementById('agreement_panel').innerHTML= data;
+			adjust_TM_eula_height("agreement_panel");
+		});
+	}
+	else if(document.form.preferred_lang.value == "RU"){
+		$.get("tm_eula_RU.htm", function(data){
+			document.getElementById('agreement_panel').innerHTML= data;
+			adjust_TM_eula_height("agreement_panel");
+		});
+	}																			
 	else{
 		$.get("tm_eula.htm", function(data){
 			document.getElementById('agreement_panel').innerHTML= data;
+			adjust_TM_eula_height("agreement_panel");
 		});
 	}
 	dr_advise();
@@ -730,12 +756,15 @@ function cancel(){
 	$('#iphone_switch').animate({backgroundPosition: -37}, "slow", function() {});
 	curState = 0;
 	document.getElementById("hiddenMask").style.visibility = "hidden";
+	htmlbodyforIE = parent.document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
+	htmlbodyforIE[0].style.overflow = "scroll";	  //hidden the Y-scrollbar for preventing from user scroll it.
 }
 
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	document.form.wrs_enable.value = 1;	
 	document.form.wrs_app_enable.value = 1;	
+	document.form.action_wait.value = "15";
 	applyRule();
 }
 
@@ -745,7 +774,7 @@ function eula_confirm(){
 <body onload="initial();" onunload="unload_body();" onselectstart="return false;">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="panel_folder" style="margin-top: -100px;"></div>
+<div id="agreement_panel" class="eula_panel_container"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center"></table>
 	<!--[if lte IE 6.5]><script>alert("<#ALERT_TO_CHANGE_BROWSER#>");</script><![endif]-->

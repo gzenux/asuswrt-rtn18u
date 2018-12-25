@@ -6,30 +6,160 @@
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  * Adjusted by so many folks, it's impossible to keep track.
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+
+//config:config INIT
+//config:	bool "init"
+//config:	default y
+//config:	select FEATURE_SYSLOG
+//config:	help
+//config:	  init is the first program run when the system boots.
+//config:
+//config:config LINUXRC
+//config:	bool "Support running init from within an initrd (not initramfs)"
+//config:	default y
+//config:	select FEATURE_SYSLOG
+//config:	help
+//config:	  Legacy support for running init under the old-style initrd. Allows
+//config:	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
+//config:
+//config:	  This does not apply to initramfs, which runs /init as PID 1 and
+//config:	  requires no special support.
+//config:
+//config:config FEATURE_USE_INITTAB
+//config:	bool "Support reading an inittab file"
+//config:	default y
+//config:	depends on INIT || LINUXRC
+//config:	help
+//config:	  Allow init to read an inittab file when the system boot.
+//config:
+//config:config FEATURE_KILL_REMOVED
+//config:	bool "Support killing processes that have been removed from inittab"
+//config:	default n
+//config:	depends on FEATURE_USE_INITTAB
+//config:	help
+//config:	  When respawn entries are removed from inittab and a SIGHUP is
+//config:	  sent to init, this option will make init kill the processes
+//config:	  that have been removed.
+//config:
+//config:config FEATURE_KILL_DELAY
+//config:	int "How long to wait between TERM and KILL (0 - send TERM only)" if FEATURE_KILL_REMOVED
+//config:	range 0 1024
+//config:	default 0
+//config:	depends on FEATURE_KILL_REMOVED
+//config:	help
+//config:	  With nonzero setting, init sends TERM, forks, child waits N
+//config:	  seconds, sends KILL and exits. Setting it too high is unwise
+//config:	  (child will hang around for too long and could actually kill
+//config:	  the wrong process!)
+//config:
+//config:config FEATURE_INIT_SCTTY
+//config:	bool "Run commands with leading dash with controlling tty"
+//config:	default y
+//config:	depends on INIT || LINUXRC
+//config:	help
+//config:	  If this option is enabled, init will try to give a controlling
+//config:	  tty to any command which has leading hyphen (often it's "-/bin/sh").
+//config:	  More precisely, init will do "ioctl(STDIN_FILENO, TIOCSCTTY, 0)".
+//config:	  If device attached to STDIN_FILENO can be a ctty but is not yet
+//config:	  a ctty for other session, it will become this process' ctty.
+//config:	  This is not the traditional init behavour, but is often what you want
+//config:	  in an embedded system where the console is only accessed during
+//config:	  development or for maintenance.
+//config:	  NB: using cttyhack applet may work better.
+//config:
+//config:config FEATURE_INIT_SYSLOG
+//config:	bool "Enable init to write to syslog"
+//config:	default y
+//config:	depends on INIT || LINUXRC
+//config:
+//config:config FEATURE_EXTRA_QUIET
+//config:	bool "Be _extra_ quiet on boot"
+//config:	default y
+//config:	depends on INIT || LINUXRC
+//config:	help
+//config:	  Prevent init from logging some messages to the console during boot.
+//config:
+//config:config FEATURE_INIT_COREDUMPS
+//config:	bool "Support dumping core for child processes (debugging only)"
+//config:	default y
+//config:	depends on INIT || LINUXRC
+//config:	help
+//config:	  If this option is enabled and the file /.init_enable_core
+//config:	  exists, then init will call setrlimit() to allow unlimited
+//config:	  core file sizes. If this option is disabled, processes
+//config:	  will not generate any core files.
+//config:
+//config:config INIT_TERMINAL_TYPE
+//config:	string "Initial terminal type"
+//config:	default "linux"
+//config:	depends on INIT || LINUXRC
+//config:	help
+//config:	  This is the initial value set by init for the TERM environment
+//config:	  variable. This variable is used by programs which make use of
+//config:	  extended terminal capabilities.
+//config:
+//config:	  Note that on Linux, init attempts to detect serial terminal and
+//config:	  sets TERM to "vt102" if one is found.
+//config:
+//config:config FEATURE_INIT_MODIFY_CMDLINE
+//config:	bool "Modify the command-line to \"init\""
+//config:	default y
+//config:	depends on INIT || LINUXRC
+//config:	help
+//config:	  When launched as PID 1 and after parsing its arguments, init
+//config:	  wipes all the arguments but argv[0] and rewrites argv[0] to
+//config:	  contain only "init", so that its command-line appears solely as
+//config:	  "init" in tools such as ps.
+//config:	  If this option is set to Y, init will keep its original behavior,
+//config:	  otherwise, all the arguments including argv[0] will be preserved,
+//config:	  be they parsed or ignored by init.
+//config:	  The original command-line used to launch init can then be
+//config:	  retrieved in /proc/1/cmdline on Linux, for example.
+
+//applet:IF_INIT(APPLET(init, BB_DIR_SBIN, BB_SUID_DROP))
+//applet:IF_LINUXRC(APPLET_ODDNAME(linuxrc, init, BB_DIR_ROOT, BB_SUID_DROP, linuxrc))
+
+//kbuild:lib-$(CONFIG_INIT) += init.o
+//kbuild:lib-$(CONFIG_LINUXRC) += init.o
+
+#define DEBUG_SEGV_HANDLER 0
 
 #include "libbb.h"
 #include <syslog.h>
-#include <paths.h>
-#include <sys/reboot.h>
 #include <sys/resource.h>
-#include <linux/vt.h>
-#if ENABLE_FEATURE_UTMP
-# include <utmp.h> /* DEAD_PROCESS */
+#ifdef __linux__
+# include <linux/vt.h>
+# include <sys/sysinfo.h>
+#endif
+#include "reboot.h" /* reboot() constants */
+
+#if DEBUG_SEGV_HANDLER
+# undef _GNU_SOURCE
+# define _GNU_SOURCE 1
+# undef __USE_GNU
+# define __USE_GNU 1
+# include <execinfo.h>
+# include <sys/ucontext.h>
 #endif
 
+/* Used only for sanitizing purposes in set_sane_term() below. On systems where
+ * the baud rate is stored in a separate field, we can safely disable them. */
+#ifndef CBAUD
+# define CBAUD 0
+# define CBAUDEX 0
+#endif
 
 /* Was a CONFIG_xxx option. A lot of people were building
  * not fully functional init by switching it on! */
 #define DEBUG_INIT 0
 
-#define COMMAND_SIZE      256
 #define CONSOLE_NAME_SIZE 32
 
 /* Default sysinit script. */
 #ifndef INIT_SCRIPT
-#define INIT_SCRIPT  "/etc/init.d/rcS"
+# define INIT_SCRIPT  "/etc/init.d/rcS"
 #endif
 
 /* Each type of actions can appear many times. They will be
@@ -79,7 +209,7 @@ struct init_action {
 	pid_t pid;
 	uint8_t action_type;
 	char terminal[CONSOLE_NAME_SIZE];
-	char command[COMMAND_SIZE];
+	char command[1];
 };
 
 static struct init_action *init_action_list = NULL;
@@ -89,13 +219,6 @@ static const char *log_console = VC_5;
 enum {
 	L_LOG = 0x1,
 	L_CONSOLE = 0x2,
-#ifndef RB_HALT_SYSTEM
-	RB_HALT_SYSTEM = 0xcdef0123, /* FIXME: this overflows enum */
-	RB_ENABLE_CAD = 0x89abcdef,
-	RB_DISABLE_CAD = 0,
-	RB_POWER_OFF = 0x4321fedc,
-	RB_AUTOBOOT = 0x01234567,
-#endif
 };
 
 /* Print a message to the specified device.
@@ -114,8 +237,8 @@ static void message(int where, const char *fmt, ...)
 	msg[0] = '\r';
 	va_start(arguments, fmt);
 	l = 1 + vsnprintf(msg + 1, sizeof(msg) - 2, fmt, arguments);
-	if (l > sizeof(msg) - 1)
-		l = sizeof(msg) - 1;
+	if (l > sizeof(msg) - 2)
+		l = sizeof(msg) - 2;
 	va_end(arguments);
 
 #if ENABLE_FEATURE_INIT_SYSLOG
@@ -166,7 +289,9 @@ static void message(int where, const char *fmt, ...)
 
 static void console_init(void)
 {
+#ifdef VT_OPENQRY
 	int vtno;
+#endif
 	char *s;
 
 	s = getenv("CONSOLE");
@@ -190,6 +315,7 @@ static void console_init(void)
 	}
 
 	s = getenv("TERM");
+#ifdef VT_OPENQRY
 	if (ioctl(STDIN_FILENO, VT_OPENQRY, &vtno) != 0) {
 		/* Not a linux terminal, probably serial console.
 		 * Force the TERM setting to vt102
@@ -198,8 +324,10 @@ static void console_init(void)
 			putenv((char*)"TERM=vt102");
 		if (!ENABLE_FEATURE_INIT_SYSLOG)
 			log_console = NULL;
-	} else if (!s)
-		putenv((char*)"TERM=linux");
+	} else
+#endif
+	if (!s)
+		putenv((char*)"TERM=" CONFIG_INIT_TERMINAL_TYPE);
 }
 
 /* Set terminal settings to reasonable defaults.
@@ -220,11 +348,17 @@ static void set_sane_term(void)
 	tty.c_cc[VSTOP] = 19;	/* C-s */
 	tty.c_cc[VSUSP] = 26;	/* C-z */
 
+#ifdef __linux__
 	/* use line discipline 0 */
 	tty.c_line = 0;
+#endif
 
 	/* Make it be sane */
-	tty.c_cflag &= CBAUD | CBAUDEX | CSIZE | CSTOPB | PARENB | PARODD;
+#ifndef CRTSCTS
+# define CRTSCTS 0
+#endif
+	/* added CRTSCTS to fix Debian bug 528560 */
+	tty.c_cflag &= CBAUD | CBAUDEX | CSIZE | CSTOPB | PARENB | PARODD | CRTSCTS;
 	tty.c_cflag |= CREAD | HUPCL | CLOCAL;
 
 	/* input modes */
@@ -234,8 +368,7 @@ static void set_sane_term(void)
 	tty.c_oflag = OPOST | ONLCR;
 
 	/* local modes */
-	tty.c_lflag =
-		ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
+	tty.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
 
 	tcsetattr_stdin_TCSANOW(&tty);
 }
@@ -279,7 +412,7 @@ static void reset_sighandlers_and_unblock_sigs(void)
 }
 
 /* Wrapper around exec:
- * Takes string (max COMMAND_SIZE chars).
+ * Takes string.
  * If chars like '>' detected, execs '[-]/bin/sh -c "exec ......."'.
  * Otherwise splits words on whitespace, deals with leading dash,
  * and uses plain exec().
@@ -287,24 +420,32 @@ static void reset_sighandlers_and_unblock_sigs(void)
  */
 static void init_exec(const char *command)
 {
-	char *cmd[COMMAND_SIZE / 2];
-	char buf[COMMAND_SIZE + 6];  /* COMMAND_SIZE+strlen("exec ")+1 */
-	int dash = (command[0] == '-' /* maybe? && command[1] == '/' */);
+	/* +8 allows to write VLA sizes below more efficiently: */
+	unsigned command_size = strlen(command) + 8;
+	/* strlen(command) + strlen("exec ")+1: */
+	char buf[command_size];
+	/* strlen(command) / 2 + 4: */
+	char *cmd[command_size / 2];
+	int dash;
+
+	dash = (command[0] == '-' /* maybe? && command[1] == '/' */);
+	command += dash;
 
 	/* See if any special /bin/sh requiring characters are present */
 	if (strpbrk(command, "~`!$^&*()=|\\{}[];\"'<>?") != NULL) {
-		strcpy(buf, "exec ");
-		strcpy(buf + 5, command + dash); /* excluding "-" */
+		sprintf(buf, "exec %s", command); /* excluding "-" */
 		/* NB: LIBBB_DEFAULT_LOGIN_SHELL define has leading dash */
 		cmd[0] = (char*)(LIBBB_DEFAULT_LOGIN_SHELL + !dash);
 		cmd[1] = (char*)"-c";
 		cmd[2] = buf;
 		cmd[3] = NULL;
+		command = LIBBB_DEFAULT_LOGIN_SHELL + 1;
 	} else {
 		/* Convert command (char*) into cmd (char**, one word per string) */
 		char *word, *next;
 		int i = 0;
-		next = strcpy(buf, command); /* including "-" */
+		next = strcpy(buf, command - dash); /* command including "-" */
+		command = next + dash;
 		while ((word = strsep(&next, " \t")) != NULL) {
 			if (*word != '\0') { /* not two spaces/tabs together? */
 				cmd[i] = word;
@@ -315,14 +456,14 @@ static void init_exec(const char *command)
 	}
 	/* If we saw leading "-", it is interactive shell.
 	 * Try harder to give it a controlling tty.
-	 * And skip "-" in actual exec call. */
-	if (dash) {
+	 */
+	if (ENABLE_FEATURE_INIT_SCTTY && dash) {
 		/* _Attempt_ to make stdin a controlling tty. */
-		if (ENABLE_FEATURE_INIT_SCTTY)
-			ioctl(STDIN_FILENO, TIOCSCTTY, 0 /*only try, don't steal*/);
+		ioctl(STDIN_FILENO, TIOCSCTTY, 0 /*only try, don't steal*/);
 	}
-	BB_EXECVP(cmd[0] + dash, cmd);
-	message(L_LOG | L_CONSOLE, "can't run '%s': %s", cmd[0], strerror(errno));
+	/* Here command never contains the dash, cmd[0] might */
+	BB_EXECVP(command, cmd);
+	message(L_LOG | L_CONSOLE, "can't run '%s': %s", command, strerror(errno));
 	/* returns if execvp fails */
 }
 
@@ -398,7 +539,7 @@ static pid_t run(const struct init_action *a)
 
 	/* Log the process name and args */
 	message(L_LOG, "starting pid %d, tty '%s': '%s'",
-			  getpid(), a->terminal, a->command);
+			getpid(), a->terminal, a->command);
 
 	/* Now run it.  The new program will take over this PID,
 	 * so nothing further in init.c should be run. */
@@ -412,13 +553,13 @@ static struct init_action *mark_terminated(pid_t pid)
 	struct init_action *a;
 
 	if (pid > 0) {
+		update_utmp_DEAD_PROCESS(pid);
 		for (a = init_action_list; a; a = a->next) {
 			if (a->pid == pid) {
 				a->pid = 0;
 				return a;
 			}
 		}
-		update_utmp(pid, DEAD_PROCESS, /*tty_name:*/ NULL, /*username:*/ NULL, /*hostname:*/ NULL);
 	}
 	return NULL;
 }
@@ -483,7 +624,7 @@ static void new_init_action(uint8_t action_type, const char *command, const char
 	 */
 	nextp = &init_action_list;
 	while ((a = *nextp) != NULL) {
-		/* Don't enter action if it's already in the list,
+		/* Don't enter action if it's already in the list.
 		 * This prevents losing running RESPAWNs.
 		 */
 		if (strcmp(a->command, command) == 0
@@ -495,25 +636,26 @@ static void new_init_action(uint8_t action_type, const char *command, const char
 			while (*nextp != NULL)
 				nextp = &(*nextp)->next;
 			a->next = NULL;
-			break;
+			goto append;
 		}
 		nextp = &a->next;
 	}
 
-	if (!a)
-		a = xzalloc(sizeof(*a));
+	a = xzalloc(sizeof(*a) + strlen(command));
+
 	/* Append to the end of the list */
+ append:
 	*nextp = a;
 	a->action_type = action_type;
-	safe_strncpy(a->command, command, sizeof(a->command));
+	strcpy(a->command, command);
 	safe_strncpy(a->terminal, cons, sizeof(a->terminal));
-	dbg_message(L_LOG | L_CONSOLE, "command='%s' action=%d tty='%s'\n",
+	dbg_message(L_LOG | L_CONSOLE, "command='%s' action=%x tty='%s'\n",
 		a->command, a->action_type, a->terminal);
 }
 
 /* NOTE that if CONFIG_FEATURE_USE_INITTAB is NOT defined,
  * then parse_inittab() simply adds in some default
- * actions(i.e., runs INIT_SCRIPT and then starts a pair
+ * actions (i.e., runs INIT_SCRIPT and then starts a pair
  * of "askfirst" shells).  If CONFIG_FEATURE_USE_INITTAB
  * _is_ defined, but /etc/inittab is missing, this
  * results in the same set of default behaviors.
@@ -528,23 +670,22 @@ static void parse_inittab(void)
 #endif
 	{
 		/* No inittab file - set up some default behavior */
-		/* Reboot on Ctrl-Alt-Del */
-		new_init_action(CTRLALTDEL, "reboot", "");
-		/* Umount all filesystems on halt/reboot */
-		new_init_action(SHUTDOWN, "umount -a -r", "");
-		/* Swapoff on halt/reboot */
-		if (ENABLE_SWAPONOFF)
-			new_init_action(SHUTDOWN, "swapoff -a", "");
-		/* Prepare to restart init when a QUIT is received */
-		new_init_action(RESTART, "init", "");
+		/* Sysinit */
+		new_init_action(SYSINIT, INIT_SCRIPT, "");
 		/* Askfirst shell on tty1-4 */
 		new_init_action(ASKFIRST, bb_default_login_shell, "");
 //TODO: VC_1 instead of ""? "" is console -> ctty problems -> angry users
 		new_init_action(ASKFIRST, bb_default_login_shell, VC_2);
 		new_init_action(ASKFIRST, bb_default_login_shell, VC_3);
 		new_init_action(ASKFIRST, bb_default_login_shell, VC_4);
-		/* sysinit */
-		new_init_action(SYSINIT, INIT_SCRIPT, "");
+		/* Reboot on Ctrl-Alt-Del */
+		new_init_action(CTRLALTDEL, "reboot", "");
+		/* Umount all filesystems on halt/reboot */
+		new_init_action(SHUTDOWN, "umount -a -r", "");
+		/* Swapoff on halt/reboot */
+		new_init_action(SHUTDOWN, "swapoff -a", "");
+		/* Restart init when a QUIT is received */
+		new_init_action(RESTART, "init", "");
 		return;
 	}
 
@@ -659,7 +800,7 @@ static void run_shutdown_and_kill_processes(void)
  * and only one will be remembered and acted upon.
  */
 
-/* The SIGUSR[12]/SIGTERM handler */
+/* The SIGPWR/SIGUSR[12]/SIGTERM handler */
 static void halt_reboot_pwoff(int sig) NORETURN;
 static void halt_reboot_pwoff(int sig)
 {
@@ -692,7 +833,7 @@ static void halt_reboot_pwoff(int sig)
 
 /* Handler for QUIT - exec "restart" action,
  * else (no such action defined) do nothing */
-static void restart_handler(int sig UNUSED_PARAM)
+static void exec_restart_action(void)
 {
 	struct init_action *a;
 
@@ -709,10 +850,12 @@ static void restart_handler(int sig UNUSED_PARAM)
 
 		run_shutdown_and_kill_processes();
 
+#ifdef RB_ENABLE_CAD
 		/* Allow Ctrl-Alt-Del to reboot the system.
 		 * This is how kernel sets it up for init, we follow suit.
 		 */
 		reboot(RB_ENABLE_CAD); /* misnomer */
+#endif
 
 		if (open_stdio_to_tty(a->terminal)) {
 			dbg_message(L_CONSOLE, "Trying to re-exec %s", a->command);
@@ -802,10 +945,17 @@ static void reload_inittab(void)
 
 	/* Remove stale entries and SYSINIT entries.
 	 * We never rerun SYSINIT entries anyway,
-	 * removing them too saves a few bytes */
+	 * removing them too saves a few bytes
+	 */
 	nextp = &init_action_list;
 	while ((a = *nextp) != NULL) {
-		if ((a->action_type & ~SYSINIT) == 0) {
+		/*
+		 * Why pid == 0 check?
+		 * Process can be removed from inittab and added *later*.
+		 * If we delete its entry but process still runs,
+		 * duplicate is spawned when the entry is re-added.
+		 */
+		if ((a->action_type & ~SYSINIT) == 0 && a->pid == 0) {
 			*nextp = a->next;
 			free(a);
 		} else {
@@ -836,29 +986,97 @@ static int check_delayed_sigs(void)
 #endif
 		if (sig == SIGINT)
 			run_actions(CTRLALTDEL);
+		if (sig == SIGQUIT) {
+			exec_restart_action();
+			/* returns only if no restart action defined */
+		}
+		if ((1 << sig) & (0
+#ifdef SIGPWR
+		    + (1 << SIGPWR)
+#endif
+		    + (1 << SIGUSR1)
+		    + (1 << SIGUSR2)
+		    + (1 << SIGTERM)
+		)) {
+			halt_reboot_pwoff(sig);
+		}
 	}
+}
+
+#if DEBUG_SEGV_HANDLER
+static
+void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
+{
+	long ip;
+	ucontext_t *uc;
+
+	uc = ucontext;
+	ip = uc->uc_mcontext.gregs[REG_EIP];
+	fdprintf(2, "signal:%d address:0x%lx ip:0x%lx\n",
+			sig,
+			/* this is void*, but using %p would print "(null)"
+			 * even for ptrs which are not exactly 0, but, say, 0x123:
+			 */
+			(long)info->si_addr,
+			ip);
+	{
+		/* glibc extension */
+		void *array[50];
+		int size;
+		size = backtrace(array, 50);
+		backtrace_symbols_fd(array, size, 2);
+	}
+	for (;;) sleep(9999);
+}
+#endif
+
+static void sleep_much(void)
+{
+        sleep(30 * 24*60*60);
 }
 
 int init_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int init_main(int argc UNUSED_PARAM, char **argv)
 {
-	die_sleep = 30 * 24*60*60; /* if xmalloc would ever die... */
-
 	if (argv[1] && strcmp(argv[1], "-q") == 0) {
 		return kill(1, SIGHUP);
 	}
 
+#if DEBUG_SEGV_HANDLER
+	{
+		struct sigaction sa;
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_sigaction = handle_sigsegv;
+		sa.sa_flags = SA_SIGINFO;
+		sigaction(SIGSEGV, &sa, NULL);
+		sigaction(SIGILL, &sa, NULL);
+		sigaction(SIGFPE, &sa, NULL);
+		sigaction(SIGBUS, &sa, NULL);
+	}
+#endif
+
 	if (!DEBUG_INIT) {
 		/* Expect to be invoked as init with PID=1 or be invoked as linuxrc */
 		if (getpid() != 1
-		 && (!ENABLE_FEATURE_INITRD || !strstr(applet_name, "linuxrc"))
+		 && (!ENABLE_LINUXRC || applet_name[0] != 'l') /* not linuxrc? */
 		) {
-			bb_show_usage();
+			bb_error_msg_and_die("must be run as PID 1");
 		}
+#ifdef RB_DISABLE_CAD
 		/* Turn off rebooting via CTL-ALT-DEL - we get a
 		 * SIGINT on CAD so we can shut things down gracefully... */
 		reboot(RB_DISABLE_CAD); /* misnomer */
+#endif
 	}
+
+	/* If, say, xmalloc would ever die, we don't want to oops kernel
+	 * by exiting.
+	 * NB: we set die_func *after* PID 1 check and bb_show_usage.
+	 * Otherwise, for example, "init u" ("please rexec yourself"
+	 * command for sysvinit) will show help text (which isn't too bad),
+	 * *and sleep forever* (which is bad!)
+	 */
+	die_func = sleep_much;
 
 	/* Figure out where the default console should be */
 	console_init();
@@ -880,8 +1098,13 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 	message(L_CONSOLE | L_LOG, "init started: %s", bb_banner);
 #endif
 
+#if 0
+/* It's 2013, does anyone really still depend on this? */
+/* If you do, consider adding swapon to sysinit actions then! */
+/* struct sysinfo is linux-specific */
+# ifdef __linux__
 	/* Make sure there is enough memory to do something useful. */
-	if (ENABLE_SWAPONOFF) {
+	/*if (ENABLE_SWAPONOFF) - WRONG: we may have non-bbox swapon*/ {
 		struct sysinfo info;
 
 		if (sysinfo(&info) == 0
@@ -895,6 +1118,8 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 			run_actions(SYSINIT);   /* wait and removing */
 		}
 	}
+# endif
+#endif
 
 	/* Check if we are supposed to be in single user mode */
 	if (argv[1]
@@ -908,8 +1133,8 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 
 		/* NOTE that if CONFIG_FEATURE_USE_INITTAB is NOT defined,
 		 * then parse_inittab() simply adds in some default
-		 * actions(i.e., INIT_SCRIPT and a pair
-		 * of "askfirst" shells */
+		 * actions (i.e., INIT_SCRIPT and a pair
+		 * of "askfirst" shells) */
 		parse_inittab();
 	}
 
@@ -924,27 +1149,22 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 			/* SELinux in enforcing mode but load_policy failed */
 			message(L_CONSOLE, "can't load SELinux Policy. "
 				"Machine is in enforcing mode. Halting now.");
-			exit(EXIT_FAILURE);
+			return EXIT_FAILURE;
 		}
 	}
 #endif
 
-	/* Make the command line just say "init"  - thats all, nothing else */
-	strncpy(argv[0], "init", strlen(argv[0]));
-	/* Wipe argv[1]-argv[N] so they don't clutter the ps listing */
-	while (*++argv)
-		memset(*argv, 0, strlen(*argv));
+	if (ENABLE_FEATURE_INIT_MODIFY_CMDLINE) {
+		/* Make the command line just say "init"  - that's all, nothing else */
+		strncpy(argv[0], "init", strlen(argv[0]));
+		/* Wipe argv[1]-argv[N] so they don't clutter the ps listing */
+		while (*++argv)
+			nuke_str(*argv);
+	}
 
 	/* Set up signal handlers */
 	if (!DEBUG_INIT) {
 		struct sigaction sa;
-
-		bb_signals(0
-			+ (1 << SIGUSR1) /* halt */
-			+ (1 << SIGTERM) /* reboot */
-			+ (1 << SIGUSR2) /* poweroff */
-			, halt_reboot_pwoff);
-		signal(SIGQUIT, restart_handler); /* re-exec another init */
 
 		/* Stop handler must allow only SIGCONT inside itself */
 		memset(&sa, 0, sizeof(sa));
@@ -960,17 +1180,23 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 		 */
 		sigaction_set(SIGSTOP, &sa); /* pause */
 
-		/* SIGINT (Ctrl-Alt-Del) must interrupt wait(),
+		/* These signals must interrupt wait(),
 		 * setting handler without SA_RESTART flag.
 		 */
-		bb_signals_recursive_norestart((1 << SIGINT), record_signo);
+		bb_signals_recursive_norestart(0
+			+ (1 << SIGINT)  /* Ctrl-Alt-Del */
+			+ (1 << SIGQUIT) /* re-exec another init */
+#ifdef SIGPWR
+			+ (1 << SIGPWR)  /* halt */
+#endif
+			+ (1 << SIGUSR1) /* halt */
+			+ (1 << SIGTERM) /* reboot */
+			+ (1 << SIGUSR2) /* poweroff */
+#if ENABLE_FEATURE_USE_INITTAB
+			+ (1 << SIGHUP)  /* reread /etc/inittab */
+#endif
+			, record_signo);
 	}
-
-	/* Set up "reread /etc/inittab" handler.
-	 * Handler is set up without SA_RESTART, it will interrupt syscalls.
-	 */
-	if (!DEBUG_INIT && ENABLE_FEATURE_USE_INITTAB)
-		bb_signals_recursive_norestart((1 << SIGHUP), record_signo);
 
 	/* Now run everything that needs to be run */
 	/* First run the sysinit command */
@@ -1028,3 +1254,138 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 		}
 	} /* while (1) */
 }
+
+//usage:#define linuxrc_trivial_usage NOUSAGE_STR
+//usage:#define linuxrc_full_usage ""
+
+//usage:#define init_trivial_usage
+//usage:       ""
+//usage:#define init_full_usage "\n\n"
+//usage:       "Init is the first process started during boot. It never exits."
+//usage:	IF_FEATURE_USE_INITTAB(
+//usage:   "\n""It (re)spawns children according to /etc/inittab."
+//usage:	)
+//usage:	IF_NOT_FEATURE_USE_INITTAB(
+//usage:   "\n""This version of init doesn't use /etc/inittab,"
+//usage:   "\n""has fixed set of processed to run."
+//usage:	)
+//usage:
+//usage:#define init_notes_usage
+//usage:	"This version of init is designed to be run only by the kernel.\n"
+//usage:	"\n"
+//usage:	"BusyBox init doesn't support multiple runlevels. The runlevels field of\n"
+//usage:	"the /etc/inittab file is completely ignored by BusyBox init. If you want\n"
+//usage:	"runlevels, use sysvinit.\n"
+//usage:	"\n"
+//usage:	"BusyBox init works just fine without an inittab. If no inittab is found,\n"
+//usage:	"it has the following default behavior:\n"
+//usage:	"\n"
+//usage:	"	::sysinit:/etc/init.d/rcS\n"
+//usage:	"	::askfirst:/bin/sh\n"
+//usage:	"	::ctrlaltdel:/sbin/reboot\n"
+//usage:	"	::shutdown:/sbin/swapoff -a\n"
+//usage:	"	::shutdown:/bin/umount -a -r\n"
+//usage:	"	::restart:/sbin/init\n"
+//usage:	"	tty2::askfirst:/bin/sh\n"
+//usage:	"	tty3::askfirst:/bin/sh\n"
+//usage:	"	tty4::askfirst:/bin/sh\n"
+//usage:	"\n"
+//usage:	"If you choose to use an /etc/inittab file, the inittab entry format is as follows:\n"
+//usage:	"\n"
+//usage:	"	<id>:<runlevels>:<action>:<process>\n"
+//usage:	"\n"
+//usage:	"	<id>:\n"
+//usage:	"\n"
+//usage:	"		WARNING: This field has a non-traditional meaning for BusyBox init!\n"
+//usage:	"		The id field is used by BusyBox init to specify the controlling tty for\n"
+//usage:	"		the specified process to run on. The contents of this field are\n"
+//usage:	"		appended to \"/dev/\" and used as-is. There is no need for this field to\n"
+//usage:	"		be unique, although if it isn't you may have strange results. If this\n"
+//usage:	"		field is left blank, then the init's stdin/out will be used.\n"
+//usage:	"\n"
+//usage:	"	<runlevels>:\n"
+//usage:	"\n"
+//usage:	"		The runlevels field is completely ignored.\n"
+//usage:	"\n"
+//usage:	"	<action>:\n"
+//usage:	"\n"
+//usage:	"		Valid actions include: sysinit, respawn, askfirst, wait,\n"
+//usage:	"		once, restart, ctrlaltdel, and shutdown.\n"
+//usage:	"\n"
+//usage:	"		The available actions can be classified into two groups: actions\n"
+//usage:	"		that are run only once, and actions that are re-run when the specified\n"
+//usage:	"		process exits.\n"
+//usage:	"\n"
+//usage:	"		Run only-once actions:\n"
+//usage:	"\n"
+//usage:	"			'sysinit' is the first item run on boot. init waits until all\n"
+//usage:	"			sysinit actions are completed before continuing. Following the\n"
+//usage:	"			completion of all sysinit actions, all 'wait' actions are run.\n"
+//usage:	"			'wait' actions, like 'sysinit' actions, cause init to wait until\n"
+//usage:	"			the specified task completes. 'once' actions are asynchronous,\n"
+//usage:	"			therefore, init does not wait for them to complete. 'restart' is\n"
+//usage:	"			the action taken to restart the init process. By default this should\n"
+//usage:	"			simply run /sbin/init, but can be a script which runs pivot_root or it\n"
+//usage:	"			can do all sorts of other interesting things. The 'ctrlaltdel' init\n"
+//usage:	"			actions are run when the system detects that someone on the system\n"
+//usage:	"			console has pressed the CTRL-ALT-DEL key combination. Typically one\n"
+//usage:	"			wants to run 'reboot' at this point to cause the system to reboot.\n"
+//usage:	"			Finally the 'shutdown' action specifies the actions to taken when\n"
+//usage:	"			init is told to reboot. Unmounting filesystems and disabling swap\n"
+//usage:	"			is a very good here.\n"
+//usage:	"\n"
+//usage:	"		Run repeatedly actions:\n"
+//usage:	"\n"
+//usage:	"			'respawn' actions are run after the 'once' actions. When a process\n"
+//usage:	"			started with a 'respawn' action exits, init automatically restarts\n"
+//usage:	"			it. Unlike sysvinit, BusyBox init does not stop processes from\n"
+//usage:	"			respawning out of control. The 'askfirst' actions acts just like\n"
+//usage:	"			respawn, except that before running the specified process it\n"
+//usage:	"			displays the line \"Please press Enter to activate this console.\"\n"
+//usage:	"			and then waits for the user to press enter before starting the\n"
+//usage:	"			specified process.\n"
+//usage:	"\n"
+//usage:	"		Unrecognized actions (like initdefault) will cause init to emit an\n"
+//usage:	"		error message, and then go along with its business. All actions are\n"
+//usage:	"		run in the order they appear in /etc/inittab.\n"
+//usage:	"\n"
+//usage:	"	<process>:\n"
+//usage:	"\n"
+//usage:	"		Specifies the process to be executed and its command line.\n"
+//usage:	"\n"
+//usage:	"Example /etc/inittab file:\n"
+//usage:	"\n"
+//usage:	"	# This is run first except when booting in single-user mode\n"
+//usage:	"	#\n"
+//usage:	"	::sysinit:/etc/init.d/rcS\n"
+//usage:	"	\n"
+//usage:	"	# /bin/sh invocations on selected ttys\n"
+//usage:	"	#\n"
+//usage:	"	# Start an \"askfirst\" shell on the console (whatever that may be)\n"
+//usage:	"	::askfirst:-/bin/sh\n"
+//usage:	"	# Start an \"askfirst\" shell on /dev/tty2-4\n"
+//usage:	"	tty2::askfirst:-/bin/sh\n"
+//usage:	"	tty3::askfirst:-/bin/sh\n"
+//usage:	"	tty4::askfirst:-/bin/sh\n"
+//usage:	"	\n"
+//usage:	"	# /sbin/getty invocations for selected ttys\n"
+//usage:	"	#\n"
+//usage:	"	tty4::respawn:/sbin/getty 38400 tty4\n"
+//usage:	"	tty5::respawn:/sbin/getty 38400 tty5\n"
+//usage:	"	\n"
+//usage:	"	\n"
+//usage:	"	# Example of how to put a getty on a serial line (for a terminal)\n"
+//usage:	"	#\n"
+//usage:	"	#::respawn:/sbin/getty -L ttyS0 9600 vt100\n"
+//usage:	"	#::respawn:/sbin/getty -L ttyS1 9600 vt100\n"
+//usage:	"	#\n"
+//usage:	"	# Example how to put a getty on a modem line\n"
+//usage:	"	#::respawn:/sbin/getty 57600 ttyS2\n"
+//usage:	"	\n"
+//usage:	"	# Stuff to do when restarting the init process\n"
+//usage:	"	::restart:/sbin/init\n"
+//usage:	"	\n"
+//usage:	"	# Stuff to do before rebooting\n"
+//usage:	"	::ctrlaltdel:/sbin/reboot\n"
+//usage:	"	::shutdown:/bin/umount -a -r\n"
+//usage:	"	::shutdown:/sbin/swapoff -a\n"

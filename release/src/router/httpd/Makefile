@@ -1,9 +1,18 @@
 include ../common.mak
 
 CFLAGS += -Os -Wall $(EXTRACFLAGS)
-CFLAGS += -I$(SRCBASE) -I$(SRCBASE)/include -I. -I$(TOP)/shared -I$(TOP)/zlib
+CFLAGS += $(PRIVATE_EXTRACFLAGS)
+CFLAGS += -I$(SRCBASE) -I. -I$(SRCBASE)/include -I$(TOP)/shared -I$(TOP)/zlib -I$(TOP)/networkmap
 CFLAGS += -I$(TOP)/push_log
 CFLAGS += -DASUS_DDNS -DTRANSLATE_ON_FLY -DFLASH_EMULATOR -DLinux -DWSC 
+
+ifeq ($(RTCONFIG_NETOOL),y)
+CFLAGS += -I$(TOP)/rc
+endif
+
+ifeq ($(RTCONFIG_VPN_FUSION),y)
+CFLAGS += -I$(TOP)/rc
+endif
 
 ifeq ($(RTCONFIG_BCM_7114),y)
 CFLAGS += -I$(SRCBASE)/../dhd/components/shared/
@@ -19,6 +28,19 @@ CFLAGS += -DQCA_WPS
 CFLAGS += -I$(TOP)/shared/sysdeps/qca -I$(TOP)/wireless_tools
 endif
 
+ifeq ($(CONFIG_REALTEK),y)
+CFLAGS += -I$(TOP)/shared/sysdeps/realtek
+endif
+
+ifeq ($(RTCONFIG_ALPINE),y)
+CFLAGS += -DALPINE_WPS
+CFLAGS += -I$(TOP)/httpd/sysdeps -I$(TOP)/shared/sysdeps/alpine -I$(TOP)/wireless_tools
+endif
+ifeq ($(RTCONFIG_LANTIQ),y)
+CFLAGS += -DLANTIQ_WPS
+CFLAGS += -I$(TOP)/shared/sysdeps/lantiq -I$(TOP)/wireless_tools
+endif
+
 include $(SRCBASE)/.config
 
 ifeq ($(RTN11P)$(RTN300),y)
@@ -29,7 +51,7 @@ ifeq ($(RTN14U),y)
 CFLAGS += -DBAND_2G_ONLY
 endif
 
-ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN300)$(RTN54U)$(RTAC1200HP)$(RTN56UB1)$(RTN56UB2)$(RTAC54U),y)
+ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN300)$(RTN54U)$(RTAC1200HP)$(RTN56UB1)$(RTN56UB2)$(RTAC54U)$(RTAC1200)$(RTAC1200GA1)$(RTAC1200GU),y)
 CFLAGS += -DRA_ESW
 endif
 
@@ -38,12 +60,20 @@ CFLAGS += -DDNSMASQ
 endif
 
 ifeq ($(RTCONFIG_BWDPI),y)
-CFLAGS += -I$(TOP)/bwdpi/ -I$(TOP)/sqlite -I$(TOP)/bwdpi_sqlite
+CFLAGS += -I$(TOP)/sqlite
+CFLAGS += -I$(TOP)/bwdpi_source/src/tdts_udb_sample
+CFLAGS += -I$(TOP)/bwdpi_source/src/tdts_udb_sample/linux
+CFLAGS += -I$(TOP)/bwdpi_source/include
+CFLAGS += -I$(TOP)/bwdpi_source/asus_include
 endif
 
 ifeq ($(RTCONFIG_TRAFFIC_LIMITER),y)
 CFLAGS += -I$(TOP)/traffic_limiter
 CFLAGS += -I$(TOP)/sqlite
+endif
+
+ifeq ($(RTCONFIG_SW_HW_AUTH), y)
+CFLAGS += -I$(TOP)/sw-hw-auth
 endif
 
 ifeq ($(or $(RTAC68A),$(RT4GAC68U)),y)
@@ -55,15 +85,25 @@ OBJS += web.o common.o nvram_f.o
 OBJS += aspbw.o initial_web_hook.o
 OBJS += apps.o
 
-ifeq ($(CONFIG_RALINK),y)
+ifeq ($(CONFIG_REALTEK),y)
+OBJS += web-realtek.o
+else ifeq ($(CONFIG_RALINK),y)
 OBJS += web-ralink.o
 else ifeq ($(CONFIG_QCA),y)
 OBJS += web-qca.o
+else ifeq ($(CONFIG_ALPINE),y)
+OBJS += web-alpine.o
+else ifeq ($(CONFIG_LANTIQ),y)
+OBJS += web-lantiq.o
 else
 OBJS += web-broadcom.o
 ifeq ($(RTCONFIG_QTN),y)
 OBJS += find_host_addr.o
 endif
+endif
+
+ifeq ($(RTCONFIG_QSR10G),y)
+OBJS += web-qsr10g.o
 endif
 
 ifeq ($(RTCONFIG_DSL),y)
@@ -77,22 +117,27 @@ ifeq ($(RTCONFIG_GEOIP),y)
 OBJS += geoiplookup.o
 endif
 
+ifeq ($(and $(HND_ROUTER),$(RTCONFIG_VISUALIZATION)),y)
+OBJS += vis_gui.o
+endif
+
 ifeq ($(RTCONFIG_HTTPS),y)
 OBJS += $(if $(wildcard pwenc.c), pwenc.o, prebuild/pwenc.o)
 endif
 
 OBJS += $(if $(wildcard web_hook.c), web_hook.o, prebuild/web_hook.o)
 
-LIBS = -L$(TOP)/nvram${BCMEX} -lnvram -L$(TOP)/shared -lshared
+LIBS = -L$(TOP)/nvram${BCMEX}$(EX7) -lnvram -L$(TOP)/shared -lshared
+ifeq ($(HND_ROUTER),y)
+LIBS += -L$(TOP)/wlcsm -lwlcsm
+endif
+
 # for ceil()
 LIBS += -lm
 
 ifeq ($(RTCONFIG_PUSH_EMAIL),y)
+CFLAGS += -L$(TOP)/openssl/include
 LIBS += -L$(TOP)/openssl -lcrypto -lssl -ldl
-LIBS += -L$(TOP)/curl-7.21.7/lib/.libs -lcurl
-LIBS += -L$(TOP)/libxml2/.libs -lxml2
-LIBS += -L$(TOP)/wb -lws
-LIBS += -L$(TOP)/push_log -lpush_log
 endif
 
 ifeq ($(RTCONFIG_BCMARM),y)
@@ -103,6 +148,10 @@ ifeq ($(RTCONFIG_QTN),y)
 CFLAGS += -I$(TOP)/libqcsapi_client -I$(TOP)/shared/sysdeps/qtn
 LIBS += -L$(TOP)/libqcsapi_client -lqcsapi_client
 endif
+endif
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
 endif
 
 ifeq ($(RTCONFIG_USB),y)
@@ -123,6 +172,8 @@ endif
 
 ifeq ($(RTCONFIG_OPENVPN),y)
 OBJS += openvpn_options.o
+CFLAGS += -I$(TOP)/libvpn
+LIBS += -L$(TOP)/libvpn -lvpn
 LIBS += -L$(TOP)/openssl -lssl -lcrypto -ldl
 endif
 
@@ -130,8 +181,8 @@ CFLAGS += -I$(TOP)/json-c
 LIBS += -L$(TOP)/json-c/.libs -ljson-c
 
 ifeq ($(RTCONFIG_BWDPI),y)
-LIBS += -L$(TOP)/bwdpi -lbwdpi
-LIBS += -L$(TOP)/bwdpi_sqlite -lbwdpi_sql
+LIBS += -L$(TOP)/bwdpi_source/asus -lbwdpi
+LIBS += -L$(TOP)/bwdpi_source/asus_sql -lbwdpi_sql
 LIBS += -L$(TOP)/sqlite/.libs -lsqlite3
 LIBS += -lpthread
 endif
@@ -166,6 +217,41 @@ LIBS += -L$(TOP)/sqlite/.libs -lsqlite3
 LIBS += -lpthread #Depend on sqlite
 endif
 
+ifeq ($(RTCONFIG_NOTIFICATION_CENTER),y)
+ifeq ($(or $(RTCONFIG_IFTTT),$(RTCONFIG_ALEXA)),y)
+CFLAGS  += -I$(TOP)/aaews
+endif
+endif
+
+ifeq ($(RTCONFIG_LETSENCRYPT),y)
+CFLAGS  += -I$(TOP)/libletsencrypt
+LIBS += -L$(TOP)/libletsencrypt -lletsencrypt
+endif
+
+ifeq ($(RTCONFIG_PERMISSION_MANAGEMENT),y)
+CFLAGS  += -I$(TOP)/sqlCipher
+CFLAGS  += -I$(TOP)/PMS_DBapis
+LIBS += -L$(TOP)/PMS_DBapis -lpms_sql
+LIBS += -L $(TOP)/sqlCipher/.libs -lsqlcipher
+endif
+
+ifeq ($(RTCONFIG_CFGSYNC),y)
+CFLAGS += -I$(TOP)/cfg_mnt
+LIBS += -L$(TOP)/cfg_mnt -lcfgmnt
+endif
+
+ifeq ($(RTCONFIG_QSR10G),y)
+CFLAGS += -I$(TOP)/libqcsapi_client_10g
+LIBS += -L$(TOP)/libqcsapi_client_10g -lqcsapi_client
+endif
+
+CFLAGS += -I$(TOP)/libpasswd
+LIBS += -L$(TOP)/libpasswd -lpasswd
+
+ifeq ($(RTCONFIG_LANTIQ),y)
+LIBS += -L$(TOP)/fapi_wlan_common-1.0.0.1 -lfapiwlancommon -ldl -L$(TOP)/libhelper-1.4.0.2 -lhelper -L$(TOP)/libfapi-0.1 -lfapi -L$(TOP)/wireless_tools/ -liw
+endif
+
 all: httpd #test_apps
 
 #test_apps: apps.c
@@ -173,7 +259,7 @@ all: httpd #test_apps
 
 httpd: $(OBJS)
 	@echo " [httpd] CC $@"
-	@$(CC) -o $@ $(OBJS) $(LIBS)
+	@$(CC) -o $@ $(OBJS) $(LIBS) $(EXTRALDFLAGS)
 
 	$(SIZECHECK)
 	$(CPTMP)

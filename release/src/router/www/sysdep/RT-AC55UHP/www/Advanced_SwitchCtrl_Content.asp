@@ -22,20 +22,22 @@
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
+	var nataccel = '<% nvram_get("qca_sfe"); %>';
+	var nataccel_status = '<% nat_accel_status(); %>';
+
+	if(nataccel == '1' && nataccel_status == '1'){
+		document.getElementById("natAccelDesc").innerHTML = "<#NAT_Acceleration_enable#>";
+	}
+	else{
+		document.getElementById("natAccelDesc").innerHTML = "<#NAT_Acceleration_ctf_disable#>";
+	}
 	show_menu();
 }
 
 function applyRule(){
-		if(valid_form()){
-				showLoading();
-				document.form.submit();	
-		}
+	showLoading();
+	document.form.submit();
 }
-
-function valid_form(){
-	return true;	
-}
-
 </script>
 </head>
 
@@ -94,20 +96,22 @@ function valid_form(){
 	<tr>
 		  <td bgcolor="#4D595D" valign="top"  >
 		  <div>&nbsp;</div>
-		  <div class="formfonttitle"><#menu5_2#> - Switch Control</div>
+		  <div class="formfonttitle"><#menu5_2#> - <#Switch_itemname#></div>
       <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-      <div class="formfontdesc">Setting <#Web_Title2#> switch control.</div>
+      <div class="formfontdesc"><#SwitchCtrl_desc#></div>
 		  
 		  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 		  	
       	<tr>
 		<th><#NAT_Acceleration#> (IPv4 Only)<!--untranslated--></th>
           <td>
-						<select name="qca_sfe" class="input_option">
-							<option class="content_input_fd" value="0" <% nvram_match("qca_sfe", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-							<option class="content_input_fd" value="1" <% nvram_match("qca_sfe", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
-						</select>			
-          </td>
+		<select name="qca_sfe" class="input_option">
+			<option class="content_input_fd" value="0" <% nvram_match("qca_sfe", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+			<option class="content_input_fd" value="1" <% nvram_match("qca_sfe", "1","selected"); %>><#Auto#></option>
+		</select>
+		&nbsp
+		<span id="natAccelDesc"></span>
+	  </td>
       	</tr>					
       <tr>
       <th><!--a class="hintstyle" href="javascript:void(0);" onClick="openHint(4,4);"--><#jumbo_frame#><!--/a--></th>

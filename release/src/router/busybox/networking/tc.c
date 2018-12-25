@@ -1,15 +1,35 @@
 /* vi: set sw=4 ts=4: */
 /*
- * tc.c		"tc" utility frontend.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
- *
- * Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
+ * Authors: Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
  *
  * Bernhard Reutner-Fischer adjusted for busybox
  */
 
+//usage:#define tc_trivial_usage
+/* //usage: "[OPTIONS] OBJECT CMD [dev STRING]" */
+//usage:	"OBJECT CMD [dev STRING]"
+//usage:#define tc_full_usage "\n\n"
+//usage:	"OBJECT: {qdisc|class|filter}\n"
+//usage:	"CMD: {add|del|change|replace|show}\n"
+//usage:	"\n"
+//usage:	"qdisc [ handle QHANDLE ] [ root |"IF_FEATURE_TC_INGRESS(" ingress |")" parent CLASSID ]\n"
+/* //usage: "[ estimator INTERVAL TIME_CONSTANT ]\n" */
+//usage:	"	[ [ QDISC_KIND ] [ help | OPTIONS ] ]\n"
+//usage:	"	QDISC_KIND := { [p|b]fifo | tbf | prio | cbq | red | etc. }\n"
+//usage:	"qdisc show [ dev STRING ]"IF_FEATURE_TC_INGRESS(" [ingress]")"\n"
+//usage:	"class [ classid CLASSID ] [ root | parent CLASSID ]\n"
+//usage:	"	[ [ QDISC_KIND ] [ help | OPTIONS ] ]\n"
+//usage:	"class show [ dev STRING ] [ root | parent CLASSID ]\n"
+//usage:	"filter [ pref PRIO ] [ protocol PROTO ]\n"
+/* //usage: "\t[ estimator INTERVAL TIME_CONSTANT ]\n" */
+//usage:	"	[ root | classid CLASSID ] [ handle FILTERID ]\n"
+//usage:	"	[ [ FILTER_TYPE ] [ help | OPTIONS ] ]\n"
+//usage:	"filter show [ dev STRING ] [ root | parent CLASSID ]"
+
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #include "libiproute/utils.h"
 #include "libiproute/ip_common.h"
@@ -39,22 +59,20 @@
 
 struct globals {
 	int filter_ifindex;
-	__u32 filter_qdisc;
-	__u32 filter_parent;
-	__u32 filter_prio;
-	__u32 filter_proto;
+	uint32_t filter_qdisc;
+	uint32_t filter_parent;
+	uint32_t filter_prio;
+	uint32_t filter_proto;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define filter_ifindex (G.filter_ifindex)
 #define filter_qdisc (G.filter_qdisc)
 #define filter_parent (G.filter_parent)
 #define filter_prio (G.filter_prio)
 #define filter_proto (G.filter_proto)
-
-void BUG_tc_globals_too_big(void);
 #define INIT_G() do { \
-	if (sizeof(G) > COMMON_BUFSIZE) \
-		BUG_tc_globals_too_big(); \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
 } while (0)
 
 /* Allocates a buffer containing the name of a class id.
@@ -77,8 +95,8 @@ static char* print_tc_classid(uint32_t cid)
 }
 
 /* Get a qdisc handle.  Return 0 on success, !0 otherwise.  */
-static int get_qdisc_handle(__u32 *h, const char *str) {
-	__u32 maj;
+static int get_qdisc_handle(uint32_t *h, const char *str) {
+	uint32_t maj;
 	char *p;
 
 	maj = TC_H_UNSPEC;
@@ -96,8 +114,8 @@ static int get_qdisc_handle(__u32 *h, const char *str) {
 }
 
 /* Get class ID.  Return 0 on success, !0 otherwise.  */
-static int get_tc_classid(__u32 *h, const char *str) {
-	__u32 maj, min;
+static int get_tc_classid(uint32_t *h, const char *str) {
+	uint32_t maj, min;
 	char *p;
 
 	maj = TC_H_ROOT;
@@ -134,17 +152,17 @@ static void print_rate(char *buf, int len, uint32_t rate)
 	double tmp = (double)rate*8;
 
 	if (use_iec) {
-		if (tmp >= 1000.0*1024.0*1024.0)
-			snprintf(buf, len, "%.0fMibit", tmp/1024.0*1024.0);
-		else if (tmp >= 1000.0*1024)
+		if (tmp >= 1000*1024*1024)
+			snprintf(buf, len, "%.0fMibit", tmp/(1024*1024));
+		else if (tmp >= 1000*1024)
 			snprintf(buf, len, "%.0fKibit", tmp/1024);
 		else
 			snprintf(buf, len, "%.0fbit", tmp);
 	} else {
-		if (tmp >= 1000.0*1000000.0)
-			snprintf(buf, len, "%.0fMbit", tmp/1000000.0);
-		else if (tmp >= 1000.0 * 1000.0)
-			snprintf(buf, len, "%.0fKbit", tmp/1000.0);
+		if (tmp >= 1000*1000000)
+			snprintf(buf, len, "%.0fMbit", tmp/1000000);
+		else if (tmp >= 1000*1000)
+			snprintf(buf, len, "%.0fKbit", tmp/1000);
 		else
 			snprintf(buf, len, "%.0fbit",  tmp);
 	}
@@ -374,7 +392,7 @@ static int print_class(const struct sockaddr_nl *who UNUSED_PARAM,
 		printf("root ");
 	else if (msg->tcm_parent) {
 		classid = print_tc_classid(filter_qdisc ?
-								   TC_H_MIN(msg->tcm_parent) : msg->tcm_parent);
+				TC_H_MIN(msg->tcm_parent) : msg->tcm_parent);
 		printf("parent %s ", classid);
 		if (ENABLE_FEATURE_CLEAN_UP)
 			free(classid);
@@ -401,9 +419,6 @@ static int print_class(const struct sockaddr_nl *who UNUSED_PARAM,
 static int print_filter(const struct sockaddr_nl *who UNUSED_PARAM,
 						struct nlmsghdr *hdr, void *arg UNUSED_PARAM)
 {
-	struct tcmsg *msg = NLMSG_DATA(hdr);
-	int len = hdr->nlmsg_len;
-	struct rtattr * tb[TCA_MAX+1];
 	return 0;
 }
 
@@ -446,14 +461,14 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 
 	obj = index_in_substrings(objects, *argv++);
 
-	if (obj < OBJ_qdisc)
+	if (obj < 0)
 		bb_show_usage();
 	if (!*argv)
 		cmd = CMD_show; /* list is the default */
 	else {
 		cmd = index_in_substrings(commands, *argv);
 		if (cmd < 0)
-			bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
+			invarg_1_to_2(*argv, argv[-1]);
 		argv++;
 	}
 	memset(&msg, 0, sizeof(msg));
@@ -476,7 +491,7 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 			NEXT_ARG();
 			/* We don't care about duparg2("qdisc handle",*argv) for now */
 			if (get_qdisc_handle(&filter_qdisc, *argv))
-				invarg(*argv, "qdisc");
+				invarg_1_to_2(*argv, "qdisc");
 		} else
 		if (obj != OBJ_qdisc
 		 && (arg == ARG_root
@@ -486,7 +501,7 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 		) {
 			/* nothing */
 		} else {
-			invarg(*argv, "command");
+			invarg_1_to_2(*argv, "command");
 		}
 		NEXT_ARG();
 		if (arg == ARG_root) {
@@ -496,11 +511,11 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 			if (obj == OBJ_filter)
 				filter_parent = TC_H_ROOT;
 		} else if (arg == ARG_parent) {
-			__u32 handle;
+			uint32_t handle;
 			if (msg.tcm_parent)
 				duparg(*argv, "parent");
 			if (get_tc_classid(&handle, *argv))
-				invarg(*argv, "parent");
+				invarg_1_to_2(*argv, "parent");
 			msg.tcm_parent = handle;
 			if (obj == OBJ_filter)
 				filter_parent = handle;
@@ -509,11 +524,12 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 				duparg(*argv, "handle");
 			/* reject LONG_MIN || LONG_MAX */
 			/* TODO: for fw
-			   if ((slash = strchr(handle, '/')) != NULL)
+			slash = strchr(handle, '/');
+			if (slash != NULL)
 				   *slash = '\0';
 			 */
 			msg.tcm_handle = get_u32(*argv, "handle");
-			/* if (slash) {if (get_u32(__u32 &mask, slash+1, NULL)) inv mask; addattr32(n, MAX_MSG, TCA_FW_MASK, mask); */
+			/* if (slash) {if (get_u32(uint32_t &mask, slash+1, NULL)) inv mask; addattr32(n, MAX_MSG, TCA_FW_MASK, mask); */
 		} else if (arg == ARG_classid && obj == OBJ_class && cmd == CMD_change){
 		} else if (arg == ARG_pref || arg == ARG_prio) { /* filter::list */
 			if (filter_prio)
@@ -524,7 +540,7 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 			if (filter_proto)
 				duparg(*argv, "protocol");
 			if (ll_proto_a2n(&tmp, *argv))
-				invarg(*argv, "protocol");
+				invarg_1_to_2(*argv, "protocol");
 			filter_proto = tmp;
 		}
 	}

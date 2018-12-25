@@ -1,0 +1,50 @@
+#if CDK_CONFIG_INCLUDE_BCM56502_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56502, BCM56502_VENDOR_ID, BCM56502_DEVICE_ID, BCM56502_REV_A0, \
+                  0, 0, \
+                  bcm56504_a0, bcm56502_a0, bcm56502_a0, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Two 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56502_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56502, BCM56502_VENDOR_ID, BCM56502_DEVICE_ID, BCM56502_REV_A1, \
+                  0, 0, \
+                  bcm56504_a0, bcm56502_a0, bcm56502_a1, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Two 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56502_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56502, BCM56502_VENDOR_ID, BCM56502_DEVICE_ID, BCM56502_REV_B0, \
+                  0, 0, \
+                  bcm56504_b0, bcm56502_b0, bcm56502_b0, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Two 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56502_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56502, BCM56502_VENDOR_ID, BCM56502_DEVICE_ID, BCM56502_REV_B1, \
+                  0, 0, \
+                  bcm56504_b0, bcm56502_b0, bcm56502_b1, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Two 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56502_B2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56502, BCM56502_VENDOR_ID, BCM56502_DEVICE_ID, BCM56502_REV_B2, \
+                  0, 0, \
+                  bcm56504_b0, bcm56502_b0, bcm56502_b2, \
+                  CDK_DEV_ARCH_XGS, "Firebolt", "BCM56500", \
+                  "24-Port GbE Multilayer Switch with Two 10-GbE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+

@@ -42,12 +42,6 @@
 	margin-bottom: 2px;
 	margin-top: 2px;
 }
-#sortable div table tr:hover{
-	cursor: pointer;
-	color: #000;
-	background-color: #66777D;
-	font-weight: bolder;
-}
 #sortable div table{
 	font-family:Verdana;
 	width: 100%;
@@ -73,7 +67,7 @@
 	-webkit-transform:rotate(-123deg);
     -moz-transform:rotate(-123deg);
     -o-transform:rotate(-123deg);
-    msTransform:rotate(-123deg);
+    ms-transform:rotate(-123deg);
     transform:rotate(-123deg);
 }
 .divUserIcon{
@@ -122,6 +116,12 @@
 	background: linear-gradient(to bottom, #A21717 0%,#B71010 70%,#FF4848 100%); /* W3C */
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#A21717', endColorstr='#FF4848',GradientType=0 ); /* IE6-9 */
 }
+.speed-meter-1000{
+	background-image:url('images/New_ui/speedmeter_2.png');
+}
+.speed-meter-100{
+	background-image:url('images/New_ui/speedmeter.png');
+}
 </style>
 <script>
 // disable auto log out
@@ -134,6 +134,10 @@ window.onresize = function() {
 } 
 var qos_rulelist = "<% nvram_get("qos_rulelist"); %>".replace(/&#62/g, ">").replace(/&#60/g, "<");
 var curState = '<% nvram_get("apps_analysis"); %>';
+
+if(cookie.get('maxBandwidth') == "" || cookie.get('maxBandwidth') == undefined){
+	cookie.set("maxBandwidth", "100");
+}
 
 function register_event(){
 	var color_array = ["#F01F09", "#F08C09", "#F3DD09", "#7A797A", "#58CCED", "inherit"];
@@ -162,14 +166,23 @@ function register_event(){
 		});
 	});
 } 
-
+var scale = [1, 5, 10, 20, 30, 50, 75, 100];
+var download_maximum = 100 * 1024;
+var upload_maximum = 100 * 1024;
 function initial(){
+	if(cookie.get('maxBandwidth') == '1000'){
+		scale = [10, 50, 100, 200, 350, 500, 750, 1000];
+		$('#upload_speed_meter_bg').attr("class", "speed-meter-1000");
+		$('#download_speed_meter_bg').attr("class", "speed-meter-1000");
+		download_maximum = 1000 * 1024;
+		upload_maximum = 1000 * 1024;
+	}
+
 	show_menu();
 	show_clients();
 }
 
-var download_maximum = 100 * 1024;
-var upload_maximum = 100 * 1024;
+
 function redraw_unit(){
 	var upload_node = document.getElementById('upload_unit').children;
 	var download_node = document.getElementById('download_unit').children;
@@ -259,36 +272,45 @@ function calculate_router_traffic(traffic){
 	var angle = 0;
 	var rotate = "";
 /* angle mapping table: [0M: -123deg, 1M: -90deg, 5M: -58deg, 10M: -33deg, 20M: -1deg, 30M: 30deg, 50M: 58deg, 75M: 88deg, 100M: 122deg]*/
+	if(cookie.get('maxBandwidth') == "100"){
+		if(tx_mb > 100 || rx_mb > 100){
+			cookie.set('maxBandwidth', '1000');
+			scale = [10, 50, 100, 200, 350, 500, 750, 1000];
+			$('#upload_speed_meter_bg').attr("class", "speed-meter-1000");
+			$('#download_speed_meter_bg').attr("class", "speed-meter-1000");
+			download_maximum = 1000 * 1024;
+			upload_maximum = 1000 * 1024;
+		}
+	}
 
 	if(router_traffic_old.length != 0){	
 		//angle = (tx_mb - lower unit)/(upper unit - lower unit)*(degree in the range) + (degree of previous scale) + (degree of 0M)
 		document.getElementById('upload_speed').innerHTML = tx_mb.toFixed(2);
-		if(tx_mb <= 1){
-			angle = (tx_mb*33) + (-123);
+		if(tx_mb <= scale[0]){
+			angle = ((tx_mb/scale[0])*33) + (-123);
 		}
-		else if(tx_mb > 1 && tx_mb <= 5){
-			angle = ((tx_mb-1)/4)*32 + 33 +(-123);
-					
+		else if(tx_mb > scale[0] && tx_mb <= scale[1]){
+			angle = ((tx_mb-scale[0])/(scale[1] - scale[0]))*32 + 33 +(-123);
 		}
-		else if(tx_mb > 5 && tx_mb <= 10){
-			angle = ((tx_mb - 5)/5)*25 + (33 + 32) + (-123);
+		else if(tx_mb > scale[1] && tx_mb <= scale[2]){
+			angle = ((tx_mb - scale[1])/(scale[2]-scale[1]))*25 + (33 + 32) + (-123);
 		}
-		else if(tx_mb > 10 && tx_mb <= 20){
-			angle = ((tx_mb - 10)/10)*32 + (33 + 32 + 25) + (-123)
+		else if(tx_mb > scale[2] && tx_mb <= scale[3]){
+			angle = ((tx_mb - scale[2])/(scale[3] - scale[2]))*32 + (33 + 32 + 25) + (-123)
 		}
-		else if(tx_mb > 20 && tx_mb <= 30){
-			angle = ((tx_mb - 20)/10)*31 + (33 + 32 + 25 + 32) + (-123);	
+		else if(tx_mb > scale[3] && tx_mb <= scale[4]){
+			angle = ((tx_mb - scale[3])/(scale[4] - scale[3]))*31 + (33 + 32 + 25 + 32) + (-123);	
 		}
-		else if(tx_mb > 30 && tx_mb <= 50){
-			angle = ((tx_mb - 30)/20)*28 + (33 + 32 + 25 + 32 + 31) + (-123);	
+		else if(tx_mb > scale[4] && tx_mb <= scale[5]){
+			angle = ((tx_mb - scale[4])/(scale[5] - scale[4]))*28 + (33 + 32 + 25 + 32 + 31) + (-123);	
 		}
-		else if(tx_mb > 50 && tx_mb <= 75){
-			angle = ((tx_mb - 50)/25)*30 + (33 + 32 + 25 + 32 + 31 + 28) + (-123);
+		else if(tx_mb > scale[5] && tx_mb <= scale[6]){
+			angle = ((rx_mb - scale[5])/(scale[6] - scale[5]))*30 + (33 + 32 + 25 + 32 + 31 + 28) + (-123);
 		}
-		else if(tx_mb >75 && tx_mb <= 100){
-			angle = ((tx_mb - 75)/25)*34 + 	(33 + 32 + 25 + 32 + 31 + 28 + 30) + (-123);
+		else if(tx_mb > scale[6] && tx_mb <= scale[7]){
+			angle = ((tx_mb - scale[6])/(scale[7] -scale[6]))*34 + (33 + 32 + 25 + 32 + 31 + 28 + 30) + (-123);
 		}
-		else{		// exception case temporally, upload traffic exceed 100Mb.
+		else{		// exception case temporally, download traffic exceed 100 Mb or 1000 Mb.
 			angle = 123;		
 		}
 
@@ -303,32 +325,31 @@ function calculate_router_traffic(traffic){
 		
 		//angle = (rx_mb - lower unit)/(upper unit - lower unit)*(degree in the range) + (degree of previous scale) + (degree of 0M)
 		document.getElementById('download_speed').innerHTML = rx_mb.toFixed(2);
-		if(rx_mb <= 1){
-			angle = (rx_mb*33) + (-123);
+		if(rx_mb <= scale[0]){
+			angle = ((rx_mb/scale[0])*33) + (-123);
 		}
-		else if(rx_mb > 1 && rx_mb <= 5){
-			angle = ((rx_mb-1)/4)*32 + 33 +(-123);
-					
+		else if(rx_mb > scale[0] && rx_mb <= scale[1]){
+			angle = ((rx_mb-scale[0])/(scale[1] - scale[0]))*32 + 33 +(-123);
 		}
-		else if(rx_mb > 5 && rx_mb <= 10){
-			angle = ((rx_mb - 5)/5)*25 + (33 + 32) + (-123);
+		else if(rx_mb > scale[1] && rx_mb <= scale[2]){
+			angle = ((rx_mb - scale[1])/(scale[2]-scale[1]))*25 + (33 + 32) + (-123);
 		}
-		else if(rx_mb > 10 && rx_mb <= 20){
-			angle = ((rx_mb - 10)/10)*32 + (33 + 32 + 25) + (-123)
+		else if(rx_mb > scale[2] && rx_mb <= scale[3]){
+			angle = ((rx_mb - scale[2])/(scale[3] - scale[2]))*32 + (33 + 32 + 25) + (-123)
 		}
-		else if(rx_mb > 20 && rx_mb <= 30){
-			angle = ((rx_mb - 20)/10)*31 + (33 + 32 + 25 + 32) + (-123);	
+		else if(rx_mb > scale[3] && rx_mb <= scale[4]){
+			angle = ((rx_mb - scale[3])/(scale[4] - scale[3]))*31 + (33 + 32 + 25 + 32) + (-123);	
 		}
-		else if(rx_mb > 30 && rx_mb <= 50){
-			angle = ((rx_mb - 30)/20)*28 + (33 + 32 + 25 + 32 + 31) + (-123);	
+		else if(rx_mb > scale[4] && rx_mb <= scale[5]){
+			angle = ((rx_mb - scale[4])/(scale[5] - scale[4]))*28 + (33 + 32 + 25 + 32 + 31) + (-123);	
 		}
-		else if(rx_mb > 50 && rx_mb <= 75){
-			angle = ((rx_mb - 50)/25)*30 + (33 + 32 + 25 + 32 + 31 + 28) + (-123);
+		else if(rx_mb > scale[5] && rx_mb <= scale[6]){
+			angle = ((rx_mb - scale[5])/(scale[6] - scale[5]))*30 + (33 + 32 + 25 + 32 + 31 + 28) + (-123);
 		}
-		else if(rx_mb >75 && rx_mb <= 100){
-			angle = ((rx_mb - 75)/25)*34 + 	(33 + 32 + 25 + 32 + 31 + 28 + 30) + (-123);
+		else if(rx_mb > scale[6] && rx_mb <= scale[7]){
+			angle = ((rx_mb - scale[6])/(scale[7] -scale[6]))*34 + (33 + 32 + 25 + 32 + 31 + 28 + 30) + (-123);
 		}
-		else{		// exception case temporally, download traffic exceed 100Mb.
+		else{		// exception case temporally, download traffic exceed 100 Mb or 1000 Mb.
 			angle = 123;		
 		}
 
@@ -472,7 +493,7 @@ function show_clients(priority_type){
 		code += '<div id="'+clientObj.mac+'_upload_unit">Kb</div>';
 		code += '</td>';
 		code += '<td style="width:20px;">';
-		code += '<div style="width:0;height:0;border-width:0 7px 10px 7px;border-style:solid;border-color:#444F53 #444F53 #93E7FF #444F53;"></div>';
+		code += '<div class="arrow_up" style="width:0;height:0;border-width:0 7px 10px 7px;border-style:solid;"></div>';
 		code += '</td>';		
 		code += '</tr>';			
 		code += '<tr>';
@@ -491,7 +512,7 @@ function show_clients(priority_type){
 		code += '<div id="'+clientObj.mac+'_download_unit" >Kb</div>';	
 		code += '</td>';
 		code += '<td style="width:20px;">';
-		code += '<div style="width:0;height:0;border-width:10px 7px 0 7px;border-style:solid;border-color:#93E7FF #444F53 #444F53 #444F53;"></div>';
+		code += '<div class="arrow_down" style="width:0;height:0;border-width:10px 7px 0 7px;border-style:solid;"></div>';
 		code += '</td>';	
 		code += '</tr>';
 		code += '</table></div></td>';
@@ -1169,13 +1190,21 @@ function regen_qos_rule(obj, priority){
 }
 
 function applyRule(){
-	document.form.qos_rulelist.value = qos_rulelist;
-	document.form.submit();
+	if(reset_wan_to_fo(document.form, document.form.apps_analysis.value)) {
+		document.form.qos_rulelist.value = qos_rulelist;
+		document.form.submit();
+	}
+	else {
+		curState = 0;
+		document.form.apps_analysis.value = 0;
+		$('#apps_analysis_enable').find('.iphone_switch').animate({backgroundPosition: -37}, "slow");
+	}
 }
 
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	document.form.apps_analysis.value = 1;
+	document.form.action_wait.value = "15";
 	applyRule();
 }
 
@@ -1184,6 +1213,8 @@ function cancel(){
 	$('#iphone_switch').animate({backgroundPosition: -37}, "slow", function() {});
 	$("#agreement_panel").fadeOut(100);
 	document.getElementById("hiddenMask").style.visibility = "hidden";
+	htmlbodyforIE = parent.document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
+	htmlbodyforIE[0].style.overflow = "scroll";	  //hidden the Y-scrollbar for preventing from user scroll it.
 }
 </script>
 </head>
@@ -1191,7 +1222,7 @@ function cancel(){
 <body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="panel_folder" style="margin-top: -100px;"></div>
+<div id="agreement_panel" class="panel_folder"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
 	</table>
@@ -1250,11 +1281,37 @@ function cancel(){
 																			if(document.form.preferred_lang.value == "JP"){
 																				$.get("JP_tm_eula.htm", function(data){
 																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
 																				});
 																			}
+																			else if(document.form.preferred_lang.value == "TW"){
+																				$.get("tm_eula_TC.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "CN"){
+																				$.get("tm_eula_SC.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "FR"){
+																				$.get("tm_eula_FR.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "RU"){
+																				$.get("tm_eula_RU.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}																			
 																			else{
 																				$.get("tm_eula.htm", function(data){
 																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
 																				});
 																			}	
 																			dr_advise();
@@ -1297,7 +1354,7 @@ function cancel(){
 												<div style="position:absolute;margin:121px 0px 0px 296px;font-size:16px;display:none;"></div>
 												<div style="position:absolute;margin:150px 0px 0px 275px;font-size:16px;display:none;"></div>
 												<div id="upload_speed" style="position:absolute;margin:147px 0px 0px 187px;font-size:24px;width:60px;text-align:center;">0.00</div>
-												<div style="background-image:url('images/New_ui/speedmeter.png');height:188px;width:270px;background-repeat:no-repeat;margin:-10px 0px 0px 70px"></div>
+												<div id="upload_speed_meter_bg" class="speed-meter-100" style="height:188px;width:270px;background-repeat:no-repeat;margin:-10px 0px 0px 70px"></div>
 												<div id="indicator_upload" class="transition_style" style="background-image:url('images/New_ui/indicator.png');position:absolute;height:100px;width:50px;background-repeat:no-repeat;margin:-110px 0px 0px 194px;"></div>
 											</td>
 											<td id="download_unit">	
@@ -1308,7 +1365,7 @@ function cancel(){
 												<div style="position:absolute;margin:120px 0px 0px 270px;font-size:16px;display:none;"></div>
 												<div style="position:absolute;margin:150px 0px 0px 250px;font-size:16px;display:none;"></div>
 												<div id="download_speed" style="position:absolute;margin:147px 0px 0px 130px;font-size:24px;text-align:center;width:60px;">0.00</div>
-												<div style="background-image:url('images/New_ui/speedmeter.png');height:188px;width:270px;background-repeat:no-repeat;margin:-10px 0px 0px 10px"></div>
+												<div id="download_speed_meter_bg" class="speed-meter-100" style="height:188px;width:270px;background-repeat:no-repeat;margin:-10px 0px 0px 10px"></div>
 												<div id="indicator_download" class="transition_style" style="background-image:url('images/New_ui/indicator.png');position:absolute;height:100px;width:50px;background-repeat:no-repeat;margin:-110px 0px 0px 133px;"></div>		
 											</td>
 										</tr>
@@ -1323,10 +1380,10 @@ function cancel(){
 									<table>									
 										<tr>
 											<td id="block_all" style="width:50%;font-family: Arial, Helvetica, sans-serif;text-align:left;padding-left:15px;visibility:hidden;">
-												<div style="cursor:pointer;background-color:#444F53;width:113px;border-radius:10px;text-align:center;box-shadow:0px 2px black;" onclick="show_clients()">
+												<div style="cursor:pointer;width:113px;border-radius:10px;text-align:center;box-shadow:0px 2px black;" onclick="show_clients()">
 													<table>
 														<tr>																			
-															<td><div style="width:110px;"><#show_all#></div></td>
+															<td><div class="qos_tab" style="width:110px;border-radius:10px;"><#show_all#></div></td>
 														</tr>
 													</table>											
 												</div>
@@ -1336,7 +1393,7 @@ function cancel(){
 													<table>
 														<tr>
 															<td>															
-																<div id="0" style="cursor:pointer;background-color:#444F53;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
+																<div id="0" class="qos_tab" style="cursor:pointer;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#F01F09;margin-left:5px;"></div></td>
@@ -1346,7 +1403,7 @@ function cancel(){
 																</div>
 															</td>
 															<td>
-																<div id="1" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
+																<div id="1" class="qos_tab" style="cursor:pointer;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#F08C09;margin-left:5px;"></div></td>
@@ -1356,7 +1413,7 @@ function cancel(){
 																</div>	
 															</td>
 															<td>
-																<div id="2" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
+																<div id="2" class="qos_tab" style="cursor:pointer;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#F3DD09;margin-left:5px;"></div></td>
@@ -1366,7 +1423,7 @@ function cancel(){
 																</div>
 															</td>
 															<td>													             												
-																<div id="3" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
+																<div id="3" class="qos_tab" style="cursor:pointer;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#7A797A;margin-left:5px;"></div></td>
@@ -1376,7 +1433,7 @@ function cancel(){
 																</div>												
 															</td>
 															<td>												
-																<div id="4" style="cursor:pointer;background-color:#444F53;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
+																<div id="4" class="qos_tab" style="cursor:pointer;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#58CCED;margin-left:5px;"></div></td>
@@ -1397,7 +1454,7 @@ function cancel(){
 						
 						<tr>					
 							<td>
-								<div colspan="2" style="width:99%;height:510px;background-color:#444f53;border-radius:10px;margin-left:4px;overflow:auto;">
+								<div colspan="2" class="monitor_qos_bg" style="width:99%;height:510px;border-radius:4px;margin-left:4px;overflow:auto;">
 									<div id="sortable" style="padding-top:5px;">
 										<div style="width: 100%;text-align: center;margin-top: 50px;">
 											<img src="/images/InternetScan.gif" style="width: 50px;">
@@ -1410,7 +1467,7 @@ function cancel(){
 							<td>
 								<div style=" *width:136px;margin:5px 0px 0px 300px;" class="titlebtn" align="center" onClick="applyRule();">
 									<span><#CTL_apply#></span>
-									<div style="margin:-30px 0 0px -480px;"><a style="text-decoration:underline;" href="http://www.asus.com/support/FAQ/1008717/" target="_blank"><#Bandwidth_monitor_WANLAN#> FAQ</a></div>
+									<div style="margin:-30px 0 0px -290px;width:200px;"><a style="text-decoration:underline;" href="http://www.asus.com/support/FAQ/1008717/" target="_blank"><#Bandwidth_monitor_WANLAN#> FAQ</a></div>
 								</div>
 							</td>
 						</tr>		

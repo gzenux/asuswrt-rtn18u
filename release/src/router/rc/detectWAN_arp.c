@@ -23,12 +23,15 @@
 #include <netinet/ether.h>
 #include <netpacket/packet.h>
 #include <linux/sockios.h>
+#include <string.h>
+#include <sys/ioctl.h>
 
 //#include <nvram/bcmnvram.h>
 #include <bcmnvram.h>
 
 #include <rc.h>
 #include <shared.h>
+//#define  DEBUG 1
 
 #pragma (1)
 struct globals {
@@ -54,6 +57,7 @@ static char gbuf[sizeof(struct globals)];
 static unsigned char inputpacket[4096];
 static int fail_counts = 0;
 static sigset_t sset, osset;
+int _sw_mode = 0;
 
 static char _lan_proto[8];
 #pragma pack()
@@ -89,6 +93,45 @@ static void restore_sig(void)
 	sigprocmask(SIG_SETMASK, &osset, NULL);
 }
 
+
+#if defined(RTCONFIG_CONCURRENTREPEATER) && defined(RTCONFIG_RALINK)
+int link_st = -1;
+int link_st_old = -1;
+int get_lan_link()
+{
+	FILE *fp = NULL;
+	char buf[32]={0};
+	char sf[32]= {0};
+	char st[4] = {0};
+
+	system("rtkswitch 3 > /tmp/link_stat");
+
+
+	fp = fopen("/tmp/link_stat", "r");
+
+	if (fp==NULL)
+	{
+		dbG("%d can't get LAN link status\n", __LINE__);
+		return 0;
+	}
+
+	while (fgets(buf, 32, fp)!=NULL)
+	{
+	    int len;
+#ifdef DEBUG
+	    printf("%d  data = %s\n", __LINE__, buf);
+#endif
+	}
+
+	sscanf(buf, "%[^:]:%3s", sf, st);
+#ifdef DEBUG
+	dbG("%s: %s %s\n",__FILE__, sf, st);
+#endif
+	fclose(fp);
+
+	return atoi(st);
+}
+#endif
 static int send_pack(struct in_addr *src_addr, struct in_addr *dst_addr, struct sockaddr_ll *ME, struct sockaddr_ll *HE)
 {
 	int err;
@@ -103,7 +146,10 @@ static int send_pack(struct in_addr *src_addr, struct in_addr *dst_addr, struct 
 	if (nvram_match("plc_wake", "0"))
 		return 0;
 #endif
-
+#if defined(RTCONFIG_CONCURRENTREPEATER) && defined(RTCONFIG_RALINK)
+	if (link_st != 1)
+		return 0;
+#endif
 	ah->ar_hrd = htons(ARPHRD_ETHER);
 	ah->ar_pro = htons(ETH_P_IP);
 	ah->ar_hln = ME->sll_halen;
@@ -125,6 +171,7 @@ static int send_pack(struct in_addr *src_addr, struct in_addr *dst_addr, struct 
 #ifdef DEBUG
 	dbg("[detectWan_arp] send %d (%d)bytes:\n", err, p-buf);
 #endif
+
 	++fail_counts;		// increase here at stable rate
 
 	return err;
@@ -137,8 +184,8 @@ static int recv_pack(unsigned char *buf, int len, struct sockaddr_ll *FROM)
 	struct in_addr src_ip, dst_ip;
 
         /* Filter out wild packets */
-	if (FROM->sll_pkttype != PACKET_HOST 
-			&& FROM->sll_pkttype != PACKET_BROADCAST 
+	if (FROM->sll_pkttype != PACKET_HOST
+			&& FROM->sll_pkttype != PACKET_BROADCAST
 			&& FROM->sll_pkttype != PACKET_MULTICAST) {
 #ifdef DEBUG
 		dbg("[detectWan_arp] recv pack filter: wrong pkt type\n");
@@ -154,7 +201,7 @@ static int recv_pack(unsigned char *buf, int len, struct sockaddr_ll *FROM)
 	}
 
         /* hrd chk and FDDI hack */
-	if (ah->ar_hrd != htons(FROM->sll_hatype) 
+	if (ah->ar_hrd != htons(FROM->sll_hatype)
 			&& (FROM->sll_hatype != ARPHRD_FDDI || ah->ar_hrd != htons(ARPHRD_ETHER))) {
 #ifdef DEBUG
 		dbg("[detectWan_arp] recv pack filter: doubt FDDI !\n");
@@ -163,9 +210,9 @@ static int recv_pack(unsigned char *buf, int len, struct sockaddr_ll *FROM)
 	}
 
 	/* protocol must be ip */
-	if (ah->ar_pro != htons(ETH_P_IP) 
-			|| (ah->ar_pln != 4) 
-			|| (ah->ar_hln != me.sll_halen) 
+	if (ah->ar_pro != htons(ETH_P_IP)
+			|| (ah->ar_pln != 4)
+			|| (ah->ar_hln != me.sll_halen)
 			|| (len < (int)sizeof(*ah) + 2*(4 + ah->ar_hln))) {
 #ifdef DEBUG
 		dbg("[detectWan_arp] recv pack filter: wrong pro/len\n");
@@ -184,10 +231,10 @@ static int recv_pack(unsigned char *buf, int len, struct sockaddr_ll *FROM)
 	}
 
 #ifdef DEBUG
-	dbg("[detectWan_arp] %scast re%s from %s[%s]\n", 
-		FROM->sll_pkttype == PACKET_HOST ? "Uni" : "Broad", 
-		ah->ar_op == htons(ARPOP_REPLY) ? "ply" : "quest", 
-		inet_ntoa(src_ip), 
+	dbg("[detectWan_arp] %scast re%s from %s[%s]\n",
+		FROM->sll_pkttype == PACKET_HOST ? "Uni" : "Broad",
+		ah->ar_op == htons(ARPOP_REPLY) ? "ply" : "quest",
+		inet_ntoa(src_ip),
 		ether_ntoa((struct ether_addr*) p));
 		fflush(stdout);
 #endif
@@ -229,6 +276,12 @@ static void poll_udhcpc(void)
 {
 	struct timeval tval;
 	char *gateway_ip = NULL;
+	_sw_mode = sw_mode();
+
+#if defined(RTCONFIG_CONCURRENTREPEATER) && defined(RTCONFIG_RALINK)
+	if (link_st != 1)
+		return;
+#endif
 
 	for(;;) {
 		tval.tv_sec = 10;
@@ -237,12 +290,18 @@ static void poll_udhcpc(void)
 
 		gateway_ip = nvram_safe_get("lan_gateway");
 
-		if (!gateway_ip || (gateway_ip && strlen(gateway_ip) < 7) 
+		if (!gateway_ip || (gateway_ip && strlen(gateway_ip) < 7)
 				|| (gateway_ip && !strncmp(gateway_ip, "0.0.0.0", 7))) {
 #ifdef DEBUG
 			dbg("[detectWan_arp] renew IP...\n");
 #endif
 			eval("killall", "-SIGUSR1", "udhcpc");
+
+#if defined(RTCONFIG_CONCURRENTREPEATER) && defined(RTCONFIG_RALINK)
+		fail_counts = 0;
+		if (_sw_mode == SW_MODE_REPEATER && nvram_get_int("lan_state_t") == 2)
+			restart_dnsmasq(1);
+#endif
 		}
 		else {
 #ifdef DEBUG
@@ -261,6 +320,7 @@ static int detectARP(void)
 	source = nvram_safe_get("lan_ipaddr");
 	target = nvram_safe_get("lan_gateway");
 	device = nvram_safe_get("lan_ifname");
+	_sw_mode = sw_mode();
 
 #ifdef DEBUG
 	dbg("[detectWan_arp]: source:[%s] taget:[%s], dev:[%s]\n", source, target, device);
@@ -330,23 +390,88 @@ static int detectARP(void)
 
 	while(1) {
 		struct sockaddr_in from;
-		int cc;
+		int cc = 0;
 
+#if defined(RTCONFIG_CONCURRENTREPEATER) && defined(RTCONFIG_RALINK)
+
+		if (nvram_get_int("lan_ready") == 0)
+			continue;
+		
+		if (nvram_get_int("wps_cli_state") == 1 && _sw_mode == SW_MODE_REPEATER)
+			continue;
+
+		if (_sw_mode == SW_MODE_REPEATER)
+				link_st = nvram_get_int("wlc_state") == WLC_STATE_CONNECTED ? 1: 0;
+		else
+				link_st = get_lan_link();
+
+		if (link_st_old == -1)
+			link_st_old = link_st;
+
+		if (_sw_mode == SW_MODE_AP) {
+		if (link_st == 0 && nvram_match("dnsqmode", "1")){
+			nvram_set("dnsqmode", "2");
+			block_sig();
+			restart_dnsmasq(1);
+			restore_sig();
+		}
+
+		if ( link_st != link_st_old)  {
+#ifdef DEBUG
+		dbG("### link_st = %d, link_st_old = %d\n", link_st, link_st_old);
+#endif
+			if (link_st == 0) {
+				/* enable DHCP server */
+				if (nvram_match("dnsqmode", "1")
+						&& (nvram_match("dhcp_enable_x", "1")
+							|| nvram_match("x_Setting", "0"))) {
+					nvram_set("dnsqmode", "2");
+					block_sig();
+					restart_dnsmasq(1);
+					restore_sig();
+				}
+			}
+			else if (link_st == 1) {
+				/* disable DHCP server: lan_proto=static */
+					if (!strcmp(_lan_proto, "static")
+							&& nvram_match("dnsqmode", "2")
+							&& (nvram_match("dhcp_enable_x", "1")
+								|| nvram_match("x_Setting", "0"))) {
+						nvram_set("dnsqmode", "1");
+						block_sig();
+						restart_dnsmasq(1);
+						restore_sig();
+					}
+			}
+			link_st_old = link_st;
+			fail_counts = 0;
+		}
+		}
+	 if (link_st == 0)
+			continue;
+#endif
 #ifdef DEBUG
 		dbg("[detectWan_arp] wait response...(%d)\n", fail_counts);
 #endif
 
-		if (fail_counts > 3) {
+		if ((_sw_mode == SW_MODE_AP && fail_counts > 3) || (_sw_mode == SW_MODE_REPEATER && fail_counts > 2)) {
 			fail_counts = 0;
 
-			/* enable DHCP server */
-			if (nvram_match("dnsqmode", "1") 
-					&& (nvram_match("dhcp_enable_x", "1") 
-						|| nvram_match("x_Setting", "0"))) {
-				nvram_set("dnsqmode", "2");
-				restart_dnsmasq(1);
+			if (_sw_mode == SW_MODE_AP) {
+				/* enable DHCP server */
+				if (nvram_match("dnsqmode", "1")
+						&& (nvram_match("dhcp_enable_x", "1")
+							|| nvram_match("x_Setting", "0"))) {
+					nvram_set("dnsqmode", "2");
+#if defined(RTCONFIG_CONCURRENTREPEATER)
+					block_sig();
+#endif
+					restart_dnsmasq(1);
+#if defined(RTCONFIG_CONCURRENTREPEATER)
+					restore_sig();
+#endif
+				}
 			}
-
 			if (!strcmp(_lan_proto, "dhcp")) {
 				nvram_set("lan_gateway", "");
 				goto dhcp_lost_gw;
@@ -375,14 +500,22 @@ static int detectARP(void)
 		recv_pack(inputpacket, cc, (struct sockaddr_ll*)&from);
 		restore_sig();
 
-		/* disable DHCP server: lan_proto=static */
-		if (!fail_counts 
-				&& !strcmp(_lan_proto, "static")
-				&& nvram_match("dnsqmode", "2") 
-				&& (nvram_match("dhcp_enable_x", "1") 
-					|| nvram_match("x_Setting", "0"))) {
-			nvram_set("dnsqmode", "1");
-			restart_dnsmasq(1);
+		if (_sw_mode == SW_MODE_AP) {
+			/* disable DHCP server: lan_proto=static */
+			if (!fail_counts
+					//&& !strcmp(_lan_proto, "static")
+					&& nvram_match("dnsqmode", "2")
+					&& (nvram_match("dhcp_enable_x", "1")
+						|| nvram_match("x_Setting", "0"))) {
+				nvram_set("dnsqmode", "1");
+	#if defined(RTCONFIG_CONCURRENTREPEATER)
+				block_sig();
+	#endif
+				restart_dnsmasq(1);
+	#if defined(RTCONFIG_CONCURRENTREPEATER)
+				restore_sig();
+	#endif
+			}
 		}
 	}
 
@@ -402,16 +535,28 @@ static_lost_gw:
 	return 1;
 }
 
+
+
 int detectWAN_arp_main(int argc, char **argv)
 {
-	if (nvram_get_int("sw_mode") != SW_MODE_AP)
+
+	_sw_mode = sw_mode();
+#if defined(RTCONFIG_CONCURRENTREPEATER) && defined(RTCONFIG_RALINK)
+		if (_sw_mode != SW_MODE_AP && _sw_mode != SW_MODE_REPEATER)
+#else
+		if (_sw_mode != SW_MODE_AP)
+#endif
 		return -1;
+#ifdef RTCONFIG_REALTEK
+/* [MUST]: Need to discuss to add new mode for Media Bridge  */
+	if (nvram_get_int("wlc_psta") == 1) // Media bridge mode
+		return -1;
+#endif
 
 	memset(_lan_proto, 0x0, sizeof(_lan_proto));
 	strcpy(_lan_proto, nvram_safe_get("lan_proto"));
 
 	signal(SIGALRM, catcher);
-
 	poll_udhcpc();
 	INIT_G();
 

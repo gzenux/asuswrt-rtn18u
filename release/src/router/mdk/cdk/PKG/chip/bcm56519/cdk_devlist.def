@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56519_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56519, BCM56519_VENDOR_ID, BCM56519_DEVICE_ID, BCM56519_REV_A0, \
+                  0, 0, \
+                  bcm56514_a0, bcm56519_a0, bcm56519_a0, \
+                  CDK_DEV_ARCH_XGS, "Firebolt2", "BCM56510", \
+                  "24-Port GbE Multilayer Switch", 0, 0)
+#endif
+#endif
+

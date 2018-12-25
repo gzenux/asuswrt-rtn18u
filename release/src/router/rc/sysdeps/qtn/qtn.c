@@ -526,9 +526,9 @@ int start_ap_qtn(void)
 	char key[65];
 	uint32_t index = 0;
 
-	strncpy(auth, nvram_safe_get("wl1_auth_mode_x"), sizeof(auth));
-	strncpy(crypto, nvram_safe_get("wl1_crypto"), sizeof(crypto));
-	strncpy(key, nvram_safe_get("wl1_wpa_psk"), sizeof(key));
+	strlcpy(auth, nvram_safe_get("wl1_auth_mode_x"), sizeof(auth));
+	strlcpy(crypto, nvram_safe_get("wl1_crypto"), sizeof(crypto));
+	strlcpy(key, nvram_safe_get("wl1_wpa_psk"), sizeof(key));
 
 	if(!strcmp(auth, "psk2") && !strcmp(crypto, "aes")){
 		memcpy(beacon, "11i", strlen("11i") + 1);
@@ -674,15 +674,18 @@ int start_psta_qtn(void)
 	return 1;
 }
 
-int start_nodfs_scan_qtn(void)
+int start_channel_scan_qtn(int dfs)
 {
 	int		 qcsapi_retval;
 	int pick_flags = 0;
 
-	logmessage("dfs", "start dfs scan\n");
+	logmessage("channel_scan", "start scan[%d]\n", dfs);
 
 	pick_flags = IEEE80211_PICK_CLEAREST;
-	pick_flags |= IEEE80211_PICK_NONDFS;
+	if(dfs == 1)
+		pick_flags |= IEEE80211_PICK_ALL;
+	else	/* exclude DFS channel */
+		pick_flags |= IEEE80211_PICK_NONDFS;
 
 	if (!rpc_qtn_ready()) {
 		dbG("5 GHz radio is not ready\n");
@@ -690,9 +693,9 @@ int start_nodfs_scan_qtn(void)
 	}
 	qcsapi_retval = qcsapi_wifi_start_scan_ext(WIFINAME, pick_flags);
 	if (qcsapi_retval >= 0) {
-		logmessage("nodfs_scan", "complete");
+		logmessage("channel_scan", "complete");
 	}else{
-		logmessage("nodfs_scan", "scan not complete");
+		logmessage("channel_scan", "scan not complete");
 	}
 
 	return 1;
@@ -814,36 +817,36 @@ int gen_stateless_conf(void)
 	int bw = atoi(nvram_safe_get("wl1_bw"));
 	uint32_t index = 0;
 
-	sprintf(ssid, "%s", nvram_safe_get("wl1_ssid"));
+	snprintf(ssid, sizeof(ssid), "%s", nvram_safe_get("wl1_ssid"));
 	memset(tmpssid, 0, sizeof(tmpssid));
 	fix_script_err(ssid, tmpssid);
-	strncpy(ssid, tmpssid, sizeof(ssid));
+	strlcpy(ssid, tmpssid, sizeof(ssid));
 
-	sprintf(region, "%s", nvram_safe_get("wl1_country_code"));
+	snprintf(region, sizeof(region), "%s", nvram_safe_get("wl1_country_code"));
 	if(strlen(region) == 0)
-		sprintf(region, "%s", nvram_safe_get("1:ccode"));
+		snprintf(region, sizeof(region), "%s", nvram_safe_get("1:ccode"));
 	dbg("[stateless] channel:[%d]\n", channel);
 	dbg("[stateless] bw:[%d]\n", bw);
 
 	fp = fopen("/tmp/stateless_slave_config", "w");
 
-	if(nvram_get_int("sw_mode") == SW_MODE_AP &&
+	if(sw_mode() == SW_MODE_AP &&
 		nvram_get_int("wlc_psta") == 1 &&
 		nvram_get_int("wlc_band") == 1){
 		/* media bridge mode */
 		fprintf(fp, "wifi0_mode=sta\n");
 
-		strncpy(auth, nvram_safe_get("wlc_auth_mode"), sizeof(auth));
-		strncpy(crypto, nvram_safe_get("wlc_crypto"), sizeof(crypto));
-		strncpy(key, nvram_safe_get("wlc_wpa_psk"), sizeof(key));
+		strlcpy(auth, nvram_safe_get("wlc_auth_mode"), sizeof(auth));
+		strlcpy(crypto, nvram_safe_get("wlc_crypto"), sizeof(crypto));
+		strlcpy(key, nvram_safe_get("wlc_wpa_psk"), sizeof(key));
 		memset(tmpkey, 0, sizeof(tmpkey));
 		fix_script_err(key, tmpkey);
-		strncpy(key, tmpkey, sizeof(key));
+		strlcpy(key, tmpkey, sizeof(key));
 
-		strncpy(ssid, nvram_safe_get("wlc_ssid"), sizeof(ssid));
+		strlcpy(ssid, nvram_safe_get("wlc_ssid"), sizeof(ssid));
 		memset(tmpssid, 0, sizeof(tmpssid));
 		fix_script_err(ssid, tmpssid);
-		strncpy(ssid, tmpssid, sizeof(ssid));
+		strlcpy(ssid, tmpssid, sizeof(ssid));
 		fprintf(fp, "wifi0_SSID=\"%s\"\n", ssid);
 
 		logmessage("start_psta", "ssid=%s, auth=%s, crypto=%s, encryption=%s, key=%s\n", ssid, auth, crypto, encryption, key);
@@ -879,18 +882,18 @@ int gen_stateless_conf(void)
 		/* not media bridge mode */
 		fprintf(fp, "wifi0_mode=ap\n");
 
-		strncpy(auth, nvram_safe_get("wl1_auth_mode_x"), sizeof(auth));
-		strncpy(crypto, nvram_safe_get("wl1_crypto"), sizeof(crypto));
-		strncpy(key, nvram_safe_get("wl1_wpa_psk"), sizeof(key));
+		strlcpy(auth, nvram_safe_get("wl1_auth_mode_x"), sizeof(auth));
+		strlcpy(crypto, nvram_safe_get("wl1_crypto"), sizeof(crypto));
+		strlcpy(key, nvram_safe_get("wl1_wpa_psk"), sizeof(key));
 		memset(tmpkey, 0, sizeof(tmpkey));
 		fix_script_err(key, tmpkey);
-		strncpy(key, tmpkey, sizeof(key));
+		strlcpy(key, tmpkey, sizeof(key));
 
 
-		strncpy(ssid, nvram_safe_get("wl1_ssid"), sizeof(ssid));
+		strlcpy(ssid, nvram_safe_get("wl1_ssid"), sizeof(ssid));
 		memset(tmpssid, 0, sizeof(tmpssid));
 		fix_script_err(ssid, tmpssid);
-		strncpy(ssid, tmpssid, sizeof(ssid));
+		strlcpy(ssid, tmpssid, sizeof(ssid));
 		fprintf(fp, "wifi0_SSID=\"%s\"\n", ssid);
 
 		if(!strcmp(auth, "psk2") && !strcmp(crypto, "aes")){

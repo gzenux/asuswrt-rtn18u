@@ -78,7 +78,7 @@ const char* getwebpath_template =
 "</getwebpath>\r\n\r\n";
 
 const char* createpin_template = 
-"<createpin>\r\n"
+"<createpin>\r\n"																																																																																	
 "<cusid>%s</cusid>\r\n"
 "<deviceid>%s</deviceid>\r\n"
 "<deviceticket>%s</deviceticket>\r\n"
@@ -93,7 +93,7 @@ const char* querypin_template =
 const char* unregister_template =
 "<unregister>\r\n"
 "<cusid>%s</cusid>\r\n"
-"<deviceid>%s</deviceid>\r\n"
+"<updateprofile_template>%s</updateprofile_template>\r\n"
 "<deviceticket>%s</deviceticket>\r\n"
 "</unregister>\r\n\r\n";
 
@@ -120,6 +120,23 @@ const char* push_msg_template =
 "</wlpush_sendmsg>\r\n\r\n"
 ;
 
-const char* wb_custom_header = 
-"Set-Cookie:ONE_VER=1_0; path=/; sid=1001";
+const char* pns_sendmsg_template = 
+"<pns_sendmsg>\r\n"
+"<cusid>%s</cusid>\r\n"
+"<deviceid>%s</deviceid>\r\n"
+"<deviceticket>%s</deviceticket>\r\n"
+"<todeviceid>%s</todeviceid>\r\n"
+"<message>%s</message>\r\n"
+"</pns_sendmsg>\r\n\r\n"
+;
+
+const char* ifttt_notification_template = 
+"%s"
+;
+
+const char* wb_custom_header_templ = 
+"Set-Cookie:ONE_VER=1_0; path=/; sid=%s";
 #endif
+
+const char* ifttt_notification_header_templ = 
+"Content-Type: application/json";

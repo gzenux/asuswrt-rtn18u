@@ -3,7 +3,7 @@
 */
 
 #include <rc.h>
-#include <bwdpi.h>
+#include <bwdpi_common.h>
 
 static int count = 0; // real count
 
@@ -22,7 +22,7 @@ void start_bwdpi_check()
 
 static void run_engine()
 {
-	if(!f_exists("/dev/detector") || !f_exists("/dev/idpfw")){
+	if(!f_exists(APPDB) || !f_exists(CATDB)){
 		run_dpi_engine_service();
 	}
 
@@ -33,14 +33,13 @@ static void run_engine()
 
 static void check_dpi_alive()
 {
-	debug = nvram_get_int("bwdpi_debug");
 	int enabled = check_bwdpi_nvram_setting();
 
-	if(debug) dbg("[bwdpi check] enabled= %d, if enabled = 0, need to enable DPI engine!\n", enabled);
+	BWDPI_DBG("enabled= %d, if enabled = 0, need to enable DPI engine!\n", enabled);
 
 	if(!enabled)
 	{
-		if(debug) dbg("[bwdpi check] count=%2d\n", count);
+		BWDPI_DBG("count=%2d\n", count);
 		run_engine();
 	
 		count -= 3;

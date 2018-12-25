@@ -25,6 +25,10 @@
 #include "usb_info.h"
 #include "disk_initial.h"
 
+#ifndef DEBUG_USB
+#include <shared.h>
+#endif
+
 #define VERSION 1
 
 extern char *get_usb_port_by_device(const char *device_name, char *buf, const int buf_size){

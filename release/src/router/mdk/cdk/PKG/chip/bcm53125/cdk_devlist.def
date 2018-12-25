@@ -1,0 +1,18 @@
+#if CDK_CONFIG_INCLUDE_BCM53125_A0 == 1
+CDK_DEVLIST_ENTRY(BCM53125, BCM53125_VENDOR_ID, BCM53125_DEVICE_ID, BCM53125_REV_A0, \
+                  0, 0, \
+                  bcm53125_a0, bcm53125_a0, bcm53125_a0, \
+                  CDK_DEV_ARCH_ROBO, "Starfighter", "BCM53125", \
+                  "6-Port GE Switch With 5 Integrated PHYs", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53125_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53125, BCM53125_VENDOR_ID, BCM53125_DEVICE_ID, BCM53125_REV_B0, \
+                  0, 0, \
+                  bcm53125_a0, bcm53125_a0, bcm53125_b0, \
+                  CDK_DEV_ARCH_ROBO, "Starfighter", "BCM53125", \
+                  "6-Port GE Switch With 5 Integrated PHYs", 0, 0)
+#endif
+#endif
+

@@ -31,6 +31,10 @@
 
 #include <stdio.h>
 
+#if IM_MESSGAE_EANBLE
+#include "im_ipc.h" // asusnatnl/natnl
+#endif
+
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
@@ -74,6 +78,61 @@ static int l_issetugid(void) {
 
 #  define issetugid l_issetugid
 # endif
+#endif
+
+server *g_srv = NULL;
+
+#if (defined APP_IPKG) && (defined I686)
+char actual_s_system[10];
+char actual_f_system[10];
+char lan_ip[20];
+char lan_ip_s_tmp[30];
+char webdav_http_port[10];
+
+void prepare_for_iptables(void)
+{
+    int i = 0;
+    char *p = NULL;
+	char lan_ip_s[20];
+    char *actual_s_system_tmp = nvram_get_second_system();
+    char *actual_f_system_tmp = nvram_get_first_system();
+    char *lan_ip_tmp = nvram_get_lan_ip();
+    char *lan_ip_s_tmp2 = nvram_get_lan_ip_s();
+
+#if EMBEDDED_EANBLE
+	char* webdav_http_port_tmp = nvram_get_webdav_http_port();
+#else
+	char* webdav_http_port_tmp = "8082";
+#endif
+
+    int length = strlen(lan_ip_s_tmp);
+    char lan_ip_s_bak[length + 1];
+    memset(actual_s_system, 0, sizeof(actual_s_system));
+    memset(actual_f_system, 0, sizeof(actual_f_system));
+    memset(lan_ip, 0, sizeof(lan_ip));
+    memset(lan_ip_s, 0, sizeof(lan_ip_s));
+    memset(lan_ip_s_bak, 0, sizeof(lan_ip_s_bak));
+    memset(webdav_http_port, 0, sizeof(webdav_http_port));
+    sprintf(actual_s_system,"%s", actual_s_system_tmp);
+    sprintf(actual_f_system,"%s", actual_f_system_tmp);
+    sprintf(lan_ip,"%s", lan_ip_tmp);
+    sprintf(lan_ip_s_bak, "%s",lan_ip_s_tmp2);
+    sprintf(webdav_http_port,"%s",webdav_http_port_tmp);
+    free(lan_ip_s_tmp2);
+    p = strtok(lan_ip_s_bak,".");
+    sprintf(lan_ip_s_tmp,"%s",p);
+    while(p != NULL && i < 2)
+    {
+        p = strtok(NULL, ".");
+        sprintf(lan_ip_s_tmp,"%s.%s", lan_ip_s_tmp,p);
+        i++;
+    }
+    sprintf(lan_ip_s_tmp,"%s.0/24", lan_ip_s_tmp);
+    free(actual_s_system_tmp);
+    free(actual_f_system_tmp);
+    free(lan_ip_tmp);
+    free(webdav_http_port_tmp);
+}
 #endif
 
 static volatile sig_atomic_t srv_shutdown = 0;
@@ -129,8 +188,27 @@ static void sigaction_handler(int sig, siginfo_t *si, void *context) {
 	case SIGUSR2:
 		process_share_link_for_router_sync_use();
 		break;
+		
+#if IM_MESSGAE_EANBLE
+	case IM_MSG_SIG_REQ:
+		//- Receive signal from IM
+		Cdbg(1, "Got new im message.....");
+		char* msg = (char *)malloc(1024);
+		int res = read_im_msg_from_shm(&msg);
+		Cdbg(1, "msg content=%s", msg);
+
+		open_close_network_access_port(g_srv, 1);
+				
+		write_im_resp_to_shm("OK");
+
+		free(msg);
+		
+		break;
+#endif
+
 	}
 }
+
 #elif defined(HAVE_SIGNAL) || defined(HAVE_SIGACTION)
 static void signal_handler(int sig) {
 	switch (sig) {
@@ -207,8 +285,12 @@ static server *server_init(void) {
 	CLEAN(syslog_buf);
 	CLEAN(cur_login_info);
 	CLEAN(last_login_info);
-	srv->last_no_ssl_connection_ts = 0;
+	
+	srv->last_ts_of_streaming_connection = 0;
 	srv->is_streaming_port_opend = 1;
+	
+	srv->last_ts_of_network_access_connection = 0;
+	srv->is_network_access_port_opend = 1;
 	
 	CLEAN(tmp_chunk_len);
 #undef CLEAN
@@ -602,7 +684,13 @@ int main (int argc, char **argv) {
 		return -1;
 	}
 
+	g_srv = srv;
+	
 	/* init structs done */
+
+	#if (defined APP_IPKG) && (defined I686)
+    prepare_for_iptables();
+    #endif
 
 	srv->srvconf.port = 0;
 #ifdef HAVE_GETUID
@@ -1027,11 +1115,17 @@ int main (int argc, char **argv) {
 	sigemptyset(&sigs_to_catch); 
 	sigaddset(&sigs_to_catch, SIGTERM);
 	sigaddset(&sigs_to_catch, SIGUSR2);   
+	
 	sigprocmask(SIG_UNBLOCK, &sigs_to_catch, NULL);
 	signal(SIGTERM, sigaction_handler);
 
 	//- 20121108 Sungmin add
 	signal(SIGUSR2, sigaction_handler);
+
+#if IM_MESSGAE_EANBLE
+	signal(IM_MSG_SIG_REQ, sigaction_handler);	
+#endif
+
 #endif
 
 #ifdef USE_ALARM

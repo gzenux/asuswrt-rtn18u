@@ -30,15 +30,25 @@
 #include <nvram_convert.h>
 #include <shutils.h>
 #include <utils.h>
+#ifdef RTCONFIG_REALTEK
+#include <sysdeps/realtek/realtek.h>
+#endif
 
+
+#if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
+#define PATH_DEV_NVRAM "/dev/"MTD_OF_NVRAM
+#else
 #define PATH_DEV_NVRAM "/dev/nvram"
+#endif
 
 #define NVRAM_IOCTL_GET_SPACE	0x0001
 
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
-
+#ifdef RTCONFIG_REALTEK
+static char hw_mac[18];
+#endif
 int
 nvram_init(void *unused)
 {
@@ -69,12 +79,77 @@ err:
 	return errno;
 }
 
+#ifdef RTCONFIG_REALTEK
+int get_rtk_mac_offset(const char *name)
+{
+	int offset = HW_SETTING_OFFSET+sizeof(PARAM_HEADER_T);
+	if(strcmp(name,"rtk_mac_nic0")==0)
+	{
+		offset+=(int)(&((struct hw_setting *)0)->nic0Addr);
+	}else
+	if(strcmp(name,"rtk_mac_nic1")==0)
+	{
+		offset+=(int)(&((struct hw_setting *)0)->nic1Addr);
+	}else
+	if(strcmp(name,"rtk_mac_wl0")==0)
+	{
+		offset+=(int)(&((struct hw_setting *)0)->wlan);
+		offset += sizeof(struct hw_wlan_setting);
+		offset+=(int)(&((struct hw_wlan_setting *)0)->macAddr);
+	}else
+	if(strcmp(name,"rtk_mac_wl1")==0)
+	{
+		offset+=(int)(&((struct hw_setting *)0)->wlan);
+		offset+=(int)(&((struct hw_wlan_setting *)0)->macAddr);
+	}else
+	{
+		return 0;
+	}
+	return offset;
+}
+static int _is_hex(char c)
+{
+    return (((c >= '0') && (c <= '9')) ||
+            ((c >= 'A') && (c <= 'F')) ||
+            ((c >= 'a') && (c <= 'f')));
+}
+
+static int string_to_hex(char *string, unsigned char *key, int len)
+{
+	char tmpBuf[4];
+	int idx, ii=0;
+	for (idx=0; idx<len; idx+=2) {
+		tmpBuf[0] = string[idx];
+		tmpBuf[1] = string[idx+1];
+		tmpBuf[2] = 0;
+		if ( !_is_hex(tmpBuf[0]) || !_is_hex(tmpBuf[1]))
+			return 0;
+
+		key[ii++] = (unsigned char) strtol(tmpBuf, (char**)NULL, 16);
+	}
+	return 1;
+}
+#endif /* RTCONFIG_REALTEK */
+
 char *nvram_get(const char *name)
 {
 	char tmp[100];
 	char *value;
 	size_t count = strlen(name) + 1;
 	unsigned long *off = (unsigned long *)tmp;
+#ifdef RTCONFIG_REALTEK
+	if(strncmp(name,"rtk_mac",strlen("rtk_mac"))==0)
+	{
+		unsigned char tmpMac[6]={0};
+		int offset=get_rtk_mac_offset(name);
+		if(!offset)
+			return NULL;
+		bzero(hw_mac,sizeof(hw_mac));
+		rtk_flash_read(tmpMac,offset,sizeof(tmpMac));
+		sprintf(hw_mac,"%02x%02x%02x%02x%02x%02x",tmpMac[0],tmpMac[1],tmpMac[2],tmpMac[3],tmpMac[4],tmpMac[5]);
+		return hw_mac;
+	}
+#endif /* RTCONFIG_REALTEK */
 
 	if (nvram_fd < 0) {
 		if (nvram_init(NULL) != 0) return NULL;
@@ -156,6 +231,25 @@ static int _nvram_set(const char *name, const char *value)
 	char tmp[100];
 	char *buf = tmp;
 	int ret;
+#ifdef RTCONFIG_REALTEK
+	if(strncmp(name,"rtk_mac",strlen("rtk_mac"))==0)
+	{
+		int offset=get_rtk_mac_offset(name);
+		if(!value)
+		{
+			cprintf("format must be name=value!\n");
+			return 0;
+		}
+
+		if(!offset|| strlen(value)!=12 || !string_to_hex(value, buf, 12))
+		{
+			cprintf("invalid mac addr,must be xxxxxxxxxxxx\n");
+			return 0;
+		}
+
+		return rtk_flash_write(buf,offset,6);
+	}
+#endif /* RTCONFIG_REALTEK */
 
 	if (nvram_fd < 0) {
 		if ((ret = nvram_init(NULL)) != 0) return ret;

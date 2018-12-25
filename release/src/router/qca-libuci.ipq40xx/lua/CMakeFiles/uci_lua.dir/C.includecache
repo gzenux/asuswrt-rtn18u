@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/work/hive.spf4.cs/qca-networking-2016-spf-4-0_qca_oem.git/qsdk/build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/uci-2015-08-27.1/lua/uci.c
+sys/types.h
+-
+sys/time.h
+-
+stdbool.h
+-
+stdlib.h
+-
+string.h
+-
+unistd.h
+-
+stdio.h
+-
+errno.h
+-
+lauxlib.h
+-
+uci.h
+-
+
+uci.h
+uci_config.h
+uci_config.h
+stdbool.h
+-
+setjmp.h
+-
+stdio.h
+-
+stdint.h
+-
+
+uci_config.h
+

@@ -223,7 +223,8 @@ typedef BWL_PRE_PACKED_STRUCT struct bcm_event {
 #define WLC_E_TX_STAT_ERROR		126	/* tx error indication */
 #define WLC_E_BCMC_CREDIT_SUPPORT	127	/* credit check for BCMC supported */
 #define WLC_E_PSTA_PRIMARY_INTF_IND	128	/* psta primary interface indication */
-#define WLC_E_LAST			129	/* highest val + 1 for range checking */
+#define WLC_E_RADAR_DETECTED	129	/* Radar Detected event */
+#define WLC_E_LAST			130	/* highest val + 1 for range checking */
 
 
 /* Table of event name strings for UIs and debugging dumps */
@@ -439,5 +440,21 @@ typedef struct wl_psta_primary_intf_event {
 
 /* This marks the end of a packed structure section. */
 #include <packed_section_end.h>
+
+typedef struct {
+        uint8 radar_type;       /* one of RADAR_TYPE_XXX */
+        uint16 min_pw;          /* minimum pulse-width (usec * 20) */
+        uint16 max_pw;          /* maximum pulse-width (usec * 20) */
+        uint16 min_pri;         /* minimum pulse repetition interval (usec) */
+        uint16 max_pri;         /* maximum pulse repetition interval (usec) */
+        uint16 subband;         /* subband/frequency */
+} radar_detected_event_info_t;
+
+typedef struct wl_event_radar_detect_data {
+        uint32 version;
+        uint16 current_chanspec; /* chanspec on which the radar is recieved */
+        uint16 target_chanspec; /*  Target chanspec after detection of radar on current_chanspec */
+        radar_detected_event_info_t radar_info[2];
+} wl_event_radar_detect_data_t;
 
 #endif /* _BCMEVENT_H_ */

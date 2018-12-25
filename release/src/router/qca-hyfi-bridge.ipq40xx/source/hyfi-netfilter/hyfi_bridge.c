@@ -277,6 +277,9 @@ int hyfi_bridge_delete_port(struct hyfi_net_bridge *hyfi_br, struct net_bridge_p
 
 struct hyfi_net_bridge_port *hyfi_bridge_get_port(const struct net_bridge_port *p)
 {
+	if (unlikely(!p))
+		return NULL;
+
 	return hyfi_bridge_get_port_by_dev(p->dev);
 }
 

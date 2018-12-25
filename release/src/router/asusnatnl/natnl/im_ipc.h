@@ -51,7 +51,6 @@ typedef struct im_shm_data {
 	  and send the IM_MSG_SHM_KEY signal to the specific process.
 	@param:
 		arg : The pointer to a ANT's natnl_im_data structure.
-	@param:
 		msg_buf : The message buffer to read im message.
 	@return
 		 0 : Success.

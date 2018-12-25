@@ -480,18 +480,14 @@ int start_timemachine()
 	char usb2_vid[8], usb2_pid[8], usb2_serial[64];
 
 	snprintf(prefix, sizeof(prefix), "usb_path%s", "1");
-	memset(usb1_vid, 0, 8);
-	strncpy(usb1_vid, nvram_safe_get(strcat_r(prefix, "_vid", tmp)), 8);
-	memset(usb1_pid, 0, 8);
-	strncpy(usb1_pid, nvram_safe_get(strcat_r(prefix, "_pid", tmp)), 8);
+	strlcpy(usb1_vid, nvram_safe_get(strcat_r(prefix, "_vid", tmp)), sizeof(usb1_vid));
+	strlcpy(usb1_pid, nvram_safe_get(strcat_r(prefix, "_pid", tmp)), sizeof(usb1_pid));
 	memset(usb1_serial, 0, 64);
 	strncpy(usb1_serial, nvram_safe_get(strcat_r(prefix, "_serial", tmp)), 8);
 
 	snprintf(prefix, sizeof(prefix), "usb_path%s", "2");
-	memset(usb2_vid, 0, 8);
-	strncpy(usb2_vid, nvram_safe_get(strcat_r(prefix, "_vid", tmp)), 8);
-	memset(usb2_pid, 0, 8);
-	strncpy(usb2_pid, nvram_safe_get(strcat_r(prefix, "_pid", tmp)), 8);
+	strlcpy(usb2_vid, nvram_safe_get(strcat_r(prefix, "_vid", tmp)), sizeof(usb2_vid));
+	strlcpy(usb2_pid, nvram_safe_get(strcat_r(prefix, "_pid", tmp)), sizeof(usb2_pid));
 	memset(usb2_serial, 0, 64);
 	strncpy(usb2_serial, nvram_safe_get(strcat_r(prefix, "_serial", tmp)), 8);
 

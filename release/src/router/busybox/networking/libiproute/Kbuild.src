@@ -2,7 +2,7 @@
 #
 # Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
 #
-# Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+# Licensed under GPLv2 or later, see file LICENSE in this source tree.
 #
 
 lib-y:=
@@ -62,5 +62,13 @@ lib-$(CONFIG_FEATURE_IP_TUNNEL) += \
 lib-$(CONFIG_FEATURE_IP_RULE) += \
 	ip_parse_common_args.o \
 	iprule.o \
+	rt_names.o \
+	utils.o
+
+lib-$(CONFIG_FEATURE_IP_NEIGH) += \
+	ip_parse_common_args.o \
+	ipneigh.o \
+	libnetlink.o \
+	ll_map.o \
 	rt_names.o \
 	utils.o

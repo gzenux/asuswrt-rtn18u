@@ -1,16 +1,14 @@
 /* vi: set sw=4 ts=4: */
 /*
- * iptunnel.c	       "ip tunnel"
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
- *
- * Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
+ * Authors: Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
  *
  * Changes:
  *
- * Rani Assaf <rani@magic.metawire.com> 980929:	resolve addresses
- * Rani Assaf <rani@magic.metawire.com> 980930:	do not allow key for ipip/sit
- * Phil Karn <karn@ka9q.ampr.org>	990408:	"pmtudisc" flag
+ * Rani Assaf <rani@magic.metawire.com> 980929: resolve addresses
+ * Rani Assaf <rani@magic.metawire.com> 980930: do not allow key for ipip/sit
+ * Phil Karn <karn@ka9q.ampr.org>       990408: "pmtudisc" flag
  */
 
 #include <netinet/ip.h>
@@ -296,7 +294,7 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 			if (key != ARG_inherit) {
 				uval = get_unsigned(*argv, "TTL");
 				if (uval > 255)
-					invarg(*argv, "TTL must be <=255");
+					invarg_1_to_2(*argv, "TTL");
 				p->iph.ttl = uval;
 			}
 		} else if (key == ARG_tos ||
@@ -307,7 +305,7 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 			key = index_in_strings(keywords, *argv);
 			if (key != ARG_inherit) {
 				if (rtnl_dsfield_a2n(&uval, *argv))
-					invarg(*argv, "TOS");
+					invarg_1_to_2(*argv, "TOS");
 				p->iph.tos = uval;
 			} else
 				p->iph.tos = 1;
@@ -406,22 +404,18 @@ static int do_del(char **argv)
 
 static void print_tunnel(struct ip_tunnel_parm *p)
 {
-	char s1[256];
-	char s2[256];
-	char s3[64];
-	char s4[64];
-
-	format_host(AF_INET, 4, &p->iph.daddr, s1, sizeof(s1));
-	format_host(AF_INET, 4, &p->iph.saddr, s2, sizeof(s2));
-	inet_ntop(AF_INET, &p->i_key, s3, sizeof(s3));
-	inet_ntop(AF_INET, &p->o_key, s4, sizeof(s4));
+	char s3[INET_ADDRSTRLEN];
+	char s4[INET_ADDRSTRLEN];
 
 	printf("%s: %s/ip  remote %s  local %s ",
-	       p->name,
-	       p->iph.protocol == IPPROTO_IPIP ? "ip" :
-	       (p->iph.protocol == IPPROTO_GRE ? "gre" :
-		(p->iph.protocol == IPPROTO_IPV6 ? "ipv6" : "unknown")),
-	       p->iph.daddr ? s1 : "any", p->iph.saddr ? s2 : "any");
+		p->name,
+		p->iph.protocol == IPPROTO_IPIP ? "ip" :
+			p->iph.protocol == IPPROTO_GRE ? "gre" :
+			p->iph.protocol == IPPROTO_IPV6 ? "ipv6" :
+			"unknown",
+		p->iph.daddr ? format_host(AF_INET, 4, &p->iph.daddr) : "any",
+		p->iph.saddr ? format_host(AF_INET, 4, &p->iph.saddr) : "any"
+	);
 	if (p->link) {
 		char *n = do_ioctl_get_ifname(p->link);
 		if (n) {
@@ -434,20 +428,21 @@ static void print_tunnel(struct ip_tunnel_parm *p)
 	else
 		printf(" ttl inherit ");
 	if (p->iph.tos) {
-		SPRINT_BUF(b1);
 		printf(" tos");
 		if (p->iph.tos & 1)
 			printf(" inherit");
 		if (p->iph.tos & ~1)
 			printf("%c%s ", p->iph.tos & 1 ? '/' : ' ',
-			       rtnl_dsfield_n2a(p->iph.tos & ~1, b1));
+				rtnl_dsfield_n2a(p->iph.tos & ~1));
 	}
 	if (!(p->iph.frag_off & htons(IP_DF)))
 		printf(" nopmtudisc");
 
+	inet_ntop(AF_INET, &p->i_key, s3, sizeof(s3));
+	inet_ntop(AF_INET, &p->o_key, s4, sizeof(s4));
 	if ((p->i_flags & GRE_KEY) && (p->o_flags & GRE_KEY) && p->o_key == p->i_key)
 		printf(" key %s", s3);
-	else if ((p->i_flags | p->o_flags) & GRE_KEY) {
+	else {
 		if (p->i_flags & GRE_KEY)
 			printf(" ikey %s ", s3);
 		if (p->o_flags & GRE_KEY)
@@ -556,16 +551,16 @@ static int do_show(char **argv)
 }
 
 /* Return value becomes exitcode. It's okay to not return at all */
-int do_iptunnel(char **argv)
+int FAST_FUNC do_iptunnel(char **argv)
 {
 	static const char keywords[] ALIGN1 =
 		"add\0""change\0""delete\0""show\0""list\0""lst\0";
 	enum { ARG_add = 0, ARG_change, ARG_del, ARG_show, ARG_list, ARG_lst };
 
 	if (*argv) {
-		smalluint key = index_in_substrings(keywords, *argv);
-		if (key > 5)
-			bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
+		int key = index_in_substrings(keywords, *argv);
+		if (key < 0)
+			invarg_1_to_2(*argv, applet_name);
 		argv++;
 		if (key == ARG_add)
 			return do_add(SIOCADDTUNNEL, argv);

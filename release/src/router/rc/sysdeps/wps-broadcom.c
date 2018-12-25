@@ -2,11 +2,11 @@
  * Miscellaneous services
  *
  * Copyright (C) 2009, Broadcom Corporation. All Rights Reserved.
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
@@ -46,6 +46,10 @@
 
 #ifdef RTCONFIG_QTN
 #include "web-qtn.h"
+#endif
+
+#if defined(RTCONFIG_AMAS) && defined(RTCONFIG_CFGSYNC)
+#include <cfg_onboarding.h>
 #endif
 
 static int
@@ -89,13 +93,11 @@ exit:
 	return -1;
 }
 
-
-
 /*
  * input variables:
- * 	nvram: wps_band:
- * 	nvram: wps_action: WPS_UI_ACT_ADDENROLLEE/WPS_UI_ACT_CONFIGAe
- *	       (wps_method: (according to wps_sta_pin)
+ * 	nvram: wps_band_x:
+ * 	nvram: wps_action: WPS_UI_ACT_ADDENROLLEE/WPS_UI_ACT_NONE
+ *     (nvram: wps_method: according to wps_sta_pin)
  *	nvram: wps_sta_pin:
  *	nvram: wps_version2:
  *	nvram: wps_autho_sta_mac:
@@ -108,8 +110,8 @@ int
 start_wps_method(void)
 {
 	int wps_band;
-	char *wps_sta_pin;
 	char prefix[]="wlXXXXXX_", tmp[100];
+	char *wps_sta_pin;
 	char buf[256] = "SET ";
 	int len = 4;
 
@@ -119,6 +121,17 @@ start_wps_method(void)
 	}
 
 	wps_band = nvram_get_int("wps_band_x");
+#if defined(RTCONFIG_AMAS) && defined(RTCONFIG_CFGSYNC)
+	if (nvram_get_int("cfg_obstatus") == OB_TYPE_LOCKED) {
+		wps_band = 0;
+		dbg("wps_band(%d) for wps registrar\n", wps_band);
+	}
+#endif
+#ifdef RTCONFIG_DPSTA
+	if (is_dpsta(wps_band) || is_dpsr(wps_band))
+	snprintf(prefix, sizeof(prefix), "wl%d.1_", wps_band);
+	else
+#endif
 	snprintf(prefix, sizeof(prefix), "wl%d_", wps_band);
 	wps_sta_pin = nvram_safe_get("wps_sta_pin");
 
@@ -153,27 +166,27 @@ start_wps_method(void)
 #endif
 
 	if (strlen(wps_sta_pin) && strcmp(wps_sta_pin, "00000000") && (wl_wpsPincheck(wps_sta_pin) == 0))
-		len += sprintf(buf + len, "wps_method=%d ", WPS_UI_METHOD_PIN);
+		len += sprintf(buf + len, "wps_method=\"%d\" ", WPS_UI_METHOD_PIN);
 	else
-		len += sprintf(buf + len, "wps_method=%d ", WPS_UI_METHOD_PBC);
+		len += sprintf(buf + len, "wps_method=\"%d\" ", WPS_UI_METHOD_PBC);
 
 	if (nvram_match("wps_version2", "enabled") && strlen(nvram_safe_get("wps_autho_sta_mac")))
-		len += sprintf(buf + len, "wps_autho_sta_mac=%s ", nvram_safe_get("wps_autho_sta_mac"));
+		len += sprintf(buf + len, "wps_autho_sta_mac=\"%s\" ", nvram_safe_get("wps_autho_sta_mac"));
 
 	if (strlen(wps_sta_pin))
-		len += sprintf(buf + len, "wps_sta_pin=%s ", wps_sta_pin);
+		len += sprintf(buf + len, "wps_sta_pin=\"%s\" ", wps_sta_pin);
 	else
-		len += sprintf(buf + len, "wps_sta_pin=00000000 ");
+		len += sprintf(buf + len, "wps_sta_pin=\"00000000\" ");
 
-	len += sprintf(buf + len, "wps_action=%d ", WPS_UI_ACT_ADDENROLLEE);
+	len += sprintf(buf + len, "wps_action=\"%d\" ", WPS_UI_ACT_ADDENROLLEE);
 
-	len += sprintf(buf + len, "wps_config_command=%d ", WPS_UI_CMD_START);
+	len += sprintf(buf + len, "wps_config_command=\"%d\" ", WPS_UI_CMD_START);
 
 	nvram_set("wps_proc_status", "0");
 	nvram_set("wps_proc_status_x", "0");
 
-	len += sprintf(buf + len, "wps_pbc_method=%d ", WPS_UI_PBC_SW);
-	len += sprintf(buf + len, "wps_ifname=%s ", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
+	len += sprintf(buf + len, "wps_pbc_method=\"%d\" ", WPS_UI_PBC_SW);
+	len += sprintf(buf + len, "wps_ifname=\"%s\" ", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
 
 	dbG("wps env buffer: %s\n", buf);
 
@@ -186,6 +199,15 @@ start_wps_method(void)
 	nvram_unset("wps_pinfail_state");
 #endif
 	nvram_unset("wps_band");
+
+#if defined(HND_ROUTER) && defined(RTCONFIG_PROXYSTA)
+	if (!wps_band && (is_dpsr(wps_band)
+#ifdef RTCONFIG_DPSTA
+		|| is_dpsta(wps_band)
+#endif
+	))
+	eval("wl", "spatial_policy", "0");
+#endif
 
 	nvram_set("wps_env_buf", buf);
 	nvram_set_int("wps_restart_war", 1);
@@ -219,21 +241,77 @@ stop_wps_method(void)
 
 	set_wps_env(buf);
 
+#if defined(HND_ROUTER) && defined(RTCONFIG_PROXYSTA)
+	if (!nvram_get_int("wps_band_x") && (is_dpsr(nvram_get_int("wps_band_x"))
+#ifdef RTCONFIG_DPSTA
+		|| is_dpsta(nvram_get_int("wps_band_x"))
+#endif
+	))
+		eval("wl", "spatial_policy", "1");
+#endif
+
 	return 0;
 }
+
+/*
+ * input variables:
+ *	nvram: wps_band:
+ *	nvram: wps_action: WPS_UI_ACT_ENROLL/WPS_UI_ACT_STA_CONFIGAP/WPS_UI_ACT_STA_GETAPCONFIG
+ *	nvram: wps_method: WPS_UI_METHOD_PIN/WPS_UI_METHOD_PBC
+ *	nvram: wps_ap_pin:
+ *
+ * output variables:
+ *	wps_action
+ *	wps_proc_status
+ *
+ * Currently only supports action WPS_UI_ACT_ENROLL and method WPS_UI_METHOD_PBC
+ */
+
+#ifdef RTCONFIG_AMAS
+int start_wps_enr(void)
+{
+	char prefix[]="wlXXXXXX_", tmp[100], buf[256] = "SET ";
+	int wps_action = WPS_UI_ACT_ENROLL;
+	int wps_method = WPS_UI_METHOD_PBC;
+	int wps_config_command = WPS_UI_CMD_START;
+	int len = 4;
+
+	snprintf(prefix, sizeof(prefix), "wl%d_", nvram_get_int("wps_band_x"));
+
+	sprintf(tmp, "%d", wps_action);
+	nvram_set("wps_action", tmp);
+
+	len += sprintf(buf + len, "wps_action=\"%d\" ", wps_action);
+	len += sprintf(buf + len, "wps_pbc_method=\"%d\" ", WPS_UI_PBC_SW);
+	len += sprintf(buf + len, "wps_method=\"%d\" ", wps_method);
+
+	nvram_set("wps_proc_status", "0");
+
+	len += sprintf(buf + len, "wps_config_command=\"%d\" ", wps_config_command);
+	len += sprintf(buf + len, "wps_ifname=\"%s\" ", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
+
+	nvram_set("wps_env_buf", buf);
+	set_wps_env(buf);
+
+	return 0;
+}
+#endif
 
 int is_wps_stopped(void)
 {
 	int ret = 1;
-#ifdef RTCONFIG_QTN
-#ifdef RTCONFIG_WPS_DUALBAND
+#if defined(RTCONFIG_QTN) && defined(RTCONFIG_WPS_DUALBAND)
 	int ret_qtn = 1;
-#endif
 #endif
 	int status = nvram_get_int("wps_proc_status");
 	time_t now = uptime();
 	time_t wps_uptime = strtoul(nvram_safe_get("wps_uptime"), NULL, 10);
 	char tmp[100];
+
+#ifdef RTCONFIG_AMAS
+	if (is_router_mode() && !nvram_get_int("w_Setting") && nvram_match("amesh_led", "1"))
+		return 0;
+#endif
 
 	nvram_set_int("wps_proc_status_x", status);
 
@@ -290,9 +368,7 @@ int is_wps_stopped(void)
 			}
 		}
 
-#ifdef RTCONFIG_WPS_DUALBAND
-		// return ret;
-#else
+#ifndef RTCONFIG_WPS_DUALBAND
 		return ret;
 #endif
 	}
@@ -343,21 +419,20 @@ int is_wps_stopped(void)
 			break;
 		case 10: /* WPS_UI_ASSOCIATING */
 			ret = 0;
-			dbg("Assciating with access point...\n");
+			dbg("Associating with access point...\n");
 			break;
 		default:
 			ret = 0;
 			break;
 	}
 
-#ifdef RTCONFIG_WPS_DUALBAND
-	if(ret == 1 || ret_qtn == 1){
+#if defined(RTCONFIG_QTN) && defined(RTCONFIG_WPS_DUALBAND)
+	if (ret == 1 || ret_qtn == 1) {
 		nvram_set("wps_proc_status", "0");
 		return 1;
-	}else{
+	} else {
 		return 0;
 	}
-	// return ret;
 #else
 	return ret;
 #endif

@@ -15,13 +15,14 @@
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
-if(parent.location.pathname.search("index") === -1) top.location.href = "../index.asp";
+if(parent.location.pathname.search("index") === -1) top.location.href = "../"+'<% networkmap_page(); %>';
 
 <% wanlink(); %>
 <% first_wanlink(); %>
 <% secondary_wanlink(); %>
 
 //active wan
+var wans_caps = '<% nvram_get("wans_cap"); %>';
 var wanip = wanlink_ipaddr();
 var wannetmask = wanlink_netmask();
 var wandns = wanlink_dns();
@@ -70,6 +71,7 @@ var wans_lanport = '<% nvram_get("wans_lanport"); %>';
 var wan0_primary = '<% nvram_get("wan0_primary"); %>';
 var wans_mode = '<%nvram_get("wans_mode");%>';
 var loadBalance_Ratio = '<%nvram_get("wans_lb_ratio");%>';
+var wlc_express = '<% nvram_get("wlc_express"); %>';
 
 <% wan_get_parameter(); %>
 
@@ -81,9 +83,35 @@ if(yadns_support){
 	var yadns_servers = [ <% yadns_servers(); %> ];
 }
 
+var wan_enable_orig = (parent.document.form.dual_wan_flag.value == 0)? '<% nvram_get("wan0_enable"); %>':'<% nvram_get("wan1_enable"); %>';
+
 function add_lanport_number(if_name)
 {
-	if (if_name == "lan") {
+	if(based_modelid == "GT-AC5300"){
+		if(if_name == "lan"){
+			if(wans_lanport == "2")
+				return "lan" + "1";
+			if(wans_lanport == "1")
+				return "lan" + "2";
+			if(wans_lanport == "4")
+				return "lan" + "5";
+			if(wans_lanport == "3")
+				return "lan" + "6";
+		}
+	}
+	else if(based_modelid == "RT-AC86U" || based_modelid == "AC2900"){
+		if(if_name == "lan"){
+			if(wans_lanport == "4")
+				return "lan" + "1";
+			if(wans_lanport == "3")
+				return "lan" + "2";
+			if(wans_lanport == "2")
+				return "lan" + "3";
+			if(wans_lanport == "1")
+				return "lan" + "4";
+		}
+	}
+	else if (if_name == "lan") {
 		return "lan" + wans_lanport;
 	}
 	return if_name;
@@ -126,7 +154,6 @@ function initial(){
 			document.getElementById("dualwan_row_main").style.display = "";	
 			// DSLTODO, need ajax to update failover status
 			document.getElementById('dualwan_mode_ctrl').style.display = "";
-			document.getElementById('wan_enable_button').style.display = "none";
 			
 			if(wans_mode == "lb"){
 				//document.getElementById("wansMode").value = 1;
@@ -265,6 +292,7 @@ function initial(){
 		update_all_xip(wanxip, wanxnetmask, wanxdns, wanxgateway, unit);
 	}
 
+	set_NM_height();
 }
 
 function update_connection_type(dualwan_unit){
@@ -397,8 +425,13 @@ function update_all_ip(wanip, wannetmask, wandns, wangateway, unit){
 	if(unit == 0){
 		showtext($("#WANIP")[0], wanip);
 		showtext($("#netmask")[0], wannetmask);
-		showtext2($("#DNS1")[0], dnsArray[0], dnsArray[0]);
-		showtext2($("#DNS2")[0], dnsArray[1], dnsArray[1]);
+		if(wandns.length == 0){
+			$("#DNS1")[0].style.height = "20px";
+		}
+		else{
+			showtext2($("#DNS1")[0], dnsArray[0], dnsArray[0]);
+			showtext2($("#DNS2")[0], dnsArray[1], dnsArray[1]);
+		}
 		showtext($("#gateway")[0], wangateway);
 
 		if(parent.wans_flag){
@@ -418,8 +451,13 @@ function update_all_ip(wanip, wannetmask, wandns, wangateway, unit){
 	else{
 		showtext($("#secondary_WANIP")[0], wanip);
 		showtext($("#secondary_netmask")[0], wannetmask);
-		showtext2($("#secondary_DNS1")[0], dnsArray[0], dnsArray[0]);
-		showtext2($("#secondary_DNS2")[0], dnsArray[1], dnsArray[1]);
+		if(wandns.length == 0){
+			$("#secondary_DNS1")[0].style.height = "20px";
+		}
+		else{
+			showtext2($("#secondary_DNS1")[0], dnsArray[0], dnsArray[0]);
+			showtext2($("#secondary_DNS2")[0], dnsArray[1], dnsArray[1]);
+		}
 		showtext($("#secondary_gateway")[0], wangateway);
 		if (secondary_wanlink_type() == "dhcp") {
 			showtext($("#secondary_lease")[0], format_time(secondary_lease, "Renewing..."));
@@ -428,8 +466,7 @@ function update_all_ip(wanip, wannetmask, wandns, wangateway, unit){
 	}
 }
 function update_all_xip(wanxip, wanxnetmask, wanxdns, wanxgateway, unit) {
-	var dnsArray = wandns.split(" ");
-	var have_dns = !(dnsArray[0] || dnsArray[1]);
+	var have_dns = false;
 	var dnsArray = wanxdns.split(" ");
 	var have_ip = false;
 	var have_gateway = false;
@@ -438,6 +475,17 @@ function update_all_xip(wanxip, wanxnetmask, wanxdns, wanxgateway, unit) {
 	var expires = 0;
 
 	var type = "";
+
+	if(parent.wans_flag){
+		type = (unit == 0) ? first_wanlink_type() : secondary_wanlink_type();
+	}
+	else
+		type = wanlink_type();
+
+	if (type != "dhcp" && type != "static") {
+		var dnsArray = wandns.split(" ");
+		var have_dns = !(dnsArray[0] || dnsArray[1]);
+	}
 
 	if(parent.wans_flag){
 		type = (unit == 0) ? first_wanlink_xtype() : secondary_wanlink_xtype();
@@ -535,6 +583,14 @@ function update_wanip(e) {
 			wanxgateway = wanlink_xgateway();
 			wan_lease = wanlink_lease();
 			wan_expires = wanlink_expires();
+
+			parent.document.getElementById("index_status").innerHTML = '<span style="word-break:break-all;">' + wanip + '</span>'
+			setTimeout(function(){
+				parent.show_ddns_status();
+			}, 1);
+		
+			if(wanip == '0.0.0.0' || wanip == '')
+				parent.document.getElementById("wanIP_div").style.display = "none";
 		}
 
 		if(old_link_internet == -1)
@@ -598,7 +654,10 @@ function goToWAN(){
 			else
 				document.act_form.current_page.value = "Advanced_Modem_Content.asp";
 		}
-		else if(wans_dualwan.split(" ")[wan_selected].toUpperCase() == "WAN" || wans_dualwan.split(" ")[wan_selected].toUpperCase() == "LAN"){
+		else if(wans_dualwan.split(" ")[wan_selected].toUpperCase() == "WAN" ||
+			wans_dualwan.split(" ")[wan_selected].toUpperCase() == "WAN2" ||
+			wans_dualwan.split(" ")[wan_selected].toUpperCase() == "LAN")
+		{
 			document.act_form.current_page.value = "Advanced_WAN_Content.asp";
 		}
 		else if(wans_dualwan.split(" ")[wan_selected].toUpperCase() == "DSL")
@@ -609,8 +668,16 @@ function goToWAN(){
 	else{
 		if(dsl_support)
 			parent.location.href = '/Advanced_DSL_Content.asp';
-		else
-			parent.location.href = '/Advanced_WAN_Content.asp';
+		else{
+			if(wans_dualwan != "" && wans_dualwan.split(" ")[0].toUpperCase() == "USB"){
+				if(gobi_support)
+					parent.location.href = '/Advanced_MobileBroadband_Content.asp';
+				else
+					parent.location.href = '/Advanced_Modem_Content.asp';
+			}
+			else
+				parent.location.href = '/Advanced_WAN_Content.asp';
+		}
 	}
 }
 
@@ -619,10 +686,20 @@ function goToDualWAN(){
 }
 
 function gotoSiteSurvey(){
-	if(sw_mode == 2)
-		parent.location.href = '/QIS_wizard.htm?flag=sitesurvey_rep&band='+'<% nvram_get("wl_unit"); %>';
-	else
+	if(sw_mode == 2){
+		if(wlc_express == "1"){
+			parent.location.href = '/QIS_wizard.htm?flag=sitesurvey_exp2';
+		}
+		else if(wlc_express == "2"){
+			parent.location.href = '/QIS_wizard.htm?flag=sitesurvey_exp5';
+		}
+		else{	
+			parent.location.href = '/QIS_wizard.htm?flag=sitesurvey_rep&band='+'<% nvram_get("wl_unit"); %>';
+		}	
+	}
+	else{
 		parent.location.href = '/QIS_wizard.htm?flag=sitesurvey_mb';
+	}
 }
 
 function manualSetup(){
@@ -633,13 +710,13 @@ function manualSetup(){
 
 <body class="statusbody" onload="initial();">
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
-<form method="post" name="internetForm" id="form" action="/start_apply2.htm">
-<input type="hidden" name="current_page" value="/index.asp">
-<input type="hidden" name="next_page" value="/index.asp">
-<input type="hidden" name="flag" value="Internet">
+<form method="post" name="internetForm" id="form" action="/start_apply2.htm" target="hidden_frame">
+<input type="hidden" name="current_page" value="<% abs_index_page(); %>">
+<input type="hidden" name="next_page" value="<% abs_index_page(); %>">
+<input type="hidden" name="flag" value="background">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="restart_wan_if">
-<input type="hidden" name="action_wait" value="5">
+<input type="hidden" name="action_wait" value="3">
 <input type="hidden" name="wan_enable" value="<% nvram_get("wan_enable"); %>">
 <input type="hidden" name="wans_dualwan" value="<% nvram_get("wans_dualwan"); %>">
 <input type="hidden" name="wan_unit" value="<% get_wan_unit(); %>">
@@ -682,7 +759,7 @@ function manualSetup(){
     		<div class="left" style="width:94px; float:right;" id="radio_wan_enable"></div>
 				<div class="clear"></div>
 				<script type="text/javascript">
-						$('#radio_wan_enable').iphoneSwitch('<% nvram_get("wan_enable"); %>', 
+						$('#radio_wan_enable').iphoneSwitch(wan_enable_orig,
 							 function() {
 								document.internetForm.wan_enable.value = "1";
 								if (dsl_support && wans_dualwan.split(" ")[wan_unit] == "dsl") {
@@ -690,8 +767,10 @@ function manualSetup(){
 									document.internetForm.dslx_link_enable.disabled = false;
 									document.internetForm.action_script.value = "start_dslwan_if 0";
 								}
-								parent.showLoading();
-								document.internetForm.submit();	
+								else if(parent.wans_flag){
+									document.internetForm.wan_unit.value = parent.document.form.dual_wan_flag.value;
+								}
+								document.internetForm.submit();
 								return true;
 							 },
 							 function() {
@@ -701,8 +780,10 @@ function manualSetup(){
 									document.internetForm.dslx_link_enable.disabled = false;
 									document.internetForm.action_script.value = "stop_dslwan_if 0";
 								}
-								parent.showLoading();
-								document.internetForm.submit();	
+								else if(parent.wans_flag){
+									document.internetForm.wan_unit.value = parent.document.form.dual_wan_flag.value;
+								}
+								document.internetForm.submit();
 								return true;
 							 }
 						);
@@ -719,33 +800,48 @@ function manualSetup(){
 				<script type="text/javascript">
 						$('#radio_dualwan_enable').iphoneSwitch(parent.wans_flag, 
 							 function() {
-								if(wans_dualwan.split(" ")[0] == "usb"){
+								if(wans_dualwan.split(" ")[0] == "usb" || wans_dualwan.split(" ")[0] == "lan"){
 									document.internetForm.wans_dualwan.value = wans_dualwan.split(" ")[0]+" wan";
 									document.internetForm.action_wait.value = '<% get_default_reboot_time(); %>';
 									document.internetForm.action_script.value = "reboot";
 								}
-								else{
-									document.internetForm.wans_dualwan.value = wans_dualwan.split(" ")[0]+" usb";
-									document.internetForm.action_wait.value = '10';
-									document.internetForm.action_script.value = "start_multipath";
+								else if(wans_dualwan.split(" ")[0] == "wan2"){
+									document.internetForm.wans_dualwan.value = wans_dualwan.split(" ")[0]+" wan";
+									document.internetForm.action_wait.value = '<% get_default_reboot_time(); %>';
+									document.internetForm.action_script.value = "reboot";
+									document.internetForm.flag.value = "Internet";
 								}
-								parent.showLoading();
+								else{
+									if(wans_caps.search("wan2") >= 0) {
+										document.internetForm.wans_dualwan.value = wans_dualwan.split(" ")[0]+" wan2";
+										document.internetForm.action_wait.value = '<% get_default_reboot_time(); %>';
+										document.internetForm.action_script.value = "reboot";
+									}else{
+										document.internetForm.wans_dualwan.value = wans_dualwan.split(" ")[0]+" usb";
+										document.internetForm.action_wait.value = '2';
+										document.internetForm.action_script.value = "start_multipath";
+										setTimeout(parent.refreshpage, 1000);
+									}
+								}
+
 								document.internetForm.submit();
 								return true;
 							 },
 							 function() {
 								if(wans_dualwan.split(" ")[1] == "usb"){
-									document.internetForm.action_wait.value = '10';
+									document.internetForm.action_wait.value = '2';
 									document.internetForm.action_script.value = "start_multipath";
+									setTimeout(parent.refreshpage, 1000);
 								}							 	
 								else{
 									document.internetForm.action_wait.value = '<% get_default_reboot_time(); %>';
 									document.internetForm.action_script.value = "reboot";
+									document.internetForm.flag.value = "Internet";
 								}	 	
 								document.internetForm.wans_dualwan.value = wans_dualwan.split(" ")[0]+" none";
 								document.internetForm.wan_unit.value = 0;
 								document.internetForm.wans_mode.value = "fo";
-								parent.showLoading();
+
 								document.internetForm.submit();
 								return true;
 							 }
@@ -758,7 +854,7 @@ function manualSetup(){
 <tr id=dualwan_row_main style="display:none">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm">WAN Port</p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="dualwan_current"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="dualwan_current"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -766,7 +862,7 @@ function manualSetup(){
 <tr id=dualwan_row_primary style="display:none">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#wan_type#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="dualwan_primary_if"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="dualwan_primary_if"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -774,7 +870,7 @@ function manualSetup(){
 <tr id=dualwan_row_secondary style="display:none">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#wan_type#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="dualwan_secondary_if"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="dualwan_secondary_if"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -783,7 +879,7 @@ function manualSetup(){
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#dualwan_mode#></p>
 
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="dualwan_mode"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="dualwan_mode"></p>
 				<!--select style="*margin-top:-7px;" id="wansMode" class="input_option" onchange="">
 					<option value="1">Load Balance</option>
 					<option value="2">Fail Over</option>
@@ -795,7 +891,7 @@ function manualSetup(){
 <tr id="loadbalance_config_ctrl" style="display:none">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#dualwan_mode_lb_setting#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="loadbalance_config"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="loadbalance_config"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -803,7 +899,7 @@ function manualSetup(){
 <tr>
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm" ><#Connectiontype#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="connectionType"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="connectionType"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -811,8 +907,8 @@ function manualSetup(){
 <tr id="primary_WANIP_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#WAN_IP#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="WANIP"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="xWANIP"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px; line-height:20px;" id="WANIP"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="xWANIP"></p>
     		<span id="wan_status" style="display:none"></span>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
@@ -820,16 +916,16 @@ function manualSetup(){
 <tr id="primary_netmask_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#IPConnection_x_ExternalSubnetMask_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="netmask"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="xnetmask"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="netmask"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="xnetmask"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr style="display:none;" id="secondary_WANIP_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#WAN_IP#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_WANIP"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_xWANIP"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_WANIP"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_xWANIP"></p>
     		<span id="wan_status" style="display:none"></span>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
@@ -837,8 +933,8 @@ function manualSetup(){
 <tr style="display:none;" id="secondary_netmask_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#IPConnection_x_ExternalSubnetMask_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_netmask"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_xnetmask"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_netmask"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_xnetmask"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -847,9 +943,9 @@ function manualSetup(){
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#YandexDNS#></p>
     		<a href="/YandexDNS.asp" target="_parent">
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="yadns_mode"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="yadns_DNS1"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="yadns_DNS2"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="yadns_mode"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="yadns_DNS1"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="yadns_DNS2"></p>
     		</a>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
@@ -858,20 +954,20 @@ function manualSetup(){
 <tr id="primary_DNS_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm">DNS</p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="DNS1"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="DNS2"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="xDNS1"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="xDNS2"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="DNS1"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="DNS2"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="xDNS1"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="xDNS2"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr style="display:none;" id="secondary_DNS_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm">DNS</p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_DNS1"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_DNS2"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_xDNS1"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_xDNS2"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_DNS1"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_DNS2"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_xDNS1"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_xDNS2"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -879,48 +975,48 @@ function manualSetup(){
 <tr id="primary_gateway_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#RouterConfig_GWStaticGW_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="gateway"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="xgateway"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="gateway"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="xgateway"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr style="display:none;" id="secondary_gateway_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#RouterConfig_GWStaticGW_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_gateway"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_xgateway"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_gateway"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_xgateway"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr style="display:none;" id="primary_lease_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#LANHostConfig_LeaseTime_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="lease"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="xlease"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="lease"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="xlease"></p>
     	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr style="display:none;" id="primary_expires_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#LeaseExpires#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="expires"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="xexpires"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="expires"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="xexpires"></p>
     	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr style="display:none;" id="secondary_lease_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#LANHostConfig_LeaseTime_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_lease"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_xlease"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_lease"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_xlease"></p>
     	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr style="display:none;" id="secondary_expires_ctrl">
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#LeaseExpires#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_expires"></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="secondary_xexpires"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_expires"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="secondary_xexpires"></p>
     	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -950,7 +1046,7 @@ function manualSetup(){
 <tr>
     <td style="padding:5px 10px 5px 15px;" id="RemoteAPtd">
     		<p class="formfonttitle_nwm"><#statusTitle_AP#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="RemoteAP"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="RemoteAP"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -958,7 +1054,7 @@ function manualSetup(){
 <tr>
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#Connectiontype#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;" id="LanProto"></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;" id="LanProto"></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
@@ -966,28 +1062,28 @@ function manualSetup(){
 <tr>
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#LAN_IP#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;"><% nvram_get("lan_ipaddr"); %></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;"><% nvram_get("lan_ipaddr"); %></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr>
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#IPConnection_x_ExternalSubnetMask_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;"><% nvram_get("lan_netmask"); %></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;"><% nvram_get("lan_netmask"); %></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr>
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#IPConnection_x_ExternalGateway_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;"><% nvram_get("lan_gateway"); %></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;"><% nvram_get("lan_gateway"); %></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>
 <tr>
     <td style="padding:5px 10px 5px 15px;">
     		<p class="formfonttitle_nwm"><#HSDPAConfig_DNSServers_itemname#></p>
-    		<p style="padding-left:10px; margin-top:3px; background-color:#444f53; line-height:20px;"><% nvram_get("lan_dns"); %></p>
+    		<p class="tab_info_bg" style="padding-left:10px; margin-top:3px;line-height:20px;"><% nvram_get("lan_dns"); %></p>
       	<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
     </td>
 </tr>

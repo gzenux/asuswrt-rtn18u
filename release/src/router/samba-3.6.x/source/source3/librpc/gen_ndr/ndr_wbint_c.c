@@ -308,7 +308,7 @@ struct tevent_req *dcerpc_wbint_LookupSid_send(TALLOC_CTX *mem_ctx,
 					       struct dom_sid *_sid /* [in] [ref] */,
 					       enum lsa_SidType *_type /* [out] [ref] */,
 					       const char **_domain /* [out] [charset(UTF8),ref] */,
-					       const char **_name /* [out] [charset(UTF8),ref] */)
+					       const char **_name /* [out] [ref,charset(UTF8)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_wbint_LookupSid_state *state;
@@ -413,7 +413,7 @@ NTSTATUS dcerpc_wbint_LookupSid(struct dcerpc_binding_handle *h,
 				struct dom_sid *_sid /* [in] [ref] */,
 				enum lsa_SidType *_type /* [out] [ref] */,
 				const char **_domain /* [out] [charset(UTF8),ref] */,
-				const char **_name /* [out] [charset(UTF8),ref] */,
+				const char **_name /* [out] [ref,charset(UTF8)] */,
 				NTSTATUS *result)
 {
 	struct wbint_LookupSid r;
@@ -753,7 +753,7 @@ struct tevent_req *dcerpc_wbint_LookupName_send(TALLOC_CTX *mem_ctx,
 						struct tevent_context *ev,
 						struct dcerpc_binding_handle *h,
 						const char *_domain /* [in] [charset(UTF8),ref] */,
-						const char *_name /* [in] [ref,charset(UTF8)] */,
+						const char *_name /* [in] [charset(UTF8),ref] */,
 						uint32_t _flags /* [in]  */,
 						enum lsa_SidType *_type /* [out] [ref] */,
 						struct dom_sid *_sid /* [out] [ref] */)
@@ -859,7 +859,7 @@ NTSTATUS dcerpc_wbint_LookupName_recv(struct tevent_req *req,
 NTSTATUS dcerpc_wbint_LookupName(struct dcerpc_binding_handle *h,
 				 TALLOC_CTX *mem_ctx,
 				 const char *_domain /* [in] [charset(UTF8),ref] */,
-				 const char *_name /* [in] [ref,charset(UTF8)] */,
+				 const char *_name /* [in] [charset(UTF8),ref] */,
 				 uint32_t _flags /* [in]  */,
 				 enum lsa_SidType *_type /* [out] [ref] */,
 				 struct dom_sid *_sid /* [out] [ref] */,
@@ -1859,7 +1859,7 @@ static void dcerpc_wbint_Gid2Sid_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_wbint_Gid2Sid_send(TALLOC_CTX *mem_ctx,
 					     struct tevent_context *ev,
 					     struct dcerpc_binding_handle *h,
-					     const char *_dom_name /* [in] [unique,charset(UTF8)] */,
+					     const char *_dom_name /* [in] [charset(UTF8),unique] */,
 					     uint64_t _gid /* [in]  */,
 					     struct dom_sid *_sid /* [out] [ref] */)
 {
@@ -1960,7 +1960,7 @@ NTSTATUS dcerpc_wbint_Gid2Sid_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_wbint_Gid2Sid(struct dcerpc_binding_handle *h,
 			      TALLOC_CTX *mem_ctx,
-			      const char *_dom_name /* [in] [unique,charset(UTF8)] */,
+			      const char *_dom_name /* [in] [charset(UTF8),unique] */,
 			      uint64_t _gid /* [in]  */,
 			      struct dom_sid *_sid /* [out] [ref] */,
 			      NTSTATUS *result)
@@ -4007,9 +4007,9 @@ static void dcerpc_wbint_DsGetDcName_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_wbint_DsGetDcName_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct dcerpc_binding_handle *h,
-						 const char *_domain_name /* [in] [ref,charset(UTF8)] */,
+						 const char *_domain_name /* [in] [charset(UTF8),ref] */,
 						 struct GUID *_domain_guid /* [in] [unique] */,
-						 const char *_site_name /* [in] [unique,charset(UTF8)] */,
+						 const char *_site_name /* [in] [charset(UTF8),unique] */,
 						 uint32_t _flags /* [in]  */,
 						 struct netr_DsRGetDCNameInfo **_dc_info /* [out] [ref] */)
 {
@@ -4112,9 +4112,9 @@ NTSTATUS dcerpc_wbint_DsGetDcName_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_wbint_DsGetDcName(struct dcerpc_binding_handle *h,
 				  TALLOC_CTX *mem_ctx,
-				  const char *_domain_name /* [in] [ref,charset(UTF8)] */,
+				  const char *_domain_name /* [in] [charset(UTF8),ref] */,
 				  struct GUID *_domain_guid /* [in] [unique] */,
-				  const char *_site_name /* [in] [unique,charset(UTF8)] */,
+				  const char *_site_name /* [in] [charset(UTF8),unique] */,
 				  uint32_t _flags /* [in]  */,
 				  struct netr_DsRGetDCNameInfo **_dc_info /* [out] [ref] */,
 				  NTSTATUS *result)

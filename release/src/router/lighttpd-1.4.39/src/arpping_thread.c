@@ -123,7 +123,7 @@ void save_arpping_list(void)
 			continue;
 
 		char temp[50]="\0";
-		sprintf(temp, "%s<%s<%s<%d>", c->name->ptr, c->ip->ptr, c->mac->ptr, c->online);
+		snprintf(temp, sizeof(temp), "%s<%s<%s<%d>", c->name->ptr, c->ip->ptr, c->mac->ptr, c->online);
 		buffer_append_string(smbdav_list, temp);
 	}
 	
@@ -356,7 +356,7 @@ int arpCheck(int thread_id,u_long inaddr, struct ifinfo *ifbuf, long timeout, bu
 				//if(hostname!=NULL)
 				{
 					
-					sprintf(checkmac, "%02X:%02X:%02X:%02X:%02X:%02X", 
+					snprintf(checkmac, sizeof(checkmac), "%02X:%02X:%02X:%02X:%02X:%02X", 
 						    arp.sHaddr[0]&0xff, arp.sHaddr[1]&0xff, arp.sHaddr[2]&0xff,
 						    arp.sHaddr[3]&0xff, arp.sHaddr[4]&0xff, arp.sHaddr[5]&0xff);
 
@@ -867,7 +867,7 @@ int init_a_srvInfo(void)
 		memcpy(pSrvInfo->macSrv, macSrv, 6);
 				
 		char ipAddr[18] = "";
-		sprintf(ipAddr,"%u.%u.%u.%u", UC(p[0]), UC(p[1]), UC(p[2]), i+1);
+		snprintf(ipAddr, sizeof(ipAddr), "%u.%u.%u.%u", UC(p[0]), UC(p[1]), UC(p[2]), i+1);
 		pSrvInfo->arp_ip = inet_addr(ipAddr);
 		buffer_copy_string(pSrvInfo->arp_cip, ipAddr);
 

@@ -27,6 +27,8 @@
 #include "hyfi_hdtbl.h"
 #include "hyfi_fdb.h"
 #include "hyfi_netlink.h"
+#include "ref/ref_port_ctrl.h"
+#include "ref/ref_fdb.h"
 
 static struct sock *hyfi_nl_sk = NULL;
 static struct sock *hyfi_nl_event_sk = NULL;
@@ -140,9 +142,7 @@ static void hyfi_netlink_receive(struct sk_buff *__skb)
 					DEBUG_ERROR("Not a Hy-Fi device, or device not found: %s\n",
 							hymsghdr->if_name);
 					hymsghdr->status = HYFI_STATUS_NOT_FOUND;
-					if (brdev)
-						dev_put(brdev);
-					break;
+					goto done;
 				}
 			}
 
@@ -470,7 +470,14 @@ static void hyfi_netlink_receive(struct sk_buff *__skb)
 				spin_unlock_bh(&br->lock);
 				break;
 			}
-
+			case HYFI_GET_SWITCH_PORT_ID: {
+				struct __switchport_index *p =hymsgdata;
+				fal_port_t port_id;
+				port_id = ref_fdb_get_port_by_mac(p->vlanid,p->mac_addr);
+				p->portid = port_id;
+				hyfi_fdb_perport(br, p);
+				break;
+			}
 			case HYFI_SET_PSW_MSE_TIMEOUT:
 			case HYFI_SET_PSW_DROP_MARKERS:
 			case HYFI_SET_PSW_OLD_IF_QUIET_TIME:
@@ -513,6 +520,8 @@ void hyfi_netlink_event_send(struct hyfi_net_bridge *br,
 	struct sk_buff *skb;
 	struct nlmsghdr *nlh = NULL;
 	int send_msg = true;
+	ssdk_port_status *linkStatus = NULL;
+	struct __ssdkport_entry *ssdk_portentry = NULL;
 	struct __hatbl_entry *hae;
 	struct net_hatbl_entry *ha;
 	struct net_bridge_port *bp;
@@ -568,7 +577,15 @@ void hyfi_netlink_event_send(struct hyfi_net_bridge *br,
 	case HYFI_EVENT_FDB_UPDATED:
 		/* No data; recipient needs to ask for the updated fdb table */
 		break;
-
+	case HYFI_EVENT_LINK_PORT_UP:
+	case HYFI_EVENT_LINK_PORT_DOWN:
+		linkStatus = (ssdk_port_status *)event_data;
+		memcpy((char *)NLMSG_DATA(nlh), (char *)linkStatus, sizeof(ssdk_port_status));
+		break;
+	case HYFI_EVENT_MAC_LEARN_ON_PORT:
+		ssdk_portentry = (struct __ssdkport_entry *)event_data;
+		memcpy((char *)NLMSG_DATA(nlh), (char *)ssdk_portentry, sizeof(struct __ssdkport_entry));
+		break;
 	default:
 		DEBUG_WARN("hyfi: event type %d is not supported\n", event_type);
 		send_msg = false;

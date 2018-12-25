@@ -5,7 +5,7 @@
  * Copyright (C) 2004  Peter Willis <psyphreak@phreaker.net>
  * Copyright (C) 2005  Tito Ragusa <farmatito@tiscali.it>
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /*
@@ -13,28 +13,34 @@
  * Most of the dirty work blatantly ripped off from cat.c =)
  */
 
+//usage:#define eject_trivial_usage
+//usage:       "[-t] [-T] [DEVICE]"
+//usage:#define eject_full_usage "\n\n"
+//usage:       "Eject DEVICE or default /dev/cdrom\n"
+//usage:	IF_FEATURE_EJECT_SCSI(
+//usage:     "\n	-s	SCSI device"
+//usage:	)
+//usage:     "\n	-t	Close tray"
+//usage:     "\n	-T	Open/close tray (toggle)"
+
 #include <sys/mount.h>
 #include "libbb.h"
+#if ENABLE_FEATURE_EJECT_SCSI
 /* Must be after libbb.h: they need size_t */
-#include "fix_u32.h"
-#include <scsi/sg.h>
-#include <scsi/scsi.h>
-
-/* various defines swiped from linux/cdrom.h */
-#define CDROMCLOSETRAY            0x5319  /* pendant of CDROMEJECT  */
-#define CDROMEJECT                0x5309  /* Ejects the cdrom media */
-#define CDROM_DRIVE_STATUS        0x5326  /* Get tray position, etc. */
-/* drive status possibilities returned by CDROM_DRIVE_STATUS ioctl */
-#define CDS_TRAY_OPEN        2
+# include "fix_u32.h"
+# include <scsi/sg.h>
+# include <scsi/scsi.h>
+#endif
 
 #define dev_fd 3
 
 /* Code taken from the original eject (http://eject.sourceforge.net/),
  * refactored it a bit for busybox (ne-bb@nicoerfurth.de) */
 
+#if ENABLE_FEATURE_EJECT_SCSI
 static void eject_scsi(const char *dev)
 {
-	static const char sg_commands[3][6] = {
+	static const char sg_commands[3][6] ALIGN1 = {
 		{ ALLOW_MEDIUM_REMOVAL, 0, 0, 0, 0, 0 },
 		{ START_STOP, 0, 0, 0, 1, 0 },
 		{ START_STOP, 0, 0, 0, 2, 0 }
@@ -66,6 +72,16 @@ static void eject_scsi(const char *dev)
 	/* force kernel to reread partition table when new disc is inserted */
 	ioctl(dev_fd, BLKRRPART);
 }
+#else
+# define eject_scsi(dev) ((void)0)
+#endif
+
+/* various defines swiped from linux/cdrom.h */
+#define CDROMCLOSETRAY            0x5319  /* pendant of CDROMEJECT  */
+#define CDROMEJECT                0x5309  /* Ejects the cdrom media */
+#define CDROM_DRIVE_STATUS        0x5326  /* Get tray position, etc. */
+/* drive status possibilities returned by CDROM_DRIVE_STATUS ioctl */
+#define CDS_TRAY_OPEN        2
 
 #define FLAG_CLOSE  1
 #define FLAG_SMART  2

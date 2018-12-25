@@ -14,6 +14,10 @@
 
 #include "hotplug2_utils.h"
 
+#ifdef HND_ROUTER
+#define inline  
+#endif
+
 /**
  * A trivial function that reads kernel seqnum from sysfs.
  *

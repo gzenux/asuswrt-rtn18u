@@ -13,6 +13,10 @@
 #include <string.h>
 #include <assert.h>
 
+#if IM_MESSGAE_EANBLE
+#include "im_ipc.h" // asusnatnl/natnl
+#endif
+
 #ifdef USE_OPENSSL
 #include <openssl/md5.h>
 #else
@@ -287,51 +291,80 @@ extern int upper_strcmp(const char *const str1, const char *const str2){
 
 extern int test_if_System_folder(const char *const dirname){
 	const char *const MS_System_folder[] = {"SYSTEM VOLUME INFORMATION", "RECYCLER", "RECYCLED", "$RECYCLE.BIN", NULL};
-    const char *const Linux_System_folder[] = {"lost+found", NULL};
-    int i;
+	const char *const Linux_System_folder[] = {"lost+found", NULL};
+	const char *const Mac_System_folder[] = {"Backups.backupdb", "CNID", NULL};
+	const char *const ASUS_System_folder[] = {"asusware", NULL};
+	int i;
+	char *ptr;
 
-    for(i = 0; MS_System_folder[i] != NULL; ++i){
-    	if(!upper_strcmp(dirname, MS_System_folder[i]))
-        	return 1;
-    }
+	for(i = 0; MS_System_folder[i] != NULL; ++i){
+		if(!upper_strcmp(dirname, MS_System_folder[i]))
+			return 1;
+	}
 
-    for(i = 0; Linux_System_folder[i] != NULL; ++i){
-    	if(!upper_strcmp(dirname, Linux_System_folder[i]))
-        	return 1;
-    }
+	for(i = 0; Linux_System_folder[i] != NULL; ++i){
+		if(!upper_strcmp(dirname, Linux_System_folder[i]))
+			return 1;
+	}
 
-    return 0;
+	for(i = 0; Mac_System_folder[i] != NULL; ++i){
+		if(!upper_strcmp(dirname, Mac_System_folder[i]))
+			return 1;
+	}
+
+	i = strlen(dirname);
+	ptr = (char *)dirname+i-16;
+	if(i >= 16 && !strcmp(ptr, "Mac.sparsebundle"))
+		return 1;
+
+	for(i = 0; ASUS_System_folder[i] != NULL; ++i){
+		if(!upper_strncmp(dirname, ASUS_System_folder[i], strlen(ASUS_System_folder[i])))
+			return 1;
+	}
+
+	return 0;
 }
 
-extern int get_var_file_name(const char *const account, const char *const path, char **file_name){
-    int len;
-    char *var_file;
-    char ascii_user[64];
+extern int get_var_file_name(const char *const account, const char *const path, char **file_name, const int is_group)
+{
+	int len;
+	char *var_file;
+	char ascii_user[64];
 
-    if(path == NULL)
-        return -1;
+	if(path == NULL)
+		return -1;
 
-    len = strlen(path)+strlen("/.___var.txt");
-    if(account != NULL){
-        memset(ascii_user, 0, 64);
-        char_to_ascii_safe(ascii_user, account, 64);
+	len = strlen(path)+strlen("/.___var.txt");
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+	if(is_group)
+		len += 2;
+#endif
 
-        len += strlen(ascii_user);
-    }
-    *file_name = (char *)malloc(sizeof(char)*(len+1));
-    if(*file_name == NULL)
-        return -1;
+	if(account != NULL){
+		memset(ascii_user, 0, 64);
+		char_to_ascii_safe(ascii_user, account, 64);
 
-    var_file = *file_name;
-    if(account != NULL)
-        sprintf(var_file, "%s/.__%s_var.txt", path, ascii_user);
-    else
-        sprintf(var_file, "%s/.___var.txt", path);
-    var_file[len] = 0;
+		len += strlen(ascii_user);
+	}
+	*file_name = (char *)malloc(sizeof(char)*(len+1));
+	if(*file_name == NULL)
+		return -1;
 
-    return 0;
+	var_file = *file_name;
+	if(account != NULL){
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+		if(is_group)
+			sprintf(var_file, "%s/.__G_%s_var.txt", path, ascii_user);
+		else
+#endif
+			sprintf(var_file, "%s/.__%s_var.txt", path, ascii_user);
+	}
+	else
+		sprintf(var_file, "%s/.___var.txt", path);
+	var_file[len] = 0;
+
+	return 0;
 }
-
 
 extern char *upper_strstr(const char *const str, const char *const target){
     char *upper_str, *upper_target;
@@ -506,185 +539,202 @@ extern void set_file_integrity(const char *const file_name){
     closedir(opened_dir);
 }
 
-extern int initial_var_file(const char *const account, const char *const mount_path) {
-    FILE *fp;
-    char *var_file;
-    int result, i;
-    int sh_num;
-    char **folder_list;
-    int samba_right, ftp_right, dms_right;
+extern int initial_var_file(const char *const account, const char *const mount_path, const int is_group){
+	FILE *fp;
+	char *var_file;
+	int i;
+	int sh_num;
+	char **folder_list;
+	int samba_right, ftp_right, dms_right;
 #ifdef RTCONFIG_WEBDAV_OLD
-    int webdav_right;
+	int webdav_right;
 #endif
 
-    if (mount_path == NULL || strlen(mount_path) <= 0) {
-        usb_dbg("No input, mount_path\n");
-        return -1;
-    }
+	if(mount_path == NULL || strlen(mount_path) <= 0){
+		usb_dbg("No input, mount_path\n");
+		return -1;
+	}
 
-    // 1. get the folder number and folder_list
-    //result = get_folder_list(mount_path, &sh_num, &folder_list);
-    result = get_all_folder(mount_path, &sh_num, &folder_list);
+	// 1. get the folder number and folder_list
+	//get_folder_list(mount_path, &sh_num, &folder_list);
+	get_all_folder(mount_path, &sh_num, &folder_list);
 
-    // 2. get the var file
-    if(get_var_file_name(account, mount_path, &var_file)){
-        usb_dbg("Can't malloc \"var_file\".\n");
-        free_2_dimension_list(&sh_num, &folder_list);
-        return -1;
-    }
+	// 2. get the var file
+	if(get_var_file_name(account, mount_path, &var_file, is_group)){
+		usb_dbg("Can't malloc \"var_file\".\n");
+		free_2_dimension_list(&sh_num, &folder_list);
+		return -1;
+	}
 
-    // 3. get the default permission of all protocol.
-    char *aa=nvram_safe_get("http_username"); //add by zero
-
-    if(account == NULL // share mode.
-       || !strcmp(account, aa)){
-//       || !strcmp(account, nvram_safe_get("http_username"))){
-        samba_right = DEFAULT_SAMBA_RIGHT;
-        ftp_right = DEFAULT_FTP_RIGHT;
-        dms_right = DEFAULT_DMS_RIGHT;
+	// 3. get the default permission of all protocol.
+	if(account == NULL // share mode.
+			|| !strcmp(account, nvram_safe_get("http_username"))){
+		samba_right = DEFAULT_SAMBA_RIGHT;
+		ftp_right = DEFAULT_FTP_RIGHT;
+		dms_right = DEFAULT_DMS_RIGHT;
 #ifdef RTCONFIG_WEBDAV_OLD
-        webdav_right = DEFAULT_WEBDAV_RIGHT;
+		webdav_right = DEFAULT_WEBDAV_RIGHT;
 #endif
-    }
-    else{
-        samba_right = 0;
-        ftp_right = 0;
-        dms_right = 0;
+	}
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+	else if(is_group){
+		samba_right = DEFAULT_SAMBA_RIGHT;
+		ftp_right = DEFAULT_FTP_RIGHT;
+		dms_right = DEFAULT_DMS_RIGHT;
 #ifdef RTCONFIG_WEBDAV_OLD
-        webdav_right = 0;
+		webdav_right = DEFAULT_WEBDAV_RIGHT;
 #endif
-    }
-    free(aa);
-    // 4. write the default content in the var file
-    if ((fp = fopen(var_file, "w")) == NULL) {
-        usb_dbg("Can't create the var file, \"%s\".\n", var_file);
-        free_2_dimension_list(&sh_num, &folder_list);
-        free(var_file);
-        return -1;
-    }
-
-    for (i = -1; i < sh_num; ++i) {
-        fprintf(fp, "*");
-
-        if(i != -1)
-            fprintf(fp, "%s", folder_list[i]);
+	}
+#endif
+	else{
+		samba_right = 0;
+		ftp_right = 0;
+		dms_right = 0;
 #ifdef RTCONFIG_WEBDAV_OLD
-        fprintf(fp, "=%d%d%d%d\n", samba_right, ftp_right, dms_right, webdav_right);
+		webdav_right = 0;
+#endif
+	}
+
+	// 4. write the default content in the var file
+	if((fp = fopen(var_file, "w")) == NULL){
+		usb_dbg("Can't create the var file, \"%s\".\n", var_file);
+		free_2_dimension_list(&sh_num, &folder_list);
+		free(var_file);
+		return -1;
+	}
+
+	for(i = -1; i < sh_num; ++i){
+		fprintf(fp, "*");
+		
+		if(i != -1)
+			fprintf(fp, "%s", folder_list[i]);
+#ifdef RTCONFIG_WEBDAV_OLD
+		fprintf(fp, "=%d%d%d%d\n", samba_right, ftp_right, dms_right, webdav_right);
 #else
-        fprintf(fp, "=%d%d%d\n", samba_right, ftp_right, dms_right);
+		fprintf(fp, "=%d%d%d\n", samba_right, ftp_right, dms_right);
 #endif
-    }
+	}
 
-    fclose(fp);
-    free_2_dimension_list(&sh_num, &folder_list);
+	fclose(fp);
+	free_2_dimension_list(&sh_num, &folder_list);
 
-    // 5. set the check target of file.
-    set_file_integrity(var_file);
-    free(var_file);
+	// 5. set the check target of file.
+	set_file_integrity(var_file);
+	free(var_file);
 
-    return 0;
+	return 0;
 }
 
 extern int get_permission(const char *const account,
-                              const char *const mount_path,
-                              const char *const folder,
-                              const char *const protocol) {
-    char *var_file, *var_info;
-    char *target, *follow_info;
-    int len, result;
+						  const char *const mount_path,
+						  const char *const folder,
+						  const char *const protocol,
+						  const int is_group
+						  ){
+	char *var_file, *var_info;
+	char *target, *follow_info;
+	int len, result;
+	char *f = (char*) folder;
 
-    // 1. get the var file
-    if(get_var_file_name(account, mount_path, &var_file)){
-    	usb_dbg("Can't malloc \"var_file\".\n");
-        return -1;
-    }
-
-    // 2. check the file integrity.
-    if(!check_file_integrity(var_file)){
-        usb_dbg("Fail to check the file: %s.\n", var_file);
-    	if(initial_var_file(account, mount_path) != 0){
-        	usb_dbg("Can't initial \"%s\"'s file in %s.\n", account, mount_path);
-                free(var_file);
-                return -1;
-        }
-    }
-
-    // 3. get the content of the var_file of the account
-    var_info = read_whole_file(var_file);
-    if (var_info == NULL) {
-    	usb_dbg("get_permission: \"%s\" isn't existed or there's no content.\n", var_file);
-        free(var_file);
-    	return -1;
-    }
-    free(var_file);
-
-    // 4. get the target in the content
-    if(folder == NULL)
-    	len = strlen("*=");
-    else
-        len = strlen("*")+strlen(folder)+strlen("=");
-    target = (char *)malloc(sizeof(char)*(len+1));
-    if (target == NULL) {
-    	usb_dbg("Can't allocate \"target\".\n");
-        free(var_info);
-        return -1;
-    }
-    if(folder == NULL)
-    	strcpy(target, "*=");
-    else
-    	sprintf(target, "*%s=", folder);
-    target[len] = 0;
-
-    follow_info = upper_strstr(var_info, target);
-    free(target);
-    if (follow_info == NULL) {
-    	if(account == NULL)
-        	usb_dbg("No right about \"%s\" with the share mode.\n", (folder == NULL?"Pool":folder));
-        else
-        	usb_dbg("No right about \"%s\" with \"%s\".\n", (folder == NULL?"Pool":folder), account);
-        free(var_info);
-        return -1;
+	// 1. get the var file
+	if(get_var_file_name(account, mount_path, &var_file, is_group)){
+		usb_dbg("Can't malloc \"var_file\".\n");
+		return -1;
 	}
 
-    follow_info += len;
+	// 2. check the file integrity.
+	if(!check_file_integrity(var_file)){
+		usb_dbg("Fail to check the file: %s.\n", var_file);
+		if(initial_var_file(account, mount_path, is_group) != 0){
+			usb_dbg("Can't initial \"%s\"'s file in %s.\n", account, mount_path);
+			free(var_file);
+			return -1;
+		}
+	}
 
-    if (follow_info[MAX_PROTOCOL_NUM] != '\n') {
-    	if(account == NULL)
-        	usb_dbg("The var info is incorrect.\nPlease reset the var file of the share mode.\n");
-        else
-            usb_dbg("The var info is incorrect.\nPlease reset the var file of \"%s\".\n", account);
+	// 3. get the content of the var_file of the account
+	var_info = read_whole_file(var_file);
+	if(var_info == NULL){
+		usb_dbg("get_permission: \"%s\" isn't existed or there's no content.\n", var_file);
+		free(var_file);
+		return -1;
+	}
+	free(var_file);
 
-        free(var_info);
-        return -1;
-    }
+	// 4. get the target in the content
+retry_get_permission:
+	if(f == NULL)
+		len = strlen("*=");
+	else
+		len = strlen("*")+strlen(f)+strlen("=");
+	target = (char *)malloc(sizeof(char)*(len+1));
+	if(target == NULL){
+		usb_dbg("Can't allocate \"target\".\n");
+		free(var_info);
+		return -1;
+	}
+	if(f == NULL)
+		strcpy(target, "*=");
+	else
+		sprintf(target, "*%s=", f);
+	target[len] = 0;
 
-    // 5. get the right of folder
-    if (!strcmp(protocol, PROTOCOL_CIFS))
-    	result = follow_info[0]-'0';
-    else if (!strcmp(protocol, PROTOCOL_FTP))
-        result = follow_info[1]-'0';
-    else if (!strcmp(protocol, PROTOCOL_MEDIASERVER))
-        result = follow_info[2]-'0';
+	follow_info = upper_strstr(var_info, target);
+	free(target);
+	if(follow_info == NULL){
+		if(account == NULL)
+			usb_dbg("No right about \"%s\" with the share mode.\n", f? f:"Pool");
+		else
+			usb_dbg("No right about \"%s\" with \"%s\".\n", f? f:"Pool", account);
+
+		if(f == NULL){
+			free(var_info);
+			return -1;
+		} else {
+			f = NULL;
+			goto retry_get_permission;
+		}
+	}
+
+	follow_info += len;
+
+	if(follow_info[MAX_PROTOCOL_NUM] != '\n'){
+		if(account == NULL)
+			usb_dbg("The var info is incorrect.\nPlease reset the var file of the share mode.\n");
+		else
+			usb_dbg("The var info is incorrect.\nPlease reset the var file of \"%s\".\n", account);
+
+		free(var_info);
+		return -1;
+	}
+
+	// 5. get the right of folder
+	if(!strcmp(protocol, PROTOCOL_CIFS))
+		result = follow_info[0]-'0';
+	else if(!strcmp(protocol, PROTOCOL_FTP))
+		result = follow_info[1]-'0';
+	else if(!strcmp(protocol, PROTOCOL_MEDIASERVER))
+		result = follow_info[2]-'0';
 #ifdef RTCONFIG_WEBDAV_OLD
-    else if (!strcmp(protocol, PROTOCOL_WEBDAV))
-        result = follow_info[3]-'0';
+	else if(!strcmp(protocol, PROTOCOL_WEBDAV))
+		result = follow_info[3]-'0';
 #endif
-    else{
-        usb_dbg("The protocol, \"%s\", is incorrect.\n", protocol);
-        free(var_info);
-    	return -1;
-    }
-    free(var_info);
+	else{
+		usb_dbg("The protocol, \"%s\", is incorrect.\n", protocol);
+		free(var_info);
+		return -1;
+	}
+	free(var_info);
 
-    if (result < 0 || result > 3) {
-    	if(account == NULL)
-        	usb_dbg("The var info is incorrect.\nPlease reset the var file of the share mode.\n");
-        else
-        	usb_dbg("The var info is incorrect.\nPlease reset the var file of \"%s\".\n", account);
-    	return -1;
-    }
+	if(result < 0 || result > 3){
+		if(account == NULL)
+			usb_dbg("The var info is incorrect.\nPlease reset the var file of the share mode.\n");
+		else
+			usb_dbg("The var info is incorrect.\nPlease reset the var file of \"%s\".\n", account);
+		return -1;
+	}
 
-    return result;
+	return result;
 }
 
 /*???end?*/
@@ -1090,7 +1140,7 @@ const short base64_reverse_table[256] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0xF0 - 0xFF */
 };
 
-unsigned char * base64_decode(buffer *out, const char *in) {
+unsigned char * base64_decode_t(buffer *out, const char *in) {
         unsigned char *result;
         unsigned int j = 0; /* current output character (position) that is decoded. can contain partial result */
         unsigned int group = 0; /* how many base64 digits in the current group were decoded already. each group has up to 4 digits */
@@ -1890,7 +1940,8 @@ int smbc_get_usbdisk_permission(const char* user_name, const char* usbdisk_rel_s
 			permission = get_permission( user_name,
 									     usbdisk_rel_sub_path,
 									     usbdisk_sub_share_folder,
-									     "cifs");
+									     "cifs",
+									     0);
 		}
 		
 		Cdbg(DBE, "usbdisk_rel_sub_path=%s, usbdisk_sub_share_folder=%s, permission=%d, user_name=%s", 
@@ -1904,505 +1955,12 @@ int smbc_get_usbdisk_permission(const char* user_name, const char* usbdisk_rel_s
 	
 		permission = get_aicloud_permission( user_name,
 											 usbdisk_rel_sub_path,
-											 usbdisk_sub_share_folder);
+											 usbdisk_sub_share_folder,
+											 0);
 #endif
 	}
 	
 	return permission;
-}
-
-int hex2ten(const char* in_str )
-{	
-	int ret;
-
-	if( in_str == (char*)'0' )
-		ret = 0;
-	else if( in_str == (char*)'1' )
-		ret = 1;
-	else if( in_str == (char*)'2' )
-		ret = 2;
-	else if( in_str == (char*)'3' )
-		ret = 3;
-	else if( in_str == (char*)'4' )
-		ret = 4;
-	else if( in_str == (char*)'5' )
-		ret = 5;
-	else if( in_str == (char*)'6' )
-		ret = 6;
-	else if( in_str == (char*)'7' )
-		ret = 7;
-	else if( in_str == (char*)'8' )
-		ret = 8;
-	else if( in_str == (char*)'9' )
-		ret = 9;
-	else if( in_str == (char*)'A' || in_str==(char*)'a' )
-		ret = 10;
-	else if( in_str==(char*)'B' || in_str==(char*)'b' )
-		ret = 11;
-	else if( in_str==(char*)'C' || in_str==(char*)'c' )
-		ret = 12;
-	else if( in_str==(char*)'D' || in_str==(char*)'d' )
-		ret = 13;
-	else if( in_str==(char*)'E' || in_str==(char*)'e' )
-		ret = 14;
-	else if( in_str==(char*)'F' || in_str==(char*)'f' )
-		ret = 15;
-	else
-		ret = 0;
-	
-	//Cdbg(1, "12121212, in_str=%c, ret=%d", in_str, ret);
-	return ret;
-}
-
-void ten2bin(int ten, char** out)
-{
-	char _array[5]="\0";
-	_array[0] = '0';    	
-	_array[1] = '0';    	
-	_array[2] = '0';    	
-	_array[3] = '0'; 
-	int _count = 3;
-
-	while( ten > 0 ){
-		//Cdbg(1, "_count=%d", _count);
-		
-		if( ( ten%2 ) == 0 )
-			_array[_count] = '0';
-		else
-			_array[_count] = '1';
-		_count--;	    
-		ten = ten/2;
-	}
-
-	*out = (char*)malloc(5);
-	memset(*out, '\0', 5);
-	strcpy(*out, _array);
-}
-
-void hexstr2binstr(const char* in_str, char** out_str)
-{
-	char *tmp;
-	buffer* ret = buffer_init();
-	for (tmp = in_str; *tmp; ++tmp){
-		
-		int ten = hex2ten( (char*)(*tmp) );
-				
-		char* binStr;
-		ten2bin(ten, &binStr);
-		//Cdbg(1, "444, binStr=%s", binStr);
-		
-		buffer_append_string_len(ret, binStr, 4);
-
-		free(binStr);
-	}
-
-	*out_str = (char*)malloc(ret->size+1);
-	strcpy(*out_str, ret->ptr);
-	buffer_free(ret);
-	
-}
-
-void ten2hex(int  _v, char** out )
-{	
-	*out = (char*)malloc(5);
-	memset(*out, '\0', 5);
-	sprintf(*out, "%x", _v);
-}
-
-void binstr2hexstr( const char* in_str, char** out_str )
-{	
-	buffer* ret = buffer_init();	
-	if( 0 != strlen(in_str) % 4 )	{
-		buffer_free(ret);
-		return;	
-	}
-
-	buffer_copy_string(ret, "");
-	
-	int ic = strlen(in_str) / 4;
-
-	int i = 0;
-	int offset = 0;
-	for(i = 0; i < ic; i++)
-	{		
-		char t[5] = "\0";
-		offset = i * 4;
-
-		strncpy(t, in_str + offset, 4);
-	
-		int uc = bin2ten( t );
-		
-		//- ten to hex
-		char* hex;
-		ten2hex(uc, &hex);
-		buffer_append_string(ret, hex);
-		free(hex);
-	}		
-
-	*out_str = (char*)malloc(ret->size+1);
-	strcpy(*out_str, ret->ptr);
-
-	buffer_free(ret);
-}
-
-void deinterleave( char* src, int charcnt, char** out )
-{	
-	int src_len = strlen(src);
-	int ic = src_len / charcnt;	
-	buffer* ret = buffer_init();
-
-	for( int i = 0; i < charcnt; i++ )	
-	{	
-		for( int j = 0; j < ic; j++ )		
-		{			
-			int x = (j*charcnt) + i;
-			
-			char tmps[8]="\0";
-			sprintf(tmps, "%c", *(src+x));
-
-			//Cdbg(1, "tmps =  %s", tmps);
-			buffer_append_string(ret, tmps);
-		}	
-		
-	}
-
-	*out = (char*)malloc(ret->size+1);
-	strcpy(*out, ret->ptr);
-
-	buffer_free(ret);
-}
-
-void interleave( char* src, int charcnt, char** out )
-{	
-	int src_len = strlen(src);
-	int ic = src_len / charcnt;	
-	buffer* ret = buffer_init();
-
-	for( int i = 0; i < ic; i++ )	{		
-		for( int j = 0; j < charcnt; j++ ) {			
-		
-			int x = (j * ic) + i;
-			
-			char tmps[8]="\0";
-			sprintf(tmps, "%c", *(src+x));
-
-			//Cdbg(DBE, "tmps =  %s", tmps);
-			buffer_append_string(ret, tmps);
-		}	
-	}
-	
-	*out = (char*)malloc(ret->size+1);
-	strcpy(*out, ret->ptr);
-
-	buffer_free(ret);
-}
-
-void str2hexstr(char* str, char* hex)
-{
-	const char* cHex = "0123456789ABCDEF";
-	int i=0;
-	for(int j =0; j < strlen(str); j++)
-	{
-		unsigned int a = (unsigned int) str[j];
-		hex[i++] = cHex[(a & 0xf0) >> 4];
-		hex[i++] = cHex[(a & 0x0f)];
-	}
-	hex = '\0';
-}
-
-int sumhexstr( const char* str )
-{		
-	//- e.g:  str = 4D44, ret = 4*16*16*16 + D*16*16 + 4*16*16 + 4*1
-	
-	int ret = 0;		
-	int ic = strlen(str) / 4.0;
-
-	int i = 0;	
-	int offset = 0;
-	for(i = 0; i < ic; i++ )	
-	{		
-		char t[5] = "\0";
-		offset = i * 4;
-
-		strncpy(t, str + offset, 4);
-
-		int j=0;
-		int y = 0;
-		
-		char *tmp;	
-		for (tmp = t; *tmp; ++tmp){
-			int pow = 1;
-			for( int k = 0; k < strlen(t) - j - 1; k++ )
-				pow *=16;
-			
-			int x = hex2ten( *tmp ) * pow;
-			y += x;
-			j++;
-		}
-	
-		ret += y;	
-	}			
-	
-	//Cdbg(DBE, "ret=%d", ret);
-	
-	return ret;
-}
-
-int getshiftamount( const char* seed_str, const char* orignaldostr )
-{	
-	//- e.g {M,D,A,6,M,G,M,6,M,j,k,6,M,m,M,6,M,T,A,6,M,j,k,=}
-	//- => {4D,44,41,36,4D,47,4D,36,4D,6A,6B,36,4D,6D,4D,36,4D,54,41,36,4D,6A,6B,3D}
-	char seed_hex_str[100]="\0";
-	str2hexstr( seed_str, &seed_hex_str );
-	//Cdbg(DBE, "getshiftamount: seed_hex_str=%s", seed_hex_str);
-	
-	//- sum hexstring, every 4digit
-	//- e.g {0x4D44 + 0x4136 + ...} = 246635;	
-	int sumhex = sumhexstr( seed_hex_str );		
-	//Cdbg(DBE, "getshiftamount: sumhex=%d", sumhex);
-	
-	//- limit shift value to lenght of seed	
-	int shiftamount = sumhex % strlen(orignaldostr);
-	//Cdbg(1, "sumhex=%d, getshiftamount=%d", sumhex, strlen(orignaldostr));
-
-	//- ensure there is a shiftamount;	
-	if( shiftamount == 0 )		
-		shiftamount = 15;	
-	
-	return shiftamount;
-}
-
-void strleftshift( const char* str, int shiftamount, char** out )
-{	
-	// e.g strleftshift("abcdef", 2) => "cdefab"
-	
-	int str_len = strlen(str);
-
-	int right_buffer_size = str_len-shiftamount+1;
-	char* right_buffer = (char*)malloc(right_buffer_size);
-	memset(right_buffer, 0, right_buffer_size);
-	strncpy(right_buffer, str+shiftamount, right_buffer_size-1);
-
-	int left_buffer_size = shiftamount+1;
-	char *left_buffer = (char*)malloc(left_buffer_size);
-	memset(left_buffer, 0, left_buffer_size);
-	strncpy(left_buffer, str, left_buffer_size-1);
-	
-	int size = strlen(right_buffer)+strlen(left_buffer)+1;
-	*out = (char*)malloc(size);
-	memset(*out, 0, size);
-	strncpy(*out , right_buffer, strlen(right_buffer));
-	strncat(*out, left_buffer, strlen(left_buffer));
-
-	free(right_buffer);
-	free(left_buffer);
-}
-
-void strrightshift( const char* str, int shiftamount, char** out )
-{	
-	// e.g strrightshift("abcdef", 2) => "efabcd"
-		
-	int str_len = strlen(str);
-		
-	int right_buffer_size = shiftamount+1;
-	char* right_buffer = (char*)malloc(right_buffer_size);
-	memset(right_buffer, 0, right_buffer_size);
-	strncpy(right_buffer, str+(str_len-shiftamount), right_buffer_size-1);
-	
-	int left_buffer_size = str_len-shiftamount+1;
-	char *left_buffer = (char*)malloc(left_buffer_size);
-	memset(left_buffer, 0, left_buffer_size);
-	strncpy(left_buffer, str, left_buffer_size-1);
-	
-	int size = strlen(right_buffer)+strlen(left_buffer)+1;
-	*out = (char*)malloc(size);
-	memset(*out, 0, size);
-	strncpy(*out , right_buffer, strlen(right_buffer));
-	strncat(*out, left_buffer, strlen(left_buffer));
-	
-	free(right_buffer);
-	free(left_buffer);
-}
-
-int bin2ten( const char* _v )
-{	
-	int ret = 0;
-	for( int j = 0; j < strlen(_v); j++ )	{	
-		int pow = 1;
-		for( int k = 0; k < strlen(_v) - j - 1; k++ )
-			pow *=2;
-
-		char tmp[8]="\0";
-		strncpy(tmp, _v+j, 1);
-
-		ret += atoi(tmp)*pow;
-	}	
-	return ret;
-}
-
-void binstr2str( const char* inbinstr, char** out )
-{	
-	//前面可能要補0	
-	if( 0 != strlen(inbinstr) % 8 )
-	{		
-		return;
-	}
-	
-	int ic = strlen(inbinstr) / 8;	
-	int k = 0;	
-	int offset = 0;
-
-	*out = (char*)malloc(ic+1);
-	memset(*out , '\0', ic);
-	
-	for( int i = 0; i < strlen(inbinstr); i+=8 )	
-	{				
-		//前四位元	
-		char substrupper[5] = "\0";
-		offset = i;
-		strncpy(substrupper, inbinstr + offset, 4);
-		int uc = bin2ten( substrupper );
-		Cdbg(DBE, "substrupper=%s, uc=%d", substrupper, uc);
-		
-		//後四位元
-		char substrlowwer[5] = "\0";
-		offset = i+4;
-		strncpy(substrlowwer, inbinstr + offset, 4);		
-		int lc = bin2ten( substrlowwer );
-		Cdbg(DBE, "substrlowwer=%s, lc=%d", substrlowwer, lc);
-		
-		int v = (uc << 4) | lc;	
-		
-		char out_char[8];
-		sprintf(out_char, "%c", v);
-		
-		strcat(*out, out_char);											
-		k++;
-	}
-
-}
-
-void dec2Bin(int dec, char** out) {
-	
-	char _array[8] = "00000000";
-	int _count = 7;
-
-	while( dec > 0 ){
-		//Cdbg(1, "_count=%d", _count);
-		
-		if( ( dec%2 ) == 0 )
-			_array[_count] = '0';
-		else
-			_array[_count] = '1';
-		_count--;	    
-		dec = dec/2;
-	}
-
-	*out = (char*)malloc(8);
-	memset(*out, '\0', 8);
-	strncpy(*out, _array, 8);
-}
-
-void str2binstr(const char* instr, char** out)
-{	
-	buffer* b = buffer_init();
-	int last = strlen(instr);	
-	for (int i = 0; i < last; i++) {
-
-		char tmp[8]="\0";
-		strncpy(tmp, instr + i, 1);
-		
-		int acsii_code = ((int)*tmp) & 0x000000ff;
-		if (acsii_code < 128){
-			char* binStr;
-			dec2Bin(acsii_code, &binStr);
-
-			//Cdbg(1, "%s -> %d %d, binStr=%s", tmp, *tmp, acsii_code, binStr);
-			
-			buffer_append_string_len(b, binStr, 8);
-			//Cdbg(1, "b=%s", b->ptr);
-
-			free(binStr);
-		}
-		
-		
-	}		
-
-	//Cdbg(1, "11111111111111 %d %d %d", b->used, last*8, b->size+1);
-
-	int len = last*8 + 1;
-	*out = (char*)malloc(len);
-	memset(*out, '\0', len);
-	strcpy(*out, b->ptr);
-	buffer_free(b);
-}
-
-char* x123_decode(const char* in_str, const char* key, char* out_str)
-{
-	Cdbg(DBE, "in_str=%s, key=%s", in_str, key);
-
-	char* ibinstr;
-	hexstr2binstr( in_str, &ibinstr );
-	Cdbg(DBE, "ibinstr=%s", ibinstr);
-
-	char* binstr;
-	deinterleave( ibinstr, 8, &binstr );
-	Cdbg(DBE, "deinterleave: binstr=%s", binstr);
-
-	int shiftamount = getshiftamount( key, binstr );
-	Cdbg(DBE, "getshiftamount: shiftamount=%d, key=%s", shiftamount, key);
-
-	char* unshiftbinstr;
-	strleftshift( binstr, shiftamount, &unshiftbinstr );
-	Cdbg(DBE, "strleftshift: unshiftbinstr=%s", unshiftbinstr);
-
-	binstr2str(unshiftbinstr, &out_str);
-	Cdbg(DBE, "out_str=%s", out_str);
-
-	free(ibinstr);
-	free(binstr);
-	free(unshiftbinstr);
-	
-	return out_str;
-}
-
-char* x123_encode(const char* in_str, const char* key, char* out_str)
-{
-	//Cdbg(DBE, "in_str=%s, key=%s", in_str, key);
-
-	char* ibinstr;
-	str2binstr( in_str, &ibinstr );
-	//Cdbg(DBE, "ibinstr = %s", ibinstr);
-
-	int shiftamount = getshiftamount( key, ibinstr );
-	//Cdbg(DBE, "shiftamount = %d", shiftamount);
-
-	char* unshiftbinstr = NULL;
-	strrightshift( ibinstr, shiftamount, &unshiftbinstr );
-	//Cdbg(DBE, "unshiftbinstr = %s", unshiftbinstr);
-
-	char* binstr;
-	interleave( unshiftbinstr, 8, &binstr );
-	//Cdbg(DBE, "binstr = %s", binstr);
-
-	char* hexstr;
-	binstr2hexstr(binstr, &hexstr);
-	//Cdbg(DBE, "hexstr = %s", hexstr);
-
-	int out_len = strlen(hexstr)+9;
-	//Cdbg(DBE, "out_len = %d, %d", out_len, strlen(hexstr));
-	
-	out_str = (char*)malloc(out_len);
-	memset(out_str , '\0', out_len);
-	strcpy(out_str, "ASUSHARE");
-	strcat(out_str, hexstr);
-
-	free(unshiftbinstr);
-	free(ibinstr);
-	free(binstr);
-	free(hexstr);
-	
-	return out_str;
 }
 
 void md5String(const char* input1, const char* input2, char** out)
@@ -2428,16 +1986,16 @@ void md5String(const char* input1, const char* input2, char** out)
 	char tempstring[2];
 
 	for(i=0; i<16; i++){
-		int x = signature[i]/16;
-		sprintf(tempstring, "%x", x);
+		uint x = signature[i]/16;
+		snprintf(tempstring, sizeof(tempstring), "%x", x);
 		buffer_append_string(b, tempstring);
 		
-		int y = signature[i]%16;
-		sprintf(tempstring, "%x", y);
+		uint y = signature[i]%16;
+		snprintf(tempstring, sizeof(tempstring), "%x", y);
 		buffer_append_string(b, tempstring);		
 	}
 
-	//Cdbg(1, "result %s", b->ptr);
+	Cdbg(DBE, "result %s", b->ptr);
 	
 	int len = b->used + 1;
 	*out = (char*)malloc(len);
@@ -2468,7 +2026,7 @@ int smbc_parser_basic_authentication(server *srv, connection* con, char** userna
 			buffer *user = buffer_init();
 			buffer *pass = buffer_init();
 					
-			if (!base64_decode(basic_msg, &http_authorization[6])) {
+			if (!base64_decode_t(basic_msg, &http_authorization[6])) {
 				log_error_write(srv, __FILE__, __LINE__, "sb", "decodeing base64-string failed", basic_msg);
 				buffer_free(basic_msg);
 				free(user);
@@ -2495,7 +2053,7 @@ int smbc_parser_basic_authentication(server *srv, connection* con, char** userna
 			free(user);
 			free(pass);
 
-			Cdbg(DBE, "base64_decode=[%s][%s]", *username, *password);
+			Cdbg(DBE, "base64_decode_t=[%s][%s]", *username, *password);
 			
 			return 1;
 		}
@@ -2507,6 +2065,17 @@ int smbc_parser_basic_authentication(server *srv, connection* con, char** userna
 }
 
 const char* g_temp_sharelink_file = "/tmp/sharelink";
+
+int is_string_encode_as_integer( const char *s ){
+    if( *s == '-' || *s == '+' ) s++;
+    while( isdigit(*s) ) s++;
+    return *s == 0;
+}
+
+int string_starts_with( const char *a, const char *b ){
+    if(strncmp(a, b, strlen(b)) == 0) return 1;
+   	return 0;
+}
 
 int generate_sharelink(server* srv,
 			               connection *con,
@@ -2520,8 +2089,14 @@ int generate_sharelink(server* srv,
 	if(filename==NULL||url==NULL||base64_auth==NULL)
 		return 0;
 
-#if 1
-	if(toShare==1){
+	if( is_string_encode_as_integer(url) || 
+		is_string_encode_as_integer(filename) || 
+		is_string_encode_as_integer(base64_auth) ){
+		return 0;
+	}
+
+	//- toShare: 0 --> for streaming use, 1 --> for share use
+	if(toShare==0||toShare==1){
 		char * pch;
 		pch = strtok(filename, ";");
 		
@@ -2573,6 +2148,7 @@ int generate_sharelink(server* srv,
 		
 		}
 	}
+#if 0
 	else{
 		char * pch;
 		pch = strtok(filename, ";");
@@ -2598,12 +2174,18 @@ int generate_sharelink(server* srv,
 		char* base64_key = ldb_base64_encode(mac, strlen(mac));
 		
 		expire = 86400; //- 24hr
-		unsigned long expiretime = (expire==0 ? 0 : time(NULL) + expire);		
-		sprintf(strTime, "%lu", expiretime);
+		unsigned long expiretime = (expire==0 ? 0 : time(NULL) + expire);
+		snprintf(strTime, sizeof(strTime), "%lu", expiretime);
 		
 		char* share_link;
-		char* urlstr = (char*)malloc(strlen(url) +  strlen(base64_auth) + strlen(strTime) + 15);
-		sprintf(urlstr, "%s?auth=%s&expire=%s", url, base64_auth, strTime);
+		int urlstr_alloc_size = strlen(url) +  strlen(base64_auth) + strlen(strTime) + 14;
+		
+		if(urlstr_alloc_size>1024)
+			return 0;
+		
+		char* urlstr = (char*)malloc(urlstr_alloc_size);
+		snprintf(urlstr, urlstr_alloc_size, "%s?auth=%s&expire=%s", url, base64_auth, strTime);
+		
 		Cdbg(DBE, "urlstr=%s", urlstr);
 		share_link = x123_encode(urlstr, base64_key, &share_link);
 		Cdbg(DBE, "share_link=%s", share_link);
@@ -2642,81 +2224,6 @@ int generate_sharelink(server* srv,
 		//decode_str = x123_decode(encode_str, ldb_base64_encode(mac, strlen(mac)), &decode_str);
 		//Cdbg(DBE, "do HTTP_METHOD_GSL decode_str=%s", decode_str);
 	}
-#else
-
-#if 1	
-	char * pch;
-	pch = strtok(filename, ";");
-	
-	*out = buffer_init();
-			
-	while(pch!=NULL){
-				
-		char share_link[1024];
-		struct timeval tv;
-		unsigned long long now_utime;
-		gettimeofday(&tv,NULL);
-		now_utime = tv.tv_sec * 1000000 + tv.tv_usec;  
-		sprintf( share_link, "AICLOUD%d", abs(now_utime));
-	
-		share_link_info_t *share_link_info;
-		share_link_info = (share_link_info_t *)calloc(1, sizeof(share_link_info_t));
-								
-		share_link_info->shortpath = buffer_init();
-		buffer_copy_string(share_link_info->shortpath, share_link);
-								
-		share_link_info->realpath = buffer_init();
-		buffer_copy_string(share_link_info->realpath, url);
-		buffer_urldecode_path(share_link_info->realpath);
-			
-		share_link_info->filename = buffer_init();
-		buffer_copy_string(share_link_info->filename, pch);
-		buffer_urldecode_path(share_link_info->filename);
-		
-		share_link_info->auth = buffer_init();
-		buffer_copy_string(share_link_info->auth, base64_auth);
-	
-		share_link_info->createtime = time(NULL);
-		share_link_info->expiretime = (expire==0 ? 0 : share_link_info->createtime + expire);
-		share_link_info->toshare = toShare;
-				
-		DLIST_ADD(share_link_info_list, share_link_info);
-				
-		buffer_append_string(*out, share_link);
-		buffer_append_string_len(*out, CONST_STR_LEN("/"));
-		buffer_append_string(*out, pch);
-				
-		//- Next
-		pch = strtok(NULL,";");
-	
-		if(pch)
-			buffer_append_string_len(*out, CONST_STR_LEN(";"));
-	
-		if(toShare==1)
-			log_sys_write(srv, "sbsbss", "Create share link", share_link_info->realpath , "/", share_link_info->filename, "from ip", con->dst_addr_buf->ptr);
-	
-	}
-#else
-	char mac[20]="\0";
-	get_mac_address("eth0", &mac);
-			
-	char* base64_auth = ldb_base64_encode(auth, strlen(auth));
-	char* base64_key = ldb_base64_encode(mac, strlen(mac));
-	char* urlstr = (char*)malloc(buffer_url->size +  strlen(base64_auth) + strlen(strTime) + 15);
-	sprintf(urlstr, "%s?auth=%s&expire=%s", buffer_url->ptr, base64_auth, strTime);
-	
-	share_link = x123_encode(urlstr, base64_key, &share_link);
-	//share_link = x123_encode("sambapc/sharefolder", "abcdefg", &share_link);
-	free(base64_auth);
-	free(base64_key);
-	free(urlstr);
-	
-	Cdbg(DBE, "do HTTP_METHOD_GSL urlstr=%s, share_link=%s", urlstr, share_link);
-	
-	//char* decode_str;
-	//decode_str = x123_decode(encode_str, ldb_base64_encode(mac, strlen(mac)), &decode_str);
-	//Cdbg(DBE, "do HTTP_METHOD_GSL decode_str=%s", decode_str);
-#endif
 #endif
 
 	return 1;
@@ -3031,19 +2538,20 @@ int is_dms_ipk_enabled(void)
 {
     FILE* fp2;
     char line[128];
-    char ms_enable[20]="\0";
+    char ms_enable[4]="\0";
     int result = 0;
     if((fp2 = fopen("/opt/lib/ipkg/info/mediaserver.control", "r")) != NULL){
-            memset(line, 0, sizeof(line));
-            while(fgets(line, 128, fp2) != NULL){
-                    if(strncmp(line, "Enabled:", 8)==0){
-                            strncpy(ms_enable, line + 9, strlen(line)-8);
-                    }
-            }
-            fclose(fp2);
+    	memset(line, 0, sizeof(line));
+        while(fgets(line, 128, fp2) != NULL){
+        	if(strncmp(line, "Enabled:", 8)==0){
+				//- yes or no
+				snprintf(ms_enable, sizeof(ms_enable), "%s", line + 9);
+			}
+		}
+		fclose(fp2);
     }
     Cdbg(DBE, "ms_enable=%s\n", ms_enable);
-    if(strncmp(ms_enable,"yes",strlen("yes")) == 0)
+    if(strncmp(ms_enable, "yes", 3) == 0)
         result = 1;
     //fprintf(stderr,"ms_enable=%s,result=%d\n", ms_enable,result);
     return result;
@@ -3957,7 +3465,8 @@ int initial_aicloud_var_file(const char *const account, const char *const mount_
 
 int get_aicloud_permission(const char *const account,
 								const char *const mount_path,
-								const char *const folder) {
+								const char *const folder,
+								const int is_group) {
 	char *var_file, *var_info;
 	char *target, *follow_info;
 	int len, result;
@@ -3976,7 +3485,7 @@ int get_aicloud_permission(const char *const account,
 	// 2. check the file integrity.
 	if(!check_file_integrity(var_file)){
 		Cdbg(DBE, "Fail to check the file: %s.", var_file);
-		if(initial_var_file(account, mount_path) != 0){
+		if(initial_var_file(account, mount_path, is_group) != 0){
 			Cdbg(DBE, "Can't initial \"%s\"'s file in %s.", account, mount_path);
 			free(var_file);
 			return -1;
@@ -4086,7 +3595,7 @@ int set_aicloud_permission(const char *const account,
 	// 2. check the file integrity.
 	if(!check_file_integrity(var_file)){
 		Cdbg(DBE, "Fail to check the file: %s.", var_file);
-		if(initial_var_file(account, mount_path) != 0){
+		if(initial_var_file(account, mount_path, 0) != 0){
 			Cdbg(DBE, "Can't initial \"%s\"'s file in %s.", account, mount_path);
 			free(var_file);
 			return -1;
@@ -4317,7 +3826,8 @@ int parse_postdata_from_chunkqueue(server *srv, connection *con, chunkqueue *cq,
 	
 	chunk *c;
 	char* result_data = NULL;
-	
+
+	UNUSED(srv);
 	UNUSED(con);
 	
 	for (c = cq->first; cq->bytes_out != cq->bytes_in; c = cq->first) {
@@ -4597,12 +4107,12 @@ void save_aicloud_acc_invite_list(){
 		append_text_to_list(aicloud_acc_invite_list, c->permission->ptr);
 		
 		char strByteInAvail[25] = {0};
-		sprintf(strByteInAvail, "%lu", c->bytes_in_avail);	
+		snprintf(strByteInAvail, sizeof(strByteInAvail), "%lu", c->bytes_in_avail);	
 		buffer_append_string(aicloud_acc_invite_list, ">");
 		append_text_to_list(aicloud_acc_invite_list, strByteInAvail);
 		
 		char strSmartAccess[2] = {0};
-		sprintf(strSmartAccess, "%d", c->smart_access);	
+		snprintf(strSmartAccess, sizeof(strSmartAccess), "%d", c->smart_access);	
 		buffer_append_string(aicloud_acc_invite_list, ">");
 		append_text_to_list(aicloud_acc_invite_list, strSmartAccess);
 
@@ -4610,17 +4120,17 @@ void save_aicloud_acc_invite_list(){
 		append_text_to_list(aicloud_acc_invite_list, c->security_code->ptr);
 
 		char strStatus[2] = {0};
-		sprintf(strStatus, "%d", c->status);	
+		snprintf(strStatus, sizeof(strStatus), "%d", c->status);	
 		buffer_append_string(aicloud_acc_invite_list, ">");
 		append_text_to_list(aicloud_acc_invite_list, strStatus);
 
 		char strAuthType[2] = {0};
-		sprintf(strAuthType, "%d", c->auth_type);	
+		snprintf(strAuthType, sizeof(strAuthType), "%d", c->auth_type);	
 		buffer_append_string(aicloud_acc_invite_list, ">");
 		append_text_to_list(aicloud_acc_invite_list, strAuthType);
 
 		char strCreateTime[25] = {0};
-		sprintf(strCreateTime, "%lu", c->createtime);	
+		snprintf(strCreateTime, sizeof(strCreateTime), "%lu", c->createtime);	
 		buffer_append_string(aicloud_acc_invite_list, ">");
 		append_text_to_list(aicloud_acc_invite_list, strCreateTime);
 		
@@ -4647,4 +4157,282 @@ void free_aicloud_acc_invite_info(aicloud_acc_invite_info_t *aicloud_acc_invite_
 	buffer_free(aicloud_acc_invite_info->permission);
 	buffer_free(aicloud_acc_invite_info->security_code);
 }
+
+#if IM_MESSGAE_EANBLE
+int read_im_msg_from_shm(char **msg_buf)
+{
+	int shmid;
+	key_t key = IM_MSG_SHM_KEY;
+	char *shm, *s;
+	im_shm_data shm_data;
+
+	// Locate the segment.
+	if ((shmid = shmget(key, MAX_IM_SHM_DATA_SIZE, 0666)) < 0) {
+		//PJ_LOG(1, (THIS_FILE, "read_im_msg_from_shm() shmget() failed. %s", strerror(errno)));
+		return -1;
+	}
+
+	// Now we attach the segment to our data space.
+	if ((shm = (char *)shmat(shmid, NULL, 0)) == (char *) -1) {
+		//PJ_LOG(1, (THIS_FILE, "read_im_msg_from_shm() shmget() failed. %s", strerror(errno)));
+		return -2;
+	}
+
+	// Now read what the client-side put in the memory.
+	memcpy(&shm_data, shm, MAX_IM_SHM_DATA_SIZE);
+
+	// We allocate the paramter so the caller must be reponsible for freeing it.
+	*msg_buf = (char *)malloc(shm_data.data_len+1);
+	memset(*msg_buf, 0, shm_data.data_len+1);
+	memcpy(*msg_buf, shm_data.data, shm_data.data_len);
+
+	// Now we detach the segment from our data space.
+	if (shmdt(shm) < 0) {
+		//PJ_LOG(1, (THIS_FILE, "read_im_msg_from_shm() shmdt() failed. %s", strerror(errno)));
+		//return -2; // Acutally we done almost, don't return error.
+	}
+
+	return 0;
+}
+
+int write_im_resp_to_shm(char *resp_msg)
+{
+	int shmid;
+	key_t key = IM_MSG_SHM_KEY;
+	char *shm, *s;
+	im_shm_data shm_data;
+
+	if (!resp_msg) {
+		//PJ_LOG(1, (THIS_FILE, "write_im_resp_to_shm() resp_msg is null."));
+		return -1;
+	}
+
+	// Locate the segment.
+	if ((shmid = shmget(key, MAX_IM_SHM_DATA_SIZE, 0666)) < 0) {
+		//PJ_LOG(1, (THIS_FILE, "write_im_resp_to_shm() shmget() failed. %s", strerror(errno)));
+		return -2;
+	}
+
+	// Now we attach the segment to our data space.
+	if ((shm = (char *)shmat(shmid, NULL, 0)) == (char *) -1) {
+		//PJ_LOG(1, (THIS_FILE, "write_im_resp_to_shm() shmget() failed. %s", strerror(errno)));
+		return -3;
+	}
+
+	// Now write the response to the memroy.
+	memset(&shm_data, 0, MAX_IM_SHM_DATA_SIZE);
+	shm_data.type = IM_SHM_TYPE_RESPONSE;
+	shm_data.data_len = strlen(resp_msg);
+	if (shm_data.data_len > MAX_IM_MSG_SIZE)
+		memcpy(shm_data.data, resp_msg, MAX_IM_MSG_SIZE);
+	else
+		memcpy(shm_data.data, resp_msg, shm_data.data_len);
+
+	s = shm;
+	memcpy(s, &shm_data, MAX_IM_SHM_DATA_SIZE);
+
+	// Now we detach the segment from our data space.
+	if (shmdt(shm) < 0) {
+		//PJ_LOG(1, (THIS_FILE, "write_im_resp_to_shm() shmdt() failed. %s", strerror(errno)));
+		//return -2; 
+	}
+
+	return 0;
+}
+#endif
+
+int open_close_streaming_port(server* srv, int toOpen){
+		
+#if EMBEDDED_EANBLE
+	char* port_number = nvram_get_webdav_http_port();
+#else
+	char* port_number = "8082";
+#endif
+
+	if(toOpen == srv->is_streaming_port_opend) 
+		return 1;
+	
+
+	if(change_port_rule_on_iptable(toOpen, port_number)==0)
+		return 0;
+
+	srv->last_ts_of_streaming_connection = srv->cur_ts;
+	srv->is_streaming_port_opend = toOpen;
+	
+	return 1;
+}
+
+int open_close_network_access_port(server* srv, int toOpen){
+	
+#if IM_MESSGAE_EANBLE
+
+#if EMBEDDED_EANBLE
+	char* port_number = nvram_get_webdav_https_port();
+#else
+	char* port_number = "443";
+#endif
+	
+	if(toOpen == srv->is_network_access_port_opend) 
+		return 1;
+	
+	if(change_port_rule_on_iptable(toOpen, port_number)==0)
+		return 0;
+	
+	srv->last_ts_of_network_access_connection = srv->cur_ts;
+	srv->is_network_access_port_opend = toOpen;
+
+#else
+	UNUSED(srv);
+	UNUSED(toOpen);
+#endif
+
+	return 1;
+}
+
+int change_port_rule_on_iptable(int toOpen, char* port_number){
+	char cmd[BUFSIZ]="\0";
+	int rc = -1;
+	
+#if (defined APP_IPKG) && (defined I686)
+    int i = 0;
+    char *p = NULL;
+    char* actual_s_system = nvram_get_second_system();
+    char* actual_f_system = nvram_get_first_system();
+    char* lan_ip = nvram_get_lan_ip();
+    char* lan_ip_s = nvram_get_lan_ip_s();
+    int length = strlen(lan_ip_s);
+    char *lan_ip_s_tmp = (char *)malloc(strlen(lan_ip_s)+3);
+    char lan_ip_s_bak[length + 1];
+    memset(lan_ip_s_tmp, 0, strlen(lan_ip_s)+3);
+    memset(lan_ip_s_bak, 0, sizeof(lan_ip_s_bak));
+    sprintf(lan_ip_s_bak, "%s", lan_ip_s);
+    p = strtok(lan_ip_s_bak,".");
+    sprintf(lan_ip_s_tmp, "%s", p);
+    while(p != NULL && i < 2)
+    {
+        p = strtok(NULL, ".");
+        sprintf(lan_ip_s_tmp, "%s.%s", lan_ip_s_tmp, p);
+        i++;
+    }
+    sprintf(lan_ip_s_tmp, "%s.0/24", lan_ip_s_tmp);
+
+    if(toOpen==1){
+        //- open streaming port
+
+        //- delete rules in VSERVER CHAIN
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i erouter0 -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, port_number, lan_ip, port_number);
+        rc = system(cmd);
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip,port_number);
+        rc = system(cmd);
+
+        //- delete accept rule       
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j ACCEPT", actual_s_system, lan_ip, port_number);
+        rc = system(cmd);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        rc = system(cmd);
+		
+        //- delete drop rule
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j DROP", actual_s_system, lan_ip, port_number);
+        rc = system(cmd);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        rc = system(cmd);
+
+         //- add rules in VSERVER CHAIN
+        sprintf(cmd, "%siptables -t nat -I VSERVER -i erouter0 -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, port_number, lan_ip, port_number);
+        rc = system(cmd);
+        sprintf(cmd, "%siptables -t nat -I VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip, port_number);
+        rc = system(cmd);
+
+        //- add accept rule        
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j ACCEPT", actual_s_system, lan_ip, port_number);
+        rc = system(cmd);
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        rc = system(cmd);
+    }
+    else if(toOpen==0){
+        //- close streaming port
+
+        //- check rule is existed?
+        //sprintf(cmd, "iptables -C INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+        //Cdbg(DBE, "%s", cmd);
+
+        //- delete rules in VSERVER CHAIN
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i erouter0 -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, port_number, lan_ip, port_number);
+        rc = system(cmd);
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip, port_number);
+        rc = system(cmd);
+
+        //- delete accept rule
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j ACCEPT", actual_s_system, lan_ip, port_number);     
+        rc = system(cmd);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);     
+        rc = system(cmd);
+
+        //- delete drop rule      
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j DROP", actual_s_system, lan_ip, port_number);
+        rc = system(cmd);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);       
+        rc = system(cmd);
+
+        //- add drop rule        
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j DROP", actual_s_system, lan_ip, port_number);       
+        rc = system(cmd);
+		
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        rc = system(cmd);
+    }
+	
+    free(actual_s_system);
+    free(actual_f_system);
+    free(lan_ip);
+    free(lan_ip_s);
+    free(lan_ip_s_tmp);
+#else
+	if(toOpen==1){
+		//- open streaming port
+
+		//- delete accept rule
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j ACCEPT", port_number);
+		rc = system(cmd);
+
+		//- delete drop rule
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+		rc = system(cmd);
+
+		//- add accept rule
+		snprintf(cmd, sizeof(cmd), "iptables -I INPUT 1 -p tcp -m tcp --dport %s -j ACCEPT", port_number);
+		rc = system(cmd);
+		Cdbg(1, "toOpen=1, cmd=%s, rc=%d", cmd, rc);
+	}
+	else if(toOpen==0){
+		//- close streaming port
+		
+		//- check rule is existed?
+		//sprintf(cmd, "iptables -C INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+		//Cdbg(DBE, "%s", cmd);
+
+		//- delete accept rule
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j ACCEPT", port_number);
+		rc = system(cmd);
+		Cdbg(1, "cmd=%s, rc=%d", cmd, rc);
+		
+		//- delete drop rule
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+		rc = system(cmd);
+		Cdbg(1, "cmd=%s, rc=%d", cmd, rc);
+		
+		//- add drop rule
+		snprintf(cmd, sizeof(cmd), "iptables -I INPUT 1 -p tcp -m tcp --dport %s -j DROP", port_number);
+		rc = system(cmd);
+		Cdbg(1, "toOpen=0, cmd=%s, rc=%d", cmd, rc);
+	}
+#endif
+
+	if(rc!=0){
+		return 0;
+	}
+
+	return 1;
+}
+
 #endif

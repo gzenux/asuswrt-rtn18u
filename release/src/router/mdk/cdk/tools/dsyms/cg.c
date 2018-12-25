@@ -1,0 +1,302 @@
+/*******************************************************************************
+ * $Id: cg.c,v 1.3 Broadcom SDK $
+ * $Copyright$
+ *
+ ******************************************************************************/
+
+
+/*^*****************************************************************************
+ *
+ * C CODE GENERATION PRIMITIVES
+ *
+ ******************************************************************************/
+
+#include "cg.h"
+#include "util.h"
+#include <time.h>
+#include <stdarg.h>
+#include <string.h>
+
+#define MAX_STRING 2048
+
+void
+cg_vcommentf(FILE* fp, const char* format, va_list args)
+{
+    char cbuf[MAX_STRING]; 
+    vsnprintf(cbuf, sizeof(cbuf), format, args); 
+
+    /* 
+     * cbuf now contains the entire comment, possibly with newlines
+     */
+    
+    if(strchr(cbuf, '\n') == NULL) {
+        /* Just output the single line comment */
+        fprintf(fp, "/* %s */\n", cbuf); 
+    }
+    else {
+        /* 
+         * Multi line comment. 
+         * Like this one. 
+         */
+        cg_mcomment_start(fp); 
+        cg_mcommentf(fp, cbuf); 
+        cg_mcomment_end(fp);
+    }   
+}       
+
+void
+cg_commentf(FILE* fp, const char* format, ...)
+{
+    va_list args; 
+    va_start(args, format); 
+    cg_vcommentf(fp, format, args); 
+    va_end(args); 
+}
+
+
+/*
+ * Multi-line comments
+ */
+void
+cg_mcomment_start(FILE* fp)
+{
+    fprintf(fp, "/*\n"); 
+}
+
+void
+cg_mcomment_end(FILE* fp)
+{
+    fprintf(fp, " */\n"); 
+}
+
+void
+cg_mcommentf(FILE* fp, const char* format, ...)
+{
+    va_list args; 
+    va_start(args, format); 
+    cg_vmcommentf(fp, format, args); 
+    va_end(args); 
+}
+
+void
+cg_vmcommentf(FILE* fp, const char* format, va_list args)
+{
+    const char** str; 
+    char cbuf[MAX_STRING]; 
+
+    vsnprintf(cbuf, sizeof(cbuf), format, args); 
+
+    for(str = parse_string(cbuf, "\n"); *str; str++) {
+        fprintf(fp, " * %s\n", *str); 
+    }    
+}
+
+/*
+ * Output block comments
+ */
+void
+cg_bcommentf(FILE* fp, const char* format, ...)
+{
+    va_list args; 
+    
+    va_start(args, format); 
+    cg_bcomment_start(fp); 
+    cg_vmcommentf(fp, format, args); 
+    cg_bcomment_end(fp); 
+
+    va_end(args); 
+}
+
+/*
+ * Block comments
+ */
+void
+cg_bcomment_start(FILE* fp)
+{
+    fprintf(fp, "/*****************************************************************************\n"); 
+    fprintf(fp, " *\n"); 
+}
+
+void
+cg_bcomment_end(FILE* fp)
+{
+    fprintf(fp, " *\n"); 
+    fprintf(fp, " ****************************************************************************/\n"); 
+}
+
+#define PREBLOCK_STR_SIZE 128
+
+typedef struct {
+    char str[PREBLOCK_STR_SIZE]; 
+    int indent; 
+} preblock_t; 
+
+#define PREBLOCK_MAX 64
+static int _preblock_count = 0;
+static preblock_t _preblocks[PREBLOCK_MAX] = {{ "", 0}}; 
+
+static void
+_cg_preproc(FILE* fp, int indents)
+{
+    int i; 
+    if(indents) {
+        printf("\n"); 
+    }   
+    fprintf(fp, "#"); 
+    
+    for(i = 0; indents && i < (indents-1)*4; i++) {
+        fprintf(fp, "%c", ' '); 
+    }   
+}
+    
+void 
+cg_if(FILE* fp, const char* expr, int indent)
+{
+    preblock_t* preblock; 
+
+    /* 
+     * New block 
+     */
+    if(_preblock_count == PREBLOCK_MAX) {
+        internal_error(__LINE__, "preblock nesting too deep (%d)", PREBLOCK_MAX); 
+    }
+    
+    preblock = _preblocks + ++_preblock_count; 
+    ASTRNCPY(preblock->str, expr); 
+    preblock->indent = (indent) ? preblock[-1].indent+1 : 0; 
+    
+    _cg_preproc(fp, preblock->indent); 
+    fprintf(fp, "if %s\n", expr); 
+    if(indent) fprintf(fp, "\n"); 
+}       
+
+void 
+cg_else(FILE* fp)
+{
+    preblock_t* preblock = _preblocks + _preblock_count; 
+
+    _cg_preproc(fp, preblock->indent); 
+    fprintf(fp, "else "); 
+    if(preblock->indent) {
+        fprintf(fp, "/* %s */\n\n", preblock->str); 
+    }
+    else {
+        fprintf(fp, "\n"); 
+    }   
+}
+
+void 
+cg_endif(FILE* fp)
+{
+    preblock_t* preblock = _preblocks + _preblock_count; 
+
+    _cg_preproc(fp, preblock->indent); 
+    fprintf(fp, "endif"); 
+    if(preblock->indent) {
+        fprintf(fp, " /* %s */\n\n", preblock->str); 
+    }
+    else {
+        fprintf(fp, "\n"); 
+    }
+
+    _preblock_count--;      
+    if(_preblock_count < 0) {
+        internal_error(__LINE__, "unbalanced preblocks"); 
+    }   
+}
+
+/*
+ * Insert newlines between code sections 
+ */
+void
+cg_next_section(FILE* fp)
+{
+    fprintf(fp, "\n\n\n\n"); 
+}
+
+
+/*
+ * Standard Copyright Notice 
+ */
+static char* _copyright = 
+"Copyright 2007-2008, Broadcom Corporation All Rights Reserved.\n"
+"THIS SOFTWARE IS OFFERED \"AS IS\", AND BROADCOM GRANTS NO WARRANTIES\n"
+"OF ANY KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE\n"
+"BROADCOM SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY,\n"
+"FITNESS FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.\n"
+" \n"; 
+
+
+
+/*
+ * Standard Autogen Notice
+ */
+static char* _autogen = 
+"DO NOT EDIT THIS FILE!\n"
+"This file is auto-generated by the DSYM program.\n"
+"Edits to this file will be lost when it is regenerated."
+" \n"; 
+
+/*
+ * Start a C source or header file with optional comments and include files. 
+ */
+void
+cg_file_start(FILE* fp, const char* name, char* comments, const char* includes)
+{
+    time_t now; 
+    char* tstring; 
+    const char** include = NULL; 
+    
+    if(name) {
+        fprintf(fp, "#ifndef __%s_H__\n", name); 
+        fprintf(fp, "#define __%s_H__\n\n", name);                         
+    }
+    
+    /* Start the header comment block with Copyright and Autogen Notice */
+    cg_bcomment_start(fp); 
+    cg_mcommentf(fp, _copyright); 
+    cg_mcommentf(fp, _autogen); 
+    cg_mcommentf(fp, " \n"); 
+
+    /* Add generation date and chip configuration */
+    time(&now); 
+    tstring = asctime(localtime(&now)); 
+    *strchr(tstring, '\n') = 0; 
+    cg_mcommentf(fp, "Generated on %s", tstring); 
+    
+    /* Add specified additional comments */
+    cg_mcommentf(fp, comments, 0); 
+    cg_bcomment_end(fp); 
+    cg_nl(fp, 1); 
+        
+
+
+    for(include = parse_string(includes, ","); include && *include; include++) {
+        fprintf(fp, "#include %s\n", *include); 
+    }
+    fprintf(fp, "\n"); 
+}
+
+/*
+ * End a source or header definition
+ */
+void
+cg_file_end(FILE* fp, const char* name)
+{
+    if(name) {
+        fprintf(fp, "#endif /* __%s_H__ */\n", name); 
+    }
+}
+
+
+void
+cg_nl(FILE* fp, int lines)
+{
+    while(lines--) {
+        fprintf(fp, "\n"); 
+    }
+}
+
+/*^*****************************************************************************
+ * END C CODE GENERATION PRIMITIVES
+ ******************************************************************************/

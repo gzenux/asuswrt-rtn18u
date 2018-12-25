@@ -1,0 +1,5 @@
+[INTERFACE]
+BridgeInterfaceName=br-lan
+ManagedInterfacesList=ath0:WLAN,ath01:WLAN,eth1:ESWITCH
+SwitchLanVid=1
+SwitchCpuPort=6

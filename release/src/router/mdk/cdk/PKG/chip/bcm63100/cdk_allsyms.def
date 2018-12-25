@@ -1,0 +1,3 @@
+#if CDK_CONFIG_INCLUDE_BCM63100_A0 == 1
+#include "chip/bcm63100_a0_sym.c"
+#endif

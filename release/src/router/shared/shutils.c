@@ -2,11 +2,11 @@
  * Shell-like utility functions
  *
  * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: shutils.c 337155 2012-06-06 12:17:08Z $
+ * $Id: shutils.c 625086 2016-03-15 12:51:47Z $
  */
 
 #ifndef _GNU_SOURCE
@@ -206,6 +206,23 @@ waitfor(int fd, int timeout)
 	return select(fd + 1, &rfds, NULL, NULL, (timeout > 0) ? &tv : NULL);
 }
 
+int _eval_retry(char *const argv[], const char *path, int timeout, int *ppid, char *appname)
+{
+	int i = 0;
+
+	for(i=0; i<5; ++i) {
+		if(pids(appname))
+			break;
+		else {
+			_dprintf("%s[%s]: counts %d!\n", __func__, appname, i+1);
+			sleep(1);
+			_eval(argv, path, timeout, ppid);
+		}
+	}
+
+	return 0;
+}
+
 /*
  * Concatenates NULL-terminated list of arguments into a single
  * commmand and executes it
@@ -229,6 +246,7 @@ int _eval(char *const argv[], const char *path, int timeout, int *ppid)
 	int n;
 	const char *p;
 	char s[256];
+	int debug_logeval = atoi(nvram_safe_get("debug_logeval"));
 	//char *cpu0_argv[32] = { "taskset", "-c", "0"};
 	//char *cpu1_argv[32] = { "taskset", "-c", "1"};
 
@@ -241,6 +259,11 @@ int _eval(char *const argv[], const char *path, int timeout, int *ppid)
 		chld = signal(SIGCHLD, SIG_DFL);
 	}
 
+#ifdef HND_ROUTER
+	p = nvram_safe_get("env_path");
+	snprintf(s, sizeof(s), "%s%s/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin", *p ? p : "", *p ? ":" : "");
+	setenv("PATH", s, 1);
+#endif
 	pid = fork();
 	if (pid == -1) {
 		perror("fork");
@@ -272,7 +295,7 @@ EXIT:
 		}
 		return status;
 	}
-	
+
 	// child
 
 	// reset signal handlers
@@ -292,13 +315,13 @@ EXIT:
 	open("/dev/null", O_WRONLY);
 	open("/dev/null", O_WRONLY);
 
-	if (nvram_match("debug_logeval", "1")) {
+	if (debug_logeval == 1) {
 		pid = getpid();
 
 		cprintf("_eval +%ld pid=%d ", uptime(), pid);
 		for (n = 0; argv[n]; ++n) cprintf("%s ", argv[n]);
 		cprintf("\n");
-		
+
 		if ((fd = open("/dev/console", O_RDWR | O_NONBLOCK)) >= 0) {
 			dup2(fd, STDIN_FILENO);
 			dup2(fd, STDOUT_FILENO);
@@ -329,7 +352,7 @@ EXIT:
 				flags |= O_TRUNC;
 			}
 		}
-		
+
 		if ((fd = open(path, flags, 0644)) < 0) {
 			perror(path);
 		}
@@ -341,10 +364,11 @@ EXIT:
 	}
 
 	// execute command
-
+#ifndef HND_ROUTER
 	p = nvram_safe_get("env_path");
 	snprintf(s, sizeof(s), "%s%s/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin", *p ? p : "", *p ? ":" : "");
 	setenv("PATH", s, 1);
+#endif
 
 	alarm(timeout);
 #if 1
@@ -380,7 +404,7 @@ int _cpu_eval(int *ppid, char *cmds[])
 {
         int ncmds=0, n=0, i;
         int maxn = get_cmds_size(cmds)
-#if defined (SMP)
+#if defined (SMP) || defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
                 + 4;
 #else
                 +1;
@@ -390,13 +414,17 @@ int _cpu_eval(int *ppid, char *cmds[])
         for(i=0; i<maxn; ++i)
                 cpucmd[i]=NULL;
 
-#if defined (SMP)
+#if defined (SMP) || defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
         cpucmd[ncmds++]="taskset";
         cpucmd[ncmds++]="-c";
         if(!strcmp(cmds[n], CPU0) || !strcmp(cmds[n], CPU1)) {
                 cpucmd[ncmds++]=cmds[n++];
         } else
+#if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
+                cpucmd[ncmds++]=cmds[n++];;
+#else
                 cpucmd[ncmds++]=CPU0;
+#endif
 #else
         if(strcmp(cmds[n], CPU0) && strcmp(cmds[n], CPU1))
                 cpucmd[ncmds++]=cmds[n++];
@@ -586,16 +614,37 @@ char *ether_etoa2(const unsigned char *e, char *a)
 	return a;
 }
 
+#ifdef GTAC5300
+static int dbg_noisy = -1;
+#endif
+
 void cprintf(const char *format, ...)
 {
 	FILE *f;
 	int nfd;
 	va_list args;
+#ifdef RTCONFIG_NVRAM_FILE
+	int debug_cprintf = 1;
+	int debug_cprintf_file = 0;
+#endif
 
-#ifdef DEBUG_NOISY
+#if defined(DEBUG_NOISY) && !defined(HND_ROUTER)
 	{
 #else
+#ifdef GTAC5300
+	if(dbg_noisy == -1)
+		dbg_noisy = nvram_get_int("debug_cprintf");
+
+	if(dbg_noisy != 1)
+		return;
+	{
+#else
+#ifdef RTCONFIG_NVRAM_FILE
+	if ( debug_cprintf == 1 ) {
+#else
 	if (nvram_match("debug_cprintf", "1")) {
+#endif
+#endif
 #endif
 		if((nfd = open("/dev/console", O_WRONLY | O_NONBLOCK)) > 0){
 			if((f = fdopen(nfd, "w")) != NULL){
@@ -607,8 +656,12 @@ void cprintf(const char *format, ...)
 			close(nfd);
 		}
 	}
-#if 1	
+#if 1
+#ifdef RTCONFIG_NVRAM_FILE
+	if (debug_cprintf_file == 1) {
+#else
 	if (nvram_match("debug_cprintf_file", "1")) {
+#endif
 //		char s[32];
 //		sprintf(s, "/tmp/cprintf.%d", getpid());
 //		if ((f = fopen(s, "a")) != NULL) {
@@ -623,12 +676,12 @@ void cprintf(const char *format, ...)
 #if 0
 	if (nvram_match("debug_cprintf_log", "1")) {
 		char s[512];
-		
+
 		va_start(args, format);
 		vsnprintf(s, sizeof(s), format, args);
 		s[sizeof(s) - 1] = 0;
 		va_end(args);
-		
+
 		if ((s[0] != '\n') || (s[1] != 0)) syslog(LOG_DEBUG, "%s", s);
 	}
 #endif
@@ -846,6 +899,34 @@ get_ifname_unit(const char* ifname, int *unit, int *subunit)
 	if (ifname_len + 1 > sizeof(str))
 		return -1;
 
+#if defined(RTCONFIG_QCA) && defined(RTCONFIG_WIGIG)
+	/* QCA's 802.11ad Wigig interface name is wlan0 and unit number is WL_60G_BAND,
+	 * that is, 3.  It's not compatible with below rule and we can't extract unit
+	 * number from interface name.
+	 */
+	if (strstr(ifname, get_wififname(WL_60G_BAND)) != NULL) {
+		int i;
+		char tmp_ifname[IFNAMSIZ];
+
+		if (unit)
+			*unit = WL_60G_BAND;
+
+		if (subunit) {
+			*subunit = 0;
+
+			if (strchr(ifname, '.') != NULL) {
+				for (i = 1; subunit && i < MAX_NO_MSSID; ++i) {
+					if (strcmp(ifname, get_wlxy_ifname(WL_60G_BAND, i, tmp_ifname)))
+						continue;
+					*subunit = i;
+					break;
+				}
+			}
+		}
+		return 0;
+	}
+#endif
+
 	strcpy(str, ifname);
 
 	/* find the trailing digit chars */
@@ -892,6 +973,51 @@ get_ifname_unit(const char* ifname, int *unit, int *subunit)
 		*unit = val;
 
 	return 0;
+}
+
+/* This utility routine builds the wl prefixes from wl_unit.
+ * Input is expected to be a null terminated string
+ *
+ * @param       prefix          Pointer to prefix buffer
+ * @param       prefix_size     Size of buffer
+ * @param       Mode            If set generates unit.subunit output
+ *                              if not set generates unit only
+ * @param       ifname          Optional interface name string
+ *
+ *
+ * @return                              pointer to prefix, NULL if error.
+ */
+char *
+make_wl_prefix(char *prefix, int prefix_size, int mode, char *ifname)
+{
+        int unit = -1, subunit = -1;
+        char *wl_unit = NULL;
+
+        if (!prefix || !prefix_size)
+                return NULL;
+
+        if (ifname) {
+                if (!*ifname)
+                        return NULL;
+                wl_unit = ifname;
+        } else {
+                wl_unit = nvram_get("wl_unit");
+
+                if (!wl_unit)
+                        return NULL;
+        }
+
+        if (get_ifname_unit(wl_unit, &unit, &subunit) < 0)
+                return NULL;
+
+        if (unit < 0) return NULL;
+
+        if  ((mode) && (subunit > 0))
+                snprintf(prefix, prefix_size, "wl%d.%d_", unit, subunit);
+        else
+                snprintf(prefix, prefix_size, "wl%d_", unit);
+
+        return prefix;
 }
 
 /* In the space-separated/null-terminated list(haystack), try to
@@ -1070,9 +1196,9 @@ str_binit(struct strbuf *b, char *buf, unsigned int size)
 
 /* Buffer sprintf wrapper to guard against buffer overflow */
 int
-str_bprintf(struct strbuf *b, const char *fmt, ...) 
+str_bprintf(struct strbuf *b, const char *fmt, ...)
 {
-        va_list ap; 
+        va_list ap;
         int r;
 
         va_start(ap, fmt);
@@ -1152,6 +1278,12 @@ nvifname_to_osifname(const char *nvifname, char *osifname_buf,
 		strncpy(osifname_buf, nvifname, osifname_buf_len);
 		return 0;
 	}
+#if defined(RTCONFIG_WIGIG)
+	if (strstr(nvifname, "wlan")) {
+		strlcpy(osifname_buf, nvifname, osifname_buf_len);
+		return 0;
+	}
+#endif
 #endif
 
 	snprintf(varname, sizeof(varname), "%s_ifname", nvifname);
@@ -1192,7 +1324,12 @@ osifname_to_nvifname(const char *osifname, char *nvifname_buf,
 	memset(nvifname_buf, 0, nvifname_buf_len);
 
 	if (strstr(osifname, "wl") || strstr(osifname, "br") ||
-	     strstr(osifname, "wds")) {
+	    strstr(osifname, "wds")
+#if defined(RTCONFIG_QCA) && defined(RTCONFIG_WIGIG)
+	    || strstr(osifname, "wlan")
+#endif
+	   )
+	{
 		strncpy(nvifname_buf, osifname, nvifname_buf_len);
 		return 0;
 	}
@@ -1264,22 +1401,22 @@ static void put_string(strbuf_t *buf, char *s, int len, int width,
 {
 	int		i;
 
-	if (len < 0) { 
-		len = strnlen(s, prec >= 0 ? prec : ULONG_MAX); 
-	} else if (prec >= 0 && prec < len) { 
-		len = prec; 
+	if (len < 0) {
+		len = strnlen(s, prec >= 0 ? prec : ULONG_MAX);
+	} else if (prec >= 0 && prec < len) {
+		len = prec;
 	}
 	if (width > len && !(f & flag_minus)) {
-		for (i = len; i < width; ++i) { 
-			put_char(buf, ' '); 
+		for (i = len; i < width; ++i) {
+			put_char(buf, ' ');
 		}
 	}
-	for (i = 0; i < len; ++i) { 
-		put_char(buf, s[i]); 
+	for (i = 0; i < len; ++i) {
+		put_char(buf, s[i]);
 	}
 	if (width > len && f & flag_minus) {
-		for (i = len; i < width; ++i) { 
-			put_char(buf, ' '); 
+		for (i = len; i < width; ++i) {
+			put_char(buf, ' ');
 		}
 	}
 }
@@ -1297,31 +1434,31 @@ static void put_ulong(strbuf_t *buf, unsigned long int value, int base,
 
 	for (len = 1, x = 1; x < ULONG_MAX / base; ++len, x = x2) {
 		x2 = x * base;
-		if (x2 > value) { 
-			break; 
+		if (x2 > value) {
+			break;
 		}
 	}
 	zeros = (prec > len) ? prec - len : 0;
 	width -= zeros + len;
-	if (prefix != NULL) { 
-		width -= strnlen(prefix, ULONG_MAX); 
+	if (prefix != NULL) {
+		width -= strnlen(prefix, ULONG_MAX);
 	}
 	if (!(f & flag_minus)) {
 		if (f & flag_zero) {
-			for (i = 0; i < width; ++i) { 
-				put_char(buf, '0'); 
+			for (i = 0; i < width; ++i) {
+				put_char(buf, '0');
 			}
 		} else {
-			for (i = 0; i < width; ++i) { 
-				put_char(buf, ' '); 
+			for (i = 0; i < width; ++i) {
+				put_char(buf, ' ');
 			}
 		}
 	}
-	if (prefix != NULL) { 
-		put_string(buf, prefix, -1, 0, -1, flag_none); 
+	if (prefix != NULL) {
+		put_string(buf, prefix, -1, 0, -1, flag_none);
 	}
-	for (i = 0; i < zeros; ++i) { 
-		put_char(buf, '0'); 
+	for (i = 0; i < zeros; ++i) {
+		put_char(buf, '0');
 	}
 	for ( ; x > 0; x /= base) {
 		int digit = (value / x) % base;
@@ -1329,8 +1466,8 @@ static void put_ulong(strbuf_t *buf, unsigned long int value, int base,
 			digit));
 	}
 	if (f & flag_minus) {
-		for (i = 0; i < width; ++i) { 
-			put_char(buf, ' '); 
+		for (i = 0; i < width; ++i) {
+			put_char(buf, ' ');
 		}
 	}
 }
@@ -1377,16 +1514,16 @@ static int dsnprintf(char **s, int size, char *fmt, va_list arg, int msize)
 			int width = 0;
 			int prec = -1;
 			for ( ; c != '\0'; c = *fmt++) {
-				if (c == '-') { 
-					f |= flag_minus; 
-				} else if (c == '+') { 
-					f |= flag_plus; 
-				} else if (c == ' ') { 
-					f |= flag_space; 
-				} else if (c == '#') { 
-					f |= flag_hash; 
-				} else if (c == '0') { 
-					f |= flag_zero; 
+				if (c == '-') {
+					f |= flag_minus;
+				} else if (c == '+') {
+					f |= flag_plus;
+				} else if (c == ' ') {
+					f |= flag_space;
+				} else if (c == '#') {
+					f |= flag_hash;
+				} else if (c == '0') {
+					f |= flag_zero;
 				} else {
 					break;
 				}
@@ -1459,10 +1596,10 @@ static int dsnprintf(char **s, int size, char *fmt, va_list arg, int msize)
 				} else {
 					if (f & flag_hash && value != 0) {
 						if (c == 'x') {
-							put_ulong(&buf, value, 16, 0, ("0x"), width, 
+							put_ulong(&buf, value, 16, 0, ("0x"), width,
 								prec, f);
 						} else {
-							put_ulong(&buf, value, 16, 1, ("0X"), width, 
+							put_ulong(&buf, value, 16, 1, ("0X"), width,
 								prec, f);
 						}
 					} else {
@@ -1589,11 +1726,11 @@ int doSystem(char *fmt, ...)
 			_dprintf("[doSystem] %s\n", cmd);
 		rc = system(cmd);
 		bfree(B_L, cmd);
-	}	
+	}
 	return rc;
 }
 
-int 
+int
 swap_check()
 {
 	struct sysinfo info;
@@ -1667,7 +1804,7 @@ long uptime(void)
 {
 	struct sysinfo info;
 	sysinfo(&info);
-	
+
 	return info.uptime;
 }
 
@@ -1699,7 +1836,7 @@ int _vstrsep(char *buf, const char *sep, ...)
 	return n;
 }
 
-#ifdef CONFIG_BCMWL5
+#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_REALTEK) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_LANTIQ)
 char *
 wl_ether_etoa(const struct ether_addr *n)
 {
@@ -1710,7 +1847,11 @@ wl_ether_etoa(const struct ether_addr *n)
 	for (i = 0; i < ETHER_ADDR_LEN; i++) {
 		if (i)
 			*c++ = ':';
+#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_LANTIQ)		
+		c += sprintf(c, "%02X", n->ether_addr_octet[i] & 0xff);
+#else
 		c += sprintf(c, "%02X", n->octet[i] & 0xff);
+#endif		
 	}
 	return etoa_buf;
 }
@@ -1775,7 +1916,7 @@ char *enc_str(char *str, char *enc_buf)
 
         memset(buf, 0, sizeof(buf));
         memset(buf2, 0, sizeof(buf2));
-        memset(enc_buf, 0, sizeof(enc_buf));
+        memset(enc_buf, 0, ENC_WORDS_LEN);
 
         strcpy((char *) buf, str);
 
@@ -1791,12 +1932,68 @@ char *dec_str(char *ec_str, char *dec_buf)
         unsigned char buf[DATA_WORDS_LEN + 1];
 
         memset(buf, 0, sizeof(buf));
-        memset(dec_buf, 0, sizeof(dec_buf));
+        memset(dec_buf, 0, DATA_WORDS_LEN);
         memcpy(buf, ec_str, DATA_WORDS_LEN+1);
         buf[DATA_WORDS_LEN] = 0;
         shortstr_decrypt(buf, (unsigned char *) dec_buf, used_shift);
 
         return dec_buf;
+}
+
+int generate_wireless_key(unsigned char *key)
+{
+	int i;
+	unsigned char ea[ETHER_ADDR_LEN];
+	char *mac = nvram_safe_get("et1macaddr");
+
+	memset(key, sizeof(key), 32);
+	ether_atoe(mac, ea);
+
+	sprintf((char *) key, "%x%x%x%x%x%x%x%x",
+		(ea[2] & 0xf0) >> 4,
+		(ea[2] & 0x0f),
+		(ea[3] & 0xf0) >> 4,
+		(ea[3] & 0x0f),
+		(ea[4] & 0xf0) >> 4,
+		(ea[4] & 0x0f),
+		(ea[5] & 0xf0) >> 4,
+		(ea[5] & 0x0f));
+	key[8] = 0x0;
+
+	for (i = 0; i < 3; i++)
+	{
+		switch(key[i])
+		{
+			case '0': key[i] = 'a'; break;
+			case '1': key[i] = 'b'; break;
+			case '2': key[i] = 'c'; break;
+			case '3': key[i] = 'd'; break;
+			case '4': key[i] = 'e'; break;
+			case '5': key[i] = 'f'; break;
+			case '6': key[i] = 'g'; break;
+			case '7': key[i] = 'h'; break;
+			case '8': key[i] = 'j'; break;
+			case '9': key[i] = 'k'; break;
+		}
+	}
+
+	for (i = 3; i < 8; i++)
+	{
+		switch(key[i])
+		{
+			case '0': key[i] = '1'; break;
+			case 'a': key[i] = '2'; break;
+			case 'b': key[i] = '3'; break;
+			case 'c': key[i] = '4'; break;
+			case 'd': key[i] = '5'; break;
+			case 'e': key[i] = '7'; break;
+			case 'f': key[i] = '8'; break;
+		}
+	}
+
+	printf("key:  %s (%d)\n", key, strlen((const char *) key));
+
+	return 0;
 }
 
 int
@@ -1869,3 +2066,94 @@ char *get_process_name_by_pid(const int pid)
 	else memset(name, 0, 1024);
 	return name;
 }
+
+int writefile(char *fname,char *content)
+{
+ FILE *fp;
+ int len;
+
+ fp=fopen(fname,"w");
+ if (!fp) return 0;
+ len=fputs(content,fp);
+ fclose(fp);
+ if (len>0) return 1;
+ return 0;
+}
+
+char *readfile(char *fname,int *fsize)
+{
+ FILE *fp;
+ unsigned long size,lsize;
+ char *pt;
+ int len;
+ char buf[100];
+
+ size=0;
+ pt=NULL;
+ fp=fopen(fname,"r");
+ if (!fp) return NULL;
+ while (1)
+  {
+   len=fread(buf,1,100,fp);
+   if (len==-1)
+    goto sysfail;
+   lsize=size;
+   size+=len;
+   pt=(char *)realloc(pt,size+1);
+   if (len==0)
+    {
+     pt[size]='\0';
+     break;
+    }
+   if (!pt)
+    goto sysfail;
+   memcpy(pt+lsize,buf,len);
+  }
+ fclose(fp);
+ pt[size]='\0';
+ *fsize=size;
+ return pt;
+
+sysfail:
+ fclose(fp);
+ if (pt)
+  free(pt);
+ return NULL;
+}
+
+int num_of_wl_if()
+{
+	char word[256], *next;
+	int count = 0;
+
+	foreach (word, nvram_safe_get("wl_ifnames"), next)
+		count++;
+
+	return count;
+}
+
+/* hex2str()
+ * Convert the hex array to string.
+ * @param hex pointer to hex to be converted
+ * @param str storage for the converted string
+ * @param hex_len length of storage for hex
+ * @return TRUE if conversion was successful and FALSE otherwise
+ */
+int hex2str(unsigned char *hex, char *str, int hex_len)
+{
+	int i = 0;
+	char *d = NULL;
+	unsigned char *s = NULL;
+	const static char hexdig[] = "0123456789ABCDEF";
+	if(hex == NULL||str == NULL)
+		return 0;
+	d = str;
+	s = hex;
+
+	for (i = 0; i < hex_len; i++,s++){
+		*d++ = hexdig[(*s >> 4) & 0xf];
+		*d++ = hexdig[*s & 0xf];
+	}
+	*d = 0;
+	return 1;
+} /* End of hex2str */

@@ -1,0 +1,9 @@
+Package: libwpa2
+Version: g2ab931a-1
+Depends: libc
+Source: qca/feeds/ieee1905-security/qca-ieee1905-security-config/libwpa2
+Section: QCA
+Maintainer: Qualcomm Atheros, Inc.
+Architecture: ipq806x
+Installed-Size: 35250
+Description:  This Package contains the wpa2 library

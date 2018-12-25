@@ -364,32 +364,34 @@ char *get_usb_port_by_string(const char *target_string, char *buf, const int buf
 {
 	memset(buf, 0, buf_size);
 
-	if(strstr(target_string, USB_XHCI_PORT_1))
-		strcpy(buf, USB_XHCI_PORT_1);
-	else if(strstr(target_string, USB_XHCI_PORT_2))
-		strcpy(buf, USB_XHCI_PORT_2);
-	else if(strstr(target_string, USB_EHCI_PORT_1))
-		strcpy(buf, USB_EHCI_PORT_1);
-	else if(strstr(target_string, USB_EHCI_PORT_2))
-		strcpy(buf, USB_EHCI_PORT_2);
-	else if(strstr(target_string, USB_OHCI_PORT_1))
-		strcpy(buf, USB_OHCI_PORT_1);
-	else if(strstr(target_string, USB_OHCI_PORT_2))
-		strcpy(buf, USB_OHCI_PORT_2);
+	if(strstr(target_string, (const char *)USB_XHCI_PORT_1))
+		strcpy(buf, (const char *)USB_XHCI_PORT_1);
+	else if(strstr(target_string, (const char *)USB_XHCI_PORT_2))
+		strcpy(buf, (const char *)USB_XHCI_PORT_2);
+	else if(strstr(target_string, (const char *)USB_EHCI_PORT_1))
+		strcpy(buf, (const char *)USB_EHCI_PORT_1);
+	else if(strstr(target_string, (const char *)USB_EHCI_PORT_2))
+		strcpy(buf, (const char *)USB_EHCI_PORT_2);
+	else if(strstr(target_string, (const char *)USB_OHCI_PORT_1))
+		strcpy(buf, (const char *)USB_OHCI_PORT_1);
+	else if(strstr(target_string, (const char *)USB_OHCI_PORT_2))
+		strcpy(buf, (const char *)USB_OHCI_PORT_2);
 #ifdef BCM_MMC
 	else if(strstr(target_string, SDCARD_PORT))
 		strcpy(buf, SDCARD_PORT);
 #endif
 #if defined(RTCONFIG_M2_SSD)
-	else if(strstr(target_string, M2_SSD_PORT))
+	else if(strstr(target_string, (const char *)M2_SSD_PORT))
 		strcpy(buf, M2_SSD_PORT);
 #endif
-	else if(strstr(target_string, USB_EHCI_PORT_3))
-		strcpy(buf, USB_EHCI_PORT_3);
-	else if(strstr(target_string, USB_OHCI_PORT_3))
-		strcpy(buf, USB_OHCI_PORT_3);
-	else
+	else if(strstr(target_string, (const char *)USB_EHCI_PORT_3))
+		strcpy(buf, (const char *)USB_EHCI_PORT_3);
+	else if(strstr(target_string, (const char *)USB_OHCI_PORT_3))
+		strcpy(buf, (const char *)USB_OHCI_PORT_3);
+	else{
+		usb_dbg("%s: wrong 1. target_string=%s.\n", __func__, target_string);
 		return NULL;
+	}
 
 	return buf;
 }
@@ -495,22 +497,22 @@ char *get_interface_by_string(const char *target_string, char *ret, const int re
 	char buf[32], *ptr, *ptr_end, *ptr2, *ptr2_end;
 	int len;
 
-	if((ptr = strstr(target_string, USB_XHCI_PORT_1)) != NULL)
-		ptr += strlen(USB_XHCI_PORT_1);
-	else if((ptr = strstr(target_string, USB_XHCI_PORT_2)) != NULL)
-		ptr += strlen(USB_XHCI_PORT_2);
-	else if((ptr = strstr(target_string, USB_EHCI_PORT_1)) != NULL)
-		ptr += strlen(USB_EHCI_PORT_1);
-	else if((ptr = strstr(target_string, USB_EHCI_PORT_2)) != NULL)
-		ptr += strlen(USB_EHCI_PORT_2);
-	else if((ptr = strstr(target_string, USB_OHCI_PORT_1)) != NULL)
-		ptr += strlen(USB_OHCI_PORT_1);
-	else if((ptr = strstr(target_string, USB_OHCI_PORT_2)) != NULL)
-		ptr += strlen(USB_OHCI_PORT_2);
-	else if((ptr = strstr(target_string, USB_EHCI_PORT_3)) != NULL)
-		ptr += strlen(USB_EHCI_PORT_3);
-	else if((ptr = strstr(target_string, USB_OHCI_PORT_3)) != NULL)
-		ptr += strlen(USB_OHCI_PORT_3);
+	if((ptr = strstr(target_string, (const char *)USB_XHCI_PORT_1)) != NULL)
+		ptr += strlen((const char *)USB_XHCI_PORT_1);
+	else if((ptr = strstr(target_string, (const char *)USB_XHCI_PORT_2)) != NULL)
+		ptr += strlen((const char *)USB_XHCI_PORT_2);
+	else if((ptr = strstr(target_string, (const char *)USB_EHCI_PORT_1)) != NULL)
+		ptr += strlen((const char *)USB_EHCI_PORT_1);
+	else if((ptr = strstr(target_string, (const char *)USB_EHCI_PORT_2)) != NULL)
+		ptr += strlen((const char *)USB_EHCI_PORT_2);
+	else if((ptr = strstr(target_string, (const char *)USB_OHCI_PORT_1)) != NULL)
+		ptr += strlen((const char *)USB_OHCI_PORT_1);
+	else if((ptr = strstr(target_string, (const char *)USB_OHCI_PORT_2)) != NULL)
+		ptr += strlen((const char *)USB_OHCI_PORT_2);
+	else if((ptr = strstr(target_string, (const char *)USB_EHCI_PORT_3)) != NULL)
+		ptr += strlen((const char *)USB_EHCI_PORT_3);
+	else if((ptr = strstr(target_string, (const char *)USB_OHCI_PORT_3)) != NULL)
+		ptr += strlen((const char *)USB_OHCI_PORT_3);
 	else
 		return NULL;
 	++ptr;
@@ -628,16 +630,22 @@ char *get_path_by_node(const char *usb_node, char *buf, const int buf_size){
 	char usb_port[32], *hub_path;
 	int port_num = 0, len;
 
-	if(usb_node == NULL || buf == NULL || buf_size <= 0)
+	if(usb_node == NULL || buf == NULL || buf_size <= 0){
+		usb_dbg("%s: wrong 1.\n", __func__);
 		return NULL;
+	}
 
 	// Get USB port.
-	if(get_usb_port_by_string(usb_node, usb_port, sizeof(usb_port)) == NULL)
+	if(get_usb_port_by_string(usb_node, usb_port, sizeof(usb_port)) == NULL){
+		usb_dbg("%s: wrong 2. usb_node=%s.\n", __func__, usb_node);
 		return NULL;
+	}
 
 	port_num = get_usb_port_number(usb_port);
-	if(port_num == 0)
+	if(port_num == 0){
+		usb_dbg("%s: wrong 3. usb_port=%s.\n", __func__, usb_port);
 		return NULL;
+	}
 
 	if(strlen(usb_node) > (len = strlen(usb_port))){
 		hub_path = (char *)usb_node+len;
@@ -775,6 +783,22 @@ int get_usb_interface_number(const char *usb_node)
 
 	if(fscanf(fp, "%d", &val) < 1)
 		val = 0;
+	fclose(fp);
+
+	return val;
+}
+
+int get_usb_interface_order(const char *interface_name)
+{
+	FILE *fp;
+	int val;
+
+	// Sometimes the class file would be built slowly, so try again during MAX_WAIT_FILE
+	if((fp = open_usb_target(interface_name, "bInterfaceNumber", MAX_WAIT_FILE)) == NULL)
+		return -1;
+
+	if(fscanf(fp, "%d", &val) < 1)
+		val = -1;
 	fclose(fp);
 
 	return val;
@@ -1189,23 +1213,28 @@ int isGCTInterface(const char *interface_name){
 #endif
 
 // 0: no modem, 1: has modem
-int is_usb_modem_ready(void)
+int is_usb_modem_ready(int wan_type)
 {
-	char prefix[32], tmp[32];
+	char prefix[32], tmp[100];
 	char usb_act[8];
 	char usb_node[32], port_path[8];
+	char prefix2[32], tmp2[100];
+	int unit;
 
 	if(nvram_match("modem_enable", "0"))
 		return 0;
 
-	if(snprintf(usb_node, sizeof(usb_node), "%s", nvram_safe_get("usb_modem_act_path")) <= 0)
+	unit = get_modemunit_by_type(wan_type);
+	usb_modem_prefix(unit, prefix2, sizeof(prefix2));
+
+	if(snprintf(usb_node, 32, "%s", nvram_safe_get(strcat_r(prefix2, "act_path", tmp2))) <= 0)
 		return 0;
 
 	if(get_path_by_node(usb_node, port_path, 8) == NULL)
 		return 0;
 
-	snprintf(prefix, sizeof(prefix), "usb_path%s", port_path);
-	snprintf(usb_act, sizeof(usb_act), "%s", nvram_safe_get(strcat_r(prefix, "_act", tmp)));
+	snprintf(prefix, 32, "usb_path%s", port_path);
+	snprintf(usb_act, 8, "%s", nvram_safe_get(strcat_r(prefix, "_act", tmp)));
 
 	if(nvram_match(prefix, "modem") && *usb_act)
 		return 1;
@@ -1354,12 +1383,15 @@ char *find_sg_of_device(const char *device_name, char *buf, const int buf_size)
 	return buf;
 }
 
+#ifdef RTCONFIG_INTERNAL_GOBI
 char *get_gobi_portpath(){
 #ifdef RT4GAC68U
-	return "3";
-#elif defined(RT4GAC55U)
+	//return "3"; old layout. there is the USB 2.0 port.
+	return "2";
+#else // 4G-AC55U, 4G-AC53U
 	return "2";
 #endif
 
 	return "";
 }
+#endif

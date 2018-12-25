@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM6300_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM6300_A0
+BMD_DEVLIST_ENTRY(BCM6300, BCM6300_VENDOR_ID, BCM6300_DEVICE_ID, BCM6300_REV_A0, \
+                0, 0, \
+                  bcm6300_a0, bcm6300_a0, bcm6300_a0, \
+                  CDK_DEV_ARCH_ROBO, "", "BCM6300", \
+                  "Multiport Gigabit Ethernet Switch", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm6300_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

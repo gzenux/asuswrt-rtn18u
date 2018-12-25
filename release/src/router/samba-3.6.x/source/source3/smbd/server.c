@@ -1030,7 +1030,7 @@ extern void build_options(bool screen);
            client problems at a later date. (tridge) */
 	generate_random_buffer(NULL, 0);
 
-	setpriority(PRIO_PROCESS, 0, -20);
+	// setpriority(PRIO_PROCESS, 0, -20);
 
 	/* get initial effective uid and gid */
 	sec_init();

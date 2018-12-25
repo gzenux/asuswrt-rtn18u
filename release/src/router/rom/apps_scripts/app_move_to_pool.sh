@@ -46,7 +46,7 @@ for obj in $objs; do
 		continue
 	fi
 
-	target=`echo $obj |awk '{FS="-"; printf $1}'`
+	target=`echo $obj |awk 'BEGIN{FS="-"}{printf $1}'`
 	if [ "$target" == "ipkg" ]; then
 		continue
 	fi

@@ -1,0 +1,163 @@
+/*
+ * $Id: board_bcm56820_k24c.c,v 1.1 Broadcom SDK $
+ * $Copyright: Copyright 2013 Broadcom Corporation.
+ * This program is the proprietary software of Broadcom Corporation
+ * and/or its licensors, and may only be used, duplicated, modified
+ * or distributed pursuant to the terms and conditions of a separate,
+ * written license agreement executed between you and Broadcom
+ * (an "Authorized License").  Except as set forth in an Authorized
+ * License, Broadcom grants no license (express or implied), right
+ * to use, or waiver of any kind with respect to the Software, and
+ * Broadcom expressly reserves all rights in and to the Software
+ * and all intellectual property rights therein.  IF YOU HAVE
+ * NO AUTHORIZED LICENSE, THEN YOU HAVE NO RIGHT TO USE THIS SOFTWARE
+ * IN ANY WAY, AND SHOULD IMMEDIATELY NOTIFY BROADCOM AND DISCONTINUE
+ * ALL USE OF THE SOFTWARE.  
+ *  
+ * Except as expressly set forth in the Authorized License,
+ *  
+ * 1.     This program, including its structure, sequence and organization,
+ * constitutes the valuable trade secrets of Broadcom, and you shall use
+ * all reasonable efforts to protect the confidentiality thereof,
+ * and to use this information only in connection with your use of
+ * Broadcom integrated circuit products.
+ *  
+ * 2.     TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS
+ * PROVIDED "AS IS" AND WITH ALL FAULTS AND BROADCOM MAKES NO PROMISES,
+ * REPRESENTATIONS OR WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY,
+ * OR OTHERWISE, WITH RESPECT TO THE SOFTWARE.  BROADCOM SPECIFICALLY
+ * DISCLAIMS ANY AND ALL IMPLIED WARRANTIES OF TITLE, MERCHANTABILITY,
+ * NONINFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, LACK OF VIRUSES,
+ * ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET POSSESSION OR
+ * CORRESPONDENCE TO DESCRIPTION. YOU ASSUME THE ENTIRE RISK ARISING
+ * OUT OF USE OR PERFORMANCE OF THE SOFTWARE.
+ * 
+ * 3.     TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL
+ * BROADCOM OR ITS LICENSORS BE LIABLE FOR (i) CONSEQUENTIAL,
+ * INCIDENTAL, SPECIAL, INDIRECT, OR EXEMPLARY DAMAGES WHATSOEVER
+ * ARISING OUT OF OR IN ANY WAY RELATING TO YOUR USE OF OR INABILITY
+ * TO USE THE SOFTWARE EVEN IF BROADCOM HAS BEEN ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGES; OR (ii) ANY AMOUNT IN EXCESS OF
+ * THE AMOUNT ACTUALLY PAID FOR THE SOFTWARE ITSELF OR USD 1.00,
+ * WHICHEVER IS GREATER. THESE LIMITATIONS SHALL APPLY NOTWITHSTANDING
+ * ANY FAILURE OF ESSENTIAL PURPOSE OF ANY LIMITED REMEDY.$1,
+ * WHICHEVER IS GREATER. THESE LIMITATIONS SHALL APPLY NOTWITHSTANDING
+ * ANY FAILURE OF ESSENTIAL PURPOSE OF ANY LIMITED REMEDY.$
+ */
+
+/*
+ * This port configuration is intended for testing Scorpion in the
+ * default 10G mode (BCM956820K24XG board).
+ */
+
+#include <board/board_config.h>
+#include <cdk/cdk_string.h>
+#include <phy/phy_buslist.h>
+
+#ifdef CDK_CONFIG_ARCH_XGS_INSTALLED
+
+#include <cdk/arch/xgs_miim.h>
+
+static uint32_t
+_phy_addr(int port)
+{
+    if (port >= 1 && port <= 20) {
+        return port + 1 + CDK_XGS_MIIM_BUS_2;
+    } else if (port >= 25 && port <= 28) {
+        return port - 3 + CDK_XGS_MIIM_BUS_2;
+    }
+    return 0;
+}
+
+static int 
+_read(int unit, uint32_t addr, uint32_t reg, uint32_t *val)
+{
+    return cdk_xgs_miim_read(unit, addr, reg, val);
+}
+
+static int 
+_write(int unit, uint32_t addr, uint32_t reg, uint32_t val)
+{
+    return cdk_xgs_miim_write(unit, addr, reg, val);
+}
+
+static phy_bus_t _phy_bus_miim_ext = {
+    "bcm956820k24c_miim_ext",
+    _phy_addr,
+    _read,
+    _write,
+};
+
+#endif /* CDK_CONFIG_ARCH_XGS_INSTALLED */
+
+static phy_bus_t *_phy_bus[] = {
+#ifdef CDK_CONFIG_ARCH_XGS_INSTALLED
+#ifdef PHY_BUS_BCM56820_MIIM_INT_INSTALLED
+    &phy_bus_bcm56820_miim_int,
+#endif
+    &_phy_bus_miim_ext,
+#endif
+    NULL
+};
+
+static int 
+_phy_reset_cb(phy_ctrl_t *pc)
+{
+    int rv = CDK_E_NONE;
+    int port;
+    phy_ctrl_t *lpc = pc;
+    uint32_t tx_pol, rx_map;
+
+    while (lpc) {
+        if (lpc->drv == NULL || lpc->drv->drv_name == NULL) {
+            return CDK_E_INTERNAL;
+        }
+        if (CDK_STRSTR(lpc->drv->drv_name, "unicore16g_xgxs") != NULL) {
+            port = PHY_CTRL_PORT(lpc);
+            /* Invert Tx polarity on all lanes of port 3 */
+            if (port == 3) {
+                tx_pol = 0x1111;
+                rv = PHY_CONFIG_SET(lpc, PhyConfig_XauiTxPolInvert,
+                                    tx_pol, NULL);
+                PHY_VERB(lpc, ("Flip Tx pol (0x%04"PRIx32")\n", tx_pol));
+            }
+            /* Remap Rx lanes on all ports */
+            rx_map = 0x0123;
+            rv = PHY_CONFIG_SET(lpc, PhyConfig_XauiRxLaneRemap,
+                                rx_map, NULL);
+            PHY_VERB(lpc, ("Remap Rx lanes (0x%04"PRIx32")\n", rx_map));
+        } else if (CDK_STRSTR(lpc->drv->drv_name, "hyperlite") != NULL) {
+            /* Remap Rx lanes on all ports */
+            rx_map = 0x0123;
+            rv = PHY_CONFIG_SET(lpc, PhyConfig_XauiRxLaneRemap,
+                                rx_map, NULL);
+            PHY_VERB(lpc, ("Remap Rx lanes (0x%04"PRIx32")\n", rx_map));
+        }
+        lpc = lpc->next;
+    }
+
+    return rv;
+}
+
+static int 
+_phy_init_cb(phy_ctrl_t *pc)
+{
+    return CDK_E_NONE;
+}
+
+static board_chip_config_t _chip_config = {
+    NULL,
+    _phy_bus,
+};
+
+static board_chip_config_t *_chip_configs[] = {
+    &_chip_config,
+    NULL
+};
+
+board_config_t board_bcm56820_k24c = {
+    "bcm56820_k24c",
+    _chip_configs,
+    &_phy_reset_cb,
+    &_phy_init_cb,
+};

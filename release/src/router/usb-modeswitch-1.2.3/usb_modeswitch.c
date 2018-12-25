@@ -83,7 +83,7 @@ int devnum=-1, busnum=-1;
 int ret;
 
 char DetachStorageOnly=0, HuaweiMode=0, SierraMode=0, SonyMode=0, GCTMode=0, KobilMode=0;
-char SequansMode=0, MobileActionMode=0, CiscoMode=0, QisdaMode=0;
+char SequansMode=0, MobileActionMode=0, CiscoMode=0, QisdaMode=0, HuaweiNewMode=0;
 char verbose=0, show_progress=1, ResetUSB=0, CheckSuccess=0, config_read=0;
 char NeedResponse=0, NoDriverLoading=0, InquireDevice=1, sysmode=0;
 
@@ -156,6 +156,7 @@ void readConfigFile(const char *configFilename)
 	ParseParamHex(configFilename, DefaultProduct);
 	ParseParamBool(configFilename, DetachStorageOnly);
 	ParseParamBool(configFilename, HuaweiMode);
+	ParseParamBool(configFilename, HuaweiNewMode);
 	ParseParamBool(configFilename, SierraMode);
 	ParseParamBool(configFilename, SonyMode);
 	ParseParamBool(configFilename, QisdaMode);
@@ -214,6 +215,7 @@ void printConfig()
 	fprintf (output,"TargetProductList=\"%s\"\n",		TargetProductList);
 	fprintf (output,"\nDetachStorageOnly=%i\n",	(int)DetachStorageOnly);
 	fprintf (output,"HuaweiMode=%i\n",			(int)HuaweiMode);
+	fprintf (output,"HuaweiNewMode=%i\n",			(int)HuaweiNewMode);
 	fprintf (output,"SierraMode=%i\n",			(int)SierraMode);
 	fprintf (output,"SonyMode=%i\n",			(int)SonyMode);
 	fprintf (output,"QisdaMode=%i\n",		(int)QisdaMode);
@@ -295,6 +297,7 @@ int readArguments(int argc, char **argv)
 			case 'r': ResponseEndpoint = strtol(optarg, NULL, 16); break;
 			case 'd': DetachStorageOnly = 1; break;
 			case 'H': HuaweiMode = 1; break;
+			case 'J': HuaweiNewMode = 1; break;
 			case 'S': SierraMode = 1; break;
 			case 'O': SonyMode = 1; break;
 			case 'B': QisdaMode = 1; break;
@@ -490,7 +493,7 @@ int main(int argc, char **argv)
 	SHOW_PROGRESS(output,"Using first interface: 0x%02x\n", Interface);
 
 	/* Check or get endpoints */
-	if (strlen(MessageContent) || InquireDevice || CiscoMode) {
+	if (strlen(MessageContent) || InquireDevice || CiscoMode || HuaweiNewMode) {
 		if (!MessageEndpoint)
 			MessageEndpoint = find_first_bulk_output_endpoint(dev);
 		if (!MessageEndpoint) {
@@ -597,6 +600,14 @@ int main(int argc, char **argv)
 		sonySuccess = switchSonyMode();
 	}
 
+	if (HuaweiNewMode) {
+		SHOW_PROGRESS(output,"Using standard Huawei switching message\n");
+		detachDriver();
+		strcpy(MessageContent,"55534243123456780000000000000011062000000101000100000000000000");
+		NeedResponse = 0;
+		switchSendMessage();
+	}
+	
 	if (strlen(MessageContent) && MessageEndpoint) {
 		if (specialMode == 0) {
 			if (InquireDevice != 2)

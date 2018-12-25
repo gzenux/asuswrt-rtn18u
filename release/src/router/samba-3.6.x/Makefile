@@ -93,7 +93,7 @@ CONFIGURE_ARGS += \
 MAKE_FLAGS += DYNEXP= PICFLAG= MODULES=
 
 all: $(PKG_BUILD_DIR)/source3/Makefile
-	$(MAKE) -C $(PKG_BUILD_DIR)/source3 $(MAKE_FLAGS)
+	$(MAKE) -C $(PKG_BUILD_DIR)/source3 include/proto.h && $(MAKE) -j 8 -C $(PKG_BUILD_DIR)/source3 $(MAKE_FLAGS)
 
 $(PKG_BUILD_DIR)/source3/Makefile:
 	$(MAKE) configure

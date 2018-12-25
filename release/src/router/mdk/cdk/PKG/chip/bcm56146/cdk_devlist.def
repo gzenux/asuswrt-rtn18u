@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56146_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56146, BCM56146_VENDOR_ID, BCM56146_DEVICE_ID, BCM56146_REV_A0, \
+                  0, 0, \
+                  bcm56142_a0, bcm56146_a0, bcm56146_a0, \
+                  CDK_DEV_ARCH_XGS, "Hurricane", "BCM56146", \
+                  "24-Port FE Multilayer Switch with Four 1G/2.5G Uplink Ports", 0, 0)
+#endif
+#endif
+

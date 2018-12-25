@@ -1,0 +1,7 @@
+;
+;  Automatically generated lbd configuration file, don't change it.
+;
+;  MAIN:            main
+
+[MAIN]
+LoadBalancingInterfaces     = ath0,ath1

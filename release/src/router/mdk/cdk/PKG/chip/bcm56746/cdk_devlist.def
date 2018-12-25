@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56746_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56746, BCM56746_VENDOR_ID, BCM56746_DEVICE_ID, BCM56746_REV_A0, \
+                  0, 0, \
+                  bcm56840_b0, bcm56746_a0, bcm56746_a0, \
+                  CDK_DEV_ARCH_XGS, "Titan+", "BCM56840", \
+                  "640 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56746_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56746, BCM56746_VENDOR_ID, BCM56746_DEVICE_ID, BCM56746_REV_A1, \
+                  0, 0, \
+                  bcm56840_b0, bcm56746_a0, bcm56746_a1, \
+                  CDK_DEV_ARCH_XGS, "Titan+", "BCM56840", \
+                  "640 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+

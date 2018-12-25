@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56701_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56701, BCM56701_VENDOR_ID, BCM56701_DEVICE_ID, BCM56701_REV_A0, \
+                  0, 0, \
+                  bcm56800_a0, bcm56701_a0, bcm56701_a0, \
+                  CDK_DEV_ARCH_XGS, "Humv", "BCM56700", \
+                  "12-Port, 144-Gbps Lossless Switch Fabric", 0, 0)
+#endif
+#endif
+

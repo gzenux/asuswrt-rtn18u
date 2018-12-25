@@ -18,6 +18,10 @@
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <sys/sysinfo.h>
+#ifdef HND_ROUTER
+#include <limits.h>
+#include <time.h>
+#endif
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
@@ -36,6 +40,10 @@
 #define	ETHER_ADDR_LEN		6
 #endif
 
+#if defined(RTCONFIG_QCA)
+#include <qca.h>
+#endif
+
 #if (defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA))
 #else
 #include <wlioctl.h>
@@ -44,9 +52,6 @@
 #define MAC_FMT "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X"
 #define MAC_ARG(x) (x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5]
 #endif
-
-
-
 
 extern char *read_whole_file(const char *target){
 	FILE *fp;
@@ -299,6 +304,1006 @@ int inet_deconflict(const char *addr1, const char *mask1, const char *addr2, con
 	return found ? 1 : 2;
 }
 
+/**
+ * Validate an IPv4 address
+ * @addr:	pointer to IPv4 address.
+ * 	0:	Legal IPv4 address
+ *  otherwise:	illegal IPv4 address
+ */
+int illegal_ipv4_address(char *addr)
+{
+	int l, r, v[4];
+	char *p, *q;
+
+	if (!addr)
+		return -1;
+
+	/* all characteristics valid? */
+	for (p = addr; *p != '\0'; ++p) {
+		if (isdigit(*p) || *p == '.')
+			continue;
+
+		return -2;
+	}
+
+	/* check length of addr */
+	l = strlen(addr);
+	if (l < 7 || l > 15)
+		return -3;
+
+	/* check value of addr */
+	if ((r = sscanf(addr, "%d.%d.%d.%d", &v[0], &v[1], &v[2], &v[3])) != 4)
+		return -4;
+
+	if (v[0] < 0 || v[0] > 255 || v[1] < 0 || v[1] > 255 ||
+	    v[2] < 0 || v[2] > 255 || v[3] < 0 || v[3] > 255)
+		return -6;
+
+	/* exclude 0.0.0.0 */
+	if (!v[0] && !v[1] && !v[2] && !v[3])
+		return -7;
+
+	/* leading '0'? */
+	for (p = q = addr - 1; p != NULL; p = q) {
+		q = strchr(p + 1, '.');
+		if (*(p + 1) == '0' && safe_atoi(p + 1) != 0)
+			return -8;
+	}
+
+	return 0;
+}
+
+/**
+ * Validate an IPv4 address
+ * @addr:	pointer to IPv4 address.
+ * 	0:	Legal IPv4 address
+ *  otherwise:	illegal IPv4 address
+ */
+int illegal_ipv4_netmask(char *netmask)
+{
+	int n, r, v[4], flag;
+	char *p, *q;
+
+	if (!netmask)
+		return -1;
+
+	/* all characteristics valid? */
+	for (p = netmask; *p != '\0'; ++p) {
+		if (isdigit(*p) || *p == '.')
+			continue;
+
+		return -2;
+	}
+
+	/* CIDR? */
+	if (!strchr(netmask, '.')) {
+		n = safe_atoi(netmask);
+		if (n < 0 || n >= 32)
+			return -3;
+
+		if (*netmask == '0')
+			return -4;
+
+		return 0;
+	}
+
+	if ((r = sscanf(netmask, "%d.%d.%d.%d", &v[0], &v[1], &v[2], &v[3])) != 4)
+		return -5;
+
+	if (v[0] < 0 || v[0] > 255 || v[1] < 0 || v[1] > 255 ||
+	    v[2] < 0 || v[2] > 255 || v[3] < 0 || v[3] > 255)
+		return -6;
+
+	n = (v[0] << 24) | (v[1] << 16) | (v[2] << 8) | v[3];
+	for (flag = 0; n > 0; n >>= 1) {
+		if (n & 1) {
+			flag = 1;
+			continue;
+		}
+
+		if (flag) {
+			dbg("%s: netmask [%s ==> %x.%x.%x.%x] has non-continuous zero bit.\n",
+				__func__, netmask, v[0], v[1], v[2], v[3]);
+			return -7;
+		}
+	}
+
+	/* leading '0'? */
+	for (p = q = netmask - 1; p != NULL; p = q) {
+		q = strchr(p + 1, '.');
+		if (*(p + 1) == '0' && safe_atoi(p + 1) != 0)
+			return -8;
+	}
+
+	return 0;
+}
+
+#if defined(RTCONFIG_PORT_BASED_VLAN) || defined(RTCONFIG_TAGGED_BASED_VLAN)
+/**
+ * Get all vlan rules.
+ * @return:	pointer to vlan_rules_s structure.
+ *  NULL:	vlan_rule_list nvram variable is not set or allocate memory error.
+ *  otherwise:	Success, even none of any legal vlan rule exist.
+ * 		Caller is incharge of release returned pointer!
+ */
+struct vlan_rules_s *get_vlan_rules(void)
+{
+	int br_index = VLAN_START_IFNAMES_INDEX;
+	char *nv, *nvp, *b;
+	struct vlan_rules_s *vlan_rules;
+	struct vlan_rule_s *r;
+#if defined(RTCONFIG_PORT_BASED_VLAN)
+	char *enable, *desc, *portset, *wlmap, *subnet_name, *intranet;
+#elif defined(RTCONFIG_TAGGED_BASED_VLAN)
+	char *enable, *vid, *prio, *wanportset, *lanportset, *wl2gset;
+	char *wl5gset, *subnet_name, *internet, *public_vlan;
+#endif
+
+	nv = nvp = strdup(nvram_safe_get("vlan_rulelist"));
+	if (!nv)
+		return NULL;
+
+	vlan_rules = malloc(sizeof(struct vlan_rules_s));
+	if (!vlan_rules)
+		return NULL;
+
+	r = &vlan_rules->rules[0];
+	memset(vlan_rules, 0, sizeof(struct vlan_rules_s));
+	while ((b = strsep(&nvp, "<")) != NULL && vlan_rules->nr_rules < ARRAY_SIZE(vlan_rules->rules)) {
+#if defined(RTCONFIG_PORT_BASED_VLAN)
+		if ((vstrsep(b, ">", &enable, &desc, &portset, &wlmap, &subnet_name, &intranet) != 6))
+			continue;
+
+		r->enable = safe_atoi(enable);
+		strlcpy(r->desc, desc, sizeof(r->desc));
+		strlcpy(r->portset, portset, sizeof(r->portset));
+		strlcpy(r->wlmap, wlmap, sizeof(r->wlmap));
+		strlcpy(r->subnet_name, subnet_name, sizeof(r->subnet_name));
+		strlcpy(r->intranet, intranet, sizeof(r->intranet));
+#elif defined(RTCONFIG_TAGGED_BASED_VLAN)
+		if ((vstrsep(b, ">", &enable, &vid, &prio, &wanportset,
+		     &lanportset, &wl2gset, &wl5gset, &subnet_name,
+		     &internet, &public_vlan ) != 10))
+			continue;
+
+		r->enable = safe_atoi(enable);
+		strlcpy(r->vid, vid, sizeof(r->vid));
+		strlcpy(r->prio, prio, sizeof(r->prio));
+		strlcpy(r->wanportset, wanportset, sizeof(r->wanportset));
+		strlcpy(r->lanportset, lanportset, sizeof(r->lanportset));
+		strlcpy(r->wl2gset, wl2gset, sizeof(r->wl2gset));
+		strlcpy(r->wl5gset, wl5gset, sizeof(r->wl5gset));
+		strlcpy(r->subnet_name, subnet_name, sizeof(r->subnet_name));
+		strlcpy(r->internet, internet, sizeof(r->internet));
+		strlcpy(r->public_vlan, public_vlan, sizeof(r->public_vlan));
+#endif
+		if (r->enable) {
+			if (safe_atoi(r->vid) == 1 || !strcmp(r->subnet_name, "default"))
+				strlcpy(r->br_if, nvram_get("lan_ifname")? : nvram_default_get("lan_ifname"), sizeof(r->br_if));
+			else
+				snprintf(r->br_if, sizeof(r->br_if), "br%d", br_index++);
+		}
+
+		vlan_rules->nr_rules++;
+		r++;
+	}
+	free(nv);
+
+	return vlan_rules;
+}
+#endif
+
+#if defined(RTCONFIG_COOVACHILLI) || \
+    defined(RTCONFIG_PORT_BASED_VLAN) || defined(RTCONFIG_TAGGED_BASED_VLAN)
+/* Don't leave { 0,0 } at end */
+static const struct ip_mask_s private_network_tbl[] = {
+	{ IP2UINT(192,168,0,0),	16 },
+	{ IP2UINT(172,16,0,0),	12 },
+	{ IP2UINT(10,0,0,0),	8 },
+};
+
+/**
+ * Get netmask of specified @cidr
+ * @cidr:	CIDR
+ * @return:	netmask of specified @cidr.
+ * NOTE:	This function doesn't validate input parameter, @cidr.
+ */
+static inline uint32_t get_netmask(int cidr)
+{
+	int host_bits;
+	uint32_t m;
+
+	host_bits = 32 - cidr;
+	m = (((~0U) >> host_bits) << host_bits);
+
+	return m;
+}
+
+/**
+ * Test specified network in one class specified by @pt.
+ * @pt:		Scan target class. Pointer to ip_mask_s structure.
+ * 		@exp_ip/@exp_cidr MUST BELONGS TO THIS CLASS!
+ * @pk_tbl:	Known networks. Pointer to ip_mask_s structure array.
+ * 		ALL ELEMENTS OF LAST ITEM MUST BE ZERO!
+ * @exp_ip:	Pointer to expected IP integer, host-endian.
+ * 		Highest bytes is first number in IP, Second one is 2-nd number in IP, etc.
+ * @exp_cidr:	Expected cidr integer.
+ * @return:
+ *     >0:	Specified network conflicts with known network in the class and new
+ *     		network is suggested in @exp_ip/@exp_cidr.
+ * 	0:	Specified network is not conflicts with any known network in the class.
+ *     -1:	Invalid parameter.
+ *     -12:	@exp_ip/@exp_cidr is not belongs to scan target class.
+ *     -13:	@exp_ip/@exp_cidr is larger than specified class.
+ *     -14:	One or more known networks is larger than specified class.
+ *     -15:	Can't find available network in specified class.
+ *     <0:	Another error.
+ */
+static int test_one_class(const struct ip_mask_s *pt, const struct ip_mask_s *pk_tbl, uint32_t *exp_ip, uint32_t exp_cidr)
+{
+	int i, c, found, s_cidr = 30, max_cidr;
+	uint32_t start_net, s, next_s, d, delta, class_mask, m, mask, new_ip = 0;
+	const struct ip_mask_s *p;
+
+	if (!pt || !pt->ip || !pt->cidr || pt->cidr > 30 || !pk_tbl ||
+	    !exp_ip || exp_cidr <= 0 || exp_cidr > 30)
+		return -1;
+
+	/* Is exp_ip/exp_cidr belongs this private IP network? */
+	mask = get_netmask(pt->cidr);
+	if ((*exp_ip & mask) != (pt->ip & mask)) {
+		dbg("%08x/%d is not belongs to %08x/%d, mask %08x\n",
+			*exp_ip, exp_cidr, pt->ip, pt->cidr, mask);
+		return -12;
+	}
+
+	if (exp_cidr < pt->cidr)
+		return -13;
+
+	for (p = pk_tbl; p->ip && p->cidr; ++p) {
+		/* Ignore wrong cidr.
+		 * For example, cidr of 192.168.x.x is lower than or equal to 16.
+		 */
+		if (p->cidr <= pt->cidr) {
+			dbg("Ignore %08x/%d due to cidr lower than %08x/%d\n",
+				p->ip, p->cidr, pt->ip, pt->cidr);
+			continue;
+		}
+
+		/* Skip different class. */
+		mask = get_netmask(pt->cidr);
+		if ((p->ip & mask) != (pt->ip & mask))
+			continue;
+
+		if (p->cidr < pt->cidr)
+			return -14;
+	}
+
+	/* Find first not conflicts network. */
+	class_mask = get_netmask(pt->cidr);
+	for (i = min(s_cidr, exp_cidr), found = 0; !found && i >= pt->cidr; i--) {
+		m = mask = get_netmask(i);
+		delta = ~mask + 1;
+		s = start_net = *exp_ip & mask;
+		dbg("Exp %08x/%d, test %08x/%d, delta 0x%x mask 0x%x, loop %d\n",
+			*exp_ip, exp_cidr, s, i, delta, mask, 1U << (i - pt->cidr));
+		next_s = 0;
+		while (!found && ((next_s & mask) != (start_net & mask))) {
+			// dbg("\t%08x/%08x,%08x\n", s, mask, m);
+			for (c = 0, p = pk_tbl, max_cidr = i; p->ip && p->cidr; ++p) {
+				m = get_netmask(min(i, p->cidr));
+				if ((s & m) == (p->ip & m)) {
+					if (p->cidr < max_cidr)
+						max_cidr = p->cidr;
+					dbg("\t%08x/%d conflicts, max_cidr %d.\n", p->ip, p->cidr, max_cidr);
+					logmessage("", "\t%08x/%d conflicts, max_cidr %d.\n", p->ip, p->cidr, max_cidr);
+					c++;
+				}
+			}
+
+			if (c == 0) {
+				new_ip = s;
+				found = 1;
+				break;
+			}
+			m = get_netmask(max_cidr);
+			d = ~m + 1;
+			s = (s + d) & m;
+			if ((s & class_mask) != (pt->ip & class_mask))
+				s = pt->ip & class_mask;
+#if 0
+			if (m != mask) {
+				dbg("\tnext %08x/%d, max_cidr %d, d %x delta %x m %x mask %x\n", s, i, max_cidr, d, delta, m, mask);
+			}
+#endif
+			next_s = s;
+		}
+	}
+
+	if (found) {
+		m = get_netmask(exp_cidr);
+		if ((new_ip & m) == (*exp_ip & m))
+			return 0;
+		else {
+			dbg("Find non-conflicts network %08x/%d for %08x/%d\n",
+				s, i, *exp_ip, exp_cidr);
+			// dbg("New IP/mask %08x/%d\n", new_ip, exp_cidr);
+			*exp_ip = new_ip;
+			return 1;
+		}
+	}
+
+	return -15;
+}
+
+/**
+ * Append an character format IP/mask to an ip_mask_s structure to an array,
+ * if IPv4 address and netmask is valid and array is not full.
+ * @nr:		Number of available items in an array specified by @p.
+ * @p:		Pointer to an ip_mask_s array.
+ * @ip_cidr_str:IPv4 address and netmask in X.X.X.X/Y
+ * @return:
+ * 	0:	OK
+ *     -1:	Invalid parameter.
+ *     -2:	Out of array space.
+ *     -3:	Netmask absent.
+ *     -4:	Invalid IPv4 address or netmask.
+ */
+static int fill_char_ip_cidr_to_ip_mask_s(unsigned int *nr, struct ip_mask_s **p, char *ip_cidr_str)
+{
+	int r, ip[4], mask[4];
+	uint32_t cidr, m;
+	char ip_mask[sizeof("192.168.100.200/255.255.255.255XXX")], *pc;
+	char ip_str[sizeof("192.168.100.200XXX")], cidr_str[sizeof("255.255.255.255XXX")];
+
+	if (!nr || !p || !ip_cidr_str) {
+		dbg("%s: invalid parameter. nr %p p %p ip_cidr_str %p\n", __func__, nr, p, ip_cidr_str);
+		return -1;
+	}
+	if (*nr <= 0) {
+		dbg("%s: Out of array. (ip_cidr %s)\n", __func__, ip_cidr_str);
+		return -2;
+	}
+
+	strlcpy(ip_mask, ip_cidr_str, sizeof(ip_mask));
+	if ((pc = strchr(ip_mask, '/')) == NULL) 
+		return -3;
+
+	strlcpy(ip_str, ip_mask, min(pc - ip_mask + 1, sizeof(ip_str)));
+	strlcpy(cidr_str, pc + 1, sizeof(cidr_str));
+	if (illegal_ipv4_address(ip_str) || illegal_ipv4_netmask(cidr_str))
+		return -4;
+
+	if ((r = sscanf(ip_str, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3])) != 4)
+		return -5;
+
+	if ((r = sscanf(cidr_str, "%d.%d.%d.%d", &mask[0], &mask[1], &mask[2], &mask[3])) == 4) {
+		/* convert x.x.x.x netmask to cidr. */
+		m = ((mask[0] & 0xFF) << 24) | ((mask[1] & 0xFF) << 16) |
+		    ((mask[2] & 0xFF) & 8) | (mask[3] & 0xFF);
+		cidr = 0;
+		while (m > 0) {
+			cidr++;
+			m <<= 1;
+		}
+	} else {
+		cidr = safe_atoi(cidr_str);
+	}
+
+	(*p)->ip = ((ip[0] & 0xFF) << 24) | ((ip[1] & 0xFF) << 16) |
+	        ((ip[2] & 0xFF) << 8) | (ip[3] & 0xFF);
+	(*p)->cidr = cidr;
+	(*nr)--;
+	(*p)++;
+
+	return 0;
+}
+
+/**
+ * Append an character format IP/mask to an ip_mask_s structure to an array,
+ * if IPv4 address and netmask is valid and array is not full.
+ * @nr:		Number of available items in an array specified by @p.
+ * @p:		Pointer to an ip_mask_s array.
+ * @ip_str:	IPv4 address
+ * @mask_str:	IPv4 netmask in X.X.X.X or CIDR format.
+ * @return:
+ * 	0:	OK
+ *     -1:	Invalid parameter.
+ *     -2:	Out of array space.
+ *     -3:	Invalid IPv4 address or netmask.
+ *     -4:	Invalid IPv4 address format
+ *     -5:	First byte of IPv4 address is zero.
+ *     -6:	Mask is zero or greater than 32.
+ */
+static int fill_char_ip_mask_to_ip_mask_s(unsigned int *nr, struct ip_mask_s **p, char *ip_str, char *mask_str)
+{
+	int r, ip[4], mask[4];
+	uint32_t cidr, m;
+
+	if (!nr || !p || !ip_str || !mask_str) {
+		dbg("%s: invalid parameter. nr %p p %p ip_str %p mask_str %p\n", __func__, nr, p, ip_str, mask_str);
+		return -1;
+	}
+	if (*nr <= 0) {
+		dbg("%s: Out of array. (ip/cidr %s/%s)\n", __func__, ip_str, mask_str);
+		return -2;
+	}
+
+	if (illegal_ipv4_address(ip_str) || illegal_ipv4_netmask(mask_str))
+		return -3;
+
+	if ((r = sscanf(ip_str, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3])) != 4)
+		return -4;
+
+	if (!ip[0])
+		return -5;
+
+	if ((r = sscanf(mask_str, "%d.%d.%d.%d", &mask[0], &mask[1], &mask[2], &mask[3])) == 4) {
+		/* convert x.x.x.x netmask to cidr. */
+		m = ((mask[0] & 0xFF) << 24) | ((mask[1] & 0xFF) << 16) |
+		    ((mask[2] & 0xFF) << 8) | (mask[3] & 0xFF);
+		cidr = 0;
+		while (m > 0) {
+			cidr++;
+			m <<= 1;
+		}
+	} else {
+		cidr = safe_atoi(mask_str);
+	}
+
+	if (!cidr || cidr > 32)
+		return -6;
+
+	(*p)->ip = ((ip[0] & 0xFF) << 24) | ((ip[1] & 0xFF) << 16) |
+	        ((ip[2] & 0xFF) << 8) | (ip[3] & 0xFF);
+	(*p)->cidr = cidr;
+	(*nr)--;
+	(*p)++;
+
+	return 0;
+}
+
+/**
+ * Append an unsigned integer format IP/mask to an ip_mask_s structure to an array,
+ * if IPv4 address and netmask is valid and array is not full.
+ * @nr:		Number of available items in an array specified by @p.
+ * @p:		Pointer to an ip_mask_s pointer.
+ * @ip:		IPv4 address
+ * @cidr:	IPv4 netmask in X.X.X.X or CIDR format.
+ * @return:
+ * 	0:	OK
+ *     -1:	Invalid parameter.
+ *     -2:	Out of array space.
+ */
+static int fill_uint_to_ip_mask_s(unsigned int *nr, struct ip_mask_s **p, unsigned int ip, unsigned int cidr)
+{
+	if (!nr || !p || !*p || !ip || !cidr || cidr > 32) {
+		dbg("%s: invalid parameter. nr %p p %p ip %x cidr %d\n", __func__, nr, p, ip, cidr);
+		return -1;
+	}
+	if (*nr <= 0) {
+		dbg("%s: Out of array. (ip/cidr 0x%x/%d)\n", __func__, ip, cidr);
+		return -2;
+	}
+
+	(*p)->ip = ip;
+	(*p)->cidr = cidr;
+	(*nr)--;
+	(*p)++;
+
+	return 0;
+}
+
+#if defined(RTCONFIG_IPSEC)
+/**
+ * Helper function to fill known IPSec server networks.
+ * @nr:
+ * @p:
+ * @excl:	Bitmask combination of EXCLUDE_NET_XXX.
+ * @return:
+ * 	1:	Don't add IPSec server networks to list due to excl is ipsec_profile_
+ * 	0:	success
+ *    < 0:	Number of fail added networks.
+ */
+static int _get_ipsec_server_networks(unsigned int *nr, struct ip_mask_s **p, uint32_t excl)
+{
+	int i, j, fail = 0, r;
+	char *nv, *nvp, *now, *next;
+	char n[sizeof("ipsec_profile_1XXX")], *a[38];
+
+	if (!(excl & EXCLUDE_NET_IPSEC_SERVER))
+		return 1;
+
+	/* Exclude IPSec VPN Server, ipsec_profile_1~5
+	 * Host to net example:
+	 * 4>test1>null>null>wan>>1>abcdekeyword>null>null>null>null>null>1>10.10.10.0/24>null>1>null>null>0>null>null>null>0>>>eap-md5>1>500>4500>10>1>null>null>null>null><10.10.10.1<10.10.10.2<10.10.10.3<10.10.10.4>0
+	 * 	0:	type
+	 * 	14:	Virtual IP
+	 * Net to net example:
+	 * 1>test2>null>null>wan>>1>QQKKABCD><10.100.200.0/24<10.100.201.0/24<10.100.202.0/24>0><10.200.100.0/24<10.200.101.0/24<10.200.102.0/24>0>tunnel>null>null>null>1>auto>auto>0>lident>ridenty>172800>0>null>null>eap-md5>1>500>4500>10>1>auto>auto>3600>3>null>0
+	 * 	0:	type
+	 *	8:	Local private subnets, '<' is seperate char if two or more subnet exist.
+	 *	10:	Remote private subnets, '<' is seperate char if two or more subnet exist.
+	 */
+	for (i = 1; i <= 5; ++i) {
+		snprintf(n, sizeof(n), "ipsec_profile_%d", i);
+
+		nv = nvp = strdup(nvram_safe_get(n));
+		if (!nv)
+			continue;
+		if (*nv == '\0') {
+			free(nv);
+			continue;
+		}
+
+		if ((r = vstrsep(nv, ">", a, a + 1, a + 2, a + 3, a + 4,
+		    a + 5, a + 6, a + 7, a + 8, a + 9, a + 10,
+		    a + 11, a + 12, a + 13, a + 14, a + 15, a + 16,
+		    a + 17, a + 18, a + 19, a + 20, a + 21, a + 22,
+		    a + 23, a + 24, a + 25, a + 26, a + 27, a + 28,
+		    a + 29, a + 30, a + 31, a + 32, a + 33, a + 34,
+		    a + 35, a + 36, a + 37)) != 38) {
+			dbg("%s: Parse IPSec server profile%d [%s] fail, r %d\n", __func__, i, nv, r);
+			free(nv);
+			continue;
+		}
+
+		switch (safe_atoi(a[0])) {
+		case 4:
+			/* Host to net, Virtual IP is saved at a[14] */
+			r = fill_char_ip_cidr_to_ip_mask_s(nr, p, a[14]);
+			if (r < 0) {
+				dbg("%s: Add %s of %s failed, return %d\n", __func__, a[14], n, r);
+				fail++;
+			}
+			break;
+		case 1:
+			/* Net to net,
+			 * local private subnets are saved at a[8],
+			 * remote private subnets are saved at a[11]
+			 */
+			for (j = 0; j < 2; ++j) {
+				now = next = (j == 0)? a[8] : a[10];
+				while ((now = strsep(&next, "<")) != NULL) {
+					if (*now == '\0')
+						continue;
+					r = fill_char_ip_cidr_to_ip_mask_s(nr, p, now);
+					if (r < 0) {
+						dbg("%s: Add %s of %s failed, return %d\n", __func__, now, n, r);
+						fail++;
+					}
+				}
+			}
+			break;
+		default:
+			dbg("%s: Unknown IPSec profile type %s\n", __func__, a[0]? : "<NULL>");
+			break;
+		}
+		free(nv);
+	}
+
+	return -fail;
+}
+
+/**
+ * Helper function to fill known IPSec client networks.
+ * @nr:
+ * @p:
+ * @excl:	Bitmask combination of EXCLUDE_NET_XXX.
+ * @return:
+ * 	1:	Don't add IPSec client networks to list due to excl is ipsec_profile_client_
+ * 	0:	success
+ *    < 0:	Number of fail added networks.
+ */
+static int _get_ipsec_client_networks(unsigned int *nr, struct ip_mask_s **p, uint32_t excl)
+{
+	int i, j, fail = 0, r;
+	char *nv, *nvp, *now, *next;
+	char n[sizeof("ipsec_profile_client_1XXX")], *a[38];
+
+	if (!(excl & EXCLUDE_NET_IPSEC_CLIENT))
+		return 1;
+
+	/* Exclude IPSec VPN Client, ipsec_profile_client_1~5
+	 * example:
+	 * ipsec_profile_client_1=2>vpn_profile_1_c1>0>192.168.100.1>wan>192.168.1.90>1>ABCDEKEY><10.20.30.0/24>0><10.20.40.0/24>0>tunnel>null>null>null>1>auto>auto>0>LIDENTY>RIDENTY>172800>0>>>eap-md5>1>500>4500>10>1>auto>auto>3600>3>null>0
+	 * ipsec_profile_client_2=2>vpn_profile_2_c2>0>192.168.200.1>wan2>10.2.2.168>1>QWERTYUI><10.30.0.0/24>0><10.40.0.0/24>0>tunnel>null>null>null>1>auto>auto>0>l2identy>r2identy>172800>0>>>eap-md5>1>500>4500>10>1>auto>auto>3600>3>null>0
+	 * 	3:	gateway
+	 *	5:	WAN IP, skip
+	 *	8:	local private subnet
+	 *	10:	remote private subnet
+	 */
+	for (i = 1; i <= 5; ++i) {
+		snprintf(n, sizeof(n), "ipsec_profile_client_%d", i);
+
+		nv = nvp = strdup(nvram_safe_get(n));
+		if (!nv)
+			continue;
+		if (*nv == '\0') {
+			free(nv);
+			continue;
+		}
+
+		if ((r = vstrsep(nv, ">", a, a + 1, a + 2, a + 3, a + 4,
+		    a + 5, a + 6, a + 7, a + 8, a + 9, a + 10,
+		    a + 11, a + 12, a + 13, a + 14, a + 15, a + 16,
+		    a + 17, a + 18, a + 19, a + 20, a + 21, a + 22,
+		    a + 23, a + 24, a + 25, a + 26, a + 27, a + 28,
+		    a + 29, a + 30, a + 31, a + 32, a + 33, a + 34,
+		    a + 35, a + 36, a + 37)) != 38) {
+			dbg("%s: Parse IPSec client profile%d [%s] fail, r %d\n", __func__, i, nv, r);
+			free(nv);
+			continue;
+		}
+
+		for (j = 0; j < 2; ++j) {
+			now = next = (j == 0)? a[8] : a[10];
+			while ((now = strsep(&next, "<")) != NULL) {
+				if (*now == '\0')
+					continue;
+				r = fill_char_ip_cidr_to_ip_mask_s(nr, p, now);
+				if (r < 0) {
+					dbg("%s: Add %s of %s failed, return %d\n", __func__, now, n, r);
+					fail++;
+				}
+			}
+		}
+		free(nv);
+	}
+
+	return -fail;
+}
+#else
+static inline int _get_ipsec_server_networks(unsigned int *nr, struct ip_mask_s **p, uint32_t excl) { return 0; }
+static inline int _get_ipsec_client_networks(unsigned int *nr, struct ip_mask_s **p, uint32_t excl) { return 0; }
+#endif
+
+/**
+ * Get known networks used by another feature or some USB modem.
+ * @nr:		Number of elements of @tbl array.
+ * @tbl:	Pointer to ip_mask_s structure array.
+ * @excl:	Bitmask combination of EXCLUDE_NET_XXX.
+ * 		If not zero, exclude network of specified feature(s).
+ * @return:
+ * 	>= 0:	Number of filled ip_mask_s structure.
+ * 	< 0:	Error
+ */
+static int get_known_networks(unsigned int nr, struct ip_mask_s *tbl, uint32_t excl)
+{
+	int i, r;
+	char prefix[20];
+	unsigned nr_orig = nr;
+	struct ip_mask_s *p = tbl, *q;
+
+	if (nr <= 0 || !tbl)
+		return -1;
+
+	/* Exclude network used by USB modem. */
+	if (!(excl & EXCLUDE_NET_USB_MODEM)) {
+		fill_uint_to_ip_mask_s(&nr, &p, IP2UINT(192,168,0,0), 24);
+		fill_uint_to_ip_mask_s(&nr, &p, IP2UINT(192,168,100,0), 24);
+	}
+
+	/* Exclude LAN */
+	if (!(excl & EXCLUDE_NET_LAN)) {
+		fill_char_ip_mask_to_ip_mask_s(&nr, &p, nvram_get("lan_ipaddr"), nvram_get("lan_netmask"));
+	}
+
+	/* Exclude all Static/DHCP WAN */
+	if (!(excl & EXCLUDE_NET_WAN)) {
+		for (i = WAN_UNIT_FIRST; i < WAN_UNIT_MAX; ++i) {
+			snprintf(prefix, sizeof(prefix), "wan%d_", i);
+			fill_char_ip_mask_to_ip_mask_s(&nr, &p, nvram_pf_get(prefix, "ipaddr"), nvram_pf_get(prefix, "netmask"));
+		}
+	}
+
+	/* Exclude PPTP VPN Server */
+	if (!(excl & EXCLUDE_NET_PPTP_SERVER)) {
+		char ip_range[sizeof("192.168.100.200-255XXX")], *c;	/* e.g. 192.168.10.2.11 */
+
+		strlcpy(ip_range, nvram_safe_get("pptpd_clients"), sizeof(ip_range));
+		c = strchr(ip_range, '-');
+		if (c != NULL)
+			*c = '\0';
+		r = fill_char_ip_mask_to_ip_mask_s(&nr, &p, ip_range, "24");
+		if (r < 0) {
+			dbg("%s: Add PPTP VPN Server %s to known networks list failed, return %d\n",
+				__func__, ip_range, r);
+		}
+	}
+
+#if defined(RTCONFIG_OPENVPN)
+	/* Exclude OpenVPN Server */
+	if (!(excl & EXCLUDE_NET_OPENVPN_SERVER)) {
+		r = fill_char_ip_mask_to_ip_mask_s(&nr, &p, nvram_get("vpn_server_sn"), nvram_get("vpn_server_nm"));
+		if (r < 0) {
+			dbg("%s: Add OpenVPN Server %s/%s to known networks list failed, return %d\n",
+				__func__, nvram_safe_get("vpn_server_sn"), nvram_safe_get("vpn_server_nm"), r);
+		}
+	}
+#endif
+
+	/* Exclude IPSec server/client */
+	_get_ipsec_server_networks(&nr, &p, excl);
+	_get_ipsec_client_networks(&nr, &p, excl);
+
+#if defined(RTCONFIG_PORT_BASED_VLAN) || defined(RTCONFIG_TAGGED_BASED_VLAN)
+	/* Exclude port/tagged based VLAN */
+	if (!(excl & EXCLUDE_NET_VLAN)) {
+		char *nv, *nvp, *b;
+#if defined(RTCONFIG_PORT_BASED_VLAN)
+		char *enable, *desc, *portset, *wlmap, *subnet_name, *intranet;
+#elif defined(RTCONFIG_TAGGED_BASED_VLAN)
+		char *enable, *vid, *prio, *wanportset, *lanportset, *wl2gset;
+		char *wl5gset, *subnet_name, *internet, *public_vlan;
+#endif
+
+		nv = nvp = strdup(nvram_safe_get("vlan_rulelist"));
+		while (nv != NULL && (b = strsep(&nvp, "<")) != NULL) {
+#if defined(RTCONFIG_PORT_BASED_VLAN)
+			if ((vstrsep(b, ">", &enable, &desc, &portset, &wlmap,
+			     &subnet_name, &intranet) != 6))
+#elif defined(RTCONFIG_TAGGED_BASED_VLAN)
+			if ((vstrsep(b, ">", &enable, &vid, &prio, &wanportset,
+			     &lanportset, &wl2gset, &wl5gset, &subnet_name,
+			     &internet, &public_vlan ) != 10))
+#endif
+				continue;
+
+			if (!strcmp(subnet_name, "default"))
+				continue;
+			r = fill_char_ip_cidr_to_ip_mask_s(&nr, &p, subnet_name);
+			if (r < 0) {
+				dbg("%s: Add VLAN %s to known networks list failed, return %d\n",
+					__func__, subnet_name);
+			}
+		}
+		if (nv != NULL)
+			free(nv);
+	}
+#endif
+
+#if defined(RTCONFIG_COOVACHILLI)
+	/* Exclude Free Wi-Fi */
+	if (!(excl & EXCLUDE_NET_FREE_WIFI)) {
+		r = fill_char_ip_cidr_to_ip_mask_s(&nr, &p, nvram_get("chilli_net"));
+		if (r < 0) {
+			dbg("%s: Add Free Wi-Fi %s to known networks list failed, return %d\n",
+				__func__, nvram_safe_get("chilli_net"));
+		}
+	}
+
+	/* Exclude Captive Portal */
+	if (!(excl & EXCLUDE_NET_CAPTIVE_PORTAL)) {
+		r = fill_char_ip_cidr_to_ip_mask_s(&nr, &p, nvram_get("cp_net"));
+		if (r < 0) {
+			dbg("%s: Add Captive Portal %s to known networks list failed, return %d\n",
+				__func__, nvram_safe_get("cp_net"));
+		}
+	}
+#endif
+
+	_dprintf("%s: %d known networks. excl %08x\n", __func__, nr_orig - nr, excl);
+	for (q = tbl; q < p; ++q) {
+		_dprintf("\t%08X/%d  (%d.%d.%d.%d/%d)\n", q->ip, q->cidr,
+			(q->ip >> 24) & 0xFF, (q->ip >> 16) & 0xFF,
+			(q->ip >> 8) & 0xFF, q->ip & 0xFF, q->cidr);
+	}
+
+	return nr_orig - nr;
+}
+
+/**
+ * Test specified network with another known networks.
+ * If conflicts with any known network, find alternate network in all scan target class.
+ * @t_class:	Bitmasp of scan target classes.
+ *  bit0:	Scan first class of private_network_tbl. (Class C private IP)
+ *  bit1:	Scan second class of private_network_tbl. (Class B private IP)
+ *  bit2:	Scan third class of private_network_tbl. (Class A private IP)
+ * @exp_ip:	Pointer to expected IP integer, host-endian.
+ * 		Highest bytes is first number in IP, Second one is 2-nd number in IP, etc.
+ * @exp_cidr:	Expected cidr integer.
+ * @excl:	Bitmask combination of EXCLUDE_NET_XXX.
+ * 		If not zero, exclude network of specified feature(s).
+ * @return:
+ * 	 1:	Input @exp_ip/@exp_cidr is conflicts to at lease one known network and
+ * 	 	new network is suggested in same parameters.
+ *     		New cidr may smaller, larger network, than original value.  It's safe to use original cidr.
+ * 	 0:	@exp_ip/@exp_cidr is not conflicts with any known networks.
+ * 	-1:	Invalid parameter.
+ *      <0:	Another error, come from test_one_class().
+ */
+int test_and_get_free_uint_network(int t_class, uint32_t *exp_ip, uint32_t exp_cidr, uint32_t excl)
+{
+	int i, exp_class_idx, r = -1, nr, may_conflicts = 0;
+	uint32_t m, ip, cidr;
+	const struct ip_mask_s *pv;
+	struct ip_mask_s known_network_tbl[50], *kn;
+
+	if (!exp_ip || exp_cidr <= 0 || exp_cidr > 30)
+		return -1;
+
+	if ((t_class >> ARRAY_SIZE(private_network_tbl)) > 0)
+		return -1;
+
+	/* Is exp_ip/exp_cidr belongs to one private IP network and will be scanned? */
+	for (i = 0, exp_class_idx = -1, pv = private_network_tbl;
+	     exp_class_idx < 0 && i < ARRAY_SIZE(private_network_tbl);
+	     ++i, ++pv)
+	{
+		if (!((t_class >> i) & 1))
+			continue;
+
+		m = get_netmask(pv->cidr);
+		if ((*exp_ip & m) != (pv->ip & m))
+			continue;
+
+		exp_class_idx = i;
+	}
+
+	/* TODO: Get known networks of another features. */
+	nr = ARRAY_SIZE(known_network_tbl);
+	memset(known_network_tbl, 0, nr);
+	get_known_networks(--nr, known_network_tbl, excl);   /* leave last elements */
+
+	for (i = 0, kn = &known_network_tbl[0];
+	    i < ARRAY_SIZE(known_network_tbl) && kn->ip && kn->cidr;
+	    ++i, ++kn)
+	{
+		m = min(exp_cidr, kn->cidr);
+		if ((*exp_ip & m) == (kn->ip & m))
+			may_conflicts++;
+	}
+
+	if (!may_conflicts)
+		return 0;
+
+	/* Try class own @exp_ip/@exp_cidr. */
+	if (exp_class_idx >= 0 && exp_class_idx < ARRAY_SIZE(private_network_tbl)) {
+		r = test_one_class(&private_network_tbl[exp_class_idx], known_network_tbl, exp_ip, exp_cidr);
+		if (r >= 0)
+			return r;
+	}
+
+	/* Try another scan target class. */
+	for (i = 0, pv = private_network_tbl; i < ARRAY_SIZE(private_network_tbl); ++i, ++pv) {
+		if (i == exp_class_idx || !((t_class >> i) & 1))
+			continue;
+
+		ip = pv->ip;
+		cidr = 24;	/* Always start from class C level */
+		dbg("Try %08x/%d for %08x/%d\n", ip, cidr, *exp_ip, exp_cidr);
+		r = test_one_class(pv, known_network_tbl, &ip, cidr);
+		if (r >= 0) {
+			*exp_ip = ip;
+			break;
+		}
+	}
+
+	return r;
+}
+
+/**
+ * Test specified network with another known networks.
+ * If conflicts with any known network, find alternate network in all scan target class.
+ * @t_class:	Bitmasp of scan target classes.
+ *  bit0:	Scan first class of private_network_tbl. (Class C private IP)
+ *  bit1:	Scan second class of private_network_tbl. (Class B private IP)
+ *  bit2:	Scan third class of private_network_tbl. (Class A private IP)
+ * @ip_cidr_str:Pointer to IP/mask string, at least 32 bytes.
+ * 		If new network is suggested, @ip_cidr_str will have new value.
+ * @exp_ip:	Pointer to expected IP integer, host-endian.
+ * 		Highest bytes is first number in IP, Second one is 2-nd number in IP, etc.
+ * @excl:	Bitmask combination of EXCLUDE_NET_XXX.
+ * 		If not zero, exclude network of specified feature(s).
+ * @return:
+ * 	 1:	Input @exp_ip/@exp_cidr is conflicts to at lease one known network and
+ * 	 	new network is suggested in same parameters.
+ *     		New cidr may smaller, larger network, than original value.  It's safe to use original cidr.
+ * 	 0:	@exp_ip/@exp_cidr is not conflicts with any known networks.
+ * 	-1:	Invalid parameter.
+ * 	-2:	'/' absent.
+ * 	-3:	illegal IPv4 address or illegal mask\
+ * 	-4:	Can't parse IPv4 address
+ * 	-5:	Can't parse netmask
+ *      <0:	Another error, come from test_one_class().
+ */
+int test_and_get_free_char_network(int t_class, char *ip_cidr_str, uint32_t excl)
+{
+	int r, v[4], c;
+	in_addr_t mask, mask_type = 0;
+	uint32_t exp_ip, exp_cidr;
+	char *p, ip_str[sizeof("192.168.100.200XXX")], mask_str[sizeof("255.255.255.255XXX")];
+
+	if (!ip_cidr_str)
+		return -1;
+
+	/* Convert char IP/mask to uint32 */
+	if (!(p = strchr(ip_cidr_str, '/')))
+		return -2;
+
+	strlcpy(ip_str, ip_cidr_str, min(p - ip_cidr_str + 1, sizeof(ip_str)));
+	strlcpy(mask_str, p + 1, sizeof(mask_str));
+	if (illegal_ipv4_address(ip_str) || illegal_ipv4_netmask(mask_str))
+		return -3;
+
+	if ((r = sscanf(ip_str, "%d.%d.%d.%d", &v[0], &v[1], &v[2], &v[3])) != 4)
+		return -4;
+
+	exp_ip = (v[0] << 24) | (v[1] << 16) | (v[2] << 8) | v[3];
+	if ((strchr(mask_str, '.')) != NULL) {
+		/* A.B.C.D */
+		if ((mask = inet_network(mask_str)) == -1)
+			return -5;
+		c = 0;
+		while (!(mask & 1)) {
+			c++;
+			mask >>= 1;
+		}
+		exp_cidr = 32 - c;
+		if (exp_cidr <= 0 || exp_cidr > 32)
+			return -5;
+		mask_type = 1;
+	} else {
+		exp_cidr = safe_atoi(mask_str);
+	}
+	r = test_and_get_free_uint_network(t_class, &exp_ip, exp_cidr, excl);
+
+	/* Convert uint32 to char if new network is suggested. */
+	if (r == 1) {
+		if (!mask_type) {
+			/* Report netmask in CIDR format. */
+			snprintf(ip_cidr_str, 32, "%d.%d.%d.%d/%d",
+				(exp_ip >> 24) & 0xFF, (exp_ip >> 16) & 0xFF,
+				(exp_ip >> 8) & 0xFF, exp_ip & 0xFF, exp_cidr);
+		} else {
+			/* Report netmask in A.B.C.D format. */
+			mask = get_netmask(exp_cidr);
+			snprintf(ip_cidr_str, 32, "%d.%d.%d.%d/%d.%d.%d.%d",
+				(exp_ip >> 24) & 0xFF, (exp_ip >> 16) & 0xFF,
+				(exp_ip >> 8) & 0xFF, exp_ip & 0xFF,
+				(mask >> 24) & 0xFF, (mask >> 16) & 0xFF,
+				(mask >> 8) & 0xFF, mask & 0xFF);
+		}
+	}
+
+	return r;
+}
+
+#endif /* RTCONFIG_COOVACHILLI || RTCONFIG_PORT_BASED_VLAN || RTCONFIG_TAGGED_BASED_VLAN */
+
+/**
+ * Return first/lowest configured and connected WAN unit.
+ * @return:	WAN_UNIT_FIRST ~ WAN_UNIT_MAX
+ */
+enum wan_unit_e get_first_configured_connected_wan_unit(void)
+{
+	int i, wan_unit = WAN_UNIT_MAX;
+	char prefix[sizeof("wanXXXXXX_")], link[sizeof("link_wanXXXXXX")];
+
+	for (i = WAN_UNIT_FIRST; i < WAN_UNIT_MAX; ++i) {
+		if (get_dualwan_by_unit(i) == WANS_DUALWAN_IF_NONE ||
+		    !is_wan_connect(i))
+			continue;
+
+		/* If the WAN unit is configured as static IP, check link status too. */
+		snprintf(prefix, sizeof(prefix), "wan%d_", i);
+		if (nvram_pf_match(prefix, "proto", "static")) {
+			if (!i)
+				strlcpy(link, "link_wan", sizeof(link));
+			else
+				snprintf(link, sizeof(link), "link_wan%d", i);
+			if (!nvram_get_int(link))
+				continue;
+		}
+
+		wan_unit = i;
+		break;
+	}
+
+	return wan_unit;
+}
+
 #ifdef RTCONFIG_IPV6
 char *ipv6_nvname_by_unit(const char *name, int unit)
 {
@@ -330,7 +1335,7 @@ int get_ipv6_service_by_unit(int unit)
 	} services[] = {
 		{ "dhcp6",	IPV6_NATIVE_DHCP },
 #ifdef RTCONFIG_6RELAYD
-		{ "ipv6pt",     IPV6_PASSTHROUGH },
+		{ "ipv6pt",	IPV6_PASSTHROUGH },
 		{ "flets",	IPV6_PASSTHROUGH },
 #endif
 		{ "6to4",	IPV6_6TO4 },
@@ -575,6 +1580,7 @@ int foreach_wif(int include_vifs, void *param,
 
 	i = 0;
 	foreach(name, ifnames, next) {
+		SKIP_ABSENT_FAKE_IFACE(name);
 		if (nvifname_to_osifname(name, ifname, sizeof(ifname)) != 0)
 			continue;
 
@@ -701,7 +1707,7 @@ int wait_action_idle(int n)
 }
 
 const char *get_wanip(void)
-{	
+{
 	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
 
 	snprintf(prefix, sizeof(prefix), "wan%d_", wan_primary_ifunit());
@@ -864,18 +1870,49 @@ int is_intf_up(const char* ifname)
 	return ret;
 }
 
+char *wl_nvprefix(char *prefix, int prefix_size, int unit, int subunit)
+{
+	if(unit < 0)
+		strcpy(prefix, "wl_");
+#ifdef RTCONFIG_LANTIQ
+	else if(client_mode() && unit == nvram_get_int("wlc_band"))
+		snprintf(prefix, prefix_size, "wl%d.%d_", unit, 1);
+#endif
+	else if(subunit > 0)
+		snprintf(prefix, prefix_size, "wl%d.%d_", unit, subunit);
+	else
+		snprintf(prefix, prefix_size, "wl%d_", unit);
+
+	return prefix;
+}
+
 char *wl_nvname(const char *nv, int unit, int subunit)
 {
 	static char tmp[128];
-	char prefix[] = "wlXXXXXXXXXX_";
+	char prefix[] = "wlXXXXXXXXXXXXX_";
 
-	if (unit < 0)
-		strcpy(prefix, "wl_");
-	else if (subunit > 0)
-		snprintf(prefix, sizeof(prefix), "wl%d.%d_", unit, subunit);
-	else
-		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+	wl_nvprefix(prefix, sizeof(prefix), unit, subunit);
+
 	return strcat_r(prefix, nv, tmp);
+}
+
+char *wl_nband_name(const char *nband)
+{
+	if (!nband || *nband == '\0') {
+		dbg("%s: invalid nband %p\n", __func__, nband);
+		return "2.4 GHz";
+	}
+
+	if (!strcmp(nband, "2"))
+		return "2.4 GHz";
+	else if (!strcmp(nband, "1"))
+		return "5 GHz";
+	else if (!strcmp(nband, "6"))
+		return "60 GHz";
+	else
+		dbg("%s: unknown nband [%s]\n", __func__, nband);
+
+	return "2.4 GHz";
 }
 
 // -----------------------------------------------------------------------------
@@ -982,7 +2019,8 @@ char *nvram_pf_get(char *prefix, const char *name)
 		return NULL;
 
 	if (!isprint(*prefix) || !isprint(*name)) {
-		dbg("%s: Invalid prefix 0x%x or name 0x%x?\n", __func__, *prefix, *name);
+		dbg("%s: Invalid prefix 0x%x [%s] or name 0x%x [%s]?\n",
+			__func__, *prefix, prefix, *name, name);
 		return NULL;
 	}
 
@@ -1227,12 +2265,16 @@ static uint32 crc_table[256]={ 0x00000000,0x77073096,0xEE0E612C,0x990951BA,
 
 uint32_t crc_calc(uint32_t crc, const char *buf, int len)
 {
+#if !defined(RTCONFIG_LANTIQ) && !defined(RTCONFIG_ALPINE)
 	crc = crc ^ 0xffffffff;
+#endif
 	while (len-- > 0) {
 		crc = crc_table[(crc ^ *((unsigned char *)buf)) & 0xFF] ^ (crc >> 8);
 		buf++;
 	}
+#if !defined(RTCONFIG_LANTIQ) && !defined(RTCONFIG_ALPINE)
 	crc = crc ^ 0xffffffff;
+#endif
 	return crc;
 }
 
@@ -1241,7 +2283,6 @@ void bcmvlan_models(int model, char *vlan)
 {
 	switch (model) {
 	case MODEL_DSLAC68U:
-	case MODEL_RPAC68U:
 	case MODEL_RTAC68U:
 	case MODEL_RTAC87U:
 	case MODEL_RTAC56S:
@@ -1254,9 +2295,10 @@ void bcmvlan_models(int model, char *vlan)
 	case MODEL_RTAC53U:
 	case MODEL_RTAC3200:
 	case MODEL_RTAC88U:
+	case MODEL_RTAC86U:
 	case MODEL_RTAC3100:
 	case MODEL_RTAC5300:
-	case MODEL_RTAC5300R:
+	case MODEL_GTAC5300:
 	case MODEL_RTAC1200G:
 	case MODEL_RTAC1200GP:
 		strcpy(vlan, "vlan1");
@@ -1297,7 +2339,7 @@ int backup_rx;
 int backup_tx;
 int backup_set = 0;
 
-unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2)		
+unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2, char *nv_lan_ifname, char *nv_lan_ifnames)		
 {
 	char word[100], word1[100], *next, *next1;
 	char tmp[100];
@@ -1309,11 +2351,12 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 	bcmvlan_models(model, modelvlan);
 
 	// find in LAN interface
-	if(nvram_contains_word("lan_ifnames", ifname))
+	if(strstr(nv_lan_ifnames, ifname))
 	{
 		// find Wireless interface
 		i=0;
 		foreach(word, nvram_safe_get("wl_ifnames"), next) {
+			SKIP_ABSENT_BAND_AND_INC_UNIT(i);
 			if(strcmp(word, ifname)==0) {
 				sprintf(ifname_desc, "WIRELESS%d", i);
 				return 1;
@@ -1368,6 +2411,11 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 		// find wired interface
 		strcpy(ifname_desc, "WIRED");
 
+#if defined(RTAC53) //sherry fix rt-ac53 bug#5 traffic incorrect when hwnat enable{
+		get_realtek_lans_bytecount(tx, rx);
+#endif	//end sherry}	
+
+
 		if(model == MODEL_DSLAC68U)
 			return 1;
 
@@ -1406,7 +2454,7 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 		return 1;
 	}
 	// find bridge interface
-	else if(nvram_match("lan_ifname", ifname))
+	else if(!strcmp(nv_lan_ifname, ifname))
 	{
 		strcpy(ifname_desc, "BRIDGE");
 		return 1;
@@ -1419,20 +2467,24 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 			get_mt7620_wan_unit_bytecount(unit, tx, rx);
 #elif defined(RTCONFIG_RALINK_MT7621)
 			get_mt7621_wan_unit_bytecount(unit, tx, rx);
-#endif			
 #endif
-#ifndef RTCONFIG_BCM5301X_TRAFFIC_MONITOR
-			if(strlen(modelvlan) && strcmp(ifname, "eth0")==0) {
+#elif defined(RTAC53)//sherry fix rt-ac53 bug#5 traffic incorrect when hwnat enable{
+			get_realtek_wan_bytecount(tx, rx);			
+#endif//end sherry}
+#if !defined(RTCONFIG_BCM5301X_TRAFFIC_MONITOR) && !defined(HND_ROUTER)
+			if(strlen(modelvlan) && !strcmp(ifname, "eth0"))
+			{
 				backup_rx = *rx;
 				backup_tx = *tx;
 				backup_set  = 1;
 			}
-			else{
+			else
 #endif
+			{
 #ifdef RTCONFIG_DUALWAN
 				if ( (unit == wan_primary_ifunit()) || ( !strstr(nvram_safe_get("wans_dualwan"), "none") && nvram_match("wans_mode", "lb")) )
 				{
-					if (unit == WAN_UNIT_FIRST) {	
+					if (unit == WAN_UNIT_FIRST) {
 						strcpy(ifname_desc, "INTERNET");
 						return 1;
 					}
@@ -1447,9 +2499,7 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 					return 1;
 				}			
 #endif	/* RTCONFIG_DUALWAN */
-#ifndef RTCONFIG_BCM5301X_TRAFFIC_MONITOR
 			}
-#endif
 		}
 		else if (dualwan_unit__usbif(unit)) {
 #ifdef RTCONFIG_DUALWAN
@@ -1516,7 +2566,7 @@ int free_caches(const char *clean_mode, const int clean_time, const unsigned int
 	char memdata[256] = {0};
 	unsigned int memfree = 0;
 
-#ifdef RTCONFIG_BCMARM
+#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_LANTIQ)
 	return 0;
 #endif
 
@@ -1633,17 +2683,49 @@ char *get_modemlog_fname(void){
 }
 #endif
 
-#ifdef RTCONFIG_BCMWL6
-#ifdef RTCONFIG_PROXYSTA
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+#ifdef RTCONFIG_DPSTA
+int is_dpsta(int unit)
+{
+	char ifname[80], name[80], *next;
+	int idx = 0;
+
+	if (nvram_get_int("wlc_dpsta") == 1) {
+		foreach (ifname, nvram_safe_get("wl_ifnames"), next) {
+			if (idx == unit) break;
+			idx++;
+		}
+
+		foreach(name, nvram_safe_get("dpsta_ifnames"), next) {
+			if (!strcmp(name, ifname))
+				return 1;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+int is_dpsr(int unit)
+{
+	if (nvram_get_int("wlc_dpsta") == 2) {
+		if ((num_of_wl_if() == 2) || !unit || unit == nvram_get_int("dpsta_band"))
+			return 1;
+	}
+
+	return 0;
+}
+
 int is_psta(int unit)
 {
 	if (unit < 0) return 0;
-	if ((nvram_get_int("sw_mode") == SW_MODE_AP) &&
+	if ((sw_mode() == SW_MODE_AP) &&
 		(nvram_get_int("wlc_psta") == 1) &&
-		((nvram_get_int("wlc_band") == unit)
-#ifdef PXYSTA_DUALBAND
-		|| (nvram_match("exband", "1") && nvram_get_int("wlc_band_ex") == unit)
+		(
+#ifdef RTCONFIG_DPSTA
+		is_dpsta(unit) ||
 #endif
+		(nvram_get_int("wlc_band") == unit)
 		))
 		return 1;
 
@@ -1656,19 +2738,25 @@ int is_psr(int unit)
 #ifdef RTCONFIG_QTN
 	if (unit == 1) return 0;
 #endif
-	if ((nvram_get_int("sw_mode") == SW_MODE_AP) &&
+	if ((sw_mode() == SW_MODE_AP) &&
 		(nvram_get_int("wlc_psta") == 2) &&
-		((nvram_get_int("wlc_band") == unit)
-#ifdef PXYSTA_DUALBAND
-		||  (nvram_match("exband", "1") && nvram_get_int("wlc_band_ex") == unit)
+		(
+#ifdef RTCONFIG_DPSTA
+#if 0
+		is_dpsta(unit) ||
+#else
+		dpsta_mode() ||
 #endif
+#endif
+		is_dpsr(unit) ||
+		(nvram_get_int("wlc_band") == unit)
 		))
 		return 1;
 
 	return 0;
 }
 
-int psta_exist()
+int psta_exist(void)
 {
 	char word[256], *next;
 	int idx = 0;
@@ -1697,7 +2785,7 @@ END:
 	return 0;
 }
 
-int psr_exist()
+int psr_exist(void)
 {
 	char word[256], *next;
 	int idx = 0;
@@ -1726,76 +2814,8 @@ END:
 	return 0;
 }
 #endif
-#endif
 
-#ifdef RTCONFIG_OPENVPN
-char *get_parsed_crt(const char *name, char *buf, size_t buf_len)
-{
-	char *value;
-	int len, i;
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	FILE *fp;
-	char tmpBuf[256] = {0};
-	char *p = buf;
-#endif
-
-	value = nvram_safe_get(name);
-	len = strlen(value);
-
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	if(!check_if_dir_exist(OVPN_FS_PATH))
-		mkdir(OVPN_FS_PATH, S_IRWXU);
-	snprintf(tmpBuf, sizeof(tmpBuf) -1, "%s/%s", OVPN_FS_PATH, name);
-#endif
-
-	if(len) {
-		for (i=0; (i < len); i++) {
-			if (value[i] == '>')
-				buf[i] = '\n';
-			else
-				buf[i] = value[i];
-		}
-		buf[i] = '\0';
-
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-		//save to file and then clear nvram value
-		fp = fopen(tmpBuf, "w");
-		if(fp) {
-			chmod(tmpBuf, S_IRUSR|S_IWUSR);
-			fprintf(fp, "%s", buf);
-			fclose(fp);
-			nvram_set(name, "");
-		}
-#endif
-	}
-	else {
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-		//nvram value cleard, get from file
-		fp = fopen(tmpBuf, "r");
-		if(fp) {
-			while(fgets(buf, buf_len, fp)) {
-				if(!strncmp(buf, "-----BEGIN", 10))
-					break;
-			}
-			if(feof(fp)) {
-				fclose(fp);
-				memset(buf, 0, buf_len);
-				return buf;
-			}
-			p += strlen(buf);
-			memset(tmpBuf, 0, sizeof(tmpBuf));
-			while(fgets(tmpBuf, sizeof(tmpBuf), fp)) {
-				strncpy(p, tmpBuf, strlen(tmpBuf));
-				p += strlen(tmpBuf);
-			}
-			*p = '\0';
-			fclose(fp);
-		}
-#endif
-	}
-	return buf;
-}
-
+#if defined(RTCONFIG_OPENVPN) || defined(RTCONFIG_IPSEC)
 int set_crt_parsed(const char *name, char *file_path)
 {
 #if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
@@ -1844,41 +2864,6 @@ int set_crt_parsed(const char *name, char *file_path)
 		return -ENOENT;
 #endif
 }
-
-int ovpn_crt_is_empty(const char *name)
-{
-	char file_path[128] ={0};
-	struct stat st;
-
-	if( nvram_is_empty(name) ) {
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-		//check file
-		if(d_exists(OVPN_FS_PATH)) {
-			snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, name);
-			if(stat(file_path, &st) == 0) {
-				if( !S_ISDIR(st.st_mode) && st.st_size ) {
-					return 0;
-				}
-				else {
-					return 1;
-				}
-			}
-			else {
-				return 1;
-			}
-		}
-		else {
-			mkdir(OVPN_FS_PATH, S_IRWXU);
-			return 1;
-		}
-#else
-		return 1;
-#endif
-	}
-	else {
-		return 0;
-	}
-}
 #endif
 
 #ifdef RTCONFIG_DUALWAN
@@ -1892,15 +2877,30 @@ int get_usbif_dualwan_unit(void)
 {
 	int wan_unit;
 
-	for (wan_unit = WAN_UNIT_FIRST; wan_unit < WAN_UNIT_MAX; ++wan_unit)
-		if (dualwan_unit__usbif(wan_unit))
+	for(wan_unit = WAN_UNIT_FIRST; wan_unit < WAN_UNIT_MAX; ++wan_unit)
+		if(get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_USB)
 			break;
 
-	if (wan_unit == WAN_UNIT_MAX)
+	if(wan_unit == WAN_UNIT_MAX)
 		wan_unit = -1;
 
 	return wan_unit;
 }
+
+#ifdef RTCONFIG_USB_MULTIMODEM
+int get_usb2if_dualwan_unit(void){
+	int wan_unit;
+
+	for(wan_unit = WAN_UNIT_FIRST; wan_unit < WAN_UNIT_MAX; ++wan_unit)
+		if(dualwan_unit__usbif(wan_unit) == WANS_DUALWAN_IF_USB2)
+			break;
+
+	if(wan_unit == WAN_UNIT_MAX)
+		wan_unit = -1;
+
+	return wan_unit;
+}
+#endif
 
 /**
  * Get unit of primary interface (WAN/LAN/USB only)
@@ -1947,13 +2947,15 @@ int get_wifi_unit(char *wif)
 	if (!wif || *wif == '\0')
 		return -1;
 	foreach (word, nvram_safe_get("wl_ifnames"), next) {
+		SKIP_ABSENT_FAKE_IFACE(word);
 		if (strncmp(word, wif, strlen(word)))
 			continue;
 
-		for (i = 0; i <= 1; ++i) {
+		for (i = 0; i <= MAX_NR_WL_IF; ++i) {
+			SKIP_ABSENT_BAND(i);
 			sprintf(nv, "wl%d_ifname", i);
-			ifn = nvram_safe_get(nv);
-			if (!strncmp(word, ifn, strlen(word)))
+			ifn = nvram_get(nv);
+			if (ifn != NULL && !strncmp(word, ifn, strlen(word)))
 				return i;
 		}
 	}
@@ -1998,106 +3000,6 @@ int get_yandex_dns(int family, int mode, char **server, int max_count)
 	return count;
 }
 #endif
-
-#ifdef RTCONFIG_BWDPI
-/*
-	usage in rc or bwdpi for checking service
-*/
-int check_bwdpi_nvram_setting()
-{
-	int enabled = 1;
-	int debug = nvram_get_int("bwdpi_debug");
-
-	// check no qos service
-	if(nvram_get_int("wrs_enable") == 0 && nvram_get_int("wrs_app_enable") == 0 && 
-		nvram_get_int("wrs_vp_enable") == 0 && nvram_get_int("wrs_cc_enable") == 0 &&
-		nvram_get_int("wrs_mals_enable") == 0 &&
-		nvram_get_int("bwdpi_db_enable") == 0 &&
-		nvram_get_int("apps_analysis") == 0 &&
-		nvram_get_int("bwdpi_wh_enable") == 0 &&
-		nvram_get_int("qos_enable") == 0)
-		enabled = 0;
-
-	// check qos service (not adaptive qos)
-	if(nvram_get_int("wrs_enable") == 0 && nvram_get_int("wrs_app_enable") == 0 && 
-		nvram_get_int("wrs_vp_enable") == 0 && nvram_get_int("wrs_cc_enable") == 0 &&
-		nvram_get_int("wrs_mals_enable") == 0 &&
-		nvram_get_int("bwdpi_db_enable") == 0 &&
-		nvram_get_int("apps_analysis") == 0 &&
-		nvram_get_int("bwdpi_wh_enable") == 0 &&
-		nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") != 1)
-		enabled = 0;
-
-	if(debug) dbg("[check_bwdpi_nvram_setting] enabled= %d\n", enabled);
-
-	return enabled;
-}
-#endif
-
-/*
-	transfer timestamp into date
-	ex. date = 2014-07-14 19:20:10
-*/
-void StampToDate(unsigned long timestamp, char *date)
-{
-	struct tm *local;
-	time_t now;
-	
-	now = timestamp;
-	local = localtime(&now);
-	strftime(date, 30, "%Y-%m-%d %H:%M:%S", local);
-}
-
-/*
-	check filesize is over or not
-	if over size, return 1, else return 0
-*/
-int check_filesize_over(char *path, long int size)
-{
-	struct stat st;
-	off_t cursize;
-
-	stat(path, &st);
-	cursize = st.st_size;
-
-	size = size * 1024; // KB
-
-	if(cursize > size)
-		return 1;
-	else
-		return 0;
-}
-
-/*
-	get last month's timestamp
-	ex.
-	now = 1445817600
-	tm  = 2015/10/26 00:00:00
-	t   = 2015/10/01 00:00:00
-	t_t = 1443628800
-*/
-time_t get_last_month_timestamp()
-{
-	struct tm local, t;
-	time_t now, t_t = 0;
-			
-	// get timestamp and tm
-	time(&now);
-	localtime_r(&now, &local);
-
-	// copy t from local
-	t.tm_year = local.tm_year;
-	t.tm_mon = local.tm_mon;
-	t.tm_mday = 1;
-	t.tm_hour = 0;
-	t.tm_min = 0;
-	t.tm_sec = 0;
-
-	// transfer tm to timestamp
-	t_t = mktime(&t);
-
-	return t_t;
-}
 
 int get_iface_hwaddr(char *name, unsigned char *hwaddr)
 {
@@ -2199,7 +3101,7 @@ int ctrl_gro(char *iface, int onoff)
 {
 	/* ethtool-util.h */
 #ifndef SIOCETHTOOL
-#define SIOCETHTOOL     0x8946
+#define SIOCETHTOOL	0x8946
 #endif
 
 	/* ethtool-copy.h */
@@ -2254,7 +3156,7 @@ int ctrl_gro(char *iface, int onoff)
  * 	 0:	success
  * 	-1:	invalid wan_unit
  * 	-2:	not supported WAN type
- * 	-3:	Can't enable GRO on WAN interface if PPPoE/PPTP/L2TP is chosed.
+ * 	-3:	Can't enable GRO on WAN interface.
  * 	-4:	ctrl_gro() fail
  */
 int ctrl_wan_gro(int wan_unit, int onoff)
@@ -2271,11 +3173,11 @@ int ctrl_wan_gro(int wan_unit, int onoff)
 	    type != WANS_DUALWAN_IF_LAN)
 		return -2;
 
+	snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
 	if (!strncmp(nvram_pf_safe_get(prefix, "ifname"), "vlan", 4))
 		return -2;
 
-	snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
-	if (onoff && !(nvram_pf_match(prefix, "proto", "static") || nvram_pf_match(prefix, "proto", "dhcp")))
+	if (onoff)
 		return -3;
 
 	r = ctrl_gro(nvram_pf_safe_get(prefix, "ifname"), onoff);
@@ -2304,12 +3206,16 @@ int ctrl_lan_gro(int onoff)
 	strlcat(ifnames, " ", sizeof(ifnames));
 	strlcat(ifnames, nvram_safe_get("lan_ifnames"), sizeof(ifnames));
 	foreach(word, ifnames, next) {
+		SKIP_ABSENT_FAKE_IFACE(word);
 		/* Skip VLAN, TUN, TAP, and Wireless interface. */
 		if (!strncmp(word, "vlan", 4) || !strncmp(word, "tun", 3) || !strncmp(word, "tap", 3)
 #if defined(RTCONFIG_RALINK)
 		    || !strncmp(word, "ra", 2)
 #elif defined(RTCONFIG_QCA)
 		    || !strncmp(word, "ath", 3)
+#if defined(RTCONFIG_WIGIG)
+		    || !strncmp(word, "wlan", 4)
+#endif
 #else
 		    || !strncmp(word, "wl", 2)
 #endif
@@ -2386,16 +3292,7 @@ char *get_qos_prefix(int unit, char *buf)
 	if (buf)
 		r = buf;
 
-#if defined(RTCONFIG_MULTIWAN_CFG)
-	if (unit < 0 || unit >= WAN_UNIT_MAX) {
-		dbg("%s: Unknown wan_unit %d\n", __func__, unit);
-		unit = 0;
-	}
-
-	sprintf(r, "qos%d_", unit);
-#else
 	strcpy(r, "qos_");
-#endif
 
 	return r;
 }
@@ -2406,6 +3303,150 @@ int internet_ready(void)
 		return 1;
 	return 0;
 }
+
+void set_no_internet_ready(void)
+{
+	nvram_set("ntp_ready", "0");
+}
+
+unsigned int num_of_mssid_support(unsigned int unit)
+{
+	char tmp_vifnames[] = "wlx_vifnames";
+	char word[256], *next;
+	int subunit;
+#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
+	if (nvram_match("wl_mssid", "0"))
+		return 0;
+#endif
+	snprintf(tmp_vifnames, sizeof(tmp_vifnames), "wl%d_vifnames", unit);
+
+	subunit = 0;
+	foreach (word, nvram_safe_get(tmp_vifnames), next) {
+		subunit++;
+	}
+	return subunit;
+}
+
+/**
+ * Get led_id enumeration via wireless band.
+ * @band:	0 ~ MAX_NR_WL_IF - 1
+ * @return:	led_id enumeration.
+ *  LED_ID_MAX:	led_id for @band is not found.
+ */
+enum led_id get_wl_led_id(int band)
+{
+	enum led_id led = LED_ID_MAX;
+
+	if (band < 0 || band >= MAX_NR_WL_IF)
+		return led;
+
+	switch (band) {
+	case WL_2G_BAND:
+#if defined(PLN12)
+		led = LED_2G_RED;
+#elif defined(PLAC56)
+		led = LED_2G_GREEN;
+#else
+		led = LED_2G;
+#endif
+		break;
+#if defined(RTCONFIG_HAS_5G)
+	case WL_5G_BAND:
+#if defined(PLAC56)
+		led = LED_5G_GREEN;
+#else
+		led = LED_5G;
+#endif
+		break;
+#if defined(RTCONFIG_HAS_5G_2)
+	case WL_5G_2_BAND:
+		led = LED_5G2;
+		break;
+#endif
+#endif
+#if defined(RTCONFIG_WIGIG)
+	case WL_60G_BAND:
+		led = LED_60G;
+		break;
+#endif
+	default:
+		dbg("%s: Unknown wl%d band!\n", __func__, band);
+	}
+
+	return led;
+}
+
+/**
+ * Get led gpio nvram variable name via wireless band.
+ * @band:	0 ~ MAX_NR_WL_IF - 1
+ * @return:	char pointer to a nvram variable name, e.g., led_2g_gpio.
+ *  empty string:	led gpio nvram variable for @band is not found.
+ */
+char *get_wl_led_gpio_nv(int band)
+{
+	char *gpio_nv = "";
+
+	if (band < 0 || band >= MAX_NR_WL_IF)
+		return gpio_nv;
+
+	switch (band) {
+	case WL_2G_BAND:
+		gpio_nv = "led_2g_gpio";
+		break;
+#if defined(RTCONFIG_HAS_5G)
+	case WL_5G_BAND:
+		gpio_nv = "led_5g_gpio";
+		break;
+#if defined(RTCONFIG_HAS_5G_2)
+	case WL_5G_2_BAND:
+		gpio_nv = "led_5g2_gpio";
+		break;
+#endif
+#endif
+#if defined(RTCONFIG_WIGIG)
+	case WL_60G_BAND:
+		gpio_nv = "led_60g_gpio";
+		break;
+#endif
+	default:
+		dbg("%s: Unknown wl%d band!\n", __func__, band);
+	}
+
+	return gpio_nv;
+}
+
+#if defined(RTCONFIG_QCA)
+/**
+ * Return driver name for wpa_supplicant based on wireless band.
+ * @band:	0 ~ MAX_NR_WL_IF
+ * @return:	pointer to driver name of @band.
+ */
+char *get_wsup_drvname(int band)
+{
+	char *r = "";
+
+	if (band < 0 || band >= MAX_NR_WL_IF)
+		return "";
+
+#if !defined(RTCONFIG_HAS_5G_2)
+	if (band == 2)
+		return "";
+#endif
+
+	switch (band) {
+	case WL_2G_BAND:	/* fall-through */
+	case WL_5G_BAND:	/* fall-through */
+	case WL_5G_2_BAND:
+		r = (char*) WSUP_DRV;
+		break;
+	case WL_60G_BAND:
+		r = (char*) WSUP_DRV_60G;
+		break;
+	}
+
+	return r;
+}
+#endif
 
 #ifdef RTCONFIG_TRAFFIC_LIMITER
 static char *traffic_limiter_get_path(const char *type)
@@ -2493,9 +3534,14 @@ void deauth_guest_sta(char *wlif_name, char *mac_addr)
 #if defined(RTCONFIG_RALINK)
         sprintf(cmd,"iwpriv %s set DisConnectSta=%s", wlif_name, mac_addr);
 #elif defined(RTCONFIG_QCA)
+	sprintf(cmd, "iwpriv %s maccmd 2", wlif_name);
+        system(cmd);
+	memset(cmd, 0, sizeof(cmd));
+	sprintf(cmd, "iwpriv %s addmac "MAC_FMT, wlif_name, MAC_ARG(mac_addr));
+        system(cmd);
+	memset(cmd, 0, sizeof(cmd));
         sprintf(cmd, "iwpriv %s kickmac "MAC_FMT, wlif_name, MAC_ARG(mac_addr));
 #endif
-	printf("cmd=%s\n", cmd);
         system(cmd);
 #else /* BCM */
         int ret;
@@ -2506,8 +3552,237 @@ void deauth_guest_sta(char *wlif_name, char *mac_addr)
 
         ret = wl_ioctl(wlif_name, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof(scb_val));
         if(ret < 0) {
-                printf("[WARNING] error to deauthticate ["MAC_FMT"] !!!\n", MAC_ARG(msc_addr));
+                //printf("[WARNING] error to deauthticate ["MAC_FMT"] !!!\n", MAC_ARG(msc_addr));
         }
 #endif
+}
+
+int FindBrifByWlif(char *wl_ifname, char *brif_name, int size)
+{
+	char word[32]={0}, *next=NULL;
+
+	if( !wl_ifname || !brif_name || !strlen(wl_ifname) )
+		return 0;
+
+	if (nvram_match("chilli_enable", "1")){
+		foreach(word, nvram_safe_get("chilli_interface"), next){
+			if(!strncmp(word, wl_ifname, strlen(word))){
+				memset(brif_name, 0, strlen(brif_name));
+				strncpy(brif_name, "br1", 3);
+			}	
+		}
+	}
+	if (nvram_match("cp_enable", "1")){
+		foreach(word, nvram_safe_get("cp_interface"), next){
+			if(!strncmp(word, wl_ifname, strlen(word))){ 
+				memset(brif_name, 0, strlen(brif_name));
+				strncpy(brif_name, "br2", 3);
+			}	
+
+		}
+	}
+	return 0;
+}
+
+#endif
+
+#ifdef RTCONFIG_CFGSYNC
+int is_valid_group_id(const char *str)
+/* valid group id char : "0123456789ABCDEF" */
+{
+	int i;
+	for (i=0; i<CFGSYNC_GROUPID_LEN; i++) {
+		if (str[i] >= '0' && str[i] <= '9')
+			continue;
+		else if (str[i] >= 'A' && str[i] <= 'F')
+			continue;
+		else
+			return 0;
+	}
+	return 1;
+}
+
+char *if_nametoalias(char *name, char *alias, int alias_len)
+{
+	char prefix[]="wlXXXXXX_", tmp[100];
+	char word[256], *next;
+	int unit = 0;
+	int subunit = 0;
+	int max_mssid = 0;
+	char *ifname = NULL;
+	int found = 0;
+
+	if (!strncmp(name, "2G", 2) || !strncmp(name, "5G", 2)) {
+		snprintf(alias, alias_len, "%s", name);
+		return alias;
+	}
+
+        foreach (word, nvram_safe_get("wl_ifnames"), next) {
+		SKIP_ABSENT_BAND_AND_INC_UNIT(unit);
+		max_mssid = num_of_mssid_support(unit);
+		memset(prefix, 0, sizeof(prefix));
+		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+		ifname = nvram_get(strcat_r(prefix, "ifname", tmp));
+		subunit = 0;
+
+		if (!strcmp(ifname, name)) {
+			snprintf(alias, alias_len, "%s", unit ? (unit == 2 ? "5G1" : "5G") : "2G");
+			found = 1;
+			break;
+		}
+
+		for (subunit = 1; subunit < max_mssid+1; subunit++) {
+			memset(prefix, 0, sizeof(prefix));
+                        snprintf(prefix, sizeof(prefix), "wl%d.%d_", unit, subunit);
+			ifname = nvram_get(strcat_r(prefix, "ifname", tmp));
+
+			if (!strcmp(ifname, name)) {
+#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_BCMARM)
+				if (nvram_get_int("sw_mode") == SW_MODE_REPEATER
+#if defined(RTCONFIG_PROXYSTA) && defined(RTCONFIG_DPSTA)
+					|| dpsta_mode() || dpsr_mode()
+#endif
+					)
+					snprintf(alias, alias_len, "%s", unit ? (unit == 2 ? "5G1" : "5G") : "2G");
+				else
+#endif
+				snprintf(alias, alias_len, "%s_%d", unit ? (unit == 2 ? "5G1" : "5G") : "2G", subunit);
+				found = 1;
+				break;
+			}
+		}
+
+		if (found)
+			break;
+ 
+		unit++;
+	}
+
+	return alias;
+}
+#endif /* RTCONFIG_CFGSYNC */
+
+#ifdef RTCONFIG_BONDING
+#ifdef HND_ROUTER
+
+#define SYS_BOND_FILE "/proc/net/bonding/bond0"
+#define STR_PARTNER_MAC "Partner Mac Address: "
+
+enum {
+	BS_NOCONFIG,
+	BS_NOPROC,
+	BS_NOLINK,
+	BS_FAIL,
+	BS_OK
+};
+
+char *bs_desc[] = {
+	"option disabled",
+	"no report",
+	"not linked",
+	"not established",
+	"successfully"
+};
+
+int get_bonding_status()
+{
+	FILE *fp;
+	char line[128], *lp, *mp=NULL;
+	int ret = 0;
+
+	if(!nvram_match("lacp_enabled", "1"))
+		return BS_NOCONFIG;
+
+	fp = fopen(SYS_BOND_FILE, "r");
+
+	if(fp != NULL)
+	{
+		while(fgets(line, sizeof(line), fp) != NULL){
+			if((lp = strstr(line, STR_PARTNER_MAC)) != NULL) {
+				mp = lp + strlen(STR_PARTNER_MAC);
+				mp[17] = 0;
+				break;
+			}
+		}
+
+		fclose(fp);
+
+		if(mp == NULL)
+			ret = BS_NOLINK;
+		else if(strncmp(mp, "00:00:00:00:00:00", 17) == 0)
+			ret = BS_FAIL;
+		else
+			ret = BS_OK;
+	} else {
+		ret = BS_NOPROC;
+	}
+
+	return ret;
+}
+
+#endif
+#endif
+
+#ifdef RTCONFIG_LANTIQ
+int ppa_support(int wan_unit)
+{
+	int ret = 1;
+	char wan_proto[16];
+	char tmp[100], prefix[32];
+	int ctf_disable_force = 0 ;
+
+	ctf_disable_force = nvram_get_int("ctf_disable_force");
+
+	/* recover the NAT accelerator*/
+	nvram_set("ctf_disable_force", "0");
+
+#ifdef RTCONFIG_USB_MODEM
+	char modem_type[32];
+	int wan_type = get_dualwan_by_unit(wan_unit);
+	int modem_unit = get_modemunit_by_type(wan_type);
+	char tmp2[100], prefix2[32];
+
+	if(modem_unit < 0)
+		modem_unit = 0;
+
+	usb_modem_prefix(modem_unit, prefix2, sizeof(prefix2));
+	snprintf(modem_type, sizeof(modem_type), "%s", nvram_safe_get(strcat_r(prefix2, "act_type", tmp2)));
+
+	if((wan_type == WANS_DUALWAN_IF_USB || wan_type == WANS_DUALWAN_IF_USB2)
+			&& (!strcmp(modem_type, "tty") || !strcmp(modem_type, "mbim"))
+			)
+	{
+		ret = 0;
+	}
+#endif
+
+	/*
+		1. traditaional qos / bandwidth limiter / disable NAT accelerator
+		2. stop_ppa_wan : debug usage
+	*/
+	if((nvram_get_int("qos_enable") == 1 && (nvram_get_int("qos_type") != 1))
+		|| nvram_match("ctf_disable_force", "1") || nvram_match("stop_ppa_wan", "1"))
+	{
+		ret = 0;
+	}
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
+	snprintf(wan_proto, sizeof(wan_proto), "%s", nvram_safe_get(strcat_r(prefix, "proto", tmp)));
+
+	if(strcmp(wan_proto, "pptp") == 0) ret = 0;
+	if(strcmp(wan_proto, "l2tp") == 0) ret = 0;
+	if(strcmp(nvram_safe_get(strcat_r(prefix, "hwaddr_x", tmp)), "")) ret = 0;
+	if(ctf_disable_force == 1) ret = 0;
+
+	/* when ppa wan interface removed, show NAT accelerator status */
+	if (ret == 0) {
+		nvram_set("ctf_disable", "1"); // GUI display
+		nvram_set("ctf_disable_force", "1");
+	}
+	else {
+		nvram_set("ctf_disable", "0"); // GUI display
+	}
+
+	return ret;
 }
 #endif

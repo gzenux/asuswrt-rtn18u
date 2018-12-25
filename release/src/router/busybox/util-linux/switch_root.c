@@ -3,8 +3,17 @@
  *
  * Switch from rootfs to another filesystem as the root of the mount tree.
  *
- * Licensed under GPL version 2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
+
+//usage:#define switch_root_trivial_usage
+//usage:       "[-c /dev/console] NEW_ROOT NEW_INIT [ARGS]"
+//usage:#define switch_root_full_usage "\n\n"
+//usage:       "Free initramfs and switch to another root fs:\n"
+//usage:       "chroot to NEW_ROOT, delete all in /, move NEW_ROOT to /,\n"
+//usage:       "execute NEW_INIT. PID must be 1. NEW_ROOT must be a mountpoint.\n"
+//usage:     "\n	-c DEV	Reopen stdio to DEV after switch"
+
 #include <sys/vfs.h>
 #include <sys/mount.h>
 #include "libbb.h"
@@ -105,7 +114,7 @@ int switch_root_main(int argc UNUSED_PARAM, char **argv)
 	}
 	xchroot(".");
 	// The chdir is needed to recalculate "." and ".." links
-	xchdir("/");
+	/*xchdir("/"); - done in xchroot */
 
 	// If a new console specified, redirect stdin/stdout/stderr to it
 	if (console) {
@@ -197,7 +206,7 @@ because they're what all paths your process uses would be relative to.
 
 That's why the careful sequencing above: we cd into the new mount point before
 we do the mount --move.  Moving the mount point would otherwise make it
-totally inaccessible to is because cd-ing to the old path wouldn't give it to
+totally inaccessible to us because cd-ing to the old path wouldn't give it to
 us anymore, and cd "/" just gives us the cached dentry from when the process
 was created (in this case the old initramfs one).  But the "." symlink gives
 us the dentry of the filesystem we just moved, so we can then "chroot ." to

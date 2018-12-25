@@ -1,0 +1,8 @@
+#if CDK_CONFIG_INCLUDE_BCM6300_A0 == 1
+CDK_DEVLIST_ENTRY(BCM6300, BCM6300_VENDOR_ID, BCM6300_DEVICE_ID, BCM6300_REV_A0, \
+                  0, 0, \
+                  bcm6300_a0, bcm6300_a0, bcm6300_a0, \
+                  CDK_DEV_ARCH_ROBO, "Mondial", "BCM6300", \
+                  "9-Port GbE Switch With 8 Integrated PHYs and LoopDTech", 0, 0)
+#endif
+

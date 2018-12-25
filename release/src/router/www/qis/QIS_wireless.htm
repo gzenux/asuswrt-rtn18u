@@ -49,11 +49,10 @@ var wlc_sbstate = '0';
 var wlc_scan_state = '0';
 var isDefault = false;
  
-function QKWireless_load_body(){	
+function QKWireless_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_wireless_webtitle#>";
 	parent.set_step("t3");
-	check_pppoe_state();
-		/*To Handle copy, paste for mobile device*/
+	/*To Handle copy, paste for mobile device*/
 	if (document.getElementById("wl0_ssid").addEventListener){
 		document.getElementById("wl0_ssid").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
 		document.getElementById("wl0_wpa_psk").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
@@ -168,7 +167,7 @@ function QKWireless_load_body(){
 			setTimeout(function(){document.form.wl0_ssid.focus();}, 1);
 		}
 
-		if(smart_connect_support){
+		if(smart_connect_support && (parent.document.QKform.sw_mode.value == 1 || parent.document.QKform.sw_mode.value == 3)){
 			if('<% nvram_get("x_Setting"); %>' == '0')
 					document.form.smart_connect_t[0].checked = true;
 
@@ -180,7 +179,7 @@ function QKWireless_load_body(){
 			document.getElementById("field_general").style.display = "";
 	}
 
-	if((parent.document.QKform.sw_mode.value == 1) && (is_TW_sku || is_CN_sku)){	
+	if((parent.document.QKform.sw_mode.value == 1) && parent.flag_manual != 1){
 		check_wan_state();
 	}	
 
@@ -215,18 +214,13 @@ function check_wan_state(){
 		},
 		success: function(response){
 			setTimeout("check_wan_state();", 1000);
-			if((wanstate  == 1 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 6 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 4 && wansbstate == 2 && wanauxstate == 0)){
-				if(!parent.flag_manual)
-					parent.pppoe_failed_flag = true;
+			if(wanstate == 4 && wansbstate == 2 && wanauxstate == 0){
+				parent.pppoe_failed_flag = true;
 			}
-			else if(wanstate == 4 && wansbstate == 4 && wanauxstate == 0){
+			else{
 				parent.pppoe_failed_flag = false;
-				parent.changeSubnet = true;
-			}
-			else{	
-				if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
-					parent.pppoe_failed_flag = false;
-				}
+				if(wanstate == 4 && wansbstate == 4 && wanauxstate == 0)
+					parent.changeSubnet = true;
 			}
 		}
 	});	
@@ -238,7 +232,7 @@ function submitForm(){
 	var wl_confirm = 0;
 	changeiuiBackground(1);
 
-		if(smart_connect_support && smartcon_skip_t == 0){
+		if(smart_connect_support && smartcon_skip_t == 0 && (parent.document.QKform.sw_mode.value == 1 || parent.document.QKform.sw_mode.value == 3)){
 			if(band5g_support){
 				inputCtrl(document.form.wl1_ssid,1);
 				inputCtrl(document.form.wl1_wpa_psk,1);
@@ -314,8 +308,8 @@ function submitForm(){
 				if(!confirm("<#JS_common_passwd#>")){
 					document.form.wl0_wpa_psk.focus();
 					document.form.wl0_wpa_psk.select();
-					return false;   
-				}       
+					return false;
+				}
 			}
 		}else
 		{
@@ -415,8 +409,8 @@ function submitForm(){
 						if(!confirm("<#JS_common_passwd#>")){
 							document.form.wl1_wpa_psk.focus();
 							document.form.wl1_wpa_psk.select();
-							return false;   
-						}       
+							return false;
+						}
 					}
 				}
 				else{
@@ -726,7 +720,7 @@ function submitForm(){
 			document.getElementById("wl2_key4").name = "wl2.1_key4";
 		}
 
-		if(sdk_7){
+		if(sdk_7 || sdk_9){
 			document.form.sw_mode.value = 3;
 			document.form.wlc_psta.value = 2;
 		}else{
@@ -778,13 +772,7 @@ function submitForm(){
 	}
 
 	if(smart_connect_support){
-			if(document.form.smart_connect_t[0].checked == true){
-				document.form.smart_connect_x.value = 1;
-				document.form.wl1_wpa_psk.value = document.form.wl0_wpa_psk.value;
-				if(wl_info.band5g_2_support)
-					document.form.wl2_wpa_psk.value = document.form.wl0_wpa_psk.value; 		
-			}else if(document.form.smart_connect_t[1].checked == true)
-				document.form.smart_connect_x.value = 0;
+		document.form.smart_connect_x.value = 0;
 	}
 
 	if(parent.based_modelid == "RT-AC87U")
@@ -813,7 +801,7 @@ function submitForm(){
 	}
 
 	document.form.submit();
-	if((document.form.sw_mode.value == "1" || document.form.sw_mode.value == "3") && !parent.pppoe_failed_flag){
+	if((document.form.sw_mode.value == "1" || document.form.sw_mode.value == "3") && !(!parent.flag_manual && parent.pppoe_failed_flag)){
 		setTimeout(function(){
 			location.href = "/qis/QIS_finish.htm";
 		}, 500)
@@ -912,7 +900,7 @@ function gotoIndex_wireless(){
 		return false;
 	}
 	else
-		parent.location.href = '/index.asp';
+		parent.location.href = '<% abs_index_page(); %>';
 }
 
 var retValHandler = {
@@ -930,57 +918,32 @@ var retValHandler = {
 		child_macaddr = '';
 	
 		$.ajax({
-			url: '/httpd_check.xml',
-			dataType: 'xml',
+			url: "/wlc_status.json",
+			dataType: 'jsonp',
 			timeout: 2000,
 			error: function(xhr){
-				setTimeout("retValHandler.doQuery();", 1000);
+				setTimeout(retValHandler.doQuery, 1000);
 				retValHandler.errCounter++;
 				if(retValHandler.errCounter > 5){ // assume it in in connected and the IP of DUT has been changed
 					genErrorHint();
 					retValHandler.forceHideLoading();
 				}
-			},
-			success: function(response){
-				setTimeout("retValHandler.wlc_isConnected();", 5000);
 			}
-		});	
+		});
 	},
 
-	"wlc_isConnected" : function(){
-		$.ajax({
-			url: '/apscan.asp',
-			dataType: 'script',
-			error: function(xhr){
-			},
-			success: function(response){
-				retValHandler.forceHideLoading();
-				if(parent.parent_macaddr && child_macaddr){
-					if(child_macaddr != parent.parent_macaddr){
-						genErrorHint();
-						return false;
-					}
-				}
-				else{
-					genErrorHint();
-					return false;
-				}
-				retValHandler.isConnected();
-			}
-		});	
-	},
-
-	"isConnected" : function(){
-		if(wlc_state == 2){ // connected
-			location.href = '/qis/QIS_finish.htm';
+	"__checkWlcStatus" : function(_status){
+		if(_status.wlc_state == 2 && _status.wlc_sbstate == 0){ // connected
+			top.location.href = '<% abs_index_page(); %>';
 		}
 		else{
-			parent.isSubmit = true;
-			parent.isrescan = 120;
-			location.href = '/qis/QIS_sitesurvey.htm';
+			top.location.href = '/error_page.htm?flag=8';
 		}
 	}
 }
+
+var checkWlcStatus = retValHandler.__checkWlcStatus;
+
 function PrevSetting(v){
 	if(v == 0){
 		inputCtrl(document.form.wl0_ssid,0);
@@ -1358,26 +1321,6 @@ function detect_LANStatus(_flag){
 				setTimeout("detect_LANStatus('"+_flag+"');", 2000);
 		}
 	});
-}
-
-function check_pppoe_state(){
-	$.ajax({
-		url: '/result_of_get_changed_status_QIS.asp',
-		dataType: 'script',		
-		error: function(xhr){
-			check_pppoe_state();		
-		},
-		success: function(response){
-			setTimeout("check_pppoe_state();", 1000);
-			if((wanstate  == 1 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 1 && wansbstate == 0 && wanauxstate == 1) || (wanstate  == 6 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 4 && wansbstate == 2 && wanauxstate == 0)){
-				if(!parent.flag_manual)
-					parent.pppoe_failed_flag = true;				
-			}
-			else if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
-				parent.pppoe_failed_flag = false;
-			}	
-		}
-	});	
 }
 </script>
 </head>

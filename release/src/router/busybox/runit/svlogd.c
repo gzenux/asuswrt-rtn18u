@@ -26,7 +26,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /* Busyboxed by Denys Vlasenko <vda.linux@googlemail.com> */
-/* TODO: depends on runit_lib.c - review and reduce/eliminate */
 
 /*
 Config files
@@ -125,9 +124,38 @@ log message, you can use a pattern like this instead
 -*: *: pid *
 */
 
-#include <sys/poll.h>
+//config:config SVLOGD
+//config:	bool "svlogd"
+//config:	default y
+//config:	help
+//config:	  svlogd continuously reads log data from its standard input, optionally
+//config:	  filters log messages, and writes the data to one or more automatically
+//config:	  rotated logs.
+
+//applet:IF_SVLOGD(APPLET(svlogd, BB_DIR_USR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_SVLOGD) += svlogd.o
+
+//usage:#define svlogd_trivial_usage
+//usage:       "[-ttv] [-r C] [-R CHARS] [-l MATCHLEN] [-b BUFLEN] DIR..."
+//usage:#define svlogd_full_usage "\n\n"
+//usage:       "Continuously read log data from stdin and write to rotated log files in DIRs"
+//usage:   "\n"
+//usage:   "\n""DIR/config file modifies behavior:"
+//usage:   "\n""sSIZE - when to rotate logs"
+//usage:   "\n""nNUM - number of files to retain"
+/*usage:   "\n""NNUM - min number files to retain" - confusing */
+/*usage:   "\n""tSEC - rotate file if it get SEC seconds old" - confusing */
+//usage:   "\n""!PROG - process rotated log with PROG"
+/*usage:   "\n""uIPADDR - send log over UDP" - unsupported */
+/*usage:   "\n""UIPADDR - send log over UDP and DONT log" - unsupported */
+/*usage:   "\n""pPFX - prefix each line with PFX" - unsupported */
+//usage:   "\n""+,-PATTERN - (de)select line for logging"
+//usage:   "\n""E,ePATTERN - (de)select line for stderr"
+
 #include <sys/file.h>
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include "runit_lib.h"
 
 #define LESS(a,b) ((int)((unsigned)(b) - (unsigned)(a)) > 0)
@@ -170,6 +198,7 @@ struct globals {
 	unsigned nearest_rotate;
 
 	void* (*memRchr)(const void *, int, size_t);
+	char *shell;
 
 	smallint exitasap;
 	smallint rotateasap;
@@ -205,15 +234,15 @@ struct globals {
 #define blocked_sigset (G.blocked_sigset)
 #define fl_flag_0      (G.fl_flag_0     )
 #define dirn           (G.dirn          )
+#define line bb_common_bufsiz1
 #define INIT_G() do { \
+	setup_common_bufsiz(); \
 	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	linemax = 1000; \
 	/*buflen = 1024;*/ \
 	linecomplete = 1; \
 	replace = ""; \
 } while (0)
-
-#define line bb_common_bufsiz1
 
 
 #define FATAL "fatal: "
@@ -259,6 +288,52 @@ static char* wstrdup(const char *str)
 	while (!(s = strdup(str)))
 		pause_nomem();
 	return s;
+}
+
+static unsigned pmatch(const char *p, const char *s, unsigned len)
+{
+	for (;;) {
+		char c = *p++;
+		if (!c) return !len;
+		switch (c) {
+		case '*':
+			c = *p;
+			if (!c) return 1;
+			for (;;) {
+				if (!len) return 0;
+				if (*s == c) break;
+				++s;
+				--len;
+			}
+			continue;
+		case '+':
+			c = *p++;
+			if (c != *s) return 0;
+			for (;;) {
+				if (!len) return 1;
+				if (*s != c) break;
+				++s;
+				--len;
+			}
+			continue;
+			/*
+		case '?':
+			if (*p == '?') {
+				if (*s != '?') return 0;
+				++p;
+			}
+			++s; --len;
+			continue;
+			*/
+		default:
+			if (!len) return 0;
+			if (*s != c) return 0;
+			++s;
+			--len;
+			continue;
+		}
+	}
+	return 0;
 }
 
 /*** ex fmt_ptime.[ch] ***/
@@ -319,6 +394,9 @@ static void processorstart(struct logdir *ld)
 	/* vfork'ed child trashes this byte, save... */
 	sv_ch = ld->fnsave[26];
 
+	if (!G.shell)
+		G.shell = xstrdup(get_shell_name());
+
 	while ((pid = vfork()) == -1)
 		pause2cannot("vfork for processor", ld->name);
 	if (!pid) {
@@ -342,7 +420,7 @@ static void processorstart(struct logdir *ld)
 		ld->fnsave[26] = 't'; /* <- that's why we need sv_ch! */
 		fd = xopen(ld->fnsave, O_WRONLY|O_NDELAY|O_TRUNC|O_CREAT);
 		xmove_fd(fd, 1);
-		fd = open_read("state");
+		fd = open("state", O_RDONLY|O_NDELAY);
 		if (fd == -1) {
 			if (errno != ENOENT)
 				bb_perror_msg_and_die(FATAL"can't %s processor %s", "open state for", ld->name);
@@ -353,8 +431,7 @@ static void processorstart(struct logdir *ld)
 		fd = xopen("newstate", O_WRONLY|O_NDELAY|O_TRUNC|O_CREAT);
 		xmove_fd(fd, 5);
 
-// getenv("SHELL")?
-		execl(DEFAULT_SHELL, DEFAULT_SHELL_SHORT_NAME, "-c", ld->processor, (char*) NULL);
+		execl(G.shell, G.shell, "-c", ld->processor, (char*) NULL);
 		bb_perror_msg_and_die(FATAL"can't %s processor %s", "run", ld->name);
 	}
 	ld->fnsave[26] = sv_ch; /* ...restore */
@@ -535,12 +612,12 @@ static int buffer_pwrite(int n, char *s, unsigned len)
 
 			while (fchdir(ld->fddir) == -1)
 				pause2cannot("change directory, want remove old logfile",
-							 ld->name);
+							ld->name);
 			oldest[0] = 'A';
 			oldest[1] = oldest[27] = '\0';
 			while (!(d = opendir(".")))
 				pause2cannot("open directory, want remove old logfile",
-							 ld->name);
+							ld->name);
 			errno = 0;
 			while ((f = readdir(d)))
 				if ((f->d_name[0] == '@') && (strlen(f->d_name) == 27)) {
@@ -626,7 +703,7 @@ static NOINLINE unsigned logdir_open(struct logdir *ld, const char *fn)
 	}
 	ld->fdlock = open("lock", O_WRONLY|O_NDELAY|O_APPEND|O_CREAT, 0600);
 	if ((ld->fdlock == -1)
-	 || (lock_exnb(ld->fdlock) == -1)
+	 || (flock(ld->fdlock, LOCK_EX | LOCK_NB) == -1)
 	) {
 		logdir_close(ld);
 		warn2("can't lock directory", (char*)fn);
@@ -679,19 +756,14 @@ static NOINLINE unsigned logdir_open(struct logdir *ld, const char *fn)
 				ld->inst = new;
 				break;
 			case 's': {
-				static const struct suffix_mult km_suffixes[] = {
-					{ "k", 1024 },
-					{ "m", 1024*1024 },
-					{ "", 0 }
-				};
 				ld->sizemax = xatou_sfx(&s[1], km_suffixes);
 				break;
 			}
 			case 'n':
-				ld->nmax = xatoi_u(&s[1]);
+				ld->nmax = xatoi_positive(&s[1]);
 				break;
 			case 'N':
-				ld->nmin = xatoi_u(&s[1]);
+				ld->nmin = xatoi_positive(&s[1]);
 				break;
 			case 't': {
 				static const struct suffix_mult mh_suffixes[] = {
@@ -974,14 +1046,14 @@ int svlogd_main(int argc, char **argv)
 	}
 	if (opt & 2) if (!repl) repl = '_'; // -R
 	if (opt & 4) { // -l
-		linemax = xatou_range(l, 0, BUFSIZ-26);
+		linemax = xatou_range(l, 0, COMMON_BUFSIZE-26);
 		if (linemax == 0)
-			linemax = BUFSIZ-26;
+			linemax = COMMON_BUFSIZE-26;
 		if (linemax < 256)
 			linemax = 256;
 	}
 	////if (opt & 8) { // -b
-	////	buflen = xatoi_u(b);
+	////	buflen = xatoi_positive(b);
 	////	if (buflen == 0) buflen = 1024;
 	////}
 	//if (opt & 0x10) timestamp++; // -t
@@ -1068,7 +1140,8 @@ int svlogd_main(int argc, char **argv)
 		/* Search for '\n' (in fact, np already holds the result) */
 		linelen = stdin_cnt;
 		if (np) {
- print_to_nl:		/* NB: starting from here lineptr may point
+ print_to_nl:
+			/* NB: starting from here lineptr may point
 			 * farther out into line[] */
 			linelen = np - lineptr + 1;
 		}

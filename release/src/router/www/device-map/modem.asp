@@ -11,7 +11,7 @@
 <link href="../form_style.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="/state.js"></script>
 <script>
-if(parent.location.pathname.search("index") === -1) top.location.href = "../index.asp";
+if(parent.location.pathname.search("index") === -1) top.location.href = "../"+'<% networkmap_page(); %>';
 
 function initial(){
 		showtext(document.getElementById("disk_model_name"), parent.usbPorts[parent.currentUsbPort].deviceName);

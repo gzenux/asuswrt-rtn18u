@@ -26,6 +26,7 @@
 #endif
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <pthread.h>
 
 #include <shared.h>
 struct tun_t *tun;                /* TUN instance            */
@@ -282,7 +283,20 @@ void child_killall(int sig) {
   CHILD *node = children;
   while (node) {
     kill(node->pid, sig);
-    log_dbg("pid %d killed %d", getpid(), node->pid);
+    log_dbg("pid %d killed %d (%d)", getpid(), node->pid, sig);
+    node = node->next;
+  }
+}
+
+void child_killall_custm(int sig) {
+  CHILD *node = children;
+  while (node) {
+	if(node->pid == getpid()){
+	  node=node->next;
+	  continue;
+	}
+    kill(node->pid, sig);
+    log_dbg("pid %d killed %d (%d)", getpid(), node->pid, sig);
     node = node->next;
   }
 }
@@ -376,6 +390,46 @@ static void _sighup(int signum) {
   do_interval = 1;
 }
 
+/* check the wan IP conflict here */   //John@mod
+static void _sigusr2(signo){
+  log_dbg("SIGUSR2: check wan ip conflict or not and then rereading configuration");
+  int i=0;
+  char *next;
+  int unit =0;
+  char tmp[100], prefix[] = "wanXXXXXXXXXX_";
+  char dns1[64]={0}, dns2[64]={0};
+  
+  for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; unit++) {
+    char *wan_dns, *wan_xdns;
+    snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+    wan_dns = nvram_safe_get(strcat_r(prefix, "dns", tmp));
+    wan_xdns = nvram_safe_get(strcat_r(prefix, "xdns", tmp));
+
+ if (!*wan_dns && !*wan_xdns)
+       continue;
+    i = 1;
+    foreach(tmp, (*wan_dns ? wan_dns : wan_xdns), next) {
+        if (i > 2)
+            break;
+        if(1 == i) snprintf(dns1, sizeof(dns1), "%s", tmp);
+        else snprintf(dns2, sizeof(dns2),"%s", tmp);
+        i++;
+    }
+    if (i >= 2)
+             break;
+   }
+  if(_options.pidfile){
+    nvram_set("cp_dns1", dns1);
+    nvram_set("cp_dns2", dns2);
+    system("rc rc_service restart_CP");  //restart cp
+  }else{
+     nvram_set("chilli_dns1", dns1);
+     nvram_set("chilli_dns2", dns2);
+     system("rc rc_service restart_chilli");
+  }
+
+}
+
 int chilli_handle_signal(void *ctx, int fd) {
   int signo = selfpipe_read();
 #if(_debug_)
@@ -386,6 +440,7 @@ int chilli_handle_signal(void *ctx, int fd) {
   case SIGPIPE: _sigvoid(signo); break;
   case SIGHUP:  _sighup(signo);  break;
   case SIGUSR1: _sigusr1(signo); break;
+  case SIGUSR2: _sigusr2(signo); break;
   case SIGTERM:
   case SIGINT:  _sigterm(signo); break;
   default: return signo;
@@ -396,6 +451,7 @@ int chilli_handle_signal(void *ctx, int fd) {
 void chilli_signals(int *with_term, int *with_hup) {
   selfpipe_trap(SIGCHLD);
   selfpipe_trap(SIGPIPE);
+  selfpipe_trap(SIGUSR2);
   
   if (with_hup) {
     p_reload_config = with_hup;
@@ -5471,6 +5527,7 @@ void Case2lower(char *word)
 }
 
 //John added for kickmac checking 
+# if 0
 static int check_kicked(char *ifname, char *macaddr)
 {
 	char tmpcmd[128], macaddr_f[64];
@@ -5500,7 +5557,6 @@ static int check_kicked(char *ifname, char *macaddr)
 	return 0;
 				
 }
-
 int kick_wifi_client(char *macaddr)
 {
       #define TRYCOUNT 50
@@ -5525,6 +5581,84 @@ int kick_wifi_client(char *macaddr)
       }
       return 1;	
 }
+#endif
+
+#define TRYCOUNT 30
+void *thread_delfilter(void *macaddr)
+{
+	char *mac=(char *)macaddr;
+	char cmd[128], macaddr_f[64];
+	char word[16], *next=NULL;	
+	time_t start;
+	
+	
+	start=mainclock_now();	
+	printf("in thread\n");
+	sleep(TRYCOUNT);
+	memset(cmd, 0, sizeof(cmd));
+	memset(macaddr_f, 0, sizeof(macaddr_f));
+      	foreach (word, nvram_safe_get("lan1_ifnames"), next) {
+		sprintf(macaddr_f, MAC_FMT, MAC_ARG(mac));
+		sprintf(cmd, "iwpriv %s delmac %s", word, macaddr_f);	
+		system(cmd);
+	}
+	printf("diff time : %d\n", mainclock_now()-start );
+	return ((void *)0);
+}
+
+void DelUserFromFilter(char *macaddr)
+{
+	char *mac=(char *)macaddr;
+	char cmd[128], macaddr_f[64];
+	char word[16], *next=NULL;	
+	time_t start;
+	char ifname[16];	
+	
+	start=mainclock_now();	
+	printf("in thread\n");
+	sleep(TRYCOUNT);
+	memset(cmd, 0, sizeof(cmd));
+	memset(macaddr_f, 0, sizeof(macaddr_f));
+	memset(ifname, 0, sizeof(ifname));
+      	if (_options.pidfile){
+      		strcpy(ifname, "lan2_ifnames");
+	}else{
+		strcpy(ifname, "lan1_ifnames");
+	}
+	foreach (word, nvram_safe_get(ifname), next) {
+		sprintf(macaddr_f, MAC_FMT, MAC_ARG(mac));
+		sprintf(cmd, "iwpriv %s delmac %s", word, macaddr_f);	
+		system(cmd);
+	}
+	printf("diff time : %d\n", mainclock_now()-start );
+	return ;
+}
+
+int kick_wifi_client(char *macaddr)
+{
+      	char tmpcmd[64];    //John add for kickmac
+      	char word[16], *next=NULL;
+      //pthread_t timer_thread;
+	char ifname[16];
+
+      	memset(tmpcmd, 0, sizeof(tmpcmd));
+      	memset(ifname, 0, sizeof(ifname));
+#if 1
+      	if (_options.pidfile){
+      		strcpy(ifname, "lan2_ifnames");
+	}else{
+		strcpy(ifname, "lan1_ifnames");
+	}
+
+      	foreach (word, nvram_safe_get(ifname), next) 
+		deauth_guest_sta(word, macaddr); 
+	  
+      	DelUserFromFilter(macaddr);	  
+//      pthread_create(&timer_thread, NULL, (void *)thread_delfilter, (void *)macaddr);
+#endif      
+      	return 0;	
+}
+
 
 int terminate_appconn(struct app_conn_t *appconn, int terminate_cause) {
 
@@ -5562,9 +5696,45 @@ int terminate_appconn(struct app_conn_t *appconn, int terminate_cause) {
     if (_options.statusfilesave)
       printstatus();
 #endif
-   printf("%s[%d]\n", __func__, __LINE__);
+//John added for kickmac
+   if(1 == *p_keep_going){
+   		pid_t mypid;
+   		if((mypid = fork()) < 0){
+			log_dbg("Error in my fork process\n");
+   		}else if (0 == mypid){
+   			if((mypid = fork()) < 0){
+	   			log_dbg("Error in my fork process\n");
+	   			exit(1);
+			}else if(mypid > 0){
+	   			exit(0);
+			}else{
+   				if(kick_wifi_client((char *)&appconn->hismac))  //John added for kick wifi user
+     				printf("kick wifi user error\n");  
+           			exit(0);
+			}
+   		}
+   		if(waitpid(mypid, NULL, 0) != mypid)
+      		log_dbg("Error in wait fored child process\n")
+   }
+/*
+   pid_t mypid;
+   if((mypid = fork()) < 0){
+	log_dbg("Error in my fork process\n");
+   }else if (0 == mypid){
+   	if((mypid = fork()) < 0){
+	   log_dbg("Error in my fork process\n");
+	   exit(1);
+	}else if(mypid > 0){
+	   exit(0);
+	}else{
    if(kick_wifi_client((char *)&appconn->hismac))  //John added for kick wifi user
      printf("kick wifi user error\n");  
+           exit(0);
+	}
+   }
+   if(waitpid(mypid, NULL, 0) != mypid)
+      log_dbg("Error in wait fored child process\n")
+*/
    }
 
   return 0;
@@ -6580,7 +6750,8 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
       
 #ifdef ENABLE_JSON
       if (listfmt == LIST_JSON_FMT) {
-	bcatcstr(s, "{ \"sessions\":[");
+//	bcatcstr(s, "{ \"sessions\":[");
+	bcatcstr(s, "{ \"pass\":[");
       }
 #endif
       
@@ -6605,7 +6776,8 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
 	  if (dhcp) {
 	    dhcpconn = dhcp->firstusedconn;
 	    while (dhcpconn) {
-	      chilli_print(s, listfmt, 0, dhcpconn);
+	      if(dhcpconn->authstate == DHCP_AUTH_PASS)                //John add for filter failed auth user.
+	         chilli_print(s, listfmt, 0, dhcpconn);
 	      dhcpconn = dhcpconn->next;
 	    }
 	  }
@@ -6616,8 +6788,14 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
       
 #ifdef ENABLE_JSON
       if (listfmt == LIST_JSON_FMT) {
+	bcatcstr(s, "],");
+      }
+      if (listfmt == LIST_JSON_FMT) {
+	bcatcstr(s, " \"failed\":[");
 	bcatcstr(s, "]}");
       }
+
+
 #endif
     }
     break;
@@ -7677,10 +7855,10 @@ int chilli_main(int argc, char **argv) {
 #ifdef ENABLE_UAMDOMAINFILE
   garden_free_domainfile();
 #endif
+   selfpipe_finish();
 
-  selfpipe_finish();
-
-  /* child_killall(SIGKILL);*/
+  log_dbg("Before sigalrm %d", SIGALRM);  //John@add for debug
+  child_killall_custm(SIGALRM);   //John@add@2016/12/19 for kill all child processes
 
   options_cleanup();
 

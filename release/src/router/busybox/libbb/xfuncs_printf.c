@@ -6,7 +6,7 @@
  * Copyright (C) 2006 Rob Landley
  * Copyright (C) 2006 Denys Vlasenko
  *
- * Licensed under GPL version 2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 /* We need to have separate xfuncs.c and xfuncs_printf.c because
@@ -112,6 +112,11 @@ char* FAST_FUNC xstrndup(const char *s, int n)
 	return memcpy(t, s, n);
 }
 
+void* FAST_FUNC xmemdup(const void *s, int n)
+{
+	return memcpy(xmalloc(n), s, n);
+}
+
 // Die if we can't open a file and return a FILE* to it.
 // Notice we haven't got xfread(), This is for use with fscanf() and friends.
 FILE* FAST_FUNC xfopen(const char *path, const char *mode)
@@ -134,19 +139,10 @@ int FAST_FUNC xopen3(const char *pathname, int flags, int mode)
 	return ret;
 }
 
-// Die if we can't open an existing file and return a fd.
+// Die if we can't open a file and return a fd.
 int FAST_FUNC xopen(const char *pathname, int flags)
 {
 	return xopen3(pathname, flags, 0666);
-}
-
-/* Die if we can't open an existing file readonly with O_NONBLOCK
- * and return the fd.
- * Note that for ioctl O_RDONLY is sufficient.
- */
-int FAST_FUNC xopen_nonblocking(const char *pathname)
-{
-	return xopen(pathname, O_RDONLY | O_NONBLOCK);
 }
 
 // Warn if we can't open a file and return a fd.
@@ -165,6 +161,32 @@ int FAST_FUNC open3_or_warn(const char *pathname, int flags, int mode)
 int FAST_FUNC open_or_warn(const char *pathname, int flags)
 {
 	return open3_or_warn(pathname, flags, 0666);
+}
+
+/* Die if we can't open an existing file readonly with O_NONBLOCK
+ * and return the fd.
+ * Note that for ioctl O_RDONLY is sufficient.
+ */
+int FAST_FUNC xopen_nonblocking(const char *pathname)
+{
+	return xopen(pathname, O_RDONLY | O_NONBLOCK);
+}
+
+int FAST_FUNC xopen_as_uid_gid(const char *pathname, int flags, uid_t u, gid_t g)
+{
+	int fd;
+	uid_t old_euid = geteuid();
+	gid_t old_egid = getegid();
+
+	xsetegid(g);
+	xseteuid(u);
+
+	fd = xopen(pathname, flags);
+
+	xseteuid(old_euid);
+	xsetegid(old_egid);
+
+	return fd;
 }
 
 void FAST_FUNC xunlink(const char *pathname)
@@ -238,6 +260,14 @@ off_t FAST_FUNC xlseek(int fd, off_t offset, int whence)
 		bb_perror_msg_and_die("lseek");
 	}
 	return off;
+}
+
+int FAST_FUNC xmkstemp(char *template)
+{
+	int fd = mkstemp(template);
+	if (fd < 0)
+		bb_perror_msg_and_die("can't create temp file '%s'", template);
+	return fd;
 }
 
 // Die with supplied filename if this FILE* has ferror set.
@@ -343,17 +373,34 @@ void FAST_FUNC xsetuid(uid_t uid)
 	if (setuid(uid)) bb_perror_msg_and_die("setuid");
 }
 
+void FAST_FUNC xsetegid(gid_t egid)
+{
+	if (setegid(egid)) bb_perror_msg_and_die("setegid");
+}
+
+void FAST_FUNC xseteuid(uid_t euid)
+{
+	if (seteuid(euid)) bb_perror_msg_and_die("seteuid");
+}
+
 // Die if we can't chdir to a new path.
 void FAST_FUNC xchdir(const char *path)
 {
 	if (chdir(path))
-		bb_perror_msg_and_die("chdir(%s)", path);
+		bb_perror_msg_and_die("can't change directory to '%s'", path);
+}
+
+void FAST_FUNC xfchdir(int fd)
+{
+	if (fchdir(fd))
+		bb_perror_msg_and_die("fchdir");
 }
 
 void FAST_FUNC xchroot(const char *path)
 {
 	if (chroot(path))
-		bb_perror_msg_and_die("can't change root directory to %s", path);
+		bb_perror_msg_and_die("can't change root directory to '%s'", path);
+	xchdir("/");
 }
 
 // Print a warning message if opendir() fails, but don't die.
@@ -387,8 +434,12 @@ int FAST_FUNC xsocket(int domain, int type, int protocol)
 		/* Hijack vaguely related config option */
 #if ENABLE_VERBOSE_RESOLUTION_ERRORS
 		const char *s = "INET";
+# ifdef AF_PACKET
 		if (domain == AF_PACKET) s = "PACKET";
+# endif
+# ifdef AF_NETLINK
 		if (domain == AF_NETLINK) s = "NETLINK";
+# endif
 IF_FEATURE_IPV6(if (domain == AF_INET6) s = "INET6";)
 		bb_perror_msg_and_die("socket(AF_%s,%d,%d)", s, type, protocol);
 #else
@@ -430,6 +481,16 @@ void FAST_FUNC xstat(const char *name, struct stat *stat_buf)
 {
 	if (stat(name, stat_buf))
 		bb_perror_msg_and_die("can't stat '%s'", name);
+}
+
+void FAST_FUNC xfstat(int fd, struct stat *stat_buf, const char *errmsg)
+{
+	/* errmsg is usually a file name, but not always:
+	 * xfstat may be called in a spot where file name is no longer
+	 * available, and caller may give e.g. "can't stat input file" string.
+	 */
+	if (fstat(fd, stat_buf))
+		bb_simple_perror_msg_and_die(errmsg);
 }
 
 // selinux_or_die() - die if SELinux is disabled.
@@ -518,13 +579,11 @@ int FAST_FUNC bb_xioctl(int fd, unsigned request, void *argp)
 
 char* FAST_FUNC xmalloc_ttyname(int fd)
 {
-	char *buf = xzalloc(128);
-	int r = ttyname_r(fd, buf, 127);
-	if (r) {
-		free(buf);
-		buf = NULL;
-	}
-	return buf;
+	char buf[128];
+	int r = ttyname_r(fd, buf, sizeof(buf) - 1);
+	if (r)
+		return NULL;
+	return xstrdup(buf);
 }
 
 void FAST_FUNC generate_uuid(uint8_t *buf)
@@ -600,3 +659,19 @@ pid_t FAST_FUNC xfork(void)
 	return pid;
 }
 #endif
+
+void FAST_FUNC xvfork_parent_waits_and_exits(void)
+{
+	pid_t pid;
+
+	fflush_all();
+	pid = xvfork();
+	if (pid > 0) {
+		/* Parent */
+		int exit_status = wait_for_exitstatus(pid);
+		if (WIFSIGNALED(exit_status))
+			kill_myself_with_sig(WTERMSIG(exit_status));
+		_exit(WEXITSTATUS(exit_status));
+	}
+	/* Child continues */
+}

@@ -30,6 +30,8 @@
 #include "hyfi_bridge.h"
 #include "hyfi_api.h"
 #include "hyfi_fdb.h"
+#include "ref/ref_port_ctrl.h"
+#include "ref/ref_fdb.h"
 
 static inline unsigned long hold_time(const struct net_bridge *br)
 {
@@ -41,6 +43,23 @@ static inline int has_expired(const struct net_bridge *br,
 {
 	return !fdb->is_static
 			&& time_before_eq(hyfi_updated_time_get(fdb) + hold_time( br ), jiffies );
+}
+
+void hyfi_fdb_perport(struct hyfi_net_bridge *hyfi_br,struct __switchport_index *pid)
+{
+	struct __ssdkport_entry portEntry;
+	memcpy((char *)portEntry.addr, (char *)pid->mac_addr, sizeof(portEntry.addr));
+	portEntry.vlanid = pid->vlanid;
+	/* if MAC not found on any one of switch port then ssdk returns with 0xffffffff */
+	if (!(~pid->portid)) {
+		portEntry.portid = 0xFF;
+		portEntry.portlink = 0;
+	}
+	else {
+		portEntry.portid = pid->portid;
+		portEntry.portlink = 1;
+	}
+	hyfi_netlink_event_send(hyfi_br, HYFI_EVENT_MAC_LEARN_ON_PORT, sizeof(portEntry), (void *)&portEntry);
 }
 /*
  * Fill buffer with forwarding table records in

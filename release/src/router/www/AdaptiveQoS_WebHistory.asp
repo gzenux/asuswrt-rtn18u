@@ -20,6 +20,7 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 .transition_style{
 	-webkit-transition: all 0.2s ease-in-out;
@@ -67,7 +68,7 @@ function parsingAjaxResult(rawData){
 	var code = "";
 	code += "<tr>";
 	code += "<th style='width:20%;text-align:left'>Access Time</th>";
-	code += "<th style='width:30%;text-align:left'>MAC Address / Client's Name</th>";
+	code += "<th style='width:30%;text-align:left'><#PPPConnection_x_MacAddressForISP_itemname#> / <#Client_Name#></th>";
 	code += "<th style='width:50%;text-align:left'>Domain Name</th>";
 	code += "</tr>";
 	for(var i=0; i<data_array.length; i++){	
@@ -194,14 +195,23 @@ function change_page(flag){
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	document.form.bwdpi_wh_enable.value = 1;
-	document.form.submit();
+	if(reset_wan_to_fo(document.form, document.form.bwdpi_wh_enable.value)) {
+		document.form.action_wait.value = "15";
+		document.form.submit();
+	}
+	else {
+		cancel();
+	}
 }
 
 function cancel(){
 	curState = 0;
+	document.form.bwdpi_wh_enable.value = 1;
 	$('#iphone_switch').animate({backgroundPosition: -37}, "slow", function() {});
 	$("#agreement_panel").fadeOut(100);
 	document.getElementById("hiddenMask").style.visibility = "hidden";
+	htmlbodyforIE = parent.document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
+	htmlbodyforIE[0].style.overflow = "scroll";	  //hidden the Y-scrollbar for preventing from user scroll it.
 }
 function cal_panel_block(obj){
 	var blockmarginLeft;
@@ -228,12 +238,17 @@ function cal_panel_block(obj){
 	else
 		document.getElementById(obj).style.marginLeft = blockmarginLeft+"px";
 }
+function updateWebHistory() {
+	setTimeout(function() {
+		getWebHistory(document.form.clientList.value);
+	}, 200);
+}
 </script>
 </head>
 <body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="panel_folder" style="margin-top: -100px;"></div>
+<div id="agreement_panel" class="eula_panel_container"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center"></table>
 	<!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
@@ -274,21 +289,58 @@ function cal_panel_block(obj){
 									</div>
 									<div style="margin:5px">
 										<table style="margin-left:0px;" width="95%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-											<th>Enable Web History</th>
+											<th><#Adaptive_History#></th>
 											<td>
 												<div align="center" class="left" style="width:94px; float:left; cursor:pointer;" id="bwdpi_wh_enable"></div>
 															<script type="text/javascript">
 																$('#bwdpi_wh_enable').iphoneSwitch('<% nvram_get("bwdpi_wh_enable"); %>',
 																	function(){
 																		if(document.form.TM_EULA.value == 0){
+																			var adjust_TM_eula_height = function(_objID) {
+																				var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+																				document.getElementById(_objID).style.top = (scrollTop + 10) + "px";
+																				var visiable_height = document.documentElement.clientHeight;
+																				var tm_eula_container_height = parseInt(document.getElementById(_objID).offsetHeight);
+																				var tm_eula_visiable_height = visiable_height - tm_eula_container_height;
+																				if(tm_eula_visiable_height < 0) {
+																					var tm_eula_content_height = parseInt(document.getElementById("tm_eula_content").style.height);
+																					document.getElementById("tm_eula_content").style.height = (tm_eula_content_height - Math.abs(tm_eula_visiable_height) - 20) + "px"; //content height - overflow height - margin top and margin bottom
+																				}
+																			};
 																			if(document.form.preferred_lang.value == "JP"){
 																				$.get("JP_tm_eula.htm", function(data){
 																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
 																				});
 																			}
+																			else if(document.form.preferred_lang.value == "TW"){
+																				$.get("tm_eula_TC.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "CN"){
+																				$.get("tm_eula_SC.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "FR"){
+																				$.get("tm_eula_FR.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "RU"){
+																				$.get("tm_eula_RU.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}																			
 																			else{
 																				$.get("tm_eula.htm", function(data){
 																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
 																				});
 																			}	
 																			dr_advise();
@@ -298,9 +350,17 @@ function cal_panel_block(obj){
 																		}
 																			var t = new Date();
 																			var timestamp = t.getTime().toString().substring(0,10);
+
 																			document.form.bwdpi_wh_stamp.value = timestamp;
 																			document.form.bwdpi_wh_enable.value = 1;
-																			document.form.submit();
+																			if(reset_wan_to_fo(document.form, document.form.bwdpi_wh_enable.value)) {
+																				document.form.submit();
+																			}
+																			else {
+																				curState = 0;
+																				document.form.bwdpi_wh_enable.value = 0;
+																				$('#bwdpi_wh_enable').find('.iphone_switch').animate({backgroundPosition: -37}, "slow");
+																			}
 																	},
 																	function(){
 																		document.form.bwdpi_wh_enable.value = 0;
@@ -314,16 +374,17 @@ function cal_panel_block(obj){
 									<div id="log_field">
 										<div style="margin:10px 5px">
 											<select id="clientListOption" class="input_option" name="clientList" onchange="getWebHistory(this.value);">
-												<option value="" selected>All client</option>
+												<option value="" selected><#All_Client#></option>
 											</select>
 											<label style="margin: 0 5px 0 20px;visibility:hidden;cursor:pointer" id="previous_button" onclick="change_page('previous');">Previous</label>
 											<input class="input_3_table" value="1" id="current_page"></input>
 											<label style="margin-left:5px;cursor:pointer" id="next_button" onclick="change_page('next');">Next</label>
 										</div>
-										<div style="height:600px;border:1px solid #A9A9A9;overflow:auto;margin:5px">
+										<div class="web_frame" style="height:600px;overflow:auto;margin:5px">
 											<table style="width:100%" id="log_table"></table>
 										</div>
 										<div class="apply_gen">
+											<input class="button_gen_long" onClick="httpApi.cleanLog('web_history', updateWebHistory);" type="button" value="<#CTL_clear#>" >
 											<input class="button_gen_long" onClick="getWebHistory(document.form.clientList.value)" type="button" value="<#CTL_refresh#>">
 										</div>
 									</div>
@@ -337,6 +398,7 @@ function cal_panel_block(obj){
 		</td>		
 	</tr>
 </table>
+</form>
 <div id="footer"></div>
 </body>
 </html>

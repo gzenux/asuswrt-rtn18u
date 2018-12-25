@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56447_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56447, BCM56447_VENDOR_ID, BCM56447_DEVICE_ID, BCM56447_REV_A0, \
+                  0, 0, \
+                  bcm56440_a0, bcm56447_a0, bcm56447_a0, \
+                  CDK_DEV_ARCH_XGSM, "Katana", "BCM56440", \
+                  "16-Port GbE Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56447_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56447, BCM56447_VENDOR_ID, BCM56447_DEVICE_ID, BCM56447_REV_B0, \
+                  0, 0, \
+                  bcm56440_b0, bcm56447_b0, bcm56447_b0, \
+                  CDK_DEV_ARCH_XGSM, "Katana", "BCM56440", \
+                  "16-Port GbE Multilayer Switch", 0, 0)
+#endif
+#endif
+

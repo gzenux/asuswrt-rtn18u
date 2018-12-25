@@ -1,7 +1,7 @@
 /*
  * Broadcom security module ipc ports file
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: security_ipc.h 566747 2015-06-25 18:53:25Z $
+ * $Id: security_ipc.h 659383 2016-09-14 01:11:59Z $
  */
 
 #ifndef __SECURITY_IPC_H__
@@ -85,14 +85,23 @@
 #define EAPD_WKSP_EVENTD_UDP_RPORT 	EAPD_WKSP_EVENTD_UDP_PORT
 #define EAPD_WKSP_EVENTD_UDP_SPORT 	EAPD_WKSP_EVENTD_UDP_PORT + EAPD_WKSP_SPORT_OFFSET
 
-#define EAPD_WKSP_WLEVENT_UDP_PORT	48000
-#define EAPD_WKSP_WLEVENT_UDP_RPORT	EAPD_WKSP_WLEVENT_UDP_PORT
-#define EAPD_WKSP_WLEVENT_UDP_SPORT	EAPD_WKSP_WLEVENT_UDP_PORT + EAPD_WKSP_SPORT_OFFSET
-
-#define EAPD_WKSP_ASPM_UDP_PORT		49000
+#define EAPD_WKSP_ASPM_UDP_PORT		48000
 #define EAPD_WKSP_ASPM_UDP_RPORT	EAPD_WKSP_ASPM_UDP_PORT
 #define EAPD_WKSP_ASPM_UDP_SPORT	EAPD_WKSP_ASPM_UDP_PORT + EAPD_WKSP_SPORT_OFFSET
 #define EAPD_WKSP_ASPM_UDP_MPORT	EAPD_WKSP_ASPM_UDP_PORT + EAPD_WKSP_MPORT_OFFSET
+
+#define EAPD_WKSP_VISDCOLL_UDP_PORT	49000
+#define EAPD_WKSP_VISDCOLL_UDP_RPORT	EAPD_WKSP_VISDCOLL_UDP_PORT
+#define EAPD_WKSP_VISDCOLL_UDP_SPORT	EAPD_WKSP_VISDCOLL_UDP_PORT + EAPD_WKSP_SPORT_OFFSET
+
+#define EAPD_WKSP_WBD_UDP_PORT		50000
+#define EAPD_WKSP_WBD_UDP_RPORT		EAPD_WKSP_WBD_UDP_PORT
+#define EAPD_WKSP_WBD_UDP_SPORT		EAPD_WKSP_WBD_UDP_PORT + EAPD_WKSP_SPORT_OFFSET
+#define EAPD_WKSP_WBD_UDP_MPORT		EAPD_WKSP_WBD_UDP_PORT + EAPD_WKSP_MPORT_OFFSET
+
+#define EAPD_WKSP_WLEVENT_UDP_PORT	58000
+#define EAPD_WKSP_WLEVENT_UDP_RPORT	EAPD_WKSP_WLEVENT_UDP_PORT
+#define EAPD_WKSP_WLEVENT_UDP_SPORT	EAPD_WKSP_WLEVENT_UDP_PORT + EAPD_WKSP_SPORT_OFFSET
 
 #define EAPD_WKSP_WLCEVENTD_UDP_PORT	59000
 #define EAPD_WKSP_WLCEVENTD_UDP_RPORT 	EAPD_WKSP_WLCEVENTD_UDP_PORT
@@ -135,4 +144,9 @@ typedef struct {
 
 #define WPS_UPNPDEV_PORT		40000
 
+/* Wireless Application Event Service (appeventd) */
+#define APPS_EVENT_UDP_PORT             40200
+
+/* all application uses this shared function to send event to appeventd */
+extern int app_event_sendup(int event_id, int status, unsigned char *data, int data_len);
 #endif	/* __SECURITY_IPC_H__ */

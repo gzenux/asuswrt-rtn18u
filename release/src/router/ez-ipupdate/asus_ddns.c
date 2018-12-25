@@ -275,12 +275,22 @@ int asus_reg_domain (void)
 	char old_mac[13];
 	memset(old_mac, 0, 13);
 	if(TransferMacAddr(nvram_safe_get("ddns_transfer"), old_mac)) {
-		snprintf(buf, BUFFER_SIZE, "GET /ddns/register.jsp?hostname=%s&myip=%s&oldmac=%s HTTP/1.0\015\012", 
+		snprintf(buf, BUFFER_SIZE, "GET /ddns/register.jsp?hostname=%s&myip=%s&oldmac=%s",
 			 host, address, old_mac);
 	}
 	else {
-		snprintf(buf, BUFFER_SIZE, "GET /ddns/register.jsp?hostname=%s&myip=%s HTTP/1.0\015\012", host, address);
+		snprintf(buf, BUFFER_SIZE, "GET /ddns/register.jsp?hostname=%s&myip=%s", host, address);
 	}
+	output(buf);
+#ifdef RTCONFIG_LETSENCRYPT
+	char acme_txt[64] = {0};
+	if(nvram_match("le_enable", "1") && f_read_string("/tmp/acme.txt", acme_txt, sizeof(acme_txt)) > 0) {
+		PRINT("acme: TXT: %s", acme_txt);
+		snprintf(buf, BUFFER_SIZE, "&acme_challenge=1&txtdata=%s", acme_txt);
+		output(buf);
+	}
+#endif
+	snprintf(buf, BUFFER_SIZE, " HTTP/1.0\015\012");
 	output(buf);
 	snprintf(buf, BUFFER_SIZE, "Authorization: Basic %s\015\012", auth);
 	output(buf);
@@ -429,12 +439,22 @@ int asus_update_entry(void)
         char old_mac[13];
         memset(old_mac, 0, 13);
         if(TransferMacAddr(nvram_safe_get("ddns_transfer"), old_mac)) {
-                snprintf(buf, BUFFER_SIZE, "GET /ddns/update.jsp?hostname=%s&myip=%s&oldmac=%s HTTP/1.0\015\012",
+                snprintf(buf, BUFFER_SIZE, "GET /ddns/update.jsp?hostname=%s&myip=%s&oldmac=%s",
                          host, address, old_mac);
         }
         else {
-                snprintf(buf, BUFFER_SIZE, "GET /ddns/update.jsp?hostname=%s&myip=%s HTTP/1.0\015\012", host, address);
+                snprintf(buf, BUFFER_SIZE, "GET /ddns/update.jsp?hostname=%s&myip=%s", host, address);
         }
+	output(buf);
+#ifdef RTCONFIG_LETSENCRYPT
+	char acme_txt[64] = {0};
+	if(nvram_match("le_enable", "1") && f_read_string("/tmp/acme.txt", acme_txt, sizeof(acme_txt)) > 0) {
+		PRINT("acme: TXT: %s", acme_txt);
+		snprintf(buf, BUFFER_SIZE, "&acme_challenge=1&txtdata=%s", acme_txt);
+		output(buf);
+	}
+#endif
+	snprintf(buf, BUFFER_SIZE, " HTTP/1.0\015\012");
 	output(buf);
 	snprintf(buf, BUFFER_SIZE, "Authorization: Basic %s\015\012", auth);
 	output(buf);
@@ -615,6 +635,44 @@ wl_wscPincheck(char *pin_string)
 	return 1;    // Invalid
 }
 
+static char *get_macaddr(void)
+{
+	int model = get_model();
+	char *mac = get_lan_hwaddr();
+
+	/* Some model use LAN MAC address to register ASUSDDNS account.
+	 * To keep consistency, don't use get_wan_hwaddr() to rewrite below code.
+	 */
+	switch (model) {
+	case MODEL_RTN56U:
+		mac = nvram_get("et1macaddr");
+		break;
+#if defined(RTCONFIG_QCA)
+	/* Below models has 380 firmwares which use et0macaddr to register ddns name.
+	 * To compatible with 380 firmware, we mustn't use get_lan_hwaddr() on those
+	 * QCA-based models due to it returns value of et1macaddr.
+	 * For newer QCA-based models, which already use get_lan_hwaddr(), e.g.,
+	 * RP-AC51, RT-ACRH17 (RT-AC82U), Lyra series, and VRZ-AC1300, don't append
+	 * model name to below list and just use return value of get_lan_hwaddr().
+	 */
+	case MODEL_RTAC55U:
+	case MODEL_RTAC55UHP:
+	case MODEL_RT4GAC55U:
+	case MODEL_PLN12:
+	case MODEL_PLAC56:
+	case MODEL_PLAC66U:
+	case MODEL_RPAC66:
+	case MODEL_RTAC58U:
+	case MODEL_BRTAC828:
+		mac = nvram_get("et0macaddr");
+		break;
+#endif
+	}
+
+
+	return mac;
+}
+
 
 // Generate password according to MAC address
 int asus_private(void)
@@ -633,23 +691,7 @@ int asus_private(void)
 	memset (user, 0, sizeof (user));
 	memset (bin_pwd, 0, sizeof (bin_pwd));
 
-	/* Some model use LAN MAC address to register ASUSDDNS account.
-	 * To keep consistency, don't use get_wan_hwaddr() to rewrite below code.
-	 */
-/* Why not to use get_lan_hwaddr() ? */
-#ifdef RTCONFIG_RGMII_BRCM5301X
-	p = nvram_get ("et1macaddr");
-#else
-	if (get_model() == MODEL_RTN56U)
-		p = nvram_get ("et1macaddr");
-	else
-	p = nvram_get ("et0macaddr");
-#endif
-
-#ifdef RTCONFIG_GMAC3
-	if(nvram_match("gmac3_enable", "1"))
-		p = nvram_safe_get ("et2macaddr");
-#endif
+	p = get_macaddr();
 	if (p == NULL)	{
 		PRINT ("ERROR: %s() can not take MAC address from et0macaddr\n");
 		return -1;

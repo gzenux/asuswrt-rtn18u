@@ -48,6 +48,12 @@
 #ifdef RTCONFIG_USB
 #include <disk_io_tools.h>
 #endif
+#ifdef RTCONFIG_NOTIFICATION_CENTER
+#include <libnt.h>
+
+int sent_unpublic = 0;
+#endif
+
 
 #define DEFAULT_SCAN_INTERVAL 5
 #define TCPCHECK_TIMEOUT 3
@@ -198,7 +204,8 @@ int cross_state = 0;
 int disconn_case_old[WAN_UNIT_MAX], disconn_case[WAN_UNIT_MAX];
 int ppp_fail_state;
 int rule_setup;
-int link_setup[WAN_UNIT_MAX], link_wan[WAN_UNIT_MAX];
+int link_changed[WAN_UNIT_MAX], link_setup[WAN_UNIT_MAX];
+int link_wan[WAN_UNIT_MAX];
 int got_notify;
 int modem_act_reset;
 int nat_state;

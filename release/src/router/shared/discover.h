@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <linux/if_packet.h> 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
@@ -32,8 +33,8 @@
 #include <errno.h>
 #include <netinet/udp.h>
 #include <netinet/ip.h>
-#include <netpacket/packet.h>
-//#include <net/ethernet.h>
+//#include <netpacket/packet.h>
+#include <net/ethernet.h>
 #include <features.h>
 
 #include <sys/uio.h>
@@ -45,8 +46,9 @@
 //#include <netinet/if_ether.h>
 #include <ctype.h>
 
+#define DETECT_LOG "/tmp/detect_wrong.log"
 #define eprintf(fmt, args...) do{\
-	FILE *ffp = fopen("/tmp/detect_wrong.log", "a+");\
+	FILE *ffp = fopen(DETECT_LOG, "a+");\
 	if(ffp) {\
 		fprintf(ffp, fmt, ## args);\
 		fclose(ffp);\
@@ -163,6 +165,8 @@ struct client_config_t {
 
 static struct client_config_t client_config;
 
+#define OPTIONS_SIZE 308
+
 struct dhcpMessage {
         u_int8_t op;
         u_int8_t htype;
@@ -179,7 +183,7 @@ struct dhcpMessage {
         u_int8_t sname[64];
         u_int8_t file[128];
         u_int32_t cookie;
-        u_int8_t options[308]; /* 312 - cookie */
+        u_int8_t options[OPTIONS_SIZE]; /* 312 - cookie */
 };
                                                                                                                                                
 struct udp_dhcp_packet {
@@ -211,12 +215,12 @@ struct dhcp_option {
         unsigned char code;
 };
                                                                                                                                                
-static int state;
+//static int state;
 //static unsigned long requested_ip; /* = 0 */
 //static unsigned long server_addr;
 //static unsigned long timeout;
 //static int packet_num; /* = 0 */
-static int cfd;
+//static int cfd;
 //static int signal_pipe[2];
                                                                                                                                                
 #define LISTEN_NONE 0
@@ -292,7 +296,7 @@ void init_header(struct dhcpMessage *packet, char type);
 
 //static void add_requests(struct dhcpMessage *packet);
 
-int send_dhcp_discover(unsigned long xid);
+int send_dhcp_discover(unsigned long xid, int ifindex, unsigned char *mac);
 
 int read_interface(char *interface, int *ifindex, u_int32_t *addr, unsigned char *arp);
 

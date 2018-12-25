@@ -37,12 +37,12 @@ typedef enum _UA_ERROR{
 typedef struct  _LOG_CFG
 {
 	int			log_level;
-	char* 			log_filename;
+	char* 		log_filename;
 	int			log_file_flags;
 	int			syslog_facility;
 	int			log_file_size;
 	int			log_rotate_number;
-	const char* log_flag_file;
+	char*       log_flag_file;
 } LOG_CFG;	  
 
 typedef struct _ACCOUNT_CFG

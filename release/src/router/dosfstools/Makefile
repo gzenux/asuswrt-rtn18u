@@ -35,7 +35,7 @@ VPATH = src
 
 all: build
 
-build: dosfsck dosfslabel mkdosfs
+build: dosfsck# dosfslabel mkdosfs
 
 dosfsck: boot.o check.o common.o fat.o file.o io.o lfn.o dosfsck.o
 
@@ -46,9 +46,9 @@ mkdosfs: mkdosfs.o
 rebuild: distclean build
 
 #install: install-bin install-doc install-man
-install: dosfsck mkdosfs
-	install -D mkdosfs $(INSTALLDIR)/sbin/mkdosfs
-	$(STRIP) $(INSTALLDIR)/sbin/mkdosfs
+install: build
+#	install -D mkdosfs $(INSTALLDIR)/sbin/mkdosfs
+#	$(STRIP) $(INSTALLDIR)/sbin/mkdosfs
 
 	install -D dosfsck $(INSTALLDIR)/sbin/dosfsck
 	$(STRIP) $(INSTALLDIR)/sbin/dosfsck

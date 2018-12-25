@@ -23,7 +23,7 @@
 <script type="text/JavaScript" language="JavaScript" src="/js/jquery.js"></script>
 <script type="text/JavaScript" language="JavaScript" src="/validator.js"></script>
 <script type="text/javascript">
-var accounts = [<% get_all_accounts(); %>];
+var accounts = [<% get_all_accounts(); %>][0];
 var wanstate = -1;
 var wansbstate = -1;
 var wanauxstate = -1;
@@ -120,6 +120,10 @@ function QKinternettype_load_body(){
 
 	if(wanauxstate == 1)
 		document.getElementById("prev_btn").style.display = "";
+
+	var amesh_found_cap = '<% nvram_get("amesh_found_cap"); %>';
+	if(amesh_found_cap == "1" && parent.amesh_support)
+		document.getElementById("amesh_hint").style.display = "";
 }
 
 function waninfo(){
@@ -315,25 +319,29 @@ function submitForm(){
 	else if(parent.flag_manual == "modem")
 		document.form.action = "/qis/QIS_modem.htm";
 	else if(parent.document.QKform.sw_mode.value == "1"){
-		if(autodet_state == "6" || autodet_auxstate == "6"){
-			if((wanstate  == 2 && wansbstate == 0 && wanauxstate == 0) && (link_internet == "2" || wan0_realip_state == "2" || wan1_realip_state == "2")){
+		if(based_modelid == "4G-AC55U" || based_modelid == "4G-AC68U")
+			document.form.action = "/qis/QIS_detect.htm";
+		else{
+			if(autodet_state == "6" || autodet_auxstate == "6"){
+				if((wanstate  == 2 && wansbstate == 0 && wanauxstate == 0) && (link_internet == "2" || wan0_realip_state == "2" || wan1_realip_state == "2")){
+					document.form.action = "/qis/QIS_wireless.htm";
+				}
+				else{
+					parent.changeSubnet = false;
+					parent.document.QKform.wan_proto.value = "pppoe";
+					document.form.action = "/qis/QIS_internet_account.htm";
+				}
+			}
+			else if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
+				document.form.action = "/qis/QIS_wireless.htm";
+			}
+			else if(wanstate == 4 && wansbstate == 4 && wanauxstate == 0){
+				parent.changeSubnet = true;
 				document.form.action = "/qis/QIS_wireless.htm";
 			}
 			else{
-				parent.changeSubnet = false;
-				parent.document.QKform.wan_proto.value = "pppoe";
-				document.form.action = "/qis/QIS_internet_account.htm";
+				document.form.action = "/qis/QIS_internet_type.htm";
 			}
-		}
-		else if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
-			document.form.action = "/qis/QIS_wireless.htm";
-		}
-		else if(wanstate == 4 && wansbstate == 4 && wanauxstate == 0){
-			parent.changeSubnet = true;
-			document.form.action = "/qis/QIS_wireless.htm";
-		}
-		else{
-			document.form.action = "/qis/QIS_internet_type.htm";
 		}
 	}	
 	else
@@ -518,6 +526,9 @@ function paste_password(){
 		</ul>
                <ul id="restore" style="display:none"><li><#QKset_restore_0#></li>
                </ul>
+		<ul id="amesh_hint" style="display:none;color:#FC0;">
+			<li>There are AiMesh Master Router available nearby, if you want adding this router to your Amesh system, please connecting to Master Router setting.</li>
+		</ul>
 	</div>
 	<div id="loginImage" style="margin-left:320px;margin-top:-200px;"><img width="300px" style="border-radius:5px;" src="/images/qis/router_login.jpg"></span></div>
 </div>

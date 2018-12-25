@@ -35,6 +35,9 @@
 #include <pj/rand.h>
 #include <pj/sock_select.h>
 #include <pj/string.h>	    /* memcpy() */
+#if defined(ENABLE_MEMWATCH) && ENABLE_MEMWATCH != 0
+#include <memwatch.h>
+#endif
 
 
 #define THIS_FILE			"stream.c"
@@ -1539,7 +1542,8 @@ static void on_rx_rtp(void *data,
 	pjmedia_session *session = (pjmedia_session *)stream->user_data;
     pjsua_call *call = (pjsua_call *)pjmedia_session_get_user_data(session);
 	pj_bool_t is_tnl_data = PJ_FALSE;
-	pj_uint8_t *pkt = (pj_uint8_t *)buf;
+    pj_uint8_t *pkt = (pj_uint8_t *)buf;
+    char *pkt_char = (char *)&pkt[UDT_DATA_CHUNK_TOTAL_HEADER_SIZE];
 	pj_bool_t disable_flow_ctl = PJ_FALSE;
 /*
 	// Speed limit. Drop packet if it is over bandwidth.
@@ -1567,11 +1571,12 @@ static void on_rx_rtp(void *data,
 
     if (rb == NULL) {
 #if 1
-        rb = PJ_POOL_ZALLOC_T(call->tnl_stream->own_pool, recv_buff);
+        rb = PJ_POOL_ZALLOC_T(call->tnl_stream->pool, recv_buff);
 #else
 		rb = malloc(sizeof(recv_buff));
 #endif
     }
+    pj_memset(rb->buff, 0, sizeof(rb->buff));
     pj_memcpy(rb->buff, buf, data_len);
     rb->len = data_len; 
 
@@ -1582,6 +1587,12 @@ static void on_rx_rtp(void *data,
 	disable_flow_ctl = pjmedia_natnl_disabled_flow_control(pkt, data_len);
 	if (disable_flow_ctl) {
 		pj_mutex_lock(call->tnl_stream->no_ctl_rbuff_mutex);
+#ifdef HTTP_DEBUG
+        if (strstr(pkt_char, "HTTP/1.1") != NULL) {
+            PJ_LOG(4, (THIS_FILE, "stream.on_rx_rtp() without control. no_ctl_rbuff_cnt=%d, len=%d %.*s", 
+                call->tnl_stream->no_ctl_rbuff_cnt, data_len, data_len, pkt_char));
+        }
+#endif
 		pj_list_push_back(&call->tnl_stream->no_ctl_rbuff, rb);
 		pj_get_timestamp(&call->tnl_stream->last_data_or_ka);  // DEAN save current time
 
@@ -1605,6 +1616,12 @@ static void on_rx_rtp(void *data,
 		pj_mutex_unlock(call->tnl_stream->no_ctl_rbuff_mutex);
 	} else {
 		pj_mutex_lock(call->tnl_stream->rbuff_mutex);
+#ifdef HTTP_DEBUG
+        if (strstr(pkt_char, "HTTP/1.1") != NULL) {
+            PJ_LOG(4, (THIS_FILE, "stream.on_rx_rtp() with control. rbuff_cnt=%d, len=%d %.*s", 
+                call->tnl_stream->rbuff_cnt, data_len, data_len, pkt_char));
+        }
+#endif
 		pj_list_push_back(&call->tnl_stream->rbuff, rb);
 		pj_get_timestamp(&call->tnl_stream->last_data_or_ka);  // DEAN save current time
 

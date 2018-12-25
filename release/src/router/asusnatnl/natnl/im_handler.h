@@ -28,6 +28,7 @@ extern "C" {
 #include <pjlib.h>
 #include <pjsua-lib/pjsua.h>
 #include <pjsua-lib/pjsua_internal.h>
+#include "common.h"
 
 #define session_set_status(session, st) (session->status = (enum client_status)st)
 #define session_is_status(session, st) (session->status == (enum client_status)st)
@@ -41,7 +42,7 @@ extern "C" {
 		pj_str_t *body;
 		int timeout_sec;
 		pj_sem_t *sem;
-		char result_body[NATNL_PKT_MAX_LEN];
+		char result_body[NATNL_IM_MAX_LEN];
 	};
 
 	enum im_session_status {

@@ -160,12 +160,7 @@ int ext_rtk_phyState(int verbose, char* BCMPorts)
 	char buf[64];
 	int *o;
 #if defined(RTCONFIG_EXT_RTL8370MB)
-#ifdef RTAC5300R
-	/* L1=R2,L2=R3,L3=R4,L4=B3,L5=R0,L6=R1,L7=R5,L8=B4,T1=B1<>R7,T2=B2<>R6*/
-	const char *portMark = "L1=%C;L2=%C;L3=%C;L4=%C;L5=%C;L6=%C;L7=%C;L8=%C;T1=%C;T2=%C;";
-#else
 	const char *portMark = "P0=%C;P1=%C;P2=%C;P3=%C;P4=%C;P5=%C;P6=%C;P7=%C;";
-#endif
 #else
 	const char *portMark = "L5=%C;L6=%C;L7=%C;L8=%C;";
 #endif
@@ -186,7 +181,6 @@ int ext_rtk_phyState(int verbose, char* BCMPorts)
 
         switch(model = get_model()) {
         case MODEL_RTAC5300:
-        case MODEL_RTAC5300R:
 		{
 		/* RTK_LAN  BRCM_LAN  WAN  POWER */
 		/* R0 R1 R2 R3 B4 B0 B1 B2 B3 */
@@ -194,10 +188,10 @@ int ext_rtk_phyState(int verbose, char* BCMPorts)
 		
 #if defined(RTCONFIG_EXT_RTL8370MB)
 		const int porder[MAX_RTL_PORTS] = {2,3,4,0,1,5,6,7};
-		o = porder;
+		o = (int *)porder;
 #else
 		const int porder[MAX_RTL_PORTS] = {3,2,1,0};
-		o = porder;
+		o = (int *)porder;
 #endif
 
 		break;
@@ -209,14 +203,14 @@ int ext_rtk_phyState(int verbose, char* BCMPorts)
 		/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
 		
 		const int porder[4] = {0,1,2,3};
-		o = porder;
+		o = (int *)porder;
 
 		break;
 		}
 	default:
 		{	
 		const int porder[4] = {0,1,2,3};
-		o = porder;
+		o = (int *)porder;
 
 		break;
 		}
@@ -232,7 +226,6 @@ int ext_rtk_phyState(int verbose, char* BCMPorts)
 
 #if defined(RTCONFIG_EXT_RTL8370MB)
 	sprintf(buf, portMark,
-#ifndef RTAC5300R
 		(pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M': 'X',
 		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M': 'X',
 		(pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M': 'X',
@@ -241,18 +234,6 @@ int ext_rtk_phyState(int verbose, char* BCMPorts)
 		(pS.link[o[5]] == 1) ? (pS.speed[o[5]] == 2) ? 'G' : 'M': 'X',
 		(pS.link[o[6]] == 1) ? (pS.speed[o[6]] == 2) ? 'G' : 'M': 'X',
 		(pS.link[o[7]] == 1) ? (pS.speed[o[7]] == 2) ? 'G' : 'M': 'X'
-#else
-		(pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M': 'X',
-		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M': 'X',
-		(pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M': 'X',
-		BCMPorts[2],
-		(pS.link[o[3]] == 1) ? (pS.speed[o[3]] == 2) ? 'G' : 'M': 'X',
-		(pS.link[o[4]] == 1) ? (pS.speed[o[4]] == 2) ? 'G' : 'M': 'X',
-		(pS.link[o[5]] == 1) ? (pS.speed[o[5]] == 2) ? 'G' : 'M': 'X',
-		BCMPorts[1],
-		(pS.link[o[7]] == 1) ? (BCMPorts[4] == 'G' && pS.speed[o[7]] == 2) ? 'G' : 'X': 'X', 	// T1: BCM_P1/RTL_P7
-		(pS.link[o[6]] == 1) ? (BCMPorts[3] == 'G' && pS.speed[o[6]] == 2) ? 'G' : 'X': 'X'	// T2: BCM_P2/RTL_P6
-#endif
 		);
 #else
 	sprintf(buf, portMark,
@@ -267,9 +248,6 @@ int ext_rtk_phyState(int verbose, char* BCMPorts)
 
 	ret = 0;
 	for(i = 0; i < MAX_RTL_PORTS; i++){
-#ifdef RTAC5300R
-		if(i >= 6) continue;
-#endif
 		if(pS.link[o[i]] == 1){
 			ret = 1;
 			break;

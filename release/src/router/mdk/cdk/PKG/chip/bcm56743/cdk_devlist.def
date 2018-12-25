@@ -1,0 +1,70 @@
+#if CDK_CONFIG_INCLUDE_BCM56743_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56743, BCM56743_VENDOR_ID, BCM56743_DEVICE_ID, BCM56743_REV_A0, \
+                  0, 0, \
+                  bcm56840_a0, bcm56743_a0, bcm56743_a0, \
+                  CDK_DEV_ARCH_XGS, "Titan", "BCM56840", \
+                  "480 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56743_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56743, BCM56743_VENDOR_ID, BCM56743_DEVICE_ID, BCM56743_REV_A1, \
+                  0, 0, \
+                  bcm56840_a0, bcm56743_a0, bcm56743_a1, \
+                  CDK_DEV_ARCH_XGS, "Titan", "BCM56840", \
+                  "480 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56743_A2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56743, BCM56743_VENDOR_ID, BCM56743_DEVICE_ID, BCM56743_REV_A2, \
+                  0, 0, \
+                  bcm56840_a0, bcm56743_a0, bcm56743_a2, \
+                  CDK_DEV_ARCH_XGS, "Titan", "BCM56840", \
+                  "480 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56743_A3 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56743, BCM56743_VENDOR_ID, BCM56743_DEVICE_ID, BCM56743_REV_A3, \
+                  0, 0, \
+                  bcm56840_a0, bcm56743_a0, bcm56743_a3, \
+                  CDK_DEV_ARCH_XGS, "Titan", "BCM56840", \
+                  "480 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56743_A4 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56743, BCM56743_VENDOR_ID, BCM56743_DEVICE_ID, BCM56743_REV_A4, \
+                  0, 0, \
+                  bcm56840_a0, bcm56743_a0, bcm56743_a4, \
+                  CDK_DEV_ARCH_XGS, "Titan", "BCM56840", \
+                  "480 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56743_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56743, BCM56743_VENDOR_ID, BCM56743_DEVICE_ID, BCM56743_REV_B0, \
+                  0, 0, \
+                  bcm56840_b0, bcm56743_b0, bcm56743_b0, \
+                  CDK_DEV_ARCH_XGS, "Titan", "BCM56840", \
+                  "480 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56743_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56743, BCM56743_VENDOR_ID, BCM56743_DEVICE_ID, BCM56743_REV_B1, \
+                  0, 0, \
+                  bcm56840_b0, bcm56743_b0, bcm56743_b1, \
+                  CDK_DEV_ARCH_XGS, "Titan", "BCM56840", \
+                  "480 Gbps Switch Fabric", 0, 0)
+#endif
+#endif
+

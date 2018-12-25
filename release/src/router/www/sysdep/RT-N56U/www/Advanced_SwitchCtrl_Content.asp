@@ -21,6 +21,15 @@
 <script>
 
 function initial(){
+	var nataccel = '<% nvram_get("hwnat"); %>';
+	var nataccel_status = '<% nat_accel_status(); %>';
+
+	if(nataccel == '1' && nataccel_status == '1'){
+		document.getElementById("natAccelDesc").innerHTML = "<#NAT_Acceleration_enable#>";
+	}
+	else{
+		document.getElementById("natAccelDesc").innerHTML = "<#NAT_Acceleration_ctf_disable#>";
+	}
 	show_menu();
 	if(based_modelid == "RT-N14U" || based_modelid == "RT-N11P" || based_modelid == "RT-N300" ||
 	   based_modelid == "RT-AC52U" || based_modelid == "RT-AC51U" || based_modelid == "RT-N54U")
@@ -46,8 +55,8 @@ function valid_form(){
 	   !validator.range(document.form.switch_ctrlrate_broadcast, 0, 1024)){
 			return false;
 	}
-		
-	return true;	
+
+	return true;
 }
 
 </script>
@@ -144,10 +153,12 @@ function valid_form(){
       	<tr>
       		<th><#NAT_Acceleration#></th>
           <td>
-						<select name="hwnat" class="input_option">
-							<option class="content_input_fd" value="0" <% nvram_match("hwnat", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-							<option class="content_input_fd" value="1" <% nvram_match("hwnat", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
-						</select>			
+		<select name="hwnat" class="input_option">
+			<option class="content_input_fd" value="0" <% nvram_match("hwnat", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+			<option class="content_input_fd" value="1" <% nvram_match("hwnat", "1","selected"); %>><#Auto#></option>
+		</select>
+		&nbsp
+		<span id="natAccelDesc"></span>
           </td>
       	</tr>					
 		</table>	

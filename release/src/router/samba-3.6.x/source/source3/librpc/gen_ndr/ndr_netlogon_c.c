@@ -101,9 +101,9 @@ static void dcerpc_netr_LogonUasLogon_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_LogonUasLogon_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server_name /* [in] [charset(UTF16),unique] */,
+						  const char *_server_name /* [in] [unique,charset(UTF16)] */,
 						  const char *_account_name /* [in] [charset(UTF16),ref] */,
-						  const char *_workstation /* [in] [charset(UTF16),ref] */,
+						  const char *_workstation /* [in] [ref,charset(UTF16)] */,
 						  struct netr_UasInfo **_info /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -204,9 +204,9 @@ NTSTATUS dcerpc_netr_LogonUasLogon_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_LogonUasLogon(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server_name /* [in] [charset(UTF16),unique] */,
+				   const char *_server_name /* [in] [unique,charset(UTF16)] */,
 				   const char *_account_name /* [in] [charset(UTF16),ref] */,
-				   const char *_workstation /* [in] [charset(UTF16),ref] */,
+				   const char *_workstation /* [in] [ref,charset(UTF16)] */,
 				   struct netr_UasInfo **_info /* [out] [ref] */,
 				   WERROR *result)
 {
@@ -327,7 +327,7 @@ struct tevent_req *dcerpc_netr_LogonUasLogoff_send(TALLOC_CTX *mem_ctx,
 						   struct dcerpc_binding_handle *h,
 						   const char *_server_name /* [in] [unique,charset(UTF16)] */,
 						   const char *_account_name /* [in] [ref,charset(UTF16)] */,
-						   const char *_workstation /* [in] [charset(UTF16),ref] */,
+						   const char *_workstation /* [in] [ref,charset(UTF16)] */,
 						   struct netr_UasLogoffInfo *_info /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -430,7 +430,7 @@ NTSTATUS dcerpc_netr_LogonUasLogoff(struct dcerpc_binding_handle *h,
 				    TALLOC_CTX *mem_ctx,
 				    const char *_server_name /* [in] [unique,charset(UTF16)] */,
 				    const char *_account_name /* [in] [ref,charset(UTF16)] */,
-				    const char *_workstation /* [in] [charset(UTF16),ref] */,
+				    const char *_workstation /* [in] [ref,charset(UTF16)] */,
 				    struct netr_UasLogoffInfo *_info /* [out] [ref] */,
 				    WERROR *result)
 {
@@ -802,7 +802,7 @@ struct tevent_req *dcerpc_netr_LogonSamLogoff_send(TALLOC_CTX *mem_ctx,
 						   struct tevent_context *ev,
 						   struct dcerpc_binding_handle *h,
 						   const char *_server_name /* [in] [charset(UTF16),unique] */,
-						   const char *_computer_name /* [in] [charset(UTF16),unique] */,
+						   const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 						   struct netr_Authenticator *_credential /* [in] [unique] */,
 						   struct netr_Authenticator *_return_authenticator /* [in,out] [unique] */,
 						   enum netr_LogonInfoClass _logon_level /* [in]  */,
@@ -912,7 +912,7 @@ NTSTATUS dcerpc_netr_LogonSamLogoff_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_LogonSamLogoff(struct dcerpc_binding_handle *h,
 				    TALLOC_CTX *mem_ctx,
 				    const char *_server_name /* [in] [charset(UTF16),unique] */,
-				    const char *_computer_name /* [in] [charset(UTF16),unique] */,
+				    const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 				    struct netr_Authenticator *_credential /* [in] [unique] */,
 				    struct netr_Authenticator *_return_authenticator /* [in,out] [unique] */,
 				    enum netr_LogonInfoClass _logon_level /* [in]  */,
@@ -1040,7 +1040,7 @@ struct tevent_req *dcerpc_netr_ServerReqChallenge_send(TALLOC_CTX *mem_ctx,
 						       struct tevent_context *ev,
 						       struct dcerpc_binding_handle *h,
 						       const char *_server_name /* [in] [charset(UTF16),unique] */,
-						       const char *_computer_name /* [in] [ref,charset(UTF16)] */,
+						       const char *_computer_name /* [in] [charset(UTF16),ref] */,
 						       struct netr_Credential *_credentials /* [in] [ref] */,
 						       struct netr_Credential *_return_credentials /* [out] [ref] */)
 {
@@ -1143,7 +1143,7 @@ NTSTATUS dcerpc_netr_ServerReqChallenge_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_ServerReqChallenge(struct dcerpc_binding_handle *h,
 					TALLOC_CTX *mem_ctx,
 					const char *_server_name /* [in] [charset(UTF16),unique] */,
-					const char *_computer_name /* [in] [ref,charset(UTF16)] */,
+					const char *_computer_name /* [in] [charset(UTF16),ref] */,
 					struct netr_Credential *_credentials /* [in] [ref] */,
 					struct netr_Credential *_return_credentials /* [out] [ref] */,
 					NTSTATUS *result)
@@ -1266,7 +1266,7 @@ struct tevent_req *dcerpc_netr_ServerAuthenticate_send(TALLOC_CTX *mem_ctx,
 						       const char *_server_name /* [in] [unique,charset(UTF16)] */,
 						       const char *_account_name /* [in] [ref,charset(UTF16)] */,
 						       enum netr_SchannelType _secure_channel_type /* [in]  */,
-						       const char *_computer_name /* [in] [charset(UTF16),ref] */,
+						       const char *_computer_name /* [in] [ref,charset(UTF16)] */,
 						       struct netr_Credential *_credentials /* [in] [ref] */,
 						       struct netr_Credential *_return_credentials /* [out] [ref] */)
 {
@@ -1373,7 +1373,7 @@ NTSTATUS dcerpc_netr_ServerAuthenticate(struct dcerpc_binding_handle *h,
 					const char *_server_name /* [in] [unique,charset(UTF16)] */,
 					const char *_account_name /* [in] [ref,charset(UTF16)] */,
 					enum netr_SchannelType _secure_channel_type /* [in]  */,
-					const char *_computer_name /* [in] [charset(UTF16),ref] */,
+					const char *_computer_name /* [in] [ref,charset(UTF16)] */,
 					struct netr_Credential *_credentials /* [in] [ref] */,
 					struct netr_Credential *_return_credentials /* [out] [ref] */,
 					NTSTATUS *result)
@@ -1495,7 +1495,7 @@ static void dcerpc_netr_ServerPasswordSet_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_ServerPasswordSet_send(TALLOC_CTX *mem_ctx,
 						      struct tevent_context *ev,
 						      struct dcerpc_binding_handle *h,
-						      const char *_server_name /* [in] [charset(UTF16),unique] */,
+						      const char *_server_name /* [in] [unique,charset(UTF16)] */,
 						      const char *_account_name /* [in] [charset(UTF16),ref] */,
 						      enum netr_SchannelType _secure_channel_type /* [in]  */,
 						      const char *_computer_name /* [in] [ref,charset(UTF16)] */,
@@ -1604,7 +1604,7 @@ NTSTATUS dcerpc_netr_ServerPasswordSet_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_ServerPasswordSet(struct dcerpc_binding_handle *h,
 				       TALLOC_CTX *mem_ctx,
-				       const char *_server_name /* [in] [charset(UTF16),unique] */,
+				       const char *_server_name /* [in] [unique,charset(UTF16)] */,
 				       const char *_account_name /* [in] [charset(UTF16),ref] */,
 				       enum netr_SchannelType _secure_channel_type /* [in]  */,
 				       const char *_computer_name /* [in] [ref,charset(UTF16)] */,
@@ -1978,7 +1978,7 @@ struct tevent_req *dcerpc_netr_DatabaseSync_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct dcerpc_binding_handle *h,
 						 const char *_logon_server /* [in] [ref,charset(UTF16)] */,
-						 const char *_computername /* [in] [ref,charset(UTF16)] */,
+						 const char *_computername /* [in] [charset(UTF16),ref] */,
 						 struct netr_Authenticator *_credential /* [in] [ref] */,
 						 struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 						 enum netr_SamDatabaseID _database_id /* [in]  */,
@@ -2093,7 +2093,7 @@ NTSTATUS dcerpc_netr_DatabaseSync_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_DatabaseSync(struct dcerpc_binding_handle *h,
 				  TALLOC_CTX *mem_ctx,
 				  const char *_logon_server /* [in] [ref,charset(UTF16)] */,
-				  const char *_computername /* [in] [ref,charset(UTF16)] */,
+				  const char *_computername /* [in] [charset(UTF16),ref] */,
 				  struct netr_Authenticator *_credential /* [in] [ref] */,
 				  struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 				  enum netr_SamDatabaseID _database_id /* [in]  */,
@@ -2231,7 +2231,7 @@ struct tevent_req *dcerpc_netr_AccountDeltas_send(TALLOC_CTX *mem_ctx,
 						  uint32_t _count /* [in]  */,
 						  uint32_t _level /* [in]  */,
 						  uint32_t _buffersize /* [in]  */,
-						  struct netr_AccountBuffer *_buffer /* [out] [subcontext(4),ref] */,
+						  struct netr_AccountBuffer *_buffer /* [out] [ref,subcontext(4)] */,
 						  uint32_t *_count_returned /* [out] [ref] */,
 						  uint32_t *_total_entries /* [out] [ref] */,
 						  struct netr_UAS_INFO_0 *_recordid /* [out] [ref] */)
@@ -2355,7 +2355,7 @@ NTSTATUS dcerpc_netr_AccountDeltas(struct dcerpc_binding_handle *h,
 				   uint32_t _count /* [in]  */,
 				   uint32_t _level /* [in]  */,
 				   uint32_t _buffersize /* [in]  */,
-				   struct netr_AccountBuffer *_buffer /* [out] [subcontext(4),ref] */,
+				   struct netr_AccountBuffer *_buffer /* [out] [ref,subcontext(4)] */,
 				   uint32_t *_count_returned /* [out] [ref] */,
 				   uint32_t *_total_entries /* [out] [ref] */,
 				   struct netr_UAS_INFO_0 *_recordid /* [out] [ref] */,
@@ -2485,14 +2485,14 @@ static void dcerpc_netr_AccountSync_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_AccountSync_send(TALLOC_CTX *mem_ctx,
 						struct tevent_context *ev,
 						struct dcerpc_binding_handle *h,
-						const char *_logon_server /* [in] [charset(UTF16),unique] */,
-						const char *_computername /* [in] [ref,charset(UTF16)] */,
+						const char *_logon_server /* [in] [unique,charset(UTF16)] */,
+						const char *_computername /* [in] [charset(UTF16),ref] */,
 						struct netr_Authenticator _credential /* [in]  */,
 						struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 						uint32_t _reference /* [in]  */,
 						uint32_t _level /* [in]  */,
 						uint32_t _buffersize /* [in]  */,
-						struct netr_AccountBuffer *_buffer /* [out] [ref,subcontext(4)] */,
+						struct netr_AccountBuffer *_buffer /* [out] [subcontext(4),ref] */,
 						uint32_t *_count_returned /* [out] [ref] */,
 						uint32_t *_total_entries /* [out] [ref] */,
 						uint32_t *_next_reference /* [out] [ref] */,
@@ -2611,14 +2611,14 @@ NTSTATUS dcerpc_netr_AccountSync_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_AccountSync(struct dcerpc_binding_handle *h,
 				 TALLOC_CTX *mem_ctx,
-				 const char *_logon_server /* [in] [charset(UTF16),unique] */,
-				 const char *_computername /* [in] [ref,charset(UTF16)] */,
+				 const char *_logon_server /* [in] [unique,charset(UTF16)] */,
+				 const char *_computername /* [in] [charset(UTF16),ref] */,
 				 struct netr_Authenticator _credential /* [in]  */,
 				 struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 				 uint32_t _reference /* [in]  */,
 				 uint32_t _level /* [in]  */,
 				 uint32_t _buffersize /* [in]  */,
-				 struct netr_AccountBuffer *_buffer /* [out] [ref,subcontext(4)] */,
+				 struct netr_AccountBuffer *_buffer /* [out] [subcontext(4),ref] */,
 				 uint32_t *_count_returned /* [out] [ref] */,
 				 uint32_t *_total_entries /* [out] [ref] */,
 				 uint32_t *_next_reference /* [out] [ref] */,
@@ -2750,9 +2750,9 @@ static void dcerpc_netr_GetDcName_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_GetDcName_send(TALLOC_CTX *mem_ctx,
 					      struct tevent_context *ev,
 					      struct dcerpc_binding_handle *h,
-					      const char *_logon_server /* [in] [ref,charset(UTF16)] */,
+					      const char *_logon_server /* [in] [charset(UTF16),ref] */,
 					      const char *_domainname /* [in] [unique,charset(UTF16)] */,
-					      const char **_dcname /* [out] [ref,charset(UTF16)] */)
+					      const char **_dcname /* [out] [charset(UTF16),ref] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_netr_GetDcName_state *state;
@@ -2851,9 +2851,9 @@ NTSTATUS dcerpc_netr_GetDcName_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_GetDcName(struct dcerpc_binding_handle *h,
 			       TALLOC_CTX *mem_ctx,
-			       const char *_logon_server /* [in] [ref,charset(UTF16)] */,
+			       const char *_logon_server /* [in] [charset(UTF16),ref] */,
 			       const char *_domainname /* [in] [unique,charset(UTF16)] */,
-			       const char **_dcname /* [out] [ref,charset(UTF16)] */,
+			       const char **_dcname /* [out] [charset(UTF16),ref] */,
 			       WERROR *result)
 {
 	struct netr_GetDcName r;
@@ -2970,7 +2970,7 @@ static void dcerpc_netr_LogonControl_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_LogonControl_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct dcerpc_binding_handle *h,
-						 const char *_logon_server /* [in] [charset(UTF16),unique] */,
+						 const char *_logon_server /* [in] [unique,charset(UTF16)] */,
 						 enum netr_LogonControlCode _function_code /* [in]  */,
 						 uint32_t _level /* [in]  */,
 						 union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [ref,switch_is(level)] */)
@@ -3073,7 +3073,7 @@ NTSTATUS dcerpc_netr_LogonControl_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_LogonControl(struct dcerpc_binding_handle *h,
 				  TALLOC_CTX *mem_ctx,
-				  const char *_logon_server /* [in] [charset(UTF16),unique] */,
+				  const char *_logon_server /* [in] [unique,charset(UTF16)] */,
 				  enum netr_LogonControlCode _function_code /* [in]  */,
 				  uint32_t _level /* [in]  */,
 				  union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [ref,switch_is(level)] */,
@@ -3194,9 +3194,9 @@ static void dcerpc_netr_GetAnyDCName_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_GetAnyDCName_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct dcerpc_binding_handle *h,
-						 const char *_logon_server /* [in] [charset(UTF16),unique] */,
-						 const char *_domainname /* [in] [charset(UTF16),unique] */,
-						 const char **_dcname /* [out] [ref,charset(UTF16)] */)
+						 const char *_logon_server /* [in] [unique,charset(UTF16)] */,
+						 const char *_domainname /* [in] [unique,charset(UTF16)] */,
+						 const char **_dcname /* [out] [charset(UTF16),ref] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_netr_GetAnyDCName_state *state;
@@ -3295,9 +3295,9 @@ NTSTATUS dcerpc_netr_GetAnyDCName_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_GetAnyDCName(struct dcerpc_binding_handle *h,
 				  TALLOC_CTX *mem_ctx,
-				  const char *_logon_server /* [in] [charset(UTF16),unique] */,
-				  const char *_domainname /* [in] [charset(UTF16),unique] */,
-				  const char **_dcname /* [out] [ref,charset(UTF16)] */,
+				  const char *_logon_server /* [in] [unique,charset(UTF16)] */,
+				  const char *_domainname /* [in] [unique,charset(UTF16)] */,
+				  const char **_dcname /* [out] [charset(UTF16),ref] */,
 				  WERROR *result)
 {
 	struct netr_GetAnyDCName r;
@@ -3418,7 +3418,7 @@ struct tevent_req *dcerpc_netr_LogonControl2_send(TALLOC_CTX *mem_ctx,
 						  enum netr_LogonControlCode _function_code /* [in]  */,
 						  uint32_t _level /* [in]  */,
 						  union netr_CONTROL_DATA_INFORMATION *_data /* [in] [switch_is(function_code),ref] */,
-						  union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [switch_is(level),ref] */)
+						  union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [ref,switch_is(level)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_netr_LogonControl2_state *state;
@@ -3523,7 +3523,7 @@ NTSTATUS dcerpc_netr_LogonControl2(struct dcerpc_binding_handle *h,
 				   enum netr_LogonControlCode _function_code /* [in]  */,
 				   uint32_t _level /* [in]  */,
 				   union netr_CONTROL_DATA_INFORMATION *_data /* [in] [switch_is(function_code),ref] */,
-				   union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [switch_is(level),ref] */,
+				   union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [ref,switch_is(level)] */,
 				   WERROR *result)
 {
 	struct netr_LogonControl2 r;
@@ -3642,10 +3642,10 @@ static void dcerpc_netr_ServerAuthenticate2_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_ServerAuthenticate2_send(TALLOC_CTX *mem_ctx,
 							struct tevent_context *ev,
 							struct dcerpc_binding_handle *h,
-							const char *_server_name /* [in] [unique,charset(UTF16)] */,
-							const char *_account_name /* [in] [ref,charset(UTF16)] */,
+							const char *_server_name /* [in] [charset(UTF16),unique] */,
+							const char *_account_name /* [in] [charset(UTF16),ref] */,
 							enum netr_SchannelType _secure_channel_type /* [in]  */,
-							const char *_computer_name /* [in] [ref,charset(UTF16)] */,
+							const char *_computer_name /* [in] [charset(UTF16),ref] */,
 							struct netr_Credential *_credentials /* [in] [ref] */,
 							struct netr_Credential *_return_credentials /* [out] [ref] */,
 							uint32_t *_negotiate_flags /* [in,out] [ref] */)
@@ -3753,10 +3753,10 @@ NTSTATUS dcerpc_netr_ServerAuthenticate2_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_ServerAuthenticate2(struct dcerpc_binding_handle *h,
 					 TALLOC_CTX *mem_ctx,
-					 const char *_server_name /* [in] [unique,charset(UTF16)] */,
-					 const char *_account_name /* [in] [ref,charset(UTF16)] */,
+					 const char *_server_name /* [in] [charset(UTF16),unique] */,
+					 const char *_account_name /* [in] [charset(UTF16),ref] */,
 					 enum netr_SchannelType _secure_channel_type /* [in]  */,
-					 const char *_computer_name /* [in] [ref,charset(UTF16)] */,
+					 const char *_computer_name /* [in] [charset(UTF16),ref] */,
 					 struct netr_Credential *_credentials /* [in] [ref] */,
 					 struct netr_Credential *_return_credentials /* [out] [ref] */,
 					 uint32_t *_negotiate_flags /* [in,out] [ref] */,
@@ -3882,7 +3882,7 @@ struct tevent_req *dcerpc_netr_DatabaseSync2_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
 						  const char *_logon_server /* [in] [ref,charset(UTF16)] */,
-						  const char *_computername /* [in] [charset(UTF16),ref] */,
+						  const char *_computername /* [in] [ref,charset(UTF16)] */,
 						  struct netr_Authenticator *_credential /* [in] [ref] */,
 						  struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 						  enum netr_SamDatabaseID _database_id /* [in]  */,
@@ -3999,7 +3999,7 @@ NTSTATUS dcerpc_netr_DatabaseSync2_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_DatabaseSync2(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
 				   const char *_logon_server /* [in] [ref,charset(UTF16)] */,
-				   const char *_computername /* [in] [charset(UTF16),ref] */,
+				   const char *_computername /* [in] [ref,charset(UTF16)] */,
 				   struct netr_Authenticator *_credential /* [in] [ref] */,
 				   struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 				   enum netr_SamDatabaseID _database_id /* [in]  */,
@@ -4370,10 +4370,10 @@ static void dcerpc_netr_LogonControl2Ex_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_LogonControl2Ex_send(TALLOC_CTX *mem_ctx,
 						    struct tevent_context *ev,
 						    struct dcerpc_binding_handle *h,
-						    const char *_logon_server /* [in] [unique,charset(UTF16)] */,
+						    const char *_logon_server /* [in] [charset(UTF16),unique] */,
 						    enum netr_LogonControlCode _function_code /* [in]  */,
 						    uint32_t _level /* [in]  */,
-						    union netr_CONTROL_DATA_INFORMATION *_data /* [in] [switch_is(function_code),ref] */,
+						    union netr_CONTROL_DATA_INFORMATION *_data /* [in] [ref,switch_is(function_code)] */,
 						    union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [switch_is(level),ref] */)
 {
 	struct tevent_req *req;
@@ -4475,10 +4475,10 @@ NTSTATUS dcerpc_netr_LogonControl2Ex_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_LogonControl2Ex(struct dcerpc_binding_handle *h,
 				     TALLOC_CTX *mem_ctx,
-				     const char *_logon_server /* [in] [unique,charset(UTF16)] */,
+				     const char *_logon_server /* [in] [charset(UTF16),unique] */,
 				     enum netr_LogonControlCode _function_code /* [in]  */,
 				     uint32_t _level /* [in]  */,
-				     union netr_CONTROL_DATA_INFORMATION *_data /* [in] [switch_is(function_code),ref] */,
+				     union netr_CONTROL_DATA_INFORMATION *_data /* [in] [ref,switch_is(function_code)] */,
 				     union netr_CONTROL_QUERY_INFORMATION *_query /* [out] [switch_is(level),ref] */,
 				     WERROR *result)
 {
@@ -4598,7 +4598,7 @@ static void dcerpc_netr_NetrEnumerateTrustedDomains_done(struct tevent_req *subr
 struct tevent_req *dcerpc_netr_NetrEnumerateTrustedDomains_send(TALLOC_CTX *mem_ctx,
 								struct tevent_context *ev,
 								struct dcerpc_binding_handle *h,
-								const char *_server_name /* [in] [charset(UTF16),unique] */,
+								const char *_server_name /* [in] [unique,charset(UTF16)] */,
 								struct netr_Blob *_trusted_domains_blob /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -4697,7 +4697,7 @@ NTSTATUS dcerpc_netr_NetrEnumerateTrustedDomains_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_NetrEnumerateTrustedDomains(struct dcerpc_binding_handle *h,
 						 TALLOC_CTX *mem_ctx,
-						 const char *_server_name /* [in] [charset(UTF16),unique] */,
+						 const char *_server_name /* [in] [unique,charset(UTF16)] */,
 						 struct netr_Blob *_trusted_domains_blob /* [out] [ref] */,
 						 NTSTATUS *result)
 {
@@ -4814,8 +4814,8 @@ static void dcerpc_netr_DsRGetDCName_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_DsRGetDCName_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct dcerpc_binding_handle *h,
-						 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
-						 const char *_domain_name /* [in] [unique,charset(UTF16)] */,
+						 const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						 const char *_domain_name /* [in] [charset(UTF16),unique] */,
 						 struct GUID *_domain_guid /* [in] [unique] */,
 						 struct GUID *_site_guid /* [in] [unique] */,
 						 uint32_t _flags /* [in]  */,
@@ -4921,8 +4921,8 @@ NTSTATUS dcerpc_netr_DsRGetDCName_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_DsRGetDCName(struct dcerpc_binding_handle *h,
 				  TALLOC_CTX *mem_ctx,
-				  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
-				  const char *_domain_name /* [in] [unique,charset(UTF16)] */,
+				  const char *_server_unc /* [in] [charset(UTF16),unique] */,
+				  const char *_domain_name /* [in] [charset(UTF16),unique] */,
 				  struct GUID *_domain_guid /* [in] [unique] */,
 				  struct GUID *_site_guid /* [in] [unique] */,
 				  uint32_t _flags /* [in]  */,
@@ -5047,11 +5047,11 @@ struct tevent_req *dcerpc_netr_LogonGetCapabilities_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
 							 const char *_server_name /* [in] [ref,charset(UTF16)] */,
-							 const char *_computer_name /* [in] [charset(UTF16),unique] */,
+							 const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 							 struct netr_Authenticator *_credential /* [in] [ref] */,
 							 struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 							 uint32_t _query_level /* [in]  */,
-							 union netr_Capabilities *_capabilities /* [out] [switch_is(query_level),ref] */)
+							 union netr_Capabilities *_capabilities /* [out] [ref,switch_is(query_level)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_netr_LogonGetCapabilities_state *state;
@@ -5156,11 +5156,11 @@ NTSTATUS dcerpc_netr_LogonGetCapabilities_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_LogonGetCapabilities(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
 					  const char *_server_name /* [in] [ref,charset(UTF16)] */,
-					  const char *_computer_name /* [in] [charset(UTF16),unique] */,
+					  const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 					  struct netr_Authenticator *_credential /* [in] [ref] */,
 					  struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 					  uint32_t _query_level /* [in]  */,
-					  union netr_Capabilities *_capabilities /* [out] [switch_is(query_level),ref] */,
+					  union netr_Capabilities *_capabilities /* [out] [ref,switch_is(query_level)] */,
 					  NTSTATUS *result)
 {
 	struct netr_LogonGetCapabilities r;
@@ -5282,7 +5282,7 @@ struct tevent_req *dcerpc_netr_LogonGetTrustRid_send(TALLOC_CTX *mem_ctx,
 						     struct tevent_context *ev,
 						     struct dcerpc_binding_handle *h,
 						     const char *_server_name /* [in] [charset(UTF16),unique] */,
-						     const char *_domain_name /* [in] [unique,charset(UTF16)] */,
+						     const char *_domain_name /* [in] [charset(UTF16),unique] */,
 						     uint32_t *_rid /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -5383,7 +5383,7 @@ NTSTATUS dcerpc_netr_LogonGetTrustRid_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_LogonGetTrustRid(struct dcerpc_binding_handle *h,
 				      TALLOC_CTX *mem_ctx,
 				      const char *_server_name /* [in] [charset(UTF16),unique] */,
-				      const char *_domain_name /* [in] [unique,charset(UTF16)] */,
+				      const char *_domain_name /* [in] [charset(UTF16),unique] */,
 				      uint32_t *_rid /* [out] [ref] */,
 				      WERROR *result)
 {
@@ -5502,9 +5502,9 @@ struct tevent_req *dcerpc_netr_ServerAuthenticate3_send(TALLOC_CTX *mem_ctx,
 							struct tevent_context *ev,
 							struct dcerpc_binding_handle *h,
 							const char *_server_name /* [in] [charset(UTF16),unique] */,
-							const char *_account_name /* [in] [charset(UTF16),ref] */,
+							const char *_account_name /* [in] [ref,charset(UTF16)] */,
 							enum netr_SchannelType _secure_channel_type /* [in]  */,
-							const char *_computer_name /* [in] [ref,charset(UTF16)] */,
+							const char *_computer_name /* [in] [charset(UTF16),ref] */,
 							struct netr_Credential *_credentials /* [in] [ref] */,
 							struct netr_Credential *_return_credentials /* [out] [ref] */,
 							uint32_t *_negotiate_flags /* [in,out] [ref] */,
@@ -5616,9 +5616,9 @@ NTSTATUS dcerpc_netr_ServerAuthenticate3_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_ServerAuthenticate3(struct dcerpc_binding_handle *h,
 					 TALLOC_CTX *mem_ctx,
 					 const char *_server_name /* [in] [charset(UTF16),unique] */,
-					 const char *_account_name /* [in] [charset(UTF16),ref] */,
+					 const char *_account_name /* [in] [ref,charset(UTF16)] */,
 					 enum netr_SchannelType _secure_channel_type /* [in]  */,
-					 const char *_computer_name /* [in] [ref,charset(UTF16)] */,
+					 const char *_computer_name /* [in] [charset(UTF16),ref] */,
 					 struct netr_Credential *_credentials /* [in] [ref] */,
 					 struct netr_Credential *_return_credentials /* [out] [ref] */,
 					 uint32_t *_negotiate_flags /* [in,out] [ref] */,
@@ -5748,7 +5748,7 @@ struct tevent_req *dcerpc_netr_DsRGetDCNameEx_send(TALLOC_CTX *mem_ctx,
 						   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						   const char *_domain_name /* [in] [charset(UTF16),unique] */,
 						   struct GUID *_domain_guid /* [in] [unique] */,
-						   const char *_site_name /* [in] [unique,charset(UTF16)] */,
+						   const char *_site_name /* [in] [charset(UTF16),unique] */,
 						   uint32_t _flags /* [in]  */,
 						   struct netr_DsRGetDCNameInfo **_info /* [out] [ref] */)
 {
@@ -5855,7 +5855,7 @@ NTSTATUS dcerpc_netr_DsRGetDCNameEx(struct dcerpc_binding_handle *h,
 				    const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				    const char *_domain_name /* [in] [charset(UTF16),unique] */,
 				    struct GUID *_domain_guid /* [in] [unique] */,
-				    const char *_site_name /* [in] [unique,charset(UTF16)] */,
+				    const char *_site_name /* [in] [charset(UTF16),unique] */,
 				    uint32_t _flags /* [in]  */,
 				    struct netr_DsRGetDCNameInfo **_info /* [out] [ref] */,
 				    WERROR *result)
@@ -5977,7 +5977,7 @@ static void dcerpc_netr_DsRGetSiteName_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_DsRGetSiteName_send(TALLOC_CTX *mem_ctx,
 						   struct tevent_context *ev,
 						   struct dcerpc_binding_handle *h,
-						   const char *_computer_name /* [in] [unique,charset(UTF16)] */,
+						   const char *_computer_name /* [in] [charset(UTF16),unique] */,
 						   const char **_site /* [out] [charset(UTF16),ref] */)
 {
 	struct tevent_req *req;
@@ -6076,7 +6076,7 @@ NTSTATUS dcerpc_netr_DsRGetSiteName_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_DsRGetSiteName(struct dcerpc_binding_handle *h,
 				    TALLOC_CTX *mem_ctx,
-				    const char *_computer_name /* [in] [unique,charset(UTF16)] */,
+				    const char *_computer_name /* [in] [charset(UTF16),unique] */,
 				    const char **_site /* [out] [charset(UTF16),ref] */,
 				    WERROR *result)
 {
@@ -6193,12 +6193,12 @@ static void dcerpc_netr_LogonGetDomainInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_LogonGetDomainInfo_send(TALLOC_CTX *mem_ctx,
 						       struct tevent_context *ev,
 						       struct dcerpc_binding_handle *h,
-						       const char *_server_name /* [in] [ref,charset(UTF16)] */,
-						       const char *_computer_name /* [in] [unique,charset(UTF16)] */,
+						       const char *_server_name /* [in] [charset(UTF16),ref] */,
+						       const char *_computer_name /* [in] [charset(UTF16),unique] */,
 						       struct netr_Authenticator *_credential /* [in] [ref] */,
 						       struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 						       uint32_t _level /* [in]  */,
-						       union netr_WorkstationInfo *_query /* [in] [switch_is(level),ref] */,
+						       union netr_WorkstationInfo *_query /* [in] [ref,switch_is(level)] */,
 						       union netr_DomainInfo *_info /* [out] [ref,switch_is(level)] */)
 {
 	struct tevent_req *req;
@@ -6304,12 +6304,12 @@ NTSTATUS dcerpc_netr_LogonGetDomainInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_LogonGetDomainInfo(struct dcerpc_binding_handle *h,
 					TALLOC_CTX *mem_ctx,
-					const char *_server_name /* [in] [ref,charset(UTF16)] */,
-					const char *_computer_name /* [in] [unique,charset(UTF16)] */,
+					const char *_server_name /* [in] [charset(UTF16),ref] */,
+					const char *_computer_name /* [in] [charset(UTF16),unique] */,
 					struct netr_Authenticator *_credential /* [in] [ref] */,
 					struct netr_Authenticator *_return_authenticator /* [in,out] [ref] */,
 					uint32_t _level /* [in]  */,
-					union netr_WorkstationInfo *_query /* [in] [switch_is(level),ref] */,
+					union netr_WorkstationInfo *_query /* [in] [ref,switch_is(level)] */,
 					union netr_DomainInfo *_info /* [out] [ref,switch_is(level)] */,
 					NTSTATUS *result)
 {
@@ -6435,7 +6435,7 @@ struct tevent_req *dcerpc_netr_ServerPasswordSet2_send(TALLOC_CTX *mem_ctx,
 						       const char *_server_name /* [in] [charset(UTF16),unique] */,
 						       const char *_account_name /* [in] [charset(UTF16),ref] */,
 						       enum netr_SchannelType _secure_channel_type /* [in]  */,
-						       const char *_computer_name /* [in] [charset(UTF16),ref] */,
+						       const char *_computer_name /* [in] [ref,charset(UTF16)] */,
 						       struct netr_Authenticator *_credential /* [in] [ref] */,
 						       struct netr_Authenticator *_return_authenticator /* [out] [ref] */,
 						       struct netr_CryptPassword *_new_password /* [in] [ref] */)
@@ -6544,7 +6544,7 @@ NTSTATUS dcerpc_netr_ServerPasswordSet2(struct dcerpc_binding_handle *h,
 					const char *_server_name /* [in] [charset(UTF16),unique] */,
 					const char *_account_name /* [in] [charset(UTF16),ref] */,
 					enum netr_SchannelType _secure_channel_type /* [in]  */,
-					const char *_computer_name /* [in] [charset(UTF16),ref] */,
+					const char *_computer_name /* [in] [ref,charset(UTF16)] */,
 					struct netr_Authenticator *_credential /* [in] [ref] */,
 					struct netr_Authenticator *_return_authenticator /* [out] [ref] */,
 					struct netr_CryptPassword *_new_password /* [in] [ref] */,
@@ -6668,10 +6668,10 @@ static void dcerpc_netr_ServerPasswordGet_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_ServerPasswordGet_send(TALLOC_CTX *mem_ctx,
 						      struct tevent_context *ev,
 						      struct dcerpc_binding_handle *h,
-						      const char *_server_name /* [in] [charset(UTF16),unique] */,
-						      const char *_account_name /* [in] [charset(UTF16),ref] */,
+						      const char *_server_name /* [in] [unique,charset(UTF16)] */,
+						      const char *_account_name /* [in] [ref,charset(UTF16)] */,
 						      enum netr_SchannelType _secure_channel_type /* [in]  */,
-						      const char *_computer_name /* [in] [charset(UTF16),ref] */,
+						      const char *_computer_name /* [in] [ref,charset(UTF16)] */,
 						      struct netr_Authenticator *_credential /* [in] [ref] */,
 						      struct netr_Authenticator *_return_authenticator /* [out] [ref] */,
 						      struct samr_Password *_password /* [out] [ref] */)
@@ -6778,10 +6778,10 @@ NTSTATUS dcerpc_netr_ServerPasswordGet_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_ServerPasswordGet(struct dcerpc_binding_handle *h,
 				       TALLOC_CTX *mem_ctx,
-				       const char *_server_name /* [in] [charset(UTF16),unique] */,
-				       const char *_account_name /* [in] [charset(UTF16),ref] */,
+				       const char *_server_name /* [in] [unique,charset(UTF16)] */,
+				       const char *_account_name /* [in] [ref,charset(UTF16)] */,
 				       enum netr_SchannelType _secure_channel_type /* [in]  */,
-				       const char *_computer_name /* [in] [charset(UTF16),ref] */,
+				       const char *_computer_name /* [in] [ref,charset(UTF16)] */,
 				       struct netr_Authenticator *_credential /* [in] [ref] */,
 				       struct netr_Authenticator *_return_authenticator /* [out] [ref] */,
 				       struct samr_Password *_password /* [out] [ref] */,
@@ -7134,7 +7134,7 @@ struct tevent_req *dcerpc_netr_DsRGetDCNameEx2_send(TALLOC_CTX *mem_ctx,
 						    uint32_t _mask /* [in]  */,
 						    const char *_domain_name /* [in] [unique,charset(UTF16)] */,
 						    struct GUID *_domain_guid /* [in] [unique] */,
-						    const char *_site_name /* [in] [charset(UTF16),unique] */,
+						    const char *_site_name /* [in] [unique,charset(UTF16)] */,
 						    uint32_t _flags /* [in]  */,
 						    struct netr_DsRGetDCNameInfo **_info /* [out] [ref] */)
 {
@@ -7245,7 +7245,7 @@ NTSTATUS dcerpc_netr_DsRGetDCNameEx2(struct dcerpc_binding_handle *h,
 				     uint32_t _mask /* [in]  */,
 				     const char *_domain_name /* [in] [unique,charset(UTF16)] */,
 				     struct GUID *_domain_guid /* [in] [unique] */,
-				     const char *_site_name /* [in] [charset(UTF16),unique] */,
+				     const char *_site_name /* [in] [unique,charset(UTF16)] */,
 				     uint32_t _flags /* [in]  */,
 				     struct netr_DsRGetDCNameInfo **_info /* [out] [ref] */,
 				     WERROR *result)
@@ -7369,7 +7369,7 @@ static void dcerpc_netr_NetrEnumerateTrustedDomainsEx_done(struct tevent_req *su
 struct tevent_req *dcerpc_netr_NetrEnumerateTrustedDomainsEx_send(TALLOC_CTX *mem_ctx,
 								  struct tevent_context *ev,
 								  struct dcerpc_binding_handle *h,
-								  const char *_server_name /* [in] [unique,charset(UTF16)] */,
+								  const char *_server_name /* [in] [charset(UTF16),unique] */,
 								  struct netr_DomainTrustList *_dom_trust_list /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -7468,7 +7468,7 @@ NTSTATUS dcerpc_netr_NetrEnumerateTrustedDomainsEx_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_NetrEnumerateTrustedDomainsEx(struct dcerpc_binding_handle *h,
 						   TALLOC_CTX *mem_ctx,
-						   const char *_server_name /* [in] [unique,charset(UTF16)] */,
+						   const char *_server_name /* [in] [charset(UTF16),unique] */,
 						   struct netr_DomainTrustList *_dom_trust_list /* [out] [ref] */,
 						   WERROR *result)
 {
@@ -7587,7 +7587,7 @@ struct tevent_req *dcerpc_netr_DsRAddressToSitenamesExW_send(TALLOC_CTX *mem_ctx
 							     struct dcerpc_binding_handle *h,
 							     const char *_server_name /* [in] [charset(UTF16),unique] */,
 							     uint32_t _count /* [in] [range(0,32000)] */,
-							     struct netr_DsRAddress *_addresses /* [in] [size_is(count),ref] */,
+							     struct netr_DsRAddress *_addresses /* [in] [ref,size_is(count)] */,
 							     struct netr_DsRAddressToSitenamesExWCtr **_ctr /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -7690,7 +7690,7 @@ NTSTATUS dcerpc_netr_DsRAddressToSitenamesExW(struct dcerpc_binding_handle *h,
 					      TALLOC_CTX *mem_ctx,
 					      const char *_server_name /* [in] [charset(UTF16),unique] */,
 					      uint32_t _count /* [in] [range(0,32000)] */,
-					      struct netr_DsRAddress *_addresses /* [in] [size_is(count),ref] */,
+					      struct netr_DsRAddress *_addresses /* [in] [ref,size_is(count)] */,
 					      struct netr_DsRAddressToSitenamesExWCtr **_ctr /* [out] [ref] */,
 					      WERROR *result)
 {
@@ -7809,7 +7809,7 @@ static void dcerpc_netr_DsrGetDcSiteCoverageW_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_DsrGetDcSiteCoverageW_send(TALLOC_CTX *mem_ctx,
 							  struct tevent_context *ev,
 							  struct dcerpc_binding_handle *h,
-							  const char *_server_name /* [in] [unique,charset(UTF16)] */,
+							  const char *_server_name /* [in] [charset(UTF16),unique] */,
 							  struct DcSitesCtr **_ctr /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -7908,7 +7908,7 @@ NTSTATUS dcerpc_netr_DsrGetDcSiteCoverageW_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_DsrGetDcSiteCoverageW(struct dcerpc_binding_handle *h,
 					   TALLOC_CTX *mem_ctx,
-					   const char *_server_name /* [in] [unique,charset(UTF16)] */,
+					   const char *_server_name /* [in] [charset(UTF16),unique] */,
 					   struct DcSitesCtr **_ctr /* [out] [ref] */,
 					   WERROR *result)
 {
@@ -8025,12 +8025,12 @@ static void dcerpc_netr_LogonSamLogonEx_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_LogonSamLogonEx_send(TALLOC_CTX *mem_ctx,
 						    struct tevent_context *ev,
 						    struct dcerpc_binding_handle *h,
-						    const char *_server_name /* [in] [charset(UTF16),unique] */,
+						    const char *_server_name /* [in] [unique,charset(UTF16)] */,
 						    const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 						    enum netr_LogonInfoClass _logon_level /* [in]  */,
 						    union netr_LogonLevel *_logon /* [in] [ref,switch_is(logon_level)] */,
 						    uint16_t _validation_level /* [in]  */,
-						    union netr_Validation *_validation /* [out] [switch_is(validation_level),ref] */,
+						    union netr_Validation *_validation /* [out] [ref,switch_is(validation_level)] */,
 						    uint8_t *_authoritative /* [out] [ref] */,
 						    uint32_t *_flags /* [in,out] [ref] */)
 {
@@ -8139,12 +8139,12 @@ NTSTATUS dcerpc_netr_LogonSamLogonEx_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_LogonSamLogonEx(struct dcerpc_binding_handle *h,
 				     TALLOC_CTX *mem_ctx,
-				     const char *_server_name /* [in] [charset(UTF16),unique] */,
+				     const char *_server_name /* [in] [unique,charset(UTF16)] */,
 				     const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 				     enum netr_LogonInfoClass _logon_level /* [in]  */,
 				     union netr_LogonLevel *_logon /* [in] [ref,switch_is(logon_level)] */,
 				     uint16_t _validation_level /* [in]  */,
-				     union netr_Validation *_validation /* [out] [switch_is(validation_level),ref] */,
+				     union netr_Validation *_validation /* [out] [ref,switch_is(validation_level)] */,
 				     uint8_t *_authoritative /* [out] [ref] */,
 				     uint32_t *_flags /* [in,out] [ref] */,
 				     NTSTATUS *result)
@@ -8269,7 +8269,7 @@ static void dcerpc_netr_DsrEnumerateDomainTrusts_done(struct tevent_req *subreq)
 struct tevent_req *dcerpc_netr_DsrEnumerateDomainTrusts_send(TALLOC_CTX *mem_ctx,
 							     struct tevent_context *ev,
 							     struct dcerpc_binding_handle *h,
-							     const char *_server_name /* [in] [charset(UTF16),unique] */,
+							     const char *_server_name /* [in] [unique,charset(UTF16)] */,
 							     uint32_t _trust_flags /* [in]  */,
 							     struct netr_DomainTrustList *_trusts /* [out] [ref] */)
 {
@@ -8370,7 +8370,7 @@ NTSTATUS dcerpc_netr_DsrEnumerateDomainTrusts_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_DsrEnumerateDomainTrusts(struct dcerpc_binding_handle *h,
 					      TALLOC_CTX *mem_ctx,
-					      const char *_server_name /* [in] [charset(UTF16),unique] */,
+					      const char *_server_name /* [in] [unique,charset(UTF16)] */,
 					      uint32_t _trust_flags /* [in]  */,
 					      struct netr_DomainTrustList *_trusts /* [out] [ref] */,
 					      WERROR *result)
@@ -8487,10 +8487,10 @@ struct tevent_req *dcerpc_netr_DsrDeregisterDNSHostRecords_send(TALLOC_CTX *mem_
 								struct tevent_context *ev,
 								struct dcerpc_binding_handle *h,
 								const char *_server_name /* [in] [charset(UTF16),unique] */,
-								const char *_domain /* [in] [charset(UTF16),unique] */,
+								const char *_domain /* [in] [unique,charset(UTF16)] */,
 								struct GUID *_domain_guid /* [in] [unique] */,
 								struct GUID *_dsa_guid /* [in] [unique] */,
-								const char *_dns_host /* [in] [charset(UTF16),ref] */)
+								const char *_dns_host /* [in] [ref,charset(UTF16)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_netr_DsrDeregisterDNSHostRecords_state *state;
@@ -8585,10 +8585,10 @@ NTSTATUS dcerpc_netr_DsrDeregisterDNSHostRecords_recv(struct tevent_req *req,
 NTSTATUS dcerpc_netr_DsrDeregisterDNSHostRecords(struct dcerpc_binding_handle *h,
 						 TALLOC_CTX *mem_ctx,
 						 const char *_server_name /* [in] [charset(UTF16),unique] */,
-						 const char *_domain /* [in] [charset(UTF16),unique] */,
+						 const char *_domain /* [in] [unique,charset(UTF16)] */,
 						 struct GUID *_domain_guid /* [in] [unique] */,
 						 struct GUID *_dsa_guid /* [in] [unique] */,
-						 const char *_dns_host /* [in] [charset(UTF16),ref] */,
+						 const char *_dns_host /* [in] [ref,charset(UTF16)] */,
 						 WERROR *result)
 {
 	struct netr_DsrDeregisterDNSHostRecords r;
@@ -8707,8 +8707,8 @@ static void dcerpc_netr_ServerTrustPasswordsGet_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_ServerTrustPasswordsGet_send(TALLOC_CTX *mem_ctx,
 							    struct tevent_context *ev,
 							    struct dcerpc_binding_handle *h,
-							    const char *_server_name /* [in] [unique,charset(UTF16)] */,
-							    const char *_account_name /* [in] [ref,charset(UTF16)] */,
+							    const char *_server_name /* [in] [charset(UTF16),unique] */,
+							    const char *_account_name /* [in] [charset(UTF16),ref] */,
 							    enum netr_SchannelType _secure_channel_type /* [in]  */,
 							    const char *_computer_name /* [in] [charset(UTF16),ref] */,
 							    struct netr_Authenticator *_credential /* [in] [ref] */,
@@ -8820,8 +8820,8 @@ NTSTATUS dcerpc_netr_ServerTrustPasswordsGet_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_ServerTrustPasswordsGet(struct dcerpc_binding_handle *h,
 					     TALLOC_CTX *mem_ctx,
-					     const char *_server_name /* [in] [unique,charset(UTF16)] */,
-					     const char *_account_name /* [in] [ref,charset(UTF16)] */,
+					     const char *_server_name /* [in] [charset(UTF16),unique] */,
+					     const char *_account_name /* [in] [charset(UTF16),ref] */,
 					     enum netr_SchannelType _secure_channel_type /* [in]  */,
 					     const char *_computer_name /* [in] [charset(UTF16),ref] */,
 					     struct netr_Authenticator *_credential /* [in] [ref] */,
@@ -8949,7 +8949,7 @@ static void dcerpc_netr_DsRGetForestTrustInformation_done(struct tevent_req *sub
 struct tevent_req *dcerpc_netr_DsRGetForestTrustInformation_send(TALLOC_CTX *mem_ctx,
 								 struct tevent_context *ev,
 								 struct dcerpc_binding_handle *h,
-								 const char *_server_name /* [in] [unique,charset(UTF16)] */,
+								 const char *_server_name /* [in] [charset(UTF16),unique] */,
 								 const char *_trusted_domain_name /* [in] [charset(UTF16),unique] */,
 								 uint32_t _flags /* [in]  */,
 								 struct lsa_ForestTrustInformation **_forest_trust_info /* [out] [ref] */)
@@ -9052,7 +9052,7 @@ NTSTATUS dcerpc_netr_DsRGetForestTrustInformation_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_DsRGetForestTrustInformation(struct dcerpc_binding_handle *h,
 						  TALLOC_CTX *mem_ctx,
-						  const char *_server_name /* [in] [unique,charset(UTF16)] */,
+						  const char *_server_name /* [in] [charset(UTF16),unique] */,
 						  const char *_trusted_domain_name /* [in] [charset(UTF16),unique] */,
 						  uint32_t _flags /* [in]  */,
 						  struct lsa_ForestTrustInformation **_forest_trust_info /* [out] [ref] */,
@@ -9406,14 +9406,14 @@ static void dcerpc_netr_LogonSamLogonWithFlags_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_LogonSamLogonWithFlags_send(TALLOC_CTX *mem_ctx,
 							   struct tevent_context *ev,
 							   struct dcerpc_binding_handle *h,
-							   const char *_server_name /* [in] [unique,charset(UTF16)] */,
+							   const char *_server_name /* [in] [charset(UTF16),unique] */,
 							   const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 							   struct netr_Authenticator *_credential /* [in] [unique] */,
 							   struct netr_Authenticator *_return_authenticator /* [in,out] [unique] */,
 							   enum netr_LogonInfoClass _logon_level /* [in]  */,
 							   union netr_LogonLevel *_logon /* [in] [switch_is(logon_level),ref] */,
 							   uint16_t _validation_level /* [in]  */,
-							   union netr_Validation *_validation /* [out] [switch_is(validation_level),ref] */,
+							   union netr_Validation *_validation /* [out] [ref,switch_is(validation_level)] */,
 							   uint8_t *_authoritative /* [out] [ref] */,
 							   uint32_t *_flags /* [in,out] [ref] */)
 {
@@ -9528,14 +9528,14 @@ NTSTATUS dcerpc_netr_LogonSamLogonWithFlags_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_LogonSamLogonWithFlags(struct dcerpc_binding_handle *h,
 					    TALLOC_CTX *mem_ctx,
-					    const char *_server_name /* [in] [unique,charset(UTF16)] */,
+					    const char *_server_name /* [in] [charset(UTF16),unique] */,
 					    const char *_computer_name /* [in] [unique,charset(UTF16)] */,
 					    struct netr_Authenticator *_credential /* [in] [unique] */,
 					    struct netr_Authenticator *_return_authenticator /* [in,out] [unique] */,
 					    enum netr_LogonInfoClass _logon_level /* [in]  */,
 					    union netr_LogonLevel *_logon /* [in] [switch_is(logon_level),ref] */,
 					    uint16_t _validation_level /* [in]  */,
-					    union netr_Validation *_validation /* [out] [switch_is(validation_level),ref] */,
+					    union netr_Validation *_validation /* [out] [ref,switch_is(validation_level)] */,
 					    uint8_t *_authoritative /* [out] [ref] */,
 					    uint32_t *_flags /* [in,out] [ref] */,
 					    NTSTATUS *result)
@@ -9665,7 +9665,7 @@ static void dcerpc_netr_ServerGetTrustInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_netr_ServerGetTrustInfo_send(TALLOC_CTX *mem_ctx,
 						       struct tevent_context *ev,
 						       struct dcerpc_binding_handle *h,
-						       const char *_server_name /* [in] [unique,charset(UTF16)] */,
+						       const char *_server_name /* [in] [charset(UTF16),unique] */,
 						       const char *_account_name /* [in] [charset(UTF16),ref] */,
 						       enum netr_SchannelType _secure_channel_type /* [in]  */,
 						       const char *_computer_name /* [in] [charset(UTF16),ref] */,
@@ -9781,7 +9781,7 @@ NTSTATUS dcerpc_netr_ServerGetTrustInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_netr_ServerGetTrustInfo(struct dcerpc_binding_handle *h,
 					TALLOC_CTX *mem_ctx,
-					const char *_server_name /* [in] [unique,charset(UTF16)] */,
+					const char *_server_name /* [in] [charset(UTF16),unique] */,
 					const char *_account_name /* [in] [charset(UTF16),ref] */,
 					enum netr_SchannelType _secure_channel_type /* [in]  */,
 					const char *_computer_name /* [in] [charset(UTF16),ref] */,

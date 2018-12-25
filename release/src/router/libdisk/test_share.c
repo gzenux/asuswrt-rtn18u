@@ -34,6 +34,7 @@
 #include <shared.h>
 #include <stdarg.h>
 
+
 int main(int argc, char *argv[]){
 	char *command;
 	int i, num;
@@ -64,16 +65,6 @@ int main(int argc, char *argv[]){
 			usb_dbg("Broken.\n");
 		}
 	}
-	else if(!strcmp(command, "get_account_list")){
-		if(get_account_list(&num, &list) <= 0)
-			usb_dbg("Can't get account list.\n");
-		else{
-			for(i = 0; i < num; ++i)
-				usb_dbg("%dth account: %s.\n", i+1, list[i]);
-
-			free_2_dimension_list(&num, &list);
-		}
-	}
 	else if(!strcmp(command, "get_folder_list")){
 		if(argc != 2)
 			usb_dbg("Usage: get_folder_list mount_path\n");
@@ -99,11 +90,20 @@ int main(int argc, char *argv[]){
 		}
 	}
 	else if(!strcmp(command, "get_var_file_name")){
+		int is_group;
 		char *file_name;
 
-		if(argc != 3)
-			usb_dbg("Usage: get_var_file_name account mount_path\n");
-		else if(get_var_file_name(argv[1], argv[2], &file_name))
+		if(argc != 3 && argc != 4){
+			usb_dbg("Usage: get_var_file_name account mount_path [is_group]\n");
+			return -1;
+		}
+
+		if(argc == 4)
+			is_group = atoi(argv[3]);
+		else
+			is_group = 0;
+
+		if(get_var_file_name(argv[1], argv[2], &file_name, is_group))
 			usb_dbg("Can't get the var file name with %s in %s.\n", argv[1], argv[2]);
 		else{
 			usb_dbg("done: %s.\n", file_name);
@@ -119,17 +119,23 @@ int main(int argc, char *argv[]){
 			usb_dbg("done.\n");
 	}
 	else if(!strcmp(command, "initial_var_file")){
+		int is_group;
 		char *target_acc = NULL;
 
-		if(argc != 3){
-			usb_dbg("Usage: initial_var_file account mount_path\n");
+		if(argc != 3 && argc != 4){
+			usb_dbg("Usage: initial_var_file account mount_path [is_group]\n");
 			return -1;
 		}
+
+		if(argc == 4)
+			is_group = atoi(argv[3]);
+		else
+			is_group = 0;
 
 		if(strcmp(argv[1], "NULL"))
 			target_acc = argv[1];
 
-		if(initial_var_file(target_acc, argv[2]) < 0){
+		if(initial_var_file(target_acc, argv[2], is_group)){
 			if(target_acc == NULL)
 				usb_dbg("Can't initial share's var file in %s.\n", argv[2]);
 			else
@@ -163,58 +169,56 @@ int main(int argc, char *argv[]){
 			usb_dbg("done.\n");
 	}
 	else if(!strcmp(command, "modify_if_exist_new_folder")){
-		if(argc != 3)
-			usb_dbg("Usage: modify_if_exist_new_folder account mount_path\n");
-		else if(modify_if_exist_new_folder(argv[1], argv[2]) < 0)
+		int is_group;
+
+		if(argc != 3 && argc != 4){
+			usb_dbg("Usage: modify_if_exist_new_folder account mount_path [is_group]\n");
+			return -1;
+		}
+
+		if(argc == 4)
+			is_group = atoi(argv[3]);
+		else
+			is_group = 0;
+
+		if(modify_if_exist_new_folder(argv[1], argv[2], is_group) < 0)
 			usb_dbg("Can't fix %s's var files in %s.\n", argv[1], argv[2]);
 		else
 			usb_dbg("done.\n");
 	}
 	else if(!strcmp(command, "get_permission")){
-		if(argc != 5)
-			usb_dbg("Usage: get_permission account mount_path folder [cifs|ftp|dms]\n");
-		else if((right = get_permission(argv[1], argv[2], argv[3], argv[4])) < 0)
+		int is_group;
+
+		if(argc != 5 && argc != 6){
+			usb_dbg("Usage: get_permission account mount_path folder [cifs|ftp|dms] [is_group]\n");
+			return -1;
+		}
+
+		if(argc == 6)
+			is_group = atoi(argv[5]);
+		else
+			is_group = 0;
+
+		if((right = get_permission(argv[1], argv[2], argv[3], argv[4], is_group)) < 0)
 			usb_dbg("%s can't get %s's %s permission in %s.\n", argv[1], argv[3], argv[4], argv[2]);
 		else
 			usb_dbg("done: %d.\n", right);
 	}
 	else if(!strcmp(command, "set_permission")){
-		if(argc != 6)
-			usb_dbg("Usage: set_permission account mount_path folder [cifs|ftp|dms] [0~3]\n");
-		else if(set_permission(argv[1], argv[2], argv[3], argv[4], atoi(argv[5])) < 0)
+		int is_group;
+
+		if(argc != 6 && argc != 7){
+			usb_dbg("Usage: set_permission account mount_path folder [cifs|ftp|dms] [0~3] [is_group]\n");
+			return -1;
+		}
+
+		if(argc == 7)
+			is_group = atoi(argv[6]);
+		else
+			is_group = 0;
+
+		if(set_permission(argv[1], argv[2], argv[3], argv[4], atoi(argv[5]), is_group) < 0)
 			usb_dbg("%s can't set %s's %s permission to be %s in %s.\n", argv[1], argv[3], argv[4], argv[5], argv[2]);
-		else
-			usb_dbg("done.\n");
-	}
-	else if(!strcmp(command, "add_account")){
-		if(argc != 3)
-			usb_dbg("Usage: add_account account password\n");
-		else if(add_account(argv[1], argv[2]) < 0)
-			usb_dbg("Can't add account(%s:%s).\n", argv[1], argv[2]);
-		else
-			usb_dbg("done.\n");
-	}
-	else if(!strcmp(command, "del_account")){
-		if(argc != 2)
-			usb_dbg("Usage: del_account account\n");
-		else if(del_account(argv[1]) < 0)
-			usb_dbg("Can't del account(%s).\n", argv[1]);
-		else
-			usb_dbg("done.\n");
-	}
-	else if(!strcmp(command, "mod_account")){
-		if(argc != 4)
-			usb_dbg("Usage: mod_account account new_account new_password\n");
-		else if(mod_account(argv[1], argv[2], argv[3]) < 0)
-			usb_dbg("Can't mod account(%s) to (%s:%s).\n", argv[1], argv[2], argv[3]);
-		else
-			usb_dbg("done.\n");
-	}
-	else if(!strcmp(command, "test_if_exist_account")){
-		if(argc != 2)
-			usb_dbg("Usage: test_if_exist_account account\n");
-		else if(test_if_exist_account(argv[1]) < 0)
-			usb_dbg("Can't test if %s is existed.\n", argv[1]);
 		else
 			usb_dbg("done.\n");
 	}
@@ -265,6 +269,83 @@ int main(int argc, char *argv[]){
 		else
 			usb_dbg("done: %d layers, share=%s, mount_path=%s.\n", layer, share, mount_path);
 	}
+	else if(!strcmp(command, "add_account")){
+		if(argc != 3)
+			usb_dbg("Usage: add_account account password\n");
+		else if(add_account(argv[1], argv[2]) < 0)
+			usb_dbg("Can't add account(%s:%s).\n", argv[1], argv[2]);
+		else
+			usb_dbg("done.\n");
+	}
+	else if(!strcmp(command, "del_account")){
+		if(argc != 2)
+			usb_dbg("Usage: del_account account\n");
+		else if(del_account(argv[1]) < 0)
+			usb_dbg("Can't del account(%s).\n", argv[1]);
+		else
+			usb_dbg("done.\n");
+	}
+	else if(!strcmp(command, "mod_account")){
+		if(argc != 4)
+			usb_dbg("Usage: mod_account account new_account new_password\n");
+		else if(mod_account(argv[1], argv[2], argv[3]) < 0)
+			usb_dbg("Can't mod account(%s) to (%s:%s).\n", argv[1], argv[2], argv[3]);
+		else
+			usb_dbg("done.\n");
+	}
+	else if(!strcmp(command, "test_if_exist_account")){
+		if(argc != 2)
+			usb_dbg("Usage: test_if_exist_account account\n");
+		else if(test_if_exist_account(argv[1]) < 0)
+			usb_dbg("Can't test if %s is existed.\n", argv[1]);
+		else
+			usb_dbg("done.\n");
+	}
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+	else if(!strcmp(command, "add_group")){
+		if(argc != 2)
+			usb_dbg("Usage: add_group group\n");
+		else if(add_group(argv[1]) < 0)
+			usb_dbg("Can't add group(%s).\n", argv[1]);
+		else
+			usb_dbg("done.\n");
+	}
+	else if(!strcmp(command, "del_group")){
+		if(argc != 2)
+			usb_dbg("Usage: del_group group\n");
+		else if(del_group(argv[1]) < 0)
+			usb_dbg("Can't del group(%s).\n", argv[1]);
+		else
+			usb_dbg("done.\n");
+	}
+	else if(!strcmp(command, "mod_group")){
+		if(argc != 3)
+			usb_dbg("Usage: mod_group group new_group\n");
+		else if(mod_group(argv[1], argv[2]) < 0)
+			usb_dbg("Can't mod group(%s) to (%s).\n", argv[1], argv[2]);
+		else
+			usb_dbg("done.\n");
+	}
+	else if(!strcmp(command, "test_if_exist_group")){
+		if(argc != 2)
+			usb_dbg("Usage: test_if_exist_group group\n");
+		else if(test_if_exist_group(argv[1]) < 0)
+			usb_dbg("Can't test if %s is existed.\n", argv[1]);
+		else
+			usb_dbg("done.\n");
+	}
+#else
+	else if(!strcmp(command, "get_account_list")){
+		if(get_account_list(&num, &list) <= 0)
+			usb_dbg("Can't get account list.\n");
+		else{
+			for(i = 0; i < num; ++i)
+				usb_dbg("%dth account: %s.\n", i+1, list[i]);
+
+			free_2_dimension_list(&num, &list);
+		}
+	}
+#endif
 	else if(!strcmp(command, "test_size")){
 		unsigned long file_size = f_size(argv[1]);
 		_dprintf("size: %lu.\n", file_size);

@@ -19,6 +19,10 @@
 
 #define ADMIN_ORDER 0
 #define MAX_ACCOUNT_NUM 6
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+#define MAX_GROUP_NUM 6
+#define UNION_PERMISSION
+#endif
 
 #define SHARE_LAYER MOUNT_LAYER+1
 
@@ -52,18 +56,18 @@ extern int check_file_integrity(const char *const file_name);
 
 extern int get_folder_list(const char *const, int *, char ***);
 extern int get_all_folder(const char *const, int *, char ***);
-extern int get_var_file_name(const char *const account, const char *const path, char **file_name);
+extern int get_var_file_name(const char *const account, const char *const path, char **file_name, const int is_group);
 extern void free_2_dimension_list(int *, char ***);
 
 extern int initial_folder_list(const char *const);
-extern int initial_var_file(const char *const, const char *const);
+extern int initial_var_file(const char *const account, const char *const mount_path, const int is_group);
 extern int initial_all_var_file(const char *const);
 extern int test_of_var_files(const char *const);
 extern int create_if_no_var_files(const char *const);
-extern int modify_if_exist_new_folder(const char *const, const char *const);
+extern int modify_if_exist_new_folder(const char *const account, const char *const mount_path, const int is_group);
 
-extern int get_permission(const char *const, const char *const, const char *const, const char *const);
-extern int set_permission(const char *const, const char *const, const char *const, const char *const, const int);
+extern int get_permission(const char *const account, const char *const mount_path, const char *const folder, const char *const protocol, const int is_group);
+extern int set_permission(const char *const account, const char *const mount_path, const char *const folder, const char *const protocol, const int flag, const int is_group);
 
 extern int add_folder(const char *const, const char *const, const char *const);
 extern int del_folder(const char *const, const char *const);
@@ -72,10 +76,17 @@ extern int test_if_exist_share(const char *const, const char *const);
 
 extern int how_many_layer(const char *const, char **, char **);
 
-extern int get_account_list(int *, char ***);
-extern int add_account(const char *const, const char *const);
-extern int del_account(const char *const);
-extern int mod_account(const char *const, const char *const, const char *const);
+extern int add_account(const char *const account, const char *const password);
+extern int del_account(const char *const account);
+extern int mod_account(const char *const account, const char *const new_account, const char *const new_password);
 extern int test_if_exist_account(const char *const);
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+extern int add_group(const char *const group);
+extern int del_group(const char *const group);
+extern int mod_group(const char *const group, const char *const new_group);
+extern int test_if_exist_group(const char *const group);
+#else
+extern int get_account_list(int *, char ***);
+#endif
 
 #endif // _DISK_SHARE_

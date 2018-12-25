@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56312_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56312, BCM56312_VENDOR_ID, BCM56312_DEVICE_ID, BCM56312_REV_A0, \
+                  0, 0, \
+                  bcm56314_a0, bcm56312_a0, bcm56312_a0, \
+                  CDK_DEV_ARCH_XGS, "Helix+", "BCM56310", \
+                  "24-Port Gigabit Ethernet Multilayer Switch with Two 10-Gigabit Ethernet/HiGig+ Ports", 0, 0)
+#endif
+#endif
+

@@ -3,6 +3,9 @@
 #ifdef RTCONFIG_TUNNEL
 void start_aae()
 {
+	if(nvram_get_int("aae_disable_force"))
+		return;
+
 	if( getpid()!=1 ) {
 		notify_rc("start_aae");
 		return;
@@ -29,6 +32,18 @@ void stop_aae()
 
 void start_mastiff()
 {
+#ifdef CONFIG_BCMWL5
+#if !(defined(HND_ROUTER) && defined(RTCONFIG_HNDMFG))
+	if (factory_debug())
+#endif
+#else
+	if (IS_ATE_FACTORY_MODE())
+#endif
+	return;
+
+	if(nvram_get_int("aae_disable_force"))
+		return;
+
 	stop_aae();
 	
 	if( getpid()!=1 ) {

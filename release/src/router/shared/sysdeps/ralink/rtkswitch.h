@@ -30,5 +30,9 @@ extern int rtkswitch_LanPort_linkDown();
 extern int rtkswitch_AllPort_linkUp();
 extern int rtkswitch_AllPort_linkDown();
 extern void rtkswitch_AllPort_phyState();
+//sherry fix rt-ac53 bug#5 traffic incorrect when hwnat enable{
+extern int get_realtek_wan_bytecount(unsigned long *tx, unsigned long *rx);
+extern int get_realtek_lans_bytecount(unsigned long *tx, unsigned long *rx);
+//end sherry}
 
 #endif

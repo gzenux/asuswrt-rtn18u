@@ -1,0 +1,40 @@
+#if CDK_CONFIG_INCLUDE_BCM53283_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53283, BCM53283_VENDOR_ID, BCM53283_DEVICE_ID, BCM53283_REV_A0, \
+                  BCM53283_MODEL, BCM53283_PROBEINFO, \
+                  bcm53280_a0, bcm53283_a0, bcm53283_a0, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "Managed Switch with 16 FE ports + 2 GbE Interfaces", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53283_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53283, BCM53283_VENDOR_ID, BCM53283_DEVICE_ID, BCM53283_REV_B0, \
+                  BCM53283_MODEL, BCM53283_PROBEINFO, \
+                  bcm53280_b0, bcm53283_b0, bcm53283_b0, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "Managed Switch with 16 FE ports + 2 GbE Interfaces", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53283_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53283, BCM53283_VENDOR_ID, BCM53283_DEVICE_ID, BCM53283_REV_B1, \
+                  BCM53283_MODEL, BCM53283_PROBEINFO, \
+                  bcm53280_b0, bcm53283_b0, bcm53283_b1, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "Managed Switch with 16 FE ports + 2 GbE Interfaces", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53283_B2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53283, BCM53283_VENDOR_ID, BCM53283_DEVICE_ID, BCM53283_REV_B2, \
+                  BCM53283_MODEL, BCM53283_PROBEINFO, \
+                  bcm53280_b0, bcm53283_b0, bcm53283_b2, \
+                  CDK_DEV_ARCH_ROBO, "Thunderbolt", "BCM53280", \
+                  "Managed Switch with 16 FE ports + 2 GbE Interfaces", 0, 0)
+#endif
+#endif
+

@@ -1,5 +1,5 @@
 PROG        = usb_modeswitch
-VERS        = 2.3.0
+VERS        = 2.4.0
 CC          ?= gcc
 CFLAGS      += -Wall
 LIBS        = `pkg-config --libs --cflags libusb-1.0`
@@ -13,12 +13,12 @@ UDEVDIR     = $(DESTDIR)/lib/udev
 SBINDIR     = $(PREFIX)/sbin
 MANDIR      = $(PREFIX)/share/man/man1
 VPATH       = jimtcl
-HOST_TCL   := $(shell cd jim && ./autosetup/find-tclsh)
-ifeq (,$(findstring jimsh0,$(HOST_TCL)))
-TCL        ?= $(HOST_TCL)
-else
-TCL        ?= /usr/bin/tclsh
-endif
+#HOST_TCL   := $(shell cd jim && ./autosetup/find-tclsh)
+#ifeq (,$(findstring jimsh0,$(HOST_TCL)))
+#TCL        ?= $(HOST_TCL)
+#else
+#TCL        ?= /usr/bin/tclsh
+#endif
 JIM_CONFIGURE_OPTS = --disable-lineedit \
 	--with-out-jim-ext="stdlib posix load signal syslog" --prefix=/usr
 
@@ -46,8 +46,8 @@ jim/libjim.a:
 	cd jim && CFLAGS="$(CFLAGS)" CC="$(CC)" ./configure $(JIM_CONFIGURE_OPTS)
 	$(MAKE) -C jim lib
 
-dispatcher-script: usb_modeswitch.tcl
-	sed 's_!/usr/bin/tclsh_!'"$(TCL)"'_' < usb_modeswitch.tcl > usb_modeswitch_dispatcher
+#dispatcher-script: usb_modeswitch.tcl
+#	sed 's_!/usr/bin/tclsh_!'"$(TCL)"'_' < usb_modeswitch.tcl > usb_modeswitch_dispatcher
 
 dispatcher-shared: jim/libjim.so dispatcher.c usb_modeswitch.string
 	$(CC) dispatcher.c $(LDFLAGS) -Ljim -ljim -Ijim -o usb_modeswitch_dispatcher $(CFLAGS)
@@ -55,8 +55,8 @@ dispatcher-shared: jim/libjim.so dispatcher.c usb_modeswitch.string
 dispatcher-static: jim/libjim.a dispatcher.c usb_modeswitch.string
 	$(CC) dispatcher.c $(LDFLAGS) jim/libjim.a -Ijim -o usb_modeswitch_dispatcher $(CFLAGS)
 
-usb_modeswitch.string: usb_modeswitch.tcl
-	$(HOST_TCL) make_string.tcl usb_modeswitch.tcl > $@
+#usb_modeswitch.string: usb_modeswitch.tcl
+#	$(HOST_TCL) make_string.tcl usb_modeswitch.tcl > $@
 
 clean:
 	$(RM) usb_modeswitch

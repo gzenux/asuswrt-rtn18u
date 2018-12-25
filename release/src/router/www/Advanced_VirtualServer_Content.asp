@@ -119,7 +119,7 @@ function initial(){
 		if(addRow_Group(32, $("#vts_rulelist_0")[0])) applyRule();
 	}
 
-	if(based_modelid == "GT-AC5300")
+	if(based_modelid == "GT-AC5300" || based_modelid == "GT-AC9600")
 		document.getElementById("VSGameList").parentNode.style.display = "none";
 }
 
@@ -580,7 +580,7 @@ function gen_vts_ruleTable_Block(_tableID) {
 
 	html += '<tr>';
 	html += '<th width="20%"><#BM_UserList1#></th>';
-	html += '<th width="20%"><a class="hintstyle" href="javascript:void(0);" onClick="">Source Target</a></th>';
+	html += '<th width="20%"><a class="hintstyle" href="javascript:void(0);" onClick=""><#IPConnection_VSList_SourceTarget#></a></th>';
 	html += '<th width="16%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);"><#FirewallConfig_LanWanSrcPort_itemname#></a></th>';
 	html += '<th width="18%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);"><#IPConnection_VServerIP_itemname#></a></th>';
 	html += '<th width="10%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,26);"><#IPConnection_VServerLPort_itemname#></a></th>';

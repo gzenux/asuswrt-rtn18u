@@ -217,11 +217,11 @@ int config8367r(int argc, char *argv[])
 	if (argc >= 3)
 		cmd2 = argv[2];
 
-	int val = atoi(cmd);
+	int val = safe_atoi(cmd);
 	int val2 = 0;
 
 	if (cmd2)
-		val2 = atoi(cmd2);
+		val2 = safe_atoi(cmd2);
 
 //	printf("config8367 %d %d\n",val,val2);
 		

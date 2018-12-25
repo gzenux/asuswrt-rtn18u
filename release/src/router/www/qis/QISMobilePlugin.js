@@ -38,7 +38,7 @@ function genErrorHint(){
 				htmlCode += "<br><br>* <#OP_MB_desc8#>";
 				htmlCode += "<br><br>* <#OP_MB_desc9#>";
 		}else{
-				htmlCode += "<br><br><br><p style='font-size:20px;line-height: 25px;color:#FC0;' class='QISGeneralFont'>* <#OP_RE_desc1#><br><#OP_RE_desc2#>";
+				htmlCode += "<br><br><br><p style='font-size:20px;line-height: 25px;color:#FC0;' class='QISGeneralFont'>* <#QKSet_finish_moveto9#>";
 				htmlCode += "<br><br>* <#DrSurf_sweet_advise1#>";
 		}
 

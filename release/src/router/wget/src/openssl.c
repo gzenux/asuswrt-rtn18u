@@ -191,10 +191,12 @@ ssl_init (void)
     }
 
 #if OPENSSL_VERSION_NUMBER >= 0x00907000
+#ifndef OPENSSL_NO_ENGINE
   OPENSSL_load_builtin_modules();
   ENGINE_load_builtin_engines();
   CONF_modules_load_file(NULL, NULL,
       CONF_MFLAGS_DEFAULT_SECTION|CONF_MFLAGS_IGNORE_MISSING_FILE);
+#endif
 #endif
   SSL_library_init ();
   SSL_load_error_strings ();

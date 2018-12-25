@@ -20,6 +20,13 @@
 #define _LIBBRIDGE_H
 
 #include <net/if.h>
+#include <linux/version.h>
+#ifndef LINUX_KERNEL_VERSION
+#define LINUX_KERNEL_VERSION LINUX_VERSION_CODE
+#endif
+#if LINUX_KERNEL_VERSION >= KERNEL_VERSION(3,10,14)
+#include <linux/in6.h> /* ASUS EXT */
+#endif
 #include <linux/if_bridge.h>
 
 struct bridge_id

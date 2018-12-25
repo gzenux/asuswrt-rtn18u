@@ -11,6 +11,10 @@
 
 #include "hotplug2.h"
 
+#ifdef HND_ROUTER
+#define inline  
+#endif
+
 #define NETLINK_UNDEFINED	0
 #define NETLINK_CONNECT		1
 #define NETLINK_BIND		2

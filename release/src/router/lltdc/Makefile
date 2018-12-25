@@ -7,7 +7,10 @@ LD= $(CC)
 CFLAGS += -I$(TOP)/shared
 CFLAGS += -I$(SRCBASE)/include
 
-LDFLAGS += -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX} -lnvram
+LDFLAGS += -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX}${EX7} -lnvram
+ifeq ($(HND_ROUTER),y)
+LDFLAGS += -L$(TOP)/wlcsm -lwlcsm
+endif
 
 ifeq ($(RTCONFIG_BCMARM),y)
 LDFLAGS += -lgcc_s
@@ -15,6 +18,10 @@ endif
 
 ifeq ($(RTCONFIG_QTN),y)
 LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
 endif
 
 OS_LAYER = osl-linux.c

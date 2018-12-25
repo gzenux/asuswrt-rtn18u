@@ -1873,8 +1873,17 @@ int dhcp_dns(struct dhcp_conn_t *conn, uint8_t *pack,
 	//int name_len = strlen((char *)q);
 	int domain_len = strlen(_options.domain);
 	
-      	if(!is_wan_connect(wan_primary_ifunit()))
-	    domain_len=0;	   
+	int unit=0;
+	int conn_flag=0;
+	for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
+		if(is_wan_connect(unit)){
+			conn_flag=1;
+			break;
+		}
+	}
+      	if(!conn_flag){
+	    domain_len=0;
+	}	   
 
 //	if (name_len >= (domain_len + 1)) {
 //	  int off = name_len - domain_len;

@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56936_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56936, BCM56936_VENDOR_ID, BCM56936_DEVICE_ID, BCM56936_REV_A0, \
+                  0, 0, \
+                  bcm56931_a0, bcm56936_a0, bcm56936_a0, \
+                  CDK_DEV_ARCH_XGS, "Sportster", "BCM56930", \
+                  "XGS pass-through and standalone Traffic Manager, 80Gbps", 0, 0)
+#endif
+#endif
+

@@ -45,6 +45,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <linux/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -63,6 +64,7 @@ struct stun_strings {
 
 static char *stun_local = "0.0.0.0";
 static char *stun_server = STUN_SERVER;
+static char *stun_iface = NULL;
 static int stun_port = STUN_PORT;
 static int stun_rto = STUN_RTO;
 static int stun_mrc = STUN_MRC;
@@ -497,8 +499,11 @@ int main(int argc, char *argv[])
 	struct hostent *hostinfo;
 	char *value;
 
-	while ((opt = getopt(argc, argv, "t:c:l:dh")) != -1) {
+	while ((opt = getopt(argc, argv, "t:c:l:dhi:")) != -1) {
 		switch (opt) {
+		case 'i':
+			stun_iface = optarg;
+			break;
 		case 't':
 			stun_rto = atoi(optarg);
 			break;
@@ -539,6 +544,16 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Error bind to socket\n");
 		close(sock);
 		return -1;
+	}
+
+	if (stun_iface) {
+		int r;
+
+		r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, stun_iface, IFNAMSIZ);
+		if (r == -1) {
+			fprintf(stderr, "Bind socket to device [%s] failed! errno %d (%s)\n",
+				stun_iface, errno, strerror(errno));
+		}
 	}
 
 	hostinfo = gethostbyname(stun_server);

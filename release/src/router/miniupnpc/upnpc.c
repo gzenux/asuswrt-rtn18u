@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #define snprintf _snprintf
@@ -26,29 +27,11 @@
 #include <sys/shm.h>
 #include <sys/sysinfo.h>
 #include <errno.h>
+#include "../networkmap/networkmap.h"
 
 #ifdef RTCONFIG_JFFS2USERICON
 #define JFFS_ICON_PATH	"/jffs/usericon"
 #define UPNP_ICON_PATH	"/tmp/upnpicon"
-
-typedef struct {
-        unsigned char   ip_addr[255][4];
-        unsigned char   mac_addr[255][6];
-        unsigned char   user_define[255][16];
-        unsigned char   device_name[255][32];
-        unsigned char   apl_dev[255][16];
-        int             type[255];
-        int             http[255];
-        int             printer[255];
-        int             itune[255];
-        int             exist[255];
-#ifdef RTCONFIG_BWDPI
-        char            bwdpi_hostname[255][32];
-        char            bwdpi_devicetype[255][100];
-#endif
-        int             ip_mac_num;
-        int             detail_info_num;
-} CLIENT_DETAIL_INFO_TABLE, *P_CLIENT_DETAIL_INFO_TABLE;
 
 //the crc32 of Windows related icon
 unsigned long default_icon_crc[] = {

@@ -71,7 +71,7 @@ union xattr_DosInfo {
 	struct xattr_DosInfo1 info1;/* [case] */
 	struct xattr_DosInfo2Old oldinfo2;/* [case(2)] */
 	struct xattr_DosInfo3 info3;/* [case(3)] */
-}/* [switch_type(uint16),public] */;
+}/* [public,switch_type(uint16)] */;
 
 struct xattr_DosAttrib {
 	uint16_t version;
@@ -108,7 +108,7 @@ struct xattr_DosStream {
 
 struct xattr_DosStreams {
 	uint32_t num_streams;
-	struct xattr_DosStream *streams;/* [unique,size_is(num_streams)] */
+	struct xattr_DosStream *streams;/* [size_is(num_streams),unique] */
 }/* [public] */;
 
 struct security_descriptor_hash_v2 {
@@ -123,9 +123,9 @@ struct security_descriptor_hash_v3 {
 }/* [public] */;
 
 union xattr_NTACL_Info {
-	struct security_descriptor *sd;/* [unique,case] */
+	struct security_descriptor *sd;/* [case,unique] */
 	struct security_descriptor_hash_v2 *sd_hs2;/* [unique,case(2)] */
-	struct security_descriptor_hash_v3 *sd_hs3;/* [unique,case(3)] */
+	struct security_descriptor_hash_v3 *sd_hs3;/* [case(3),unique] */
 }/* [switch_type(uint16)] */;
 
 struct xattr_NTACL {

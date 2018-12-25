@@ -1,12 +1,19 @@
 #!/bin/sh
 # $1: AT cmd, $2: waiting time, $3: forcely use the bulk node.
+# environment variable: unit - modem unit.
 # echo "This is a script to execute the AT command."
 
 
-modem_type=`nvram get usb_modem_act_type`
-act_node1="usb_modem_act_int"
-act_node2="usb_modem_act_bulk"
-modem_vid=`nvram get usb_modem_act_vid`
+if [ -z "$unit" ] || [ "$unit" -eq "0" ]; then
+	prefix="usb_modem_"
+else
+	prefix="usb_modem${unit}_"
+fi
+
+modem_type=`nvram get ${prefix}act_type`
+act_node1="${prefix}act_int"
+act_node2="${prefix}act_bulk"
+modem_vid=`nvram get ${prefix}act_vid`
 
 atcmd=`nvram get modem_atcmd`
 

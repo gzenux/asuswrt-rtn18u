@@ -5,11 +5,24 @@
  * Copyright (C) 2001 by Michael Habermann <mhabermann@gmx.de>
  * Copyrigjt (C) Mar 16, 2003 Manuel Novoa III   (mjn3@codepoet.org)
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 N/A */
 /* BB_AUDIT GNU defects -- only option -n is supported. */
+
+//usage:#define watch_trivial_usage
+//usage:       "[-n SEC] [-t] PROG ARGS"
+//usage:#define watch_full_usage "\n\n"
+//usage:       "Run PROG periodically\n"
+//usage:     "\n	-n	Loop period in seconds (default 2)"
+//usage:     "\n	-t	Don't print header"
+//usage:
+//usage:#define watch_example_usage
+//usage:       "$ watch date\n"
+//usage:       "Mon Dec 17 10:31:40 GMT 2000\n"
+//usage:       "Mon Dec 17 10:31:42 GMT 2000\n"
+//usage:       "Mon Dec 17 10:31:44 GMT 2000"
 
 #include "libbb.h"
 
@@ -56,20 +69,22 @@ int watch_main(int argc UNUSED_PARAM, char **argv)
 		printf("\033[H""\033[J");
 		if (!(opt & 0x2)) { // no -t
 			const unsigned time_len = sizeof("1234-67-90 23:56:89");
-			time_t t;
 
 			// STDERR_FILENO is procps3 compat:
 			// "watch ls 2>/dev/null" does not detect tty size
-			get_terminal_width_height(STDERR_FILENO, &new_width, NULL);
+			new_width = get_terminal_width(STDERR_FILENO);
 			if (new_width != width) {
 				width = new_width;
 				free(header);
 				header = xasprintf("Every %us: %-*s", period, (int)width, cmd);
 			}
-			time(&t);
-			if (time_len < width)
-				strftime(header + width - time_len, time_len,
-					"%Y-%m-%d %H:%M:%S", localtime(&t));
+			if (time_len < width) {
+				strftime_YYYYMMDDHHMMSS(
+					header + width - time_len,
+					time_len,
+					/*time_t*:*/ NULL
+				);
+			}
 
 			// compat: empty line between header and cmd output
 			printf("%s\n\n", header);

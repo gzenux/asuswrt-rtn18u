@@ -75,6 +75,25 @@ var validator = {
 			return "";
 	},
 
+	bandwidth_code: function(o,event) {
+		var keyPressed = event.keyCode ? event.keyCode : event.which;
+		var target = o.value.split(".");
+		
+		if (validator.isFunctionButton(event))
+			return true;
+			
+		if((keyPressed == 46) && (target.length > 1))
+			return false;
+
+		if((target.length > 1) && (target[1].length > 0))
+			return false;
+			
+		if ((keyPressed == 46) || (keyPressed > 47 && keyPressed < 58))
+			return true;
+		else
+			return false;
+	},
+
 	checkIP: function(o,e){
 		var nextInputBlock = o.nextSibling.nextSibling; //find the next input (sibling include ".")
 		var nc = window.event ? e.keyCode : e.which;
@@ -272,9 +291,6 @@ var validator = {
 	haveFullWidthChar: function(obj) {
 		var re = /[^\x00-\xff]/g;
 		if (obj.value.match(re)) {
-			alert('<#JS_validchar#>');
-			obj.focus();
-			obj.select();
 			return false;
 		}
 		else {
@@ -287,7 +303,7 @@ var validator = {
 		if(re.test(obj.value)){
 			return "";
 		}
-		else if(location.pathname == "/" || location.pathname == "/index.asp"){
+		else if(location.pathname == "/" || location.pathname == "<% abs_index_page(); %>"){
 			return "Client device name only accept alphanumeric characters, under line and dash symbol. The first character cannot be dash \"-\" or under line \"_\".";
 		}
 		else{
@@ -306,7 +322,7 @@ var validator = {
 	},
 
 	domainName: function (obj) { //support a-z, 0-9, "-", "_" , "."", The first character cannot be dash "-" or under line "_"
-		var re = new RegExp(/^(?:[a-z0-9](?:[a-z0-9-_]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]$/);
+		var re = new RegExp(/^(?:[a-z0-9](?:[a-z0-9-_]{0,61}[a-z0-9])?\.)*[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]$/);
 		if(re.test(obj.value)){
 			return "";
 		}
@@ -337,6 +353,16 @@ var validator = {
 		}
 		
 		else return 0;
+	},
+
+	isEmpty: function(obj) {
+		if(obj.value.trim() == "") {
+			alert("<#JS_fieldblank#>");
+			obj.focus();
+			return false;
+		}
+		else 
+			return true;
 	},
 
 	isFunctionButton: function(e){
@@ -390,6 +416,10 @@ var validator = {
 		else if(keyPressed == 58 || keyPressed == 13){	//symbol ':' & 'ENTER'
 			return true;
 		}
+		else if(event.metaKey && (keyPressed == 65 || keyPressed == 67 || keyPressed == 86 || keyPressed == 88 
+			                   || keyPressed == 97 || keyPressed == 99 || keyPressed == 118 || keyPressed == 120)){		//for Mac + Safari, let 'Command + A'(C, V, X) can work
+			return true
+		}
 		else{
 			return false;
 		}
@@ -404,6 +434,10 @@ var validator = {
 
 		if ((keyPressed == 46) || (keyPressed>47 && keyPressed<58))
 			return true;
+		else if(event.metaKey && (keyPressed == 65 || keyPressed == 67 || keyPressed == 86 || keyPressed == 88 
+			                   || keyPressed == 97 || keyPressed == 99 || keyPressed == 118 || keyPressed == 120)){		//for Mac + Safari, let 'Command + A'(C, V, X) can work
+			return true
+		}
 		else
 			return false;
 	},
@@ -417,6 +451,10 @@ var validator = {
 
 		if ((keyPressed == 45) || (keyPressed>47 && keyPressed<58))
 			return true;
+		else if(event.metaKey && (keyPressed == 65 || keyPressed == 67 || keyPressed == 86 || keyPressed == 88 
+			                   || keyPressed == 97 || keyPressed == 99 || keyPressed == 118 || keyPressed == 120)){		//for Mac + Safari, let 'Command + A'(C, V, X) can work
+			return true
+		}
 		else
 			return false;
 	},
@@ -434,8 +472,25 @@ var validator = {
 			}*/
 			return true;
 		}
+		else if(event.metaKey && (keyPressed == 65 || keyPressed == 67 || keyPressed == 86 || keyPressed == 88 
+			                   || keyPressed == 97 || keyPressed == 99 || keyPressed == 118 || keyPressed == 120)){		//for Mac + Safari, let 'Command + A'(C, V, X) can work
+			return true
+		}		
 		else{
 			return false;
+		}
+	},
+
+	isContainblanksStr: function(obj) {
+		var obj_value = obj.value;
+		if(obj_value.replace(/^\s+|\s+$/g,"").match(/\x20/i)) {
+			obj.focus();
+			obj.select();
+			alert("The Name can not contain blanks");
+			return false;
+		}
+		else {
+			return true;
 		}
 	},
 
@@ -479,6 +534,10 @@ var validator = {
 			return true;
 		}else if(keyPressed == 13){	// 'ENTER'
 			return true;
+		}
+		else if(event.metaKey && (keyPressed == 65 || keyPressed == 67 || keyPressed == 86 || keyPressed == 88 
+			                   || keyPressed == 97 || keyPressed == 99 || keyPressed == 118 || keyPressed == 120)){		//for Mac + Safari, let 'Command + A'(C, V, X) can work
+			return true
 		}
 
 		return false;
@@ -671,6 +730,147 @@ var validator = {
 		}
 	},
 
+	isLegalIPAndMask: function(obj_name) {
+		// A : 1.0.0.0~126.255.255.255
+		// B : 127.0.0.0~127.255.255.255 (forbidden)
+		// C : 128.0.0.0~255.255.255.254
+		var A_class_start = inet_network("1.0.0.0");
+		var A_class_end = inet_network("126.255.255.255");
+		var B_class_start = inet_network("127.0.0.0");
+		var B_class_end = inet_network("127.255.255.255");
+		var C_class_start = inet_network("128.0.0.0");
+		var C_class_end = inet_network("255.255.255.255");		
+		var ip_obj = obj_name;
+		var ip_mask_array = ip_obj.value.split("/");
+
+		var vaildMaskRange = function() {
+			var mask = parseInt(ip_mask_array[1]);
+
+			if(parseInt(ip_mask_array[1]) == "" || isNaN(mask)) {
+				alert("This is not a valid IP/Mask address!");
+				ip_obj.focus();
+				ip_obj.select();
+				return false;
+			}
+			else if(parseInt(ip_mask_array[1]) < 0 || parseInt(ip_mask_array[1]) > 32) {
+				alert(ip_mask_array[1] + " is not a valid Mask address!");
+				ip_obj.focus();
+				ip_obj.select();
+				return false;
+			}
+			else {
+				return true;
+			}
+		};
+
+		if(ip_mask_array.length != 2) {
+			alert("This is not a valid IP/Mask address!");
+			ip_obj.focus();
+			ip_obj.select();
+			return false;
+		}
+		var ip_num = inet_network(ip_mask_array[0]);
+
+		if(ip_num > A_class_start && ip_num < A_class_end){
+			if(vaildMaskRange()) {
+				obj_name.value = ipFilterZero(ip_mask_array[0]) + "/" + ip_mask_array[1];
+				return true;
+			}
+		}
+		else if(ip_num > B_class_start && ip_num < B_class_end){
+			alert(ip_mask_array[0]+" <#JS_validip#>");
+			ip_obj.focus();
+			ip_obj.select();
+			return false;
+		}
+		else if(ip_num > C_class_start && ip_num < C_class_end){
+			if(vaildMaskRange()) {
+				obj_name.value = ipFilterZero(ip_mask_array[0]) + "/" + ip_mask_array[1];
+				return true;
+			}
+		}
+		else{
+			alert(ip_mask_array[0]+" <#JS_validip#>");
+			ip_obj.focus();
+			ip_obj.select();
+			return false;
+		}	
+	},
+
+	isLegal_ipv6: function(obj) {
+		// check whether every char of the str is a Hex char(0~9,a~f,A~F)
+		var isHex = function(str) {
+			if(str.length == 0 || str.length > 4) {
+				return false;
+			}
+			str = str.toLowerCase();
+			var ch;
+			for(var i=0; i< str.length; i++) {
+				ch = str.charAt(i);
+				if(!(ch >= '0' && ch <= '9') && !(ch >= 'a' && ch <= 'f')) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		var idx = obj.value.indexOf("::");
+		// there is no "::" in the ip address
+		if (idx == -1) {
+			var items = obj.value.split(":");
+			if (items.length != 8) {
+				alert(obj.value + " <#JS_validip#>");
+				obj.focus();
+				return false;
+			}
+			else {
+				for (var key = 0; key < items.length; key += 1) {
+					if (!isHex(items[key])) {
+						alert(obj.value + " <#JS_validip#>");
+						obj.focus();
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+		else {
+			// at least, there are two "::" in the ip address
+			if (idx != obj.value.lastIndexOf("::")) {
+				alert(obj.value + " <#JS_validip#>");
+				obj.focus();
+				return false;
+			}
+			else {
+				var items = obj.value.split("::");
+				var items0 = items[0].split(":");
+				var items1 = items[1].split(":");
+				if ((items0.length + items1.length) > 7) {
+					alert(obj.value + " <#JS_validip#>");
+					obj.focus();
+					return false;
+				}
+				else {
+					for (var key = 0; key < items0.length; key += 1) {
+						if (!isHex(items0[key])) {
+							alert(obj.value + " <#JS_validip#>");
+							obj.focus();
+							return false;
+						}
+					}
+					for (var key = 0; key < items1.length; key += 1) {
+						if (!isHex(items1[key])) {
+							alert(obj.value + " <#JS_validip#>");
+							obj.focus();
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+		}
+	},
+
 	isPortRange: function(o,event){
 		var keyPressed = event.keyCode ? event.keyCode : event.which;
 
@@ -701,6 +901,10 @@ var validator = {
 			else
 				return false;
 		}
+		else if(event.metaKey && (keyPressed == 65 || keyPressed == 67 || keyPressed == 86 || keyPressed == 88 
+			                   || keyPressed == 97 || keyPressed == 99 || keyPressed == 118 || keyPressed == 120)){		//for Mac + Safari, let 'Command + A'(C, V, X) can work
+			return true
+		}		
 
 		return false;
 	},
@@ -715,6 +919,10 @@ var validator = {
 			
 		if ((keyPressed>47 && keyPressed<58) || keyPressed == 32){
 			return true;
+		}
+		else if(event.metaKey && (keyPressed == 65 || keyPressed == 67 || keyPressed == 86 || keyPressed == 88 
+			                   || keyPressed == 97 || keyPressed == 99 || keyPressed == 118 || keyPressed == 120)){		//for Mac + Safari, let 'Command + A'(C, V, X) can work
+			return true
 		}
 		else{
 			return false;
@@ -749,6 +957,15 @@ var validator = {
 			alert('<#JS_validchar#>');
 			return false;
 		}	
+	},
+
+	isValidURL: function(value) {
+		var urlregex = new RegExp("^(http|https|ftp)\://([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)*(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-]+))*$");
+		if (urlregex.test(value)) {
+			return true;
+		}
+		alert("It is invalid URL."); /*untranslated*/
+		return false;
 	},
 
 	// 2010.07 James. {
@@ -1525,16 +1742,15 @@ var validator = {
 	},
 
 	rangeFloat: function(o, _min, _max, def){
-
-		if(isNaN(o.value) || o.value <= _min || o.value > _max) {
-			alert('<#JS_validrange#> ' + min + ' <#JS_validrange_to#> ' + max + '.');
+        if(isNaN(o.value) || o.value <= _min || o.value > _max) {
+            alert('<#JS_validrange#> ' + min + ' <#JS_validrange_to#> ' + max + '.');
 			o.value = def;
 			o.focus();
 			o.select();
 			return false;
 		}
 
-		return true;
+        return true;
 	},
 
 	ssidChar: function(ch){
@@ -1577,7 +1793,6 @@ var validator = {
 	},
 	
 	string_KR: function(string_obj, flag){		//Alphabets, numbers, specialcharacters mixed
-
 		var string_length = string_obj.value.length;
 		if(!/[A-Za-z]/.test(string_obj.value) || !/[0-9]/.test(string_obj.value) || string_length < 8
 				|| !/[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~]/.test(string_obj.value)){
@@ -1596,8 +1811,10 @@ var validator = {
 		}
 
 		if(invalid_char != ""){
-			if(flag != "noalert")
+			if(flag != "noalert"){
 				alert("<#JS_validstr2#> '"+invalid_char+"' !");
+			}
+
 			string_obj.value = "";
 			string_obj.focus();
 			return false;
@@ -1625,6 +1842,7 @@ var validator = {
 				return false;
 			}
 		}
+
 		return true;
 	},
 
@@ -1851,7 +2069,6 @@ var validator = {
 		
 		if(iscurrect == false){
 			alert(str);
-			
 			key_obj.focus();
 			key_obj.select();
 		}
@@ -1867,6 +2084,57 @@ var validator = {
 		}
 		
 		return true;
-	}
+	},
 
+	mac_addr: function(_value) {
+		var hwaddr = new RegExp("(([a-fA-F0-9]{2}(\:|$)){6})", "gi");
+		if(hwaddr.test(_value))
+			return true;
+		else
+			return false;
+	},
+
+	ipv4_addr: function(_value) {
+		//ip address accept is 0.0.0.0~255.255.255.255
+		var ipformat  = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+		if((ipformat.test(_value)))
+			return true;
+		else
+			return false;
+	},
+
+	ipv4_addr_range: function(_value) {
+		//ip address accept is 0.0.0.0~255.255.255.255
+		//format: 192.168.1.*, 192.168.1.2-100, 192.168.1.0/24
+		var ipformatSubnet = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(\*)$/;
+		if((ipformatSubnet.test(_value)))	//192.168.1.*
+			return true;
+		else {
+			var ipformatRange = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$/;
+			if((ipformatRange.test(_value))) {	//192.168.1.0-255
+				var part = _value.split(".");
+				var range = part[3].split("-");
+				if(parseInt(range[0]) < parseInt(range[1]))
+					return true;
+				else
+					return false;
+			}
+			else {
+				var ipformatMask = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|2[0-9]|1[0-9]|[1-9])$/;
+				if((ipformatMask.test(_value)))	//192.168.1.0/24
+					return true;
+				else
+					return false;
+			}
+		}
+	},
+
+	domainName_flag: function(_value) {
+		//domin name
+		var domainNameFormat = /^((?:(?:(?:\w[\.\-\+]?)*)\w)+)((?:(?:(?:\w[\.\-\+]?){0,62})\w)+)\.(\w{2,6})$/; 
+		if(domainNameFormat.test(_value))
+			return true;
+		else
+			return false;
+	}
 };

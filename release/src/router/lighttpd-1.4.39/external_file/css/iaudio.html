@@ -7,14 +7,12 @@
 <script type="text/javascript" src="/smb/js/jplayer/jquery.jplayer.min.js"></script>
 <link rel="stylesheet" href="/smb/css/jplayer.ios.css" type="text/css">
 <script type="text/javascript">
-$("document").ready(function() {	
-	var ua = navigator.userAgent;
-	var orgfile = window.location.href;
-	var media_hostName = window.location.host;
-	if(media_hostName.indexOf(":")!=-1)
-		media_hostName = media_hostName.substring(0, media_hostName.indexOf(":"));
-	var audiofile = "http://" + media_hostName + ":" + $("div#http_port").attr("content") + "/" + 
-	                orgfile.substring( orgfile.indexOf("AICLOUD"), orgfile.length );
+$("document").ready(function() {
+	var host = $("div#header_info").attr("host");
+	var port = $("div#header_info").attr("port");
+	var path = $("div#header_info").attr("path");
+		
+	var audiofile = "http://" + host + ":" + port + path;
 	
 	$('#jquery_jplayer_1').jPlayer({
 		solution: 'html',

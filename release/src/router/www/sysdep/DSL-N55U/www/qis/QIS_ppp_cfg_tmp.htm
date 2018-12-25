@@ -326,7 +326,7 @@ function gotoHome() {
 		location.href = '/qis/QIS_wireless.htm';
 	}
 	else {
-		parent.location.href = '/index.asp';
+		parent.location.href = "<% abs_index_page(); %>";
 	}
 }
 
@@ -505,11 +505,11 @@ function showMAC(){
 <!-- Germany ISP setting end-->
 
 	<div class="apply_gen" style="margin-top:30px">
-		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" tabindex="6" onclick="gotoprev(document.form);" class="button_gen" >
+		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" tabindex="6" onclick="gotoprev(document.form);" class="button_gen_long">
 <!--
 		<input type="button" id="nextButton" value="Ethernet WAN" onclick="redirect_page('internet_type');" class="button_gen" >
 -->
-		<input type="button" id="nextButton" value="<#CTL_next#>" tabindex="5" onclick="submitForm();" class="button_gen">
+		<input type="button" id="nextButton" value="<#CTL_next#>" tabindex="5" onclick="submitForm();" class="button_gen_long">
 	</div>
 
 </div>

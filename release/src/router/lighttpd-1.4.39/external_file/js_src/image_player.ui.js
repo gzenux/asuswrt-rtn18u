@@ -39,13 +39,13 @@ var g_image_player = {
 		
 		var image_array = new Array();
 		for(var i=0;i<this.file_array.length;i++){
-			var file_ext = getFileExt(this.file_array[i].href);			
+			var file_ext = getFileExt(this.file_array[i].furl);			
 			if(file_ext=="jpg"||file_ext=="jpeg"||file_ext=="png"||file_ext=="gif")
 				image_array.push(this.file_array[i]);
 		}
 		
-		var image_array_count = image_array.length;
-	
+        var image_array_count = image_array.length;
+	      
 		if(image_array_count==0){
 			alert(m.getString("msg_no_image_list"));
 			return;
@@ -53,7 +53,7 @@ var g_image_player = {
 		
 		var default_index = 0;
 		for(var i=0;i<image_array.length;i++){
-   			if( this.loc == image_array[i].href )
+   			if( this.loc == image_array[i].furl )
    				default_index = i;
   		}
 		
@@ -66,14 +66,17 @@ var g_image_player = {
 		div_html += 'px; z-index: 2999;">';
 	
 		div_html += '<div class="barousel_image">';
-	
+        
+        var host_url = window.location.protocol + "//" + window.location.host;
+        //var host_url = g_storage.get('request_host_url') + "/";
+        
 		for(var i=0;i<image_array.length;i++){
-			var img_url = window.location.protocol + "//" + window.location.host + image_array[i].href;
+			var img_url = host_url + image_array[i].furl;
 			
 			if(i==default_index)
-				div_html += '<img src="" path="' + img_url + '" uhref="' + image_array[i].href + '" file="' + image_array[i].name + '" alt="" class="default"/>';
+				div_html += '<img src="" path="' + img_url + '" uhref="' + image_array[i].furl + '" file="' + image_array[i].name + '" alt="" class="default"/>';
 			else
-				div_html += '<img src="" path="' + img_url + '" uhref="' + image_array[i].href + '" file="' + image_array[i].name + '" alt="" class=""/>';
+				div_html += '<img src="" path="' + img_url + '" uhref="' + image_array[i].furl + '" file="' + image_array[i].name + '" alt="" class=""/>';
 		}
 	
 		div_html += '</div>';

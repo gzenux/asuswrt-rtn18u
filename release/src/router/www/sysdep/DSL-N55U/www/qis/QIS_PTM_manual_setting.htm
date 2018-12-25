@@ -259,6 +259,7 @@ function showAllList(o){
 		for(i=0; i< ISP_List.length; i++) {
 			if(ISP_List[i][1] == o) {
 				showNomoISPServiceByIdx(i);
+				showSpecificSetting(i);
 				break;
 			}
 		}
@@ -433,8 +434,13 @@ function btnNext() {
 		document.form.dslx_vdsl_profile.value = "1";
 		parent.restartDSLSetting = true;
 	}
-	if( document.form.country.value == 'United Kingdom'
-		&& document.form.dsltmp_cfg_ispname.value=='Sky - Fibre Broadband'
+	if( (document.form.dsltmp_cfg_country.value=='United Kingdom'
+			&& (document.form.dsltmp_cfg_ispname.value=='Sky - Fibre Broadband'
+			|| document.form.dsltmp_cfg_ispname.value=='TalkTalk (Automatic IP)')
+			)
+		|| (document.form.dsltmp_cfg_country.value=='India'
+			&& document.form.dsltmp_cfg_ispname.value=='Airtel (Automatic IP)'
+			)
 	){
 		document.form.dslx_ginp_try_enable_disp.value = "1";
 		parent.restartDSLSetting = true;
@@ -488,7 +494,21 @@ function check_ginp_try(obj){
 }
 
 function showSpecificSetting(idx) {
-	if(ISP_List[idx][4] == 'Sky - Fibre Broadband') {
+	if ( idx=='NO' )
+	{
+		document.getElementById('dslx_ginp_try_checkbox').style.display = "none";
+		document.form.dslx_ginp_try_enable.value = 0;
+		return;
+	}
+
+	if( (ISP_List[idx][1] == 'United Kingdom'
+			&& (ISP_List[idx][4] == 'Sky - Fibre Broadband'
+			|| ISP_List[idx][4] == 'TalkTalk (Automatic IP)')
+			)
+		|| (ISP_List[idx][1] == 'India'
+			&& ISP_List[idx][4] == 'Airtel (Automatic IP)'
+			)
+	) {
 		document.getElementById('dslx_ginp_try_checkbox').style.display = "";
 		document.form.dslx_ginp_try_enable.value = 1;
 	}

@@ -3,7 +3,7 @@ include ../version.mak
 #RTSRCBASE=../../..
 PJBASE=../pjproject-1.12
 RTSHAREDBASE=$(TOP)/shared
-RTNVARMBASE=$(TOP)/nvram$(BCMEX)
+RTNVARMBASE=$(TOP)/nvram$(BCMEX)$(EX7)
 UMEMBASE=../umem-1.0.1
 UDTBASE=../udt
 LIB_UDT=udt
@@ -26,10 +26,14 @@ CFLAGS += -g -I$(NATBASE) -I$(NATBASE)/msvc_prjs/asusnatnl
 CFLAGS += -DTUNNEL_V=\"$(VERSION)\"
 CFLAGS += -I$(UDTBASE) -I$(SCTPBASE)
 #CFLAGS += -Wall
-CPPFLAGS += -fPIC $(CFLAGS)
+CPPFLAGS += -fPIC $(CFLAGS) 
 
 ifeq ($(AR),)
 AR=ar
+endif
+
+ifeq ($(RTCONFIG_SW_HW_AUTH),y)
+CFLAGS += -DSW_HW_AUTH
 endif
 
 ifeq ($(router), yes)
@@ -44,6 +48,9 @@ LDLIBS += -lshared
 LDLIBS += -lnvram
 LDFLAGS += -L$(RTSHAREDBASE)
 LDFLAGS += -L$(RTNVARMBASE)
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
 endif
 
 #check if make goal is android-lib or linux-lib

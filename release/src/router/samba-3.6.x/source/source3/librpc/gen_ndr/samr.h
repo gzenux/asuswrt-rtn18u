@@ -355,7 +355,7 @@ union samr_GroupInfo {
 struct samr_RidAttrArray {
 	uint32_t count;
 	uint32_t *rids;/* [unique,size_is(count)] */
-	uint32_t *attributes;/* [size_is(count),unique] */
+	uint32_t *attributes;/* [unique,size_is(count)] */
 };
 
 struct samr_AliasInfoAll {
@@ -698,7 +698,7 @@ struct samr_RidWithAttribute {
 
 struct samr_RidWithAttributeArray {
 	uint32_t count;
-	struct samr_RidWithAttribute *rids;/* [size_is(count),unique] */
+	struct samr_RidWithAttribute *rids;/* [unique,size_is(count)] */
 }/* [public] */;
 
 struct samr_DispEntryGeneral {
@@ -725,7 +725,7 @@ struct samr_DispEntryFull {
 
 struct samr_DispInfoFull {
 	uint32_t count;
-	struct samr_DispEntryFull *entries;/* [size_is(count),unique] */
+	struct samr_DispEntryFull *entries;/* [unique,size_is(count)] */
 };
 
 struct samr_DispEntryFullGroup {
@@ -738,7 +738,7 @@ struct samr_DispEntryFullGroup {
 
 struct samr_DispInfoFullGroups {
 	uint32_t count;
-	struct samr_DispEntryFullGroup *entries;/* [unique,size_is(count)] */
+	struct samr_DispEntryFullGroup *entries;/* [size_is(count),unique] */
 };
 
 struct samr_DispEntryAscii {
@@ -748,7 +748,7 @@ struct samr_DispEntryAscii {
 
 struct samr_DispInfoAscii {
 	uint32_t count;
-	struct samr_DispEntryAscii *entries;/* [size_is(count),unique] */
+	struct samr_DispEntryAscii *entries;/* [unique,size_is(count)] */
 };
 
 union samr_DispInfo {
@@ -886,7 +886,7 @@ struct samr_ValidatePasswordInfo {
 	NTTIME lockout_time;
 	uint32_t bad_pwd_count;
 	uint32_t pwd_history_len;
-	struct samr_ValidationBlob *pwd_history;/* [size_is(pwd_history_len),unique] */
+	struct samr_ValidationBlob *pwd_history;/* [unique,size_is(pwd_history_len)] */
 };
 
 struct samr_ValidatePasswordRepCtr {
@@ -1238,7 +1238,7 @@ struct samr_QueryGroupInfo {
 	} in;
 
 	struct {
-		union samr_GroupInfo **info;/* [switch_is(level),ref] */
+		union samr_GroupInfo **info;/* [ref,switch_is(level)] */
 		NTSTATUS result;
 	} out;
 
@@ -1359,7 +1359,7 @@ struct samr_SetAliasInfo {
 	struct {
 		struct policy_handle *alias_handle;/* [ref] */
 		enum samr_AliasInfoEnum level;
-		union samr_AliasInfo *info;/* [switch_is(level),ref] */
+		union samr_AliasInfo *info;/* [ref,switch_is(level)] */
 	} in;
 
 	struct {
@@ -1456,7 +1456,7 @@ struct samr_QueryUserInfo {
 	} in;
 
 	struct {
-		union samr_UserInfo **info;/* [ref,switch_is(level)] */
+		union samr_UserInfo **info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 
@@ -1467,7 +1467,7 @@ struct samr_SetUserInfo {
 	struct {
 		struct policy_handle *user_handle;/* [ref] */
 		enum samr_UserInfoLevel level;
-		union samr_UserInfo *info;/* [ref,switch_is(level)] */
+		union samr_UserInfo *info;/* [switch_is(level),ref] */
 	} in;
 
 	struct {
@@ -1524,7 +1524,7 @@ struct samr_QueryDisplayInfo {
 	struct {
 		uint32_t *total_size;/* [ref] */
 		uint32_t *returned_size;/* [ref] */
-		union samr_DispInfo *info;/* [switch_is(level),ref] */
+		union samr_DispInfo *info;/* [ref,switch_is(level)] */
 		NTSTATUS result;
 	} out;
 
@@ -1603,7 +1603,7 @@ struct samr_QueryDomainInfo2 {
 	} in;
 
 	struct {
-		union samr_DomainInfo **info;/* [switch_is(level),ref] */
+		union samr_DomainInfo **info;/* [ref,switch_is(level)] */
 		NTSTATUS result;
 	} out;
 
@@ -1769,7 +1769,7 @@ struct samr_GetDomPwInfo {
 
 struct samr_Connect2 {
 	struct {
-		const char *system_name;/* [charset(UTF16),unique] */
+		const char *system_name;/* [unique,charset(UTF16)] */
 		uint32_t access_mask;
 	} in;
 
@@ -1785,7 +1785,7 @@ struct samr_SetUserInfo2 {
 	struct {
 		struct policy_handle *user_handle;/* [ref] */
 		enum samr_UserInfoLevel level;
-		union samr_UserInfo *info;/* [ref,switch_is(level)] */
+		union samr_UserInfo *info;/* [switch_is(level),ref] */
 	} in;
 
 	struct {
@@ -1825,7 +1825,7 @@ struct samr_GetBootKeyInformation {
 
 struct samr_Connect3 {
 	struct {
-		const char *system_name;/* [charset(UTF16),unique] */
+		const char *system_name;/* [unique,charset(UTF16)] */
 		uint32_t unknown;
 		uint32_t access_mask;
 	} in;

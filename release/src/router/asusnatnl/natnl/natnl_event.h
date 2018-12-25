@@ -122,7 +122,7 @@ typedef enum natnl_status_code
     /*PJ_SC_TSX_RESOLVE_ERROR = 702,*/
     PJ_SC_TSX_TRANSPORT_ERROR = PJ_SC_SERVICE_UNAVAILABLE,
 
-#if defined(WIN32) && !defined(NATNL_LIB)
+#if (defined(WIN32) || defined(__OBJC__)) && !defined(NATNL_LIB)
 	PJ_EUNKNOWN	=	70001	,	//	"Unknown Error"				
 	PJ_EPENDING  	=	70002	,	//	"Pending operation"				
 	PJ_ETOOMANYCONN  	=	70003	,	//	"Too many connecting sockets"				

@@ -28,6 +28,9 @@
 #include <pjlib.h>
 #include <pj/errno.h>
 #include <pj/sock.h>
+#if defined(ENABLE_MEMWATCH) && ENABLE_MEMWATCH != 0
+#include <memwatch.h>
+#endif
 
 
 #ifdef __cplusplus
@@ -104,6 +107,8 @@ struct natnl_data {
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+#define NATNL_IM_MAX_LEN 13000
 
 #ifdef SOLARIS
 /* Copied from sys/time.h on linux system since solaris system that I tried to

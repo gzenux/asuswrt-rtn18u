@@ -1,0 +1,6 @@
+/* BCM56444 */
+#define BCM56444_VENDOR_ID                0x14e4
+#define BCM56444_DEVICE_ID                0xb444
+#define BCM56444_REV_A0                     0x01
+#define BCM56444_REV_B0                     0x11
+

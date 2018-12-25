@@ -24,12 +24,22 @@
 
 extern const char WIF_2G[];
 extern const char WIF_5G[];
+extern const char BR_GUEST[];
+extern const char APMODE_BRGUEST_IP[];
 extern const char WDSIF_5G[];
 extern const char STA_2G[];
 extern const char STA_5G[];
 extern const char VPHY_2G[];
 extern const char VPHY_5G[];
 extern const char WSUP_DRV[];
+extern const char WSUP_DRV_60G[];
+extern const char WIF_5G2[];
+extern const char STA_5G2[];
+extern const char VPHY_5G2[];
+extern const char WIF_60G[];
+extern const char STA_60G[];
+extern const char VPHY_60G[];
+
 #define URE	"apcli0"
 
 #ifndef ETHER_ADDR_LEN
@@ -276,7 +286,7 @@ enum ASUS_IOCTL_SUBCMD {
 #define ETH1_MAC_OFFSET			0x5006
 #elif defined(RTCONFIG_SOC_IPQ8064)
 
-#if defined(BRTAC828) || defined(RTAC88S)
+#if defined(BRTAC828) || defined(RTAD7200) || defined(RTAC88S)
 #define ETH0_MAC_OFFSET			0x1006	/* 2G EEPROM */
 #define ETH1_MAC_OFFSET			0x5006	/* 5G EEPROM */
 #elif defined(RTAC88N)
@@ -292,6 +302,7 @@ enum ASUS_IOCTL_SUBCMD {
 #define ETH1_MAC_OFFSET			0x9006	/* 5G EEPROM */
 #else
 #define ETH1_MAC_OFFSET			0x5006	/* 5G EEPROM */
+#define ETH2_MAC_OFFSET			0x9006	/* 5G2 EEPROM */
 #endif
 
 #else
@@ -321,7 +332,11 @@ enum ASUS_IOCTL_SUBCMD {
 #define OFFSET_MAC_ADDR			(MTD_FACTORY_BASE_ADDRESS + ETH1_MAC_OFFSET)	/* FIXME: How to map 2G/5G to eth0/1? */
 #define	QCA9557_EEPROM_SIZE		1088
 #define	QCA9557_EEPROM_MAC_OFFSET	(OFFSET_MAC_ADDR_2G & 0xFFF) // 2
+#if defined(RPAC51)
+#define	QC98XX_EEPROM_SIZE_LARGEST	12064 // sync with driver
+#else
 #define	QC98XX_EEPROM_SIZE_LARGEST	2116 // sync with driver
+#endif
 #define	QC98XX_EEPROM_MAC_OFFSET	(OFFSET_MAC_ADDR & 0xFFF) // 6
 #elif defined(RTCONFIG_WIFI_QCA9990_QCA9990) || defined(RTCONFIG_WIFI_QCA9994_QCA9994)
 
@@ -330,7 +345,7 @@ enum ASUS_IOCTL_SUBCMD {
  * 2G: follow WAN
  * 5G: follow LAN
  */
-#if defined(BRTAC828) || defined(RTAC88S)
+#if defined(BRTAC828) || defined(RTAD7200) || defined(RTAC88S)
 #define OFFSET_MAC_ADDR_2G		(MTD_FACTORY_BASE_ADDRESS + ETH0_MAC_OFFSET)
 #define OFFSET_MAC_ADDR			(MTD_FACTORY_BASE_ADDRESS + ETH1_MAC_OFFSET)
 #elif defined(RTAC88N)
@@ -346,6 +361,7 @@ enum ASUS_IOCTL_SUBCMD {
 #elif defined(RTCONFIG_SOC_IPQ40XX)
 #define OFFSET_MAC_ADDR_2G		(MTD_FACTORY_BASE_ADDRESS + ETH0_MAC_OFFSET)
 #define OFFSET_MAC_ADDR			(MTD_FACTORY_BASE_ADDRESS + ETH1_MAC_OFFSET)
+#define OFFSET_MAC_ADDR_5G_2		(MTD_FACTORY_BASE_ADDRESS + ETH2_MAC_OFFSET)
 #define	QC98XX_EEPROM_SIZE_LARGEST	12064 // sync with driver
 #define	QC98XX_EEPROM_MAC_OFFSET	(OFFSET_MAC_ADDR & 0xFFF) // 6
 
@@ -368,6 +384,14 @@ enum ASUS_IOCTL_SUBCMD {
  */
 #ifdef RTCONFIG_DEFAULT_AP_MODE
 #define OFFSET_FORCE_DISABLE_DHCP	(MTD_FACTORY_BASE_ADDRESS + 0x0D1AA)	// 1
+#endif
+
+#ifdef RTCONFIG_CFGSYNC
+#define OFFSET_DEF_GROUPID		(MTD_FACTORY_BASE_ADDRESS + 0x0D1B0)	// CFGSYNC_GROUPID_LEN (32 bytes)
+#endif
+
+#if defined(MAPAC1300) || defined(MAPAC2200) || defined(VZWAC1300) || defined(MAPAC3000) /* for Lyra */
+#define OFFSET_DISABLE_WIFI_DRV		(MTD_FACTORY_BASE_ADDRESS + 0x0D1F2)	// 1 byte
 #endif
 
 #define OFFSET_DEV_FLAGS		(MTD_FACTORY_BASE_ADDRESS + 0x0ffa0)	//device dependent flags
@@ -432,4 +456,58 @@ typedef struct {
 	unsigned int link[MAX_NR_SWITCH_PORTS];
 	unsigned int speed[MAX_NR_SWITCH_PORTS];
 } phyState;
+
+#if defined(RTCONFIG_WIFI_QCA9990_QCA9990) || defined(RTCONFIG_WIFI_QCA9994_QCA9994)
+#define BD_2G_PREFIX	"boardData_QCA9984_CUS260_2G_"
+#define BD_5G_PREFIX	"boardData_QCA9984_CUS239_5G_"
+#define BD_2G_CHIP_DIR	"QCA9984"
+#define BD_2G_HW_DIR	"hw.1"
+#define BD_5G_CHIP_DIR	"QCA9984"
+#define BD_5G_HW_DIR	"hw.1"
+#elif defined(RTAC58U) || defined(VZWAC1300) || defined(RT4GAC53U)
+#define BD_2G_PREFIX	"boardData_1_0_IPQ4019_Y9803_wifi0"
+#define BD_5G_PREFIX	"boardData_1_0_IPQ4019_Y9803_wifi1"
+#define BD_2G_CHIP_DIR	"IPQ4019"
+#define BD_2G_HW_DIR	"hw.1"
+#define BD_5G_CHIP_DIR	"IPQ4019"
+#define BD_5G_HW_DIR	"hw.1"
+#elif defined(RTAC82U)
+#define BD_2G_PREFIX	"boardData_1_0_IPQ4019_DK04_2G"
+#define BD_5G_PREFIX	"boardData_QCA9984_CUS238_5G_v1_003"
+#define BD_2G_CHIP_DIR	"IPQ4019"
+#define BD_2G_HW_DIR	"hw.1"
+#define BD_5G_CHIP_DIR	"QCA9984"
+#define BD_5G_HW_DIR	"hw.1"
+#elif defined(MAPAC1300)
+#define BD_2G_PREFIX	"boardData_1_0_IPQ4019_YA131_wifi0"
+#define BD_5G_PREFIX	"boardData_1_0_IPQ4019_YA131_wifi1"
+#define BD_2G_CHIP_DIR	"IPQ4019"
+#define BD_2G_HW_DIR	"hw.1"
+#define BD_5G_CHIP_DIR	"IPQ4019"
+#define BD_5G_HW_DIR	"hw.1"
+#elif defined(MAPAC2200)
+#define BD_2G_PREFIX	"boardData_1_0_IPQ4019_DK04_2G"
+#define BD_5G_PREFIX	"boardData_1_0_IPQ4019_DK04_5G"
+#define BD_5G2_PREFIX	"boardData_2_0_QCA9888_5G_Y9484"
+#define BD_2G_CHIP_DIR	"IPQ4019"
+#define BD_2G_HW_DIR	"hw.1"
+#define BD_5G_CHIP_DIR	"IPQ4019"
+#define BD_5G_HW_DIR	"hw.1"
+#define BD_5G2_CHIP_DIR	"QCA9888"
+#define BD_5G2_HW_DIR	"hw.2"
+#elif defined(MAPAC3000)
+#define BD_2G_PREFIX	"boardData_1_0_IPQ4019_DK04_2G"
+#define BD_5G_PREFIX	"boardData_1_0_IPQ4019_DK04_5G"
+#define BD_5G2_PREFIX	"boardData_QCA9984_CUS239_5G_v1_001"
+#define BD_2G_CHIP_DIR	"IPQ4019"
+#define BD_2G_HW_DIR	"hw.1"
+#define BD_5G_CHIP_DIR	"IPQ4019"
+#define BD_5G_HW_DIR	"hw.1"
+#define BD_5G2_CHIP_DIR	"QCA9984"
+#define BD_5G2_HW_DIR	"hw.1"
+#elif defined(RPAC51)
+#define BD_5G_PREFIX	"boardData_2_0_QCA9888_5G_Y9484"
+#define BD_5G_CHIP_DIR	"QCA9888"
+#define BD_5G_HW_DIR	"hw.2"
+#endif
 #endif	/* _QCA_H_ */

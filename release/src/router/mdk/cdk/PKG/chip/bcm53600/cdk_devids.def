@@ -1,0 +1,6 @@
+/* BCM53600 */
+#define BCM53600_VENDOR_ID                0x0362
+#define BCM53600_DEVICE_ID                0x5f40
+#define BCM53600_PROBEINFO            0x000800e8
+#define BCM53600_REV_A0                     0x00
+

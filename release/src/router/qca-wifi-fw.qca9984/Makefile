@@ -11,7 +11,7 @@ install:
 	install -d $(INSTALLFWDIR)/QCA9984/hw.1
 	install -m 644 $(PKG_BUILD_DIR)/hw.1/* $(INSTALLFWDIR)/QCA9984/hw.1
 	install -m 644 $(PKG_BUILD_DIR)/hw.1/.filenames $(INSTALLFWDIR)/QCA9984/hw.1
-	[ ! -e $(BUILD_NAME) ] || install -m 644 $(BUILD_NAME)/* $(INSTALLFWDIR)/QCA9984/hw.1
+	[ ! -e $(BUILD_NAME) ] || install -m 644 $(BUILD_NAME)/*.bin $(INSTALLFWDIR)/QCA9984/hw.1
 
 clean:
 	@#Nothing to do

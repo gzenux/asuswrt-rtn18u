@@ -1,35 +1,40 @@
 #
 # Linux eventd Makefile
 #
-# Copyright (C) 2015, Broadcom Corporation
+# Broadcom Proprietary and Confidential. Copyright (C) 2016,
 # All Rights Reserved.
 # 
-# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom;
 # the contents of this file may not be disclosed to third parties, copied
 # or duplicated in any form, in whole or in part, without the prior
-# written permission of Broadcom Corporation.
+# written permission of Broadcom.
 #
 # $Id:  $
 #
+
+include $(TOP)/.config
 
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include ${WLAN_StdIncPathA} -I$(SRCBASE)/common/include -Wall -Werror
 CFLAGS	+= $(if $(WLAN_ComponentIncPath),$(WLAN_ComponentIncPath),$(addprefix -I,$(wildcard $(SRCBASE)/shared/bcmwifi/include)))
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -O2
-LDFLAGS += -L$(TOP)/nvram${BCMEX} -L$(INSTALLDIR)/nvram/usr/lib -lnvram
+LDFLAGS += -L$(TOP)/nvram${BCMEX}${EX7} -lnvram ${EXTRA_NV_LDFLAGS}
 LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
-LDFLAGS += -lgcc_s
+LDFLAGS += $(EXTRA_LDFLAGS)
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
 
 
 vpath %.c $(SRCBASE)/shared/
 
-ifeq ($(wildcard $(SRCBASE)/eventd/*.c),)
-all: 
-	-cp -f $(SRCBASE)/router/eventd/prebuilt/eventd eventd
+ifeq ($(wildcard $(SRCBASE)/router/eventd/*.c),)
+all:
+	-cp -f prebuilt/eventd eventd
 else
 all: eventd
 endif
-all: eventd
 
 OBJS = eventd_main.o
 

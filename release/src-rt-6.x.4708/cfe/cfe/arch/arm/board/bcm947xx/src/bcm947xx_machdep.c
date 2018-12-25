@@ -136,8 +136,7 @@ board_pinmux_init(si_t *sih)
 	si_gpioout(sih, USB3_LED_GPIO, USB3_LED_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioout(sih, WAN_LED_GPIO, WAN_LED_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioout(sih, USB_PWR1_GPIO, USB_PWR1_GPIO, GPIO_DRV_PRIORITY);
-#else
-
+#else // DSLAC68U
 	si_gpioouten(sih, PWR_LED_GPIO, PWR_LED_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioouten(sih, USB_LED_GPIO, USB_LED_GPIO, GPIO_DRV_PRIORITY);
 #ifdef RTAC68U
@@ -153,14 +152,11 @@ board_pinmux_init(si_t *sih)
 	si_gpioouten(sih, WAN_LED_GPIO, WAN_LED_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioouten(sih, LAN_LED_GPIO, LAN_LED_GPIO, GPIO_DRV_PRIORITY);
 #endif
-#ifndef RTN18U				// for RT-AC56U & RT-AC68U
 	si_gpioouten(sih, USB_PWR1_GPIO, USB_PWR1_GPIO, GPIO_DRV_PRIORITY);
-#if !defined(RTAC68U) && !defined(RTAC87U) && !defined(RT4GAC68U)
+#if !defined(RTN18U) && !defined(RTAC68U) && !defined(RTAC87U) && !defined(RT4GAC68U)
 	si_gpioouten(sih, USB_PWR2_GPIO, USB_PWR2_GPIO, GPIO_DRV_PRIORITY);
 #endif
-#endif
 #ifdef RTN18U				// RT-N18U
-	si_gpioouten(sih, USB_PWR1_GPIO, USB_PWR1_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioouten(sih, WL2G_LED_GPIO, WL2G_LED_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioouten(sih, USB3_LED_GPIO, USB3_LED_GPIO, GPIO_DRV_PRIORITY);
 #endif
@@ -180,19 +176,17 @@ board_pinmux_init(si_t *sih)
 	si_gpioout(sih, WAN_LED_GPIO, WAN_LED_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioout(sih, LAN_LED_GPIO, LAN_LED_GPIO, GPIO_DRV_PRIORITY);
 #endif
-#ifndef RTN18U				// for RT-AC56U & RT-AC68U to enable USB power
+	/* enable USB power */
+#ifndef RT4GAC68U
 	si_gpioout(sih, USB_PWR1_GPIO, USB_PWR1_GPIO, GPIO_DRV_PRIORITY);
-#if !defined(RTAC68U) && !defined(RTAC87U) && !defined(RT4GAC68U)
+#if !defined(RTN18U) && !defined(RTAC68U) && !defined(RTAC87U)
 	si_gpioout(sih, USB_PWR2_GPIO, USB_PWR2_GPIO, GPIO_DRV_PRIORITY);
 #endif
 #endif
 
-#endif	//DSLAC68U
+#endif // DSLAC68U
 
 #ifdef RTN18U				// RT-N18U
-	/* enable USB power */
-	si_gpioout(sih, USB_PWR1_GPIO, USB_PWR1_GPIO, GPIO_DRV_PRIORITY);
-
 	/* power on LEDs */
 	si_gpioout(sih, PWR_LED_GPIO, PWR_LED_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioout(sih, WL2G_LED_GPIO, WL2G_LED_GPIO, GPIO_DRV_PRIORITY);
@@ -216,6 +210,9 @@ board_pinmux_init(si_t *sih)
 	si_gpioout(sih, LTE_SIG1_GPIO, LTE_SIG1_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioout(sih, LTE_SIG2_GPIO, LTE_SIG2_GPIO, GPIO_DRV_PRIORITY);
 	si_gpioout(sih, LTE_SIG3_GPIO, LTE_SIG3_GPIO, GPIO_DRV_PRIORITY);
+
+	/* disable USB power */
+	si_gpioout(sih, USB_PWR1_GPIO, 0, GPIO_DRV_PRIORITY);
 #endif
 }
 

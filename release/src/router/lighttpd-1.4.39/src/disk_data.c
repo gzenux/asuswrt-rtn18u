@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <stdlib.h>
+#define _XOPEN_SOURCE /* See feature_test_macros(7) */
 #include <unistd.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -2254,8 +2255,6 @@ partition_info_t *create_partition(const char *device_name, partition_info_t **n
 }
 
 extern void free_disk_data(disk_info_t **disk_info_list){
-    printf("#####free_disk_data start#####\n");
-    fprintf(stderr,"@@@@@free_disk_data start@@@@@\n");
     disk_info_t *follow_disk, *old_disk;
 
     if(disk_info_list == NULL)
@@ -2280,7 +2279,6 @@ extern void free_disk_data(disk_info_t **disk_info_list){
         follow_disk = follow_disk->next;
         free(old_disk);
     }
-    fprintf(stderr,"@@@@@free_disk_data end@@@@@\n");
 }
 
 disk_info_t *initial_disk_data(disk_info_t **disk_info_list){
@@ -2867,8 +2865,6 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info){
 }
 
 extern disk_info_t *read_disk_data(){
-    printf("#####read_disk_data start#####\n");
-    fprintf(stderr,"@@@@@read_disk_data start@@@@@\n");
 	disk_info_t *disk_info_list = NULL, *new_disk_info, **follow_disk_info_list;
 	char *partition_info = read_whole_file(PARTITION_FILE);
 	char *follow_info;
@@ -2943,7 +2939,6 @@ extern disk_info_t *read_disk_data(){
 	}
 
 	free(partition_info);
-    fprintf(stderr,"@@@@@read_disk_data end@@@@@\n");
 	return disk_info_list;
 }
 
@@ -3249,7 +3244,14 @@ extern int add_account(const char *const account, const char *const password){
 
     memset(ascii_passwd, 0, 64);
     char_to_ascii_safe(ascii_passwd, password, 64);
-
+#ifdef RTCONFIG_NVRAM_ENCRYPT
+    int enclen = pw_enc_blen(ascii_passwd);
+    char enc_passwd[enclen];
+    memset(enc_passwd, 0, sizeof(enc_passwd));
+    pw_enc(ascii_passwd, enc_passwd);
+    memset(ascii_passwd, 0, 64);
+    strlcpy(ascii_passwd, enc_passwd, sizeof(ascii_passwd));
+#endif
     acc_num = nvram_get_int("acc_num");
     if(acc_num < 0)
         acc_num = 0;
@@ -3299,3 +3301,74 @@ extern int add_account(const char *const account, const char *const password){
 
     return 0;
 }
+
+//==========================================================================================================================
+// shared/misc.c
+int upper_strncmp(const char *const str1, const char *const str2, int count){
+	char *upper_str1, *upper_str2;
+	int ret;
+
+	if(str1 == NULL || str2 == NULL)
+		return -1;
+
+	if(get_upper_str(str1, &upper_str1) == NULL)
+		return -1;
+
+	if(get_upper_str(str2, &upper_str2) == NULL){
+		free(upper_str1);
+		return -1;
+	}
+
+	ret = strncmp(upper_str1, upper_str2, count);
+	free(upper_str1);
+	free(upper_str2);
+
+	return ret;
+}
+//==========================================================================================================================
+// libpasswd/passwd.c
+#include <shadow.h>
+//#include <crypt.h>
+int compare_passwd_in_shadow(const char *username, const char *passwd)
+{
+	char *salt, *correct, *p, *supplied;
+	struct spwd *shadow_entry;
+	
+	if(!username || !passwd)
+		return 0;
+
+	shadow_entry = getspnam(username);
+
+	if(!shadow_entry)
+		return 0;
+
+	correct = shadow_entry->sp_pwdp;
+	
+	salt = strdup(correct);
+
+	if (salt == NULL) 
+		goto ERROR;
+	
+	p = strchr(salt + 1, '$');
+	if (p == NULL) 
+		goto ERROR;
+	
+	p = strchr(p + 1, '$');
+	if (p == NULL) 
+		goto ERROR;
+	p[1] = 0;	
+
+	supplied = crypt(passwd, salt);
+	
+	if (supplied == NULL) 
+		goto ERROR;
+
+	free(salt);
+	return !strcmp(supplied, correct);
+	
+ERROR:
+	if(salt)
+		free(salt);
+	return 0;
+}
+

@@ -679,6 +679,7 @@ _GL_WARN_ON_USE (getline, "getline is unportable - "
 # endif
 #endif
 
+#ifndef HND_ROUTER
 #if @GNULIB_GETS@
 # if @REPLACE_STDIO_READ_FUNCS@ && @GNULIB_STDIO_H_NONBLOCKING@
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -696,6 +697,7 @@ _GL_CXXALIASWARN (gets);
    so any use of gets warrants an unconditional warning.  Assume it is
    always declared, since it is required by C89.  */
 _GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
+#endif
 #endif
 
 

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -18,32 +18,16 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script>
-var $j = jQuery.noConflict();
 
 function initial(){
 	show_menu();
-
-	if(!band5g_support){
-		document.getElementById("wl_unit_field").style.display = "none";
-	}
-	else{
-		if(document.form.wl_unit.value == 0){
-			document.getElementById("table_proto_2").style.display = "";
-		}
-		else{
-			document.getElementById("table_proto_5").style.display = "";
-		}
-	}
 
 	if(productid == "RP-N53")
 		document.getElementById("wifipxy_enable_prompt").style.display = "";
 }
 
-function enable_wifipxy_2(enable){
+function enable_wifipxy(enable){
 	document.form.wlc0_wifipxy.value = enable;
-}
-
-function enable_wifipxy_5(enable){
 	document.form.wlc1_wifipxy.value = enable;
 }
 
@@ -111,7 +95,7 @@ function applyRule(){
 
 				<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 
-					<tr id="wl_unit_field" class="rept">
+					<tr id="wl_unit_field" class="rept" style="display:none">
 						<th><#Interface#></th>
 						<td>
 							<select name="wl_unit" class="input_option" onChange="change_wl_unit();">
@@ -121,20 +105,12 @@ function applyRule(){
 						</td>
 					</tr>
 
-					<tr id="table_proto_2" style="display:none">
+					<tr>
 						<th><a>Enable Wi-Fi Proxy?</a></th>
 						<td>
-							<input type="radio" name="wifipxy_enable_2" class="input" value="1" onclick="enable_wifipxy_2('1')" <% nvram_match("wlc0_wifipxy", "1", "checked"); %>><#checkbox_Yes#>
-							<input type="radio" name="wifipxy_enable_2" class="input" value="0" onclick="enable_wifipxy_2('0')" <% nvram_match("wlc0_wifipxy", "0", "checked"); %>><#checkbox_No#>
+							<input type="radio" name="wifipxy_enable_2" class="input" value="1" onclick="enable_wifipxy('1')" <% nvram_match("wlc0_wifipxy", "1", "checked"); %>><#checkbox_Yes#>
+							<input type="radio" name="wifipxy_enable_2" class="input" value="0" onclick="enable_wifipxy('0')" <% nvram_match("wlc0_wifipxy", "0", "checked"); %>><#checkbox_No#>
 							<span id="wifipxy_enable_prompt" style="display:none;">(Only support 2.4GHz)</span>
-						</td>
-					</tr>
-
-					<tr id="table_proto_5" style="display:none">
-						<th><a>Enable Wi-Fi Proxy?</a></th>
-						<td>
-							<input type="radio" name="wifipxy_enable_5" class="input" value="1" onclick="enable_wifipxy_5('1')" <% nvram_match("wlc1_wifipxy", "1", "checked"); %>><#checkbox_Yes#>
-							<input type="radio" name="wifipxy_enable_5" class="input" value="0" onclick="enable_wifipxy_5('0')" <% nvram_match("wlc1_wifipxy", "0", "checked"); %>><#checkbox_No#>
 						</td>
 					</tr>
 				</table>

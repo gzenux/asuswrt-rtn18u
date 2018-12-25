@@ -29,6 +29,12 @@
 #endif
 #include "rtstate.h"
 
+#include <bcmnvram.h>
+#include <shutils.h>
+
+#include <shared.h>
+
+
 static int optionsdebug = 0; /* TODO: Should be changed to instance */
 
 static int termstate = REDIR_TERM_INIT;    /* When we were terminated */
@@ -1554,7 +1560,11 @@ int redir_reply(struct redir_t *redir, struct redir_socket_t *sock,
    /* 
     if(!is_wan_connect(wan_primary_ifunit())){   //John add for redir error page
 
-      bcatcstr(buffer, "http://192.168.1.1:8082/error_page.html\r\n"); 
+#if defined(RT4GAC68U)
+      bcatcstr(buffer, "http://192.168.1.1:8082/error_page.html\r\n");
+#else
+      bcatcstr(buffer, "http://192.168.1.1:8083/error_page.html\r\n");
+#endif
     
     }else if (strstr(userurl, "generate_204")){
       bcatcstr(buffer, "http://192.168.1.1:8083/reidr.html\r\n"); 
@@ -2279,7 +2289,19 @@ static int redir_getreq(struct redir_t *redir, struct redir_socket_t *sock,
       if (!redir_getparam(redir, httpreq->qs, "userurl", bt)) {
 	bstring bt2 = bfromcstr("");
 	redir_urldecode(bt, bt2);
-	bstrtocstr(bt2, conn->s_state.redir.userurl, sizeof(conn->s_state.redir.userurl));
+	//John add for external url setting
+	char customized_url[128];
+	memset(customized_url, 0, sizeof(customized_url));
+	if (_options.pidfile){ 
+		strcpy(customized_url, nvram_safe_get("cp_external_UI"));
+	}else{
+		strcpy(customized_url, nvram_safe_get("external_UI"));
+	}
+	if(strlen(customized_url) != 0){
+		strcpy(conn->s_state.redir.userurl, customized_url);
+	}else{
+		bstrtocstr(bt2, conn->s_state.redir.userurl, sizeof(conn->s_state.redir.userurl));
+	}
 	log_dbg("-->> Setting userurl=[%s]",conn->s_state.redir.userurl);
 	bdestroy(bt2);
       }
@@ -2871,11 +2893,19 @@ int is_local_user(struct redir_t *redir, struct redir_conn_t *conn) {
 
   log_dbg("checking %s for user %s", _options.localusers, conn->s_state.redir.username);
 
-  if (!(f = fopen(_options.localusers, "r"))) {
+  if (!(f = fopen(_options.localusers, "r+"))) {
     log_err(errno, "fopen() failed opening %s!", _options.localusers);
     return 0;
   }
 
+// John added for phone and email auth.
+#if 0
+  if(nvram_get_int("chilli_authtype") > 0){
+    fseek(f, 0, SEEK_END);  
+    fprintf(f, "%s:noauth\n", conn->s_state.redir.username);	
+    rewind(f);
+  }
+#endif
   if (_options.debug) {/*debug*/
     char buffer[64];
     redir_chartohex(conn->s_state.redir.uamchal, buffer, REDIR_MD5LEN);
@@ -2945,17 +2975,21 @@ int is_local_user(struct redir_t *redir, struct redir_conn_t *conn) {
       *pu = 0; /* null terminate */
       *pp = 0;
 
-      if (usernamelen == strlen(u) &&
-	  !strncmp(conn->s_state.redir.username, u, usernamelen)) {
+      if ((usernamelen == strlen(u) &&
+	  !strncmp(conn->s_state.redir.username, u, usernamelen)) || 
+           nvram_get_int("cp_authtype") >= 2 ) {
 
 	log_dbg("found %s, checking password", u);
 
 	if (conn->authdata.type == REDIR_AUTH_PAP) {
-	  if (!strcmp((char*)user_password, p))
+	  if (!strcmp((char*)user_password, p)){
+	    log_dbg("found %s, checking password", u);
 	    match = 1;
+	  }
 	}
 	else if (conn->authdata.type == REDIR_AUTH_CHAP) {
 	  uint8_t tmp[REDIR_MD5LEN];
+	  log_dbg("found %s, checking password", u);
 	  MD5Init(&context);
 	  MD5Update(&context, (uint8_t*)&conn->authdata.v.chapmsg.identity, 1);     
 	  MD5Update(&context, (uint8_t*)p, strlen(p));
@@ -3742,24 +3776,41 @@ int redir_main(struct redir_t *redir,
       log_dbg("redir_accept: challenge expired: %d : %d", 
 	      conn.s_state.uamtime, mainclock_now());
 
-      redir_memcopy(REDIR_CHALLENGE);      
+      redir_memcopy(REDIR_ABORT);      
       redir_msg_send(REDIR_MSG_OPT_REDIR);
 
       redir_reply(redir, &socket, &conn, REDIR_FAILED_OTHER, NULL, 
 		  0, hexchal, NULL, NULL, NULL, 
 		  0, conn.hismac, &conn.hisip, httpreq.qs);
       
-      if(kick_wifi_client((char *)conn.hismac))   //John add for kick user
-	 printf("kick user error!\n");
+#if 1             //fork process to kikc user
+	char kickcmd[128];
+	memset(kickcmd, 0, sizeof(kickcmd));
+      //John added for kickmac
+      pid_t mypid;
+      if((mypid = fork()) < 0){
+	log_dbg("Error in my fork process\n");
+      }else if (0 == mypid){
+   	if((mypid = fork()) < 0){
+	   log_dbg("Error in my fork process\n");
+	   exit(1);
+	}else if(mypid > 0){
+	   exit(0);
+	}else{
+	   if(kick_wifi_client((char *)conn.hismac))  //John added for kick wifi user
+              log_dbg("kick wifi user error\n");  
+           log_dbg("in child's process\n");
+	   exit(0);
+	}
+      }
+      if(waitpid(mypid, NULL, 0) != mypid)
+         log_dbg("Error in wait fored child process\n")
+#endif	
+
       return redir_main_exit();
     }
 
-    if (is_local_user(redir, &conn)) { 
-      session_param_defaults(&conn.s_params);
-      conn.response = REDIR_SUCCESS;
-    }
-    else {
-
+	if (_options.pidfile && atoi(nvram_safe_get("cp_Radius"))){ 
 #ifdef ENABLE_MODULES
       int i;
       int flags = 0;
@@ -3770,40 +3821,39 @@ int redir_main(struct redir_t *redir,
 	 *  When waiting for RADIUS, we need to be forked.
 	 *  TODO: make redir_radius asynchronous.
 	 */
-	pid_t forkpid = redir_fork(infd, outfd);
-	if (forkpid) { /* parent or error */
-	  return redir_main_exit();
-	}
+		pid_t forkpid = redir_fork(infd, outfd);
+		if (forkpid) { /* parent or error */
+	  		return redir_main_exit();
+		}
       }
 
 #ifdef ENABLE_MODULES
       log_dbg("checking modules...");
       for (i=0; i < MAX_MODULES; i++) {
-	if (!_options.modules[i].name[0]) break;
-	if (_options.modules[i].ctx) {
-	  struct chilli_module *m = 
-	    (struct chilli_module *)_options.modules[i].ctx;
-	  if (m->redir_login) {
-	    int modresult = m->redir_login(redir, &conn, &socket);
-	    flags |= modresult;
-	    switch(chilli_mod_state(modresult)) {
-	    case CHILLI_MOD_ERROR:
-	      return redir_main_exit();
-	    default: 
-	      break;
-	    }
-	  }
-	}
+			if (!_options.modules[i].name[0]) break;
+			if (_options.modules[i].ctx) {
+	  		struct chilli_module *m = (struct chilli_module *)_options.modules[i].ctx;
+	  			if (m->redir_login) {
+	    			int modresult = m->redir_login(redir, &conn, &socket);
+	    			flags |= modresult;
+	    			switch(chilli_mod_state(modresult)) {
+	    				case CHILLI_MOD_ERROR:
+	      					return redir_main_exit();
+	    				default: 
+	      					break;
+	    			}
+	  			}
+			}
       }
       if (flags & CHILLI_MOD_REDIR_SKIP_RADIUS) {
-	log_dbg("Skipping RADIUS authentication");
+			log_dbg("Skipping RADIUS authentication");
       } else {
 #endif
       
       termstate = REDIR_TERM_RADIUS;
       
       if (optionsdebug) 
-	log_dbg("redir_accept: Sending RADIUS request");
+			log_dbg("redir_accept: Sending RADIUS request");
       
       redir_radius(redir, &address->sin_addr, &conn, reauth);
       termstate = REDIR_TERM_REPLY;
@@ -3815,6 +3865,15 @@ int redir_main(struct redir_t *redir,
 #if(_debug_ > 1)
       log_dbg("Received RADIUS reply");
 #endif
+	}else{
+		if (is_local_user(redir, &conn)) { 
+      		session_param_defaults(&conn.s_params);
+      		conn.response = REDIR_SUCCESS;
+    	}else{
+			conn.response = REDIR_FAILED_REJECT;
+		}
+
+
     }
 
     if (conn.response == REDIR_SUCCESS) { /* Accept-Accept */

@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM53604_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53604, BCM53604_VENDOR_ID, BCM53604_DEVICE_ID, BCM53604_REV_A0, \
+                  BCM53604_MODEL, BCM53604_PROBEINFO, \
+                  bcm53600_a0, bcm53604_a0, bcm53604_a0, \
+                  CDK_DEV_ARCH_ROBO, "Voyager", "BCM53600", \
+                  "Managed Switch with 24 FE ports + 2 GbE Interfaces", 0, 0)
+#endif
+#endif
+

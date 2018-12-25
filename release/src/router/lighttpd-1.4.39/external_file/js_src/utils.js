@@ -242,6 +242,13 @@ function myencodeURI(iurl){
 	return myurl;
 }
 
+function encodeSafeString(input){
+    input = input.replace(/&/g, '&amp;');
+    input = input.replace(/<script/g, '<script&lt;');
+    input = input.replace(/script>/g, 'script&gt;');
+    return input;
+}
+
 function isIE(){
 	var is_ie = false;
 	
@@ -285,8 +292,8 @@ function getInternetExplorerVersion(){
 }
 
 function getPageSize() {
-	var body_width = $(window).width();
-	var body_height = $(window).height();
+	var body_width = $(document).width();
+	var body_height = $(document).height() - 37;
 	return [ body_width, body_height ];
 }
 
@@ -300,7 +307,7 @@ function getLockToken(content){
 	}
 	else { // Internet Explorer
 		xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
-    xmlDoc.async="false";
+        xmlDoc.async="false";
 		xmlDoc.loadXML(content);
 					
 		if(!xmlDoc.documentElement){
@@ -374,6 +381,7 @@ function DrawImage(ImgD,FitWidth,FitHeight,FitWidthOnly){
      }
 }
 
+ 
 /*
 function getXmlHttpRequest() {
     		

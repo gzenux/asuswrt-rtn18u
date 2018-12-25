@@ -33,6 +33,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 #include <shared.h>
+#include <qtn/qtn_vlan.h>
 
 #ifdef RTCONFIG_QTN
 #include "web-qtn.h"
@@ -45,63 +46,67 @@ cleanup(void)
 }
 
 /* #565: Access Intranet off */
-void create_mbssid_vlan(void)
+void create_mbssid_vlan(int unit, int subunit)
 {
-	if(nvram_get_int("wl1.1_bss_enabled") == 1){
-		if(nvram_match("wl1.1_lanaccess", "off") &&
-			!nvram_match("wl1.1_lanaccess", "")){	// strange logic !? same happened below below
+	char prefix_bss_enabled[] = "wlXXX_bss_enabled";
+	char prefix_lanaccess[] = "wlXXX_lanaccess";
+	char vlan_id[] = "4000";
+	char vlan_name[] = "vlan4000";
+	char vlan_index[] = "0x0fa0";
+	char mbsswifi_name[] = "wifi1";
+	qcsapi_vlan_cmd cmd = 0;
+
+	if(unit != 1) return;
+	if(subunit == -1 || subunit == 0) return;
+
+	snprintf(prefix_bss_enabled, sizeof(prefix_bss_enabled),
+					"wl%d.%d_bss_enabled", unit, subunit);
+	snprintf(prefix_lanaccess, sizeof(prefix_lanaccess),
+					"wl%d.%d_lanaccess", unit, subunit);
+
+	snprintf(vlan_id, sizeof(vlan_id), "%d", 4000+subunit-1);
+	snprintf(vlan_name, sizeof(vlan_name), "vlan%d", 4000+subunit-1);
+	snprintf(vlan_index, sizeof(vlan_index), "0x%04x", 4000+subunit-1);
+	snprintf(mbsswifi_name, sizeof(mbsswifi_name), "wifi%d", subunit);
+
+	logmessage("mbss", "prefix_bss_enabled:[%s][%s]",
+		prefix_bss_enabled, nvram_safe_get(prefix_bss_enabled));
+	logmessage("mbss", "prefix_lanaccess:[%s][%s]",
+		prefix_lanaccess, nvram_safe_get(prefix_lanaccess));
+	if(nvram_get_int(prefix_bss_enabled) == 1){
+		if(nvram_match(prefix_lanaccess, "off")){
 			/* VID 4000 */
-			eval("vconfig", "add", "eth0", "4000");
-			eval("ifconfig", "vlan4000", "hw", "ether", nvram_safe_get("lan_hwaddr"), "up");
-			eval("brctl", "addif", "br0", "vlan4000");
-			eval("et", "robowr", "0x05", "0x81", "0x0fa0");
+			eval("vconfig", "add", "eth0", vlan_id);
+			eval("ifconfig", vlan_name, "hw", "ether", nvram_safe_get("lan_hwaddr"), "up");
+			eval("brctl", "addif", "br0", vlan_name);
+			eval("et", "robowr", "0x05", "0x81", vlan_index);
 			eval("et", "robowr", "0x05", "0x83", "0x00a0");
 			eval("et", "robowr", "0x05", "0x80", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
+
+			logmessage("mbss", "dp-10 unit:[%d], subunit:[%d]", unit, subunit);
+			qcsapi_wifi_vlan_config("wifi0" /* main if */,
+				e_qcsapi_vlan_enable, QVLAN_VID_ALL);
+			qcsapi_wifi_vlan_config("eth1_0" /* main if */,
+				e_qcsapi_vlan_trunk, QVLAN_VID_ALL);
+			qcsapi_wifi_vlan_config("eth1_1" /* main if */,
+				e_qcsapi_vlan_trunk, 0x1);
+			cmd = e_qcsapi_vlan_access | 
+				e_qcsapi_vlan_untag | e_qcsapi_vlan_pvid;
+			qcsapi_wifi_vlan_config(mbsswifi_name,
+				cmd, atoi(vlan_id) /* vid */);
 		}else{
-			eval("brctl", "delif", "br0", "vlan4000");
-			eval("et", "robowr", "0x05", "0x81", "0x0fa0");
+			eval("brctl", "delif", "br0", vlan_name);
+			eval("et", "robowr", "0x05", "0x81", vlan_index);
 			eval("et", "robowr", "0x05", "0x83", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
-		}
-	}
-	if(nvram_get_int("wl1.2_bss_enabled") == 1){
-		if(nvram_match("wl1.2_lanaccess", "off") &&
-			!nvram_match("wl1.2_lanaccess", "")){
-			/* VID 4001 */
-			eval("vconfig", "add", "eth0", "4001");
-			eval("ifconfig", "vlan4001", "hw", "ether", nvram_safe_get("lan_hwaddr"), "up");
-			eval("brctl", "addif", "br0", "vlan4001");
-			eval("et", "robowr", "0x05", "0x81", "0x0fa1");
-			eval("et", "robowr", "0x05", "0x83", "0x00a0");
-			eval("et", "robowr", "0x05", "0x80", "0x0000");
-			eval("et", "robowr", "0x05", "0x80", "0x0080");
-		}else{
-			eval("brctl", "delif", "br0", "vlan4001");
-			eval("et", "robowr", "0x05", "0x81", "0x0fa1");
-			eval("et", "robowr", "0x05", "0x83", "0x0000");
-			eval("et", "robowr", "0x05", "0x80", "0x0000");
-			eval("et", "robowr", "0x05", "0x80", "0x0080");
-		}
-	}
-	if(nvram_get_int("wl1.3_bss_enabled") == 1){
-		if(nvram_match("wl1.3_lanaccess", "off") &&
-			!nvram_match("wl1.3_lanaccess", "")){
-			/* VID 4002 */
-			eval("vconfig", "add", "eth0", "4002");
-			eval("ifconfig", "vlan4002", "hw", "ether", nvram_safe_get("lan_hwaddr"), "up");
-			eval("brctl", "addif", "br0", "vlan4002");
-			eval("et", "robowr", "0x05", "0x81", "0x0fa2");
-			eval("et", "robowr", "0x05", "0x83", "0x00a0");
-			eval("et", "robowr", "0x05", "0x80", "0x0000");
-			eval("et", "robowr", "0x05", "0x80", "0x0080");
-		}else{
-			eval("brctl", "delif", "br0", "vlan4002");
-			eval("et", "robowr", "0x05", "0x81", "0x0fa2");
-			eval("et", "robowr", "0x05", "0x83", "0x0000");
-			eval("et", "robowr", "0x05", "0x80", "0x0000");
-			eval("et", "robowr", "0x05", "0x80", "0x0080");
+
+			logmessage("mbss", "dp-11 unit:[%d], subunit:[%d]", unit, subunit);
+			cmd = e_qcsapi_vlan_access | e_qcsapi_vlan_del |
+				e_qcsapi_vlan_untag | e_qcsapi_vlan_pvid;
+			qcsapi_wifi_vlan_config(mbsswifi_name,
+				cmd, atoi(vlan_id) /* vid */);
 		}
 	}
 }
@@ -138,31 +143,33 @@ void rpc_parse_nvram_from_httpd(int unit, int subunit)
 		rpc_update_wds_psk(nvram_safe_get("wl1_wds_psk"));
 		rpc_update_ap_isolate(WIFINAME, atoi(nvram_safe_get("wl1_ap_isolate")));
 
+		qcsapi_wifi_rfenable((qcsapi_unsigned_int) 0);
 		if(nvram_get_int("wps_enable") == 1){
 			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 0);
 			if (ret < 0)
-				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
+				dbG("rpc_qcsapi_wifi_disable_wps %s error[%d]\n", WIFINAME, ret);
 
 			ret = qcsapi_wps_set_ap_pin(WIFINAME, nvram_safe_get("wps_device_pin"));
 			if (ret < 0)
-				dbG("qcsapi_wps_set_ap_pin %s error, return: %d\n", WIFINAME, ret);
+				dbG("qcsapi_wps_set_ap_pin %s error[%d]\n", WIFINAME, ret);
 
 			ret = qcsapi_wps_registrar_set_pp_devname(WIFINAME, 0, (const char *) get_productid());
 			if (ret < 0)
-				dbG("qcsapi_wps_registrar_set_pp_devname %s error, return: %d\n", WIFINAME, ret);
+				dbG("qcsapi_wps_registrar_set_pp_devname %s error[%d]\n", WIFINAME, ret);
 
 		}else{
 			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 1);
 			if (ret < 0)
-				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
+				dbG("rpc_qcsapi_wifi_disable_wps %s error[%d]\n", WIFINAME, ret);
 		}
+		qcsapi_wifi_rfenable(nvram_get_int("wl1_radio"));
 
 		ret = qcsapi_wps_upnp_enable(WIFINAME, 0);
 		if (ret < 0)
-			dbG("disable WPS UPnP %s error, return: %d\n", WIFINAME, ret);
+			dbG("disable WPS UPnP %s error[%d]\n", WIFINAME, ret);
 
-		if(nvram_get_int("sw_mode") == SW_MODE_ROUTER ||
-			(nvram_get_int("sw_mode") == SW_MODE_AP && nvram_get_int("wlc_psta") == 1)){
+		if(sw_mode() == SW_MODE_ROUTER ||
+			(sw_mode() == SW_MODE_AP && nvram_get_int("wlc_psta") == 1)){
 			if(nvram_get_int("wl1_mumimo") == 1){
 				dbG("mu-mimo: enable MU-MIMO\n");
 				ret = qcsapi_wifi_set_enable_mu(WIFINAME, 1);
@@ -181,94 +188,58 @@ void rpc_parse_nvram_from_httpd(int unit, int subunit)
 #endif
 	}else if (unit == 1 && subunit == 1){
 		if(nvram_get_int("wl1.1_bss_enabled") == 1){
-			rpc_update_mbss("wl1.1_ssid", nvram_safe_get("wl1.1_ssid"));
 			rpc_update_mbss("wl1.1_bss_enabled", nvram_safe_get("wl1.1_bss_enabled"));
-			rpc_update_mbss("wl1.1_wpa_psk", nvram_safe_get("wl1.1_wpa_psk"));
-			rpc_update_mbss("wl1.1_wpa_gtk_rekey", nvram_safe_get("wl1.1_wpa_gtk_rekey"));
-			rpc_update_mbss("wl1.1_auth_mode_x", nvram_safe_get("wl1.1_auth_mode_x"));
-			rpc_update_mbss("wl1.1_mbss", nvram_safe_get("wl1.1_mbss"));
-			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
-				if(nvram_match("wl1.1_lanaccess", "off") && !nvram_match("wl1.1_lanaccess", "")){
-					dbG("[lanaccess] wifi1 lanaccess off\n");
-					// libqcsapi_client/qtn/qtn_vlan.h
-					// QVLAN_VID_ALL: 0xffff
-					qcsapi_wifi_vlan_config("wifi0", e_qcsapi_vlan_enable, 0xffff /* QVLAN_VID_ALL */);
-					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_add, 4000 /* vid */);
-				}else{
-					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_del, 4000 /* vid */);
-				}
-			}
 #ifdef RTCONFIG_IPV6
 			if (get_ipv6_service() == IPV6_DISABLED)
 				qcsapi_wifi_run_script("router_command.sh", "ipv6_off wifi1");
 			else
 				qcsapi_wifi_run_script("router_command.sh", "ipv6_on wifi1");
 #endif
+
+			/* these should be done after rfenabled */
+			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+				create_mbssid_vlan(unit, subunit);
+			}
 		}
 		else{
 			qcsapi_wifi_remove_bss(wl_vifname_qtn(unit, subunit));
 		}
 	}else if (unit == 1 && subunit == 2){
 		if(nvram_get_int("wl1.2_bss_enabled") == 1){
-			rpc_update_mbss("wl1.2_ssid", nvram_safe_get("wl1.2_ssid"));
 			rpc_update_mbss("wl1.2_bss_enabled", nvram_safe_get("wl1.2_bss_enabled"));
-			rpc_update_mbss("wl1.2_wpa_psk", nvram_safe_get("wl1.2_wpa_psk"));
-			rpc_update_mbss("wl1.2_wpa_gtk_rekey", nvram_safe_get("wl1.2_wpa_gtk_rekey"));
-			rpc_update_mbss("wl1.2_auth_mode_x", nvram_safe_get("wl1.2_auth_mode_x"));
-			rpc_update_mbss("wl1.2_mbss", nvram_safe_get("wl1.2_mbss"));
-			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
-				if(nvram_match("wl1.2_lanaccess", "off") && !nvram_match("wl1.2_lanaccess", "")){
-					dbG("[lanaccess] wifi2 lanaccess off\n");
-					// libqcsapi_client/qtn/qtn_vlan.h
-					// QVLAN_VID_ALL: 0xffff
-					qcsapi_wifi_vlan_config("wifi0", e_qcsapi_vlan_enable, 0xffff /* QVLAN_VID_ALL */);
-					qcsapi_wifi_vlan_config("wifi2", e_qcsapi_vlan_add, 4001 /* vid */);
-				}else{
-					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_del, 4001 /* vid */);
-				}
-			}
 #ifdef RTCONFIG_IPV6
 			if (get_ipv6_service() == IPV6_DISABLED)
 				qcsapi_wifi_run_script("router_command.sh", "ipv6_off wifi2");
 			else
 				qcsapi_wifi_run_script("router_command.sh", "ipv6_on wifi2");
 #endif
+
+			/* these should be done after rfenabled */
+			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+				create_mbssid_vlan(unit, subunit);
+			}
 		}
 		else{
 			qcsapi_wifi_remove_bss(wl_vifname_qtn(unit, subunit));
 		}
 	}else if (unit == 1 && subunit == 3){
 		if(nvram_get_int("wl1.3_bss_enabled") == 1){
-			rpc_update_mbss("wl1.3_ssid", nvram_safe_get("wl1.3_ssid"));
 			rpc_update_mbss("wl1.3_bss_enabled", nvram_safe_get("wl1.3_bss_enabled"));
-			rpc_update_mbss("wl1.3_wpa_psk", nvram_safe_get("wl1.3_wpa_psk"));
-			rpc_update_mbss("wl1.3_wpa_gtk_rekey", nvram_safe_get("wl1.3_wpa_gtk_rekey"));
-			rpc_update_mbss("wl1.3_auth_mode_x", nvram_safe_get("wl1.3_auth_mode_x"));
-			rpc_update_mbss("wl1.3_mbss", nvram_safe_get("wl1.3_mbss"));
-			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
-				if(nvram_match("wl1.3_lanaccess", "off") && !nvram_match("wl1.3_lanaccess", "")){
-					dbG("[lanaccess] wifi3 lanaccess off\n");
-					// libqcsapi_client/qtn/qtn_vlan.h
-					// QVLAN_VID_ALL: 0xffff
-					qcsapi_wifi_vlan_config("wifi0", e_qcsapi_vlan_enable, 0xffff /* QVLAN_VID_ALL */);
-					qcsapi_wifi_vlan_config("wifi3", e_qcsapi_vlan_add, 4002 /* vid */);
-				}else{
-					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_del, 4002 /* vid */);
-				}
-			}
 #ifdef RTCONFIG_IPV6
 			if (get_ipv6_service() == IPV6_DISABLED)
 				qcsapi_wifi_run_script("router_command.sh", "ipv6_off wifi3");
 			else
 				qcsapi_wifi_run_script("router_command.sh", "ipv6_on wifi3");
 #endif
+
+			/* these should be done after rfenabled */
+			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+				create_mbssid_vlan(unit, subunit);
+			}
 		}
 		else{
 			qcsapi_wifi_remove_bss(wl_vifname_qtn(unit, subunit));
 		}
-	}
-	if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
-		create_mbssid_vlan();
 	}
 
 	/* disable UPNP */
@@ -318,7 +289,7 @@ QTN_RESET:
 #endif
 
 #if 0
-	if(nvram_get_int("sw_mode") == SW_MODE_AP &&
+	if(sw_mode() == SW_MODE_AP &&
 		nvram_get_int("wlc_psta") == 1 &&
 		nvram_get_int("wlc_band") == 1){
 		dbG("[sw_mode] start QTN PSTA mode\n");
@@ -350,7 +321,7 @@ QTN_RESET:
 	// qcsapi_wifi_run_script("set_test_mode", "update_router_command");
 
 #if 1	/* STATELESS */
-	if(nvram_get_int("sw_mode") == SW_MODE_AP &&
+	if(sw_mode() == SW_MODE_AP &&
 		nvram_get_int("wlc_psta") == 1 &&
 		nvram_get_int("wlc_band") == 1){
 		dbG("[sw_mode] skip start_psta_qtn, QTN will run scripts automatically\n");
@@ -375,25 +346,6 @@ QTN_RESET:
 
 		rpc_update_wdslist();
 
-		if(nvram_get_int("wps_enable") == 1){
-			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 0);
-			if (ret < 0)
-				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
-
-			ret = qcsapi_wps_set_ap_pin(WIFINAME, nvram_safe_get("wps_device_pin"));
-			if (ret < 0)
-				dbG("qcsapi_wps_set_ap_pin %s error, return: %d\n", WIFINAME, ret);
-
-			ret = qcsapi_wps_registrar_set_pp_devname(WIFINAME, 0, (const char *) get_productid());
-			if (ret < 0)
-				dbG("qcsapi_wps_registrar_set_pp_devname %s error, return: %d\n", WIFINAME, ret);
-		}else{
-			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 1);
-			if (ret < 0)
-				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
-		}
-
-		rpc_set_radio(1, 0, nvram_get_int("wl1_radio"));
 
 	}
 #endif
@@ -406,30 +358,33 @@ QTN_RESET:
 		qcsapi_wifi_run_script("router_command.sh", "80211h_off");
 	}
 
-	if(nvram_get_int("sw_mode") == SW_MODE_ROUTER ||
-		(nvram_get_int("sw_mode") == SW_MODE_AP &&
+	if(sw_mode() == SW_MODE_ROUTER ||
+		(sw_mode() == SW_MODE_AP &&
 			nvram_get_int("wlc_psta") == 0)){
 		if(nvram_get_int("wl1_chanspec") == 0){
 			if (nvram_match("1:ccode", "EU")){
 				if(nvram_get_int("acs_dfs") != 1){
-					dbG("[dfs] start nodfs scanning and selection\n");
-					start_nodfs_scan_qtn();
+					dbG("[dfs] start channel scanning and selection[%d]\n",
+							nvram_get_int("acs_dfs"));
+					start_channel_scan_qtn(0);
+				}else{
+					start_channel_scan_qtn(1);
 				}
 			}else{
 				/* all country except EU */
-				dbG("[dfs] start nodfs scanning and selection\n");
-				start_nodfs_scan_qtn();
+				dbG("[dfs] start channel scanning and selection\n");
+				start_channel_scan_qtn(1);
 			}
 		}
 	}
-	if(nvram_get_int("sw_mode") == SW_MODE_AP &&
+	if(sw_mode() == SW_MODE_AP &&
 		nvram_get_int("wlc_psta") == 1 &&
 		nvram_get_int("wlc_band") == 0){
 		ret = qcsapi_wifi_reload_in_mode(WIFINAME, qcsapi_station);
 		if (ret < 0)
 			dbG("qtn reload_in_mode STA fail\n");
 	}
-	if(nvram_get_int("QTNTELNETSRV") == 1 && nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+	if(nvram_get_int("QTNTELNETSRV") == 1 && sw_mode() == SW_MODE_ROUTER){
 		dbG("[QTNT] enable telnet server\n");
 		qcsapi_wifi_run_script("router_command.sh", "enable_telnet_srv 1");
 	}

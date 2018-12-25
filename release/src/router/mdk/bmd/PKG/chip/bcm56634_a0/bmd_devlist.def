@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM56634_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM56634_A0
+BMD_DEVLIST_ENTRY(BCM56634, BCM56634_VENDOR_ID, BCM56634_DEVICE_ID, BCM56634_REV_A0, \
+                  0, 0, \
+                  bcm56634_a0, bcm56634_a0, bcm56634_a0, \
+                  CDK_DEV_ARCH_XGS, "Triumph2", "BCM56630", \
+                  "48-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm56634_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

@@ -1,3 +1,6 @@
+# Convert asuswrt build environment variable to libnl-tiny
+PKG_BUILD_DIR=.
+
 WFLAGS=-Wall
 CFLAGS+=-O2 -fPIC
 INCLUDES=-Iinclude
@@ -17,3 +20,10 @@ $(LIBNAME): $(LIBNL_OBJ) $(GENL_OBJ)
 
 clean:
 	rm -f $(LIBNL_OBJ) $(GENL_OBJ) $(LIBNAME)
+
+stage:
+	install -d $(STAGEDIR)/usr/lib/pkgconfig $(STAGEDIR)/usr/include/libnl-tiny
+	cp -rf $(PKG_BUILD_DIR)/include/* $(STAGEDIR)/usr/include/libnl-tiny
+	cp -rf $(PKG_BUILD_DIR)/libnl-tiny.so $(STAGEDIR)/usr/lib/
+	cp -rf files/libnl-tiny.pc $(STAGEDIR)/usr/lib/pkgconfig
+	@touch $@

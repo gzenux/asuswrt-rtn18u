@@ -21,6 +21,7 @@ typedef struct _RWCB{
 //	struct		write_info*		pWriteInfo;
 //	void*		write_data;	
 //	void*		curlptr;
+	long        code;
 }RWCB, *PRWCB;
 
 int	curl_io(const char*	web_path, const	char* custom_header[], PRWCB pRWCB);

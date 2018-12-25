@@ -41,16 +41,33 @@ jQuery.fn.iphoneSwitch = function(start_state, switched_on_callback, switched_of
 		// click handling
 		jQuery(this).unbind("click"); // initial click event
 		jQuery(this).click(function() {
-			if((this.id == "radio_clouddisk_enable" || this.id == "radio_web_restrict_enable" || this.id == "apps_analysis_enable" || this.id == "radio_wps_enable" || this.id == "nm_radio_dualwan_enable" || this.id == "simdetect_switch" || this.id == "dns_switch" || this.id == "radio_fbwifi_enable" || this.id == "ad_radio_dualwan_enable") && typeof(curState))
-				state = curState;
+			if((this.id == "stream_ad_enable" || this.id == "pop_ad_enable" || //AiProtection_AdBlock
+				this.id == "radio_protection_enable" || this.id == "radio_mals_enable" || this.id == "radio_vp_enable" || this.id == "radio_cc_enable" || //AiProtection_HomeProtection
+				this.id == "radio_web_restrict_enable" ||  //AiProtection_AppProtector, AiProtection_WebProtector
+				this.id == "traffic_analysis_enable" ||  //TrafficAnalyzer_Statistic
+				this.id == "apps_analysis_enable" ||  //AdaptiveQoS_Bandwidth_Monitor
+				this.id == "bwdpi_wh_enable" ||  //AdaptiveQoS_WebHistory
+				this.id == "radio_clouddisk_enable" ||   //Cloud_main
+				this.id == "radio_wps_enable" ||  //Advanced_WWPS_Content
+				this.id == "nm_radio_dualwan_enable" ||  //Internet
+				this.id == "simdetect_switch" ||  //Advanced_MobileBroadband_Content
+				this.id == "dns_switch" ||   //Advanced_IPTV_Content
+				this.id == "radio_fbwifi_enable" ||   //Guest_network_fbwifi
+				this.id == "vlan_enable" ||  //Advanced_TagBasedVLAN_Content
+				this.id == "ad_radio_dualwan_enable") && typeof(curState) != "undefined"){
+					state = curState;
+			}
 			else if(this.id.length > 18 && this.id.substr(0, 18) == "wtfast_rule_enable"){
 				var index = (this.id).substr(18);
 				var index_int = parseInt(index);
 				state = rule_enable_array[index_int];
 			}
+			else if(this.id.substr(0, 16) == "vlan_rule_enable"){
+				var index = (this.id).substr(16);
+			}
 
-                        if((this.id == "wandhcp_switch") && typeof(curWandhcpState))
-                                state = curWandhcpState;
+			if((this.id == "wandhcp_switch") && typeof(curWandhcpState))
+				state = curWandhcpState;
 
 			if(state == '1') {
 				jQuery(this).find('.iphone_switch').animate({backgroundPosition: -37}, "slow", function() {

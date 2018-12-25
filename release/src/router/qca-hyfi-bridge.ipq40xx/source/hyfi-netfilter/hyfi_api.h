@@ -53,12 +53,16 @@
  * HYFI_EVENT_AGEOUT_HA_ENTRIES:
  * HYFI_EVENT_LINK_UP:              ifindex (u32)
  * HYFI_EVENT_LINK_DOWN:            ifindex (u32)
+ * HYFI_EVENT_LINK_PORT_UP:         ssdk_port_status
+ * HYFI_EVENT_LINK_PORT_DOWN:       ssdk_port_status
+ * HYFI_EVENT_MAC_LEARN_ON_PORT:    struct __ssdkport_entry
  */
 
 #ifndef _HYFI_API_H
 #define _HYFI_API_H
 
 #include <linux/types.h>
+
 
 /* netlink define */
 /* netlink port */
@@ -82,6 +86,7 @@ enum {
 	HYFI_SET_EVENT_PID,
 	HYFI_ATTACH_BRIDGE,
 	HYFI_DETACH_BRIDGE,
+	HYFI_GET_SWITCH_PORT_ID,
 
 	HYFI_GET_PORT_LIST = 0x100,
 	HYFI_SET_BRPORT_GROUP, /* port group number and type */
@@ -193,6 +198,18 @@ struct __event_info {
 	u_int32_t event_pid;
 };
 
+struct __switchport_index {
+        u_int8_t mac_addr[6];
+        u_int32_t vlanid;
+        u_int32_t portid;
+};
+
+struct __ssdkport_entry {
+	u_int8_t  addr[6];
+	u_int32_t vlanid;
+	u_int32_t portid;
+	u_int16_t portlink;
+};
 struct __hybr_info {
 	u_int32_t ifindex;
 	u_int32_t flags;
@@ -214,6 +231,9 @@ enum {
 	HYFI_EVENT_LINK_UP,
 	HYFI_EVENT_LINK_DOWN,
 	HYFI_EVENT_FDB_UPDATED,
+	HYFI_EVENT_LINK_PORT_UP,
+	HYFI_EVENT_LINK_PORT_DOWN,
+	HYFI_EVENT_MAC_LEARN_ON_PORT,
 };
 
 struct __hfdb_entry {
@@ -222,8 +242,8 @@ struct __hfdb_entry {
 	u_int8_t is_local;
 	u_int32_t ageing_timer_value;
 	u_int8_t ifindex_hi;
+	u_int16_t portid;
 	u_int8_t pad0;
-	u_int16_t unused;
 };
 
 struct __hdtbl_entry {

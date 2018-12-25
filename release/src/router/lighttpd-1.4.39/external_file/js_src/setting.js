@@ -12,7 +12,7 @@ var g_invite_token = "";
 
 $("document").ready(function() {
 	//document.oncontextmenu = function() {return false;};
-	
+				
 	var vars = getUrlVars();
 	var loc_lan = String(window.navigator.userLanguage || window.navigator.language).toLowerCase();		
 	var lan = ( g_storage.get('lan') == undefined ) ? loc_lan : g_storage.get('lan');
@@ -71,8 +71,12 @@ $("document").ready(function() {
 		var ln = "Hsinchu";
 		var orag = "ASUS";
 		var ounit = "RD";
-		var cn = window.location.hostname;
 		
+		var cn = g_storage.get('request_host_url');
+		if(cn.indexOf("://")!=-1){
+            cn = cn.substr(cn.indexOf("://")+3); 
+        }
+                    
 		var msg = m.getString("msg_gen_crt_confirm");
 		msg = msg.replace("%s", cn);
 		
@@ -506,8 +510,7 @@ $("document").ready(function() {
       			
       			var invite_url = "";
 				if(g_storage.get('ddns_host_name')==""){
-					var b = window.location.href.indexOf("/",window.location.protocol.length+2);
-					invite_url = window.location.href.slice(0,b) + "/" + invite_token;
+					invite_url = g_storage.get('request_host_url') + "/" + invite_token;					
 				}
 				else{
 					invite_url = "https://" + g_storage.get('ddns_host_name');
@@ -527,7 +530,7 @@ $("document").ready(function() {
 				account_info += "<br><br>" + smartaccess_desc;
 				account_info += "<br><br>" + securitycode_desc;
 							
-				$("#account_info").html(account_info);
+				$("#account_info").html(encodeSafeString(account_info));
 				
 				var mail_content = "mailto:?subject=Welcome to my AiCloud";
       			mail_content += "&body=";
@@ -620,7 +623,7 @@ function query_partition_share_folder(account_type, account, path, folder, table
 	  		
 	  		html_data += "</table>";
 	  		
-	  		$("#"+ table_name).html(html_data);
+	  		$("#"+ table_name).html(encodeSafeString(html_data));
 	  		
 	  		$(".folder_table_tr").mouseenter(function(){
 	  			$(this).css("background-color", "#cccccc");
@@ -697,9 +700,8 @@ function query_account_list(){
 	  			html_data += "</tr>";
 	  		}
 	  		
-	  		
 	  		$("#table_account_list tbody").empty();
-	  		$("#table_account_list tbody").append(html_data);
+	  		$("#table_account_list tbody").append(encodeSafeString(html_data));
 	  		
 	  		$(".edit_account").click(function(){
 	  			var item_info = $(this).closest("tr");
@@ -743,15 +745,8 @@ function query_account_list(){
 
 function query_account_invite_list(){
 	
-	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
-	var window_url = window.location.href.slice(0,b);
-	
-	var window_url = "";
-	if(g_storage.get('ddns_host_name')==""){
-		var b = window.location.href.indexOf("/",window.location.protocol.length+2);
-		window_url = window.location.href.slice(0,b);
-	}
-	else{
+	var window_url = g_storage.get('request_host_url');
+	if(g_storage.get('ddns_host_name')!=""){
 		window_url = "https://" + g_storage.get('ddns_host_name');
 	}
 							
@@ -803,7 +798,7 @@ function query_account_invite_list(){
 	  		
 	  		
 	  		$("#table_account_invite_list tbody").empty();
-	  		$("#table_account_invite_list tbody").append(html_data);
+	  		$("#table_account_invite_list tbody").append(encodeSafeString(html_data));
 	  		
 	  		$(".edit_account_invite").click(function(){
 	  			var item_info = $(this).closest("tr");
@@ -873,6 +868,7 @@ function onFacebookLogin( token, uid ){
 }
 
 function facebook_login(){
+    /*
 	var app_id = "697618710295679";
 	window._onFacebookLogin = this.onFacebookLogin;
 	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
@@ -883,6 +879,7 @@ function facebook_login(){
 	var url = "http://www.facebook.com/dialog/oauth/?scope=publish_stream%2Cuser_photos%2Coffline_access&client_id=" + app_id + "&display=popup&redirect_uri=" + encodeURIComponent(auth_url) + redirect_url;
 	
 	window.open(url,"mywindow","menubar=1,resizable=0,width=630,height=250, top=100, left=300");
+	*/
 }
 
 function onGoogleLogin( token, uid ){
@@ -901,6 +898,7 @@ function onGoogleLogin( token, uid ){
 }
 
 function google_login(){
+    /*
 	var app_id = "103584452676-oo7gkbh8dg7nm07lao9a0i3r9jh6jfra.apps.googleusercontent.com";
 	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
 	var callback_function = "onGoogleLogin";
@@ -916,6 +914,7 @@ function google_login(){
 			  "&state=/callback=" + callback_function + "+ps5host=" + redirect_url;
 		
 	window.open(url,"mywindow","menubar=1,resizable=0,width=630,height=250, top=100, left=300");
+	*/
 }
 
 function getLatestVersion(){
@@ -952,10 +951,14 @@ function getLatestVersion(){
 
 function refreshShareLinkList(){
 	var webdav_mode = g_storage.get('webdav_mode');
-	var ddns_host_name = g_storage.get('ddns_host_name');    
-	var cur_host_name = window.location.host;
+	var ddns_host_name = g_storage.get('ddns_host_name');   
+	
 	var hostName = "";
-				
+	var cur_host_name = g_storage.get('request_host_url');
+	if(cur_host_name.indexOf("://")!=-1){
+        cur_host_name = cur_host_name.substr(cur_host_name.indexOf("://")+3); 
+    }
+                    			
 	if(!isPrivateIP(cur_host_name))
 		hostName = cur_host_name;
 	else			
@@ -1057,7 +1060,7 @@ function refreshShareLinkList(){
 			table_html += "<span>刪除選取連結</span>";
 			table_html += "</div>";
 			
-			$(table_html).appendTo($("#tab2"));
+			$("#tab2").html(encodeSafeString(table_html));
 			
 			$("div.delcheck_block").css("visibility", "hidden");	
 			

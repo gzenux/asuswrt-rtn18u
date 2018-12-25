@@ -28,20 +28,47 @@ function applyRule(){
 }
 
 function validForm(){
-	if(document.form.dmz_ip.value != ""){
-		if(!validator.ipAddrFinal(document.form.dmz_ip, 'dmz_ip')){
-			return false;
+	if (!mtwancfg_support || !dualWAN_support || wans_dualwan_array.indexOf("none") != -1 || wans_mode != "lb"){
+		if(document.form.dmz_ip.value != ""){
+			if(!validator.ipAddrFinal(document.form.dmz_ip, 'dmz_ip')){
+				return false;
+			}
+
+			if(document.form.dmz_enable[1].checked){
+				document.form.dmz_ip.value = "";
+				document.form.dmz1_ip.value = "";
+			}
 		}
-		
-		if(document.form.dmz_enable[1].checked){
-			document.form.dmz_ip.value = "";
+		else{
+			if(document.form.dmz_enable[0].checked){
+				alert("<#JS_fieldblank#>");
+				document.form.dmz_ip.focus();
+				return false;
+			}
 		}
 	}
 	else{
-		if(document.form.dmz_enable[0].checked){
+		// Handle two DMZ IP for each WAN interface in dualwan.
+		// If dualwan + lb, one of dmz_ip/dmz1_ip can be blank.
+		if(document.form.dmz_enable[0].checked && document.form.dmz_ip.value == "" && document.form.dmz1_ip.value == ""){
 			alert("<#JS_fieldblank#>");
-			document.form.dmz_ip.focus();
+			if (document.form.dmz_ip.value == "")
+				document.form.dmz_ip.focus();
+			else if (document.form.dmz1_ip.value == "")
+				document.form.dmz1_ip.focus();
 			return false;
+		}
+		if(document.form.dmz_ip.value != ""){
+			if(!validator.ipAddrFinal(document.form.dmz_ip, 'dmz_ip'))
+				return false;
+			if(document.form.dmz_enable[1].checked)
+				document.form.dmz_ip.value = "";
+		}
+		if(document.form.dmz1_ip.value != ""){
+			if(!validator.ipAddrFinal(document.form.dmz1_ip, 'dmz1_ip'))
+				return false;
+			if(document.form.dmz_enable[1].checked)
+				document.form.dmz1_ip.value = "";
 		}
 	}
 
@@ -62,21 +89,48 @@ function initial(){
 }
 
 function dmz_enable_check(){
-	if(document.form.dmz_ip.value == ""){
-		document.form.dmz_enable[1].checked = "true";
-		document.getElementById('dmz_ip_tr').style.display = "none";
-	}	
+	if (!mtwancfg_support || !dualWAN_support || wans_dualwan_array.indexOf("none") != -1 || wans_mode != "lb"){
+		document.getElementById('wan_dmz_ip_tr').style.display = "none";
+		document.getElementById('wan_dmz1_ip_tr').style.display = "none";
+		document.getElementById('dmz1_ip_tr').style.display = "none";
+		if(document.form.dmz_ip.value == ""){
+			document.form.dmz_enable[1].checked = "true";
+			document.getElementById('dmz_ip_tr').style.display = "none";
+		}
+		else{
+			document.form.dmz_enable[0].checked = "true";
+			document.getElementById('dmz_ip_tr').style.display = "";
+		}
+	}
 	else{
-		document.form.dmz_enable[0].checked = "true";
-		document.getElementById('dmz_ip_tr').style.display = "";
-	}	
+		// Handle two DMZ IP for each WAN interface in dualwan.
+		if(document.form.dmz_ip.value == "" && document.form.dmz1_ip.value == ""){
+			document.form.dmz_enable[1].checked = "true";
+		}else{
+			document.form.dmz_enable[0].checked = "true";
+		}
+		dmz_on_off();
+	}
 }
 
 function dmz_on_off(){
-	if(document.form.dmz_enable[0].checked)
+	if(document.form.dmz_enable[0].checked){
 		document.getElementById('dmz_ip_tr').style.display = "";
-	else	
+		document.getElementById('wan_dmz_ip_tr').style.display = "none";
+		if (mtwancfg_support && dualWAN_support && wans_dualwan_array.indexOf("none") == -1 && wans_mode == "lb"){
+			document.getElementById('wan_dmz_ip_tr').style.display = "";
+			document.getElementById('dmz1_ip_tr').style.display = "";
+			document.getElementById('wan_dmz1_ip_tr').style.display = "";
+		}else{
+			document.getElementById('dmz1_ip_tr').style.display = "none";
+			document.getElementById('wan_dmz1_ip_tr').style.display = "none";
+		}
+	}else{
+		document.getElementById('wan_dmz_ip_tr').style.display = "none";
 		document.getElementById('dmz_ip_tr').style.display = "none";
+		document.getElementById('wan_dmz1_ip_tr').style.display = "none";
+		document.getElementById('dmz1_ip_tr').style.display = "none";
+	}
 }
 </script>
 </head>
@@ -123,10 +177,9 @@ function dmz_on_off(){
 										<br/>
 										<br/>
 										<#IPConnection_BattleNet_sectionname#>:
-										<!-- untranslated  -->
 										<ul>
 											<li><#IPConnection_BattleNet_sectiondesc#></li>
-											<li>Please <span style="text-decoration:underline;cursor:pointer" id="addVtsRule_ftp">add a rule</span> to port forwarding list for USB Disk access properly on FTP service.</li>
+											<li><#IPConnection_BattleNet_sectiondesc2#></li>
 											<script>
 												document.getElementById("addVtsRule_ftp").onclick = function(){
 													/* untranslated */
@@ -149,12 +202,24 @@ function dmz_on_off(){
 												<input type="radio" name="dmz_enable" class="input" onclick="dmz_on_off()" ><#checkbox_No#>
 											</td>
 										</tr>
+										<tr id="wan_dmz_ip_tr">
+											<th colspan=2><#dualwan_primary#></th>
+										</tr>
 										<tr id="dmz_ip_tr">
 											<th><#IPConnection_ExposedIP_itemname#></th>
 											<td>
 												<input type="text" maxlength="15" class="input_15_table" name="dmz_ip" value="<% nvram_get("dmz_ip"); %>" onkeypress="return validator.isIPAddr(this, event)" autocorrect="off" autocapitalize="off"/>
 											</td>
+										</tr>
+										<tr id="wan_dmz1_ip_tr">
+											<th colspan=2><#dualwan_secondary#></th>
 										</tr>      		
+										<tr id="dmz1_ip_tr">
+											<th><#IPConnection_ExposedIP_itemname#></th>
+											<td>
+												<input type="text" maxlength="15" class="input_15_table" name="dmz1_ip" value="<% nvram_get("dmz1_ip"); %>" onkeypress="return validator.isIPAddr(this, event)" autocorrect="off" autocapitalize="off"/>
+											</td>
+										</tr>
 									</table>
 									<div class="apply_gen">
 										<input name="button" type="button" class="button_gen" onclick="applyRule()" value="<#CTL_apply#>"/>

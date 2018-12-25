@@ -29,6 +29,8 @@
 
 //Sam.B	2013/10/31
 #define TYPEDEF_BOOL	//will skip in typedefs.h
+#include <sys/ioctl.h>
+#include <net/if.h>
 #include <unistd.h>
 #include <bcmnvram.h>
 #include "shared.h"

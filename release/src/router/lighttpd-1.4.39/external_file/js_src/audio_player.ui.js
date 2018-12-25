@@ -6,7 +6,7 @@ function openAudioPlayer(loc){
 	
 	var audio_array = new Array();
 	for(var i=0;i<g_file_array.length;i++){
-   		var file_ext = getFileExt(g_file_array[i].href);			
+   		var file_ext = getFileExt(g_file_array[i].furl);			
 		if(file_ext=="mp3")
    			audio_array.push(g_file_array[i]);
 	}
@@ -21,7 +21,7 @@ function openAudioPlayer(loc){
 	var audio_list = "";
 	var default_index = 0;
 	for(var i=0;i<audio_array.length;i++){
-		var the_loc = audio_array[i].href;
+		var the_loc = audio_array[i].furl;
 			
 	 	if( loc == the_loc )
 	 		default_index = i;
@@ -128,14 +128,7 @@ function get_mp3_url(audio_list, generate_sharelink, complete_handler){
 	}
 	
 	if(generate_sharelink){
-		
-		var media_hostName = window.location.host;
-		//if(media_hostName.indexOf(":")!=-1)
-		//	media_hostName = media_hostName.substring(0, media_hostName.indexOf(":"));
-		//media_hostName = "http://" + media_hostName + ":" + g_storage.get("http_port") + "/";
-		
-		media_hostName = window.location.protocol + "//" + media_hostName + "/";
-		
+		var media_hostName = g_storage.get('request_host_url') + "/";		
 		var timer = setInterval(function(){
 			
 			if(on_query==false){
@@ -484,7 +477,7 @@ function initAudioPlayer(){
 	if( browserVer.indexOf("Chrome") != -1 ||
 	    browserVer.indexOf("Firefox") != -1 ||
 	    ( browserVer.indexOf("Safari") != -1 && ( isMacOS() || isWinOS() ) ) ){
-		jplayer_solution = "html,flash";
+		jplayer_solution = "html,flash";		
 		jplayer_supplied = "mp3";
 	}
 	else if( isIE() ||

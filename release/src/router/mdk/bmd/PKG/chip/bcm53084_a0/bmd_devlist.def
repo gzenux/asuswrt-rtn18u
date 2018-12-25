@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM53084_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM53084_A0
+BMD_DEVLIST_ENTRY(BCM53084, BCM53084_VENDOR_ID, BCM53084_DEVICE_ID, BCM53084_REV_A0, \
+                  0, 0, \
+                  bcm53084_a0, bcm53084_a0, bcm53084_a0, \
+                  CDK_DEV_ARCH_ROBO, "Navigator", "BCM53084", \
+                  "2-Port GE Switch With Integrated PHYs", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm53084_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

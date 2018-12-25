@@ -149,8 +149,9 @@ padding-left:30px;
 margin:0;
 padding:0;
 width:100%;
-float:left;
+height:100%;
 overflow: hidden;
+position:absolute;
 }
 /*--------------------------------------*/
 
@@ -187,7 +188,8 @@ height:200px;
 margin:0;
 padding:0;
 width:297px;
-height:320px;
+/*height:320px;*/
+height:100%;
 float:left;
 overflow-y: auto;
 overflow-x: hidden;
@@ -363,9 +365,11 @@ background-color:#121212;
 
 /*--Bottom Region------------------------------------*/
 #bottom_region {
-float: left;
+/*float: left;*/
+position:absolute;
+bottom:0px;
 width: 100%;
-height:32px;
+height:29px;
 background-image:url("images/top_bottom_region_bg.png");
 background-repeat:repeat-x;
 border-top:1px solid;
@@ -452,9 +456,10 @@ font-size:16px;
 margin:0;
 padding:0;
 width:500px;
-height:40px;
+/*height:40px;
 float:left;
-position:absolute;
+position:absolute;*/
+position:fixed;
 display:block;
 background-color: #424242;
 z-index:0;
@@ -464,7 +469,6 @@ bottom:0px;
 #button_panel #ui_region{
 width:100%;
 height:40px;
-position:absolute;
 bottom:0px;
 left:0px;
 }
@@ -2103,7 +2107,7 @@ width:16px;
 height:60px;
 position:absolute;
 right:0px;
-bottom:72px;
+bottom:90px;
 display:none;
 cursor:pointer;
 background-position: -520px -430px;

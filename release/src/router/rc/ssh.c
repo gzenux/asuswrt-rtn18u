@@ -5,6 +5,8 @@
 
 */
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "rc.h"
 
 static inline int check_host_key(const char *ktype, const char *nvname, const char *hkfn)
@@ -24,11 +26,9 @@ static inline int check_host_key(const char *ktype, const char *nvname, const ch
 int start_sshd(void)
 {
 	char buf[sizeof("255.255.255.255:65535")], *port;
-	char timeout[8];
 	char *dropbear_argv[] = { "dropbear",
 		"-p", buf,	/* -p [address:]port */
 		"-a",
-		NULL, NULL,	/* -I <idle_timeout>  (0 is never, default 0, in seconds) */
 		NULL,		/* -s */
 		NULL, NULL,	/* -W receive_window_buffer */
 		NULL };
@@ -57,12 +57,6 @@ int start_sshd(void)
 		port += snprintf(buf, sizeof(buf), "%s:", nvram_safe_get("lan_ipaddr"));
 	snprintf(port, sizeof(buf) - (port - buf), "%d", nvram_get_int("sshd_port") ? : 22);
 
-	if (nvram_get_int("sshd_timeout")) {
-		snprintf(timeout, sizeof(timeout), "%d", nvram_get_int("sshd_timeout") * 60);
-		dropbear_argv[index++] = "-I";
-		dropbear_argv[index++] = timeout;
-	}
-	
 	if (!nvram_get_int("sshd_pass"))
 		dropbear_argv[index++] = "-s";
 

@@ -95,11 +95,18 @@ CFLAGS:= \
 	 -g -W -Wall  -Wno-unused  -g -O2 -g -W -Wall  -Wno-unused  -DHAVE_CONFIG_H -DWINDOW_1 -DTEST_WRITE -DNODEBUG -DLPR_with_ASUS ${GLOBAL_OPTIONS} #-DRETURNOK -DUSBONLY
 
 USER_OBJS := 
-LDFLAGS   := -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX} -lnvram
+LDFLAGS   := -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX}${EX7} -lnvram
+ifeq ($(HND_ROUTER),y)
+LDFLAGS += -L$(TOP)/wlcsm -lwlcsm -lgcc_s
+endif
 
 include ../../common.mak
 ifeq ($(RTCONFIG_QTN),y)
 LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c -ljson-c
 endif
 
 FILTER_DIR = ${libexecdir}/filters

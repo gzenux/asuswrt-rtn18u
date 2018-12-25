@@ -18,6 +18,7 @@ function restart_needed_time(second){
 
 function Callback(){
 	parent.showLoading(restart_time);
+	document.redirectForm.action = '<% abs_index_page(); %>';
 	setTimeout("document.redirectForm.submit();", restart_time*1000);
 	return;
 }
@@ -26,7 +27,7 @@ function Callback(){
 
 <body onLoad="Callback();">
 <% wan_action(); %>
-<form method="post" name="redirectForm" action="/index.asp" target="_parent">
+<form method="post" name="redirectForm" action="<% abs_index_page(); %>" target="_parent">
 	<input type="hidden" name="flag" value="">
 </form>
 </body>

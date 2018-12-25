@@ -1,8 +1,8 @@
+#ifndef __WLSCAN_H_
+#define __WLSCAN_H_
+
 #define BIT(n) (1 << (n))
 #define WPA_GET_LE16(a) ((unsigned int) (((a)[1] << 8) | (a)[0]))
-
-//#define DOT11_MNG_WPA_ID 0xdd
-//#define DOT11_MNG_RSN_ID 0x30
 
 #define WPA_CIPHER_NONE_ BIT(0)
 #define WPA_CIPHER_WEP40_ BIT(1)
@@ -127,7 +127,8 @@ struct bss_ie_hdr {
 	unsigned char elem_id;
 	unsigned char len;
 	unsigned char oui[3];
-} bss_ie;
+};
+extern struct bss_ie_hdr bss_ie;
 
 #define MAX_NUMBER_OF_APINFO	64
 
@@ -144,8 +145,25 @@ struct apinfo
 	struct wpa_ie_data wid;
 	int status;
 	int NetworkType;
-} apinfos[MAX_NUMBER_OF_APINFO];
+};
+extern struct apinfo apinfos[MAX_NUMBER_OF_APINFO];
 
+#ifdef RTCONFIG_REALTEK
+/* [MUST] : must to modify */
+#define APINFO_MAX 64
+typedef struct apinfo apinf_t;
+//int apinfo_count=0;
+#endif
 #define WIF "eth1"
 #define WLC_SCAN_RESULT_BUF_LEN	32 * 1024
-char buf[WLC_IOCTL_MAXLEN];
+extern char buf[WLC_IOCTL_MAXLEN];
+
+#endif
+
+#if defined(RTCONFIG_AMAS) || defined(RTCONFIG_CFGSYNC)
+struct tlvbase {
+	uchar type;
+	uchar len;
+	uchar data[1];
+};
+#endif

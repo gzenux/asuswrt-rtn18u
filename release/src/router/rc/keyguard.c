@@ -289,7 +289,7 @@ int check_auth_device_wifi() {
 
 exit:
 	if(mac_list) free(mac_list);
-#endif	
+#endif
 	return kdevice_found;
 }
 
@@ -335,7 +335,7 @@ static void kg_watchdog(int sig) {
 	kdevice_t *ptr;
 
 	if ( !nvram_get_int("wlready") ||
-	     nvram_get_int("sw_mode") != SW_MODE_ROUTER ||
+	     !is_router_mode() ||
 	     (!KG_WAN && !KG_STREAM && !KG_WIFI_RADIO) ||
 	     KeyDevice == NULL)
 		return;
@@ -674,7 +674,7 @@ void kg_trigger(int kdevice) {
 				eval("wl", "-i", ifname, "down");
 				eval("wl", "-i", ifname, "up");
 #endif
-#endif     
+#endif
 	           	}
         	}
 

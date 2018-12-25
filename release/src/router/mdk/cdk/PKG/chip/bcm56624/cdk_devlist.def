@@ -1,0 +1,36 @@
+#if CDK_CONFIG_INCLUDE_BCM56624_A0 == 1
+CDK_DEVLIST_ENTRY(BCM56624, BCM56624_VENDOR_ID, BCM56624_DEVICE_ID, BCM56624_REV_A0, \
+                  0, 0, \
+                  bcm56624_a0, bcm56624_a0, bcm56624_a0, \
+                  CDK_DEV_ARCH_XGS, "Triumph", "BCM56620", \
+                  "48-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56624_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56624, BCM56624_VENDOR_ID, BCM56624_DEVICE_ID, BCM56624_REV_A1, \
+                  0, 0, \
+                  bcm56624_a0, bcm56624_a0, bcm56624_a1, \
+                  CDK_DEV_ARCH_XGS, "Triumph", "BCM56620", \
+                  "48-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56624_B0 == 1
+CDK_DEVLIST_ENTRY(BCM56624, BCM56624_VENDOR_ID, BCM56624_DEVICE_ID, BCM56624_REV_B0, \
+                  0, 0, \
+                  bcm56624_b0, bcm56624_b0, bcm56624_b0, \
+                  CDK_DEV_ARCH_XGS, "Triumph", "BCM56620", \
+                  "48-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56624_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56624, BCM56624_VENDOR_ID, BCM56624_DEVICE_ID, BCM56624_REV_B1, \
+                  0, 0, \
+                  bcm56624_b0, bcm56624_b0, bcm56624_b1, \
+                  CDK_DEV_ARCH_XGS, "Triumph", "BCM56620", \
+                  "48-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+

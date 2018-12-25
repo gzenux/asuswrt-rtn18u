@@ -1,0 +1,3 @@
+#if PHY_CONFIG_INCLUDE_BCM5482 == 1 || defined(PHY_DEVLIST_INCLUDE_ALL)
+PHY_DEVLIST_ENTRY(BCM5482, bcm5482, 0, "Dual-Port 10/100/1000BASE-T Gigabit Ethernet Transceiver", 0, 0)
+#endif

@@ -6,13 +6,19 @@
 # $Id: Makefile 401201 2013-05-09 03:06:42Z kenlo $
 #
 
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/common/include -Wall -Werror
+include $(SRCBASE)/router/.config
+
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/common/include -Wall 
 CFLAGS	+= $(if $(WLAN_ComponentIncPath),$(WLAN_ComponentIncPath),$(addprefix -I,$(wildcard $(SRCBASE)/shared/bcmwifi/include)))
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -O2
-LDFLAGS += -L$(TOP)/nvram$(BCMEX) -lnvram
+LDFLAGS += -L$(TOP)/nvram$(BCMEX)$(EX7) -lnvram ${EXTRA_NV_LDFLAGS}
 LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += $(EXTRALDFLAGS)
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
 
 #ifdef BCMINTERNAL
 ifneq ($(NO_BCMINTERNAL), 1)

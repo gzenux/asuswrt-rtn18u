@@ -40,6 +40,7 @@
 #endif
 
 #include <json.h>
+#include <rtconfig.h>
 
 #if defined(linux)
 /* Use SVID search */
@@ -54,7 +55,7 @@ extern char *strsep(char **stringp, char *delim);
 /* CGI hash table */
 static struct hsearch_data htab;
 
-static void
+void
 unescape(char *s)
 {
 	unsigned int c;
@@ -89,21 +90,40 @@ get_cgi(char *name)
 char *
 get_cgi_json(char *name, json_object *root)
 {
+	char *value;
+
 	if(root == NULL){
-		ENTRY e, *ep;
-
-	if (!htab.table)
-		return NULL;
-
-	e.key = name;
-	hsearch_r(e, FIND, &ep, &htab);
-
-	return ep ? ep->data : NULL;
+		value = get_cgi(name);
+		return value;
 	}else{
-		struct json_object *json_value;
-		json_value = json_object_object_get(root, name);
+		struct json_object *json_value = NULL;
+		json_object_object_get_ex(root, name, &json_value);
+#ifdef RTCONFIG_CFGSYNC
+		if (json_object_is_type(json_value, json_type_object))
+			return (char *)json_object_to_json_string(json_value);
+		else
+			return (char *)json_object_get_string(json_value);
+#else
 		return (char *)json_object_get_string(json_value);
+#endif
 	}
+}
+
+char *
+safe_get_cgi_json(char *name, json_object *root)
+{
+	char *value;
+
+	if(root == NULL){
+		value = get_cgi(name);
+
+	}else{
+		struct json_object *json_value = NULL;
+		json_object_object_get_ex(root, name, &json_value);
+
+		value = (char *) json_object_get_string(json_value);
+	}
+	return value ? value : "";
 }
 
 void
@@ -155,7 +175,7 @@ init_cgi(char *query)
 		/* Assign variable */
 		name = strsep(&value, "=");
 		if (value) {
-//			printf("set_cgi: name=%s, value=%s.\n", name , value);	// N12 test
+			//printf("set_cgi: name=%s, value=%s.\n", name , value);	// N12 test
 			set_cgi(name, value);
 		}
 	}

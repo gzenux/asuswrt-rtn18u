@@ -32,6 +32,10 @@
 #include <sys/time.h>
 #endif
 
+#ifdef HND_ROUTER
+#include <ifaddrs.h>
+#endif
+
 #ifndef SIOCGIFCONF
 #ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>

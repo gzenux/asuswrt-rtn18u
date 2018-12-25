@@ -1,0 +1,43 @@
+# Copyright (c) 2012, Qualcomm Atheros, Inc.
+#
+include ../common.mak
+CFLAGS+=-MMD -O2 -Wall -g -I$(STAGEDIR)/usr/include
+
+CROSS=$(CROSS_COMPILE)
+LINUX_KARCH=$(ARCH)
+LINUX_DIR=$(LINUXDIR)
+LINUX_SRC_DIR=$(LINUXDIR)
+LINUX_VERSION=$(LINUX_KERNEL)
+LINUX_RELEASE=$(LINUX_KERNEL)
+PKG_BUILD_DIR=$(shell pwd)/source
+STAGING_DIR=$(STAGEDIR)
+GWLIB+=$(STAGEDIR_DIR) $(LDFLAGS) 
+EXTRA_CFLAGS=-I$(PKG_BUILD_DIR)
+
+
+GWTOP = $(TOPDIR)/apps/gateway
+HYFIDIR ?= $(TOP)/qca-hyfi-bridge.ipq40xx/source/hyfi-netfilter
+HYFIMCDIR ?= $(TOP)/qca-hyfi-bridge.ipq40xx/source/hyfi-multicast
+
+GW_INSTALL_ROOT := $(GWTOP)/install
+
+# gateway: Where to install include files
+GWINCLUDE ?= $(GW_INSTALL_ROOT)/include
+vpath %.h . $(GWINCLUDE)
+vpath %.makefun . $(GWINCLUDE)
+
+# Where to install dynamic libraries
+GWLIB ?= $(INSTALL_ROOT)/lib
+vpath %.so . $(GWLIB)
+
+CFLAGS += -I . -I $(GWINCLUDE) \
+		  -I $(KERNELPATH)/include -I $(HYFIDIR) -I $(HYFIMCDIR)
+	  
+# Generate dependencies and symbols
+CFLAGS += -MMD
+
+# Generate each function and global in a separate section
+# This allows the linker to remove unused functions.
+CFLAGS += -ffunction-sections -fdata-sections -fPIC
+
+-include $(OBJS:.o=.d)

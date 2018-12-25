@@ -52,11 +52,12 @@ var pptpd_connected_clients = [];
 var pptpd_sr_rulelist_array_ori = '<% nvram_char_to_ascii("","pptpd_sr_rulelist"); %>';
 var pptpd_sr_rulelist_array = decodeURIComponent(pptpd_sr_rulelist_array_ori);
 var pptpd_sr_edit_username = "";
+var enable_samba = '<% nvram_get("enable_samba"); %>';
 
 var max_shift = "";	/*MODELDEP (include dict #PPTP_desc2# #vpn_max_clients# #vpn_maximum_clients#) : 
-				RT-AC5300/RT-AC5300R/RT-AC3200/RT-AC3100/RT-AC88U/RT-AC87U/RT-AC68U/RT-AC66U/RT-AC56U/RT-N66U/RT-N18U */
-if(based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC3100" ||
-		based_modelid == "RT-AC88U" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC68U" ||
+				RT-AC5300/GT-AC5300/RT-AC86U/AC2900/RT-AC3200/RT-AC3100/RT-AC88U/RT-AC87U/RT-AC68U/RT-AC66U/RT-AC56U/RT-N66U/RT-N18U */
+if(based_modelid == "RT-AC5300" || based_modelid == "GT-AC5300" || based_modelid == "GT-AC9600" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC3100" ||
+		based_modelid == "RT-AC88U" || based_modelid == "RT-AC86U" || based_modelid == "AC2900" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC68U" ||
 		based_modelid == "RT-AC66U" || based_modelid == "RT-AC56U" ||
 		based_modelid == "RT-N66U" || based_modelid == "RT-N18U"){
 	max_shift = parseInt("29");
@@ -76,11 +77,7 @@ function initial(){
 	
 	show_menu();		
 	addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "VPN"]);
-	//if support pptpd and openvpnd then show switch button
-	if(pptpd_support && openvpnd_support) {
-		document.getElementById("divSwitchMenu").style.display = "";
-	}
-	
+
 	formShowAndHide(document.form.pptpd_enable.value, "pptpd");	
 	if(wans_mode == "lb"){
 		var wan0_ipaddr = wanlink_ipaddr();
@@ -164,12 +161,27 @@ function initial(){
 	/* MPPE end */		
 	check_vpn_conflict();
 	/* Advanced Setting end */
+
+	var vpn_server_array = { "PPTP" : ["PPTP", "Advanced_VPN_PPTP.asp"], "OpenVPN" : ["OpenVPN", "Advanced_VPN_OpenVPN.asp"], "IPSEC" : ["IPSec VPN", "Advanced_VPN_IPSec.asp"]};
+	if(!pptpd_support) {
+		delete vpn_server_array.PPTP;
+	}
+	if(!openvpnd_support) {
+		delete vpn_server_array.OpenVPN;
+	}
+	if(!ipsec_srv_support) {
+		delete vpn_server_array.IPSEC;
+	}
+	$('#divSwitchMenu').html(gen_switch_menu(vpn_server_array, "PPTP"));
+
+	//set FAQ URL
+	set_FAQ_link("faq_port_forwarding", "1033906", "privateIP");//this id is include in string : #vpn_privateIP_hint#
 }
 
 var MAX_RETRY_NUM = 5;
 var external_ip_retry_cnt = MAX_RETRY_NUM;
 function show_warning_message(){
-	if(realip_support && wans_mode != "lb"){
+	if(realip_support && (based_modelid == "BRT-AC828" || wans_mode != "lb")){
 		if(realip_state != "2" && external_ip_retry_cnt > 0){
 			if( external_ip_retry_cnt == MAX_RETRY_NUM )
 				get_real_ip();
@@ -212,6 +224,7 @@ function formShowAndHide(server_enable, server_type) {
 		showpptpd_clientlist();
 		parsePPTPClients();
 		pptpd_connected_status();
+		update_pptp_client_status();
 		document.getElementById("divApply").style.display = "";
 	}
 	else{
@@ -227,24 +240,32 @@ function formShowAndHide(server_enable, server_type) {
 
 function pptpd_connected_status(){
 	var rule_num = document.getElementById('pptpd_clientlist_table').rows.length;
-	var username_status = "";
 	for(var x=0; x < rule_num; x++){
-		var ind = x+1;
-		username_status = "status"+ind;
+		var $rowObj = $(document.getElementById('pptpd_clientlist_table').rows[x]);
 		if(pptpd_connected_clients.length >0){
+			var have_client_flag = false;
 			for(var y=0; y<pptpd_connected_clients.length; y++) {
-				if(document.getElementById('pptpd_clientlist_table').rows[x].cells[1].title == pptpd_connected_clients[y].username){
-					document.getElementById(username_status).innerHTML = '<a class="hintstyle2" href="javascript:void(0);" onClick="showPPTPClients(\''+pptpd_connected_clients[y].username+'\');"><#Connected#></a>';
+				if($rowObj.children(":first").next().attr("title") == pptpd_connected_clients[y].username){
+					have_client_flag = true;
+					if($rowObj.children(":first").children().length == 0) {
+						$rowObj.children(":first").html('<a class="hintstyle2" href="javascript:void(0);" onClick="showPPTPClients(\''+pptpd_connected_clients[y].username+'\');"><#Connected#></a>');
+					}
 					break;
-				}		
+				}
 			}
-			
-			if(document.getElementById(username_status).innerHTML == "") {
-				document.getElementById(username_status).innerHTML = "<#Disconnected#>";
+
+			if(!have_client_flag) {
+				if($rowObj.children().length == 1)
+					$rowObj.children(":first").html("<#IPConnection_VSList_Norule#>");
+				else
+					$rowObj.children(":first").html("<#Disconnected#>");
 			}
 		}
-		else if(document.getElementById(username_status)) {
-			document.getElementById(username_status).innerHTML = "<#Disconnected#>";
+		else {
+			if($rowObj.children().length == 1)
+				$rowObj.children(":first").html("<#IPConnection_VSList_Norule#>");
+			else
+				$rowObj.children(":first").html("<#Disconnected#>");
 		}	
 	}
 }
@@ -264,12 +285,7 @@ function applyRule() {
 			for(var i = 0; i < rule_num; i += 1) {
 				tmp_value += "<"		
 				for(var j = 1; j < item_num - 2; j += 1) {
-					if(document.getElementById("pptpd_clientlist_table").rows[i].cells[j].innerHTML.lastIndexOf("...") < 0) {
-						tmp_value += document.getElementById("pptpd_clientlist_table").rows[i].cells[j].innerHTML;
-					}
-					else {
-						tmp_value += document.getElementById("pptpd_clientlist_table").rows[i].cells[j].title;
-					}					
+					tmp_value += document.getElementById("pptpd_clientlist_table").rows[i].cells[j].title;
 					if(j != item_num - 3)
 						tmp_value += ">";
 				}
@@ -553,12 +569,8 @@ function showpptpd_clientlist(){
 						code +='<td width="30%" title="'+pptpd_clientlist_col[0]+'">'+ pptpd_clientlist_col[0] +'</td>';
 				}
 				else if(j == 1){
-					if(pptpd_clientlist_col[1].length >28){
-						overlib_str1[i] += pptpd_clientlist_col[1];
-						pptpd_clientlist_col[1]=pptpd_clientlist_col[1].substring(0, 26)+"...";
-						code +='<td width="30%" title="'+overlib_str1[i]+'">'+ pptpd_clientlist_col[1] +'</td>';
-					}else
-						code +='<td width="30%">'+ pptpd_clientlist_col[1] +'</td>';
+					overlib_str1[i] += pptpd_clientlist_col[1];
+					code +='<td width="30%" title="'+overlib_str1[i]+'" style="text-align:center;">-</td>';
 				} 
 			}
 			
@@ -574,6 +586,7 @@ function showpptpd_clientlist(){
 }
 
 function parsePPTPClients(){	
+	pptpd_connected_clients = [];
 	var Loginfo = document.getElementById("pptp_connected_info").firstChild.innerHTML;
 	var lines = Loginfo.split('\n');
 	if(Loginfo == "")
@@ -808,6 +821,25 @@ function check_vpn_conflict() {		//if conflict with LAN ip & DHCP ip pool & stat
 	document.getElementById("pptpd_conflict").innerHTML = "";	
 }
 /* Advanced Setting end */ 
+
+function update_pptp_client_status(){
+	$.ajax({
+		url: 'ajax_vpnserver_client_status.xml',
+		dataType: 'xml',
+		error: function(xml){
+			update_pptp_client_status();
+		},
+		success: function(xml){
+			$("#pptp_connected_info").children(":first").empty();
+			if(xml.getElementsByTagName("pptp")[0].firstChild != null) {
+				$("#pptp_connected_info").children(":first").html(xml.getElementsByTagName("pptp")[0].firstChild.nodeValue);
+			}	
+			parsePPTPClients();
+			pptpd_connected_status();
+			setTimeout("update_pptp_client_status();", 3000);
+		}
+	});
+}
 </script>
 </head>
 <body onload="initial();">
@@ -852,16 +884,7 @@ function check_vpn_conflict() {		//if conflict with LAN ip & DHCP ip pool & stat
 								<td bgcolor="#4D595D" valign="top">
 									<div>&nbsp;</div>
 									<div id="divVPNTitle" class="formfonttitle"><#BOP_isp_heart_item#> - PPTP</div>
-									<div id="divSwitchMenu" style="margin-top:-40px;float:right;display:none;">
-										<div style="width:173px;height:30px;border-top-left-radius:8px;border-bottom-left-radius:8px;" class="block_filter_pressed">
-											<div style="text-align:center;padding-top:5px;color:#93A9B1;font-size:14px">PPTP</div>
-										</div>
-										<div style="width:172px;height:30px;margin:-32px 0px 0px 173px;border-top-right-radius:8px;border-bottom-right-radius:8px;" class="block_filter">
-											<a href="Advanced_VPN_OpenVPN.asp">	
-												<div class="block_filter_name">OpenVPN</div>
-											</a>
-										</div>
-									</div>
+									<div id="divSwitchMenu" style="margin-top:-40px;float:right;"></div>
 									<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 									<div id="privateIP_notes" class="formfontdesc" style="display:none;color:#FC0;"><#vpn_privateIP_hint#></div>
 									<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
@@ -909,7 +932,7 @@ function check_vpn_conflict() {		//if conflict with LAN ip & DHCP ip pool & stat
 										<div class="formfontdesc"><#PPTP_desc#></div>
 										<div id="wan_ctrl" class="formfontdesc"></div>
 										<div id="dualwan_ctrl" style="display:none;" class="formfontdesc"></div>
-										<div class="formfontdesc" style="margin-top:-10px;font-weight: bolder;"><#PPTP_desc3#></div>
+										<div class="formfontdesc" style="margin-top:-10px;"><#PPTP_desc3#></div>
 										<div class="formfontdesc" style="margin-top:-10px;">(7) <#NSlookup_help#></div>
 										<div class="formfontdesc" style="margin:-10px 0px 0px -15px;">
 											<ul>
@@ -960,7 +983,7 @@ function check_vpn_conflict() {		//if conflict with LAN ip & DHCP ip pool & stat
 											<td>
 												<input type="radio" value="1" name="pptpd_broadcast_option" onClick="setBroadcast(this);"/><#checkbox_Yes#>
 												<input type="radio" value="0" name="pptpd_broadcast_option" onClick="setBroadcast(this);"/><#checkbox_No#>
-												<span id="pptpd_broadcast_hint" style="font-family: Lucida Console;color: #FFCC00;display: none;">When Network Place enabled, this must be enabled</span>
+												<span id="pptpd_broadcast_hint" style="font-family: Lucida Console;color: #FFCC00;display: none;"><#PPTP_broadcast_hint#></span>
 											</td>
 										</tr>
 										<tr>

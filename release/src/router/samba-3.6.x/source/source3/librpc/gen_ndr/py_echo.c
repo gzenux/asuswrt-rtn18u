@@ -19,8 +19,8 @@ staticforward PyTypeObject echo_Enum2_Type;
 staticforward PyTypeObject echo_Surrounding_Type;
 staticforward PyTypeObject rpcecho_InterfaceType;
 
-void initecho(void);static PyTypeObject *Object_Type;
-static PyTypeObject *ClientConnection_Type;
+void initecho(void);static PyTypeObject *ClientConnection_Type;
+static PyTypeObject *Object_Type;
 
 static PyObject *py_echo_info1_get_v(PyObject *obj, void *closure)
 {
@@ -1128,23 +1128,23 @@ static PyMethodDef echo_methods[] = {
 void initecho(void)
 {
 	PyObject *m;
-	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_base;
-
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
-		return;
+	PyObject *dep_talloc;
 
 	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
 	if (dep_samba_dcerpc_base == NULL)
 		return;
 
-	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
-	if (Object_Type == NULL)
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
 		return;
 
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
 	if (ClientConnection_Type == NULL)
+		return;
+
+	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
+	if (Object_Type == NULL)
 		return;
 
 	echo_info1_Type.tp_base = Object_Type;
@@ -1227,8 +1227,8 @@ void initecho(void)
 
 	PyModule_AddObject(m, "ECHO_ENUM2_32", PyInt_FromLong(ECHO_ENUM2_32));
 	PyModule_AddObject(m, "ECHO_ENUM2", PyInt_FromLong(ECHO_ENUM2));
-	PyModule_AddObject(m, "ECHO_ENUM1_32", PyInt_FromLong(ECHO_ENUM1_32));
 	PyModule_AddObject(m, "ECHO_ENUM1", PyInt_FromLong(ECHO_ENUM1));
+	PyModule_AddObject(m, "ECHO_ENUM1_32", PyInt_FromLong(ECHO_ENUM1_32));
 	Py_INCREF((PyObject *)(void *)&echo_info1_Type);
 	PyModule_AddObject(m, "info1", (PyObject *)(void *)&echo_info1_Type);
 	Py_INCREF((PyObject *)(void *)&echo_info2_Type);

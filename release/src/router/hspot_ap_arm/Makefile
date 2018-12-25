@@ -30,6 +30,11 @@ CFLAGS += -DPPR_API
 #LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += -lgcc_s
 LDFLAGS += -L$(TOP)/nvram${BCMEX} -lnvram -L$(TOP)/shared -lshared
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
+
 LDFLAGS += $(EXTRA_LDFLAGS)
 
 vpath %.c $(SRCBASE)/wl/exe

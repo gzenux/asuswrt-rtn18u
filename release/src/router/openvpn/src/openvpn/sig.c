@@ -257,7 +257,13 @@ print_status (const struct context *c, struct status_output *so)
   struct gc_arena gc = gc_new ();
 
   status_reset (so);
-
+#if 1//asus
+	if(c->c2.to_link_addr)
+		status_printf (so, "REMOTE,%s:%d,Static_Key"
+			, inet_ntoa(c->c2.to_link_addr->dest.addr.in4.sin_addr)
+			, ntohs(c->c2.to_link_addr->dest.addr.in4.sin_port)
+		);
+#endif
   status_printf (so, "OpenVPN STATISTICS");
   status_printf (so, "Updated,%s", time_string (0, 0, false, &gc));
   status_printf (so, "TUN/TAP read bytes," counter_format, c->c2.tun_read_bytes);

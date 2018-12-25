@@ -293,7 +293,7 @@ int btn_setup_get_setting(PKT_SET_INFO_GW_QUICK *pkt)	// WLAN 2.4G
 	char tmpbuf[256];
 	int ret=0;
 
-	memset(pkt, 0, sizeof(pkt));
+	memset(pkt, 0, sizeof(PKT_SET_INFO_GW_QUICK));
 
 	pkt->QuickFlag=QFCAP_WIRELESS;
 	strcpy(tmpbuf, nvram_safe_get("wl0_ssid"));
@@ -353,7 +353,7 @@ int btn_setup_get_setting2(PKT_SET_INFO_GW_QUICK *pkt)	// WLAN 5G
 	char tmpbuf[256];
 	int ret=0;
 
-	memset(pkt, 0, sizeof(pkt));
+	memset(pkt, 0, sizeof(PKT_SET_INFO_GW_QUICK));
 
 	pkt->QuickFlag=QFCAP_WIRELESS;
 	strcpy(tmpbuf, nvram_safe_get("wl1_ssid"));
@@ -715,9 +715,9 @@ void btn_setup_save_setting(PKT_SET_INFO_GW_QUICK *pkt)
 					idx1 = 12;
 				}
 
-				
-				sprintf(sr_num,"%d",pkt->ISPSetting.SRNum);
-                                nvram_set("sr_num_x",sr_num);
+
+				snprintf(sr_num, sizeof(sr_num), "%d", pkt->ISPSetting.SRNum);
+				nvram_set("sr_num_x", sr_num);
 
 
 //				printf("start_num is %x, end_num is %x\n",start_num, end_num);
@@ -915,7 +915,7 @@ int OTSStart(int flag)
 		bs_mode = BTNSETUP_START;
 #else
 		bs_mode = BTNSETUP_DATAEXCHANGE;
-#endif		
+#endif
 		bs_timeout = BTNSETUP_INIT_TIMEOUT;
 		time(&bs_time);
 	}

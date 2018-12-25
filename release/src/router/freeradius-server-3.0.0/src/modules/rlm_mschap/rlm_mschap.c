@@ -35,9 +35,11 @@ RCSID("$Id$")
 #include	"mschap.h"
 #include	"smbdes.h"
 
+#if 0
 #ifdef HAVE_OPENSSL_CRYPTO_H
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #  include	<openssl/rc4.h>
+#endif
 #endif
 
 #ifdef WITH_OPEN_DIRECTORY
@@ -828,6 +830,7 @@ ntlm_auth_err:
 		return -1;
 
 	} else if (inst->local_cpw) {
+#if 0
 #ifdef HAVE_OPENSSL_CRYPTO_H
 		/*
 		 * decrypt the new password blob, add it as a temporary request
@@ -997,6 +1000,8 @@ ntlm_auth_err:
 		RDEBUG("Local MS-CHAPv2 password changes require OpenSSL support");
 		return -1;
 #endif
+#endif
+		RDEBUG("MS-CHAPv2 password change not configured");
 	} else {
 		RDEBUG("MS-CHAPv2 password change not configured");
 	}

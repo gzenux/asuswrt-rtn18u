@@ -77,6 +77,10 @@ unsigned int IdleTimeout = MIN_CLEAN_PERIOD * TIMEOUT_DIVISOR;
 /* Pipe for breaking select() to initiate periodic cleaning */
 int CleanPipe[2];
 
+static int 	hide_relayid = 0;
+unsigned char 	proxy_addr[ETH_ALEN];
+int           	proxy_idx = -1;
+
 /* Our relay: if_index followed by peer_mac */
 #define MY_RELAY_TAG_LEN (sizeof(int) + ETH_ALEN)
 
@@ -246,10 +250,13 @@ main(int argc, char *argv[])
 
     openlog("pppoe-relay", LOG_PID, LOG_DAEMON);
 
-    while((opt = getopt(argc, argv, "hC:S:B:n:i:F")) != -1) {
+    while((opt = getopt(argc, argv, "hHC:S:B:n:i:F")) != -1) {
 	switch(opt) {
 	case 'h':
 	    usage(argv[0]);
+	    break;
+	case 'H':
+	    hide_relayid = 1;
 	    break;
 	case 'F':
 	    beDaemon = 0;
@@ -994,7 +1001,6 @@ relayHandlePADI(PPPoEInterface const *iface,
     PPPoETag tag;
     unsigned char *loc;
     int i, r;
-
     int ifIndex;
 
     /* Can a client legally be behind this interface? */
@@ -1039,24 +1045,29 @@ relayHandlePADI(PPPoEInterface const *iface,
 	return;
     }
 
-    /* Get array index of interface */
-    ifIndex = iface - Interfaces;
+    if(!hide_relayid) {
+    	/* Get array index of interface */
+    	ifIndex = iface - Interfaces;
 
-    loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
-    if (!loc) {
-	tag.type = htons(TAG_RELAY_SESSION_ID);
-	tag.length = htons(MY_RELAY_TAG_LEN);
-	memcpy(tag.payload, &ifIndex, sizeof(ifIndex));
-	memcpy(tag.payload+sizeof(ifIndex), packet->ethHdr.h_source, ETH_ALEN);
-	/* Add a relay tag if there's room */
-	r = addTag(packet, &tag);
-	if (r < 0) return;
-	size += r;
+    	loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
+    	if (!loc) {
+		tag.type = htons(TAG_RELAY_SESSION_ID);
+		tag.length = htons(MY_RELAY_TAG_LEN);
+		memcpy(tag.payload, &ifIndex, sizeof(ifIndex));
+		memcpy(tag.payload+sizeof(ifIndex), packet->ethHdr.h_source, ETH_ALEN);
+		/* Add a relay tag if there's room */
+		r = addTag(packet, &tag);
+		if (r < 0) return;
+		size += r;
+    	} else {
+		/* We do not re-use relay-id tags.  Drop the frame.  The RFC says the
+	   	relay agent SHOULD return a Generic-Error tag, but this does not
+	   	make sense for PADI packets. */
+		return;
+    	}
     } else {
-	/* We do not re-use relay-id tags.  Drop the frame.  The RFC says the
-	   relay agent SHOULD return a Generic-Error tag, but this does not
-	   make sense for PADI packets. */
-	return;
+	proxy_idx = iface - Interfaces;
+	memcpy(proxy_addr, packet->ethHdr.h_source, ETH_ALEN);
     }
 
     /* Broadcast the PADI on all AC-capable interfaces except the interface
@@ -1089,6 +1100,7 @@ relayHandlePADO(PPPoEInterface const *iface,
     unsigned char *loc;
     int ifIndex;
     int acIndex;
+    PPPoEInterface *outIface = NULL;
 
     /* Can a server legally be behind this interface? */
     if (!iface->acOK) {
@@ -1125,65 +1137,78 @@ relayHandlePADO(PPPoEInterface const *iface,
 	return;
     }
 
-    /* Find relay tag */
-    loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
-    if (!loc) {
-	syslog(LOG_ERR,
-	       "PADO packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
+    if(!hide_relayid) {
+    	/* Find relay tag */
+    	loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
+    	if (!loc) {
+		syslog(LOG_ERR,
+	       	"PADO packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+
+    	/* If it's the wrong length, ignore it */
+    	if (ntohs(tag.length) != MY_RELAY_TAG_LEN) {
+		syslog(LOG_ERR,
+	       	"PADO packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have correct length Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+
+    	/* Extract interface index */
+    	memcpy(&ifIndex, tag.payload, sizeof(ifIndex));
+
+    	if (ifIndex < 0 || ifIndex >= NumInterfaces ||
+		!Interfaces[ifIndex].clientOK ||
+		iface == &Interfaces[ifIndex]) {
+		syslog(LOG_ERR,
+	       	"PADO packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s has invalid interface in Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+		iface->name);
+		return;
+	}
+
+	/* Replace Relay-ID tag with opposite-direction tag */
+	memcpy(loc+TAG_HDR_SIZE, &acIndex, sizeof(acIndex));
+	memcpy(loc+TAG_HDR_SIZE+sizeof(ifIndex), packet->ethHdr.h_source, ETH_ALEN);
+    	/* Set destination address to MAC address in relay ID */
+    	memcpy(packet->ethHdr.h_dest, tag.payload + sizeof(ifIndex), ETH_ALEN);
+
+    	/* Set source address to MAC address of interface */
+    	memcpy(packet->ethHdr.h_source, Interfaces[ifIndex].mac, ETH_ALEN);
+
+    	/* Send the PADO to the proper client */
+    	sendPacket(NULL, Interfaces[ifIndex].discoverySock, packet, size);
+    } else {
+	if (proxy_idx == -1)
+		return;
+
+	memcpy(packet->ethHdr.h_dest, proxy_addr, ETH_ALEN);
+
+	outIface = &Interfaces[proxy_idx];
+	memcpy(proxy_addr, packet->ethHdr.h_source, ETH_ALEN);
+	proxy_idx = iface - Interfaces;
+
+	memcpy(packet->ethHdr.h_source, outIface->mac, ETH_ALEN);
+	sendPacket(NULL, outIface->discoverySock, packet, size);
     }
-
-    /* If it's the wrong length, ignore it */
-    if (ntohs(tag.length) != MY_RELAY_TAG_LEN) {
-	syslog(LOG_ERR,
-	       "PADO packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have correct length Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
-    }
-
-    /* Extract interface index */
-    memcpy(&ifIndex, tag.payload, sizeof(ifIndex));
-
-    if (ifIndex < 0 || ifIndex >= NumInterfaces ||
-	!Interfaces[ifIndex].clientOK ||
-	iface == &Interfaces[ifIndex]) {
-	syslog(LOG_ERR,
-	       "PADO packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s has invalid interface in Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
-    }
-
-    /* Replace Relay-ID tag with opposite-direction tag */
-    memcpy(loc+TAG_HDR_SIZE, &acIndex, sizeof(acIndex));
-    memcpy(loc+TAG_HDR_SIZE+sizeof(ifIndex), packet->ethHdr.h_source, ETH_ALEN);
-
-    /* Set destination address to MAC address in relay ID */
-    memcpy(packet->ethHdr.h_dest, tag.payload + sizeof(ifIndex), ETH_ALEN);
-
-    /* Set source address to MAC address of interface */
-    memcpy(packet->ethHdr.h_source, Interfaces[ifIndex].mac, ETH_ALEN);
-
-    /* Send the PADO to the proper client */
-    sendPacket(NULL, Interfaces[ifIndex].discoverySock, packet, size);
 }
 
 /**********************************************************************
@@ -1205,6 +1230,7 @@ relayHandlePADR(PPPoEInterface const *iface,
     unsigned char *loc;
     int ifIndex;
     int cliIndex;
+    PPPoEInterface *outIface;
 
     /* Can a client legally be behind this interface? */
     if (!iface->clientOK) {
@@ -1241,65 +1267,78 @@ relayHandlePADR(PPPoEInterface const *iface,
 	return;
     }
 
-    /* Find relay tag */
-    loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
-    if (!loc) {
-	syslog(LOG_ERR,
-	       "PADR packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
+    if(!hide_relayid) {
+    	/* Find relay tag */
+    	loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
+    	if (!loc) {
+		syslog(LOG_ERR,
+	       	"PADR packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+
+    	/* If it's the wrong length, ignore it */
+    	if (ntohs(tag.length) != MY_RELAY_TAG_LEN) {
+		syslog(LOG_ERR,
+	       	"PADR packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have correct length Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+
+    	/* Extract interface index */
+    	memcpy(&ifIndex, tag.payload, sizeof(ifIndex));
+
+    	if (ifIndex < 0 || ifIndex >= NumInterfaces ||
+		!Interfaces[ifIndex].acOK ||
+		iface == &Interfaces[ifIndex]) {
+		syslog(LOG_ERR,
+	       	"PADR packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s has invalid interface in Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+
+    	/* Replace Relay-ID tag with opposite-direction tag */
+   	memcpy(loc+TAG_HDR_SIZE, &cliIndex, sizeof(cliIndex));
+    	memcpy(loc+TAG_HDR_SIZE+sizeof(ifIndex), packet->ethHdr.h_source, ETH_ALEN);
+
+    	/* Set destination address to MAC address in relay ID */
+    	memcpy(packet->ethHdr.h_dest, tag.payload + sizeof(ifIndex), ETH_ALEN);
+
+    	/* Set source address to MAC address of interface */
+    	memcpy(packet->ethHdr.h_source, Interfaces[ifIndex].mac, ETH_ALEN);
+
+    	/* Send the PADR to the proper access concentrator */
+    	sendPacket(NULL, Interfaces[ifIndex].discoverySock, packet, size);
+    } else {
+	if (proxy_idx == -1)
+		return;
+
+	memcpy(packet->ethHdr.h_dest, proxy_addr, ETH_ALEN);
+	outIface = &Interfaces[proxy_idx];
+	memcpy(proxy_addr, packet->ethHdr.h_source, ETH_ALEN);
+	proxy_idx = iface - Interfaces;
+
+	memcpy(packet->ethHdr.h_source, outIface->mac, ETH_ALEN);
+	sendPacket(NULL, outIface->discoverySock, packet, size);
     }
-
-    /* If it's the wrong length, ignore it */
-    if (ntohs(tag.length) != MY_RELAY_TAG_LEN) {
-	syslog(LOG_ERR,
-	       "PADR packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have correct length Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
-    }
-
-    /* Extract interface index */
-    memcpy(&ifIndex, tag.payload, sizeof(ifIndex));
-
-    if (ifIndex < 0 || ifIndex >= NumInterfaces ||
-	!Interfaces[ifIndex].acOK ||
-	iface == &Interfaces[ifIndex]) {
-	syslog(LOG_ERR,
-	       "PADR packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s has invalid interface in Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
-    }
-
-    /* Replace Relay-ID tag with opposite-direction tag */
-    memcpy(loc+TAG_HDR_SIZE, &cliIndex, sizeof(cliIndex));
-    memcpy(loc+TAG_HDR_SIZE+sizeof(ifIndex), packet->ethHdr.h_source, ETH_ALEN);
-
-    /* Set destination address to MAC address in relay ID */
-    memcpy(packet->ethHdr.h_dest, tag.payload + sizeof(ifIndex), ETH_ALEN);
-
-    /* Set source address to MAC address of interface */
-    memcpy(packet->ethHdr.h_source, Interfaces[ifIndex].mac, ETH_ALEN);
-
-    /* Send the PADR to the proper access concentrator */
-    sendPacket(NULL, Interfaces[ifIndex].discoverySock, packet, size);
 }
 
 /**********************************************************************
@@ -1356,53 +1395,57 @@ relayHandlePADS(PPPoEInterface const *iface,
 	return;
     }
 
-    /* Find relay tag */
-    loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
-    if (!loc) {
-	syslog(LOG_ERR,
-	       "PADS packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
+    if(!hide_relayid) {
+    	/* Find relay tag */
+    	loc = findTag(packet, TAG_RELAY_SESSION_ID, &tag);
+    	if (!loc) {
+		syslog(LOG_ERR,
+	       	"PADS packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+
+    	/* If it's the wrong length, ignore it */
+    	if (ntohs(tag.length) != MY_RELAY_TAG_LEN) {
+		syslog(LOG_ERR,
+	       	"PADS packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have correct length Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+
+    	/* Extract interface index */
+    	memcpy(&ifIndex, tag.payload, sizeof(ifIndex));
+
+    	if (ifIndex < 0 || ifIndex >= NumInterfaces ||
+		!Interfaces[ifIndex].clientOK ||
+		iface == &Interfaces[ifIndex]) {
+		syslog(LOG_ERR,
+	       	"PADS packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s has invalid interface in Relay-Session-Id tag",
+	       	packet->ethHdr.h_source[0],
+	       	packet->ethHdr.h_source[1],
+	       	packet->ethHdr.h_source[2],
+	       	packet->ethHdr.h_source[3],
+	       	packet->ethHdr.h_source[4],
+	       	packet->ethHdr.h_source[5],
+	       	iface->name);
+		return;
+    	}
+    } else {
+	if (proxy_idx == -1)
+		return;
     }
-
-    /* If it's the wrong length, ignore it */
-    if (ntohs(tag.length) != MY_RELAY_TAG_LEN) {
-	syslog(LOG_ERR,
-	       "PADS packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s does not have correct length Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
-    }
-
-    /* Extract interface index */
-    memcpy(&ifIndex, tag.payload, sizeof(ifIndex));
-
-    if (ifIndex < 0 || ifIndex >= NumInterfaces ||
-	!Interfaces[ifIndex].clientOK ||
-	iface == &Interfaces[ifIndex]) {
-	syslog(LOG_ERR,
-	       "PADS packet from %02x:%02x:%02x:%02x:%02x:%02x on interface %s has invalid interface in Relay-Session-Id tag",
-	       packet->ethHdr.h_source[0],
-	       packet->ethHdr.h_source[1],
-	       packet->ethHdr.h_source[2],
-	       packet->ethHdr.h_source[3],
-	       packet->ethHdr.h_source[4],
-	       packet->ethHdr.h_source[5],
-	       iface->name);
-	return;
-    }
-
     /* If session ID is zero, it's the AC respoding with an error.
        Just relay it; do not create a session */
     if (packet->session != htons(0)) {
@@ -1418,9 +1461,15 @@ relayHandlePADS(PPPoEInterface const *iface,
 
 	if (!ses) {
 	    /* Create a new session */
-	    ses = createSession(iface, &Interfaces[ifIndex],
+	    if(!hide_relayid) {
+	    	ses = createSession(iface, &Interfaces[ifIndex],
 				packet->ethHdr.h_source,
 				loc + TAG_HDR_SIZE + sizeof(ifIndex), packet->session);
+	    } else {
+	    	ses = createSession(iface, &Interfaces[proxy_idx],
+				packet->ethHdr.h_source,
+				proxy_addr, packet->session);
+	    }
 	    if (!ses) {
 		/* Can't allocate session -- send error PADS to client and
 		   PADT to server */
@@ -1430,9 +1479,15 @@ relayHandlePADS(PPPoEInterface const *iface,
 		} else {
 		    hu = NULL;
 		}
-		relaySendError(CODE_PADS, htons(0), &Interfaces[ifIndex],
+	    	if(!hide_relayid) {
+			relaySendError(CODE_PADS, htons(0), &Interfaces[ifIndex],
 			       loc + TAG_HDR_SIZE + sizeof(ifIndex),
 			       hu, "RP-PPPoE: Relay: Unable to allocate session");
+		} else {
+			relaySendError(CODE_PADS, htons(0), &Interfaces[proxy_idx],
+			       proxy_idx,
+			       hu, "RP-PPPoE: Relay: Unable to allocate session");
+		}
 		relaySendError(CODE_PADT, packet->session, iface,
 			       packet->ethHdr.h_source, NULL,
 			       "RP-PPPoE: Relay: Unable to allocate session");
@@ -1443,18 +1498,25 @@ relayHandlePADS(PPPoEInterface const *iface,
 	packet->session = ses->sesNum;
     }
 
-    /* Remove relay-ID tag */
-    removeBytes(packet, loc, MY_RELAY_TAG_LEN + TAG_HDR_SIZE);
-    size -= (MY_RELAY_TAG_LEN + TAG_HDR_SIZE);
+    if(!hide_relayid) {
+    	/* Remove relay-ID tag */
+    	removeBytes(packet, loc, MY_RELAY_TAG_LEN + TAG_HDR_SIZE);
+    	size -= (MY_RELAY_TAG_LEN + TAG_HDR_SIZE);
 
-    /* Set destination address to MAC address in relay ID */
-    memcpy(packet->ethHdr.h_dest, tag.payload + sizeof(ifIndex), ETH_ALEN);
+    	/* Set destination address to MAC address in relay ID */
+    	memcpy(packet->ethHdr.h_dest, tag.payload + sizeof(ifIndex), ETH_ALEN);
 
-    /* Set source address to MAC address of interface */
-    memcpy(packet->ethHdr.h_source, Interfaces[ifIndex].mac, ETH_ALEN);
+    	/* Set source address to MAC address of interface */
+    	memcpy(packet->ethHdr.h_source, Interfaces[ifIndex].mac, ETH_ALEN);
 
-    /* Send the PADS to the proper client */
-    sendPacket(NULL, Interfaces[ifIndex].discoverySock, packet, size);
+    	/* Send the PADS to the proper client */
+    	sendPacket(NULL, Interfaces[ifIndex].discoverySock, packet, size);
+    } else {
+	memcpy(packet->ethHdr.h_dest, proxy_addr, ETH_ALEN);
+	memcpy(packet->ethHdr.h_source, Interfaces[proxy_idx].mac, ETH_ALEN);
+	sendPacket(NULL, Interfaces[proxy_idx].discoverySock, packet, size);
+	proxy_idx = -1;
+    }
 }
 
 /**********************************************************************

@@ -52,11 +52,11 @@ void start_snmpd(void)
 	memset(privType, 0x0, 5);
 	memset(authPwd, 0x0, 256);
 	memset(privPwd, 0x0, 256);
-	sprintf(user, "%s", nvram_safe_get("http_username"));	
-	sprintf(authType, "%s", nvram_safe_get("v3_auth_type"));
-	sprintf(authPwd, "%s", nvram_safe_get("v3_auth_passwd"));
-	sprintf(privType, "%s", nvram_safe_get("v3_priv_type"));		
-	sprintf(privPwd, "%s", nvram_safe_get("v3_priv_passwd"));
+	snprintf(user, sizeof(user), "%s", nvram_safe_get("http_username"));
+	snprintf(authType, sizeof(authType), "%s", nvram_safe_get("v3_auth_type"));
+	snprintf(authPwd, sizeof(authPwd), "%s", nvram_safe_get("v3_auth_passwd"));
+	snprintf(privType, sizeof(privType), "%s", nvram_safe_get("v3_priv_type"));
+	snprintf(privPwd, sizeof(privPwd), "%s", nvram_safe_get("v3_priv_passwd"));
 
 	cprintf("write config for snmpd!\n");
 

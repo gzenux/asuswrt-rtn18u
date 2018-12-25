@@ -163,7 +163,7 @@ handler_t ntlm_authentication_handler(server *srv, connection *con, plugin_data 
 			Cdbg(DBE, "con->smb_info->state == NTLMSSP_DONE-->re-authentication");
 			if(strncmp(http_authorization, "NTLM ", 5) == 0) {				
 				buffer *ntlm_msg = buffer_init();
-				if (!base64_decode(ntlm_msg, &http_authorization[5])) {
+				if (!base64_decode_t(ntlm_msg, &http_authorization[5])) {
 					log_error_write(srv, __FILE__, __LINE__, "sb", "decodeing base64-string failed", ntlm_msg);
 					buffer_free(ntlm_msg);
 					return HANDLER_GO_ON;
@@ -238,7 +238,7 @@ handler_t ntlm_authentication_handler(server *srv, connection *con, plugin_data 
 			http_authorization = ds_auth->value->ptr;			
 			if(strncmp(http_authorization, "NTLM ", 5) == 0) {
 				buffer *ntlm_msg = buffer_init();
-				if (!base64_decode(ntlm_msg, &http_authorization[5])) {
+				if (!base64_decode_t(ntlm_msg, &http_authorization[5])) {
 					log_error_write(srv, __FILE__, __LINE__, "sb", "decodeing base64-string failed", ntlm_msg);
 					buffer_free(ntlm_msg);
 					return HANDLER_GO_ON;
@@ -363,6 +363,7 @@ handler_t ntlm_authentication_handler(server *srv, connection *con, plugin_data 
 			break;
 		}
 		}
+
 		if( res == NT_STATUS_V(NT_STATUS_LOGON_FAILURE) ||
 			res == NT_STATUS_V(NT_STATUS_ACCESS_DENIED) ) 
 		{

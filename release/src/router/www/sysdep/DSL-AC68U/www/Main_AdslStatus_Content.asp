@@ -84,6 +84,9 @@ var sync_status_update = "<% nvram_get("dsltmp_adslsyncsts"); %>";
 var status_isVDSLmode = "<% nvram_get("dsllog_xdslmode"); %>";
 var adsl_boottime = boottime - adsl_timestamp;
 var dsl_type = "<% nvram_get("dsllog_adsltype"); %>".replace("_", " ");
+if(status_isVDSLmode == "VDSL"){
+	dsl_type = dsl_type.replace("ANNEX ", "");
+}
 
 var SystemVendorID_orig = "<% nvram_get("dsllog_sysvid"); %>";
 var SystemVendorModelID_orig = "<% nvram_get("dsllog_sysvmid"); %>";
@@ -126,10 +129,12 @@ var log_VDSLBAND_SATNUp;
 function display_basic_dsl_information(){
 	if(status_isVDSLmode == "VDSL")
 	{
+		document.getElementById("th_AdslType").innerHTML = "<#dslsetting_disc2_vdsl#>";      /*untranslated*/
 		document.getElementById("tr_VDSL_CurrentProfile").style.display = "";
 	}
 	else
 	{
+		document.getElementById("th_AdslType").innerHTML = "<#dslsetting_disc2#>";
 		document.getElementById("tr_VDSL_CurrentProfile").style.display = "none";
 	}
 }
@@ -177,12 +182,13 @@ function update_log(){
 				if(sync_status_update == "up")
 				{
 					document.getElementById("div_Opmode").innerHTML = log_Opmode;
-					document.getElementById("div_AdslType").innerHTML = log_AdslType;
 					document.getElementById("div_FarEndVendorID").innerHTML = log_FarEndVendorID;
 					if(status_isVDSLmode == "VDSL")
 					{
+						log_AdslType = log_AdslType.replace("ANNEX ", "");
 						document.getElementById("div_VDSL_CurrentProfile").innerHTML = log_VDSL_CurrentProfile;
 					}
+					document.getElementById("div_AdslType").innerHTML = log_AdslType;
 				}
 				else
 				{
@@ -384,7 +390,7 @@ function showadslbootTime(){
 								</td>
 							</tr>
 							<tr>
-								<th><#dslsetting_disc2#></th>
+								<th id="th_AdslType"><#dslsetting_disc2#></th>
 								<td colspan="2">
 									<div id="div_AdslType"></div>
 								</td>

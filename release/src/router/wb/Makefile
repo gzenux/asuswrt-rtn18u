@@ -4,7 +4,9 @@ WSLIB=libws.so
 
 CURL_DIR=$(TOP)/curl-7.21.7
 XML2_DIR=$(TOP)/libxml2
+JSON_C_DIR=$(TOP)/json-c
 OPENSSL_DIR=$(TOP)/openssl
+NTCENTER_DIR=$(TOP)/nt_center
 
 WS_SRC=ws_src
 OUTPUT=output
@@ -22,11 +24,31 @@ else
 all: $(WSLIB)
 endif
 
-CFLAGS = -fPIC -I$(CURL_DIR)/include -I$(OPENSSL_DIR)/include -I$(XML2_DIR)/include -I.  -I$(WS_SRC)
+CFLAGS += 
+CFLAGS += -fPIC
+ifeq ($(RTCONFIG_NOTIFICATION_CENTER), y)
+CFLAGS += -DRTCONFIG_NOTIFICATION_CENTER=y
+endif
+ifeq ($(RTCONFIG_IFTTT), y)
+CFLAGS += -DRTCONFIG_IFTTT=y
+endif
+ifeq ($(RTCONFIG_ALEXA), y)
+CFLAGS += -DRTCONFIG_ALEXA=y
+endif
+CFLAGS += -I$(CURL_DIR)/include
+CFLAGS += -I$(OPENSSL_DIR)/include
+CFLAGS += -I$(XML2_DIR)/include
+CFLAGS += -I$(JSON_C_DIR)
+CFLAGS += -I$(WS_SRC)
+CFLAGS += -I.
 
 LDFLAGS = -L$(OPENSSL_DIR) -lcrypto -lssl
 LDFLAGS += -L$(CURL_DIR)/lib/.libs -lcurl
 LDFLAGS += -L$(XML2_DIR)/.libs -lxml2
+LDFLAGS += -L$(JSON_C_DIR)/.libs -ljson-c
+ifeq ($(HND_ROUTER),y)
+LDFLAGS += -lm -lgcc_s
+endif
 
 $(WSLIB): $(WSLIB_OBJS)
 	$(LD) -shared -o $@ $^ $(LDFLAGS)

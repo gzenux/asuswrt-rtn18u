@@ -1,1 +1,2 @@
-﻿fromNetworkmapd = '<% get_client_detail_info(); %>'.replace(/&#62/g, ">").replace(/&#60/g, "<").split('<');
+﻿fromNetworkmapd_maclist = [<% get_clientlist_maclist(); %>];
+get_cfg_clientlist = [<% get_cfg_clientlist(); %>];

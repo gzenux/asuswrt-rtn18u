@@ -76,13 +76,24 @@
 }
 
 .iconUSBdisk{ background:url(images/New_ui/networkmap/USB_2.png) no-repeat 0% 0%;	width:91px; height:91px; cursor:pointer;}
-
+.iconM2{ background:url(images/New_ui/networkmap/M2.png) no-repeat 0% 0%; width:91px; height:91px; cursor:pointer;}
 #iconClient{ background:url(images/New_ui/networkmap/map-iconClient.png) no-repeat 0% 0%; width:95px; height:95px; cursor:pointer;}
 .iconPrinter{ background:url(images/New_ui/networkmap/map-iconPrinter.png) no-repeat 0% 0%;	width:91px; height:96px; cursor:pointer;}
 .iconmodem{ background:url(images/New_ui/networkmap/map-iconmodem.png) no-repeat 0% 0%;	width:95px; height:96px; cursor:pointer;}
 #iconWebcam{ background:url(images/New_ui/networkmap/map-iconWebcam.png) no-repeat 0% 0%; width:89px; height:89px; cursor:pointer;}
 .iconNo{ background:url(images/New_ui/networkmap/devicebt_default.png) no-repeat; width:91px; height:91px;}
-
+.iconNoM2{ background:url(images/New_ui/networkmap/M2_default.png) no-repeat; width:91px; height:91px;}
+.iconAMesh{ background:url(images/New_ui/amesh/Amesh_button_light.png) no-repeat 0% 0%; width:90px; height:90px; cursor:pointer;}
+.iconAMesh_dis{ background:url(images/New_ui/amesh/Amesh_button_dark.png) no-repeat 0% 0%; width:90px; height:90px; cursor:pointer;}
+.usb_text {
+	font: bold 16px Sans-Serif;
+	text-shadow: 1px 1px 1px #677C84;
+	color:#23292b;
+}
+.usb_text.plugin {
+	color: #FFFFFF;
+	text-shadow: 1px 2px 1px #000000;
+}
 .table1px{
 	border:1px solid #4d595d; 
 	background-color:#4d595d;
@@ -348,6 +359,26 @@
 	-moz-border-radius: 10px 10px 0 0;
 	border-radius: 10px 10px 0 0;
 }
+.NM_radius_bottom_container{
+	margin-left:45px;
+	width: 320px;
+	height: 760px;
+	background-color:#2A3539;
+	-webkit-border-bottom-right-radius: 10px;
+	-webkit-border-bottom-left-radius: 10px;
+	-moz-border-radius-bottomright: 10px;
+	-moz-border-radius-bottomleft: 10px;
+	border-bottom-right-radius: 10px;
+	border-bottom-left-radius: 10px;
+	-moz-box-shadow: 3px 8px 10px #333;
+	-webkit-box-shadow: 3px 8px 10px #333;
+	box-shadow: 3px 8px 10px #333;
+	behavior: url(/PIE.htc);
+	position:relative;
+	-webkit-border-radius: 0 0 10px 10px;
+	-moz-border-radius: 0 0 10px 10px;
+	border-radius: 0 0 10px 10px;
+}
 .NM_radius_bottom{
 	-webkit-border-bottom-right-radius: 10px;
 	-webkit-border-bottom-left-radius: 10px;
@@ -355,13 +386,6 @@
 	-moz-border-radius-bottomleft: 10px;
 	border-bottom-right-radius: 10px;
 	border-bottom-left-radius: 10px;
-
-	-moz-box-shadow: 3px 8px 10px #333;
-	-webkit-box-shadow: 3px 8px 10px #333;
-	box-shadow: 3px 8px 10px #333;
-
-	/*filter: alpha(opacity=98);
-	opacity: .98;*/
 	behavior: url(/PIE.htc);
 	position:relative;
 	-webkit-border-radius: 0 0 10px 10px;
@@ -403,4 +427,5 @@
 	-moz-border-radius: 5px;
 	border-radius: 5px;
 	behavior: url(/PIE.htc);
+	min-height: 810px;
 }

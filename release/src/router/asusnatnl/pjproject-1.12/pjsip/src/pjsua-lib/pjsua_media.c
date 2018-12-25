@@ -22,6 +22,9 @@
 #include <pjmedia/transport_sctp.h>
 #include <pjsua-lib/pjsua.h>
 #include <pjsua-lib/pjsua_internal.h>
+#if defined(ENABLE_MEMWATCH) && ENABLE_MEMWATCH != 0
+#include <memwatch.h>
+#endif
 
 
 #define THIS_FILE		"pjsua_media.c"
@@ -1048,7 +1051,11 @@ static void on_ice_complete(pjmedia_transport *tp,
 	// DEAN
 #if defined(PJMEDIA_HAS_DTLS) && (PJMEDIA_HAS_DTLS != 0)
 	if (result == PJ_SUCCESS) {
+#if defined(PJMEDIA_DISABLE_SCTP) && (PJMEDIA_DISABLE_SCTP!=0)
+		pjmedia_transport *dtls = pjsua_var[tp->inst_id].calls[id].med_tp;
+#else
 		pjmedia_transport *dtls = pjmedia_transport_sctp_get_member(pjsua_var[tp->inst_id].calls[id].med_tp);
+#endif
 		pjmedia_dtls_do_handshake(dtls,
 			turn_mapped_addr);
 	} else {
@@ -1817,7 +1824,6 @@ pj_status_t pjsua_media_channel_init(pjsua_inst_id inst_id,
 #endif
 		/* Always create DTLS transport */
 		pjmedia_dtls_setting_default(&dtls_opt);
-		dtls_opt.close_member_tp = PJ_FALSE;
 		if (use_custom_med_tp)
 			custom_med_tp_flags |= PJSUA_MED_TP_CLOSE_MEMBER;
 		/* If media session has been ever established, let's use remote's 
@@ -1868,7 +1874,8 @@ pj_status_t pjsua_media_channel_init(pjsua_inst_id inst_id,
 			pj_memcpy(call->med_tp->dest_uri->ptr, call->med_orig->dest_uri->ptr, call->med_tp->dest_uri->slen);
 		}
 
-		/* Always create SCTP transport */
+#if !defined(PJMEDIA_DISABLE_SCTP) || (PJMEDIA_DISABLE_SCTP == 0)  // enable sctp
+		/* Create SCTP transport */
 		pjmedia_sctp_setting_default(&sctp_opt);
 		sctp_opt.use = call->use_sctp ? PJMEDIA_SCTP_MANDATORY : PJMEDIA_SCTP_DISABLED;
 
@@ -1901,6 +1908,7 @@ pj_status_t pjsua_media_channel_init(pjsua_inst_id inst_id,
 			call->med_tp->dest_uri->slen = call->med_orig->dest_uri->slen;
 			pj_memcpy(call->med_tp->dest_uri->ptr, call->med_orig->dest_uri->ptr, call->med_tp->dest_uri->slen);
 		}
+#endif
     }
 #elif defined(PJMEDIA_HAS_SRTP) && (PJMEDIA_HAS_SRTP != 0)
     /* This function may be called when SRTP transport already exists 
@@ -2562,7 +2570,7 @@ static pj_status_t audio_channel_update(pjsua_inst_id inst_id,
 
 	// 2013-10-20 DEAN, we must create natnl stream before creating media session.
 	// Because media session must know the pointer value of natnl stream.
-	status = pjmedia_natnl_stream_create(pjsua_var[inst_id].pool, call, si, &call->tnl_stream);
+	status = pjmedia_natnl_stream_create( pjsua_var[inst_id].med_endpt, call, si, &call->tnl_stream);
 	if (status != PJ_SUCCESS)
 		return status;
     

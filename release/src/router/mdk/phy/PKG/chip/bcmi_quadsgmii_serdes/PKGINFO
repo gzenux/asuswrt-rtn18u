@@ -1,0 +1,3 @@
+VERSION:2.8.0
+NAME:bcmi_quadsgmii_serdes
+DEPEND:bcmi_unicore13g_xgxs

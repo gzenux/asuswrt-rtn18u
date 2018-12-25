@@ -70,12 +70,37 @@ void load_sysparam(void)
 	char tmp[100], prefix[] = "wlXXXXXXXXXXXXXX";
 #endif
 #ifdef RTCONFIG_WIRELESSREPEATER
-	if (nvram_get_int("sw_mode") == SW_MODE_REPEATER)
+	if (sw_mode() == SW_MODE_REPEATER)
 	{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+		if (nvram_get_int("wlc_band") < 0 || nvram_get_int("wlc_express") == 0)
+			snprintf(prefix, sizeof(prefix), "wl0.1_");
+		else if (nvram_get_int("wlc_express") == 1)
+			snprintf(prefix, sizeof(prefix), "wl1.1_");
+		else if (nvram_get_int("wlc_express") == 2)
+			snprintf(prefix, sizeof(prefix), "wl0.1_");
+		else
+
+#endif
 		snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
 		strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), sizeof(ssid_g));
+
 	}
 	else
+#ifdef RTCONFIG_REALTEK
+/* {, [MUST] Need to discuss to add new mode for MediaBridge */
+	if (sw_mode() == SW_MODE_AP && nvram_get_int("wlc_psta") == 1)
+	{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+		snprintf(prefix, sizeof(prefix), "wl0_");
+#else
+		snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
+#endif
+		strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), 32);		
+	}
+	else
+/* }, [MUST] Need to discuss to add new mode for MediaBridge */
+#endif
 #endif
 #ifdef RTCONFIG_BCMWL6
 #ifdef RTCONFIG_PROXYSTA
@@ -230,6 +255,7 @@ int processReq(int sockfd)
 /*						J++
     closesocket(sockfd);
 */
+    return 0;
 }
 
 /************************************/

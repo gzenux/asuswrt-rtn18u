@@ -270,7 +270,7 @@ nvram_xfr(const char *buf)
         char *name = tmpbuf;
         ssize_t ret=0;
 
-        if (copy_from_user(name, buf, strlen(buf)+1)) {
+        if (copy_from_user(name, buf, sizeof(tmpbuf))) {
                 ret = -EFAULT;
                 goto done;
         }
@@ -279,7 +279,7 @@ nvram_xfr(const char *buf)
         {
                 asusnls_u2c(tmpbuf);
         }
-        else if (strncmp(buf, NLS_NVRAM_C2U, strlen(NLS_NVRAM_C2U))==0)
+        else if (strncmp(tmpbuf, NLS_NVRAM_C2U, strlen(NLS_NVRAM_C2U))==0)
         {
                 asusnls_c2u(tmpbuf);
         }
@@ -288,7 +288,7 @@ nvram_xfr(const char *buf)
                 strcpy(tmpbuf, "");
         }
 
-        if (copy_to_user(buf, tmpbuf, strlen(tmpbuf)+1))
+        if (copy_to_user(buf, tmpbuf, sizeof(tmpbuf)))
         {
                 ret = -EFAULT;
                 goto done;

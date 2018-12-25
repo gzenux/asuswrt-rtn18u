@@ -21,6 +21,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <httpd.h>
+#ifdef HND_ROUTER
+#include <shared.h>
+#endif
 
 #define nvram_match(name, match) ({ \
 	const char *value = nvram_get(name); \
@@ -31,8 +34,9 @@
 #define FW_APPEND	1
 #define FW_NEWLINE	2
 
+#ifndef _dprintf
 #define _dprintf(args...)	do { } while(0)
-
+#endif
 
 /*
 typedef union {
@@ -70,8 +74,6 @@ static const nvset_t nvset_list[] = {
 	{ NULL }
 };
 */
-
-FILE *connfp;
 
 // for backup =========================================================
 

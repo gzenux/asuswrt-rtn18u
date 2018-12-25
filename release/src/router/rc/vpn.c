@@ -49,6 +49,9 @@ void write_chap_secret(char *file)
 	char *nv, *nvp, *b;
 	char *username, *passwd;
 	char namebuf[256], passwdbuf[256];
+#ifdef RTCONFIG_NVRAM_ENCRYPT
+	char dec_passwd[256];
+#endif
 
 	fp = fopen(file, "w");
 	if (fp == NULL)
@@ -61,6 +64,11 @@ void write_chap_secret(char *file)
 				continue;
 			if (*username =='\0' /*|| *passwd == '\0'*/)
 				continue;
+#ifdef RTCONFIG_NVRAM_ENCRYPT
+			memset(dec_passwd, 0, sizeof(dec_passwd));
+			pw_dec(passwd, dec_passwd);
+			passwd = dec_passwd;
+#endif
 			fprintf(fp, "'%s' * '%s' *\n",
 				ppp_safe_escape(username, namebuf, sizeof(namebuf)),
 				ppp_safe_escape(passwd, passwdbuf, sizeof(passwdbuf)));
@@ -227,9 +235,14 @@ void start_pptpd(void)
 		"iptables -I FORWARD 2 -i $1 -j ACCEPT\n"
 		"iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n",	// rule for wake on lan over pptp tunnel
 		bcast);
-#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_BCMWL6) || defined(RTCONFIG_BCMARM)
+#ifdef CONFIG_BCMWL5
+#ifdef HND_ROUTER
+	/* bypass flow cache learning */
+	if (nvram_match("fc_disable", "0") && nvram_match("fc_pt_war", "1"))
+#else
 	/* mark connect to bypass CTF */
 	if (nvram_match("ctf_disable", "0"))
+#endif
 		fprintf(fp, "iptables -t mangle -A FORWARD -i $1 -m state --state NEW -j MARK --set-mark 0x01/0x7\n");
 #endif
 	/* Add static route for vpn client */
@@ -262,9 +275,14 @@ void start_pptpd(void)
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"
 		"iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n",	// rule for wake on lan over pptp tunnel
 		bcast);
-#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_BCMWL6) || defined(RTCONFIG_BCMARM)
+#ifdef CONFIG_BCMWL5
+#ifdef HND_ROUTER
+	/* bypass flow cache learning */
+	if (nvram_match("fc_disable", "0") && nvram_match("fc_pt_war", "1"))
+#else
 	/* mark connect to bypass CTF */
 	if (nvram_match("ctf_disable", "0"))
+#endif
 		fprintf(fp, "iptables -t mangle -D FORWARD -i $1 -m state --state NEW -j MARK --set-mark 0x01/0x7\n");
 #endif
 	/* Keep ip-down script last */

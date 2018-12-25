@@ -43,7 +43,7 @@ function openAudioPlayer(loc){
 	
 	var audio_array = new Array();
 	for(var i=0;i<g_file_array.length;i++){
-   		var file_ext = getFileExt(g_file_array[i].href);
+   		var file_ext = getFileExt(g_file_array[i].furl);
 		if(file_ext=="mp3")
    			audio_array.push(g_file_array[i]);
 	}
@@ -58,7 +58,7 @@ function openAudioPlayer(loc){
 	var audio_list = "";
 	var default_index = 0;
 	for(var i=0;i<audio_array.length;i++){
-		var the_loc = audio_array[i].href;		
+		var the_loc = audio_array[i].furl;		
 	 	if( loc == the_loc )
 	 		default_index = i;
 	   			
@@ -82,7 +82,7 @@ function openImageViewer(loc){
 	
 	var image_array = new Array();
 	for(var i=0;i<g_file_array.length;i++){
-   	var file_ext = getFileExt(g_file_array[i].href);			
+   	var file_ext = getFileExt(g_file_array[i].furl);			
 		if(file_ext=="jpg"||file_ext=="jpeg"||file_ext=="png"||file_ext=="gif")
    			image_array.push(g_file_array[i]);
 	}
@@ -96,7 +96,7 @@ function openImageViewer(loc){
 	
 	var default_index = 0;
 	for(var i=0;i<image_array.length;i++){
-   		if( loc == image_array[i].href )
+   		if( loc == image_array[i].furl )
    			default_index = i;
   	}
 		
@@ -108,7 +108,7 @@ function openImageViewer(loc){
 	
 	for(var i=0;i<image_array.length;i++){
 				
-   		var img_url = image_array[i].href;
+   		var img_url = image_array[i].furl;
     	
    		if(i==default_index)
    			div_html += '<img src="" path="' + img_url + '" alt="" class="default"/>';
@@ -214,9 +214,9 @@ function openSelItem(item){
 				//- subtitle
 				var array_srt_files = new Array();				
 				for(var i=0;i<g_file_array.length;i++){
-					var file_ext = getFileExt(g_file_array[i].href);
+					var file_ext = getFileExt(g_file_array[i].furl);
 					if(file_ext=="srt"){
-						array_srt_files.push(g_file_array[i].href);
+						array_srt_files.push(g_file_array[i].furl);
 					}
 				}
 				
@@ -341,7 +341,7 @@ function createThumbView(query_type, parent_url, folder_array, file_array){
 			html += '0';
 								
 		html += '" uhref="';
-		html += folder_array[i].href;
+		html += folder_array[i].furl;
 		html += '">';
 		
 		if(query_type == "2"){
@@ -373,7 +373,7 @@ function createThumbView(query_type, parent_url, folder_array, file_array){
 		html += '<a id="list_item" qtype="';
 		html += query_type;
 		html += '" isdir="1" uhref="';
-		html += folder_array[i].href;
+		html += folder_array[i].furl;
 		html += '" title="';
 		html += folder_array[i].name;
 		html += '" online="';
@@ -414,7 +414,7 @@ function createThumbView(query_type, parent_url, folder_array, file_array){
 		
 		/*
 		if(folder_array[i].type == "usbdisk"&&query_type==1){	
-			//alert(folder_array[i].name+","+folder_array[i].href+","+query_type);
+			//alert(folder_array[i].name+","+folder_array[i].furl+","+query_type);
 			
 			client.GETDISKSPACE("/", folder_array[i].name, function(error, statusstring, content){				
 				if(error==200){
@@ -449,7 +449,7 @@ function createThumbView(query_type, parent_url, folder_array, file_array){
 		html += '<tbody>';									
 									
 		//- get file ext
-		var file_path = String(file_array[i].href);
+		var file_path = String(file_array[i].furl);
 		var file_ext = getFileExt(file_path);
 		if(file_ext.length>5)file_ext="";
 																
@@ -458,7 +458,7 @@ function createThumbView(query_type, parent_url, folder_array, file_array){
 			html += '<div class="picDiv" popupmenu="1" uhref="';
 		else
 			html += '<div class="picDiv" popupmenu="0" uhref="';
-		html += file_array[i].href;
+		html += file_array[i].furl;
 		html += '">';
 		
 		if(file_ext=="jpg"||file_ext=="jpeg"||file_ext=="png"||file_ext=="gif"||file_ext=="bmp")
@@ -488,7 +488,7 @@ function createThumbView(query_type, parent_url, folder_array, file_array){
 		html += '<tr><td>';
 		html += '<div class="albuminfo" style="font-size:80%">';
 		html += '<a id="list_item" qtype="1" isdir="0" uhref="';
-		html += file_array[i].href;
+		html += file_array[i].furl;
 		html += '" title="';
 		html += file_array[i].name;
 		html += '" uid="';
@@ -719,7 +719,7 @@ function doPROPFIND(open_url, complete_handler, auth){
 								if( this_contenttype=="httpd/unix-directory" ){
 									
 									g_folder_array.push({ contenttype: this_contenttype, 
-										                  href: this_href,
+										                  furl: this_href,
 										                  name: this_name,
 										                  uname: this_uncode_name,
 										                  shortname: this_short_name,
@@ -736,7 +736,7 @@ function doPROPFIND(open_url, complete_handler, auth){
 								}				
 								else{
 									g_file_array.push({ contenttype: this_contenttype, 
-										                href: this_href, 
+										                furl: this_href, 
 										                name: this_name,
 										                uname: this_uncode_name,
 										                shortname: this_short_name,

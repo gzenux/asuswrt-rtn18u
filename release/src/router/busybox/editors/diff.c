@@ -10,7 +10,7 @@
  * Agency (DARPA) and Air Force Research Laboratory, Air Force
  * Materiel Command, USAF, under agreement number F39502-99-1-0512.
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /*
@@ -76,12 +76,61 @@
  * 6n words for files of length n.
  */
 
+//config:config DIFF
+//config:	bool "diff"
+//config:	default y
+//config:	help
+//config:	  diff compares two files or directories and outputs the
+//config:	  differences between them in a form that can be given to
+//config:	  the patch command.
+//config:
+//config:config FEATURE_DIFF_LONG_OPTIONS
+//config:	bool "Enable long options"
+//config:	default y
+//config:	depends on DIFF && LONG_OPTS
+//config:	help
+//config:	  Enable use of long options.
+//config:
+//config:config FEATURE_DIFF_DIR
+//config:	bool "Enable directory support"
+//config:	default y
+//config:	depends on DIFF
+//config:	help
+//config:	  This option enables support for directory and subdirectory
+//config:	  comparison.
+
+//kbuild:lib-$(CONFIG_DIFF) += diff.o
+
+//applet:IF_DIFF(APPLET(diff, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//usage:#define diff_trivial_usage
+//usage:       "[-abBdiNqrTstw] [-L LABEL] [-S FILE] [-U LINES] FILE1 FILE2"
+//usage:#define diff_full_usage "\n\n"
+//usage:       "Compare files line by line and output the differences between them.\n"
+//usage:       "This implementation supports unified diffs only.\n"
+//usage:     "\n	-a	Treat all files as text"
+//usage:     "\n	-b	Ignore changes in the amount of whitespace"
+//usage:     "\n	-B	Ignore changes whose lines are all blank"
+//usage:     "\n	-d	Try hard to find a smaller set of changes"
+//usage:     "\n	-i	Ignore case differences"
+//usage:     "\n	-L	Use LABEL instead of the filename in the unified header"
+//usage:     "\n	-N	Treat absent files as empty"
+//usage:     "\n	-q	Output only whether files differ"
+//usage:     "\n	-r	Recurse"
+//usage:     "\n	-S	Start with FILE when comparing directories"
+//usage:     "\n	-T	Make tabs line up by prefixing a tab when necessary"
+//usage:     "\n	-s	Report when two files are the same"
+//usage:     "\n	-t	Expand tabs to spaces in output"
+//usage:     "\n	-U	Output LINES lines of context"
+//usage:     "\n	-w	Ignore all whitespace"
+
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #if 0
-//#define dbg_error_msg(...) bb_error_msg(__VA_ARGS__)
+# define dbg_error_msg(...) bb_error_msg(__VA_ARGS__)
 #else
-#define dbg_error_msg(...) ((void)0)
+# define dbg_error_msg(...) ((void)0)
 #endif
 
 enum {                  /* print_status() and diffreg() return values */
@@ -230,7 +279,7 @@ static int search(const int *c, int k, int y, const struct cand *list)
 {
 	int i, j;
 
-	if (list[c[k]].y < y)	/* quick look for typical case */
+	if (list[c[k]].y < y)  /* quick look for typical case */
 		return k + 1;
 
 	for (i = 0, j = k + 1;;) {
@@ -315,7 +364,7 @@ static void stone(const int *a, int n, const int *b, int *J, int pref)
 }
 
 struct line {
-	/* 'serial' is not used in the begining, so we reuse it
+	/* 'serial' is not used in the beginning, so we reuse it
 	 * to store line offsets, thus reducing memory pressure
 	 */
 	union {
@@ -385,7 +434,7 @@ static void fetch(FILE_and_pos_t *ft, const off_t *ix, int a, int b, int ch)
 		for (j = 0, col = 0; j < ix[i] - ix[i - 1]; j++) {
 			int c = fgetc(ft->ft_fp);
 			if (c == EOF) {
-				printf("\n\\ No newline at end of file\n");
+				puts("\n\\ No newline at end of file");
 				return;
 			}
 			ft->ft_pos++;
@@ -479,7 +528,7 @@ start:
 	for (; suff < nlen[0] - pref && suff < nlen[1] - pref &&
 	       nfile[0][nlen[0] - suff].value == nfile[1][nlen[1] - suff].value;
 	       suff++);
-	/* Arrays are pruned by the suffix and prefix lenght,
+	/* Arrays are pruned by the suffix and prefix length,
 	 * the result being sorted and stored in sfile[fileno],
 	 * and their sizes are stored in slen[fileno]
 	 */
@@ -610,8 +659,8 @@ static bool diff(FILE* fp[2], char *file[2])
 				}
 
 				for (j = 0; j < 2; j++)
-					for (k = v[j].a; k < v[j].b; k++)
-						nonempty |= (ix[j][k+1] - ix[j][k] != 1);
+					for (k = v[j].a; k <= v[j].b; k++)
+						nonempty |= (ix[j][k] - ix[j][k - 1] != 1);
 
 				vec = xrealloc_vector(vec, 6, ++idx);
 				memcpy(vec[idx], v, sizeof(v));
@@ -644,7 +693,7 @@ static bool diff(FILE* fp[2], char *file[2])
 					continue;
 				printf(",%d", (a < b) ? b - a + 1 : 0);
 			}
-			printf(" @@\n");
+			puts(" @@");
 			/*
 			 * Output changes in "unified" diff format--the old and new lines
 			 * are printed together.
@@ -672,10 +721,12 @@ static bool diff(FILE* fp[2], char *file[2])
 
 static int diffreg(char *file[2])
 {
-	FILE *fp[2] = { stdin, stdin };
+	FILE *fp[2];
 	bool binary = false, differ = false;
 	int status = STATUS_SAME, i;
 
+	fp[0] = stdin;
+	fp[1] = stdin;
 	for (i = 0; i < 2; i++) {
 		int fd = open_or_warn_stdin(file[i]);
 		if (fd == -1)
@@ -685,19 +736,20 @@ static int diffreg(char *file[2])
 		 */
 		if (lseek(fd, 0, SEEK_SET) == -1 && errno == ESPIPE) {
 			char name[] = "/tmp/difXXXXXX";
-			int fd_tmp = mkstemp(name);
-			if (fd_tmp < 0)
-				bb_perror_msg_and_die("mkstemp");
+			int fd_tmp = xmkstemp(name);
+
 			unlink(name);
 			if (bb_copyfd_eof(fd, fd_tmp) < 0)
 				xfunc_die();
-			if (fd) /* Prevents closing of stdin */
+			if (fd != STDIN_FILENO)
 				close(fd);
 			fd = fd_tmp;
+			xlseek(fd, 0, SEEK_SET);
 		}
 		fp[i] = fdopen(fd, "r");
 	}
 
+	setup_common_bufsiz();
 	while (1) {
 		const size_t sz = COMMON_BUFSIZE / 2;
 		char *const buf0 = bb_common_bufsiz1;
@@ -795,7 +847,9 @@ static int FAST_FUNC skip_dir(const char *filename,
 			free(othername);
 			if (r != 0 || !S_ISDIR(osb.st_mode)) {
 				/* other dir doesn't have similarly named
-				 * directory, don't recurse */
+				 * directory, don't recurse; return 1 upon
+				 * exit, just like diffutils' diff */
+				exit_status |= 1;
 				return SKIP;
 			}
 		}
@@ -819,7 +873,7 @@ static void diffdir(char *p[2], const char *s_start)
 		 * add_to_dirlist will remove it. */
 		list[i].len = strlen(p[i]);
 		recursive_action(p[i], ACTION_RECURSE | ACTION_FOLLOWLINKS,
-		                 add_to_dirlist, skip_dir, &list[i], 0);
+				add_to_dirlist, skip_dir, &list[i], 0);
 		/* Sort dl alphabetically.
 		 * GNU diff does this ignoring any number of trailing dots.
 		 * We don't, so for us dotted files almost always are
@@ -847,9 +901,10 @@ static void diffdir(char *p[2], const char *s_start)
 			break;
 		pos = !dp[0] ? 1 : (!dp[1] ? -1 : strcmp(dp[0], dp[1]));
 		k = pos > 0;
-		if (pos && !(option_mask32 & FLAG(N)))
+		if (pos && !(option_mask32 & FLAG(N))) {
 			printf("Only in %s: %s\n", p[k], dp[k]);
-		else {
+			exit_status |= 1;
+		} else {
 			char *fullpath[2], *path[2]; /* if -N */
 
 			for (i = 0; i < 2; i++) {
@@ -949,6 +1004,31 @@ int diff_main(int argc UNUSED_PARAM, char **argv)
 	xfunc_error_retval = 1;
 	if (gotstdin && (S_ISDIR(stb[0].st_mode) || S_ISDIR(stb[1].st_mode)))
 		bb_error_msg_and_die("can't compare stdin to a directory");
+
+	/* Compare metadata to check if the files are the same physical file.
+	 *
+	 * Comment from diffutils source says:
+	 * POSIX says that two files are identical if st_ino and st_dev are
+	 * the same, but many file systems incorrectly assign the same (device,
+	 * inode) pair to two distinct files, including:
+	 * GNU/Linux NFS servers that export all local file systems as a
+	 * single NFS file system, if a local device number (st_dev) exceeds
+	 * 255, or if a local inode number (st_ino) exceeds 16777215.
+	 */
+	if (ENABLE_DESKTOP
+	 && stb[0].st_ino == stb[1].st_ino
+	 && stb[0].st_dev == stb[1].st_dev
+	 && stb[0].st_size == stb[1].st_size
+	 && stb[0].st_mtime == stb[1].st_mtime
+	 && stb[0].st_ctime == stb[1].st_ctime
+	 && stb[0].st_mode == stb[1].st_mode
+	 && stb[0].st_nlink == stb[1].st_nlink
+	 && stb[0].st_uid == stb[1].st_uid
+	 && stb[0].st_gid == stb[1].st_gid
+	) {
+		/* files are physically the same; no need to compare them */
+		return STATUS_SAME;
+	}
 
 	if (S_ISDIR(stb[0].st_mode) && S_ISDIR(stb[1].st_mode)) {
 #if ENABLE_FEATURE_DIFF_DIR

@@ -1,7 +1,7 @@
 #
 # Broadcom Linux Router WL firmware Makefile
 #
-# Copyright (C) 2016, Broadcom. All Rights Reserved.
+# Copyright (C) 2017, Broadcom. All Rights Reserved.
 # 
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -25,8 +25,10 @@ PCIEFD_EMBED_HEADER		:= $(SRCBASE_DHD)/shared/rtecdc_router.h
 # All firmware targets must be defined here
 #PCIEFD_TARGETS_LIST		:= 43602a1
 ifeq ($(or $(RTAC88U),$(RTAC3100),$(RTAC5300)), y)
-PCIEFD_TARGETS_LIST		+= 4366b1
+#PCIEFD_TARGETS_LIST		+= 4366b1
 PCIEFD_TARGETS_LIST		+= 4366c0
+else ifeq ($(HND_ROUTER),y)
+PCIEFD_TARGETS_LIST		:= 4366c0
 endif
 
 obj-pciefd			:= $(patsubst %,%-obj,$(PCIEFD_TARGETS_LIST))
@@ -34,10 +36,13 @@ clean-pciefd			:= $(patsubst %,%-clean,$(PCIEFD_TARGETS_LIST))
 version-pciefd			:= $(patsubst %,%-version,$(PCIEFD_TARGETS_LIST))
 
 WLCX				:= ""
-ifeq ($(CONFIG_GMAC3),y)
-ifeq ($(CONFIG_FLATLAS),y)
+ifeq ($(RTCONFIG_GMAC3),y)
+ifeq ($(RTCONFIG_FLATLAS),y)
 	WLCX			:= "-wlcx"
 endif
+endif
+ifeq ($(RTCONFIG_FBT),y)
+	FBT			:= "-fbt"
 endif
 
 # 43602a1-roml target
@@ -48,7 +53,7 @@ FW_43602a1_MAKE_PATH		:= $(FW_43602a1_SRCBASE)/dongle/rte/wl
 FW_43602a1_BUILD_PATH		:= $(FW_43602a1_MAKE_PATH)/builds/$(FW_43602a1_BUILD_PREFIX)
 FW_43602a1_OS_PATH		:= $(FW_43602a1_SRCBASE)/hndrte
 ifeq ($(WLTEST),1)
-    FW_43602a1_TARGET	:= pcie-ag-splitrx-fdap-mbss-mfgtest-seqcmds-phydbg-phydump-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-11nprop-ringer-dmaindex16
+    FW_43602a1_TARGET  := pcie-ag-splitrx-fdap-mbss-mfgtest-seqcmds-phydbg-phydump-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-ringer-dmaindex16
 else
     FW_43602a1_TARGET      := pcie-ag-splitrx-fdap-mbss-mfp-osen-wl11u-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-obss-ringer-dmaindex16
 endif
@@ -62,22 +67,32 @@ FW_4366b1_MAKE_PATH		:= $(FW_4366b1_SRCBASE)/dongle/make/wl
 FW_4366b1_BUILD_PATH		:= $(FW_4366b1_SRCBASE)/../build/dongle/$(FW_4366b1_BUILD_PREFIX)
 FW_4366b1_OS_PATH		:= $(FW_4366b1_SRCBASE)/../components/threadx
 ifeq ($(WLTEST),1)
-	FW_4366b1_TARGET   := pcie-ag-splitrx-fdap-mbss-mfgtest-seqcmds-phydbg-phydump-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-dbgam-dbgams-ringer-dmaindex16-bgdfs$(WLCX)-hostpmac-splitassoc
+    FW_4366b1_TARGET   := pcie-ag-splitrx-fdap-mbss-mfgtest-seqcmds-phydbg-phydump-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-dbgam-dbgams-ringer-dmaindex16-bgdfs$(WLCX)-hostpmac-splitassoc
 else
-	FW_4366b1_TARGET   := pcie-ag-splitrx-fdap-mbss-mfp-wnm-osen-wl11k-wl11u-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-obss-dbwsw-ringer-dmaindex16-bgdfs$(WLCX)-hostpmac
+    FW_4366b1_TARGET   := pcie-ag-splitrx-fdap-mbss-mfp-wnm-osen-wl11k-wl11u-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-obss-dbwsw-ringer-dmaindex16-bgdfs$(WLCX)-hostpmac
 endif
 
 # 4366c0-roml target
+ifeq ($(HND_ROUTER),y)
+FW_4366c0_SRCBASE		:= $(abspath $(SRCBASE)/../../4365/src)
+else
 FW_4366c0_SRCBASE		:= $(abspath $(SRCBASE)/../4365/src)
+endif
 FW_4366c0_CHIPID		:= 4366c0
 FW_4366c0_BUILD_PREFIX		:= $(FW_4366c0_CHIPID)-roml
 FW_4366c0_MAKE_PATH		:= $(FW_4366c0_SRCBASE)/dongle/make/wl
 FW_4366c0_BUILD_PATH		:= $(FW_4366c0_SRCBASE)/../build/dongle/$(FW_4366c0_BUILD_PREFIX)
 FW_4366c0_OS_PATH		:= $(FW_4366c0_SRCBASE)/../components/threadx
 ifeq ($(WLTEST),1)
-	FW_4366c0_TARGET   := pcie-ag-splitrx-fdap-mbss-mfgtest-seqcmds-phydbg-phydump-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-dbgam-dbgams-ringer-dmaindex16-bgdfs$(WLCX)-hostpmac-murx-splitassoc
+	FW_4366c0_TARGET   := pcie-ag-splitrx-fdap-mbss-mfgtest-seqcmds-phydbg-phydump-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-dbgam-dbgams-ringer-dmaindex16-bgdfs$(WLCX)-hostpmac-murx-splitassoc-hostmemucode-dyn160
+        #FW_4366c0_TARGET := config_pcie_wltest
 else
-	FW_4366c0_TARGET   := pcie-ag-splitrx-fdap-mbss-mfp-wnm-osen-wl11k-wl11u-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-obss-dbwsw-ringer-dmaindex16-bgdfs$(WLCX)-stamon-hostpmac-murx-splitassoc-dyn160
+ifeq ($(HND_ROUTER),y)
+	FW_4366c0_TARGET       := pcie-ag-splitrx-fdap-mbss-mfp-wnm-osen-wl11k-wl11u-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-obss-dbwsw-ringer-dmaindex16-bgdfs$(WLCX)-stamon-hostpmac-murx-splitassoc-hostmemucode-dyn160-dhdhdr$(FBT)
+else
+    FW_4366c0_TARGET       := pcie-ag-splitrx-fdap-mbss-mfp-wnm-osen-wl11k-wl11u-txbf-pktctx-amsdutx-ampduretry-chkd2hdma-proptxstatus-11nprop-obss-dbwsw-ringer-dmaindex16-bgdfs$(WLCX)-stamon-hostpmac-murx-splitassoc-hostmemucode-dyn160-txpwr-stamon
+        #FW_4366c0_TARGET := config_pcie_external
+endif
 endif
 
 
@@ -90,7 +105,13 @@ endif
 ifeq ($(WLCLMLOAD),1)
 	FW_43602a1_TARGET	:= $(addsuffix -noclminc-clm_min,$(FW_43602a1_TARGET))
 	FW_4366b1_TARGET	:= $(addsuffix -noclminc-clm_min,$(FW_4366b1_TARGET))
-	FW_4366c0_TARGET	:= $(addsuffix -noclminc-clm_min,$(FW_4366c0_TARGET))
+#if defined(BCMINTERNAL)
+ifeq ($(NO_BCMINTERNAL),1)
+#endif
+	FW_4366c0_TARGET        := $(addsuffix -noclminc-clm_min,$(FW_4366c0_TARGET))
+#if defined(BCMINTERNAL)
+endif
+#endif
 	CLM_BLOBS_43602a1	:= 43602a1_access
 	CLM_BLOBS_4366b1	:= 4366_access
 	CLM_BLOBS_4366c0	:= 4366_access
@@ -102,14 +123,13 @@ endif
 #
 # All rules start here
 $(obj-pciefd):
-	@echo "TARGETS : $(PCIEFD_TARGETS_LIST)"
 	$(eval R_CHIP := $(patsubst %-obj,%,$@))
 	$(eval R_CLM_BLOBS := $(CLM_BLOBS_$(R_CHIP)))
 	$(eval CLMBASE := $(FW_$(R_CHIP)_SRCBASE)/wl/clm)
 	$(eval GOTPRIV_$(R_CHIP) := "$(wildcard $(CLMBASE)/private)")
 	$(info "R_CHIP = $(R_CHIP) $@ ")
 	$(info "R_CLM_BLOBS = $(R_CLM_BLOBS)  WLCLMLOAD = $(WLCLMLOAD) ...")
-	$(info "TARGET = $(FW_$(R_CHIP)_TARGET) ...")
+	$(info "FW TARGET = $(FW_$(R_CHIP)_TARGET) WLAN_SrcBaseA = $(WLAN_SrcBaseA) ...")
 	$(info "GOTPRIV_$(R_CHIP) = $(GOTPRIV_$(R_CHIP))  CURRENTLY THERE...")
 	@if [ -d $(FW_$(R_CHIP)_SRCBASE)/wl/sys ] && [ -d $(FW_$(R_CHIP)_OS_PATH) ]; then \
 	if [ ! -f $(FW_$(R_CHIP)_BUILD_PATH)/$(FW_$(R_CHIP)_TARGET)/.tcchked ]; then \
@@ -147,9 +167,8 @@ $(obj-pciefd):
 		if [ -f $(FW_$(R_CHIP)_BUILD_PATH)/$(FW_$(R_CHIP)_TARGET)/*.clm_blob ]; then \
 			echo "Save clm blobs $(R_CLM_BLOBS) for $(R_CHIP) ...." && \
 			cp $(FW_$(R_CHIP)_BUILD_PATH)/$(FW_$(R_CHIP)_TARGET)/*.clm_blob $(FW_$(R_CHIP)_SRCBASE)/wl/clm/src; \
-			cp $(FW_$(R_CHIP)_BUILD_PATH)/$(FW_$(R_CHIP)_TARGET)/$(CLM_BLOBS_$(R_CHIP)).clm_blob $(FW_$(R_CHIP)_SRCBASE)/wl/clm/src/$(CLM_BLOBS_$(R_CHIP)).clm_blob.GEN; \
 		else \
-			echo "No clm blobs for $(R_CHIP) ...."; \
+			echo "No clm blobs generated for $(R_CHIP) ...."; \
 		fi && \
 		if [ ! -d $(FW_$(R_CHIP)_BUILD_PATH)/.prebuilt ]; then \
 			cd $(FW_$(R_CHIP)_BUILD_PATH)/$(FW_$(R_CHIP)_TARGET) && \
@@ -204,13 +223,11 @@ ifeq  ($(WLCLMLOAD),1)
 #
 pciefd-install:
 	@echo WLCLMLOAD = $(WLCLMLOAD) Start pciefd-install
-	@echo FW_43602a1_BUILD_PATH = $(FW_43602a1_BUILD_PATH) FW_43602a1_TARGET = $(FW_43602a1_TARGET)
-	@echo FW_4366b1_BUILD_PATH = $(FW_4366b1_BUILD_PATH) FW_4366b1_TARGET = $(FW_4366b1_TARGET)
-	@echo FW_4366c0_BUILD_PATH = $(FW_4366c0_BUILD_PATH) FW_4366c0_TARGET = $(FW_4366c0_TARGET)
+	@echo In pciefd-install PCIEFD_TARGETS_LIST = $(PCIEFD_TARGETS_LIST)
 	install -d $(TARGETDIR)/etc/brcm/clm
-	install -D $(FW_43602a1_SRCBASE)/wl/clm/src/*clm_blob $(TARGETDIR)/etc/brcm/clm
-	install -D $(FW_4366b1_SRCBASE)/wl/clm/src/*clm_blob $(TARGETDIR)/etc/brcm/clm
-	install -D $(FW_4366c0_SRCBASE)/wl/clm/src/*clm_blob $(TARGETDIR)/etc/brcm/clm
+	$(foreach target,$(PCIEFD_TARGETS_LIST),\
+		install -D $(FW_$(target)_SRCBASE)/wl/clm/src/*clm_blob \
+			$(TARGETDIR)/etc/brcm/clm; )
 	@true
 else
 pciefd-install:

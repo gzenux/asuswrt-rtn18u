@@ -4,7 +4,7 @@
  *
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -20,19 +20,16 @@
 int FAST_FUNC get_linux_version_code(void)
 {
 	struct utsname name;
-	char *s;
+	char *t;
 	int i, r;
 
-	if (uname(&name) == -1) {
-		bb_perror_msg("can't get system information");
-		return 0;
-	}
-
-	s = name.release;
+	uname(&name); /* never fails */
+	t = name.release;
 	r = 0;
 	for (i = 0; i < 3; i++) {
-		r = r * 256 + atoi(strtok(s, "."));
-		s = NULL;
+		t = strtok(t, ".");
+		r = r * 256 + (t ? atoi(t) : 0);
+		t = NULL;
 	}
 	return r;
 }

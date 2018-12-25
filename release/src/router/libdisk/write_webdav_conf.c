@@ -109,7 +109,6 @@ char *port_get(char *name)
 
         while(-1!=access("/tmp/aicloud_check.control",F_OK))
             usleep(50);
-    printf("name = %s\n",name);
     FILE *fp;
     if((fp=fopen("/tmp/webDAV.conf","r+"))==NULL)
     {
@@ -128,7 +127,6 @@ char *port_get(char *name)
             p=strchr(tmp,'=');
             p++;
             strcpy(value,p);
-            printf("name = %s,len =%d\n",value,strlen(value));
             if(value[strlen(value)-1]=='\n')
                 value[strlen(value)-1]='\0';
         }
@@ -156,14 +154,12 @@ int webdav_match(char *name,int id)
     {
         return 0;
     }
-    printf("name = %s,id = %d\n",name,id);
     char tmp[256]={0};
     while(!feof(fp)){
         memset(tmp,0,sizeof(tmp));
         fgets(tmp,sizeof(tmp),fp);
         if(strncmp(tmp,name,strlen(name))==0)
         {
-            printf("tmp = %s\n",tmp);
             int size;
             char *p=NULL;
             p=strchr(tmp,'=');
@@ -171,7 +167,6 @@ int webdav_match(char *name,int id)
             size=atoi(p);
             if(size==id)
             {
-                printf("return 1\n");
                 fclose(fp);
                 return 1;
             }
@@ -278,7 +273,11 @@ int main(int argc, char *argv[]) {
 	fprintf(fp, "server.upload-dirs=(\"/tmp/lighttpd/uploads\")\n");
 	fprintf(fp, "server.errorlog=\"/tmp/lighttpd/err.log\"\n");
 	fprintf(fp, "server.pid-file=\"/tmp/lighttpd/lighttpd.pid\"\n");
+#if (defined APP_IPKG) && (defined I686)
+    fprintf(fp, "server.arpping-interface=\"br2\"\n");
+#else
 	fprintf(fp, "server.arpping-interface=\"br0\"\n");
+#endif
 #ifndef APP_IPKG
 	fprintf(fp, "server.errorfile-prefix=\"/usr/lighttpd/css/status-\"\n");
 #else
@@ -332,7 +331,7 @@ int main(int argc, char *argv[]) {
 //	fprintf(fp, "	alias.url=(\"/webdav\"=>\"/mnt/\")\n");
 //	fprintf(fp, "   $HTTP[\"url\"]=~\"^/usbdisk($|/)\"{\n");
 
-	fprintf(fp, "   url.aicloud-auth-deny = (\"query_field.json\")\n");
+	fprintf(fp, "   url.aicloud-auth-deny = (\"query_field.json\", \".html\")\n");
 
 	fprintf(fp, "   $HTTP[\"url\"]=~\"^/%s($|/)\"{\n",get_productid());
     fprintf(fp, "       server.document-root = \"/\"\n");
@@ -340,7 +339,11 @@ int main(int argc, char *argv[]) {
 	fprintf(fp, "       alias.url=(\"/%s\"=>\"/mnt\")\n", get_productid());
     fprintf(fp, "       webdav.activate=\"enable\"\n");
     fprintf(fp, "       webdav.is-readonly=\"disable\"\n");
+#if (defined APP_IPKG) && (defined I686)
+    fprintf(fp, "       webdav.sqlite-db-name=\"/opt/etc/webdav.db\"\n");
+#else
     fprintf(fp, "       webdav.sqlite-db-name=\"/tmp/lighttpd/webdav.db\"\n");
+#endif
     fprintf(fp, "   }\n");
 	fprintf(fp, "	else $HTTP[\"url\"]=~\"^/smb($|/)\"{\n");
 	fprintf(fp, "		server.document-root = \"/\"\n");
@@ -369,7 +372,11 @@ int main(int argc, char *argv[]) {
    	fprintf(fp, "	    smbdav.activate = \"enable\" \n");
     fprintf(fp, "	    smbdav.is-readonly = \"disable\" \n");
     fprintf(fp, "	    smbdav.always-auth = \"enable\" \n");
+#if (defined APP_IPKG) && (defined I686)
+    fprintf(fp, "	    smbdav.sqlite-db-name = \"/opt/etc/smbdav.db\" \n");
+#else
     fprintf(fp, "	    smbdav.sqlite-db-name = \"/tmp/lighttpd/smbdav.db\" \n");
+#endif
     fprintf(fp, "	    usertrack.cookie-name = \"SMBSESSID\" \n");
 	fprintf(fp, "	}\n");
 	fprintf(fp, "}\n");
@@ -494,10 +501,17 @@ WEBDAV_SETTING:
 	
 	//FILE* fd;
 	//if (NULL != (fd = fopen("/etc/intermediate_cert.pem", "rb"))) {
+#ifndef APP_IPKG
 	if (nvram_match("https_intermediate_crt_save", "1")){
 		fprintf(fp, "   ssl.ca-file=\"/etc/intermediate_cert.pem\"\n");
 		//fclose(fd);
 	}
+#else
+	if (webdav_match("https_intermediate_crt_save", 1)){
+		fprintf(fp, "   ssl.ca-file=\"/etc/intermediate_cert.pem\"\n");
+		//fclose(fd);
+	}
+#endif
 
 	fprintf(fp, "	ssl.engine=\"enable\"\n");
 	fprintf(fp, "   ssl.use-compression=\"disable\"\n");
@@ -506,7 +520,7 @@ WEBDAV_SETTING:
 	fprintf(fp, "   ssl.honor-cipher-order=\"enable\"\n");
 	//fprintf(fp, "   ssl.cipher-list=\"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4\"\n");
 	fprintf(fp, "   ssl.cipher-list=\"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:AES256-GCM-SHA384:AES256-SHA256:AES256-SHA:AES128-GCM-SHA256:AES128-SHA256:AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!CAMELLIA:!DES:!MD5:!PSK:!RC4;\"\n");
-	fprintf(fp, "   url.aicloud-auth-deny = (\"query_field.json\")\n");
+	fprintf(fp, "   url.aicloud-auth-deny = (\"query_field.json\", \".html\")\n");
 	//fprintf(fp, "	alias.url=(\"/webdav\"=>\"/mnt/\")\n"); 
 //	fprintf(fp, "	$HTTP[\"url\"]=~\"^/usbdisk($|/)\"{\n");
 	fprintf(fp, "	$HTTP[\"url\"]=~\"^/%s($|/)\"{\n", get_productid());
@@ -515,7 +529,11 @@ WEBDAV_SETTING:
 	fprintf(fp, "       alias.url=(\"/%s\"=>\"/mnt\")\n", get_productid());	
 	fprintf(fp, "		webdav.activate=\"enable\"\n");
 	fprintf(fp, "		webdav.is-readonly=\"disable\"\n");
+#if (defined APP_IPKG) && (defined I686)
+	fprintf(fp, "		webdav.sqlite-db-name=\"/opt/etc/webdav.db\"\n");
+#else
 	fprintf(fp, "		webdav.sqlite-db-name=\"/tmp/lighttpd/webdav.db\"\n");
+#endif
 	fprintf(fp, "	}\n");
 	fprintf(fp, "	else $HTTP[\"url\"]=~\"^/smb($|/)\"{\n");
 	fprintf(fp, "		server.document-root = \"/\"\n");
@@ -550,7 +568,11 @@ WEBDAV_SETTING:
    	fprintf(fp, "	    smbdav.activate = \"enable\" \n");
     fprintf(fp, "	    smbdav.is-readonly = \"disable\" \n");
     fprintf(fp, "	    smbdav.always-auth = \"enable\" \n");
+#if (defined APP_IPKG) && (defined I686)
+	fprintf(fp, "	    smbdav.sqlite-db-name = \"/opt/etc/smbdav.db\" \n");
+#else
     fprintf(fp, "	    smbdav.sqlite-db-name = \"/tmp/lighttpd/smbdav.db\" \n");
+#endif
     fprintf(fp, "	    usertrack.cookie-name = \"SMBSESSID\" \n");
 	fprintf(fp, "	}\n");
 #if 0

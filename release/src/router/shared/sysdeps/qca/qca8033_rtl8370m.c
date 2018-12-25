@@ -75,10 +75,23 @@ int rtkswitch_ioctl(int val, int *val2)
 	case 44:	/* set WAN port */
 	case 45:	/* set LAN trunk group */
 	case 46:	/* set LAN trunk port mask */
+	case 47:	/* set LAN hash algorithm */
 	case 99:
 	case 100:
 	case 109:	/* Set specific ext port txDelay */
 	case 110:	/* Set specific ext port rxDelay */
+//#ifdef RTCONFIG_RTK_SWITCH_VLAN
+	case 298:	/* set some ports tagged only */
+	case 299:	/* set some ports untagged only */
+	case 300:	/* set all ports accept tagged and untagged */
+	case 301:	/* config vlan id */
+	case 302:	/* config vlan prio */
+	case 303:	/* config portlist and set to switch */
+	case 304:	/* get vlan info */
+	case 305:	/* set port pvid related[ VLAN id ] */
+	case 306:	/* set port pvid related[ Priority ] */
+	case 307:	/* set port pvid related[ Port Id and set to driver ] */
+//#endif			
 		p = val2;
 		break;
 	case 29:/* Set VoIP port. Cherry Cho added in 2011/6/30. */
@@ -158,7 +171,7 @@ int is_wan_unit_in_switch(int wan_unit)
 	char word[32], *next, wans_dualwan[128];
 	int unit = 0;
 
-	strcpy(wans_dualwan, nvram_safe_get("wans_dualwan"));
+	strlcpy(wans_dualwan, nvram_safe_get("wans_dualwan"), sizeof(wans_dualwan));
 	foreach (word, wans_dualwan, next) {
 		if(strcmp(word, "lan") == 0)
 		{
@@ -178,22 +191,40 @@ int is_wan_unit_in_switch(int wan_unit)
  */
 unsigned int rtkswitch_wanPort_phyStatus(int wan_unit)
 {
-	int sw_mode = nvram_get_int("sw_mode");
+	int sw_mode = sw_mode();
 	unsigned int value;
-	char prefix[16], tmp[100], *ifname;
+	char prefix[16], tmp[100], *ifname = NULL;
 
-	if (sw_mode == SW_MODE_AP || sw_mode == SW_MODE_REPEATER)
+	if (sw_mode == SW_MODE_REPEATER)
 		return 0;
 
-	if(is_wan_unit_in_switch(wan_unit))
-	{
-		value = 0;
-		if (rtkswitch_ioctl(0, &value) < 0)
-			return -1;
-		return value;
+	switch (sw_mode) {
+	case SW_MODE_ROUTER:
+		if(is_wan_unit_in_switch(wan_unit))
+		{
+			value = 0;
+			if (rtkswitch_ioctl(0, &value) < 0)
+				return -1;
+			return value;
+		}
+		snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
+		ifname = nvram_get(strcat_r(prefix, "ifname", tmp));
+		break;
+	case SW_MODE_AP:
+#if defined(BRTAC828) || defined(RTAD7200)
+#if defined(RTCONFIG_SWITCH_RTL8370M_PHY_QCA8033_X2)
+		/* BRT-AC828 SR1~SR3, REV 1.00 ~ 1.20 */
+		ifname = (!wan_unit)? "eth2" : "eth3";
+#else
+		/* BRT-AC828 SR4 or above, REV 1.30+ */
+		ifname = (!wan_unit)? "eth0" : "eth3";
+#endif
+#endif
+		break;
+	default:
+		return 0;
 	}
-	snprintf(prefix, sizeof(prefix), "wan%d_", wan_unit);
-	ifname = nvram_get(strcat_r(prefix, "ifname", tmp));
+
 	if (!ifname || *ifname == '\0')
 		return 0;
 	value = !!(mdio_read(ifname, MII_BMSR) & BMSR_LSTATUS);
@@ -213,7 +244,7 @@ unsigned int rtkswitch_lanPorts_phyStatus(void)
 
 unsigned int __rtkswitch_WanPort_phySpeed(int wan_unit)
 {
-	int v, sw_mode = nvram_get_int("sw_mode");
+	int v, sw_mode = sw_mode();
 	unsigned int value = 0;
 	char prefix[16], tmp[100], *ifname;
 
@@ -264,7 +295,7 @@ static void phy_link_ctrl(char *ifname, int onoff)
 	if (fd < 0)
 		return;
 
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if (ioctl(fd, SIOCGMIIPHY, &ifr) < 0) {
 		_dprintf("%s: ifname %s SIOCGMIIPHY failed.\n",
 			__func__, ifname);
@@ -353,7 +384,7 @@ int rtkswitch_AllPort_phyState(void)
 	if (get_model() == MODEL_RTN65U)
 		portMark = "W0=%C;L4=%C;L3=%C;L2=%C;L1=%C;";
 
-	sprintf(buf, portMark,
+	snprintf(buf, sizeof(buf), portMark,
 		(pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M': 'X',
 		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M': 'X',
 		(pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M': 'X',

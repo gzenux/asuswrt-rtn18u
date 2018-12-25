@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56321_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56321, BCM56321_VENDOR_ID, BCM56321_DEVICE_ID, BCM56321_REV_A0, \
+                  0, 0, \
+                  bcm56334_a0, bcm56321_a0, bcm56321_a0, \
+                  CDK_DEV_ARCH_XGS, "Helix3", "BCM56334", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56321_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56321, BCM56321_VENDOR_ID, BCM56321_DEVICE_ID, BCM56321_REV_B0, \
+                  0, 0, \
+                  bcm56334_b0, bcm56321_b0, bcm56321_b0, \
+                  CDK_DEV_ARCH_XGS, "Helix3", "BCM56334", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56321_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56321, BCM56321_VENDOR_ID, BCM56321_DEVICE_ID, BCM56321_REV_B1, \
+                  0, 0, \
+                  bcm56334_b0, bcm56321_b0, bcm56321_b1, \
+                  CDK_DEV_ARCH_XGS, "Helix3", "BCM56334", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+

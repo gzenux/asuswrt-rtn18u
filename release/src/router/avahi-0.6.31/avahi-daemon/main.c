@@ -41,8 +41,11 @@
 
 //Edison add nvram
 #include <unistd.h>
+
+#ifndef MS_IPK
 #include <bcmnvram.h>
 #include "shared.h"
+#endif
 
 #ifdef HAVE_INOTIFY
 #include <sys/inotify.h>
@@ -92,6 +95,9 @@ AvahiServer *avahi_server = NULL;
 AvahiSimplePoll *simple_poll_api = NULL;
 static char *argv0 = NULL;
 int nss_support = 0;
+#ifdef MS_IPK
+char *http_username;
+#endif
 
 typedef enum {
     DAEMON_RUN,
@@ -1355,8 +1361,12 @@ static int drop_root(void) {
 //Edison modify username 20131023
     char dut_user[128];
     memset(dut_user, 0, 128);
-    
+
+#ifdef MS_IPK
+    strncpy(dut_user,http_username, 128);
+#else    
     strncpy(dut_user, nvram_safe_get("http_username"), 128);
+#endif
 
     if (!(pw = getpwnam(dut_user))) {
 	avahi_log_error( "Failed to find user '%s'.",dut_user);
@@ -1431,8 +1441,12 @@ static int make_runtime_dir(void) {
 //Edison modify username 20131023
     char dut_user[128];
     memset(dut_user, 0, 128);
-    
+
+#ifdef MS_IPK
+    strncpy(dut_user, http_username, 128);
+#else    
     strncpy(dut_user, nvram_safe_get("http_username"), 128);
+#endif
 
     if (!(pw = getpwnam(dut_user))) {
 	avahi_log_error( "Failed to find user '%s'.",dut_user);
@@ -1536,6 +1550,27 @@ int main(int argc, char *argv[]) {
     init_rand_seed();
 
     avahi_server_config_init(&config.server_config);
+#ifdef MS_IPK
+   //add for read  http_username
+    FILE *fp;
+    int f_size;
+    char filename[128];
+    sprintf(filename, "/tmp/avahi/http_username");
+    fp = fopen(filename, "r");
+    if (fp == NULL){
+    printf("fail to open file!\n");
+	return NULL;
+    }
+    fseek(fp,0,SEEK_END);
+    f_size = ftell(fp);
+    http_username=avahi_malloc(f_size+1);
+    memset(http_username, 0, f_size+1);
+    rewind(fp);
+    fread(http_username, 1, f_size, fp);
+    http_username[f_size-1]=0;
+    printf("http_username=%s\n",http_username);
+    fclose(fp);
+#endif
     config.command = DAEMON_RUN;
     config.daemonize = 0;
     config.config_file = NULL;

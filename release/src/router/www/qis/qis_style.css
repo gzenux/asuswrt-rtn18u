@@ -14,7 +14,9 @@ legend {
 	font-weight:bold;
 	font-size:14px;
 }
-
+.banner_1{
+	height:54px;
+}
 /*.LevelQIS {  
 	margin-top: 5px;
 	background-image: url(/images/bg.gif);	

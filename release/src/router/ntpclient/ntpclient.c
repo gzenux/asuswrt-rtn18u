@@ -532,9 +532,18 @@ int main(int argc, char *argv[]) {
 		if (!primary_loop(usd, probe_count, cycle_time)) {
 			if (!nvram_match("ntp_ready", "1")) {
 				nvram_set("ntp_ready", "1");
-				if (nvram_contains_word("rc_support", "defpsk"))
+#if !defined(RPAC56) && !defined(MAPAC1300) && !defined(MAPAC2200) && !defined(VZWAC1300)
+				if(nvram_contains_word("rc_support", "defpsk")){
 					nvram_set("x_Setting", "1");
+				}
+#endif
 				doSystem("kill -SIGTSTP `cat %s`", "/var/run/ntp.pid");
+#ifdef RTCONFIG_CFGSYNC
+				if (pidof("cfg_server") >= 0)
+					kill_pidfile_s("/var/run/cfg_server.pid", SIGUSR1);
+				if (pidof("cfg_client") >= 0)
+					kill_pidfile_s("/var/run/cfg_client.pid", SIGUSR1);
+#endif
 			}
 			close(usd);
 			break;

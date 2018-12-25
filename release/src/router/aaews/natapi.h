@@ -24,5 +24,17 @@ typedef int (*NAT_POOL_DUMP)(int detail);
 
 typedef int (*NAT_DETECT) (char *stun_srv);
 
-int init_natnl_api(NAT_INIT3* nat_int3, NAT_DEINIT* nat_deinit, NAT_MAKECALL* nat_makecall, NAT_HANG_UP* nat_hangup, NAT_POOL_DUMP* nat_dump, NAT_DETECT* nat_detect, NAT_VERSION* nat_version);
+typedef int (*NAT_READ_IM_MSG) (char **msg_buf);
+
+typedef int (*NAT_WRITE_IM_RESP) (char *resp_msg);
+
+int init_natnl_api(NAT_INIT3* nat_int3, 
+	NAT_DEINIT* nat_deinit, 
+	NAT_MAKECALL* nat_makecall, 
+	NAT_HANG_UP* nat_hangup, 
+	NAT_POOL_DUMP* nat_dump, 
+	NAT_DETECT* nat_detect, 
+	NAT_VERSION* nat_version, 
+	NAT_READ_IM_MSG* nat_read_im_msg, 
+	NAT_WRITE_IM_RESP* nat_write_im_resp);
 #endif

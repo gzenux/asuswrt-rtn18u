@@ -1,4 +1,5 @@
 #!/bin/sh
+# environment variable: unit - modem unit.
 # echo "This is a script to find the modem type out."
 
 
@@ -6,14 +7,20 @@ node_home=/sys/devices
 modem_enable=`nvram get modem_enable`
 usb_gobi2=`nvram get usb_gobi2`
 
-modem_act_path=`nvram get usb_modem_act_path`
+if [ -z "$unit" ] || [ "$unit" -eq "0" ]; then
+	prefix="usb_modem_"
+else
+	prefix="usb_modem${unit}_"
+fi
+
+modem_act_path=`nvram get ${prefix}act_path`
 home="$node_home/"`cd $node_home && find -name "$modem_act_path" 2>/dev/null`
 modem_vid=`cat $home/idVendor 2>/dev/null`
 modem_pid=`cat $home/idProduct 2>/dev/null`
 
 if [ "$modem_vid" == "" -o "$modem_pid" == "" ]; then
 	echo "type=unknown"
-	nvram set usb_modem_act_type=
+	nvram set ${prefix}act_type=
 	exit 0
 fi
 
@@ -88,5 +95,5 @@ elif [ "$modem_vid" == "19d2" -a "$modem_pid" == "1589" ]; then # ZTE MF193A
 fi
 echo "type=$type."
 
-nvram set usb_modem_act_type=$type
+nvram set ${prefix}act_type=$type
 

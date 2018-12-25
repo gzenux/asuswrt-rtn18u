@@ -254,13 +254,14 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 	us = htons(us);
 	memcpy(pkt_type, &us, sizeof(us));
 	*modified = 1;
-      } else if (!isReq && type == 1) {
+	
+      } /*else if (!isReq && type == 1) {   //John add for test@10.27
 	log_dbg("changing A to AAAA response");
 	us = 28;
 	us = htons(us);
 	memcpy(pkt_type, &us, sizeof(us));
 	*modified = 1;
-      }
+      }*/
     }
 #endif
 

@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56143_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56143, BCM56143_VENDOR_ID, BCM56143_DEVICE_ID, BCM56143_REV_A0, \
+                  0, 0, \
+                  bcm56142_a0, bcm56143_a0, bcm56143_a0, \
+                  CDK_DEV_ARCH_XGS, "Hurricane", "BCM56143", \
+                  "24-Port GbE Multilayer Switch with Two 1/2.5G and Two HiGig-Duo Uplink Ports", 0, 0)
+#endif
+#endif
+

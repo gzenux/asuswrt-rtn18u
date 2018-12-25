@@ -631,6 +631,8 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 			robo->ops->write_reg(etc->robo, page, vec[0], &val, len);
 			ET_TRACE(("etc_ioctl: ETCROBOWR to page 0x%x, reg 0x%x <= 0x%016llX\n",
 			          page, reg, val));
+
+			bcm_robo_check_gphy_reset(robo, page, vec[0], &val, len);
 		}
 		break;
 #endif /* ETROBO */

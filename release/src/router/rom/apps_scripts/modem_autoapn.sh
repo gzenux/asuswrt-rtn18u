@@ -1,54 +1,35 @@
 #!/bin/sh
 # $1: output, $2: special IMSI.
+# environment variable: unit - modem unit.
 # echo "This is a script to capture the settings of SIM."
 
 
-modem_type=`nvram get usb_modem_act_type`
-act_node1="usb_modem_act_int"
-act_node2="usb_modem_act_bulk"
-modem_vid=`nvram get usb_modem_act_vid`
+if [ -z "$unit" ] || [ "$unit" -eq "0" ]; then
+	prefix="usb_modem_"
+else
+	prefix="usb_modem${unit}_"
+fi
+
+modem_type=`nvram get ${prefix}act_type`
+modem_vid=`nvram get ${prefix}act_vid`
 modem_autoapn=`nvram get modem_autoapn`
 modem_imsi=
 apps_local_space=`nvram get apps_local_space`
 dataf="$apps_local_space/spn_asus.dat"
-#modem_prefix="modem_"
-modem_prefix="test_modem_"
 
 
 if [ "$modem_type" == "" -o  "$modem_type" == "ecm" -o "$modem_type" == "rndis" -o "$modem_type" == "asix" -o "$modem_type" == "ncm" ]; then
 	exit 0
 fi
 
-act_node=
-#if [ "$modem_type" = "tty" -o "$modem_type" = "mbim" ]; then
-#	if [ "$modem_type" = "tty" -a "$modem_vid" = "6610" ]; then # e.q. ZTE MF637U
-#		act_node=$act_node1
-#	else
-#		act_node=$act_node2
-#	fi
-#else
-	act_node=$act_node1
-#fi
-
-modem_act_node=`nvram get $act_node`
-if [ -z "$modem_act_node" ]; then
-	/usr/sbin/find_modem_node.sh
-
-	modem_act_node=`nvram get $act_node`
-	if [ -z "$modem_act_node" ]; then
-		echo "Can't get $act_node!"
-		exit 1
-	fi
-fi
-
 if [ "$1" = "set" ]; then
 	modem_imsi=$2
 else
-	modem_imsi=`nvram get usb_modem_act_imsi |cut -c '1-6' 2>/dev/null`
+	modem_imsi=`nvram get ${prefix}act_imsi |cut -c '1-6' 2>/dev/null`
 fi
 if [ -z "$modem_imsi" ]; then
 	/usr/sbin/modem_status.sh imsi
-	modem_imsi=`nvram get usb_modem_act_imsi |cut -c '1-6' 2>/dev/null`
+	modem_imsi=`nvram get ${prefix}act_imsi |cut -c '1-6' 2>/dev/null`
 	if [ -z "$modem_imsi" ]; then
 		echo "Can't get IMI of SIM!"
 		exit 2
@@ -59,8 +40,8 @@ if [ "$1" = "set" ]; then
 	content=`awk '/^'"$modem_imsi"',/ {print $0 "," NR; exit}' $dataf 2>/dev/null`
 else
 	total_line=`wc -l $dataf |awk '{print $1}' 2>/dev/null`
-	nvram set usb_modem_auto_lines=$total_line
-	nvram set usb_modem_auto_running=1
+	nvram set ${prefix}auto_lines=$total_line
+	nvram set ${prefix}auto_running=1
 
 	modem_imsi_s=`echo $modem_imsi |cut -c 1-6 2>/dev/null`
 	content=`awk '/^'"$modem_imsi_s"',/ {print $0 "," NR; exit}' $dataf 2>/dev/null`
@@ -69,7 +50,7 @@ else
 		content=`awk '/^'"$modem_imsi_s"',/ {print $0 "," NR; exit}' $dataf 2>/dev/null`
 	fi
 
-	nvram set usb_modem_auto_running=$total_line
+	nvram set ${prefix}auto_running=$total_line
 fi
 
 if [ -z "$content" ]; then
@@ -186,7 +167,7 @@ if [ "$1" = "console" ]; then
 	echo "   user: $modem_user."
 	echo "   pass: $modem_pass."
 elif [ "$1" = "set" ]; then
-	nvram set usb_modem_auto_imsi="$modem_imsi"
+	nvram set ${prefix}auto_imsi="$modem_imsi"
 	nvram set modem_country="$modem_country"
 	modem_isp=`nvram get modem_roaming_isp`
 	nvram set modem_isp="$modem_isp"
@@ -196,14 +177,14 @@ elif [ "$1" = "set" ]; then
 	nvram set modem_user="$modem_user"
 	nvram set modem_pass="$modem_pass"
 else
-	nvram set usb_modem_auto_imsi="$compare"
-	nvram set usb_modem_auto_country="$modem_country"
-	nvram set usb_modem_auto_isp="$modem_isp"
-	nvram set usb_modem_auto_spn="$modem_spn"
-	nvram set usb_modem_auto_apn="$modem_apn"
-	nvram set usb_modem_auto_dialnum="$modem_dial"
-	nvram set usb_modem_auto_user="$modem_user"
-	nvram set usb_modem_auto_pass="$modem_pass"
+	nvram set ${prefix}auto_imsi="$compare"
+	nvram set ${prefix}auto_country="$modem_country"
+	nvram set ${prefix}auto_isp="$modem_isp"
+	nvram set ${prefix}auto_spn="$modem_spn"
+	nvram set ${prefix}auto_apn="$modem_apn"
+	nvram set ${prefix}auto_dialnum="$modem_dial"
+	nvram set ${prefix}auto_user="$modem_user"
+	nvram set ${prefix}auto_pass="$modem_pass"
 
 	if [ "$modem_autoapn" = "1" ]; then
 		nvram set modem_country="$modem_country"

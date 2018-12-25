@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM53017_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53017, BCM53017_VENDOR_ID, BCM53017_DEVICE_ID, BCM53017_REV_A0, \
+                  BCM53017_MODEL, BCM53017_PROBEINFO, \
+                  bcm53010_a0, bcm53017_a0, bcm53017_a0, \
+                  CDK_DEV_ARCH_ROBO, "Costar", "BCM53010", \
+                  "5-Port GE Switch With 2-Port Integrated PHY", 0, 0)
+#endif
+#endif
+

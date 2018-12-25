@@ -47,6 +47,26 @@
 #include <linux/kernel.h>
 #include <linux/pm_runtime.h>
 
+#ifdef HNDCTF
+#include <linux/proc_fs.h>
+#include <osl.h>
+#endif
+
+#ifdef BCM47XX
+#include <siutils.h>
+#include <bcmdefs.h>
+#include <bcmdevs.h>
+/* Global SB handle */
+extern si_t *bcm947xx_sih;
+#define sih bcm947xx_sih
+
+#define BCM_USB_TX_ALIGN
+
+#ifdef BCM_USB_TX_ALIGN
+static int tx_align_hits = 0;
+#endif /* BCM_USB_TX_ALIGN */
+#endif /* BCM47XX */
+
 #define DRIVER_VERSION		"22-Aug-2005"
 
 
@@ -219,6 +239,58 @@ static int init_status (struct usbnet *dev, struct usb_interface *intf)
 	return 0;
 }
 
+#ifdef HNDCTF
+#define USBNET_CTFPOOLSZ	512
+#define CTF_L2HEADER_RESERVE (174)
+#define CTFPOOL_PADDING (32)
+static int usbnet_ctf_enable=0;
+static int usbnet_ctf_pool_enable=0, usbnet_ctf_pool_empty=0;
+static int usbnet_ctf_hits=0, usbnet_ctf_miss=0 , usbnet_ctf_refill =0;
+
+static inline int32
+usbnet_ctf_forward(struct usbnet *dev, struct sk_buff *skb)
+{
+	int i;
+	/* use slow path if ctf is disabled */
+	if (!CTF_ENAB(dev->cih))
+		return (BCME_ERROR);
+
+	/* Fix ASIX driver, if cloned dont queue it into ctf pool. */
+	if(PKTISFAST(dev->osh, skb) && !CTFPOOLPTR(dev->osh, skb)){
+		PKTCLRFAST(dev->osh, skb);
+		CTFPOOLPTR(dev->osh, skb) = NULL;
+	}
+#ifdef CTFPOOL
+	/* CTF pool empty. refill 1/4 pool size*/
+	if(usbnet_ctf_pool_enable  && usbnet_ctf_pool_empty) {
+		for(i = 0; i < (USBNET_CTFPOOLSZ>>2); i++ )
+			osl_ctfpool_add(dev->osh);
+		usbnet_ctf_refill += (USBNET_CTFPOOLSZ>>2);
+		usbnet_ctf_pool_empty=0;
+	}
+#endif /* CTFPOOL */
+
+	/* try cut thru first */
+	if (ctf_forward(dev->cih, skb, skb->dev) != BCME_ERROR)
+		return (BCME_OK);
+
+	/* clear skipct flag before sending up */
+	PKTCLRSKIPCT(dev->osh, skb);
+
+#ifdef CTFPOOL
+	if(usbnet_ctf_pool_enable) {
+		/* clear fast buf flag before sending up */
+		PKTCLRFAST(dev->osh, skb);
+		/* re-init the hijacked field */
+		CTFPOOLPTR(dev->osh, skb) = NULL;
+
+	}
+#endif /* CTFPOOL */
+
+	return (BCME_ERROR);
+}
+#endif /* HNDCTF */
+
 /* Passes this packet up the stack, updating its accounting.
  * Some link protocols batch packets, so their rx_fixup paths
  * can return clones as well as just modify the original skb.
@@ -226,6 +298,19 @@ static int init_status (struct usbnet *dev, struct usb_interface *intf)
 void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 {
 	int	status;
+
+#ifdef HNDCTF
+	if(CTF_ENAB(dev->cih) && usbnet_ctf_enable) {
+		skb->dev = dev->net;
+		/* try cut thru' before sending up */
+		if (usbnet_ctf_forward(dev, skb) != BCME_ERROR)
+		{
+			usbnet_ctf_hits++;
+			return;
+		}
+		usbnet_ctf_miss ++;
+	}
+#endif /* HNDCTF */
 
 	if (test_bit(EVENT_RX_PAUSED, &dev->flags)) {
 		skb_queue_tail(&dev->rxq_pause, skb);
@@ -270,6 +355,12 @@ int usbnet_change_mtu (struct net_device *net, int new_mtu)
 	dev->hard_mtu = net->mtu + net->hard_header_len;
 	if (dev->rx_urb_size == old_hard_mtu) {
 		dev->rx_urb_size = dev->hard_mtu;
+#ifdef HNDCTF
+		if(CTF_ENAB(dev->cih) && usbnet_ctf_pool_enable){
+			osl_ctfpool_cleanup(dev->osh);
+			osl_ctfpool_init(dev->osh, USBNET_CTFPOOLSZ, dev->rx_urb_size + CTF_L2HEADER_RESERVE + NET_IP_ALIGN + CTFPOOL_PADDING);
+		}
+#endif
 		if (dev->rx_urb_size > old_rx_urb_size)
 			usbnet_unlink_rx_urbs(dev);
 	}
@@ -342,13 +433,45 @@ static int rx_submit (struct usbnet *dev, struct urb *urb, gfp_t flags)
 	unsigned long		lockflags;
 	size_t			size = dev->rx_urb_size;
 
+#ifdef HNDCTF
+	/* Allocate from local pool */
+	if(usbnet_ctf_pool_enable){
+		/* try CTFPOOL_SPINLOCK */
+		skb = PKTGET(dev->osh, size + CTF_L2HEADER_RESERVE + NET_IP_ALIGN + CTFPOOL_PADDING, FALSE);
+	} else if(usbnet_ctf_enable) {
+		skb = alloc_skb (size + CTF_L2HEADER_RESERVE + NET_IP_ALIGN , flags);
+	}
+	else{
+		skb = alloc_skb (size + NET_IP_ALIGN, flags);
+	}
+
+	if (skb == NULL) {
+#else /* CTFPOOL */
 	skb = __netdev_alloc_skb_ip_align(dev->net, size, flags);
 	if (!skb) {
+#endif
 		netif_dbg(dev, rx_err, dev->net, "no rx skb\n");
 		usbnet_defer_kevent (dev, EVENT_RX_MEMORY);
 		usb_free_urb (urb);
 		return -ENOMEM;
 	}
+
+#ifdef HNDCTF
+	if(usbnet_ctf_pool_enable) {
+		skb_trim(skb, 0);
+		skb_reserve (skb, CTF_L2HEADER_RESERVE+NET_IP_ALIGN+CTFPOOL_PADDING);
+	} else if(usbnet_ctf_enable) {
+		skb_trim(skb, 0);
+		skb_reserve (skb, CTF_L2HEADER_RESERVE+NET_IP_ALIGN);
+	}else
+		skb_reserve (skb, NET_IP_ALIGN);
+#endif
+
+#ifdef HNDCTF
+	if(usbnet_ctf_pool_enable && CTF_ENAB(dev->cih) && !PKTISFAST(dev->osh, skb)) {
+		usbnet_ctf_pool_empty =1;
+	}
+#endif
 
 	entry = (struct skb_data *) skb->cb;
 	entry->urb = urb;
@@ -393,6 +516,11 @@ static int rx_submit (struct usbnet *dev, struct urb *urb, gfp_t flags)
 	}
 	spin_unlock_irqrestore (&dev->rxq.lock, lockflags);
 	if (retval) {
+#ifdef HNDCTF
+		if (usbnet_ctf_pool_enable)
+			PKTFREE(dev->osh, skb, FALSE);
+		else
+#endif
 		dev_kfree_skb_any (skb);
 		usb_free_urb (urb);
 	}
@@ -1083,6 +1211,41 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 			goto drop;
 		}
 	}
+
+#ifdef BCM_USB_TX_ALIGN
+	if (BCM4707_CHIP(sih->chip) && (dev->udev->speed == USB_SPEED_HIGH)) {
+		unsigned int rest_byte = skb->len % dev->maxpacket;
+
+		/* data must be 4-byte aligned */
+		length = ((unsigned long)skb->data) & 0x3;
+		if ((length == 2) && (rest_byte >= 3) && (rest_byte <= 5)) {
+			tx_align_hits++;
+			if (skb_cloned(skb) ||
+			    ((skb_headroom(skb) < length) &&
+			     (skb_tailroom(skb) < (4-length)))) {
+				struct sk_buff *skb2;
+				/* copy skb with proper alignment */
+				skb2 = skb_copy_expand(skb, 0, 4, GFP_ATOMIC);
+#ifdef HNDCTF
+				PKTFREE(dev->osh, skb, TRUE);
+#else
+				dev_kfree_skb_any(skb);
+#endif
+
+				skb = skb2;
+				if (!skb)
+					goto drop;
+
+			} else {
+				/* move data inside buffer */
+				length = ((skb_headroom(skb) >= length) ? 0 : 4)-length;
+				memmove(skb->data+length, skb->data, skb->len);
+				skb_reserve(skb, length);
+			}
+		}
+	}
+#endif /* BCM_USB_TX_ALIGN */
+
 	length = skb->len;
 
 	if (!(urb = usb_alloc_urb (0, GFP_ATOMIC))) {
@@ -1185,6 +1348,9 @@ static void usbnet_bh (unsigned long param)
 	struct usbnet		*dev = (struct usbnet *) param;
 	struct sk_buff		*skb;
 	struct skb_data		*entry;
+#ifdef HNDCTF
+	int istx = FALSE;
+#endif
 
 	while ((skb = skb_dequeue (&dev->done))) {
 		entry = (struct skb_data *) skb->cb;
@@ -1194,8 +1360,17 @@ static void usbnet_bh (unsigned long param)
 			rx_process (dev, skb);
 			continue;
 		case tx_done:
+#ifdef HNDCTF
+			istx = TRUE;
+#endif
 		case rx_cleanup:
 			usb_free_urb (entry->urb);
+#ifdef HNDCTF
+			if(usbnet_ctf_pool_enable) { /* try not pktfree rx buffer */
+				PKTFREE(dev->osh, skb, istx);
+			}
+			else
+#endif
 			dev_kfree_skb (skb);
 			continue;
 		default:
@@ -1270,7 +1445,23 @@ void usbnet_disconnect (struct usb_interface *intf)
 		   dev->driver_info->description);
 
 	net = dev->net;
+#ifdef HNDCTF
+	if (dev->cih)
+		ctf_dev_unregister(dev->cih, net);
+#endif /* HNDCTF */
 	unregister_netdev (net);
+
+#if (defined(CTFPOOL) && defined(HNDCTF))
+	/* free the buffers in fast pool */
+	if(usbnet_ctf_pool_enable)
+			osl_ctfpool_cleanup(dev->osh);
+#endif /* CTFPOOL */
+
+#ifdef HNDCTF
+	/* free ctf resources */
+	if (dev->cih)
+		ctf_detach(dev->cih);
+#endif /* HNDCTF */
 
 	/* we don't hold rtnl here ... */
 	flush_scheduled_work ();
@@ -1296,6 +1487,27 @@ static const struct net_device_ops usbnet_netdev_ops = {
 /*-------------------------------------------------------------------------*/
 
 // precondition: never called in_interrupt
+#ifdef HNDCTF
+uint32 usbnet_ctf_msg_level = 1;
+
+extern unsigned long num_physpages;
+
+static void
+usbnet_ctf_detach(ctf_t *ci, void *arg)
+{
+	struct usbnet *dev = (struct usbnet *)arg;
+
+	dev->cih = NULL;
+
+#ifdef CTFPOOL
+	/* free the buffers in fast pool */
+	if(usbnet_ctf_pool_enable)
+		osl_ctfpool_cleanup(dev->osh);
+#endif /* CTFPOOL */
+
+	return;
+}
+#endif /* HNDCTF */
 
 static struct device_type wlan_type = {
 	.name	= "wlan",
@@ -1316,6 +1528,9 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	int				status;
 	const char			*name;
 	struct usb_driver 	*driver = to_usb_driver(udev->dev.driver);
+#ifdef HNDCTF
+	osl_t *osh = NULL;
+#endif
 
 	/* usbnet already took usb runtime pm, so have to enable the feature
 	 * for usb interface, otherwise usb_autopm_get_interface may return
@@ -1377,6 +1592,12 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	 * bind() should set rx_urb_size in that case.
 	 */
 	dev->hard_mtu = net->mtu + net->hard_header_len;
+#if 0
+// dma_supported() is deeply broken on almost all architectures
+	// possible with some EHCI controllers
+	if (dma_supported (&udev->dev, DMA_BIT_MASK(64)))
+		net->features |= NETIF_F_HIGHDMA;
+#endif
 
 	net->netdev_ops = &usbnet_netdev_ops;
 	net->watchdog_timeo = TX_TIMEOUT_JIFFIES;
@@ -1431,6 +1652,47 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	if (!dev->rx_urb_size)
 		dev->rx_urb_size = dev->hard_mtu;
 	dev->maxpacket = usb_maxpacket (dev->udev, dev->out, 1);
+
+#ifdef HNDCTF
+	char *var = getvar(NULL, "usbnet_ctf_enable");
+	if (var)
+		usbnet_ctf_enable = bcm_strtoul(var, NULL, 0);
+	printk("%s: usbnet_ctf_enable set to 0x%x\n", __FUNCTION__, usbnet_ctf_enable);
+
+	var = getvar(NULL, "usbnet_ctf_pool_enable");
+	if (var)
+		usbnet_ctf_pool_enable = bcm_strtoul(var, NULL, 0);
+
+	if(!usbnet_ctf_enable)
+		usbnet_ctf_pool_enable=0;
+
+	printk("%s: usbnet_ctf_pool_enable set to 0x%x\n", __FUNCTION__, usbnet_ctf_pool_enable);
+
+	if(usbnet_ctf_enable) {
+		osh = osl_attach(net, USB_BUS, FALSE);
+		dev->osh = osh;
+		if(osh) {
+			dev->cih = ctf_attach(osh, net->name, &usbnet_ctf_msg_level, usbnet_ctf_detach, dev);
+
+			if((ctf_dev_register(dev->cih, net, FALSE) != BCME_OK) ||
+			   (ctf_enable(dev->cih, net, TRUE, NULL) != BCME_OK)) {
+				printk("usbnet: ctf_dev_register() failed\n");
+				goto out3;
+			}
+		}
+
+#ifdef CTFPOOL
+		if(usbnet_ctf_pool_enable && osh) {
+			/* create ctf packet pool with specified number of buffers */
+			if(CTF_ENAB(dev->cih) && (num_physpages >= 8192) &&
+			   (osl_ctfpool_init(osh, USBNET_CTFPOOLSZ, dev->rx_urb_size + CTF_L2HEADER_RESERVE + NET_IP_ALIGN + CTFPOOL_PADDING) < 0)) {
+				printk("usbnet: chipattach: ctfpool alloc/init failed\n");
+				goto out3;
+			}
+		}
+#endif /* CTFPOOL */
+	}
+#endif /* HNDCTF */
 
 	if ((dev->driver_info->flags & FLAG_WLAN) != 0)
 		SET_NETDEV_DEVTYPE(net, &wlan_type);
@@ -1508,6 +1770,57 @@ int usbnet_resume (struct usb_interface *intf)
 }
 EXPORT_SYMBOL_GPL(usbnet_resume);
 
+#ifdef HNDCTF
+static int
+usbnet_ctf_procfs_read_counters(char *page, char **start, off_t off,
+	int count, int *eof, void *data)
+{
+	char* ptr = (char*) page;
+	int len;
+	len =sprintf(ptr,"usbnet ctf hit: %d  miss: %d usbnet_ctf_refill: %d\n", usbnet_ctf_hits, usbnet_ctf_miss, usbnet_ctf_refill);
+	usbnet_ctf_hits=usbnet_ctf_miss = usbnet_ctf_refill = 0;
+	*eof=1;
+	return len;
+}
+
+void
+usbnet_ctf_procfs_init(void)
+{
+	struct proc_dir_entry *proc_fs;
+
+	proc_fs = create_proc_read_entry("usbnet_ctf_counters", S_IRUGO, NULL,
+		usbnet_ctf_procfs_read_counters, NULL);
+}
+#endif
+
+#ifdef BCM_USB_TX_ALIGN
+#ifdef CONFIG_PROC_FS
+static int
+usbnet_tx_align_procfs_read(char *page, char **start, off_t off,
+	int count, int *eof, void *data)
+{
+	char* ptr = (char*) page;
+	int len;
+
+	len = sprintf(ptr, "tx_align_hits: %d\n", tx_align_hits);
+	tx_align_hits = 0;
+	*eof=1;
+
+	return len;
+}
+
+void
+usbnet_tx_align_procfs_init(void)
+{
+	struct proc_dir_entry *proc_fs;
+
+	proc_fs = create_proc_read_entry("usbnet_tx_align", S_IRUGO, NULL,
+		usbnet_tx_align_procfs_read, NULL);
+}
+#else /* ! CONFIG_PROC_FS */
+void usbnet_tx_align_procfs_init(void) { }
+#endif /* ! CONFIG_PROC_FS */
+#endif /* BCM_USB_TX_ALIGN */
 
 /*-------------------------------------------------------------------------*/
 
@@ -1518,12 +1831,24 @@ static int __init usbnet_init(void)
 			< sizeof (struct skb_data));
 
 	random_ether_addr(node_id);
+#ifdef HNDCTF
+	usbnet_ctf_procfs_init();
+#endif
+#ifdef BCM_USB_TX_ALIGN
+	usbnet_tx_align_procfs_init();
+#endif /* BCM_USB_TX_ALIGN */
 	return 0;
 }
 module_init(usbnet_init);
 
 static void __exit usbnet_exit(void)
 {
+#ifdef HNDCTF
+	remove_proc_entry("usbnet_ctf_counters", NULL);
+#endif
+#ifdef BCM_USB_TX_ALIGN
+	remove_proc_entry("usbnet_tx_align", NULL);
+#endif /* BCM_USB_TX_ALIGN */
 }
 module_exit(usbnet_exit);
 

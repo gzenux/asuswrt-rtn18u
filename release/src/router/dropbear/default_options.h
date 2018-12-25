@@ -141,7 +141,7 @@ much traffic. */
 /* Enable CBC mode for ciphers. This has security issues though
  * is the most compatible with older SSH implementations */
 #ifndef DROPBEAR_ENABLE_CBC_MODE
-#define DROPBEAR_ENABLE_CBC_MODE 1
+#define DROPBEAR_ENABLE_CBC_MODE 0
 #endif
 
 /* Enable "Counter Mode" for ciphers. This is more secure than normal

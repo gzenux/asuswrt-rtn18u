@@ -242,31 +242,6 @@ if test "x$smart_include" = "x"; then
 		   AC_MSG_RESULT(no)
 		 ])
 fi
-
-dnl #
-dnl #  Try to guess possible locations.
-dnl #
-if test "x$smart_include" = "x"; then
-  FR_LOCATE_DIR(smart_include_dir,$1)
-  for try in $smart_include_dir /usr/local/include /opt/include; do
-    AC_MSG_CHECKING([for $1 in $try])
-    CFLAGS="$old_CFLAGS -isystem $try"
-    AC_TRY_COMPILE([$2
-		    #include <$1>],
-		   [int a = 1;],
-		   [
-		     smart_include="-isystem $try"
-		     AC_MSG_RESULT(yes)
-		     break
-		   ],
-		   [
-		     smart_include=
-		     AC_MSG_RESULT(no)
-		   ])
-  done
-  CFLAGS="$old_CFLAGS"
-fi
-
 dnl #
 dnl #  Found it, set the appropriate variable.
 dnl #

@@ -1,0 +1,6 @@
+#if CDK_CONFIG_INCLUDE_BCM56224_A0 == 1
+#include "chip/bcm56224_a0_sym.c"
+#endif
+#if CDK_CONFIG_INCLUDE_BCM56224_B0 == 1
+#include "chip/bcm56224_b0_sym.c"
+#endif

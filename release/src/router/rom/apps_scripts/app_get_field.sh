@@ -64,7 +64,7 @@ for f in $LIST_FILES; do
 		continue
 	fi
 
-	field_value=`grep "$2: " $TEMP_CONF_FILE |sed '2,$d' |awk '{FS="'$2': "; print $2}' |sed 's/, /,/g'`
+	field_value=`grep "$2: " $TEMP_CONF_FILE |sed '2,$d' |awk 'BEGIN{FS="'$2': "}{print $2}' |sed 's/, /,/g'`
 	rm -f $TEMP_CONF_FILE
 	echo "$field_value"
 	exit 0

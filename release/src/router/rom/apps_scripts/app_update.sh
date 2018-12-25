@@ -27,9 +27,6 @@ wget_timeout=`nvram get apps_wget_timeout`
 #wget_options="-nv -t 2 -T $wget_timeout --dns-timeout=120"
 wget_options="-q -t 2 -T $wget_timeout"
 
-
-nvram set apps_state_update=0 # INITIALIZING
-#nvram set apps_state_error=0
 APPS_PATH=/opt
 CONF_FILE=$APPS_PATH/etc/ipkg.conf
 TEMP_FILE=/tmp/ipkg.server.list
@@ -51,6 +48,9 @@ if [ "$link_internet" != "2" ]; then
 	exit 1
 fi
 
+
+nvram set apps_state_update=0 # INITIALIZING
+#nvram set apps_state_error=0
 #2016.7.1 sherry new oleg arm{
 #if [ "$pkg_type" == "arm" ]; then
 #	sed -i '/^#src\/gz.*ASUSWRT$/c src/gz optware.mbwe-bluering http://ipkg.nslu2-linux.org/feeds/optware/mbwe-bluering/cross/stable' $CONF_FILE

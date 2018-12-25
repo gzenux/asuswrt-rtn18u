@@ -1,0 +1,7 @@
+/* BCM53018 */
+#define BCM53018_VENDOR_ID                0x600d
+#define BCM53018_DEVICE_ID                0x87c0
+#define BCM53018_MODEL                    0x3018
+#define BCM53018_PROBEINFO            0x14040230
+#define BCM53018_REV_A0                     0x00
+

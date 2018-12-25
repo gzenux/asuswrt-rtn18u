@@ -3,8 +3,7 @@ var dragenterHandler = function (event) {
 	handleDragOver(event);
 };
 		
-function create_ui_view(type, container, query_type, parent_url, folder_array, file_array, mousedown_item_handler){
-	
+function create_ui_view(type, container, query_type, parent_url, folder_array, file_array, mousedown_item_handler){	
 	var cancel_all_select_items = function(){
 		g_select_array = null;
 		g_select_file_count=0;
@@ -174,7 +173,7 @@ function createThumbView(container, query_type, parent_url, folder_array, file_a
 		html += '" qtype="';
 		html += query_type;
 		html += '" isParent="0" isdir="1" uhref="';
-		html += folder_array[i].href;
+		html += folder_array[i].furl;
 		html += '" data-name="';
 		html += folder_array[i].name;
 		html += '" data-thumb="';
@@ -205,7 +204,7 @@ function createThumbView(container, query_type, parent_url, folder_array, file_a
 			html += '0';
 									
 		html += '" uhref="';
-		html += folder_array[i].href;
+		html += folder_array[i].furl;
 		//html += '" data-thumb="';
 		//html += folder_array[i].thumb;
 		//html += '" data-name="';
@@ -293,7 +292,7 @@ function createThumbView(container, query_type, parent_url, folder_array, file_a
 		html += ' title="';
 		html += this_title;		
 		html += '" qtype="1" isParent="1" isdir="0" uhref="';
-		html += file_array[i].href;
+		html += file_array[i].furl;
 		html += '" data-name="';
 		html += file_array[i].name;
 		html += '" matadatatitle="';
@@ -316,7 +315,7 @@ function createThumbView(container, query_type, parent_url, folder_array, file_a
 		html += '<tbody>';									
 									
 		//- get file ext
-		var file_path = String(file_array[i].href);
+		var file_path = String(file_array[i].furl);
 		var file_ext = getFileExt(file_path);
 		if(file_ext.length>5)file_ext="";
 																
@@ -325,7 +324,7 @@ function createThumbView(container, query_type, parent_url, folder_array, file_a
 			html += '<div class="picDiv cb" popupmenu="1" uhref="';
 		else
 			html += '<div class="picDiv cb" popupmenu="0" uhref="';
-		html += file_array[i].href;
+		html += file_array[i].furl;
 		//html += '" data-thumb="';
 		//html += file_array[i].thumb;
 		//html += '" data-name="';
@@ -369,7 +368,7 @@ function createThumbView(container, query_type, parent_url, folder_array, file_a
 		html += '<a id="list_item">';
 		/*
 		html += '<a id="list_item" qtype="1" isdir="0" uhref="';
-		html += file_array[i].href;
+		html += file_array[i].furl;
 		html += '" title="';
 		html += file_array[i].name;
 		html += '" matadatatitle="';
@@ -391,10 +390,10 @@ function createThumbView(container, query_type, parent_url, folder_array, file_a
 		html += '</tbody>';
 		html += '</table>';
 		
-		if(query_type == "0"){
+		//if(query_type == "0"){
 			html += '<div class="item-check ui-icon"></div>';
 			html += '<div class="item-menu ui-icon"></div>';
-		}
+		//}
 		
 		html += '</div>';
 	}
@@ -452,7 +451,7 @@ function createListView(container, query_type, parent_url, folder_array, file_ar
 		html += ' id="list_item" qtype="';
 		html += query_type;
 		html += '" isdir="1" uhref="';
-		html += folder_array[i].href;
+		html += folder_array[i].furl;
 		html += '" title="';
 		html += folder_array[i].name;
 		html += '" online="';
@@ -516,13 +515,13 @@ function createListView(container, query_type, parent_url, folder_array, file_ar
 	for(var i=0; i<file_array.length; i++){
 		
 		//- get file ext
-		var file_path = String(file_array[i].href);
+		var file_path = String(file_array[i].furl);
 		var file_ext = getFileExt(file_path);
 		if(file_ext.length>5)file_ext="";
 		
 		html += '<tr class="listDiv fcb wcb"';		
 		html += ' id="list_item" qtype="1" isdir="0" uhref="';
-		html += file_array[i].href;
+		html += file_array[i].furl;
 		html += '" title="';
 		html += file_array[i].name;
 		html += '" matadatatitle="';
@@ -546,11 +545,11 @@ function createListView(container, query_type, parent_url, folder_array, file_ar
 		//html += '<td field="check"><input type="checkbox" id="check_del" name="check_del" class="check_del"></td>';
 		
 		html += '<td field="check">';
-		if(query_type == "0"){
+		//if(query_type == "0"){
 			html += '<div class="checklist">';
 			html += '<div class="item-check ui-icon"></div>';
 			html += '</div>';
-		}
+		//}
 		html += '</td>';
 		
 		html += '<td field="icon">';
@@ -580,11 +579,11 @@ function createListView(container, query_type, parent_url, folder_array, file_ar
 		html += '<td field="time" align="left">' + file_array[i].time + '</td>';
 		html += '<td field="size" align="left">' + file_array[i].size + '</td>';
 		html += '<td field="option" align="left">';
-		if(query_type == "0"){
+		//if(query_type == "0"){
 			html += '<div class="checklist">';
 			html += '<div class="item-menu ui-icon"></div>';
 			html += '</div>';
-		}
+		//}
 		html += '</td>';
 		html += '</tr>';
 	}

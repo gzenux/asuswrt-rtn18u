@@ -25,12 +25,53 @@
 #include "hyfi_bridge.h"
 #include "hyfi_hatbl.h"
 #include "mc_snooping.h"
+#include "ref/ref_port_ctrl.h"
+#include "ref/ref_fdb.h"
 
 static int hyfi_device_event(struct notifier_block *unused, unsigned long event,
 		void *ptr);
 
 static struct notifier_block hyfi_device_notifier = { .notifier_call =
 		hyfi_device_event };
+
+static int hyfi_device_link_event(struct notifier_block *unused, unsigned long event,
+                void *ptr);
+
+static struct notifier_block hyfi_device_link_notifier = { .notifier_call =
+                hyfi_device_link_event };
+
+/*
+ * Handle changes of per port link state information for ethernet interface
+ */
+static int hyfi_device_link_event(struct notifier_block *unused, unsigned long event,
+		void *ptr)
+{
+	struct net_device *dev;
+	struct hyfi_net_bridge *hyfi_br = NULL;
+	ssdk_port_status *link_status_p;
+	u_int8_t portstatus_event;
+	/* switch port doesn't aware of netdevice, hence br-lan netdevice used,
+	   So, looping from the first net_device found until hyfi linux_bridge found*/
+	read_lock(&dev_base_lock);
+	dev = first_net_device(&init_net);
+	while (dev)
+	{
+		hyfi_br = hyfi_bridge_get_by_dev(dev);
+		if (hyfi_br)
+		{
+			break;
+		}
+		dev = next_net_device(dev);
+	}
+	read_unlock(&dev_base_lock);
+	link_status_p = ptr;
+	portstatus_event = link_status_p->port_link ? HYFI_EVENT_LINK_PORT_UP : HYFI_EVENT_LINK_PORT_DOWN;
+	if (hyfi_br)
+	{
+		hyfi_netlink_event_send(hyfi_br, portstatus_event, sizeof(ssdk_port_status), link_status_p);
+	}
+	return NOTIFY_DONE;
+}
 
 /*
  * Handle changes in state of network devices enslaved to a bridge.
@@ -69,11 +110,15 @@ static int hyfi_device_event(struct notifier_block *unused, unsigned long event,
 	switch (event) {
 	case NETDEV_UP:
 	case NETDEV_DOWN:
+		device_event = (event == NETDEV_UP) ?
+			HYFI_EVENT_LINK_UP : HYFI_EVENT_LINK_DOWN;
+		/* Send a link change notification */
+		hyfi_netlink_event_send(hyfi_br, device_event, sizeof(u_int32_t), p);
+		break;
 	case NETDEV_CHANGE:
 		device_event =
 				netif_carrier_ok(dev) ?
-						HYFI_EVENT_LINK_UP : HYFI_EVENT_LINK_DOWN;
-
+			HYFI_EVENT_LINK_UP : HYFI_EVENT_LINK_DOWN;
 		/* Send a link change notification */
 		hyfi_netlink_event_send(hyfi_br, device_event, sizeof(u_int32_t), p);
 		break;
@@ -148,12 +193,16 @@ void hyfi_br_notify(int group, int event, const void *ptr)
 int __init hyfi_notify_init(void)
 {
 	int ret;
-
+	int rval; /* ssdk register status */
 	ret = register_netdevice_notifier(&hyfi_device_notifier);
     rcu_assign_pointer(br_notify_hook, hyfi_br_notify);
 
 	if (ret) {
 		DEBUG_ERROR("hyfi: Failed to register to netdevice notifier\n" );
+	}
+	rval = ssdk_port_link_notify_register(&hyfi_device_link_notifier);
+	if (ret < 0) {
+		DEBUG_ERROR("hyfi: Failed to register to ssdk_port_link notifier\n" );
 	}
 
 	return ret;
@@ -163,4 +212,5 @@ void hyfi_notify_fini(void)
 {
 	unregister_netdevice_notifier(&hyfi_device_notifier);
     rcu_assign_pointer(br_notify_hook, NULL);
+	ssdk_port_link_notify_unregister(&hyfi_device_link_notifier);
 }

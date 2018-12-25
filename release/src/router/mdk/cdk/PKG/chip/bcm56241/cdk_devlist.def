@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56241_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56241, BCM56241_VENDOR_ID, BCM56241_DEVICE_ID, BCM56241_REV_A0, \
+                  0, 0, \
+                  bcm56440_a0, bcm56241_a0, bcm56241_a0, \
+                  CDK_DEV_ARCH_XGSM, "Katana", "BCM56440", \
+                  "6-Port FE Multilayer Switch with Two 2.5G Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56241_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56241, BCM56241_VENDOR_ID, BCM56241_DEVICE_ID, BCM56241_REV_B0, \
+                  0, 0, \
+                  bcm56440_b0, bcm56241_b0, bcm56241_b0, \
+                  CDK_DEV_ARCH_XGSM, "Katana", "BCM56440", \
+                  "6-Port FE Multilayer Switch with Two 2.5G Uplink Ports", 0, 0)
+#endif
+#endif
+

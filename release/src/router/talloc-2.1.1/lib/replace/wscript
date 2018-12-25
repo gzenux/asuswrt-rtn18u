@@ -53,10 +53,6 @@ struct foo bar = { .y = 'X', .x = 1 };
                 conf.ADD_CFLAGS(f)
             break
 
-    if conf.CHECK_CFLAGS(['-fstack-protector']) and conf.CHECK_LDFLAGS(['-fstack-protector']):
-        conf.ADD_CFLAGS('-fstack-protector')
-        conf.ADD_LDFLAGS('-fstack-protector')
-
     # Try to find the right extra flags for -Werror behaviour
     for f in ["-Werror",       # GCC
 	      "-errwarn=%all", # Sun Studio
@@ -557,7 +553,6 @@ removeea setea
 
     # look for a method of finding the list of network interfaces
     for method in ['HAVE_IFACE_GETIFADDRS', 'HAVE_IFACE_AIX', 'HAVE_IFACE_IFCONF', 'HAVE_IFACE_IFREQ']:
-	#print "##### method=%s" %(method)
         if conf.CHECK_CODE('''
                            #define %s 1
                            #define NO_CONFIG_H 1
@@ -574,10 +569,10 @@ removeea setea
                            addmain=False,
                            execute=True):
             break
-    #print "call RECURSE(system)"
+
     conf.RECURSE('system')
     conf.SAMBA_CONFIG_H()
-    #print "******* end lib config"	
+
 
 REPLACEMENT_FUNCTIONS = {
     'replace.c': ['ftruncate', 'strlcpy', 'strlcat', 'mktime', 'initgroups',

@@ -226,29 +226,29 @@ function publish_sharelink(){
 			}
 
 function webdav_sharelink_callbackfunction(error, content, statusstring){
-	if(error==200){
-					
-		var data = parseXml(statusstring);				
-		var share_link = $(data).find('sharelink').text();
-							
-		if(share_link==''){
-			alert("Invalid share link!");
-			return;
-		}
+    if(error==200){
 
-		var sharelink = g_hostName + "/" + share_link;
-		g_sharelink_publish_array.push(sharelink);
-	}
-			else if(error==405){
-				var msg = m.getString("msg_exceed_max_sharelink");
-				msg = msg.replace("%d", g_storage.get('max_sharelink'));
-				alert(msg);
-		return;
-			}
-			else{
-				alert("Fail to generate share link!");	
-		return;
-			}
+		var data = parseXml(statusstring);				
+        var share_link = $(data).find('sharelink').text();
+
+		if(share_link==''){
+            alert("Invalid share link!");
+            return;
+        }
+
+        var sharelink = g_hostName + "/" + share_link;
+        g_sharelink_publish_array.push(sharelink);
+    }
+    else if(error==405){
+        var msg = m.getString("msg_exceed_max_sharelink");
+        msg = msg.replace("%d", g_storage.get('max_sharelink'));
+        alert(msg);
+        return;
+    }
+    else{
+        alert("Fail to generate share link!");	
+        return;
+    }
 	
 	g_sharelink_array.splice(0,1);
 	
@@ -281,9 +281,12 @@ $("document").ready(function() {
 	g_webdav_client.initialize();
 	
 	var webdav_mode = g_storage.get('webdav_mode');
-	var ddns_host_name = g_storage.get('ddns_host_name');    
-	var cur_host_name = window.location.host;
-		
+	var ddns_host_name = g_storage.get('ddns_host_name');
+	var cur_host_name = g_storage.get('request_host_url');
+	if(cur_host_name.indexOf("://")!=-1){
+        cur_host_name = cur_host_name.substr(cur_host_name.indexOf("://")+3);
+    }
+                    	
 	if(!isPrivateIP(cur_host_name))
 		g_hostName = cur_host_name;
 	else			
@@ -464,7 +467,7 @@ function select_all(){
                         <select id="expire_day" name="expire_day" class="expire_day">
                         </select>
                         <span id="custom_expire_day" style="display:none">
-                        	<input id="input_expire_day" name="input_expire_day" class="numInput" maxlength="2" style="width:25px;" value="3"><span id="day_unit" style="padding-left:5px;">å¤?/span>
+                        	<input id="input_expire_day" name="input_expire_day" class="numInput" maxlength="2" style="width:25px;" value="3"><span id="day_unit" style="padding-left:5px;">ï¿½?/span>
                         </span>
                     </div>
                 </div>
@@ -484,7 +487,7 @@ function select_all(){
                             <select id="expire_day" name="expire_day" class="expire_day">
                             </select>
                             <span id="custom_expire_day" style="display:none">
-                                <input id="input_expire_day" class="numInput" maxlength="2" style="width:25px;" value="3"><span id="day_unit" style="padding-left:5px;">å¤?/span>
+                                <input id="input_expire_day" class="numInput" maxlength="2" style="width:25px;" value="3"><span id="day_unit" style="padding-left:5px;">ï¿½?/span>
                             </span>
                         </div>
                     </div>

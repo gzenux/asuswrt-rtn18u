@@ -66,9 +66,9 @@ def configure(conf):
         if not conf.env.HAVE_PYTHON_H:
             Logs.warn('Disabling pytalloc-util as python devel libs not found')
             conf.env.disable_python = True
-    print "call SAMBA_CONFIG_H()"	
+
     conf.SAMBA_CONFIG_H()
-    print "call SAMBA_CHECK_UNDEFINED_SYMBOL_FLAGS()"
+
     conf.SAMBA_CHECK_UNDEFINED_SYMBOL_FLAGS()
 
 

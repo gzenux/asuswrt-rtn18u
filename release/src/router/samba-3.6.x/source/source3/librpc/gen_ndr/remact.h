@@ -37,12 +37,12 @@ struct RemoteActivation {
 	struct {
 		struct ORPCTHIS this_object;
 		struct GUID Clsid;
-		const char *pwszObjectName;/* [ref,charset(UTF16)] */
+		const char *pwszObjectName;/* [charset(UTF16),ref] */
 		struct MInterfacePointer *pObjectStorage;/* [ref] */
 		uint32_t ClientImpLevel;
 		uint32_t Mode;
 		uint32_t Interfaces;/* [range(1,32768)] */
-		struct GUID *pIIDs;/* [ref,size_is(Interfaces)] */
+		struct GUID *pIIDs;/* [size_is(Interfaces),ref] */
 		uint16_t num_protseqs;
 		uint16_t *protseq;/* [size_is(num_protseqs)] */
 	} in;

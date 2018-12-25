@@ -79,6 +79,11 @@
 #include <disk_io_tools.h>
 #include <disk_share.h>
 
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+#include <PMS_DBAPIs.h>
+#endif
+
+
 /* Private variables to this file */
 /* Current umask() */
 static unsigned int s_current_umask;
@@ -1020,6 +1025,16 @@ vsf_sysutil_next_dirent(const char* session_user, const char *base_dir, struct v
 	char *mount_path, *share_name;
 	int layer = 0;
 	int user_right;
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+	int group_right;
+	int acc_num;
+	PMS_ACCOUNT_INFO_T *account_list, *follow_account;
+	int group_num;
+	PMS_ACCOUNT_GROUP_INFO_T *group_list;
+	PMS_OWNED_INFO_T *owned_group;
+	PMS_ACCOUNT_GROUP_INFO_T *group_member;
+	char char_user[64];
+#endif
 
 	if(!strcmp(p_dirent->d_name, ".") || !strcmp(p_dirent->d_name, ".."))
 		return p_dirent->d_name;
@@ -1060,7 +1075,49 @@ vsf_sysutil_next_dirent(const char* session_user, const char *base_dir, struct v
 		}
 
 		if(strcmp(session_user, "anonymous")){
-			user_right = get_permission(session_user, mount_path, share_name, "ftp");
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+			if(PMS_GetAccountInfo(PMS_ACTION_GET_FULL, &account_list, &group_list, &acc_num, &group_num) < 0){
+				PMS_FreeAccInfo(&account_list, &group_list);
+				free(mount_path);
+				free(share_name);
+				return DENIED_DIR;
+			}
+
+			for(follow_account = account_list; follow_account != NULL; follow_account = follow_account->next){
+				memset(char_user, 0, sizeof(char_user));
+				ascii_to_char_safe(char_user, follow_account->name, sizeof(char_user));
+
+				if(!strcmp(char_user, session_user))
+					break;
+			}
+			if(follow_account == NULL){
+				PMS_FreeAccInfo(&account_list, &group_list);
+				free(mount_path);
+				free(share_name);
+				return DENIED_DIR;
+			}
+
+			owned_group = follow_account->owned_group;
+			while(owned_group != NULL){
+				group_member = (PMS_ACCOUNT_GROUP_INFO_T *)owned_group->member;
+
+				memset(char_user, 0, sizeof(char_user));
+				ascii_to_char_safe(char_user, group_member->name, sizeof(char_user));
+
+				group_right = get_permission(char_user, mount_path, share_name, "ftp", 1);
+				if(group_right < 1 || group_right == 2){
+					PMS_FreeAccInfo(&account_list, &group_list);
+					free(mount_path);
+					free(share_name);
+					return DENIED_DIR;
+				}
+
+				owned_group = owned_group->next;
+			}
+			PMS_FreeAccInfo(&account_list, &group_list);
+
+#endif
+			user_right = get_permission(session_user, mount_path, share_name, "ftp", 0);
 			if(user_right < 1 || user_right == 2){
 				free(mount_path);
 				free(share_name);
@@ -2327,9 +2384,8 @@ test_user(char *target, char *pattern)	// added by Jiahao for WL500gP
 struct vsf_sysutil_user*	// Jiahao
 vsf_sysutil_getpwnam(const char* p_user){
 	struct passwd *result;
-	int acc_num, i;
-	char *nv, *nvp, *b;
-	char *tmp_account, *tmp_passwd;
+	int acc_num;
+	char char_user[64], char_passwd[64];
 
 	if (strcmp(p_user, "root") == 0){
 		result = (struct passwd *)(malloc(sizeof(struct passwd)));
@@ -2349,6 +2405,47 @@ vsf_sysutil_getpwnam(const char* p_user){
 	if(nvram_match("st_ftp_mode", "2")
 			|| (nvram_match("st_ftp_mode", "1") && !strcmp(nvram_safe_get("st_ftp_force_mode"), ""))
 			){
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+		PMS_ACCOUNT_INFO_T *account_list, *follow_account;
+		int group_num;
+		PMS_ACCOUNT_GROUP_INFO_T *group_list;
+
+		if(PMS_GetAccountInfo(PMS_ACTION_GET_FULL, &account_list, &group_list, &acc_num, &group_num) < 0){
+			PMS_FreeAccInfo(&account_list, &group_list);
+			return NULL;
+		}
+
+		for(follow_account = account_list; follow_account != NULL; follow_account = follow_account->next){
+			memset(char_user, 0, sizeof(char_user));
+			ascii_to_char_safe(char_user, follow_account->name, sizeof(char_user));
+			memset(char_passwd, 0, sizeof(char_passwd));
+			ascii_to_char_safe(char_passwd, follow_account->passwd, sizeof(char_passwd));
+
+			if(!strcmp(p_user, char_user)){
+				result = (struct passwd *)(malloc(sizeof(struct passwd)));
+				if(result == NULL){
+					PMS_FreeAccInfo(&account_list, &group_list);
+					return NULL;
+				}
+
+				result->pw_name = (char *)p_user;
+				result->pw_passwd = char_passwd;
+				result->pw_uid = 1;
+				result->pw_gid = 1;
+				result->pw_gecos = char_user;
+				result->pw_dir = POOL_MOUNT_ROOT;
+
+				PMS_FreeAccInfo(&account_list, &group_list);
+				return (struct vsf_sysutil_user *)result;
+			}
+		}
+
+		PMS_FreeAccInfo(&account_list, &group_list);
+#else
+		char *nv, *nvp, *b;
+		char *tmp_account, *tmp_passwd;
+		int i;
+
 		acc_num = atoi(nvram_safe_get("acc_num"));
 		if(acc_num < 0)
 			acc_num = 0;
@@ -2360,8 +2457,13 @@ vsf_sysutil_getpwnam(const char* p_user){
 				if(vstrsep(b, ">", &tmp_account, &tmp_passwd) != 2)
 					continue;
 
+#ifdef RTCONFIG_NVRAM_ENCRYPT
+                            char dec_passwd[64];
+                            memset(dec_passwd, 0, sizeof(dec_passwd));
+                            pw_dec(tmp_passwd, dec_passwd);
+                            tmp_passwd = dec_passwd;
+#endif
 				char char_user[64], char_passwd[64];
-
 				memset(char_user, 0, 64);
 				ascii_to_char_safe(char_user, tmp_account, 64);
 				memset(char_passwd, 0, 64);
@@ -2388,6 +2490,7 @@ vsf_sysutil_getpwnam(const char* p_user){
 		}
 		if(nv)
 			free(nv);
+#endif
 
 		return NULL;
 	}

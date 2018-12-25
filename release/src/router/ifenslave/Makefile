@@ -5,7 +5,9 @@ OBJS = ifenslave.o
 PROGS = ifenslave
 
 CFLAGS += $(EXTRACFLAGS)
+ifneq ($(HND_ROUTER),y)
 CFLAGS += -Wall -Wstrict-prototypes -Os -I$(LINUXDIR)/include
+endif
 
 
 all: $(PROGS)

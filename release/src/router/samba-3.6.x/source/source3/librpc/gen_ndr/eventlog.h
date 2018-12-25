@@ -107,7 +107,7 @@ struct EVENTLOGHEADER {
 
 struct EVENTLOGRECORD {
 	uint32_t Length;
-	const char *Reserved;/* [value("LfLe"),charset(DOS)] */
+	const char *Reserved;/* [charset(DOS),value("LfLe")] */
 	uint32_t RecordNumber;
 	time_t TimeGenerated;
 	time_t TimeWritten;
@@ -124,12 +124,12 @@ struct EVENTLOGRECORD {
 	uint32_t DataOffset;/* [value(56+2*(strlen_m_term(SourceName)+strlen_m_term(Computername))+UserSidLength+(2*ndr_size_string_array(Strings,NumStrings,LIBNDR_FLAG_STR_NULLTERM)))] */
 	const char * SourceName;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
 	const char * Computername;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
-	struct dom_sid0 UserSid;/* [flag(LIBNDR_FLAG_ALIGN4),subcontext(0),subcontext_size(UserSidLength)] */
+	struct dom_sid0 UserSid;/* [subcontext_size(UserSidLength),flag(LIBNDR_FLAG_ALIGN4),subcontext(0)] */
 	const char * *Strings;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
 	uint8_t *Data;/* [flag(LIBNDR_PRINT_ARRAY_HEX)] */
 	const char * Pad;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint32_t Length2;/* [value(Length)] */
-}/* [public,gensize] */;
+}/* [gensize,public] */;
 
 struct EVENTLOGEOF {
 	uint32_t RecordSizeBeginning;/* [value(0x28)] */
@@ -300,7 +300,7 @@ struct eventlog_ReadEventLogW {
 	} in;
 
 	struct {
-		uint8_t *data;/* [ref,size_is(number_of_bytes)] */
+		uint8_t *data;/* [size_is(number_of_bytes),ref] */
 		uint32_t *sent_size;/* [ref] */
 		uint32_t *real_size;/* [ref] */
 		NTSTATUS result;
@@ -320,8 +320,8 @@ struct eventlog_ReportEventW {
 		uint32_t data_size;/* [range(0,0x3FFFF)] */
 		struct lsa_String *servername;/* [ref] */
 		struct dom_sid *user_sid;/* [unique] */
-		struct lsa_String **strings;/* [size_is(num_of_strings),unique] */
-		uint8_t *data;/* [size_is(data_size),unique] */
+		struct lsa_String **strings;/* [unique,size_is(num_of_strings)] */
+		uint8_t *data;/* [unique,size_is(data_size)] */
 		uint16_t flags;
 		uint32_t *record_number;/* [unique] */
 		time_t *time_written;/* [unique] */
@@ -424,7 +424,7 @@ struct eventlog_GetLogInformation {
 	} in;
 
 	struct {
-		uint8_t *buffer;/* [size_is(buf_size),ref] */
+		uint8_t *buffer;/* [ref,size_is(buf_size)] */
 		uint32_t *bytes_needed;/* [ref] */
 		NTSTATUS result;
 	} out;
@@ -457,7 +457,7 @@ struct eventlog_ReportEventAndSourceW {
 		struct lsa_String *servername;/* [ref] */
 		struct dom_sid *user_sid;/* [unique] */
 		struct lsa_String **strings;/* [size_is(num_of_strings),unique] */
-		uint8_t *data;/* [unique,size_is(data_size)] */
+		uint8_t *data;/* [size_is(data_size),unique] */
 		uint16_t flags;
 		uint32_t *record_number;/* [unique] */
 		time_t *time_written;/* [unique] */

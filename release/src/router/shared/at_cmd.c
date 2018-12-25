@@ -6,14 +6,14 @@
 #include <ctype.h>
 #include <sys/file.h>
 
-#include "rtconfig.h"
+#include "shared.h"
 #include "bcmnvram.h"
 #include "shutils.h"
-
+#include "usb_info.h"
 
 #ifdef RTCONFIG_USB_MODEM
 
-static inline int Gobi_AtCommand(const char *cmd, const char *file)
+static inline int Gobi_AtCommand(int unit, const char *cmd, const char *file)
 {
 	const char *modem_act_node;
 	int fd;
@@ -21,6 +21,8 @@ static inline int Gobi_AtCommand(const char *cmd, const char *file)
 	const char *lock_file = "/tmp/at_cmd_lock";
 	char buf[32];
 	int owner = -1;
+	char prefix[32], tmp[100];
+	int atcmd = nvram_get_int("modem_atcmd");
 
 	if (cmd == NULL || file == NULL)
 		return -1;
@@ -47,14 +49,19 @@ static inline int Gobi_AtCommand(const char *cmd, const char *file)
 
 	unlink(file);
 
-	if (nvram_match("usb_modem_act_type", "tty"))
-		modem_act_node = nvram_get("usb_modem_act_bulk");
+	usb_modem_prefix(unit, prefix, sizeof(prefix));
+
+	if (nvram_match(strcat_r(prefix, "act_type", tmp), "tty"))
+		modem_act_node = nvram_get(strcat_r(prefix, "act_bulk", tmp));
 	else
-		modem_act_node = nvram_get("usb_modem_act_int");
+		modem_act_node = nvram_get(strcat_r(prefix, "act_int", tmp));
 
 	if (modem_act_node != NULL)
 	{
-		ret = doSystem("chat -t 1 -e '' 'AT%s' OK >> /dev/%s < /dev/%s 2>%s", cmd, modem_act_node, modem_act_node, file);
+		if(atcmd)
+			ret = doSystem("open_tty 'AT%s' >%s", cmd, file);
+		else
+			ret = doSystem("chat -t 1 -e '' 'AT%s' OK >> /dev/%s < /dev/%s 2>%s", cmd, modem_act_node, modem_act_node, file);
 	}
 
 	flock(fd, LOCK_UN);
@@ -144,13 +151,13 @@ static inline char * find_field(const char *buf, const char sep, int num, char *
 #define cut_space(p)	{if(p != NULL){ int idx = strlen(p) -1; while(idx > 0 && isspace(p[idx])) p[idx--] = '\0';}}
 
 // system("chat -t 1 -e '' 'AT+CPIN?' OK >> /dev/ttyACM0 < /dev/ttyACM0 2>/tmp/at_cpin; grep OK /tmp/at_cpin -q && v=PASS || v=FAIL; echo $v");
-char *Gobi_SimCard(char *line, int size)
+char *Gobi_SimCard(int unit, char *line, int size)
 {
 	const char *atCmd   = "+CPIN?";
 	const char *tmpFile = "/tmp/at_cpin";
 	char *p = NULL;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_str(line, size, tmpFile, "+CPIN: ")) != NULL)
 	{
 		skip_space(p);
@@ -169,13 +176,13 @@ int Gobi_SimCardReady(const char *status)
 
 
 // system("chat -t 1 -e '' 'AT+CGSN' OK >> /dev/ttyACM0 < /dev/ttyACM0 2>/tmp/at_cgsn; [ `sed -n 4p /tmp/at_cgsn | wc -m ` = 16 ] && v=`sed -n 4p /tmp/at_cgsn` || v=FAIL; echo $v");
-char *Gobi_IMEI(char *line, int size)
+char *Gobi_IMEI(int unit, char *line, int size)
 {
 	const char *atCmd   = "+CGSN";
 	const char *tmpFile = "/tmp/at_cgsn";
 	char *p;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_num(line, size, tmpFile, 3)) != NULL)
 	{
 		int cnt;
@@ -190,14 +197,14 @@ char *Gobi_IMEI(char *line, int size)
 }
 
 // system("chat -t 1 -e '' 'AT+CGNWS' OK >> /dev/ttyACM0 < /dev/ttyACM0 2>/tmp/at_cgnws; grep +CGNWS: /tmp/at_cgnws | awk -F, '{print $4}' | grep 0x01 -q && v=`grep +CGNWS: /tmp/at_cgnws | awk -F, '{print $7}'` || v=FAIL; echo $v");
-char *Gobi_ConnectISP(char *line, int size)
+char *Gobi_ConnectISP(int unit, char *line, int size)
 {
 	const char *atCmd   = "+CGNWS";
 	const char *tmpFile = "/tmp/at_cgnws";
 	char str[64];
 	char *p;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_str(line, size, tmpFile, "+CGNWS:")) != NULL)
 	{
 		char *f;
@@ -250,7 +257,7 @@ char *Gobi_ConnectStatus_Str(int status)
 }
 
 // system("chat -t 1 -e '' 'AT$CBEARER' OK >> /dev/ttyACM0 < /dev/ttyACM0 2>/tmp/at_cbearer; st=`grep '$CBEARER:' /tmp/at_cbearer | awk -F: '{print $2}'` ; echo $st | grep '0x0[1-9A-D]' -q && v=$st || v=FAIL; echo $v");
-int Gobi_ConnectStatus_Int(void)
+int Gobi_ConnectStatus_Int(int unit)
 {
 	const char *atCmd   = "$CBEARER";
 	const char *tmpFile = "/tmp/at_cbearer";
@@ -258,7 +265,7 @@ int Gobi_ConnectStatus_Int(void)
 	char *p;
 	int value = 0;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_str(line, sizeof(line), tmpFile, "$CBEARER:")) != NULL)
 	{
 		skip_space(p);
@@ -281,7 +288,7 @@ int Gobi_SignalQuality_Percent(int value)
 }
 
 // system("chat -t 1 -e '' 'AT+CSQ' OK >> /dev/ttyACM0 < /dev/ttyACM0 2>/tmp/at_csq; sg=`grep +CSQ: /tmp/at_csq | awk -F: '{print $2}'` ; echo $sg | grep ,99 -q && v=`echo $sg | awk -F, '{print $1}'` || v=FAIL; echo $v");
-int Gobi_SignalQuality_Int(void)
+int Gobi_SignalQuality_Int(int unit)
 {
 	const char *atCmd   = "+CSQ";
 	const char *tmpFile = "/tmp/at_csq";
@@ -289,7 +296,7 @@ int Gobi_SignalQuality_Int(void)
 	char *p;
 	int value = -1;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_str(line, sizeof(line), tmpFile, "+CSQ:")) != NULL)
 	{
 		char *p2;
@@ -304,7 +311,7 @@ int Gobi_SignalQuality_Int(void)
 	return value;
 }
 
-int Gobi_SignalLevel_Int(void)
+int Gobi_SignalLevel_Int(int unit)
 {
 	const char *atCmd   = "$CSIGNAL";
 	const char *tmpFile = "/tmp/at_csignal";
@@ -312,7 +319,7 @@ int Gobi_SignalLevel_Int(void)
 	char *p;
 	int value = 0;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_str(line, sizeof(line), tmpFile, "$CSIGNAL:")) != NULL)
 	{
 		skip_space(p);
@@ -326,14 +333,18 @@ int Gobi_SignalLevel_Int(void)
 	return value;
 }
 
-char * Gobi_FwVersion(char *line, int size)
+char * Gobi_FwVersion(int unit, char *line, int size)
 {
 	const char *atCmd   = "I";
 	const char *tmpFile = "/tmp/ati";
 	char *p = NULL;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
-	    && (p = get_line_by_str(line, size, tmpFile, "WWLC")) != NULL)
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0 &&
+#ifdef RT4GAC68U
+			(p = get_line_by_str(line, size, tmpFile, "WWHC")) != NULL)
+#else
+			(p = get_line_by_str(line, size, tmpFile, "WWLC")) != NULL)
+#endif
 	{
 		skip_space(p);
 		cut_space(p);
@@ -341,13 +352,13 @@ char * Gobi_FwVersion(char *line, int size)
 	return p;
 }
 
-char * Gobi_QcnVersion(char *line, int size)
+char * Gobi_QcnVersion(int unit, char *line, int size)
 {
 	const char *atCmd   = "$QCNVER";
 	const char *tmpFile = "/tmp/at_qcnver";
 	char *p = NULL;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_num(line, size, tmpFile, 3)) != NULL)
 	{
 		skip_space(p);
@@ -356,7 +367,7 @@ char * Gobi_QcnVersion(char *line, int size)
 	return p;
 }
 
-char * Gobi_SelectBand(const char *band, char *line, int size)
+char * Gobi_SelectBand(int unit, const char *band, char *line, int size)
 {
 	const char *atCmd1;
 	const char *atCmd2 = "+CSETPREFNET=11";
@@ -382,9 +393,9 @@ char * Gobi_SelectBand(const char *band, char *line, int size)
 	else
 		return NULL;
 
-	if (Gobi_AtCommand(atCmd1, tmpFile1) >= 0
-		&& Gobi_AtCommand(atCmd2, tmpFile2) >= 0
-		&& Gobi_AtCommand(atCmd3, tmpFile3) >= 0
+	if (Gobi_AtCommand(unit, atCmd1, tmpFile1) >= 0
+		&& Gobi_AtCommand(unit, atCmd2, tmpFile2) >= 0
+		&& Gobi_AtCommand(unit, atCmd3, tmpFile3) >= 0
 		&& (p = get_line_by_num(line, size, tmpFile2, 1)) != NULL)
 	{
 		skip_space(p);
@@ -393,13 +404,13 @@ char * Gobi_SelectBand(const char *band, char *line, int size)
 	return p;
 }
 
-char * Gobi_BandChannel(char *line, int size)
+char * Gobi_BandChannel(int unit, char *line, int size)
 {
 	const char *atCmd   = "$CRFI";
 	const char *tmpFile = "/tmp/at_crfi";
 	char *p = NULL;
 
-	if (Gobi_AtCommand(atCmd, tmpFile) >= 0
+	if (Gobi_AtCommand(unit, atCmd, tmpFile) >= 0
 	    && (p = get_line_by_str(line, size, tmpFile, "$CRFI:")) != NULL)
 	{
 		skip_space(p);

@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM56685_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM56685_A0
+BMD_DEVLIST_ENTRY(BCM56685, BCM56685_VENDOR_ID, BCM56685_DEVICE_ID, BCM56685_REV_A0, \
+                  0, 0, \
+                  bcm56685_a0, bcm56685_a0, bcm56685_a0, \
+                  CDK_DEV_ARCH_XGS, "Valkyrie2", "BCM56685", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm56685_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

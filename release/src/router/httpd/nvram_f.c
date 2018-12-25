@@ -37,6 +37,7 @@
 #include <syslog.h>
 #include <bcmnvram.h>
 #include <sys/mman.h>
+#include <shared.h>
 
 #define MAX_LINE_SIZE 512
 #define MAX_FILE_NAME 64
@@ -121,7 +122,7 @@ int nvram_add_lists_x(const char *sid, const char *name, const char *value, int 
 {    	
     char name1[32], name2[32];
   
-    strcpy(name1, name);
+    strlcpy(name1, name, sizeof(name1));
   
   if (name[0]!='\0')
     {	
@@ -141,10 +142,10 @@ int nvram_add_lists_x(const char *sid, const char *name, const char *value, int 
 int nvram_del_lists_x(const char *sid, const char *name, int *delMap)
 {
 //    FILE *fp;
-    char names[32], oname[32], nname[32], *oval, *nval;
+    char names[32], oname[32], nname[32], *oval;
     int oi, ni, di;
     
-    strcpy(names, name);
+    strlcpy(names, name, sizeof(names));
     
     if (names[0]!='\0')
     {	
@@ -157,7 +158,6 @@ int nvram_del_lists_x(const char *sid, const char *name, int *delMap)
 		sprintf(nname, "%s%d", names, ni);
 
 		oval = nvram_get(oname);
-		nval = nvram_get(nname);
 
 		if (oval==NULL) break;
 

@@ -46,8 +46,8 @@ fi
 need_asuslighttpd=0
 need_smartsync=0
 if [ "$1" == "downloadmaster" ]; then
-	DM_version1=`/usr/sbin/app_get_field.sh downloadmaster Version 1 |awk '{FS=".";print $1}'`
-	DM_version4=`/usr/sbin/app_get_field.sh downloadmaster Version 1 |awk '{FS=".";print $4}'`
+	DM_version1=`/usr/sbin/app_get_field.sh downloadmaster Version 1 |awk 'BEGIN{FS="."}{print $1}'`
+	DM_version4=`/usr/sbin/app_get_field.sh downloadmaster Version 1 |awk 'BEGIN{FS="."}{print $4}'`
 
 	if [ "$DM_version1" -gt "3" ]; then
 		need_asuslighttpd=1
@@ -55,8 +55,8 @@ if [ "$1" == "downloadmaster" ]; then
 		need_asuslighttpd=1
 	fi
 elif [ "$1" == "mediaserver" ]; then
-	MS_version1=`/usr/sbin/app_get_field.sh mediaserver Version 1 |awk '{FS=".";print $1}'`
-	MS_version4=`/usr/sbin/app_get_field.sh mediaserver Version 1 |awk '{FS=".";print $4}'`
+	MS_version1=`/usr/sbin/app_get_field.sh mediaserver Version 1 |awk 'BEGIN{FS="."}{print $1}'`
+	MS_version4=`/usr/sbin/app_get_field.sh mediaserver Version 1 |awk 'BEGIN{FS="."}{print $4}'`
 
 	if [ "$MS_version1" -gt "1" ]; then
 		need_asuslighttpd=1
@@ -64,8 +64,8 @@ elif [ "$1" == "mediaserver" ]; then
 		need_asuslighttpd=1
 	fi
 elif [ "$1" == "aicloud" ]; then
-	AC_version1=`/usr/sbin/app_get_field.sh aicloud Version 1 |awk '{FS=".";print $1}'`
-	AC_version4=`/usr/sbin/app_get_field.sh aicloud Version 1 |awk '{FS=".";print $4}'`
+	AC_version1=`/usr/sbin/app_get_field.sh aicloud Version 1 |awk 'BEGIN{FS="."}{print $1}'`
+	AC_version4=`/usr/sbin/app_get_field.sh aicloud Version 1 |awk 'BEGIN{FS="."}{print $4}'`
 
 	if [ "$AC_version1" -gt "1" ]; then
 		need_smartsync=1

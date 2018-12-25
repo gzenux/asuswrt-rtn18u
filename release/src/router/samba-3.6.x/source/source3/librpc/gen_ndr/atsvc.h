@@ -98,7 +98,7 @@ struct atsvc_JobAdd {
 
 struct atsvc_JobDel {
 	struct {
-		const char *servername;/* [unique,charset(UTF16)] */
+		const char *servername;/* [charset(UTF16),unique] */
 		uint32_t min_job_id;
 		uint32_t max_job_id;
 	} in;
@@ -112,7 +112,7 @@ struct atsvc_JobDel {
 
 struct atsvc_JobEnum {
 	struct {
-		const char *servername;/* [charset(UTF16),unique] */
+		const char *servername;/* [unique,charset(UTF16)] */
 		uint32_t preferred_max_len;
 		struct atsvc_enum_ctr *ctr;/* [ref] */
 		uint32_t *resume_handle;/* [unique] */

@@ -142,7 +142,10 @@ start_vpnc(void)
 				    "nomppe-56\n"
 				    "require-mppe\n"
 				    "require-mppe-128\n");
-		}
+		} else
+		if (nvram_match(strcat_r(prefix, "pptp_options_x", tmp), ""))
+			fprintf(fp, "require-mppe-40\n"
+				    	"require-mppe-128\n");
 	} else {
 		fprintf(fp, "nomppe nomppc\n");
 
@@ -406,6 +409,11 @@ void vpnc_add_firewall_rule()
 			eval("iptables", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu");
 #ifdef RTCONFIG_BCMARM
 		else	/* mark tcp connection to bypass CTF */
+#ifdef HND_ROUTER
+			if (nvram_match("fc_disable", "0") && nvram_match("fc_pt_war", "1"))
+#else
+			if (nvram_match("ctf_disable", "0"))
+#endif
 			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-p", "tcp", 
 				"-m", "state", "--state", "NEW","-j", "MARK", "--set-mark", "0x01/0x7");
 #endif
@@ -510,14 +518,14 @@ vpnc_ipup_main(int argc, char **argv)
 
 	strcpy(buf, "");
 	if ((value = getenv("DNS1")))
-		sprintf(buf, "%s", value);
+		snprintf(buf, sizeof(buf), "%s", value);
 	if ((value = getenv("DNS2")))
-		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "", value);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s%s", strlen(buf) ? " " : "", value);
 
 	/* empty DNS means they either were not requested or peer refused to send them.
 	 * lift up underlying xdns value instead, keeping "dns" filled */
 	if (strlen(buf) == 0)
-		sprintf(buf, "%s", nvram_safe_get(strcat_r(prefix, "xdns", tmp)));
+		snprintf(buf, sizeof(buf), "%s", nvram_safe_get(strcat_r(prefix, "xdns", tmp)));
 
 	nvram_set(strcat_r(prefix, "dns", tmp), buf);
 
@@ -543,6 +551,11 @@ void vpnc_del_firewall_rule()
 		eval("iptables", "-D", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu");
 #ifdef RTCONFIG_BCMARM
 	else
+#ifdef HND_ROUTER
+		if (nvram_match("fc_disable", "0") && nvram_match("fc_pt_war", "1"))
+#else
+		if (nvram_match("ctf_disable", "0"))
+#endif
 		eval("iptables", "-t", "mangle", "-D", "FORWARD", "-p", "tcp", 
 			"-m", "state", "--state", "NEW","-j", "MARK", "--set-mark", "0x01/0x7");
 #endif

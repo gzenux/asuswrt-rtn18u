@@ -34,7 +34,7 @@
  *
  */
 
-int 
+int
 start_wps_method(void)
 {
 	if(getpid()!=1) {
@@ -42,12 +42,27 @@ start_wps_method(void)
 		return 0;
 	}
 
+#if defined(RTN11P_B1)
+	system("reg s 0xB0000000; reg w 0x64 0x30035555"); // Set WLED GPIO mode.
+#endif
+
+#if defined(RTCONFIG_CONCURRENTREPEATER)
+	#define REWPSC_PID_FILE "/var/run/re_wpsc.pid"
+	if ((sw_mode() == SW_MODE_REPEATER)) {
+	if (check_if_file_exist(REWPSC_PID_FILE)) {
+		return 0;
+	}
+			stop_wps_method();
+			start_re_wpsc();
+	}
+	else
+#endif
 	start_wsc();
 
 	return 0;
 }
 
-int 
+int
 stop_wps_method(void)
 {
 	char prefix[] = "wlXXXXXXXXXX_", word[256], *next, ifnames[128];
@@ -58,6 +73,36 @@ stop_wps_method(void)
 		return 0;
 	}
 
+#if defined(RTN11P_B1)
+	system("reg s 0xB0000000; reg w 0x64 0x30035554"); // Set WLED hardware mode.
+#endif
+
+#if defined(RTCONFIG_CONCURRENTREPEATER)
+	#define REWPSC_PID_FILE "/var/run/re_wpsc.pid"
+	i = 0;
+	strcpy(ifnames, nvram_safe_get("wl_ifnames"));
+
+	char wif[256]={0};
+	char tmp[100]={0};
+	char *aif = NULL;
+
+
+	foreach(wif, nvram_safe_get("wl_ifnames"), next) {
+		SKIP_ABSENT_BAND_AND_INC_UNIT(i);
+		sprintf(prefix, "wl%d_", i);
+		aif = nvram_safe_get(strcat_r(prefix, "vifs", tmp));
+			/* Make sure WPS on all band are turned off */
+			if (nvram_get_int("wlc_express") == 0 || (nvram_get_int("wlc_express") == 1  && i == 0) || (nvram_get_int("wlc_express") == 2  && i == 1)){
+				doSystem("iwpriv %s set WscStop=%d", aif, 1);	// WPS disabled
+				doSystem("ifconfig %s up", aif);
+			}
+		i++;
+	}
+	if(nvram_match("wps_ign_btn", "1")) {
+		nvram_unset("wps_ign_btn");
+		kill_pidfile_s("/var/run/watchdog.pid", SIGUSR2);
+	}
+#else
 	i = 0;
 	strcpy(ifnames, nvram_safe_get("wl_ifnames"));
 	foreach (word, ifnames, next) {
@@ -67,27 +112,40 @@ stop_wps_method(void)
 			++i;
 			continue;
 		}
+		SKIP_ABSENT_BAND_AND_INC_UNIT(i);
 		snprintf(prefix, sizeof(prefix), "wl%d_", i);
 
 		if (!multiband) {
+
+#if defined(RTCONFIG_RALINK_RT3883) || defined(RTCONFIG_RALINK_RT3052)
 //			doSystem("iwpriv %s set WscConfMode=%d", get_wpsifname(), 0);		// WPS disabled
 			doSystem("iwpriv %s set WscStatus=%d", get_wifname(i), 0);	// Not Used
 //			doSystem("iwpriv %s set WscConfMode=%d", get_non_wpsifname(), 7);	// trigger Windows OS to give a popup about WPS PBC AP
+#else
+			doSystem("iwpriv %s set WscStop=1", get_wifname(i));	// Stop WPS Process.
+#endif
 		} else {
 			/* Make sure WPS on all band are turned off */
+#if defined(RTCONFIG_RALINK_RT3883) || defined(RTCONFIG_RALINK_RT3052)
 			doSystem("iwpriv %s set WscConfMode=%d", get_wifname(i), 0);	// WPS disabled
 			doSystem("iwpriv %s set WscStatus=%d", get_wifname(i), 0);	// Not Used
-			doSystem("iwpriv %s set WscConfMode=%d", get_wifname(i), 7);	// trigger Windows OS to give a popup about WPS PBC AP
+#else
+			doSystem("iwpriv %s set WscStop=1", get_wifname(i));	// Stop WPS Process.
+#endif
 		}
-
 		++i;
 	}
-
+	sleep(10);
+	doSystem("iwpriv %s set WscConfMode=%d", get_wifname(0), 7);	// trigger Windows OS to give a popup about WPS PBC AP
+#if defined(RTCONFIG_HAS_5G)
+	doSystem("iwpriv %s set WscConfMode=%d", get_wifname(1), 7);	// trigger Windows OS to give a popup about WPS PBC AP
+#endif
+#endif
 	return 0;
 }
 
 extern int g_isEnrollee[MAX_NR_WL_IF];
-int count[MAX_NR_WL_IF] = { 0, 0 };
+int count[MAX_NR_WL_IF] = { 0, };
 
 int is_wps_stopped(void)
 {
@@ -104,13 +162,14 @@ int is_wps_stopped(void)
 			++i;
 			continue;
 		}
+		SKIP_ABSENT_BAND_AND_INC_UNIT(i);
 		snprintf(prefix, sizeof(prefix), "wl%d_", i);
 		if (!__need_to_start_wps_band(prefix) || nvram_match(strcat_r(prefix, "radio", tmp), "0")) {
 			ret = 0;
 			++i;
 			continue;
 		}
-			
+
 		status = getWscStatus(i);
 		if (status != 1)
 			count[i] = 0;

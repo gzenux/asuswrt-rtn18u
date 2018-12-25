@@ -108,17 +108,31 @@ int separate_tc_fw_from_trx(char* trxpath)
 	unsigned int filelen;
 	unsigned int TcFwSize;	
 	int RetVal = 0;
+	size_t r_counts = 0;
+	size_t TrxHdrBuf_size = sizeof(TrxHdrBuf);
 
 	FILE* fpSrc = NULL;
 	FILE* fpDst = NULL;	
 
 	FpTrx = fopen(trxpath,"rb");
-	if (FpTrx == NULL) goto err;
-	fread(TrxHdrBuf,1,sizeof(TrxHdrBuf),FpTrx);	  
-	fseek( FpTrx, 0, SEEK_END);
-	filelen = ftell( FpTrx );
-	fclose(FpTrx);
+	if (FpTrx == NULL)
+	{
+		goto err;
+	}
 
+	r_counts = fread(TrxHdrBuf,1,TrxHdrBuf_size,FpTrx);
+	if(r_counts == TrxHdrBuf_size)
+	{
+		fseek( FpTrx, 0, SEEK_END);
+		filelen = ftell( FpTrx );
+		fclose(FpTrx);
+	}
+	else
+	{
+		cprintf("Cannot read trx header correctly!\n");
+		fclose(FpTrx);
+		goto err;
+	}
 	pTrxSize = (unsigned int*)&TrxHdrBuf[12];
 	TrxSize = SWAP_LONG(*pTrxSize) + 64;
 	cprintf("trx size %x , file size %x\n",TrxSize,filelen);
@@ -243,12 +257,13 @@ int check_tc_firmware_crc()
 	long filelen, *filelenptr;
 	int cmpHeaderErr = 0;
 	int RetVal = 0;
-	char buf[4096];
+	char buf[4096] = {0};
 	int new_modem_trx_ver;
 	int curr_modem_trx_ver;
-	unsigned char bBuf[4096];
+	unsigned char bBuf[4096] = {0};
 	unsigned char tag[] = {0x3C, 0x23, 0x24, 0x3E};	//<#$>
 	int bBufsize = sizeof(bBuf);
+	size_t r_counts = 0;
 
 	if (update_tc_fw == 0) return 0;
 	
@@ -266,10 +281,16 @@ int check_tc_firmware_crc()
 		goto exit;
 	}
 
-	fread(buf, 1, 0x100, fpSrc);
-
-	cprintf("TC FW VER : %c%c%c , %s , %s\n",buf[0],buf[1],buf[2],TC_DSL_FW_VER,TC_DSL_FW_VER_FROM_MODEM);
-
+	r_counts = fread(buf, 1, 0x100, fpSrc);
+	if(r_counts == 0x100)
+	{
+		cprintf("TC FW VER : %c%c%c , %s , %s\n",buf[0],buf[1],buf[2],TC_DSL_FW_VER,TC_DSL_FW_VER_FROM_MODEM);
+	}
+	else
+	{
+		RetVal = -1;
+		goto exit;
+	}
 
 	//read tcfw.bin and find the driver ras info, date ...
 	fseek(fpSrc, 0xF000, SEEK_SET);
@@ -291,11 +312,26 @@ int check_tc_firmware_crc()
 		else
 			continue;
 	}
-	cprintf("bin date: %s\n", (char*)bBuf+read_idx-14);
-	cprintf("bin ras: %s\n", (char*)bBuf+read_idx+4);
-	
+	if((read_idx-14 >= 0)&&(read_idx-14 < bBufsize))
+	{
+		cprintf("bin date: %s\n", (char*)bBuf+read_idx-14);
+	}
+	else
+	{
+		goto exit;
+	}
+
+	if((read_idx+4 >= 0)&&(read_idx+4 < bBufsize))
+	{
+		cprintf("bin ras: %s\n", (char*)bBuf+read_idx+4);
+	}
+	else
+	{
+		goto exit;
+	}
+
 	fseek(fpSrc, 0x0100, SEEK_SET);
-	
+
 	//check Annex mode
 #ifdef RTCONFIG_DSL_ANNEX_B
 	if(bBuf[read_idx+14] != 'B') {	//ASUS_Annex'B'_..
@@ -320,7 +356,7 @@ int check_tc_firmware_crc()
 		// RAS:ASUS_ANNEXAIJLM_20120423
 		// System:3.6.18.0(BE.C3)3.16.18.0| 2011/10/31   20111031_v012  [Oct 31 2011 12:53:59]
 	FILE *fpCur;
-	char ver_info_buf[256];
+	char ver_info_buf[256] = {0};
 	int line_idx = 3;
 	int ver_idx = 0;
 	fpCur = fopen("/tmp/adsl/tc_ver_info.txt", "r");
@@ -328,7 +364,7 @@ int check_tc_firmware_crc()
 		while(line_idx--)
 			fgets(ver_info_buf, 256, fpCur);
 		fclose(fpCur);
-		while(++ver_idx < 256) {
+		while(++ver_idx < 256 - 12) {
 			if(ver_info_buf[ver_idx] == 0x7C) {
 				*(ver_info_buf + ver_idx + 12) = '\0';
 				cprintf("cur date: %s\n", ver_info_buf+ver_idx+2);
@@ -341,13 +377,14 @@ int check_tc_firmware_crc()
 				continue;
 		}
 	}
-	
+
+	memset(ver_info_buf, 0, sizeof(ver_info_buf));
 	//check RAS
 	fpCur = fopen("/tmp/adsl/tc_ras_ver.txt", "r");
 	if(fpCur != NULL) {
 		fgets(ver_info_buf, 256, fpCur);
 		fclose(fpCur);
-		cprintf("cur ras: %s\n", ver_info_buf);
+		cprintf("cur ras: %255s\n", ver_info_buf);
 #ifdef RTCONFIG_DSL_ANNEX_B
 		if(!strncmp(ver_info_buf, (char*)bBuf+read_idx+4, 20))	//ASUS_AnnexB_20111031
 #else
@@ -446,8 +483,8 @@ void do_upgrade_adsldrv(void)
 	// if adsl fw IP address is different, user should update to a new router fw first
 	if (strncmp(ipaddr,ADSL_FW_IP_PREFIX,sizeof(ADSL_FW_IP_PREFIX)-1)!=0) chk_image_err = 1;
 
-	strcpy(UpdateFwBuf,"cd /tmp; tftp -p -l ras.bin ");
-	strcat(UpdateFwBuf,ipaddr);
+	snprintf(UpdateFwBuf, sizeof(UpdateFwBuf), "cd /tmp; tftp -p -l ras.bin ");
+	snprintf(UpdateFwBuf+strlen(UpdateFwBuf), sizeof(UpdateFwBuf)-strlen(UpdateFwBuf), "%s", ipaddr);
 
 	cprintf("## upgrade tc fw\n");
 	
@@ -458,9 +495,9 @@ void do_upgrade_adsldrv(void)
 		system("adslate waitadsl;adslate quitdrv");
 		system("ifconfig eth2.1:0 194.255.255.1 netmask 255.255.255.0;ifconfig eth2.1:0 up");
 		// wait if up
-		strcpy(PingBuf,"ping ");
-		strcat(PingBuf,ipaddr);
-		strcat(PingBuf," -c 1");
+		snprintf(PingBuf, sizeof(PingBuf), "ping ");
+		snprintf(PingBuf+strlen(PingBuf), sizeof(PingBuf)-strlen(PingBuf), "%s", ipaddr);
+		snprintf(PingBuf+strlen(PingBuf), sizeof(PingBuf)-strlen(PingBuf), " -c 1");
 		for (WaitCnt=0; WaitCnt<3; WaitCnt++)
 		{
 			system(PingBuf);

@@ -1,0 +1,3 @@
+#define PHY_BUS_BCM56840_MIIM_INT_INSTALLED
+extern phy_bus_t phy_bus_bcm56840_miim_int;
+

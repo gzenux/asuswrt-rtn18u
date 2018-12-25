@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
@@ -33,15 +33,32 @@ function initial(){
 		
 }
 
-function restoreRule(){
+function restoreRule(_flag){
 	var alert_string = "<#Setting_factorydefault_hint1#>";
+	switch(_flag) {
+		case "restore" :
+			alert_string = "<#Setting_factorydefault_hint1#>";
+			break;
+		case "initialize" :
+			alert_string = "All current settings and data log for each functions will be erased. Router will restore to initial factory setting.\n";/* untranslated */
+			break;
+	}
 
 	if(lan_ipaddr != '<% nvram_default_get("lan_ipaddr"); %>')
 		alert_string += "<#Setting_factorydefault_iphint#>\n\n".replace("192.168.1.1", '<% nvram_default_get("lan_ipaddr"); %>');
 
 	alert_string += "<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string)){
-		document.form.action1.blur();
+		switch(_flag) {
+			case "restore" :
+				document.form.action1.blur();
+				document.restoreform.action_mode.value = "Restore";
+				break;
+			case "initialize" :
+				document.form.action_init.blur();
+				document.restoreform.action_mode.value = "restore_erase";
+				break;
+		}
 		showtext(document.getElementById("loading_block2"), "<#SAVE_restart_desc#>");
 		document.getElementById('loading_block3').style.display = "none";
 		showLoading();
@@ -51,7 +68,7 @@ function restoreRule(){
 		return false;
 }
 
-function saveSetting(){
+function saveSetting(mode){
 	var flag = 0;
 	if(ddns_enable == 1 && ddns_server != "WWW.ASUS.COM"){
 		flag = 1;
@@ -59,7 +76,8 @@ function saveSetting(){
 	else{	//ASUS DDNS
 		flag = document.getElementById("transfer_ddns").checked ? 1 : 0;
 	}
-	
+
+	//location.href='Settings_'+productid+'_' + mode + '.CFG?path=' + flag + '&mode=' + mode;
 	location.href='Settings_'+productid+'.CFG?path=' + flag;
 }
 
@@ -99,18 +117,18 @@ function detect_httpd(){
     						document.getElementById('loading_block1').style.display = "none";
     						document.getElementById('loading_block2').style.display = "none";
     						document.getElementById('loading_block3').style.display = "";
-						if(findasus_support){
+						/*if(findasus_support){
     							document.getElementById('loading_block3').innerHTML = "<div><#OP_AP_hint#></div>";
-						}else{
+						}else{*/
 							document.getElementById('loading_block3').innerHTML = "<div><#Main_alert_proceeding_desc3#>.<#LANConfig_ChangedLANIP#></div>";
-						}
+						//}
 							
     				}
     		},
 
     		success: function(){
     				setTimeout("hideLoadingBar();",1000);
-      			location.href = "index.asp";
+      			location.href = '<% abs_index_page(); %>';
   			}
   		});
 }
@@ -194,25 +212,28 @@ function detect_httpd(){
 	            								<th width="25%" align="right">
 	            									<a class="hintstyle"  href="javascript:void(0);" onclick="openHint(19,1)"><#Setting_factorydefault_itemname#></a>
 	            								</th>
-	            								<td>
-									            	<input class="button_gen" onclick="restoreRule();" type="button" value="<#CTL_restore#>" name="action1" />
-	              									<input type="hidden" name="wl_gmode_protection_x" value="<% nvram_get("wl_gmode_protection_x"); %>" />
+	            								<td colspan = "4">
+													<input class="button_gen" onclick="restoreRule('restore');" type="button" value="<#CTL_restore#>" name="action1" />
+													<input class="button_gen" onclick="restoreRule('initialize');" type="button" value="<#CTL_initialize#>" name="action_init" />
+													<input type="hidden" name="wl_gmode_protection_x" value="<% nvram_get("wl_gmode_protection_x"); %>" />
 	              								</td>
 	          								</tr>
 											<tr>
-												<th align="right">
+												<th align="right" style="border-bottom:none">
 													<a class="hintstyle"  href="javascript:void(0);" onclick="openHint(19,2)"><#Setting_save_itemname#></a>
 												</th>
-												<td>
-													<input class="button_gen" onclick="saveSetting();" type="button" value="<#CTL_onlysave#>" name="action2" />
-													<span id="transfer_ddns_field" style="display:none"><input id="transfer_ddns" type="checkbox">Transfer ASUS DDNS name</span>
+												<td><input class="button_gen" onclick="saveSetting('Router');" type="button" value="<#CTL_onlysave#>" name="action2" /><span id="transfer_ddns_field" style="display:none"><input id="transfer_ddns" type="checkbox"><#DDNS_transfer#></span>
 												</td>
+											</tr>
+											<tr id="transfer_ddns_field" style="display:none">
+												<th align="right" style="border-top:none;height:10px;padding:0px">
+												<td colspan = "4" style="border:none;padding:0px;padding-left:14px"><span><input id="transfer_ddns" type="checkbox">Transfer ASUS DDNS name</span></td>
 											</tr>
 											<tr>
 												<th align="right">
 													<a class="hintstyle" href="javascript:void(0);" onclick="openHint(19,3)"><#Setting_upload_itemname#></a>
 												</th>
-												<td>
+												<td colspan = "4">
 													<div style="margin-left:-10px;">
 														<table>
 															<tr>

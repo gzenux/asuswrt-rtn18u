@@ -5,14 +5,15 @@
 <title>AiCloud Share Link</title>
 <script type="text/javascript" src="/smb/js/tools.js"></script>
 <script type="text/javascript">
-$("document").ready(function() {	
-	var orgfile = window.location.href;
-	var media_hostName = window.location.host;
-	if(media_hostName.indexOf(":")!=-1)
-		media_hostName = media_hostName.substring(0, media_hostName.indexOf(":"));
-	var audiofile = "http://" + media_hostName + ":" + $("div#http_port").attr("content") + "/" + orgfile.substring( orgfile.indexOf("AICLOUD"), orgfile.length );
+$("document").ready(function() {
 	
-	var video = "<source src='" + audiofile;	            
+	var host = $("div#header_info").attr("host");
+	var port = $("div#header_info").attr("port");
+	var path = $("div#header_info").attr("path");
+		
+	var thefile = "http://" + host + ":" + port + path;
+	
+	var video = "<source src='" + thefile;	            
 	video += "' type='video/mp4' />";
 		
 	$(video).appendTo($("video#videoPlayer"));

@@ -560,16 +560,16 @@ configuration. Please go to DHCP setting.</div>
 									<table id="tbVLANRuleList" width="100%" border="1" align="center" cellpadding="4" cellspacing="0"  class="FormTable_table">
 										<thead>
 										<tr>
-											<td id="tdVLANRuleList" colspan="8">Configuration</td>
+											<td id="tdVLANRuleList" colspan="8"><#Configuration#></td>
 										</tr>
 										</thead>
 										<tr>
-											<th>Enable</th>
+											<th><#WLANConfig11b_WirelessCtrl_button1name#></th>
 											<th>VLAN</th>
 											<th>LAN</th>
 											<th id="thWireless1">Wireless1</th>
 											<th id="thWireless2">Wireless2</th>
-											<th>Subnet</th>
+											<th><#Subnet#></th>
 											<th>Intranet only</th>
 											<!--th>Member isolated</th-->
 											<th><#list_add_delete#></th>

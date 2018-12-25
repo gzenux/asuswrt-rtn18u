@@ -427,6 +427,8 @@ set_private_cmd(int		skfd,		/* Socket */
       wrq.u.data.length = 0L;
     }
 
+  if (strcmp(cmdname,"get_site_survey")==0) wrq.u.data.length=8192;
+  else if (strcmp(cmdname,"asuscmd")==0) wrq.u.data.length=32;
   strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 
   /* Those two tests are important. They define how the driver

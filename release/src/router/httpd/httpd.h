@@ -53,6 +53,21 @@ struct mime_handler {
 
 extern struct mime_handler mime_handlers[];
 
+struct useful_redirect_list {
+	char *pattern;
+	char *mime_type;
+};
+
+extern struct useful_redirect_list useful_redirect_lists[];
+
+#ifdef RTCONFIG_AMAS
+struct AiMesh_whitelist {
+	char *pattern;
+	char *mime_type;
+};
+extern struct AiMesh_whitelist AiMesh_whitelists[];
+#endif
+
 #define MIME_EXCEPTION_NOAUTH_ALL 	1<<0
 #define MIME_EXCEPTION_NOAUTH_FIRST	1<<1
 #define MIME_EXCEPTION_NORESETTIME	1<<2
@@ -75,13 +90,25 @@ extern struct mime_handler mime_handlers[];
 #define ISLOGOUT	8
 #define NOLOGIN		9
 
+#define LOCKTIME 60*5
+
 /* image path for app */
-#define IMAGE_MODEL_PRODUCT	"/images/Model_product.png"
-#define IMAGE_WANUNPLUG		"/images/WANunplug.png"
-#define IMAGE_ROUTER_MODE	"/images/New_ui/rt.jpg"
-#define IMAGE_REPEATER_MODE	"/images/New_ui/re.jpg"
-#define IMAGE_AP_MODE		"/images/New_ui/ap.jpg"
-#define IMAGE_MEDIA_BRIDGE_MODE	"/images/New_ui/mb.jpg"
+#define IMAGE_MODEL_PRODUCT	"/Model_product.png"
+#define IMAGE_WANUNPLUG		"/WANunplug.png"
+#define IMAGE_ROUTER_MODE	                              "/rt.jpg"
+#define IMAGE_REPEATER_MODE	"/re.jpg"
+#define IMAGE_AP_MODE		"/ap.jpg"
+#define IMAGE_MEDIA_BRIDGE_MODE	"/mb.jpg"
+
+//Add Login Try
+#define NOLOGINTRY   0
+#define LOGINTRY   1
+
+#if defined(RTCONFIG_IFTTT) || defined(RTCONFIG_ALEXA)
+#define IFTTTUSERAGENT  "asusrouter-Windows-IFTTT-1.0"
+#define GETIFTTTCGI     "get_IFTTTPincode.cgi"
+#define GETIFTTTOKEN "get_IFTTTtoken.cgi"
+#endif
 
 /* Exception MIME handler */
 struct except_mime_handler {
@@ -99,13 +126,6 @@ struct mime_referer {
 
 extern struct mime_referer mime_referers[];
 
-struct useful_redirect_list {
-        char *pattern;
-        char *mime_type;
-};
-
-extern struct useful_redirect_list useful_redirect_lists[];
-
 typedef struct asus_token_table asus_token_t;
 struct asus_token_table{
 	char useragent[1024];
@@ -115,9 +135,6 @@ struct asus_token_table{
 	char host[64];
 	asus_token_t *next;
 };
-
-asus_token_t *head;
-asus_token_t *curr;
 
 #define INC_ITEM        128
 #define REALLOC_VECTOR(p, len, size, item_size) {                               \
@@ -219,6 +236,10 @@ struct ej_handler {
 };
 extern struct ej_handler ej_handlers[];
 
+#define MAX_LOGIN_BLOCK_TIME	300
+#define LOCK_LOGIN_LAN 	0x01
+#define LOCK_LOGIN_WAN 	0x02
+
 #ifdef vxworks
 #define fopen(path, mode)	tar_fopen((path), (mode))
 #define fclose(fp)		tar_fclose((fp))
@@ -259,9 +280,12 @@ extern char *gethost(void);
 extern void http_logout(unsigned int ip, char *cookies, int fromapp_flag);
 extern int is_auth(void);
 extern int is_firsttime(void);
-extern char *generate_token(void);
+extern char *generate_token(char *token_buf, size_t length);
 extern int match( const char* pattern, const char* string );
 extern int match_one( const char* pattern, int patternlen, const char* string );
+extern void send_page( int status, char* title, char* extra_header, char* text , int fromapp);
+extern void send_content_page( int status, char* title, char* extra_header, char* text , int fromapp);
+extern char *get_referrer(char *referer, char *auth_referer, size_t length);
 
 /* web.c */
 extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
@@ -275,14 +299,17 @@ extern char *trim_r(char *str);
 extern int is_wlif_up(const char *ifname);
 extern void add_asus_token(char *token);
 extern int check_token_timeout_in_list(void);
-extern int get_token_list_length(void);
 extern asus_token_t* search_timeout_in_list(asus_token_t **prev, int fromapp_flag);
-extern asus_token_t* add_token_to_list(char *token, int add_to_end);
 extern asus_token_t* create_list(char *token);
+extern int delete_logout_from_list(char *cookies);
 extern void set_referer_host(void);
 extern int check_xss_blacklist(char* para, int check_www);
-extern char *get_referrer(char *referer);
+extern int check_cmd_whitelist(char* para);
 extern int useful_redirect_page(char *next_page);
+extern char* reverse_str( char *str );
+#ifdef RTCONFIG_AMAS
+extern int check_AiMesh_whitelist(char *page);
+#endif
 
 /* web-*.c */
 extern int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit);
@@ -294,19 +321,59 @@ extern int ej_wps_info(int eid, webs_t wp, int argc, char_t **argv);
 extern char referer_host[64];
 extern char host_name[64];
 extern char user_agent[1024];
+extern char gen_token[32];
+extern unsigned int login_ip_tmp;
 extern int check_user_agent(char* user_agent);
-#ifdef RTCONFIG_IFTTT
+#if defined(RTCONFIG_IFTTT) || defined(RTCONFIG_ALEXA)
 extern void add_ifttt_flag(void);
 #endif
 
 #ifdef RTCONFIG_HTTPS
-extern char *pwenc(const char *input);
+extern int gen_ddns_hostname(char *ddns_hostname);
 extern int check_model_name(void);
+extern char *pwenc(char *input, char *output);
 #endif
 
+#if defined(RTCONFIG_IFTTT) || defined(RTCONFIG_ALEXA)
+extern char ifttt_stoken[128];
+extern char ifttt_query_string[2048];
+extern time_t ifttt_timestamp;
+extern char *gen_IFTTTPincode(char *pincode);
+extern int gen_IFTTTtoken(char* stoken, char* token);
+extern char* gen_IFTTT_inviteCode(char* inviteCode);
+extern int check_ifttt_token(char* asus_token);
+extern void ifttt_log(char* url, char* file);
+extern int alexa_block_internet(int block);
+#endif
+
+extern unsigned int MAX_login;
+extern int cur_login_ip_type;
+extern time_t login_timestamp_tmp; // the timestamp of the current session.
+extern time_t last_login_timestamp; // the timestamp of the current session.
+extern time_t login_timestamp_tmp_wan; // the timestamp of the current session.
+extern time_t last_login_timestamp_wan; // the timestamp of the current session.
+extern unsigned int login_try;
+extern unsigned int login_try_wan;
+extern time_t auth_check_dt;
+extern int lock_flag;
+extern int add_try;
+extern char auth_passwd[AUTH_MAX];
 extern char* ipisdomain(char* hostname, char* str);
+#ifdef RTCONFIG_AMAS
+extern char* iscap(char* str);
+#endif
 extern int referer_check(char* referer, int fromapp_flag);
+extern int auth_check( char* dirname, char* authorization, char* url, char* file, char* cookies, int fromapp_flag);
 extern int check_noauth_referrer(char* referer, int fromapp_flag);
 extern char current_page_name[128];
+extern int gen_guestnetwork_pass(char *key, size_t size);
+extern int alexa_pause_internet(int pause);
+extern int httpd_sw_hw_check(void);
+extern int ej_get_ui_support(int eid, webs_t wp, int argc, char **argv);
+extern void page_default_redirect(int fromapp_flag, char* url);
+#ifdef RTCONFIG_LANTIQ
+extern int wave_app_flag;
+extern int wave_handle_app_flag(char *name, int wave_app_flag);
+#endif
 
 #endif /* _httpd_h_ */

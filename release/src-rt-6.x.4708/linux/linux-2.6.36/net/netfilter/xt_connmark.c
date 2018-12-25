@@ -58,8 +58,7 @@ connmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		break;
 	case XT_CONNMARK_SET_RETURN:
 		// Set connmark and mark, apply mask to mark, do XT_RETURN	- zzz
-		newmark = ct->mark = info->ctmark;
-		newmark &= info->ctmask;
+		newmark = ct->mark = (ct->mark & ~info->ctmask) | (info->ctmark & info->ctmask);
 		if (newmark != skb->mark) {
 			skb->mark = newmark;
 		}

@@ -37,13 +37,13 @@
 struct lsa_String {
 	uint16_t length;/* [value(2*strlen_m(string))] */
 	uint16_t size;/* [value(2*strlen_m(string))] */
-	const char *string;/* [unique,length_is(length/2),size_is(size/2),charset(UTF16)] */
+	const char *string;/* [charset(UTF16),unique,length_is(length/2),size_is(size/2)] */
 }/* [public] */;
 
 struct lsa_StringLarge {
 	uint16_t length;/* [value(2*strlen_m(string))] */
 	uint16_t size;/* [value(2*strlen_m_term(string))] */
-	const char *string;/* [charset(UTF16),unique,size_is(size/2),length_is(length/2)] */
+	const char *string;/* [length_is(length/2),size_is(size/2),charset(UTF16),unique] */
 }/* [public] */;
 
 struct lsa_Strings {
@@ -54,19 +54,19 @@ struct lsa_Strings {
 struct lsa_AsciiString {
 	uint16_t length;/* [value(strlen_m(string))] */
 	uint16_t size;/* [value(strlen_m(string))] */
-	const char *string;/* [charset(DOS),unique,size_is(size),length_is(length)] */
+	const char *string;/* [length_is(length),size_is(size),unique,charset(DOS)] */
 }/* [public] */;
 
 struct lsa_AsciiStringLarge {
 	uint16_t length;/* [value(strlen_m(string))] */
 	uint16_t size;/* [value(strlen_m_term(string))] */
-	const char *string;/* [charset(DOS),length_is(length),unique,size_is(size)] */
+	const char *string;/* [charset(DOS),unique,length_is(length),size_is(size)] */
 }/* [public] */;
 
 struct lsa_BinaryString {
 	uint16_t length;
 	uint16_t size;
-	uint16_t *array;/* [length_is(length/2),unique,size_is(size/2)] */
+	uint16_t *array;/* [size_is(size/2),length_is(length/2),unique] */
 }/* [public] */;
 
 struct lsa_LUID {
@@ -81,7 +81,7 @@ struct lsa_PrivEntry {
 
 struct lsa_PrivArray {
 	uint32_t count;
-	struct lsa_PrivEntry *privs;/* [unique,size_is(count)] */
+	struct lsa_PrivEntry *privs;/* [size_is(count),unique] */
 };
 
 struct lsa_QosInfo {
@@ -316,12 +316,12 @@ struct lsa_SidPtr {
 
 struct lsa_SidArray {
 	uint32_t num_sids;/* [range(0,20480)] */
-	struct lsa_SidPtr *sids;/* [size_is(num_sids),unique] */
+	struct lsa_SidPtr *sids;/* [unique,size_is(num_sids)] */
 }/* [public] */;
 
 struct lsa_DomainList {
 	uint32_t count;
-	struct lsa_DomainInfo *domains;/* [size_is(count),unique] */
+	struct lsa_DomainInfo *domains;/* [unique,size_is(count)] */
 };
 
 enum lsa_SidType
@@ -366,7 +366,7 @@ struct lsa_TransSidArray {
 
 struct lsa_RefDomainList {
 	uint32_t count;/* [range(0,1000)] */
-	struct lsa_DomainInfo *domains;/* [unique,size_is(count)] */
+	struct lsa_DomainInfo *domains;/* [size_is(count),unique] */
 	uint32_t max_size;
 }/* [public] */;
 
@@ -401,7 +401,7 @@ struct lsa_TranslatedName {
 
 struct lsa_TransNameArray {
 	uint32_t count;/* [range(0,20480)] */
-	struct lsa_TranslatedName *names;/* [unique,size_is(count)] */
+	struct lsa_TranslatedName *names;/* [size_is(count),unique] */
 }/* [public] */;
 
 struct lsa_LUIDAttribute {
@@ -418,12 +418,12 @@ struct lsa_PrivilegeSet {
 struct lsa_DATA_BUF {
 	uint32_t length;
 	uint32_t size;
-	uint8_t *data;/* [size_is(size),unique,length_is(length)] */
+	uint8_t *data;/* [unique,size_is(size),length_is(length)] */
 }/* [flag(LIBNDR_PRINT_ARRAY_HEX)] */;
 
 struct lsa_DATA_BUF2 {
 	uint32_t size;/* [range(0,65536)] */
-	uint8_t *data;/* [unique,size_is(size)] */
+	uint8_t *data;/* [size_is(size),unique] */
 }/* [flag(LIBNDR_PRINT_ARRAY_HEX)] */;
 
 enum lsa_TrustDomInfoEnum
@@ -607,7 +607,7 @@ struct lsa_DATA_BUF_PTR {
 };
 
 struct lsa_RightAttribute {
-	const char *name;/* [charset(UTF16),unique] */
+	const char *name;/* [unique,charset(UTF16)] */
 };
 
 struct lsa_RightSet {
@@ -617,7 +617,7 @@ struct lsa_RightSet {
 
 struct lsa_DomainListEx {
 	uint32_t count;
-	struct lsa_TrustDomainInfoInfoEx *domains;/* [unique,size_is(count)] */
+	struct lsa_TrustDomainInfoInfoEx *domains;/* [size_is(count),unique] */
 };
 
 /* bitmap lsa_krbAuthenticationOptions */
@@ -664,7 +664,7 @@ struct lsa_TranslatedName2 {
 
 struct lsa_TransNameArray2 {
 	uint32_t count;/* [range(0,1000)] */
-	struct lsa_TranslatedName2 *names;/* [unique,size_is(count)] */
+	struct lsa_TranslatedName2 *names;/* [size_is(count),unique] */
 };
 
 enum lsa_LookupOptions
@@ -702,7 +702,7 @@ struct lsa_TranslatedSid2 {
 
 struct lsa_TransSidArray2 {
 	uint32_t count;/* [range(0,1000)] */
-	struct lsa_TranslatedSid2 *sids;/* [size_is(count),unique] */
+	struct lsa_TranslatedSid2 *sids;/* [unique,size_is(count)] */
 };
 
 struct lsa_TranslatedSid3 {
@@ -761,7 +761,7 @@ struct lsa_ForestTrustRecord {
 
 struct lsa_ForestTrustInformation {
 	uint32_t count;/* [range(0,4000)] */
-	struct lsa_ForestTrustRecord **entries;/* [size_is(count),unique] */
+	struct lsa_ForestTrustRecord **entries;/* [unique,size_is(count)] */
 }/* [public] */;
 
 enum lsa_ForestTrustCollisionRecordType
@@ -1170,7 +1170,7 @@ struct lsa_QueryTrustedDomainInfo {
 	} in;
 
 	struct {
-		union lsa_TrustedDomainInfo **info;/* [switch_is(level),ref] */
+		union lsa_TrustedDomainInfo **info;/* [ref,switch_is(level)] */
 		NTSTATUS result;
 	} out;
 
@@ -1181,7 +1181,7 @@ struct lsa_SetInformationTrustedDomain {
 	struct {
 		struct policy_handle *trustdom_handle;/* [ref] */
 		enum lsa_TrustDomInfoEnum level;
-		union lsa_TrustedDomainInfo *info;/* [ref,switch_is(level)] */
+		union lsa_TrustedDomainInfo *info;/* [switch_is(level),ref] */
 	} in;
 
 	struct {
@@ -1363,7 +1363,7 @@ struct lsa_QueryTrustedDomainInfoBySid {
 	} in;
 
 	struct {
-		union lsa_TrustedDomainInfo **info;/* [ref,switch_is(level)] */
+		union lsa_TrustedDomainInfo **info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 
@@ -1444,7 +1444,7 @@ struct lsa_OpenPolicy2 {
 
 struct lsa_GetUserName {
 	struct {
-		const char *system_name;/* [charset(UTF16),unique] */
+		const char *system_name;/* [unique,charset(UTF16)] */
 		struct lsa_String **account_name;/* [ref] */
 		struct lsa_String **authority_name;/* [unique] */
 	} in;
@@ -1465,7 +1465,7 @@ struct lsa_QueryInfoPolicy2 {
 	} in;
 
 	struct {
-		union lsa_PolicyInformation **info;/* [ref,switch_is(level)] */
+		union lsa_PolicyInformation **info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 
@@ -1568,7 +1568,7 @@ struct lsa_QueryDomainInformationPolicy {
 	} in;
 
 	struct {
-		union lsa_DomainInformationPolicy **info;/* [ref,switch_is(level)] */
+		union lsa_DomainInformationPolicy **info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 

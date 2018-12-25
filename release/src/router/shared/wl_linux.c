@@ -73,9 +73,13 @@ wl_ioctl(char *name, int cmd, void *buf, int len)
 				snprintf(buffer, sizeof(buffer), "%s: WLC_%s_VAR(%s)", name,
 				         cmd == WLC_GET_VAR ? "GET" : "SET", (char *)buf);
 			} else {
-				snprintf(buffer, sizeof(buffer), "%s: cmd=%d", name, cmd);
+				snprintf(buffer, sizeof(buffer), "%s: cmd=%d (errno %d)",
+					name, cmd, errno);
 			}
 			perror(buffer);
+
+			close(s);
+			return -errno;
 		}
 	/* cleanup */
 	close(s);

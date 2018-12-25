@@ -24,6 +24,12 @@
 /* Define to 1 if you have the <asm/unistd.h> header file. */
 #define HAVE_ASM_UNISTD_H 1
 
+/* Have avahi */
+/* #undef HAVE_AVAHI */
+
+/* Define to 1 if you have the <avahi-common/thread-watch.h> header file. */
+/* #undef HAVE_AVAHI_COMMON_THREAD_WATCH_H */
+
 /* Define to 1 if you have the <avcodec.h> header file. */
 /* #undef HAVE_AVCODEC_H */
 
@@ -106,7 +112,11 @@
 
 /* Define to 1 if you have the `getifaddrs' function. */
 #ifndef MS_IPK
+#if defined RPAC68U
+/* #undef HAVE_GETIFADDRS */
+#else
 #define HAVE_GETIFADDRS 1
+#endif
 #endif
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
@@ -409,7 +419,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.1.4"
+#define PACKAGE_VERSION "1.2.1"
 
 /* Define to 5 if you want to enable NETGEAR ReadyNAS PnP-X support */
 /* #undef PNPX */

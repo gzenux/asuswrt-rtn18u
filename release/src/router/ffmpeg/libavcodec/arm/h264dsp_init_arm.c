@@ -86,6 +86,8 @@ void ff_h264_idct_add8_neon(uint8_t **dest, const int *block_offset,
                             DCTELEM *block, int stride,
                             const uint8_t nnzc[6*8]);
 
+void ff_h264dsp_init_neon(H264DSPContext *c);
+
 #if HAVE_NEON
 static void ff_h264dsp_init_neon(H264DSPContext *c)
 {

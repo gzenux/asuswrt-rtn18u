@@ -27,7 +27,14 @@ all: .conf apps
 
 apps: .conf
 	mkdir -p $(srcdir)/bin
-	$(MAKE) -C $(srcdir) all
+	$(MAKE) -C $(srcdir) include/proto.h && $(MAKE) -j 8 -C $(srcdir) all
+
+ifeq ($(HND_ROUTER),y)
+LIB_RESOLV="yes"
+else
+DEF_FCNTL="-Dfcntl=fcntl64"
+LIB_RESOLV="no"
+endif
 
 .conf:
 	cd $(srcdir) && \
@@ -43,7 +50,7 @@ apps: .conf
 	export samba_cv_HAVE_IFACE_IFCONF=yes ; \
 	export samba_cv_USE_SETRESUID=yes ; \
 	export samba_cv_have_longlong=yes ; \
-	ac_cv_lib_resolv___dn_expand=no \
+	ac_cv_lib_resolv___dn_expand=$(LIB_RESOLV) \
 	ac_cv_func_prctl=no \
 	samba_cv_HAVE_INO64_T=yes \
 	samba_cv_HAVE_OFF64_T=yes \
@@ -77,7 +84,7 @@ apps: .conf
 	samba_cv_SIZEOF_DEV_T=yes \
 	samba_cv_SIZEOF_INO_T=yes \
 	samba_cv_SIZEOF_TIME_T=no \
-	CPPFLAGS="-DNDEBUG -DSHMEM_SIZE=524288 -Dfcntl=fcntl64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_LARGE_FILES=1" \
+	CPPFLAGS="-DNDEBUG -DSHMEM_SIZE=524288 $(DEF_FCNTL) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_LARGE_FILES=1" \
 	CFLAGS="$(SMBCFLAGS)" LDFLAGS="$(SMBLDFLAGS)" CC=$(CC) LD=$(LD) AR=$(AR) RANLIB=$(RANLIB) \
 	$(CONFIGURE) \
 		--prefix=/usr \
@@ -136,7 +143,11 @@ install: all
 	@install -D $(srcdir)/bin/smbpasswd $(INSTALLDIR)/usr/bin/smbpasswd
 	#@install -D $(srcdir)/bin/libsmbclient.so $(INSTALLDIR)/usr/lib/libsmbclient.so
 	#@install -D $(srcdir)/bin/libbigballofmud.so.0 $(INSTALLDIR)/usr/lib/libbigballofmud.so.0
+ifeq ($(HND_ROUTER),y)
+	@install -D $(TOOLCHAIN)/arm-buildroot-linux-gnueabi/sysroot/lib/libresolv.so.2 $(INSTALLDIR)/usr/lib/libresolv.so.2
+else
 	@install -D $(shell dirname $(shell which $(CXX)))/../lib/libresolv.so.0 $(INSTALLDIR)/usr/lib/libresolv.so.0
+endif
 ###############################Charles Modify##########	
 
 	$(STRIP) -s $(INSTALLDIR)/usr/sbin/smbd

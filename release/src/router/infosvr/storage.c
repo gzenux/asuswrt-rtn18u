@@ -29,7 +29,7 @@ int getStorageStatus(STORAGE_INFO_T *st)
 	st->AppHttpPort = __cpu_to_le16(nvram_get_int("dm_http_port"));
 
 	/*
-	if(nvram_get_int("sw_mode")!=SW_MODE_ROUTER) {
+	if(!is_router_mode()) {
 		return 0;
 	}
 	*/
@@ -53,6 +53,13 @@ int getStorageStatus(STORAGE_INFO_T *st)
 
 	st->ExtendCap |= __cpu_to_le16(EXTEND_CAP_SWCTRL);
 
+#ifdef RTCONFIG_AMAS
+	st->ExtendCap |= __cpu_to_le16(EXTEND_CAP_AMAS);
+#ifdef RTCONFIG_MASTER_DET
+	if (nvram_get_int("cfg_master"))
+		st->ExtendCap |= __cpu_to_le16(EXTEND_CAP_MASTER);
+#endif
+#endif
 	if(nvram_get_int("enable_webdav")) 	
 		st->u.wt.EnableWebDav = 1;
 	else

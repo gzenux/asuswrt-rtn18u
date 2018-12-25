@@ -28,12 +28,12 @@
 	background-color:#000;
 	position:absolute;
 	margin-top:1px;
-	*margin-top:22px;	
+	*margin-top:22px;
 	margin-left:-4px;
 	*margin-left:-263px;
 	width:220px;
 	*width:192px;
-	text-align:left;	
+	text-align:left;
 	height:auto;
 	overflow-y:auto;
 	z-index:200;
@@ -57,11 +57,13 @@
 	color:#EAE9E9;
 	font-size:12px;
 	font-family:Arial, Helvetica, sans-serif;
-	text-decoration:none;	
+	text-decoration:none;
 }
+
 #ClientList_Block_PC strong {
 	padding-left: 3px;
 }
+
 #ClientList_Block_PC div:hover, #ClientList_Block a:hover{
 	background-color:#3366FF;
 	color:#FFFFFF;
@@ -74,7 +76,7 @@
 	background-repeat: no-repeat;
 	border-radius: 3px;
 	position:absolute;
-	top:116px;
+	top:126px;
 	z-index:1;
 	width:760px; 
 	height:800px; 
@@ -82,8 +84,7 @@
 
 .Background_Management{
 	border-radius: 3px;
-	position:absolute;
-	top:116px;
+	position:relative;
 	z-index:1;
 	width:760px;
 	background: #4e5659; /* Old browsers */
@@ -119,7 +120,8 @@ select::-ms-expand { display: none; }
 	border-left: 0px;
 	background-color: transparent;
 	padding:7px 4px 6px 0px;
-}	
+}
+	
 #see_all{
 	color:#6D624C;
 	margin-left:20px;
@@ -186,7 +188,7 @@ select::-ms-expand { display: none; }
 .wtfast_input_option{
 	height:21px;
 	background-color:#000000;
-	border: 1px solid #EAE9E9;	
+	border: 1px solid #EAE9E9;
 	color:#EAE9E9;
 	font-family: calibri;
 	font-size:14px;
@@ -199,9 +201,17 @@ select::-ms-expand { display: none; }
  	width:25px;
  	cursor:pointer;
 }
+
 .wtfast_remove_btn:hover, .wtfast_remove_btn:active{
 	border:0;
  	cursor:pointer;
+}
+
+.comment_div{
+	color:#FFCC00;
+	font-family:calibri;
+	font-size:11px;
+	margin-right: 20px;
 }
 </style>
 <script>
@@ -226,14 +236,14 @@ for(var i = 1; i < wtfast_rulelist_row.length; i ++) {
 
 var saved_game_list = decodeURIComponent('<% nvram_char_to_ascii("", "wtf_game_list"); %>');
 var saved_server_list = decodeURIComponent('<% nvram_char_to_ascii("", "wtf_server_list"); %>');
-var wtf_enable_games = "";
+
 //	[ToDo] This JSON should be stored in the router or get form wtfd.
 var wtfast_status = [<% wtfast_status();%>][0];
 
 if(saved_game_list != ""){
 	var saved_game_row = saved_game_list.split('<');
 		for(var i = 1; i < saved_game_row.length; i++) {
-			var saved_game_col = saved_game_row[i].split('>');		
+			var saved_game_col = saved_game_row[i].split('>');
 			wtfast_status.Game_List.push({"name": saved_game_col[0], "id":saved_game_col[1]});
 		}
 }
@@ -273,8 +283,6 @@ function initial(){
 	  rv = -1;
 	}
 	show_menu();
-	document.getElementById("_GameBoost").innerHTML = '<table><tbody><tr><td><div class="_GameBoost"></div></td><td><div style="width:120px;"><#Game_Boost#></div></td></tr></tbody></table>';
-	document.getElementById("_GameBoost").className = "menu_clicked";
 
 	var GB_login_str = "<#Game_Boost_login#>";
 	GB_login_str = GB_login_str.replace(/WTFast/gi,"<span><img src=\"/images/wtfast_logo.png\" style=\"margin-bottom:-5px; margin-left:10px;\"></span>");
@@ -286,6 +294,14 @@ function initial(){
 	if( sVer!= -1 || rv == 11)
   		document.getElementById("pull_arrow").style.marginLeft = "-4px";
 
+  	if(based_modelid === "GT-AC5300" || based_modelid == "GT-AC9600"){ 
+  		$("#goBackBtn").hide();
+  		$("#goBackBtn_M").hide();
+  		document.getElementById("WTFast_login_div").style.top = "150px";
+  	}
+
+	var Newstr = document.getElementById("benefit3").innerHTML.replace(/, Console game/, "");
+	document.getElementById("benefit3").innerHTML = Newstr;
 }
 
 function _create_server_list(name, index, showauto){
@@ -340,6 +356,7 @@ function show_info(){
 		document.getElementById("ended_date").innerHTML = "<#GB_ended_date_type0#>";
 		document.getElementById("days_left").style.display = "none";
 		document.getElementById("days_title").style.display = "none";
+		document.getElementById("trail_desc").style.display = "none";
 	}
 	else{
 		if(wtfast_status.Account_Type == "Basic")
@@ -352,6 +369,7 @@ function show_info(){
 		document.getElementById("days_left").style.display = "";
 		document.getElementById("days_title").style.display = "";
 		document.getElementById("days_left").innerHTML = wtfast_status.Days_Left + "&nbsp" + "Days";
+		document.getElementById("trail_desc").style.display = "";
 	}
 	document.getElementById("max_computers").innerHTML = wtfast_status.Max_Computers;
 }
@@ -366,7 +384,6 @@ function applyRule(){
 	}
 
 	document.form.wtf_rulelist.value = wtfast_rulelist;
-	document.form.wtf_enable_game.value = wtf_enable_games;
 	showLoading();
 	document.form.submit();
 }
@@ -394,12 +411,12 @@ function check_macaddr(obj,flag){
 	}
 }
 
-function pullLANList(obj){	
+function pullLANList(obj){
 	var element = document.getElementById('ClientList_Block_PC');
 	var isMenuopen = element.offsetWidth > 0 || element.offsetHeight > 0;
-	if(isMenuopen == 0){		
+	if(isMenuopen == 0){
 		obj.src = "images/arrow-top.gif"
-		element.style.display = 'block';		
+		element.style.display = 'block';
 		document.form.clientmac_x_0.focus();
 	}
 	else
@@ -486,9 +503,6 @@ function addRule(){
 
 		if(addRule){
 			wtfast_rulelist_array.push([rule_enable, document.form.clientmac_x_0.value.toUpperCase(), document.form.server_1_list.value, document.form.server_2_list.value, document.form.game_list.value]);
-			if(rule_enable == "1" && (wtf_enable_games.indexOf(document.form.game_list.value) == -1)){
-				wtf_enable_games += "<" + document.form.game_list.value;
-			}
 			update_rulelist(1);
 			show_rulelist();
 		}
@@ -606,14 +620,14 @@ function show_rulelist(){
 
 			if(wtfast_rulelist_array[key][0] == "0"){
 				code += '<td style="width:14%;">';
-				code += '<select data-server_number="1" data-row="' + key + '" id="server_1_list' + key + '" class="wtfast_input_option" style="color:#949393; border: 1px solid #949393;" name="server_1_list'+ key + '" onchange="change_server($(this));"></select>';	
+				code += '<select data-server_number="1" data-row="' + key + '" id="server_1_list' + key + '" class="wtfast_input_option" style="color:#949393; border: 1px solid #949393;" name="server_1_list'+ key + '" onchange="change_server($(this));"></select>';
 				code += '<div class="server_2_list_div"><select data-server_number="2" data-row="' + key + '" id="server_2_list' + key + '" class="wtfast_input_option" style="color:#949393; border: 1px solid #949393; margin-top: 10px;" name="server_2_list' + key + '" onchange="change_server($(this));"></select></div>';
 				code += '</td>';
 			}
 			else{
 				code += '<td style="width:14%;">';
 				code += '<select data-server_number="1" data-row="' + key + '" id="server_1_list' + key + '" class="wtfast_input_option" name="server_1_list'+ key + '" onchange="change_server($(this));"></select>';
-				code += '<div class="server_2_list_div"><select data-server_number="2" data-row="' + key + '" id="server_2_list' + key + '" class="wtfast_input_option" style="margin-top: 10px;" name="server_2_list' + key + '" onchange="change_server($(this));"></select></div>';			
+				code += '<div class="server_2_list_div"><select data-server_number="2" data-row="' + key + '" id="server_2_list' + key + '" class="wtfast_input_option" style="margin-top: 10px;" name="server_2_list' + key + '" onchange="change_server($(this));"></select></div>';
 				code += '</td>';
 			}
 	
@@ -648,7 +662,7 @@ function show_rulelist(){
 					select.selectedIndex = j;
 					break;
 				}
-			}			
+			}
 
 			create_server_list(key);
 			var server_1_list_id = "server_1_list" + key;
@@ -773,6 +787,8 @@ var isOldIE = navigator.userAgent.search("MSIE") > -1;
 function show_login_page(show){
 	if(show){
 		document.getElementById("WTFast_login_div").style.display = "";
+		document.getElementById("wtf_username").disabled = false;
+		document.getElementById("wtf_passwd").disabled = false;
 		if(isChrome){
 			showFire();
 			document.getElementById("fire_pic").style.display = "none";
@@ -796,6 +812,8 @@ function show_management_page(show){
 	if(show){
 		document.getElementById("error_msg").innerHTML = "";
 		document.getElementById("ManagementPage").style.display = "";
+		document.getElementById("wtf_username").disabled = true;
+		document.getElementById("wtf_passwd").disabled = true;
 	}
 	else
 		document.getElementById("ManagementPage").style.display = "none";
@@ -804,7 +822,7 @@ function show_management_page(show){
 	[ToDo] callback function to handle the response from wtfast web server.
 */
 function checkLoginStatus(){
-	if(wtfast_status.Login_status == 1 && (typeof(wtfast_status.eMail) != "undefined" && wtfast_status.eMail != "")){
+	if(wtfast_status.Login_status == 1){
 		show_info();
 		show_login_page(0);
 		show_management_page(1);
@@ -922,16 +940,23 @@ function wtf_logout(){
 				session_hash: wtfast_status.Session_Hash
 			},
 			success: function( response ) {
-				wtfast_status = response;
-				reset_rule_state();
-				update_rulelist(0);
-				document.wtfast_form.wtf_rulelist.value = wtfast_rulelist;
-				document.wtfast_form.action_mode.value = "wtfast_logout";
-				document.wtfast_form.submit();
-				show_management_page(0);
-				show_login_page(1);
-				document.getElementById("loadingIcon_logout").style.display = "none";
-				document.getElementById("logout_button").style.display = "";
+				$.ajax({
+					url: "/apply.cgi",
+					type: "POST",
+					data: {
+						action_mode: "wtfast_logout",
+						wtf_rulelist: wtfast_rulelist,
+						wtf_login: response.Login_status,
+					},
+					success: function( response ) {
+						reset_rule_state();
+						update_rulelist(0);
+						show_management_page(0);
+						show_login_page(1);
+						document.getElementById("loadingIcon_logout").style.display = "none";
+						document.getElementById("logout_button").style.display = "";
+					}
+				});
 			}		
 		});
 	}
@@ -942,7 +967,7 @@ function return_to_login(){
 	show_management_page(0);
 	show_login_page(1);
 	document.getElementById("loadingIcon_logout").style.display = "none";
-	document.getElementById("logout_button").style.display = "";	
+	document.getElementById("logout_button").style.display = "";
 }
 
 function open_link(page){
@@ -958,6 +983,8 @@ function open_link(page){
 		tourl = "https://www.asus.com/support/FAQ/1015723/";
 	else if(page == "howto")
 		tourl = "https://www.asus.com/support/FAQ/1015726/";
+	else if(page == "gameList")
+		tourl = "https://wtfast.zendesk.com/hc/en-us/articles/210169943";
 	else
 		tourl = "https://www.wtfast.com/pages/asus_router/";
 	
@@ -994,7 +1021,7 @@ function show_apply(show){//1: show   0: hide
 }
 
 function clean_macerr(){
-	document.getElementById("check_mac") ? document.getElementById("check_mac").style.display="none" : true;	
+	document.getElementById("check_mac") ? document.getElementById("check_mac").style.display="none" : true;
 }
 </script>
 </head>
@@ -1006,11 +1033,11 @@ function clean_macerr(){
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
-		<td width="17">&nbsp;</td>		
-		<td valign="top" width="202">	
-			<div  id="mainMenu"></div>	
-			<div  id="subMenu"></div>		
-		</td>						
+		<td width="17">&nbsp;</td>
+		<td valign="top" width="202">
+			<div  id="mainMenu"></div>
+			<div  id="subMenu"></div>
+		</td>
     <td valign="top">
 	<div id="tabMenu" class="submenuBlock"></div>
 
@@ -1022,13 +1049,12 @@ function clean_macerr(){
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 <input type="hidden" name="wtf_rulelist" value="">
-<input type="hidden" name="wtf_enable_game" value="">
 
 <table width="98%" border="0" align="left" cellpadding="0" cellspacing="0">
 	<tr>
 		<td align="left" valign="top" >
 		<div id="WTFast_login_div" class="Background" style="display:none;">
-		<div ><img onclick="go_setting('GameBoost.asp')" align="right" style="width:40px; cursor:pointer;position:absolute;top:10px;right:10px;" title="Back to Game Boost" src="images/wtfast_back.svg" onMouseOver="this.src='images/wtfast_back_hover.svg'" onMouseOut="this.src='images/wtfast_back.svg'" ></div>
+		<div id="goBackBtn"><img onclick="go_setting('GameBoost.asp')" align="right" style="width:40px; cursor:pointer;position:absolute;top:10px;right:10px;" title="Back to Game Boost" src="images/wtfast_back.svg" onMouseOver="this.src='images/wtfast_back_hover.svg'" onMouseOut="this.src='images/wtfast_back.svg'" ></div>
 		<table width="760px" height="200px" border="0" cellpadding="0" cellspacing="0" id="WTFast_Login" style="margin-top:350px;">
 		<tr>
 			<td rowspan="2" style="width:40%; vertical-align: top;">
@@ -1036,7 +1062,7 @@ function clean_macerr(){
 			</td>
 			<td style="height:75px; vertical-align: top;">
 				<div style="margin-left:15px; margin-right:10px; color:#EAE9E9; font-size:13px; font-weight:bolder;">
-					<#Game_Boost_desc1#>
+					<#Game_Boost_desc#>
 				</div>
 			</td>
 		</tr>
@@ -1047,7 +1073,7 @@ function clean_macerr(){
 				<ul type="disc">
 					<li style="line-height:15px; margin-left:-25px; margin-top:-10px; color:#949393;"><#Game_Boost_Benefit1#></li>
 					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit2#></li>
-					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit3#><br>(<#Game_Boost_Benefit3_1#>)</li>
+					<li id="benefit3" style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit3#><br>(<#Game_Boost_Benefit3_1#>)</li>
 					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit4#></li>
 					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit5#></li>
 				</ul>
@@ -1058,10 +1084,10 @@ function clean_macerr(){
 		<table style="margin-top:10px;  width:760px;">
 			<tr><td colspan="2" style="color:#EBE8E8; font-size:20px; font-weight:bold; text-align:center;"><div id="Game_Boost_login_div"></div></td></tr>
 			<tr>
-				<th style="width:254px; height:35px; color:#949393; font-size:14px; text-align:right; padding-right:15px;">E-Mail</th><!--untranslated-->
+				<th style="width:200px; height:35px; color:#949393; font-size:14px; text-align:right; padding-right:15px;">E-Mail</th><!--untranslated-->
 				<td style="color:#949393; font-size:14px; text-align:left;">
-				<input type="text" maxlength="32" class="login_input" id="wtf_username" name="wtf_username" value="" onkeypress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off" >
-				<span ><a id="link" href="javascript:open_link('newAccount')" style="margin-left:5px;text-decoration:underline;color:#949393;"><#create_free_acc#></a></span>
+				<input type="text" maxlength="32" class="login_input" id="wtf_username" name="wtf_username" value="" onkeypress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off">
+				<span ><a href="javascript:open_link('newAccount')" style="margin-left:5px;text-decoration:underline;color:#949393;"><#create_free_acc#></a></span>
 				</td>
 			</tr>
 			<tr>
@@ -1080,7 +1106,7 @@ function clean_macerr(){
 				</td>
 			</tr>
 		</table>
-		<div style="color:#949393; font-size:12px; text-align:center;">* <#note_up_to_date#></div>
+		<div style="color:#ffffff; font-size:12px; text-align:center;"><#Manual_Setting_notice#> <#GB_management_note1#></div>
 		<div>
 			<canvas id="fire" style="width:760px;height:430px; display:block;position:absolute; top:491px; z-index:-1;"></canvas>
 			<img id="fire_pic" style="position: absolute; top: 499px; z-index: -1; margin-left: 3px;display:none;" src="images/fire.jpg">
@@ -1089,7 +1115,7 @@ function clean_macerr(){
 		</div><!--WTFast_login_div-->
 
 		<div id="ManagementPage" style="display:none;">
-			<table id="Background_Management" class="Background_Management" border="0" cellpadding="4" cellspacing="0">
+			<table id="FormTitle" class="Background_Management" border="0" cellpadding="4" cellspacing="0">
 			<tbody>
 				<tr>
 					<td valign="top">
@@ -1099,10 +1125,10 @@ function clean_macerr(){
 								<tr>
 									<td>
 										<div style="float:left; margin-left:20px; margin-top:-10px;"><img src="images/New_ui/game.svg" style="width:77px; height:77px;"></div>
-										<div style="color:#EBE8E8; font-size:26px; font-weight:bold; font-family:calibri; float:left; margin-top:12px; margin-left:6px;"><#Game_Boost_management#></div>										
+										<div style="color:#EBE8E8; font-size:26px; font-weight:bold; font-family:calibri; float:left; margin-top:12px; margin-left:6px;"><#Game_Boost_management#></div>
 									</td>
 									<td align="right">
-										<img onclick="go_setting('GameBoost.asp')" style="width:40px; cursor:pointer;position:absolute;margin-left:-20px;margin-top:-30px;" title="Back to Game Boost" src="images/wtfast_back.svg" onMouseOver="this.src='images/wtfast_back_hover.svg'" onMouseOut="this.src='images/wtfast_back.svg'">
+										<div id="goBackBtn_M"><img onclick="go_setting('GameBoost.asp')" style="width:40px; cursor:pointer;position:absolute;margin-left:-20px;margin-top:-30px;" title="Back to Game Boost" src="images/wtfast_back.svg" onMouseOver="this.src='images/wtfast_back_hover.svg'" onMouseOut="this.src='images/wtfast_back.svg'"></div>
 									</td>
 								</tr>
 							</table>
@@ -1130,7 +1156,7 @@ function clean_macerr(){
 								
 								<td>
 							  		<div id="account_type"></div>
-								</td>							
+								</td>
 							</tr>
 							<tr style="vertical-align:bottom; color:#949393; font-family:calibri; font-size:16px;">
 								<th align="left">
@@ -1144,9 +1170,10 @@ function clean_macerr(){
 							  		<span id="max_computers"></span>
 								</td>
 								<td id="ended_date_td">
-							  		<span id="ended_date"></span><span id="days_title" style="margin-left:10px;">( Days Left: <span id="days_left"></span> )</span> <!--untranslated-->
+							  		<span id="ended_date"></span><span id="days_title" style="margin-left:10px;">(Days Left: <span id="days_left"></span>)</span> <!--untranslated-->
+							  		<div id="trail_desc" style="color:#FFCC00; margin-top: 10px;"><#GB_ended_date_desc#></div>
 								</td>
-							</tr>			
+							</tr>
 						</table>
 
 						<table id="MainTable2" width="710px" border="0" align="left" cellpadding="4" cellspacing="0" style="text-align:center; margin-left:20px; margin-top:40px;">
@@ -1181,10 +1208,10 @@ function clean_macerr(){
 								<td>
 									<select data-server_number="1" id="server_1_list" name="server_1_list" onchange="update_server_list_visibilities($(this));"></select>
 									<div class="server_2_list_div" style="display: none; margin-top: 10px;">
-										<select data-server_number="2" id="server_2_list" name="server_2_list" onchange="update_server_list_visibilities($(this));"></select>	
+										<select data-server_number="2" id="server_2_list" name="server_2_list" onchange="update_server_list_visibilities($(this));"></select>
 									</div>
 								</td>
-															
+
 								<td align="center">
 									<div data-server_number="2" id="addCircle" class="addCircle"><img id="add_btn" src="images/New_ui/add.svg" onMouseOver="this.src='images/New_ui/add_hover.svg'" onMouseOut="this.src='images/New_ui/add.svg'" style="width:25px; height:25px; cursor:pointer;" onClick="addRule();"></div>
 								</td>
@@ -1194,11 +1221,13 @@ function clean_macerr(){
 							</tr>
 						</table>
 						<table cellspacing="0"><tr><td><div id="wtfast_rulelist_Block"></div></td></tr></table>
-						<div style="color:#FFCC00; margin-left: 25px; font-family:calibri; font-size:11px;"><#GB_management_note1#></div>
-						<div style="color:#FFCC00; margin-left: 25px; font-family:calibri; font-size:11px;"><#GB_management_note2#></div>
-						<div style="color:#FFCC00; margin-left: 25px; font-family:calibri; font-size:11px;"><#GB_management_note3#></div>
-						<div style="color:#FFCC00; margin-left: 25px; font-family:calibri; font-size:11px;"><#GB_management_note4#></div>
-						<div style="color:#FFCC00; margin-left: 25px; font-family:calibri; font-size:11px;"><#GB_management_note5#></div>
+						<ul>
+							<li style="color: #FFCC00;"><div class="comment_div"><#GB_management_note1#></div></li>
+							<li style="color: #FFCC00;"><div class="comment_div"><#GB_management_note2#></div></li>
+							<li style="color: #FFCC00;"><div class="comment_div"><#GB_management_note3#></div></li>
+							<li style="color: #FFCC00;"><div class="comment_div"><#GB_management_note4#></div></li>
+							<li style="color: #FFCC00;"><div class="comment_div"><#GB_management_note5#></div></li>
+						</ul>
 						<div id="applyBtn" align="center" style="margin-top:20px; display:none;">
 							<input class="wtfast_button" onclick="applyRule()" type="button" value="<#CTL_apply#>"/>
 						</div>
@@ -1217,13 +1246,5 @@ function clean_macerr(){
 </form>
 
 <div id="footer"></div>
-<form method="post" name="wtfast_form" action="/apply.cgi" target="hidden_frame">
-<input type="hidden" name="action_mode" value="">
-<input type="hidden" name="action_script" value="">
-<input type="hidden" name="action_wait" value="">
-<input type="hidden" name="wtf_username" value="">
-<input type="hidden" name="wtf_passwd" value="">
-<input type="hidden" name="wtf_rulelist" value="">
-</form>
 </body>
 </html>

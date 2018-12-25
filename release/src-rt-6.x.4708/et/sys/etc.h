@@ -225,7 +225,7 @@ typedef struct et_sw_port_info {
  * Must be >= size of largest rxhdr
  * Must be 2-mod-4 aligned so IP is 0-mod-4
  */
-#define	HWRXOFF		14
+#define	HWRXOFF		16 //cathy test
 
 #define TC_BK		0	/* background traffic class */
 #define TC_BE		1	/* best effort traffic class */

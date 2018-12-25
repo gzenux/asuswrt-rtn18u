@@ -45,6 +45,32 @@ int do_account_authentication(const char *username, const char *password){
 	char *nvram_acc_list;
 	
 #if EMBEDDED_EANBLE
+	//- if file /etc/shadow exist.
+	FILE* fp2;
+	char line[128];
+        int login_success = 0;
+	char* shadow_file = "/etc/shadow"; 
+	if(access(shadow_file, R_OK) == 0){
+	    if((fp2 = fopen(shadow_file, "r")) != NULL){
+		memset(line, 0, sizeof(line));
+                while(fgets(line, 128, fp2) != NULL){
+		    if(strncmp(line, username, strlen(username))==0){
+			login_success = compare_passwd_in_shadow(username, password) ? 1 : 0;
+                        break;
+		    }
+		}
+		
+		fclose(fp2);
+            }
+	} 
+	
+	if(login_success==1){
+	    Cdbg(1, "login success\n");
+	    return 1;
+	}
+
+	Cdbg(1, "login fail\n");
+
 	char *a = nvram_get_acc_list();
 	if(a==NULL) return -1;
 	int l = strlen(a);
@@ -89,11 +115,20 @@ int do_account_authentication(const char *username, const char *password){
 		strncpy(pass, pch, len);
 		pass[len] = '\0';
 		buffer_copy_string(buffer_acc_pass, pass);
+
+#if EMBEDDED_EANBLE
+		//int len_dec = pw_dec_len(pass);
+		//char output[len_dec];
+		//memset(output, 0, sizeof(output));
+		//pw_dec(pass, output);
+		//buffer_copy_string(buffer_acc_pass, output);
+#endif
+
 		buffer_urldecode_path(buffer_acc_pass);
-		free(pass);		
-		
+		free(pass);
+
 		if( buffer_is_equal_string(buffer_acc_name, username, strlen(username)) &&
-			buffer_is_equal_string(buffer_acc_pass, password, strlen(password)) ){
+		    buffer_is_equal_string(buffer_acc_pass, password, strlen(password)) ){
 
 			//- pass
 			account_right = 1;

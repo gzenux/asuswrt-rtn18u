@@ -2,7 +2,7 @@
 /*
  * See README for additional information
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -149,14 +149,14 @@ const uint32_t e2attr_flags_value[] = {
 	EXT2_TOPDIR_FL
 };
 
-const char e2attr_flags_sname[] =
+const char e2attr_flags_sname[] ALIGN1 =
 #ifdef ENABLE_COMPRESSION
 	"BZXE"
 #endif
 	"I"
 	"suSDiadAcjtT";
 
-static const char e2attr_flags_lname[] =
+static const char e2attr_flags_lname[] ALIGN1 =
 #ifdef ENABLE_COMPRESSION
 	"Compressed_File" "\0"
 	"Compressed_Dirty_File" "\0"

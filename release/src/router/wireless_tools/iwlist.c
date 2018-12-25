@@ -800,6 +800,7 @@ print_scanning_info(int		skfd,
 	    {
 	      /* Check if buffer was too small (WE-17 only) */
 	      if((errno == E2BIG) && (range.we_version_compiled > 16))
+	      if((errno == E2BIG) && (range.we_version_compiled > 16) && (buflen < 65535))
 		{
 		  /* Some driver may return very large scan results, either
 		   * because there are many cells, or because they have many
@@ -814,6 +815,9 @@ print_scanning_info(int		skfd,
 		    buflen = wrq.u.data.length;
 		  else
 		    buflen *= 2;
+
+		  if(buflen > 65535)
+		    buflen = 65535;
 
 		  /* Try again */
 		  goto realloc;

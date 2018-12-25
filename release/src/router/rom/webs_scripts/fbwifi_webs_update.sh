@@ -31,10 +31,10 @@ odmpid=`nvram get odmpid`
 odmpid="$odmpid#"
 
 if [ "$forsq" == "1" ]; then
-	echo "---- update sq normal for fbwifi----" >> /tmp/webs_upgrade.log
+	echo "---- update sq normal for fbwifi----" > /tmp/webs_upgrade.log
 	wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/wlan_update_fbwifi.zip -O /tmp/wlan_update.txt		
 else
-	echo "---- update real normal for fbwifi----" >> /tmp/webs_upgrade.log
+	echo "---- update real normal for fbwifi----" > /tmp/webs_upgrade.log
 	wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless/wlan_update_fbwifi.zip -O /tmp/wlan_update.txt
 fi	
 

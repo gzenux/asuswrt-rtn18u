@@ -1,0 +1,29 @@
+#!/bin/sh
+SSL=/usr/bin/openssl
+export PATH=${SSL}/bin/:${SSL}/ssl/misc:${PATH}
+export LD_LIBRARY_PATH=${SSL}/lib
+echo "*********************************************************************************"
+echo "Creating client private key and certificate"
+echo "When prompted enter the client name in the Common Name field. This is the same"
+echo " used as the Username in FreeRADIUS"
+echo "*********************************************************************************"
+echo
+# Request a new PKCS#10 certificate.
+# First, newreq.pem will be overwritten with the new certificate request
+openssl req -new -keyout newreq.pem -out newreq.pem -passin pass:realtek -passout pass:realtek
+# Sign the certificate request. The policy is defined in the openssl.cnf file.
+# The request generated in the previous step is specified with the -infiles option and
+# the output is in newcert.pem
+# The -extensions option is necessary to add the OID for the extended key for client authentication
+openssl ca -policy policy_anything -out newcert.pem -passin pass:realtek -key realtek -extensions xpclient_ext -extfile xpextensions -infiles newreq.pem
+# Create a PKCS#12 file from the new certificate and its private key found in newreq.pem
+# and place in file specified on the command line
+openssl pkcs12 -export -in newcert.pem -inkey newreq.pem -out $1.p12 -clcerts -passin pass:realtek -passout pass:realtek
+# parse the PKCS#12 file just created and produce a PEM format certificate and key in certclt.pem
+openssl pkcs12 -in $1.p12 -out $1.pem -passin pass:realtek -passout pass:realtek
+# Convert certificate from PEM format to DER format
+openssl x509 -inform PEM -outform DER -in $1.pem -out $1.der
+# clean up
+rm -rf newcert newreq.pem
+
+

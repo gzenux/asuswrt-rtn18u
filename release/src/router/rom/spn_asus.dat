@@ -168,15 +168,11 @@
 25521,PEOPLEnet,#777,,000000,,PEOPLEnet
 25523,CDMA Ukraine,#777,,,,CDMA Ukraine
 26001,Plus,*99#,,,internet,Plus
-26002,T-Mobile,*99***1#,erainternet,erainternet,erainternet,Era Internet postpaid
-26002,T-Mobile,*99***1#,erainternet,erainternet,erainternettt,Era Internet prepaid
-26002,T-Mobile,*99***1#,,,erawap,Era HTTP postpaid
-26002,T-Mobile,*99***1#,,,erawaptt,Era HTTP prepaid
-26003,Orange,*99#,internet,internet,internet,Orange Internet
-26003,Orange,*99#,wap,wap,wap,Orange HTTP
+26002,T-Mobile,*99***1#,,,erainternet,T-Mobile
+26003,Orange,*99#,,,internet,Orange
 26006,Play,*99#,,,internet,P4 Internet
 26006,Play,*99#,,,wap,P4 Data HTTP
-26012,Cyfrowy Polsat,*99***1#,,,multi.internet,Cyfrowy Polsat
+26012,Cyfrowy Polsat,*99***1#,,,plus,Cyfrowy Polsat
 26017,Aero2,*99#,,,darmowy,Aero2
 26201,DE T-D1 GPRS,,t-mobile,tm,internet.telekom,T-Mobile Internet (4G)
 26201,DE T-D1 GPRS,,t-mobile,tm,internet.t-mobile,T-Mobile Internet
@@ -742,7 +738,7 @@
 45404,3,*99***1#,,,web-g.three.com.hk,3(2G) Network
 45405,3,*99***1#,,,ipc.three.com.hk,3 CDMA
 45406,SmarTone,*99***1#,,,SmarTone,SmarTone
-45407,沃宽带用户手机上网,*99#,,,3gwap,沃宽带用户手机上网
+45407,China Unicom,*99#,,,3gwap,China Unicom
 45410,New World Mobility,*99***1#,,,internet,csl Tethering
 45412,CMCC HK,*99***1#,,,cmhk,CMHK Data
 45412,CMCC HK,*99***1#,,,peoples.net,CMHK HTTP Setting
@@ -761,20 +757,18 @@
 45503,3 Macau,*99#,,,mobile.three.com.mo,3 Macau
 46000,China Mobile,*99#,,,cmnet,CMCC Internet
 46000,China Mobile,*99#,wap,wap,cmwap,CMCC HTTP
-46001,China Unicom,*99#,,,3gnet,沃宽带用户连接互联网
-46001,China Unicom,*99#,,,3gwap,沃宽带用户手机上网
+46001,China Unicom,*99#,,,3gnet,China Unicom
 46002,China Mobile,*99#,,,cmnet,CMCC Internet
 46002,China Mobile,*99#,wap,wap,cmwap,CMCC HTTP
-46003,China Telecom,#777,card,card,ctnet,中国电信
-46005,China Telecom,#777,card,card,ctnet,中国电信
-46006,China Unicom,*99#,,,3gnet,中国联通
+46003,China Telecom,#777,card,card,ctnet,China Telecom
+46005,China Telecom,#777,card,card,ctnet,China Telecom
+46006,China Unicom,*99#,,,3gnet,China Unicom
 46007,China Mobile,*99#,,,cmnet,CMCC Internet
 46007,China Mobile,*99#,wap,wap,cmwap,CMCC HTTP
-46009,沃宽带用户手机上网,*99#,,,3gwap,沃宽带用户手机上网
-46009,沃宽带用户连接互联网,*99#,,,3gnet,沃宽带用户连接互联网
+46009,China Unicom,*99#,,,3gnet,China Unicom
 46020,CMCC HTTP,*99#,wap,wap,cmwap,CMCC HTTP
 46020,CMCC Internet,*99#,,,cmnet,CMCC Internet
-46601,Far EasTone,*99#,,,internet,遠傳網際網路
+46601,Far EasTone,*99#,,,internet,Far EasTone
 46605,Far EasTone,*99#,,,gtnet,GT Internet
 46611,Chunghwa Telecom,*99***1#,,,internet,Chunghwa LDM
 46688,Far EasTone,*99#,,,internet,KGT Internet
@@ -782,9 +776,9 @@
 46689,VIBO,*99#,,,viboone,VIBOONE
 46689,VIBO,*99#,,,vibo,VIBO-vibo
 46692,Chunghwa Telecom,*99***1#,,,internet,CHT Internet
-46693,TW Mobile,*99#,,,internet,台灣大哥大(TW Mobile)
-46697,TW Mobile,*99#,,,internet,台灣大哥大(TW Mobile)
-46699,TW Mobile,*99#,,,internet,台灣大哥大(TW Mobile)
+46693,TW Mobile,*99#,,,internet,TW Mobile
+46697,TW Mobile,*99#,,,internet,TW Mobile
+46699,TW Mobile,*99#,,,internet,TW Mobile
 47001,Grameen Phone,,,,gpinternet,GrameenPho Interneet postpaid
 47001,Grameen Phone,,,,gpwap,GrameenPhone HTTP postpaid
 47002,Aktel,,,,internet,Aktel

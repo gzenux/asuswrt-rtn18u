@@ -38,6 +38,9 @@ var encap_str = "LLC";
 if (encap_val == "1") encap_str = "VC-Mux";
 
 var iptv_num_pvc_val = "<% nvram_get("dsltmp_cfg_iptv_num_pvc"); %>";
+var mac_addr_2g = "<%nvram_get("wan0_hwaddr");%>";
+var mac_addr_last_3bytes = "\"" + mac_addr_2g.substring(9, 11) + mac_addr_2g.substring(12, 14) + mac_addr_2g.substring(15, 17) + "\"";
+var model_name = "<%nvram_get("productid");%>";
 
 //udpate iptv information
 if (iptv_num_pvc_val != "0" && iptv_num_pvc_val != "") {
@@ -116,6 +119,7 @@ function QKfinish_load_body(){
 		document.getElementById("mac_addr2").style.display = "";
 	}
 
+/* //Renjie: Remove this field, we will use Option 61 and 12 for UK Sky.
 	if (country_str == "United Kingdom" && (ispname_str == "SKY (MER)" || ispname_str == "Sky - Fibre Broadband"))
 	{
 		//UK ISP SKY Broadband, MER requires some tweak.
@@ -125,7 +129,7 @@ function QKfinish_load_body(){
 		document.getElementById("ppp_password1").style.display = "";
 		document.getElementById("ppp_password2").style.display = "";
 	}
-
+*/
         if(transfer_mode == "atm"){
 		document.getElementById("atm_info").style.display = "";
                 document.form.prev_page.value = "/qis/QIS_manual_setting.htm";
@@ -255,11 +259,20 @@ function submitForm(){
 	if (country_str == "United Kingdom" && (ispname_str == "SKY (MER)" || ispname_str == "Sky - Fibre Broadband"))
 	{
 		//Only for UK ISP SKY Broadband
+		/*
 		if(document.form.ppp_username.value != "")
 			document.form.dslx_dhcp_clientid.value = document.form.ppp_username.value + "|" + document.form.ppp_password.value;
 
 		document.form.ppp_username.disabled = true;
 		document.form.ppp_password.disabled = true;
+		*/
+		document.form.dslx_dhcp_clientid.value = mac_addr_last_3bytes;
+		document.form.dslx_dhcp_hostname.value = model_name;
+	}
+	else
+	{
+		document.form.dslx_dhcp_clientid.value = "";
+		document.form.dslx_dhcp_hostname.value = "";
 	}
 
 	if(transfer_mode == "ptm")
@@ -277,7 +290,7 @@ function gotoHome() {
 		location.href = '/qis/QIS_wireless.htm';
 	}
 	else {
-		parent.location.href = '/index.asp';
+		parent.location.href = "<% abs_index_page(); %>";
 	}
 }
 </script>
@@ -317,6 +330,7 @@ function gotoHome() {
 <input type="hidden" name="dsltmp_qis_dsl_pvc_set" value="1">
 <input type="hidden" name="dsltmp_qis_pppoe_relay" value="0">
 <input type="hidden" name="dslx_dhcp_clientid" value="">
+<input type="hidden" name="dslx_dhcp_hostname" value="">
 
 <!-- dsltmp_qis_hwaddr is in the HTML code -->
 
@@ -351,10 +365,10 @@ function gotoHome() {
 <div id="showip">
 <fieldset>
 <legend>
-	<#Layer3Forwarding_x_UseStaticIP_itemname#>
+	<#Layer3Forwarding_x_DHCPClient_itemname#>
 	<span id="dhcp_info_radio">
-		<input type="radio" name="x_DHCPClient" class="input" value="0" tabindex="1" onclick="show_dhcpenable(this.value);"><#checkbox_Yes#>
-		<input type="radio" name="x_DHCPClient" class="input" value="1" tabindex="2" onclick="show_dhcpenable(this.value);"><#checkbox_No#>
+		<input type="radio" name="x_DHCPClient" class="input" value="0" tabindex="1" onclick="show_dhcpenable(this.value);"><#checkbox_No#>
+		<input type="radio" name="x_DHCPClient" class="input" value="1" tabindex="2" onclick="show_dhcpenable(this.value);"><#checkbox_Yes#>
 	</span>
 </legend>
 	<table id="tblsetting_2" class="QISform" width="400" border="0" align="center" cellpadding="3" cellspacing="0">
@@ -481,10 +495,10 @@ function gotoHome() {
 <div id="dns_sec">
   <fieldset>
   <legend>
-	  <span id="dns_info_title"><#qis_dns#>:</span>
+	  <span id="dns_info_title"><#IPConnection_x_DNSServerEnable_itemname#>:</span>
 	  <span id="dns_info_radio">
-  		<input type="radio" name="wan_dnsenable_x" value="1" tabindex="6" onclick="show_dnsenable(this.value);" class="input"><#checkbox_Yes#>
-			<input type="radio" name="wan_dnsenable_x" value="0" tabindex="7" onclick="show_dnsenable(this.value);" class="input"><#checkbox_No#>
+  		<input type="radio" name="wan_dnsenable_x" value="1" tabindex="6" onclick="show_dnsenable(this.value);" class="input"><#checkbox_No#>
+		<input type="radio" name="wan_dnsenable_x" value="0" tabindex="7" onclick="show_dnsenable(this.value);" class="input"><#checkbox_Yes#>
 	  </span>
   </legend>
   <table id="tblsetting_4" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
@@ -578,6 +592,7 @@ function gotoHome() {
 		</td>
 	  </tr>
   </table>
+<!-- Renjie: Remove this field, we will use Option 61 and 12 for UK Sky.
   <table>
 	  <tr>
 		<th width="120"><span id="ppp_username1" style="display:none">PPP <#HSDPAConfig_Username_itemname#>:</span></th>
@@ -596,15 +611,16 @@ function gotoHome() {
 		</td>
 	  </tr>
   </table>
+-->
 </div>
 
 
 	<div class="apply_gen" style="margin-top:30px">
-		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" tabindex="14" onclick="gotoprev(document.form);" class="button_gen" >
+		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" tabindex="14" onclick="gotoprev(document.form);" class="button_gen_long" >
 <!--
 		<input type="button" id="nextButton" value="Ethernet WAN" onclick="redirect_page('internet_type');" class="button_gen" >
 -->
-		<input type="button" id="nextButton" value="<#CTL_next#>" tabindex="13" onclick="submitForm();" class="button_gen">
+		<input type="button" id="nextButton" value="<#CTL_next#>" tabindex="13" onclick="submitForm();" class="button_gen_long">
 	</div>
 
 </div>

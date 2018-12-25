@@ -579,17 +579,19 @@ URIHANDLER_FUNC(mod_webdav_uri_handler) {
 	return HANDLER_GO_ON;
 }
 
-static size_t curl_write_callback_func(void *ptr, size_t size, size_t count, void *stream)
+static size_t curl_write_callback_func(void *ptr, size_t size, size_t count, void *srv_response)
 {
    	/* ptr - your string variable.
      	stream - data chuck you received */
-	char **response_ptr =  (char**)stream;
+	char **response_ptr =  (char**)srv_response;
 
     /* assuming the response is a string */
     *response_ptr = strndup(ptr, (size_t)(size *count));
 	
   	//printf("%.*s", size, (char*)stream));
    	//Cdbg(1, "callback_func.... %s", (char*)ptr);
+   	
+   	return 0;
 }
 #if 0
 
@@ -724,10 +726,14 @@ static int get_minidlna_db_path(plugin_data *p){
 	//Cdbg(DBE, ".............................minidlna_db_dir=%s", p->minidlna_db_dir->ptr);
 	//Cdbg(DBE, ".............................minidlna_db_file=%s", p->minidlna_db_file->ptr);
 	//Cdbg(DBE, ".............................minidlna_media_dir=%s", p->minidlna_media_dir->ptr);
-	
+
+	return 1;
+
 }
 
-static int get_thumb_image(char* path, plugin_data *p, unsigned char **out){
+static int get_thumb_image(char* path, plugin_data *p, char **out){
+	UNUSED(p);
+	
 	if(is_dms_enabled()==0){
 		return 0;
 	}
@@ -769,7 +775,7 @@ static int get_thumb_image(char* path, plugin_data *p, unsigned char **out){
 	char* filename = NULL;	
 	extract_filename(path, &filename);
 	const char *dot = strrchr(filename, '.');
-	int index = dot - filename;
+	int idx = dot - filename;
 	//Cdbg(DBE,"dot = %s, index=%d", dot, index);
 	
 	char* filepath = NULL;
@@ -778,7 +784,7 @@ static int get_thumb_image(char* path, plugin_data *p, unsigned char **out){
 	Cdbg(DBE,"filepath=%s, filename=%s", filepath, filename);
 	
 	strcat(thumb_dir, filepath);
-	strncat(thumb_dir, filename, index);
+	strncat(thumb_dir, filename, idx);
 	strcat(thumb_dir, ".jpg");
 	
 	free(filename);
@@ -798,17 +804,19 @@ static int get_thumb_image(char* path, plugin_data *p, unsigned char **out){
        	int fileLen = ftell(fp);
        	fseek(fp, 0, SEEK_SET);
 			
-		char* buffer = (char *)malloc(fileLen+1);
-		if(buffer){		
-			fread( buffer, fileLen, sizeof(unsigned char), fp );
-			
-			unsigned char* tmp = ldb_base64_encode(buffer, fileLen);			
-			uint32 olen = strlen(tmp) + 1;
-			*out = (char*)malloc(olen);
-			memcpy(*out, tmp, olen);
-				
-			free(tmp);			
-			free(buffer);
+		char* buffer_x = (char *)malloc(fileLen+1);
+		if(buffer_x){		
+			int len = fread( buffer_x, fileLen, sizeof(unsigned char), fp );
+
+			if(len>0){
+				char* tmp = (char *)ldb_base64_encode(buffer_x, fileLen);			
+				uint32 olen = strlen(tmp) + 1;
+				*out = (char*)malloc(olen);
+				memcpy(*out, tmp, olen);
+				free(tmp);
+			}
+						
+			free(buffer_x);
 				
 			fclose(fp);
 
@@ -820,7 +828,7 @@ static int get_thumb_image(char* path, plugin_data *p, unsigned char **out){
 	return result;
 }
 
-static int get_album_cover_image(sqlite3 *sql_minidlna, sqlite_int64 plAlbumArt, unsigned char **out){
+static int get_album_cover_image(sqlite3 *sql_minidlna, sqlite_int64 plAlbumArt, char **out){
 	if(is_dms_enabled()==0){
 		return 0;
 	}
@@ -831,10 +839,10 @@ static int get_album_cover_image(sqlite3 *sql_minidlna, sqlite_int64 plAlbumArt,
 	
 	int rows2;
 	char **result2;
-	char* base64_image = NULL;
+	//char* base64_image = NULL;
 	char sql_query[2048] = "\0";
 	
-	sprintf(sql_query, "SELECT PATH FROM ALBUM_ART WHERE ID = '%lld'", plAlbumArt );
+	snprintf(sql_query, sizeof(sql_query), "SELECT PATH FROM ALBUM_ART WHERE ID = '%lld'", plAlbumArt );
 	if( sql_get_table(sql_minidlna, sql_query, &result2, &rows2, NULL) == SQLITE_OK ){
 		//Cdbg(DBE, "get_album_cover_image, album cover path=%s", result2[1]);
 
@@ -848,11 +856,11 @@ static int get_album_cover_image(sqlite3 *sql_minidlna, sqlite_int64 plAlbumArt,
 	       	int fileLen = ftell(fp);
 	       	fseek(fp, 0, SEEK_SET);
 			
-			char* buffer = (char *)malloc(fileLen+1);
-			if(!buffer){
+			char* buffer_x = (char *)malloc(fileLen+1);
+			if(!buffer_x){
 				return 0;
 			}
-			char* aa = get_filename_ext(album_cover_file);
+			char* aa = (char *)get_filename_ext(album_cover_file);
 			int len = strlen(aa)+1; 		
 			char* file_ext = (char*)malloc(len);
 			memset(file_ext,'\0', len);
@@ -860,16 +868,18 @@ static int get_album_cover_image(sqlite3 *sql_minidlna, sqlite_int64 plAlbumArt,
 			for (int i = 0; file_ext[i]; i++)
 				file_ext[i] = tolower(file_ext[i]);
 										
-			fread( buffer, fileLen, sizeof(unsigned char), fp );
-			
-			unsigned char* tmp = ldb_base64_encode(buffer, fileLen);			
-			uint32 olen = strlen(tmp) + 1;
-			*out = (char*)malloc(olen);
-			memcpy(*out, tmp, olen);
-			
-			free(tmp);			
+			len = fread( buffer_x, fileLen, sizeof(unsigned char), fp );
+
+			if(len>0){
+				char* tmp = (char *)ldb_base64_encode(buffer_x, fileLen);			
+				uint32 olen = strlen(tmp) + 1;
+				*out = (char*)malloc(olen);
+				memcpy(*out, tmp, olen);
+				free(tmp);
+			}
+					
 			free(file_ext);
-			free(buffer);
+			free(buffer_x);
 			
 			fclose(fp);
 		}
@@ -1315,8 +1325,8 @@ static int webdav_get_live_property(server *srv, connection *con, plugin_data *p
 			//- 20120302 Jerry add
 			buffer_append_string_len(b,CONST_STR_LEN("<D:getattr>"));
 			
-			int permission = -1;
 		#if EMBEDDED_EANBLE
+			int permission = -1;
 			char* usbdisk_rel_sub_path = NULL;
 			char* usbdisk_sub_share_folder = NULL;
 						
@@ -1406,7 +1416,7 @@ static int webdav_get_live_property(server *srv, connection *con, plugin_data *p
 
 			if(is_dms_enabled()==1){
 		
-				int rows, i;
+				int rows;
 				sqlite3 *sql_minidlna = NULL;
 				char **result;
 				char sql_query[2048] = "\0";
@@ -1422,33 +1432,33 @@ static int webdav_get_live_property(server *srv, connection *con, plugin_data *p
 				if (sql_minidlna) {
 					
 					int column_count = 11;
-					sprintf(sql_query, "SELECT ID, TITLE, SIZE, TIMESTAMP, THUMBNAIL, RESOLUTION, CREATOR, ARTIST, MIME, ALBUM, ALBUM_ART from DETAILS");
+					snprintf(sql_query, sizeof(sql_query), "SELECT ID, TITLE, SIZE, TIMESTAMP, THUMBNAIL, RESOLUTION, CREATOR, ARTIST, MIME, ALBUM, ALBUM_ART from DETAILS");
 
 					#if EMBEDDED_EANBLE
 					if (0 == strcmp(dst->path->ptr, "/tmp"))
-						sprintf(sql_query, "%s WHERE PATH = '%s'", sql_query, dst->path->ptr);
+						snprintf(sql_query, sizeof(sql_query), "%s WHERE PATH = '%s'", sql_query, dst->path->ptr);
 					else
-						sprintf(sql_query, "%s WHERE PATH = '/tmp%s'", sql_query, dst->path->ptr);
+						snprintf(sql_query, sizeof(sql_query), "%s WHERE PATH = '/tmp%s'", sql_query, dst->path->ptr);
 					#else
-					sprintf(sql_query, "%s WHERE PATH = '%s'", sql_query, dst->path->ptr);
+					snprintf(sql_query, sizeof(sql_query), "%s WHERE PATH = '%s'", sql_query, dst->path->ptr);
 					#endif
 					
 					//Cdbg(DBE, "sql_query=%s", sql_query);
 
 					if( sql_get_table(sql_minidlna, sql_query, &result, &rows, NULL) == SQLITE_OK ){
 						if( rows ){
-							sqlite_int64 plID = strtoll(result[column_count], NULL, 10);
+							//sqlite_int64 plID = strtoll(result[column_count], NULL, 10);
 							char* plname = result[column_count+1];						
-							char* thumbnail = result[column_count+4];
+							//char* thumbnail = result[column_count+4];
 							char* resolution = result[column_count+5];
 							char* creator = result[column_count+6];	
 							char* artist = result[column_count+7];
 							char* mime = result[column_count+8];
-							char* album = result[column_count+9];
-							char* album_art = result[column_count+10];
+							//char* album = result[column_count+9];
+							//char* album_art = result[column_count+10];
 							
 							if(plname){
-								int thumb = atoi(thumbnail);
+								//int thumb = atoi(thumbnail);
 
 								buffer_append_string_len(b, CONST_STR_LEN("<D:title>"));
 								buffer_append_string(b, plname);
@@ -1696,6 +1706,7 @@ static int webdav_parse_chunkqueue(server *srv, connection *con, plugin_data *p,
 
 	/* read the chunks in to the XML document */
 	ctxt = xmlCreatePushParserCtxt(NULL, NULL, NULL, 0, NULL);
+	ctxt->options -= XML_PARSE_DTDATTR;
 
 	for (c = cq->first; cq->bytes_out != cq->bytes_in; c = cq->first) {
 		size_t weWant = cq->bytes_out - cq->bytes_in;
@@ -1923,7 +1934,7 @@ static const char* change_webdav_file_path(server *srv, connection *con, const c
 
 			data_string *ds = (data_string *)alias->data[j];			
 			if( strncmp(source, ds->key->ptr, ds->key->used-1) == 0 ){
-				char* buff = replace_str(source, ds->key->ptr, ds->value->ptr, out);
+				char* buff = (char *)replace_str(source, ds->key->ptr, ds->value->ptr, out);
 				array_free(alias);
 				return buff;
 			}
@@ -3294,7 +3305,7 @@ propmatch_cleanup:
 							//uuid_t id;
 							char uuid[37] /* 36 + \0 */;
 
-							sprintf( uuid, "%d", rand() );
+							snprintf( uuid, sizeof(uuid), "%d", rand() );
 
 							//uuid_generate(id);
 							//uuid_unparse(id, uuid);
@@ -3534,13 +3545,13 @@ propmatch_cleanup:
 		
 		char auth[100]="\0";		
 		if(con->aidisk_username->used && con->aidisk_passwd->used)
-			sprintf(auth, "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
+			snprintf(auth, sizeof(auth), "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
 		else{
 			con->http_status = 400;
 			return HANDLER_FINISHED;
 		}
 
-		char* base64_auth = ldb_base64_encode(auth, strlen(auth));
+		char* base64_auth = (char *)ldb_base64_encode(auth, strlen(auth));
 
 		if( generate_sharelink(srv, 
 			                   con, 
@@ -3590,10 +3601,10 @@ propmatch_cleanup:
 		}
 #endif
 
-		char stime[1024]="\0";
+		char srv_time[1024]="\0";
 		time_t server_time = time(NULL);
-		sprintf(stime, "%ld", server_time);
-		Cdbg(DBE, "do HTTP_METHOD_GETSRVTIME....................%s", stime);
+		snprintf(srv_time, sizeof(srv_time), "%ld", server_time);
+		Cdbg(DBE, "do HTTP_METHOD_GETSRVTIME....................%s", srv_time);
 		
 		con->http_status = 200;
 		
@@ -3604,7 +3615,7 @@ propmatch_cleanup:
 		buffer_copy_string_len(b, CONST_STR_LEN("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"));
 		buffer_append_string_len(b,CONST_STR_LEN("<result>\n"));
 		buffer_append_string_len(b,CONST_STR_LEN("<servertime>\n"));
-		buffer_append_string(b,stime);
+		buffer_append_string(b,srv_time);
 		buffer_append_string_len(b,CONST_STR_LEN("</servertime>\n"));
 		buffer_append_string_len(b,CONST_STR_LEN("</result>\n"));
 
@@ -4245,6 +4256,28 @@ propmatch_cleanup:
 			parentid = ds->value;
 		}
 
+		//- Check paramter
+		if( (start!=NULL && !is_string_encode_as_integer(start->ptr)) || 
+			(end!=NULL && !is_string_encode_as_integer(end->ptr)) ||
+			(keyword!=NULL && keyword->used > 200 ) ||
+			(orderby!=NULL && orderby->used > 20 ) ||
+			(orderrule!=NULL && orderrule->used > 20 ) ||
+			(parentid!=NULL && parentid->used > 20 ) ){
+			
+			Cdbg(DBE, "NULL value 'sql_minidlna'!");
+			con->http_status = 207;
+			con->file_finished = 1;
+			return HANDLER_FINISHED;
+		}
+
+		//- Avoid SQL injection!
+		if( keyword!=NULL && strstr(keyword->ptr, "'")!=NULL) {			
+			Cdbg(DBE, "keyword is invalid!");
+			con->http_status = 207;
+			con->file_finished = 1;
+			return HANDLER_FINISHED;
+		}
+		
 		get_minidlna_db_path(p);
 		
 		if (!buffer_is_empty(p->minidlna_db_file)) {			
@@ -4267,7 +4300,7 @@ propmatch_cleanup:
 		char sql_query[2048] = "\0";
 		
 		int column_count = 7;
-		sprintf(sql_query, "SELECT d.ID as ID, "
+		sprintf(sql_query, "%s", "SELECT d.ID as ID, "
 		                   "d.PATH as PATH, "
 		                   "d.TITLE as TITLE, "
 		                   "d.SIZE as SIZE, "
@@ -4297,7 +4330,7 @@ propmatch_cleanup:
 			buffer_urldecode_path(keyword);
 
 			if(strstr(keyword->ptr, "*")||strstr(keyword->ptr, "?")){
-				char buff[4096];
+				char buff[200];
 				replace_str(keyword->ptr, "*", "%", buff);
 				replace_str(buff, "?", "_", buff);
 				sprintf(sql_query, "%s and ( PATH LIKE '%s' or TITLE LIKE '%s' )", sql_query, buff, buff);
@@ -4370,7 +4403,7 @@ propmatch_cleanup:
 		//- Total count
 		buffer_append_string_len(b, CONST_STR_LEN(" qcount=\""));
 		char qcount[1024]="\0";
-		sprintf(qcount, "%d", rows);
+		snprintf(qcount, sizeof(qcount), "%d", rows);
 		buffer_append_string(b, qcount);
 		buffer_append_string_len(b, CONST_STR_LEN("\""));
 
@@ -4381,7 +4414,7 @@ propmatch_cleanup:
     	FILE *fp;
 
 		if (!buffer_is_empty(p->minidlna_db_dir)) {	    
-	        sprintf(dms_scanfile, "%s/scantag", p->minidlna_db_dir->ptr);
+	        snprintf(dms_scanfile, sizeof(dms_scanfile), "%s/scantag", p->minidlna_db_dir->ptr);
 
 	        fp = fopen(dms_scanfile, "r");
 
@@ -4745,12 +4778,12 @@ propmatch_cleanup:
 		}
 		
 		int column_count = 5;
-		int rows, i;
+		int rows;
 		char **result;
 		char sql_query[2048] = "\0";
 
 		if(buffer_is_equal_string(classify, CONST_STR_LEN("album"))){
-			sprintf(sql_query, "SELECT d.TITLE as TITLE, "
+			snprintf(sql_query, sizeof(sql_query), "SELECT d.TITLE as TITLE, "
 						   	   "d.ALBUM_ART as ALBUM_ART, "
 						   	   "d.ARTIST as ARTIST, "
 						   	   "o.PARENT_ID as PARENT_ID, "
@@ -4761,7 +4794,7 @@ propmatch_cleanup:
 						       "and o.PARENT_ID = '%s'", MUSIC_ALBUM_ID);
 		}
 		else if(buffer_is_equal_string(classify, CONST_STR_LEN("artist"))){
-			sprintf(sql_query, "SELECT d.TITLE as TITLE, "
+			snprintf(sql_query, sizeof(sql_query), "SELECT d.TITLE as TITLE, "
 							   "d.ALBUM_ART as ALBUM_ART, "
 							   "d.ARTIST as ARTIST, "
 							   "o.PARENT_ID as PARENT_ID, "
@@ -4789,18 +4822,18 @@ propmatch_cleanup:
 				
 		if( sql_get_table(sql_minidlna, sql_query, &result, &rows, NULL) == SQLITE_OK ){
 			Cdbg(DBE, "sql_query=%s, rows=%d", sql_query, rows);
-			int i=0;
+			//int i=0;
 					
-			for( i=column_count; i<=rows*column_count; i+=column_count ){			
+			for( int j=column_count; j<=rows*column_count; j+=column_count ){			
 		
-				char* title = result[i];
-				char* album_art = result[i+1];
-				char* artist = result[i+2];
-				char* parent_id = result[i+3];
-				char* object_id = result[i+4];
+				char* title = result[j];
+				char* album_art = result[j+1];
+				char* artist = result[j+2];
+				//char* parent_id = result[j+3];
+				char* object_id = result[j+4];
 
 				buffer* id = buffer_init();
-				buffer_copy_string(id,object_id);
+				buffer_copy_string(id, object_id);
 				if(buffer_is_equal_string(classify, CONST_STR_LEN("artist")))
 					buffer_append_string(id,"$0");
 				
@@ -4808,11 +4841,11 @@ propmatch_cleanup:
 
 #if 1
 				int column_count2 = 1;
-				int rows2, j;
+				int rows2;
 				char **result2;
 				int partion_count = 0;
 				
-				sprintf(sql_query, "SELECT COUNT(*) as COUNT from DETAILS d "
+				snprintf(sql_query, sizeof(sql_query), "SELECT COUNT(*) as COUNT from DETAILS d "
 					"LEFT JOIN OBJECTS o on (o.DETAIL_ID = d.ID) "
 					"WHERE d.MIME glob 'a*' AND o.PARENT_ID='%s' ", id->ptr);
 				
@@ -4834,10 +4867,10 @@ propmatch_cleanup:
 							//- ignore the hidden file
 						}
 
-						sprintf(partion_path, "%s%s", disk_path, de->d_name);
+						snprintf(partion_path, sizeof(partion_path), "%s%s", disk_path, de->d_name);
 						
 						if(strstr( con->physical.path->ptr, partion_path )){
-							sprintf(sql_query, "%s AND PATH LIKE '%s%s/%s'", sql_query, "%", partion_path, "%");
+							snprintf(sql_query, sizeof(sql_query), "%s AND PATH LIKE '%s%s/%s'", sql_query, "%", partion_path, "%");
 						}
 
 						partion_count++;
@@ -4846,23 +4879,19 @@ propmatch_cleanup:
 				}
 #else
 				char partion_path[100] = "/mnt/sda";
-				sprintf(sql_query, "%s AND PATH LIKE '%s%s/%s'", sql_query, "%", partion_path, "%");
+				snprintf(sql_query, sizeof(sql_query), "%s AND PATH LIKE '%s%s/%s'", sql_query, "%", partion_path, "%");
 				partion_count = 1;
 #endif
-				if(partion_count>1){
-					Cdbg(1, "sql_query=%s", sql_query);
+				if(partion_count>1){					
 					int count = 0;
 					if( sql_get_table(sql_minidlna, sql_query, &result2, &rows2, NULL) == SQLITE_OK ){
-						Cdbg(DBE, "aaaaaaaaaaaaaa rows2=%d", rows2);
-
-						for( j=column_count2; j<=rows2*column_count2; j+=column_count2 ){					
-							count = atoi(result2[j]);						
+						
+						for( int k=column_count2; k<=rows2*column_count2; k+=column_count2 ){					
+							count = atoi(result2[k]);						
 						}
 
 						sqlite3_free_table(result2);
 					}
-
-					Cdbg(DBE, "bbbbbbbbbbbbb count=%d", count);
 
 					if(count==0){
 						buffer_free(id);
@@ -4955,11 +4984,11 @@ propmatch_cleanup:
 		}
 		
 		int column_count = 2;
-		int rows, i;
+		int rows;
 		char **result;
 		char sql_query[2048] = "\0";
 
-		sprintf(sql_query, "SELECT d.TITLE as TITLE, "
+		snprintf(sql_query, sizeof(sql_query), "SELECT d.TITLE as TITLE, "
 						   "d.PATH as PATH "
 						   "from OBJECTS o "
 						   "left join DETAILS d on (o.DETAIL_ID = d.ID) "
@@ -4976,23 +5005,22 @@ propmatch_cleanup:
 
 		char auth[100]="\0";		
 		if(con->aidisk_username->used && con->aidisk_passwd->used)
-			sprintf(auth, "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
+			snprintf(auth, sizeof(auth), "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
 		else{
 			con->http_status = 400;
 			sqlite3_close(sql_minidlna);
 			return HANDLER_FINISHED;
 		}
 
-		char* base64_auth = ldb_base64_encode(auth, strlen(auth));
+		char* base64_auth = (char *)ldb_base64_encode(auth, strlen(auth));
 		
 		if( sql_get_table(sql_minidlna, sql_query, &result, &rows, NULL) == SQLITE_OK ){
 			Cdbg(DBE, "sql_query=%s, rows=%d", sql_query, rows);
-			int i=0;
 					
-			for( i=column_count; i<=rows*column_count; i+=column_count ){			
+			for( int j=column_count; j<=rows*column_count; j+=column_count ){			
 		
-				char* title = result[i];
-				char* path = result[i+1];
+				char* title = result[j];
+				char* path = result[j+1];
 				Cdbg(DBE, "title=%s", title);	
 				Cdbg(DBE, "path=%s", path);	
 				buffer_append_string_len(b,CONST_STR_LEN("<item>"));
@@ -5162,13 +5190,13 @@ propmatch_cleanup:
 
 		char auth[100]="\0";		
 		if(con->aidisk_username->used && con->aidisk_passwd->used)
-			sprintf(auth, "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
+			snprintf(auth, sizeof(auth), "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
 		else{
 			con->http_status = 400;
 			return HANDLER_FINISHED;
 		}
 
-		char* base64_auth = ldb_base64_encode(auth, strlen(auth));
+		char* base64_auth = (char *)ldb_base64_encode(auth, strlen(auth));
 		
 		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/xml; charset=\"utf-8\""));
 		
@@ -5181,8 +5209,8 @@ propmatch_cleanup:
 			struct dirent *de;
 
 			while(NULL != (de = readdir(dir))) {
-				struct stat st;
-				int status = 0;
+				//struct stat st;
+				//int status = 0;
 
 				if ((de->d_name[0] == '.' && de->d_name[1] == '\0')  ||
 				    (de->d_name[0] == '.' && de->d_name[1] == '.' && de->d_name[2] == '\0')) {
@@ -5190,7 +5218,7 @@ propmatch_cleanup:
 					/* ignore the parent dir */
 				}
 
-				char* aa = get_filename_ext(de->d_name);
+				char* aa = (char *)get_filename_ext(de->d_name);
 				int len = strlen(aa)+1; 		
 				char* file_ext = (char*)malloc(len);
 				memset(file_ext,'\0', len);
@@ -5390,6 +5418,14 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "FILENAME"))) {
 			filename = ds->value;
 			buffer_urldecode_path(filename);
+			
+			//- Check paramter
+			if( filename->used <= 1 ||
+				string_starts_with(filename->ptr, "../") ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
+			
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5398,6 +5434,12 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TITLE"))) {
 			title = ds->value;
 			buffer_urldecode_path(title);
+
+			//- Check paramter
+			if( title->used > 20000 ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5405,6 +5447,14 @@ propmatch_cleanup:
 		
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TOKEN"))) {
 			auth_token = ds->value;
+			
+			//- Check paramter
+			if( buffer_is_empty(auth_token) ||
+				auth_token->used > 255 ||
+				auth_token->used <= 1 ){				
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5412,6 +5462,16 @@ propmatch_cleanup:
 
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "ALBUM"))) {
 			album = ds->value;
+			
+			//- Check paramter
+			if( buffer_is_empty(album) ||
+				!is_string_encode_as_integer(album->ptr) ||
+				album->used > 30 ||
+				album->used <= 1){				
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
+			
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5421,7 +5481,7 @@ propmatch_cleanup:
 		CURLcode rt;
 		struct curl_httppost *formpost = NULL;
 		struct curl_httppost *lastptr = NULL;
-		char md5[129];
+		//char md5[129];
 		char* response_str;
 		char url_upload_facebook[1024] = "\0";
 		curl = curl_easy_init();
@@ -5454,7 +5514,7 @@ propmatch_cleanup:
 			             CURLFORM_COPYCONTENTS, "success", CURLFORM_END);
 			
 			char photo_path[1024] = "\0";
-			sprintf(photo_path, "%s/%s", con->physical.path->ptr, filename->ptr);
+			snprintf(photo_path, sizeof(photo_path), "%s/%s", con->physical.path->ptr, filename->ptr);
 			Cdbg(1, "photo_path=%s", photo_path);
 
 			//- check file exists
@@ -5534,6 +5594,13 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "FILENAME"))) {
 			filename = ds->value;
 			buffer_urldecode_path(filename);
+
+			//- Check paramter
+			if( filename->used <= 1 ||
+				string_starts_with(filename->ptr, "../") ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5542,6 +5609,12 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TITLE"))) {
 			title = ds->value;
 			buffer_urldecode_path(title);
+
+			//- Check paramter
+			if( title->used > 20000 ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5549,6 +5622,15 @@ propmatch_cleanup:
 
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "UID"))) {
 			user_id = ds->value;
+
+			//- Check paramter
+			if( buffer_is_empty(user_id) ||
+				!is_string_encode_as_integer(user_id->ptr) ||
+				user_id->used > 30 ||
+				user_id->used <= 1){				
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5556,6 +5638,15 @@ propmatch_cleanup:
 
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "AID"))) {
 			album_id = ds->value;
+
+			//- Check paramter
+			if( buffer_is_empty(album_id) ||
+				!is_string_encode_as_integer(album_id->ptr) ||
+				album_id->used > 30 ||
+				album_id->used <= 1){				
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5563,6 +5654,13 @@ propmatch_cleanup:
 		
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TOKEN"))) {
 			auth_token = ds->value;
+
+			//- Check paramter
+			if( buffer_is_empty(auth_token) ||
+				auth_token->used <= 1 ){				
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5570,23 +5668,17 @@ propmatch_cleanup:
 		
 		CURL *curl;
 		CURLcode rt;
-
-		#if 0
-		_buffer_t upload_response;
-		#endif
-		
-		buffer* buffer_photoid;
 		
 		curl = curl_easy_init();
 		if(curl) {
 			Cdbg(DBE, "curl_easy_init OK");
 
 			char request_url[1024] = "\0";
-			sprintf(request_url, "https://picasaweb.google.com/data/feed/api/user/%s/albumid/%s", user_id->ptr, album_id->ptr);
+			snprintf(request_url, sizeof(request_url), "https://picasaweb.google.com/data/feed/api/user/%s/albumid/%s", user_id->ptr, album_id->ptr);
 			curl_easy_setopt(curl, CURLOPT_URL, request_url);
 			
 			char photo_path[1024] = "\0";
-			sprintf(photo_path, "%s/%s", con->physical.path->ptr, filename->ptr);
+			snprintf(photo_path, sizeof(photo_path), "%s/%s", con->physical.path->ptr, filename->ptr);
 			
 			FILE *fd;
  			fd = fopen(photo_path, "rb"); /* open file to upload */ 
@@ -5597,15 +5689,15 @@ propmatch_cleanup:
 		 	}
 
 			/* to get the file size */
-			struct stat file_info;
-  			if(fstat(fileno(fd), &file_info) != 0) {
+			struct stat the_file_info;
+  			if(fstat(fileno(fd), &the_file_info) != 0) {
 				fclose(fd);
 				curl_easy_cleanup(curl);
 		    	con->http_status = 404;
 				return HANDLER_FINISHED;
 			}
 
-			long file_size = file_info.st_size;
+			long file_size = the_file_info.st_size;
 			char* file_data = (char*) malloc (sizeof(char)*file_size);
   			if(file_data == NULL) {
 				fclose(fd);
@@ -5626,7 +5718,7 @@ propmatch_cleanup:
 			}
 
 			char mpart1[4096] = "\0";
-  			sprintf(mpart1, "\nMedia multipart posting\n"
+  			snprintf(mpart1, sizeof(mpart1), "\nMedia multipart posting\n"
 				"--END_OF_PART\n"
 				"Content-Type: application/atom+xml\n\n"
 				"<entry xmlns='http://www.w3.org/2005/Atom'>\n"
@@ -5664,11 +5756,11 @@ propmatch_cleanup:
 			headers = curl_slist_append(headers,"GData-Version: 2");
 			
 			char authHeader[1024] = "\0";
-			sprintf(authHeader, "Authorization: OAuth %s", auth_token->ptr);
+			snprintf(authHeader, sizeof(authHeader), "Authorization: OAuth %s", auth_token->ptr);
 			headers = curl_slist_append(headers, authHeader);
   
 			char content_length[1024] = "\0";
-			sprintf(content_length, "Content-Length=%d", file_size);
+			snprintf(content_length, sizeof(content_length), "Content-Length=%ld", file_size);
 			headers = curl_slist_append(headers, content_length);
 			
 			curl_easy_setopt(curl, CURLOPT_VERBOSE, 2);
@@ -5763,6 +5855,13 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "FILENAME"))) {
 			filename = ds->value;
 			buffer_urldecode_path(filename);
+
+			//- Check paramter
+			if( filename->used <= 1 ||
+				string_starts_with(filename->ptr, "../") ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5771,6 +5870,12 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TITLE"))) {
 			title = ds->value;
 			buffer_urldecode_path(title);
+
+			//- Check paramter
+			if( title->used > 20000 ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5778,6 +5883,13 @@ propmatch_cleanup:
 		
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TOKEN"))) {
 			auth_token = ds->value;
+
+			//- Check paramter
+			if( buffer_is_empty(auth_token) ||
+				auth_token->used <= 1 ){				
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -5840,7 +5952,7 @@ propmatch_cleanup:
 			             CURLFORM_COPYCONTENTS, title->ptr, CURLFORM_END);
 
 			char photo_path[1024] = "\0";
-			sprintf(photo_path, "%s/%s", con->physical.path->ptr, filename->ptr);
+			snprintf(photo_path, sizeof(photo_path), "%s/%s", con->physical.path->ptr, filename->ptr);
 			Cdbg(1, "photo_path=%s", photo_path);
 
 			//- check file exists
@@ -5882,15 +5994,15 @@ propmatch_cleanup:
 				
 				if (0 == xmlStrcmp(rootnode->name, BAD_CAST "rsp")) {
 
-					xmlChar *stat = xmlGetProp(rootnode,(const xmlChar*) "stat"); 
+					xmlChar *xml_stat = xmlGetProp(rootnode,(const xmlChar*) "stat"); 
 
-					if (0 == xmlStrcmp(stat, BAD_CAST "ok")) {
+					if (0 == xmlStrcmp(xml_stat, BAD_CAST "ok")) {
 						
 						xmlNode *childnode;
 						for (childnode = rootnode->children; childnode; childnode = childnode->next) {
 							if (0 == xmlStrcmp(childnode->name, BAD_CAST "photoid")) {
 								xmlChar *photoid = xmlNodeGetContent(childnode);
-								buffer_copy_string( buffer_photoid, photoid );								
+								buffer_copy_string( buffer_photoid, (char*)photoid );								
 								break;
 							}
 						}
@@ -5973,9 +6085,9 @@ propmatch_cleanup:
 								
 						if (0 == xmlStrcmp(rootnode->name, BAD_CAST "rsp")) {
 				
-							xmlChar *stat = xmlGetProp(rootnode,(const xmlChar*) "stat"); 
+							xmlChar *xml_stat = xmlGetProp(rootnode,(const xmlChar*) "stat"); 
 				
-							if (0 == xmlStrcmp(stat, BAD_CAST "ok")) {
+							if (0 == xmlStrcmp(xml_stat, BAD_CAST "ok")) {
 								Cdbg(1, "set photoset OK...");
 							}
 				
@@ -6040,6 +6152,13 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "FILENAME"))) {
 			filename = ds->value;
 			buffer_urldecode_path(filename);
+
+			//- Check paramter
+			if( filename->used <= 1 ||
+				string_starts_with(filename->ptr, "../") ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -6048,6 +6167,12 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TITLE"))) {
 			title = ds->value;
 			buffer_urldecode_path(title);
+
+			//- Check paramter
+			if( title->used > 20000 ){
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -6055,6 +6180,13 @@ propmatch_cleanup:
 		
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "TOKEN"))) {
 			auth_token = ds->value;
+
+			//- Check paramter
+			if( buffer_is_empty(auth_token) ||
+				auth_token->used <= 1 ){				
+				con->http_status = 400;
+				return HANDLER_FINISHED;
+			}
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -6116,7 +6248,7 @@ propmatch_cleanup:
 
 			struct curl_slist *headers = NULL;
 			char authHeader[1024] = "\0";
-			sprintf(authHeader, "Authorization: OAuth"
+			snprintf(authHeader, sizeof(authHeader), "Authorization: OAuth"
 				" oauth_consumer_key=\"%s\","
 				" oauth_nonce=\"%s\","
 				" oauth_signature_method=\"HMAC-SHA1\","
@@ -6134,7 +6266,7 @@ propmatch_cleanup:
 			headers = curl_slist_append(headers,"Content-Type: multipart/form-data");
 			
 			char photo_path[1024] = "\0";
-			sprintf(photo_path, "%s/%s", con->physical.path->ptr, filename->ptr);
+			snprintf(photo_path, sizeof(photo_path), "%s/%s", con->physical.path->ptr, filename->ptr);
 			Cdbg(DBE, "photo_path=%s", photo_path);
 
 			FILE *fd;
@@ -6146,15 +6278,15 @@ propmatch_cleanup:
 		 	}
 
 			/* to get the file size */
-			struct stat file_info;
-  			if(fstat(fileno(fd), &file_info) != 0) {
+			struct stat the_file_info;
+  			if(fstat(fileno(fd), &the_file_info) != 0) {
 				fclose(fd);
 				curl_easy_cleanup(curl);
 		    	con->http_status = 404;
 				return HANDLER_FINISHED;
 			}
 
-			long file_size = file_info.st_size;
+			long file_size = the_file_info.st_size;
 			long l_photo_size_limit = atol(photo_size_limit->ptr);
 			fclose(fd);
 

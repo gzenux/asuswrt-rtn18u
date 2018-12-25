@@ -31,6 +31,7 @@ WSLIB=libws.so
 
 CURL_DIR=../curl-7.21.7
 XML2_DIR=../libxml2
+JSON_C_DIR=$(TOP)/json-c
 OPENSSL_DIR=../openssl
 
 WS_SRC=ws_src
@@ -44,11 +45,12 @@ WSLIB_OBJS := $(WS_SOURCES:%.c=$(OUTPUT)/%.o)
 
 all: $(WSLIB)
 
-CFLAGS = -fPIC -I$(CURL_DIR)/include -I$(OPENSSL_DIR)/include -I$(XML2_DIR)/include -I.  -I$(WS_SRC)
+CFLAGS = -fPIC -I$(CURL_DIR)/include -I$(OPENSSL_DIR)/include -I$(XML2_DIR)/include -I$(JSON_C_DIR) -I.  -I$(WS_SRC)
 
 LDFLAGS = -L$(OPENSSL_DIR) -lcrypto -lssl
 LDFLAGS += -L$(CURL_DIR)/lib/.libs -lcurl
 LDFLAGS += -L$(XML2_DIR)/.libs -lxml2 -lpthread
+LDFLAGS += -L$(JSON_C_DIR)/.libs -ljson-c
 LDFLAGS += -ldl
 
 $(WSLIB): $(WSLIB_OBJS)

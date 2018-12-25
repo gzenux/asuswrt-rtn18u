@@ -1,7 +1,7 @@
 #ifndef _ATE_H_
 #define _ATE_H_
 
-enum led_color {
+enum ate_led_color {
 	LED_COLOR_WHITE = 0,
 	LED_COLOR_BLUE,
 	LED_COLOR_RED,

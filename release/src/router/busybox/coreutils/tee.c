@@ -4,13 +4,26 @@
  *
  * Copyright (C) 2003  Manuel Novoa III  <mjn3@codepoet.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 compliant */
 /* http://www.opengroup.org/onlinepubs/007904975/utilities/tee.html */
 
+//usage:#define tee_trivial_usage
+//usage:       "[-ai] [FILE]..."
+//usage:#define tee_full_usage "\n\n"
+//usage:       "Copy stdin to each FILE, and also to stdout\n"
+//usage:     "\n	-a	Append to the given FILEs, don't overwrite"
+//usage:     "\n	-i	Ignore interrupt signals (SIGINT)"
+//usage:
+//usage:#define tee_example_usage
+//usage:       "$ echo \"Hello\" | tee /tmp/foo\n"
+//usage:       "$ cat /tmp/foo\n"
+//usage:       "Hello\n"
+
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 int tee_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int tee_main(int argc, char **argv)
@@ -25,6 +38,7 @@ int tee_main(int argc, char **argv)
 #if ENABLE_FEATURE_TEE_USE_BLOCK_IO
 	ssize_t c;
 # define buf bb_common_bufsiz1
+	setup_common_bufsiz();
 #else
 	int c;
 #endif
@@ -42,7 +56,7 @@ int tee_main(int argc, char **argv)
 	 * that doesn't consume all its input.  Good idea... */
 	signal(SIGPIPE, SIG_IGN);
 
-	/* Allocate an array of FILE *'s, with one extra for a sentinal. */
+	/* Allocate an array of FILE *'s, with one extra for a sentinel. */
 	fp = files = xzalloc(sizeof(FILE *) * (argc + 2));
 	np = names = argv - 1;
 
@@ -67,11 +81,11 @@ int tee_main(int argc, char **argv)
 	/* names[0] will be filled later */
 
 #if ENABLE_FEATURE_TEE_USE_BLOCK_IO
-	while ((c = safe_read(STDIN_FILENO, buf, sizeof(buf))) > 0) {
+	while ((c = safe_read(STDIN_FILENO, buf, COMMON_BUFSIZE)) > 0) {
 		fp = files;
 		do
-			fwrite(buf, 1, c, *fp++);
-		while (*fp);
+			fwrite(buf, 1, c, *fp);
+		while (*++fp);
 	}
 	if (c < 0) {		/* Make sure read errors are signaled. */
 		retval = EXIT_FAILURE;
@@ -81,8 +95,8 @@ int tee_main(int argc, char **argv)
 	while ((c = getchar()) != EOF) {
 		fp = files;
 		do
-			putc(c, *fp++);
-		while (*fp);
+			putc(c, *fp);
+		while (*++fp);
 	}
 #endif
 

@@ -54,9 +54,9 @@ function initial(){
 }
 
 function applyRule(){	
-		save_table();
-		showLoading();	 	
-		document.form.submit();
+	save_table();
+	showLoading();
+	document.form.submit();
 }
 
 function save_table(){
@@ -111,11 +111,31 @@ function validForm(){
 	if(!Block_chars(document.form.qos_service_name_x_0, ["<" ,">" ,"'" ,"%"])){
 				return false;		
 	}
-	
-	if(!valid_IPorMAC(document.form.qos_ip_x_0)){
-		return false;
+
+	if(document.form.qos_ip_x_0.value != "") {
+		if(document.form.qos_ip_x_0.value.split(":").length == 6) { //mac
+			if(!validator.mac_addr(document.form.qos_ip_x_0.value)) {
+				document.form.qos_ip_x_0.focus();
+				alert("<#LANHostConfig_ManualDHCPMacaddr_itemdesc#>");
+				return false;
+			}
+		}
+		else if(document.form.qos_ip_x_0.value.split(".").length == 4) { //ip
+			if(!validator.ipv4_addr(document.form.qos_ip_x_0.value)) { //single ip
+				if(!validator.ipv4_addr_range(document.form.qos_ip_x_0.value)) { //ip range
+					document.form.qos_ip_x_0.focus();
+					alert(document.form.qos_ip_x_0.value + " <#JS_validip#>");
+					return false;
+				}
+			}
+		}
+		else {
+			document.form.qos_ip_x_0.focus();
+			alert(document.form.qos_ip_x_0.value + " <#Manual_Setting_JS_invalid#>");
+			return false;
+		}
 	}
-	
+
 	replace_symbol();
 	if(document.form.qos_port_x_0.value != "" && !Check_multi_range(document.form.qos_port_x_0, 1, 65535)){
 		parse_port="";
@@ -658,40 +678,6 @@ function replace_symbol(){
 					}		
 }					
 //} Viz add 2011.11 for replace ">" to ":65535"   &   "<" to "1:" 
-
-function valid_IPorMAC(obj){
-	
-	if(obj.value == ""){
-			return true;
-	}else{
-			var hwaddr = new RegExp("(([a-fA-F0-9]{2}(\:|$)){6})", "gi");		// ,"g" whole erea match & "i" Ignore Letter
-			var legal_hwaddr = new RegExp("(^([a-fA-F0-9][aAcCeE02468])(\:))", "gi"); // for legal MAC, unicast & globally unique (OUI enforced)
-
-			if(obj.value.split(":").length >= 2){
-					if(!hwaddr.test(obj.value)){	
-							obj.focus();
-							alert("<#LANHostConfig_ManualDHCPMacaddr_itemdesc#>");							
-    					return false;
-    			}else if(!legal_hwaddr.test(obj.value)){
-    					obj.focus();
-    					alert("<#IPConnection_x_illegal_mac#>");					
-    					return false;
-    			}else
-    					return true;
-			}		
-			else if(obj.value.split("*").length >= 2){
-					if(!validator.ipSubnet(obj))
-							return false;
-					else
-							return true;				
-			}
-			else if(!validator.validIPForm(obj, 0)){
-    			return false;
-			}
-			else
-					return true;		
-	}	
-}
 
 function pullLANIPList(obj){
 	var element = document.getElementById('ClientList_Block_PC');

@@ -1,0 +1,3 @@
+#if PHY_CONFIG_INCLUDE_BCM5248 == 1 || defined(PHY_DEVLIST_INCLUDE_ALL)
+PHY_DEVLIST_ENTRY(BCM5248, bcm5248, 0, "10/100BASE-TX Octal-F(tm) Transceiver", 0, 0)
+#endif

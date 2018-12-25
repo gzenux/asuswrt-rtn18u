@@ -127,24 +127,27 @@ ipup_main(int argc, char **argv)
 
 	strcpy(buf, "");
 	if ((value = getenv("DNS1")))
-		sprintf(buf, "%s", value);
+		snprintf(buf, sizeof(buf), "%s", value);
 	if ((value = getenv("DNS2")))
-		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "", value);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s%s", strlen(buf) ? " " : "", value);
 
 	/* empty DNS means they either were not requested or peer refused to send them.
 	 * for this case static DNS can be used, if they are configured */
 	if (strlen(buf) == 0 && !nvram_get_int(strcat_r(prefix, "dnsenable_x", tmp))) {
 		value = nvram_safe_get(strcat_r(prefix, "dns1_x", tmp));
 		if (*value && inet_addr_(value) != INADDR_ANY)
-			sprintf(buf, "%s", value);
+			snprintf(buf, sizeof(buf), "%s", value);
 		value = nvram_safe_get(strcat_r(prefix, "dns2_x", tmp));
 		if (*value && inet_addr_(value) != INADDR_ANY)
-			sprintf(buf + strlen(buf), "%s%s", *buf ? " " : "", value);
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s%s", *buf ? " " : "", value);
 	}
 
 	nvram_set(strcat_r(prefix, "dns", tmp), buf);
 
 	wan_up(wan_ifname);
+
+	nvram_set(strcat_r(prefix, "auth_ok", tmp), "1");
+	nvram_commit();
 
 	_dprintf("%s:: done\n", __FUNCTION__);
 	return 0;

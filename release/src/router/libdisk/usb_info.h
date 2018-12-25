@@ -1,3 +1,6 @@
+#ifndef _USB_INFO_H_
+#define _USB_INFO_H_
+
 #include <linux/version.h>
 #include <rtconfig.h>
 
@@ -13,7 +16,7 @@
 		} \
 	}while(0)
 #else
-#define usb_dbg printf
+#define usb_dbg _dprintf
 #endif
 
 #define foreach_58(word, wordlist, next) \
@@ -35,7 +38,11 @@
 #define SYS_BLOCK "/sys/block"
 #define SYS_TTY "/sys/class/tty"
 #define SYS_NET "/sys/class/net"
+#if !defined(HND_ROUTER) && !defined(RTCONFIG_LANTIQ)
 #define SYS_USB "/sys/class/usb"
+#else
+#define SYS_USB "/sys/class/usbmisc"
+#endif
 #define SYS_SG "/sys/class/scsi_generic"
 #define USB_DEVICE_PATH "/sys/bus/usb/devices"
 #define SYS_RNDIS_PATH "/sys/module/rndis_host/drivers/usb:rndis_host"
@@ -44,6 +51,7 @@
 
 #include <rtstate.h>
 
+#if !defined(RTCONFIG_ALPINE) && !defined(RTCONFIG_LANTIQ)
 #define USB_XHCI_PORT_1 get_usb_xhci_port(0)
 #define USB_XHCI_PORT_2 get_usb_xhci_port(1)
 #define USB_EHCI_PORT_1 get_usb_ehci_port(0)
@@ -52,6 +60,7 @@
 #define USB_OHCI_PORT_2 get_usb_ohci_port(1)
 #define USB_EHCI_PORT_3 get_usb_ehci_port(2)
 #define USB_OHCI_PORT_3 get_usb_ohci_port(2)
+#endif
 
 #if defined(RTCONFIG_M2_SSD)
 #define M2_SSD_PORT USB_EHCI_PORT_3
@@ -90,6 +99,7 @@ extern char *get_usb_product(const char *usb_node, char *buf, const int buf_size
 extern char *get_usb_serial(const char *usb_node, char *buf, const int buf_size);
 extern char *get_usb_speed(const char *usb_node, char *buf, const int buf_size);
 extern int get_usb_interface_number(const char *usb_node);
+extern int get_usb_interface_order(const char *interface_name);
 extern char *get_usb_interface_class(const char *interface_name, char *buf, const int buf_size);
 extern char *get_usb_interface_subclass(const char *interface_name, char *buf, const int buf_size);
 extern int get_interface_numendpoints(const char *interface_name);
@@ -117,7 +127,7 @@ extern int hadBeceemModule();
 extern int hadGCTModule(void);
 extern int isBeceemNode(const char *device_name);
 #endif
-extern int is_usb_modem_ready(void);
+extern int is_usb_modem_ready(int wan_type);
 #endif
 
 #ifdef RTCONFIG_USB_PRINTER
@@ -130,7 +140,7 @@ extern int isStorageDevice(const char *device_name);
 #if defined(RTCONFIG_M2_SSD)
 extern int isM2SSDDevice(const char *device_name);
 #else
-static inline int isM2SSDDevice(const char *device_name) { return 0; }
+static inline int isM2SSDDevice(__attribute__ ((unused)) const char *device_name) { return 0; }
 #endif
 #ifdef BCM_MMC
 extern int isMMCDevice(const char *device_name);
@@ -138,4 +148,8 @@ extern int isMMCDevice(const char *device_name);
 
 extern char *find_sg_of_device(const char *device_name, char *buf, const int buf_size);
 
+#ifdef RTCONFIG_INTERNAL_GOBI
 extern char *get_gobi_portpath();
+#endif
+
+#endif	/* !_USB_INFO_H_ */

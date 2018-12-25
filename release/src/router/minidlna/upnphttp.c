@@ -594,6 +594,21 @@ Send400(struct upnphttp * h)
 	CloseSocket_upnphttp(h);
 }
 
+/* very minimalistic 403 error message */
+static void
+Send403(struct upnphttp * h)
+{
+	static const char body403[] =
+		"<HTML><HEAD><TITLE>403 Forbidden</TITLE></HEAD>"
+		"<BODY><H1>Forbidden</H1>You don't have permission to access this resource."
+		"</BODY></HTML>\r\n";
+	h->respflags = FLAG_HTML;
+	BuildResp2_upnphttp(h, 403, "Forbidden",
+	                    body403, sizeof(body403) - 1);
+	SendResp_upnphttp(h);
+	CloseSocket_upnphttp(h);
+}
+
 /* very minimalistic 404 error message */
 static void
 Send404(struct upnphttp * h)
@@ -705,6 +720,7 @@ SendResp_readynas_admin(struct upnphttp * h)
 }
 #endif
 
+#if 0
 static void
 SendResp_presentation(struct upnphttp * h)
 {
@@ -732,7 +748,7 @@ SendResp_presentation(struct upnphttp * h)
 		"<tr><td>Image files</td><td>%d</td></tr>"
 		"</table>", a, v, p);
 
-	if (scanning)
+	if (GETFLAG(SCANNING_MASK))
 		strcatf(&str,
 			"<br><i>* Media scan in progress</i><br>");
 
@@ -751,13 +767,14 @@ SendResp_presentation(struct upnphttp * h)
 	}
 	strcatf(&str, "</table>");
 
-	strcatf(&str, "<br>%d connection%s currently open<br>", (number_of_children > 0 ? : 0), (number_of_children == 1 ? "" : "s"));
+	strcatf(&str, "<br>%d connection%s currently open<br>", (number_of_children > 0 ? number_of_children : 0), (number_of_children == 1 ? "" : "s"));
 	strcatf(&str, "</BODY></HTML>\r\n");
 
 	BuildResp_upnphttp(h, str.data, str.off);
 	SendResp_upnphttp(h);
 	CloseSocket_upnphttp(h);
 }
+#endif
 
 /* ProcessHTTPPOST_upnphttp()
  * executes the SOAP query if it is possible */
@@ -929,12 +946,6 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 	HttpCommand[i] = '\0';
 	while(*p==' ')
 		p++;
-	if(strncmp(p, "http://", 7) == 0)
-	{
-		p = p+7;
-		while(*p!='/')
-			p++;
-	}
 	for(i = 0; i<511 && *p && *p != ' ' && *p != '\r'; i++)
 		HttpUrl[i] = *(p++);
 	HttpUrl[i] = '\0';
@@ -1112,6 +1123,7 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 		{
 			SendResp_caption(h, HttpUrl+10);
 		}
+#if 0
 		else if(strncmp(HttpUrl, "/status", 7) == 0)
 		{
 			if (web_status)
@@ -1126,6 +1138,7 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 			SendResp_presentation(h);
 			#endif
 		}
+#endif
 		else
 		{
 			DPRINTF(E_WARN, L_HTTP, "%s not found, responding ERROR 404\n", HttpUrl);
@@ -1264,7 +1277,7 @@ BuildHeader_upnphttp(struct upnphttp * h, int respcode,
 		"Connection: close\r\n"
 		"Content-Length: %d\r\n"
 		"Server: " MINIDLNA_SERVER_STRING "\r\n";
-	time_t curtime = time(NULL);
+	time_t curtime = uptime();
 	char date[30];
 	int templen;
 	struct string_s res;
@@ -1434,7 +1447,7 @@ start_dlna_header(struct string_s *str, int respcode, const char *tmode, const c
 	char date[30];
 	time_t now;
 
-	now = time(NULL);
+	now = uptime();
 	strftime(date, sizeof(date),"%a, %d %b %Y %H:%M:%S GMT" , gmtime(&now));
 	strcatf(str, "HTTP/1.1 %d OK\r\n"
 	             "Connection: close\r\n"
@@ -1445,6 +1458,46 @@ start_dlna_header(struct string_s *str, int respcode, const char *tmode, const c
 	             "transferMode.dlna.org: %s\r\n"
 	             "Content-Type: %s\r\n",
 	             respcode, date, tmode, mime);
+}
+
+static int
+_open_file(const char *orig_path)
+{
+	struct media_dir_s *media_path;
+	char buf[PATH_MAX];
+	const char *path;
+	int fd;
+
+	if (!GETFLAG(WIDE_LINKS_MASK))
+	{
+		path = realpath(orig_path, buf);
+		if (!path)
+		{
+			DPRINTF(E_ERROR, L_HTTP, "Error resolving path %s: %s\n",
+						orig_path, strerror(errno));
+			return -1;
+		}
+
+		for (media_path = media_dirs; media_path; media_path = media_path->next)
+		{
+			if (strncmp(path, media_path->path, strlen(media_path->path)) == 0)
+				break;
+		}
+		if (!media_path && strncmp(path, db_path, strlen(db_path)))
+		{
+			DPRINTF(E_ERROR, L_HTTP, "Rejecting wide link %s -> %s\n",
+						orig_path, path);
+			return -403;
+		}
+	}
+	else
+		path = orig_path;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0)
+		DPRINTF(E_ERROR, L_HTTP, "Error opening %s\n", path);
+
+	return fd;
 }
 
 #ifdef MS_IPK
@@ -1943,11 +1996,13 @@ SendResp_albumArt(struct upnphttp * h, char * object)
 	}
 	DPRINTF(E_INFO, L_HTTP, "Serving album art ID: %lld [%s]\n", id, path);
 
-	fd = open(path, O_RDONLY);
+	fd = _open_file(path);
 	if( fd < 0 ) {
-		DPRINTF(E_ERROR, L_HTTP, "Error opening %s\n", path);
 		sqlite3_free(path);
-		Send404(h);
+		if (fd == -403)
+			Send403(h);
+		else
+			Send404(h);
 		return;
 	}
 	sqlite3_free(path);
@@ -1991,11 +2046,13 @@ SendResp_caption(struct upnphttp * h, char * object)
 	}
 	DPRINTF(E_INFO, L_HTTP, "Serving caption ID: %lld [%s]\n", id, path);
 
-	fd = open(path, O_RDONLY);
+	fd = _open_file(path);
 	if( fd < 0 ) {
-		DPRINTF(E_ERROR, L_HTTP, "Error opening %s\n", path);
 		sqlite3_free(path);
-		Send404(h);
+		if (fd == -403)
+			Send403(h);
+		else
+			Send404(h);
 		return;
 	}
 	sqlite3_free(path);
@@ -2114,7 +2171,7 @@ SendResp_resizedimg(struct upnphttp * h, char * object)
 #ifdef MS_IPK
 	no_thumb_image_path_dir = realpath("/opt/etc/downloadmaster/mediaserverui/images", no_thumb_image_path_dir_buf);
 #else
-    	no_thumb_image_path_dir = realpath("/www/images", no_thumb_image_path_dir_buf);
+    no_thumb_image_path_dir = realpath("/www/images", no_thumb_image_path_dir_buf);
 #endif
 	if (no_thumb_image_path_dir)
 		snprintf(no_thumb_image_path, sizeof(no_thumb_image_path), "%s/ic_file_image.jpg", no_thumb_image_path_dir);
@@ -2295,9 +2352,9 @@ SendResp_resizedimg(struct upnphttp * h, char * object)
 		}
 
 #if defined MS_IPK || defined MS_LIMIT
-        imdst = imsrc;
+		imdst = imsrc;
 #else
-        imdst = image_resize(imsrc, dstw, dsth);
+		imdst = image_resize(imsrc, dstw, dsth);
 #endif
 		data = image_save_to_jpeg_buf(imdst, &size);
 
@@ -2310,14 +2367,14 @@ SendResp_resizedimg(struct upnphttp * h, char * object)
 		{
 
 #if defined MS_IPK || defined MS_LIMIT
-            if (thumb_cache_exists(file_path, &cache_file))
-                imsrc = image_new_from_jpeg(cache_file, 1, NULL, 0, 1, rotate);
-            else
-                imsrc = image_new_from_jpeg(no_thumb_image_path, 1, NULL, 0, 1, rotate);
+			if (thumb_cache_exists(file_path, &cache_file))
+				imsrc = image_new_from_jpeg(cache_file, 1, NULL, 0, 1, rotate);
+			else
+			imsrc = image_new_from_jpeg(no_thumb_image_path, 1, NULL, 0, 1, rotate);
 #else
-            imsrc = image_new_from_jpeg(file_path, 1, NULL, 0, scale, rotate);
+			imsrc = image_new_from_jpeg(file_path, 1, NULL, 0, scale, rotate);
 #endif
-            if( !imsrc )
+			if( !imsrc )
 			{
 				DPRINTF(E_WARN, L_HTTP, "Unable to open image %s!\n", file_path);
 				Send500(h);
@@ -2325,9 +2382,9 @@ SendResp_resizedimg(struct upnphttp * h, char * object)
 			}
 			
 #if defined MS_IPK || defined MS_LIMIT
-            imdst = imsrc;
+			imdst = imsrc;
 #else
-            imdst = image_resize(imsrc, dstw, dsth);
+			imdst = image_resize(imsrc, dstw, dsth);
 #endif
 			data = image_save_to_jpeg_buf(imdst, &size);
 
@@ -2499,10 +2556,12 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 	}
 
 	offset = h->req_RangeStart;
-	sendfh = open(last_file.path, O_RDONLY);
+	sendfh = _open_file(last_file.path);
 	if( sendfh < 0 ) {
-		DPRINTF(E_ERROR, L_HTTP, "Error opening %s\n", last_file.path);
-		Send404(h);
+		if (sendfh == -403)
+			Send403(h);
+		else
+			Send404(h);
 		goto error;
 	}
 	size = lseek(sendfh, 0, SEEK_END);

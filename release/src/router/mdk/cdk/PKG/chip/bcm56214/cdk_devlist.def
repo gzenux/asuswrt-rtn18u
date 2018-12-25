@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56214_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56214, BCM56214_VENDOR_ID, BCM56214_DEVICE_ID, BCM56214_REV_A0, \
+                  0, 0, \
+                  bcm56218_a0, bcm56214_a0, bcm56214_a0, \
+                  CDK_DEV_ARCH_XGS, "Raptor", "BCM56210", \
+                  "Integrated Multilayer Switch and CPU", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56214_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56214, BCM56214_VENDOR_ID, BCM56214_DEVICE_ID, BCM56214_REV_A1, \
+                  0, 0, \
+                  bcm56218_a0, bcm56214_a0, bcm56214_a1, \
+                  CDK_DEV_ARCH_XGS, "Raptor", "BCM56210", \
+                  "Integrated Multilayer Switch and CPU", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56214_A2 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56214, BCM56214_VENDOR_ID, BCM56214_DEVICE_ID, BCM56214_REV_A2, \
+                  0, 0, \
+                  bcm56218_a0, bcm56214_a0, bcm56214_a2, \
+                  CDK_DEV_ARCH_XGS, "Raptor", "BCM56210", \
+                  "Integrated Multilayer Switch and CPU", 0, 0)
+#endif
+#endif
+

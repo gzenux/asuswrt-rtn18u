@@ -1,11 +1,13 @@
 #ifndef __NATNL_LIB_H__
 #define __NATNL_LIB_H__
 
+#include "natnl_event.h"
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <natnl_event.h>
 
 #ifndef MAX_SIP_SERVER_COUNT
 #define MAX_SIP_SERVER_COUNT 8
@@ -19,17 +21,19 @@ extern "C" {
 #define MAX_USER_PORT_COUNT 15
 #define MAX_TUNNEL_PORT_COUNT 8
 #define MAX_TEXT_LEN 64 
+#define MAX_ERR_MSG_LEN 80 
 #define MAX_PORT_LEN 6 
 #define MAX_IP_LEN 64 
 
 #define MAX_CALLS_COUNT 4
+
 
 /* 
 The structure is used to make a instant message port pair between local device and remote device.
 When the tunnel is built. The application can connect to 127.0.0.1:lport for 
 accessing the service of remote device.
 */
-struct natnl_im_port {
+typedef struct natnl_im_port {
 	// dest_device_id. The device_id of destination for sending message.
 	char dest_device_id[128];  
 
@@ -41,9 +45,9 @@ struct natnl_im_port {
 
 	// The timeout value for instant message.
 	int timeout_sec;
-};
+} natnl_im_port;
 
-typedef struct natnl_im_port natnl_im_port;
+//typedef struct natnl_im_port natnl_im_port;
 
 /*
 This structure should be passed in natnl_dll_init API for initialization of SDK.
@@ -208,6 +212,12 @@ struct natnl_config {
 
 	// The array of instant message port.
 	natnl_im_port im_ports[MAX_USER_PORT_COUNT];
+
+	// The file path of trusted ca certificate list for SIP server.
+	char sip_trusted_ca_certs[256];
+
+	// The file path of trusted ca certificate list for SIP server.
+	int sip_verify_server_peer;
 };
 
 //Global declare, nantl_config structure basic config
@@ -218,7 +228,7 @@ The structure is used to make a tunnel between local device and remote device.
 When the tunnel is built. The application can connect to 127.0.0.1:lport for 
 accessing the service of remote device.
 */
-struct natnl_srv_port {
+typedef struct natnl_srv_port {
 	// Local device to listen 127.0.0.1:lport. If assign 0, it will be chosen by operating system.
 	char lport[MAX_PORT_LEN];
 
@@ -240,7 +250,7 @@ struct natnl_srv_port {
 
 	// IP address of Remote device. If not assigned, 127.0.0.1 will be used.
 	char rip[MAX_IP_LEN];
-};
+} natnl_srv_port;
 
 typedef struct natnl_srv_port natnl_tnl_port;
 
@@ -280,7 +290,7 @@ struct natnl_tnl_event {
 	natnl_status_code    status_code;              
 	
 	// The string of error, might be empty string by case.
-	char                 status_text[MAX_TEXT_LEN];
+	char                 status_text[MAX_ERR_MSG_LEN];
 
 	// The user agent type 
 	// 0 is unknown
@@ -363,6 +373,18 @@ struct natnl_tnl_event {
 
 	// The consuming time in seconds while tunnel build process.
 	int                  tnl_build_spent_sec;
+
+	// The error of stun
+	int                  stun_last_status;
+
+	// The string of error of stun, might be empty string by case.
+	char                 stun_status_text[MAX_ERR_MSG_LEN];
+
+	// The error of turn
+	int                  turn_last_status;
+
+	// The string of error of turn, might be empty string by case.
+	char                 turn_status_text[MAX_ERR_MSG_LEN];
 };
 
 /**
@@ -392,7 +414,7 @@ struct natnl_tnl_info {
 	//  The call handle that is output by natnl_make_call.
 	int                  call_id;
 
-	// The natnl_event enumeration.
+	// The natnl_tnl_state enumeration.
 	natnl_tnl_state      state;    
 
 	// The natnl_status_code enumeration that is defined in natnl_event.h.
@@ -451,6 +473,24 @@ struct natnl_tnl_info {
 
 	// The consuming time in seconds while tunnel build process.
 	int                  tnl_build_spent_sec;
+
+	// The string of state.
+	char                 state_text[MAX_ERR_MSG_LEN];
+
+	// The string of error, might be empty string by case.
+	char                 status_text[MAX_ERR_MSG_LEN];
+
+	// The error of stun
+	int                  stun_last_status;
+
+	// The string of error of stun, might be empty string by case.
+	char                 stun_status_text[MAX_ERR_MSG_LEN];
+
+	// The error of turn
+	int                  turn_last_status;
+
+	// The string of error of turn, might be empty string by case.
+	char                 turn_status_text[MAX_ERR_MSG_LEN];
 };
 
 /*

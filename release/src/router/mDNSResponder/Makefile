@@ -1,3 +1,4 @@
+export MSIPK := $(MSIPK)
 all:
 	$(MAKE) -C mDNSPosix os=linux
 

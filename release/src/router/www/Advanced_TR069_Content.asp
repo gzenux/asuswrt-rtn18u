@@ -280,7 +280,7 @@ function cal_panel_block(){
 				</tr>
 
 				<tr>
-					<th>User Name</th>
+					<th><#Username#></th>
 					<td>
 						<input type="text" maxlength="32" name="tr_username" class="input_15_table" value="<% nvram_get("tr_username"); %>" onKeyPress="return is_string(this,event);" autocorrect="off" autocapitalize="off"/>
 					</td>
@@ -302,7 +302,7 @@ function cal_panel_block(){
 				</thead>
 
 				<tr>
-					<th>User Name</th>
+					<th><#Username#></th>
 					<td>
 						<input type="text" maxlength="32" name="tr_conn_username" class="input_15_table" value="<% nvram_get("tr_conn_username"); %>" onKeyPress="return is_string(this,event);" autocorrect="off" autocapitalize="off"/>
 					</td>

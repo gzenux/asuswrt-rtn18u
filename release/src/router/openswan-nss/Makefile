@@ -1,7 +1,0 @@
-all:
-
-install:
-
-clean:
-
-stage:

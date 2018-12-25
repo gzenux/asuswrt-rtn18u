@@ -12,7 +12,7 @@
 #include <bcmnvram.h>
 #include "httpd.h"
 #include "openvpn_options.h"
-
+#include "openvpn_config.h"
 
 struct buffer
 alloc_buf (size_t size)
@@ -334,12 +334,13 @@ check_inline_file_via_fp (FILE *fp, char *p[])
 }
 
 void
-add_custom(char *nv, char *p[])
+add_custom(int unit, char *p[])
 {
-	char *custom = nvram_safe_get(nv);
+	char nv[32];
+	char *custom;
 	char *param = NULL;
 	char *final_custom = NULL;
-	int i = 0, size = 0;
+	int i = 0, size = 0, sizeParam = 0;
 
 	if(!p[0])
 		return;
@@ -350,6 +351,7 @@ add_custom(char *nv, char *p[])
 	}
 
 	param = (char*)calloc(size, sizeof(char));
+	sizeParam = size * sizeof(char);
 
 	if(!param)
 		return;
@@ -357,19 +359,23 @@ add_custom(char *nv, char *p[])
 	i = 0;
 	while(p[i]) {
 		if(*param)
-			strcat(param, " ");
-		strcat(param, p[i]);
+			strlcat(param, " ", sizeParam);
+
+		strlcat(param, p[i], sizeParam);
 		i++;
 	}
 
+	snprintf(nv, sizeof(nv), "vpn_client%d_custom", unit);
+	custom = nvram_safe_get(nv);
 	if(custom) {
 		final_custom = calloc(strlen(custom) + strlen(param) + 2, sizeof(char));
+		sizeParam = (strlen(custom) + strlen(param) + 2)*sizeof(char);
 		if(final_custom) {
 			if(*custom) {
-				strcat(final_custom, custom);
-				strcat(final_custom, "\n");
+				strlcat(final_custom, custom, sizeParam);
+				strlcat(final_custom, "\n", sizeParam);
 			}
-			strcat(final_custom, param);
+			strlcat(final_custom, param, sizeParam);
 			nvram_set(nv, final_custom);
 			free(final_custom);
 		}
@@ -383,76 +389,69 @@ add_custom(char *nv, char *p[])
 static int
 add_option (char *p[], int line, int unit)
 {
-	char buf[32] = {0};
-	FILE *fp;
-	char file_path[128] ={0};
+	char prefix[32] = {0};
+
+	snprintf(prefix, sizeof(prefix), "vpn_client%d_", unit);
 
 	if  (streq (p[0], "dev") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_if", unit);
 		if(!strncmp(p[1], "tun", 3))
-			nvram_set(buf, "tun");
+			nvram_pf_set(prefix, "if", "tun");
 		else if(!strncmp(p[1], "tap", 3))
-			nvram_set(buf, "tap");
+			nvram_pf_set(prefix, "if", "tap");
 	}
 	else if  (streq (p[0], "proto") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_proto", unit);
-		nvram_set(buf, p[1]);
+		nvram_pf_set(prefix, "proto", p[1]);
 	}
 	else if  (streq (p[0], "remote") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_addr", unit);
-		nvram_set(buf, p[1]);
+		nvram_pf_set(prefix, "addr", p[1]);
 
-		sprintf(buf, "vpn_client%d_port", unit);
 		if(p[2])
-			nvram_set(buf, p[2]);
+			nvram_pf_set(prefix, "port", p[2]);
 		else
-			nvram_set(buf, "1194");
+			nvram_pf_set(prefix, "port", "1194");
+
+		if(p[3])
+			nvram_pf_set(prefix, "proto", p[3]);
+	}
+	else if  (streq (p[0], "port") && p[1])
+	{
+		nvram_pf_set(prefix, "port", p[1]);
 	}
 	else if (streq (p[0], "resolv-retry") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_retry", unit);
 		if (streq (p[1], "infinite"))
-			nvram_set(buf, "-1");
+			nvram_pf_set(prefix, "retry", "-1");
 		else
-			nvram_set(buf, p[1]);
+			nvram_pf_set(prefix, "retry", p[1]);
 	}
 	else if (streq (p[0], "comp-lzo"))
 	{
-		sprintf(buf, "vpn_client%d_comp", unit);
 		if(p[1])
-			nvram_set(buf, p[1]);
+			nvram_pf_set(prefix, "comp", p[1]);
 		else
-			nvram_set(buf, "adaptive");
+			nvram_pf_set(prefix, "comp", "adaptive");
 	}
 	else if (streq (p[0], "cipher") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_cipher", unit);
-		nvram_set(buf, p[1]);
+		nvram_pf_set(prefix, "cipher", p[1]);
+	}
+	else if (streq (p[0], "auth") && p[1])
+	{
+		nvram_pf_set(prefix, "digest", p[1]);
 	}
 	else if (streq (p[0], "verb") && p[1])
 	{
-		nvram_set("vpn_loglevel", p[1]);
+		nvram_pf_set(prefix, "verb", p[1]);
 	}
 	else if  (streq (p[0], "ca") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_crypt", unit);
-		nvram_set(buf, "tls");
+		nvram_pf_set(prefix, "crypt", "tls");
 		if (streq (p[1], INLINE_FILE_TAG) && p[2])
 		{
-			sprintf(buf, "vpn_crt_client%d_ca", unit);
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-			snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, buf);
-			fp = fopen(file_path, "w");
-			if(fp) {
-				fprintf(fp, "%s", strstr(p[2], "-----BEGIN"));
-				fclose(fp);
-			}
-			else
-#endif
-				nvram_set(buf, strstr(p[2], "-----BEGIN"));
+			set_ovpn_key(OVPN_TYPE_CLIENT, unit, OVPN_CLIENT_CA, p[2], NULL);
 		}
 		else
 		{
@@ -463,17 +462,7 @@ add_option (char *p[], int line, int unit)
 	{
 		if (streq (p[1], INLINE_FILE_TAG) && p[2])
 		{
-			sprintf(buf, "vpn_crt_client%d_crt", unit);
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-			snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, buf);
-			fp = fopen(file_path, "w");
-			if(fp) {
-				fprintf(fp, "%s", strstr(p[2], "-----BEGIN"));
-				fclose(fp);
-			}
-			else
-#endif
-				nvram_set(buf, strstr(p[2], "-----BEGIN"));
+			set_ovpn_key(OVPN_TYPE_CLIENT, unit, OVPN_CLIENT_CERT, p[2], NULL);
 		}
 		else
 		{
@@ -484,17 +473,7 @@ add_option (char *p[], int line, int unit)
 	{
 		if (streq (p[1], INLINE_FILE_TAG) && p[2])
 		{
-			sprintf(buf, "vpn_crt_client%d_key", unit);
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-			snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, buf);
-			fp = fopen(file_path, "w");
-			if(fp) {
-				fprintf(fp, "%s", strstr(p[2], "-----BEGIN"));
-				fclose(fp);
-			}
-			else
-#endif
-				nvram_set(buf, strstr(p[2], "-----BEGIN"));
+			set_ovpn_key(OVPN_TYPE_CLIENT, unit, OVPN_CLIENT_KEY, p[2], NULL);
 		}
 		else
 		{
@@ -505,48 +484,25 @@ add_option (char *p[], int line, int unit)
 	{
 		if (streq (p[1], INLINE_FILE_TAG) && p[2])
 		{
-			sprintf(buf, "vpn_crt_client%d_static", unit);
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-			snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, buf);
-			fp = fopen(file_path, "w");
-			if(fp) {
-				fprintf(fp, "%s", strstr(p[2], "-----BEGIN"));
-				fclose(fp);
-			}
-			else
-#endif
-				nvram_set(buf, strstr(p[2], "-----BEGIN"));
+			set_ovpn_key(OVPN_TYPE_CLIENT, unit, OVPN_CLIENT_STATIC, p[2], NULL);
 			//key-direction
-			sprintf(buf, "vpn_client%d_hmac", unit);
-			if(nvram_match(buf, "-1"))	//default, disable
-				nvram_set(buf, "2");	//openvpn default value: KEY_DIRECTION_BIDIRECTIONAL
+			if(nvram_pf_match(prefix, "hmac", "-1"))	//default, disable
+				nvram_pf_set(prefix, "hmac", "2");	//openvpn default value: KEY_DIRECTION_BIDIRECTIONAL
 		}
 		else
 		{
 			if(p[2]) {
-				sprintf(buf, "vpn_client%d_hmac", unit);
-				nvram_set(buf, p[2]);
+				nvram_pf_set(prefix, "hmac", p[2]);
 			}
 			return VPN_UPLOAD_NEED_STATIC;
 		}
 	}
 	else if (streq (p[0], "secret") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_crypt", unit);
-		nvram_set(buf, "secret");
+		nvram_pf_set(prefix, "crypt", "secret");
 		if (streq (p[1], INLINE_FILE_TAG) && p[2])
 		{
-			sprintf(buf, "vpn_crt_client%d_static", unit);
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-			snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, buf);
-			fp = fopen(file_path, "w");
-			if(fp) {
-				fprintf(fp, "%s", strstr(p[2], "-----BEGIN"));
-				fclose(fp);
-			}
-			else
-#endif
-				nvram_set(buf, strstr(p[2], "-----BEGIN"));
+			set_ovpn_key(OVPN_TYPE_CLIENT, unit, OVPN_CLIENT_STATIC, p[2], NULL);
 		}
 		else
 		{
@@ -555,20 +511,16 @@ add_option (char *p[], int line, int unit)
 	}
 	else if (streq (p[0], "auth-user-pass"))
 	{
-		sprintf(buf, "vpn_client%d_userauth", unit);
-		nvram_set(buf, "1");
+		nvram_pf_set(prefix, "userauth", "1");
 	}
 	else if (streq (p[0], "tls-remote") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_tlsremote", unit);
-		nvram_set(buf, "1");
-		sprintf(buf, "vpn_client%d_cn", unit);
-		nvram_set(buf, p[1]);
+		nvram_pf_set(prefix, "tlsremote", "1");
+		nvram_pf_set(prefix, "cn", p[1]);
 	}
 	else if (streq (p[0], "key-direction") && p[1])
 	{
-		sprintf(buf, "vpn_client%d_hmac", unit);
-		nvram_set(buf, p[1]);
+		nvram_pf_set(prefix, "hmac", p[1]);
 	}
 	else if (streq (p[0], "crl-verify") && p[1])
 	{
@@ -578,8 +530,16 @@ add_option (char *p[], int line, int unit)
 	}
 	else
 	{
-		sprintf(buf, "vpn_client%d_custom", unit);
-		add_custom(buf, p);
+		if ( streq (p[0], "client")
+			|| streq (p[0], "nobind")
+			|| streq (p[0], "persist-key")
+			|| streq (p[0], "persist-tun")
+		) {
+			;//ignore
+		}
+		else {
+			add_custom(unit, p);
+		}
 	}
 	return 0;
 }
@@ -592,6 +552,7 @@ read_config_file (const char *file, int unit)
 	char line[OPTION_LINE_SIZE];
 	char *p[MAX_PARMS];
 	int ret = 0;
+	char prefix[32] = {0};
 
 	fp = fopen (file, "r");
 	if (fp)
@@ -613,6 +574,13 @@ read_config_file (const char *file, int unit)
 			}
 		}
 		fclose (fp);
+
+		if( !(ret & VPN_UPLOAD_NEED_KEY)
+			&& !ovpn_key_exists(OVPN_TYPE_CLIENT, unit, OVPN_CLIENT_KEY)
+		) {
+			snprintf(prefix, sizeof(prefix), "vpn_client%d_", unit);
+			nvram_pf_set(prefix, "useronly", "1");
+		}
 	}
 	else
 	{
@@ -625,70 +593,11 @@ read_config_file (const char *file, int unit)
 	return ret;
 }
 
-void reset_client_setting(int unit){
-	char nv[32];
-	char file_path[128] ={0};
-
-	sprintf(nv, "vpn_client%d_custom", unit);
-	nvram_set(nv, "");
-	sprintf(nv, "vpn_client%d_comp", unit);
-	nvram_set(nv, "-1");
-	sprintf(nv, "vpn_client%d_reneg", unit);
-	nvram_set(nv, "-1");
-	sprintf(nv, "vpn_client%d_hmac", unit);
-	nvram_set(nv, "-1");
-	sprintf(nv, "vpn_client%d_retry", unit);
-	nvram_set(nv, "-1");
-	sprintf(nv, "vpn_client%d_cipher", unit);
-	nvram_set(nv, "default");
-	sprintf(nv, "vpn_client%d_tlsremote", unit);
-	nvram_set(nv, "0");
-	sprintf(nv, "vpn_client%d_cn", unit);
-	nvram_set(nv, "");
-	sprintf(nv, "vpn_client%d_userauth", unit);
-	nvram_set(nv, "0");
-	sprintf(nv, "vpn_client%d_username", unit);
-	nvram_set(nv, "");
-	sprintf(nv, "vpn_client%d_password", unit);
-	nvram_set(nv, "");
-	sprintf(nv, "vpn_crt_client%d_ca", unit);
-	nvram_set(nv, "");
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, nv);
-	unlink(file_path);
-#endif
-	sprintf(nv, "vpn_crt_client%d_crt", unit);
-	nvram_set(nv, "");
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, nv);
-	unlink(file_path);
-#endif
-	sprintf(nv, "vpn_crt_client%d_key", unit);
-	nvram_set(nv, "");
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, nv);
-	unlink(file_path);
-#endif
-	sprintf(nv, "vpn_crt_client%d_static", unit);
-	nvram_set(nv, "");
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, nv);
-	unlink(file_path);
-#endif
-	sprintf(nv, "vpn_crt_client%d_crl", unit);
-	nvram_set(nv, "");
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	snprintf(file_path, sizeof(file_path) -1, "%s/%s", OVPN_FS_PATH, nv);
-	unlink(file_path);
-#endif
-}
-
 void parse_openvpn_status(int unit){
 	FILE *fpi, *fpo;
 	char buf[512];
 	char *token;
-	char nv_name[32] = "";
-	char prefix_vpn[] = "vpn_serverXX_";
+	ovpn_sconf_t conf;
 
 	sprintf(buf, "/etc/openvpn/server%d/status", unit);
 	fpi = fopen(buf, "r");
@@ -696,14 +605,14 @@ void parse_openvpn_status(int unit){
 	sprintf(buf, "/etc/openvpn/server%d/client_status", unit);
 	fpo = fopen(buf, "w");
 
-	snprintf(prefix_vpn, sizeof(prefix_vpn), "vpn_server%d_", unit);
+	get_ovpn_sconf(unit, &conf);
 
 	if(fpi && fpo) {
 		while(!feof(fpi)){
 			CLEAR(buf);
 			if (!fgets(buf, sizeof(buf), fpi))
 				break;
-			if(!strncmp(buf, "CLIENT_LIST", 11)) {
+			if(!strncmp(buf, "CLIENT_LIST", 11) && conf.auth_mode == OVPN_AUTH_TLS) {
 				//printf("%s", buf);
 				token = strtok(buf, ",");	//CLIENT_LIST
 				token = strtok(NULL, ",");	//Common Name
@@ -712,10 +621,8 @@ void parse_openvpn_status(int unit){
 					fprintf(fpo, "%s ", token);
 				else
 					fprintf(fpo, "NoRealAddress ");
-				snprintf(nv_name, sizeof(nv_name) -1, "vpn_server%d_if", unit);
 
-				if(nvram_match(strcat_r(prefix_vpn, "if", nv_name), "tap")
-					&& nvram_match(strcat_r(prefix_vpn, "dhcp", nv_name), "1")) {
+				if( conf.if_type == OVPN_IF_TAP && conf.dhcp == 1) {
 					fprintf(fpo, "VirtualAddressAssignedByDhcp ");
 				}
 				else {
@@ -734,6 +641,18 @@ void parse_openvpn_status(int unit){
 					fprintf(fpo, "%s", token);
 				else
 					fprintf(fpo, "NoUsername");
+			}
+			else if(!strncmp(buf, "REMOTE", 6) && conf.auth_mode == OVPN_AUTH_STATIC) {
+				token = strtok(buf, ",");	//REMOTE,
+				token = strtok(NULL, ",");	//Real Address
+				if(token)
+					fprintf(fpo, "%s ", token);
+				else
+					fprintf(fpo, "NoRealAddress ");
+
+				fprintf(fpo, "%s ", conf.remote);
+				fprintf(fpo, "Static_Key");
+				break;
 			}
 		}
 		fclose(fpi);

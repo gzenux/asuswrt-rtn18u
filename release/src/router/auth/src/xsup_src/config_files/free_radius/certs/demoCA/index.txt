@@ -1,0 +1,2 @@
+V	050719070852Z		01	unknown	/C=TW/ST=HsinChu/L=SciencePark/O=Realtek/CN=linux223-server
+V	050719071023Z		02	unknown	/C=TW/ST=HsinChu/L=SciencePark/O=Realtek/CN=kenny

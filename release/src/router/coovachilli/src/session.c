@@ -120,10 +120,18 @@ int session_json_acct(struct session_state *state,
   init = init || !state->authenticated;
 
   bcatcstr(json,"\"sessionTime\":");
-  bassignformat(tmp, "%ld", init ? 0 : sessiontime);
+  if(params->sessiontimeout!=0){
+    bassignformat(tmp, "%ld", init ? 0 : (params->sessiontimeout - sessiontime));   //John changes to remain time
+  }else{
+    bassignformat(tmp, "%ld", init ? 0 : (params->sessiontimeout));   //John changes to remain time
+  }
   bconcat(json, tmp);
   bcatcstr(json,",\"idleTime\":");
-  bassignformat(tmp, "%ld", init ? 0 : idletime);
+  if(params->idletimeout != 0){  
+    bassignformat(tmp, "%ld", init ? 0 : (params->idletimeout - idletime));        //John changed to reamin time
+  }else{
+    bassignformat(tmp, "%ld", init ? 0 : (params->idletimeout));        //John changed to reamin time
+  }
   bconcat(json, tmp);
   bcatcstr(json,",\"inputOctets\":");
   bassignformat(tmp, "%ld",init ? 0 :  inoctets);

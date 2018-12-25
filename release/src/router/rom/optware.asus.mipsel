@@ -23,7 +23,7 @@ Size: 311017
 Filename: asuslighttpd_3.1.0.97_mipsel.ipk
 Source: http://dlcdnet.asus.com/pub/ASUS/wireless/ASUSWRT
 Description: 
-URL:
+URL: 
 
 
 Package: downloadmaster
@@ -56,7 +56,7 @@ Version: 1.0.2j.v001
 Section: libs
 Architecture: mipsel
 Maintainer: NSLU2 Linux <nslu2-linux@yahoogroups.com>
-Size: 988566
+Size: 988566 
 Filename: asusopenssl_1.0.2j.v001_mipsel.ipk
 Source: http://www.openssl.org/source/openssl-1.0.2j.tar.gz
 Description: Openssl provides the ssl implementation in libraries libcrypto and libssl, and is needed by many other applications and libraries.

@@ -1,0 +1,40 @@
+#if CDK_CONFIG_INCLUDE_BCM56309_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56309, BCM56309_VENDOR_ID, BCM56309_DEVICE_ID, BCM56309_REV_A0, \
+                  0, 0, \
+                  bcm56504_a0, bcm56309_a0, bcm56309_a0, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port GE L2 Switch with Four 10 GE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56309_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56309, BCM56309_VENDOR_ID, BCM56309_DEVICE_ID, BCM56309_REV_A1, \
+                  0, 0, \
+                  bcm56504_a0, bcm56309_a0, bcm56309_a1, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port GE L2 Switch with Four 10 GE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56309_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56309, BCM56309_VENDOR_ID, BCM56309_DEVICE_ID, BCM56309_REV_B0, \
+                  0, 0, \
+                  bcm56304_b0, bcm56309_b0, bcm56309_b0, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port GE L2 Switch with Four 10 GE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56309_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56309, BCM56309_VENDOR_ID, BCM56309_DEVICE_ID, BCM56309_REV_B1, \
+                  0, 0, \
+                  bcm56304_b0, bcm56309_b0, bcm56309_b1, \
+                  CDK_DEV_ARCH_XGS, "Helix", "BCM56300", \
+                  "24-Port GE L2 Switch with Four 10 GE/HiGig+ Ports", 0, 0)
+#endif
+#endif
+

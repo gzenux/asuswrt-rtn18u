@@ -1,6 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<html xmlns:v>
+﻿<html>
 <head>
 <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -15,17 +13,14 @@
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <style>
 .banner1{
-	width:998px;
-	height:54px;
-	background:url(images/New_ui/title_bg.png) 0 0 no-repeat;
+	width:998px;	
 	margin:0px auto;
 }
 .qismenu{
 	width:120px;
 	font-size: 12px;
-	font-weight: bold;
 	text-shadow: 1px 1px 0px black;
-	filter: progid:DXImageTransform.Microsoft.DropShadow(OffX=1, OffY=1, Color=#000000);
+	font-weight: bold;
 }
 .button_gen_scan{
 	font-weight: bolder;
@@ -84,7 +79,7 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script>
-var isFirst = ('<% nvram_get("x_Setting"); %>' == '1') ? false : true;;
+var isFirst = ('<% nvram_get("x_Setting"); %>' == '1') ? false : true;
 var header_info = [<% get_header_info(); %>][0];
 var ROUTERHOSTNAME = '<% nvram_get("local_domain"); %>';
 var domainNameUrl = ((header_info.host.split(":").length==2)?"https":"http")+"://"+header_info.host.replace(header_info.host.split(":")[0], ROUTERHOSTNAME);
@@ -115,11 +110,12 @@ var pppoe_failed_flag = false;
 if(isMobile() && tmo_support && sw_mode != 2 && qisFlag != "sitesurvey_rep" && qisFlag != "sitesurvey_mb")
 	location.href = "MobileQIS_Login.asp";
 
-if(isMobile() && (based_modelid == "RT-AC88U" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R"))
-	location.href = "QIS_wizard_m.htm";	
+if(isMobile() && (based_modelid == "RT-AC88U" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC5300" || based_modelid == "GT-AC5300" || based_modelid == "GT-AC9600")){
+	location.href = "QIS_wizard_m.htm" + ((qisFlag !== "") ? "?flag="+qisFlag : "");
+}
 	
 var parent_macaddr = '<% nvram_get("lan_hwaddr"); %>';
-
+var nz_isp_support = isSupport("nz_isp");
 var isRepeater = true;
 var reduced_internet_type = "disable";
 var targeturl = "/index.htm";
@@ -163,6 +159,15 @@ var rebootTime = eval("<% get_default_reboot_time(); %>");
 
 var wan_autodet_state = "";
 var usb_connected = 0;
+
+var wans_dualwan = '<% nvram_get("wans_dualwan"); %>'.split(" ");
+if(wans_dualwan[0].indexOf("wan") != -1  && wans_dualwan[1].indexOf("wan") != -1)
+	var dual_ewan = true;
+else
+	var dual_ewan = false;
+
+var cur_wan_unit = 0;
+
 
 var htmlEnDeCode = (function() {
 	var charToEntityRegex,
@@ -320,25 +325,44 @@ $.ajax({
 	});	
 }
 
+
 function QIS_load_body(){
 	var showCase;
-	showCase = (document.getElementById("flag").value == "") ? "welcome" : document.getElementById("flag").value;
-	winW_H();
-	
-	var banner_code = "";
-	if (spirit_logo_support)
-		banner_code += '<img src="images/New_ui/asus_spirit_title.png" width="214" height="31" align="left" style="margin-top:13px;margin-left:30px;">'
-	else {
-		banner_code += '<img src="images/New_ui/asustitle.png" width="218" height="54" align="left">'
-		banner_code += '<span class="modelName_top" style="margin-top:20px;"><#Web_Title2#></span>'
+
+	var getDefaultCase = function(){
+		if(isFirst)
+			return "welcome";
+		else if(document.QKform.sw_mode.value == 2)
+			return "sitesurvey_rep";
+		else if(document.QKform.sw_mode.value == 3)
+			return "lanip";
+		else if(document.QKform.sw_mode.value == 4)
+			return "sitesurvey_mb";
+		else
+			return "detect";
+
+		return "welcome";
 	}
-	banner_code += '<ul id="language_menu" class="navigation"></ul>'
-	document.getElementById("QIS_banner").innerHTML = banner_code;
+
+	winW_H();
+	if(based_modelid == "GT-AC5300" || based_modelid == "GT-AC9600"){
+		document.getElementById("logo").src = "images/New_ui/logo_ROG.png"
+		document.getElementById("logo").style.width = "358px"
+		document.getElementById("logo").style.height = "86px"
+	}
+	else if(spirit_logo_support){
+		document.getElementById("logo").src = "images/New_ui/asus_spirit_title.png";
+		document.getElementById("logo").style.width = "214px";
+		document.getElementById("logo").style.height = "31px";
+		document.getElementById("logo").style.marginTop = "13px";
+		document.getElementById("logo").style.marginLeft = "30px";
+		document.getElementById("title_name").style.display = "none";
+	}
 
 	document.getElementById("language_menu").innerHTML = '<% shown_language_css(); %>';
 	show_selected_language();
 	
-	if(based_modelid == "4G-AC55U" && sim_state == "1" && modem_autoapn == "1" && usb_modem_auto_spn.length == 0)
+	if((based_modelid == "4G-AC53U" || based_modelid == "4G-AC55U" || based_modelid == "4G-AC68U") && sim_state == "1" && modem_autoapn == "1" && usb_modem_auto_spn.length == 0)
 		update_apn_progress();
 	else
 		document.getElementById("apn_div").style.display = "none";	
@@ -348,6 +372,55 @@ function QIS_load_body(){
 			document.QKform.sw_mode.value = 4;
 	}
 
+	if(dual_ewan){
+		document.QKform.wan_proto.disabled = true;
+		document.QKform.wan_dhcpenable_x.disabled = true;
+		document.QKform.wan_ipaddr_x.disabled = true;
+		document.QKform.wan_netmask_x.disabled = true;
+		document.QKform.wan_gateway_x.disabled = true;
+		document.QKform.wan_heartbeat_x.disabled = true;
+		document.QKform.wan_dnsenable_x.disabled = true;
+		document.QKform.wan_dns1_x.disabled = true;
+		document.QKform.wan_dns2_x.disabled = true;
+		document.QKform.wan_hostname.disabled = true;
+		document.QKform.wan_hwaddr_x.disabled = true;
+		document.QKform.wan_pppoe_username.disabled = true;
+		document.QKform.wan_pppoe_passwd.disabled = true;
+	}
+	else{
+		document.QKform.wan0_proto.disabled = true;
+		document.QKform.wan0_dhcpenable_x.disabled = true;
+		document.QKform.wan0_ipaddr_x.disabled = true;
+		document.QKform.wan0_netmask_x.disabled = true;
+		document.QKform.wan0_gateway_x.disabled = true;
+		document.QKform.wan0_heartbeat_x.disabled = true;
+		document.QKform.wan0_dnsenable_x.disabled = true;
+		document.QKform.wan0_dns1_x.disabled = true;
+		document.QKform.wan0_dns2_x.disabled = true;
+		document.QKform.wan0_hostname.disabled = true;
+		document.QKform.wan0_hwaddr_x.disabled = true;
+		document.QKform.wan0_pppoe_username.disabled = true;
+		document.QKform.wan0_pppoe_passwd.disabled = true;
+		document.QKform.wan1_proto.disabled = true;
+		document.QKform.wan1_dhcpenable_x.disabled = true;
+		document.QKform.wan1_ipaddr_x.disabled = true;
+		document.QKform.wan1_netmask_x.disabled = true;
+		document.QKform.wan1_gateway_x.disabled = true;
+		document.QKform.wan1_heartbeat_x.disabled = true;
+		document.QKform.wan1_dnsenable_x.disabled = true;
+		document.QKform.wan1_dns1_x.disabled = true;
+		document.QKform.wan1_dns2_x.disabled = true;
+		document.QKform.wan1_hostname.disabled = true;
+		document.QKform.wan1_hwaddr_x.disabled = true;
+		document.QKform.wan1_pppoe_username.disabled = true;
+		document.QKform.wan1_pppoe_passwd.disabled = true;
+	}
+	if(based_modelid == "MAP-AC1300" || based_modelid == "MAP-AC2200" || based_modelid == "VZW-AC1300"){
+		document.getElementById("QIS_wizard_menu").style.display = "none";
+		document.getElementById("qis_menu").style.marginTop = "-160px";
+	}
+
+	showCase = (document.getElementById("flag").value == "") ? getDefaultCase() : document.getElementById("flag").value;
 	with(document.redirectForm){
 		switch(showCase){
 			case "remind":
@@ -370,34 +443,62 @@ function QIS_load_body(){
 				action = "/qis/QIS_internet_ip.htm";
 				flag.value = showCase;
 				submit();
-				break;				
+				break;
 			case "verify_detect":
 				action = "/qis/QIS_verify_detect.htm";
 				flag.value = showCase;
 				submit();
-				break;				
+				break;
 			case "adv_ap_mode":
 				document.QKform.sw_mode.value = "3";
 				action = "/qis/QIS_lanip.htm";
 				submit();
-				break;				
+				break;
 			case "pppoe":
-				document.QKform.wan_proto.value = "pppoe";			
+				if(dual_ewan){
+					if(cur_wan_unit == 0)
+						document.QKform.wan0_proto.value = "pppoe";
+					else
+						document.QKform.wan1_proto.value = "pppoe";
+				}
+				else
+					document.QKform.wan_proto.value = "pppoe";
 				action = "/qis/QIS_internet_account.htm";
 				submit();
-				break;				
+				break;
 			case "pptp":
-				document.QKform.wan_proto.value = "pptp";			
+				if(dual_ewan){
+					if(cur_wan_unit == 0)
+						document.QKform.wan0_proto.value = "pptp";
+					else
+						document.QKform.wan1_proto.value = "pptp";
+				}
+				else
+					document.QKform.wan_proto.value = "pptp";
 				action = "/qis/QIS_internet_account.htm";
 				submit();
-				break;				
+				break;
 			case "l2tp":
-				document.QKform.wan_proto.value = "l2tp";
+				if(dual_ewan){
+					if(cur_wan_unit == 0)
+						document.QKform.wan0_proto.value = "l2tp";
+					else
+						document.QKform.wan1_proto.value = "l2tp";
+				}
+				else
+					document.QKform.wan_proto.value = "l2tp";
 				action = "/qis/QIS_internet_account.htm";
 				submit();
-				break;				
+				break;
 			case "account":
-				document.QKform.wan_proto.value = "pptp";
+				if(dual_ewan){
+					if(cur_wan_unit == 0)
+						document.QKform.wan0_proto.value = "pptp";
+					else
+						document.QKform.wan1_proto.value = "pptp";
+				}
+				else
+					document.QKform.wan_proto.value = "pptp";
 				action = "/qis/QIS_internet_account.htm";
 				submit();
 				break;
@@ -417,13 +518,17 @@ function QIS_load_body(){
 				action = "/qis/QIS_lanip.htm";
 				submit();
 				break;
+			case "sim":
+				action = "/qis/QIS_detect.htm?flag=sim";
+				submit();
+				break;
 			default:
 				if(showCase.split("?").length == 1)
 					action = "/qis/QIS_" + showCase + ".htm";
 				else
 					action = "/qis/QIS_" + showCase.split("?")[0] + ".htm?" + showCase.split("?")[1];
 				submit();
-				break;					
+				break;
 		}
 	}
 }
@@ -529,7 +634,7 @@ function gotoIndex(){
 		location.href = '/QIS_wizard.htm?flag=wireless';
 	}
 	else
-		location.href = '/index.asp';
+		location.href = "<% abs_index_page(); %>";
 }
 
 function check_DUT(){
@@ -559,16 +664,16 @@ function detect_httpd(){
     			document.getElementById('loading_block1').style.display = "none";
     			document.getElementById('loading_block2').style.display = "none";
     			document.getElementById('loading_block3').style.display = "";
-				if(findasus_support){
+				/*if(findasus_support){
     				document.getElementById('loading_block3').innerHTML = "<div><#OP_AP_hint#></div>";
-				}else{
+				}else{*/
 					document.getElementById('loading_block3').innerHTML = "<div><#Main_alert_proceeding_desc3#>.<#LANConfig_ChangedLANIP#></div>";
-				}						
+				//}						
     		}
     	},
     	success: function(){
     		setTimeout("hideLoadingBar();",1000);
-      		location.href = "index.asp";
+      		location.href = "<% abs_index_page(); %>";
   		}
   	});
 }
@@ -581,7 +686,6 @@ function detect_httpd(){
 		<div style="margin:200px auto; width:300px; background-color:#006699; color:#FFFFFF; line-height:150%; border:3px solid #FFF; padding:5px;"><#not_support_script#></p></div>
 	</div>
 </noscript>
-
 <div id="LoadingBar" class="popup_bar_bg">
 <table cellpadding="5" cellspacing="0" id="loadingBarBlock" class="loadingBarBlock" align="center">
 	<tr>
@@ -629,7 +733,11 @@ function detect_httpd(){
 
 <!--For content in ifame-->	
 <!--[if !lte IE 6]>-->
-<div class="banner1" align="center" id="QIS_banner"></div>
+<div id="title_banner" class="banner1 banner_1 banner1_bg" align="center">
+	<img id="logo" src="images/New_ui/asustitle.png" style="width:218px;height:54px;" align="left">
+	<span id="title_name" class="modelName_top" style="margin-top:20px;"><#Web_Title2#></span>
+	<ul id="language_menu" class="navigation"></ul>
+</div>
 <!--<![endif]-->
 <!--[if lte IE 6]>
 <div class="banner1" align="center">
@@ -638,17 +746,17 @@ function detect_httpd(){
 </div>
 <![endif]-->
 
-<table width="998px" border="0" align="center" cellpadding="0" cellspacing="0">
+<table width="998px" border="0" align="center" cellpadding="0" cellspacing="0" class="minup_bg">
 	<tr>
-		<td height="170px" width="998px" valign="top" background="/images/New_ui/midup_bg.png"></td>
+		<td height="170px" width="998px" valign="top"></td>
 	</tr>
 </table>
 
-<table width="998px"  border="0" align="center" cellpadding="0" cellspacing="0" background="/images/New_ui/middown_bg.png">
+<table width="998px"  border="0" align="center" cellpadding="0" cellspacing="0" class="mindown_bg">
   <tr>
-		<td style="width:210px;*width:263px;" valign="top">
-			<div class="m_qis_r" id="btn_gotoindex" style="margin-left: 15px;margin-top: -160px;cursor:pointer;" onclick="gotoIndex();"><table><tbody><tr><td><div class="_index"></div></td><td><div><#CTL_Setting#></div></td></tr></tbody></table></div>
-			<div class="lefttabhead" style="margin-left:15px;" id="option0"><table width="192px" height="37px"><tbody><tr><td><#QIS_title#></td></tr></tbody></table></div>
+		<td style="width:210px;*width:263px;font-size:12px;" valign="top">
+			<div style="margin-left: 15px;margin-top: -160px;cursor:pointer;" class="menu menu_QIS_title" onclick="gotoIndex();" id="QIS_wizard_menu"><table><tbody><tr><td><div class="menu_Icon menu_QIS"></div></td><td class="menu_Desc" sytle=""><#CTL_Setting#></td></tr></tbody></table></div>
+			<div id="qis_menu" class="menu_Split" style="margin-left:15px;"><table width="100%" height="30px"><tbody><tr><td style="font-size:12px;text-align:center;line-height:25px;"><#QIS_title#></td></tr></tbody></table></div>
 			<div class="lefttabmid" id="t1" style="margin-left:15px;"><table height="52px"><tbody><tr><td><img style="margin-left:3px;" border="0" src="/images/qis/qisStep1.png"></td><td><div class="qismenu"><#QIS_step2#></div></td></tr></tbody></table></div>
 			<div class="lefttabmid" id="t2" style="margin-left:15px;"><table height="52px"><tbody><tr><td><img style="margin-left:3px;" border="0" src="/images/qis/qisStep2.png"></td><td><div class="qismenu"><#QIS_step3#></div></td></tr></tbody></table></div>
 			<div class="lefttabmid" id="t3" style="margin-left:15px;"><table height="52px"><tbody><tr><td><img style="margin-left:3px;" border="0" src="/images/qis/qisStep3.png"></td><td><div class="qismenu"><#QIS_step4#></div></td></tr></tbody></table></div>
@@ -658,7 +766,7 @@ function detect_httpd(){
 					<div id="apn_proceeding_img_text"></div>
 					<div id="apn_proceeding_img"></div>
 				</div>
-			</div>			
+			</div>
 		</td>
 
 		<td>
@@ -670,17 +778,18 @@ function detect_httpd(){
 				var $iframe = $("#contentM");
 				$iframe.on("load", function(){
 					$iframe.fadeIn(100);
-					document.getElementById("contentM").contentWindow.onbeforeunload = function(){
-						$iframe.css("display", "none");
 
-						if(wl_info.band5g_2_support && document.getElementById("contentM").contentWindow.location.pathname.search("QIS_wireless.htm") != -1){
-							$iframe.css("height", "650px");
-							$("._contentM_qis").css("height", "650px");
-						}
-						else{
-							$iframe.css("height", "540px");
-							$("._contentM_qis").css("height", "540px");
-						}
+					if(wl_info.band5g_2_support && document.getElementById("contentM").contentWindow.location.pathname.search("QIS_wireless.htm") != -1){
+						$iframe.css("height", "650px");
+						$("._contentM_qis").css("height", "650px");
+					}
+					else{
+						$iframe.css("height", "540px");
+						$("._contentM_qis").css("height", "540px");
+					}
+
+					$iframe[0].contentWindow.onbeforeunload = function(){
+						$("#contentM").css("display", "none");
 					};
 				});
 			})()
@@ -690,7 +799,7 @@ function detect_httpd(){
   </tr>
 
 	<tr>
-		<td height="27" colspan="3" style="background: url('/images/New_ui/bottom_bg.png') no-repeat">&nbsp;</td>
+		<td height="27" colspan="3" class="bottom_bg">&nbsp;</td>
 	</tr>
 </table>
 
@@ -732,6 +841,45 @@ function detect_httpd(){
 	<!-- internet Account -->
 	<input type="hidden" name="wan_pppoe_username" value="<% nvram_get("wan_pppoe_username"); %>">
 	<input type="hidden" name="wan_pppoe_passwd" value="<% nvram_get("wan_pppoe_passwd"); %>">
+
+	<!-- WAN1 -->
+	<!-- detect -->
+	<input type="hidden" name="wan0_proto" value="<% nvram_get("wan0_proto"); %>">
+	<!-- internet IP -->
+	<input type="hidden" name="wan0_dhcpenable_x" value="<% nvram_get("wan0_dhcpenable_x"); %>">
+	<input type="hidden" name="wan0_ipaddr_x" value="<% nvram_get("wan0_ipaddr_x"); %>">
+	<input type="hidden" name="wan0_netmask_x" value="<% nvram_get("wan0_netmask_x"); %>">
+	<input type="hidden" name="wan0_gateway_x" value="<% nvram_get("wan0_gateway_x"); %>">
+	<input type="hidden" name="wan0_heartbeat_x" value="<% nvram_get("wan0_heartbeat_x"); %>">
+	<input type="hidden" name="wan0_dnsenable_x" value="<% nvram_get("wan0_dnsenable_x"); %>">
+	<input type="hidden" name="wan0_dns1_x" value="<% nvram_get("wan0_dns1_x"); %>"> 
+	<input type="hidden" name="wan0_dns2_x" value="<% nvram_get("wan0_dns2_x"); %>"> 
+	<!-- internet ISP -->
+	<input type="hidden" name="wan0_hostname" value="<% nvram_get("wan0_hostname"); %>">
+	<input type="hidden" name="wan0_hwaddr_x" value="<% nvram_get("wan0_hwaddr_x"); %>">
+	<!-- internet Account -->
+	<input type="hidden" name="wan0_pppoe_username" value="<% nvram_get("wan0_pppoe_username"); %>">
+	<input type="hidden" name="wan0_pppoe_passwd" value="<% nvram_get("wan0_pppoe_passwd"); %>">
+
+	<!-- WAN2 -->
+	<!-- detect -->
+	<input type="hidden" name="wan1_proto" value="<% nvram_get("wan1_proto"); %>">
+	<!-- internet IP -->
+	<input type="hidden" name="wan1_dhcpenable_x" value="<% nvram_get("wan1_dhcpenable_x"); %>">
+	<input type="hidden" name="wan1_ipaddr_x" value="<% nvram_get("wan1_ipaddr_x"); %>">
+	<input type="hidden" name="wan1_netmask_x" value="<% nvram_get("wan1_netmask_x"); %>">
+	<input type="hidden" name="wan1_gateway_x" value="<% nvram_get("wan1_gateway_x"); %>">
+	<input type="hidden" name="wan1_heartbeat_x" value="<% nvram_get("wan1_heartbeat_x"); %>">
+	<input type="hidden" name="wan1_dnsenable_x" value="<% nvram_get("wan1_dnsenable_x"); %>">
+	<input type="hidden" name="wan1_dns1_x" value="<% nvram_get("wan1_dns1_x"); %>"> 
+	<input type="hidden" name="wan1_dns2_x" value="<% nvram_get("wan1_dns2_x"); %>"> 
+	<!-- internet ISP -->
+	<input type="hidden" name="wan1_hostname" value="<% nvram_get("wan1_hostname"); %>">
+	<input type="hidden" name="wan1_hwaddr_x" value="<% nvram_get("wan1_hwaddr_x"); %>">
+	<!-- internet Account -->
+	<input type="hidden" name="wan1_pppoe_username" value="<% nvram_get("wan1_pppoe_username"); %>">
+	<input type="hidden" name="wan1_pppoe_passwd" value="<% nvram_get("wan1_pppoe_passwd"); %>">
+
 	<!-- ap lan -->
 	<input type="hidden" name="lan_proto" value="<% nvram_get("lan_proto"); %>">
 	<input type="hidden" name="lan_ipaddr" value="<% nvram_get("lan_ipaddr"); %>">

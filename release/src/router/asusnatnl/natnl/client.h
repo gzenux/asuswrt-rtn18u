@@ -153,7 +153,12 @@ typedef struct client
 	char im_dest_deviceid[128];   /* The device_id of destination for sending message. */
 	void *im_user_data;
 	int im_timeout_sec;			  /* The timeout value in second unit for sending message. */
+	char *im_req_buf;
+	char *im_res_buf;
+	int im_res_len;
 	struct timeval      im_request_timeout;     // for check timeout.
+
+	int sleep_while_data_sent;
 } client_t;
 
 /* Call specific data */
@@ -164,7 +169,6 @@ typedef struct call_data
 	fd_set              client_fds;
 	int					nfds;
 	list_t             *clients;
-	list_t             *client_locks;
 
     /* for UDP_CLIENT */
     list_t             *conn_clients;
@@ -198,7 +202,7 @@ client_t *client_create(uint16_t id, socket_t *tcp_sock, pjmedia_transport *tp,
 client_t *client_copy(client_t *dst, client_t *src, size_t len);
 int client_cmp(client_t *c1, client_t *c2, size_t len);
 void client_free(client_t **c);
-void disconnect_and_remove_client(uint16_t id, list_t *clients,
+void disconnect_and_remove_client(client_t *c, list_t *clients,
 								  fd_set *fds, int full_disconnect, int type);
 void mutex_free(pj_mutex_t **c);
 int client_connect_tcp(client_t *c);
@@ -213,6 +217,7 @@ int client_recv_udp_msg(client_t *client, char *data, int data_len,
 #endif
 
 int client_send_lo_data(client_t *c);
+int client_send_lo_im_data(client_t *c);
 int client_recv_lo_data(client_t *c, struct call_data *cd);
 int client_recv_lo_whole_data(client_t *c, struct call_data *cd);
 int client_send_tnl_data(client_t *c);

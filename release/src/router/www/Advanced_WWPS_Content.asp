@@ -84,6 +84,10 @@ function initial(){
 			document.getElementById("wps_band_word").innerHTML = band0 + " / " + band1;
 		}
 	}
+
+	if(lantiq_support){
+		checkWLReady();
+	}
 	
 	if(!ValidateChecksum(document.form.wps_sta_pin.value) || document.form.wps_sta_pin.value == "00000000"){
 		document.form.wps_method[0].checked = true;
@@ -200,6 +204,11 @@ function enableWPS(){
 }
 
 function configCommand(){
+	if(lantiq_support && wave_ready != 1){
+		alert("Please wait a minute for wireless ready");
+		return false;
+	}
+
 	if(document.form.wps_method[1].checked == true){
 		if(PIN_PBC_Check()){
 			FormActions("apply.cgi", "wps_apply", "", "");
@@ -216,7 +225,14 @@ function configCommand(){
 }
 
 function resetWPS(){
+	if(lantiq_support && wave_ready != 1){
+		alert("Please wait a minute for wireless ready");
+		return false;
+	}
+
 	var sec = 5;
+	if(based_modelid == "BLUECAVE")
+		sec = 30;
 	if (Qcawifi_support)
 		sec += 7;
 	showLoading(sec);
@@ -325,7 +341,7 @@ function loadXML(){
 }
 
 function refresh_wpsinfo(xhr){
-	if(xhr.responseText.search("Main_Login.asp") !== -1) top.location.href = "/index.asp";
+	if(xhr.responseText.search("Main_Login.asp") !== -1) top.location.href = '<% abs_index_page(); %>';
 
 	var wpss = xhr.responseXML.getElementsByTagName("wps");
 	if(wpss == null || wpss[0] == null){
@@ -414,17 +430,17 @@ function show_wsc_status(wps_infos){
 
 	// First filter whether turn on Wi-Fi or not
 	if(currentBand == 0 && radio_2 != "1") {	//2.4GHz
-		document.getElementById("wps_enable_hint").innerHTML = "* <#note_turn_wifi_on_WPS#> <a style='color:#FC0; text-decoration: underline; font-family:Lucida Console;cursor:pointer;' onclick=\"_change_wl_advanced_unit_status(" + wps_infos[12].firstChild.nodeValue + ");\"><#btn_go#></a>"
+		document.getElementById("wps_enable_hint").innerHTML = "* <#note_turn_wifi_on_WPS#> <a style='color:#FC0; text-decoration: underline; font-family:Lucida Console;cursor:pointer;' onclick=\"_change_wl_advanced_unit_status(" + htmlEnDeCode.htmlEncode(wps_infos[12].firstChild.nodeValue) + ");\"><#btn_go#></a>"
 		controlDisplayItem();
 		return;
 	}
 	else if(currentBand == 1 && radio_5 != "1") {	//5GHz
-		document.getElementById("wps_enable_hint").innerHTML = "* <#note_turn_wifi_on_WPS#> <a style='color:#FC0; text-decoration: underline; font-family:Lucida Console;cursor:pointer;' onclick=\"_change_wl_advanced_unit_status(" + wps_infos[12].firstChild.nodeValue + ");\"><#btn_go#></a>"
+		document.getElementById("wps_enable_hint").innerHTML = "* <#note_turn_wifi_on_WPS#> <a style='color:#FC0; text-decoration: underline; font-family:Lucida Console;cursor:pointer;' onclick=\"_change_wl_advanced_unit_status(" + htmlEnDeCode.htmlEncode(wps_infos[12].firstChild.nodeValue) + ");\"><#btn_go#></a>"
 		controlDisplayItem();
 		return;
 	}
 	else if (reject_wps(wps_infos[11].firstChild.nodeValue, wep)){ // Second filter the authentication method
-		document.getElementById("wps_enable_hint").innerHTML = "<#WPS_weptkip_hint#><br><#wsc_mode_hint1#> <a style='color:#FC0; text-decoration: underline; font-family:Lucida Console;cursor:pointer;' onclick=\"_change_wl_unit_status(" + wps_infos[12].firstChild.nodeValue + ");\"><#menu5_1_1#></a> <#wsc_mode_hint2#>"
+		document.getElementById("wps_enable_hint").innerHTML = "<#WPS_weptkip_hint#><br><#wsc_mode_hint1#> <a style='color:#FC0; text-decoration: underline; font-family:Lucida Console;cursor:pointer;' onclick=\"_change_wl_unit_status(" + htmlEnDeCode.htmlEncode(wps_infos[12].firstChild.nodeValue) + ");\"><#menu5_1_1#></a> <#wsc_mode_hint2#>"
 		controlDisplayItem();
 
 		return;
@@ -440,7 +456,7 @@ function show_wsc_status(wps_infos){
 	}
 	else{
 		document.getElementById("wps_state_tr").style.display = "";
-		document.getElementById("wps_state_td").innerHTML = wps_infos[0].firstChild.nodeValue;
+		document.getElementById("wps_state_td").innerHTML = htmlEnDeCode.htmlEncode(wps_infos[0].firstChild.nodeValue);
 		if(productid=="RT-AC55U" || productid=="RT-AC55UHP")
 		{   
 		   	if(document.form.wps_band.value =="0" && wlan0_radio_flag == "0")
@@ -577,12 +593,12 @@ function show_wsc_status2(wps_infos0, wps_infos1){
 	}
 	else{
 		document.getElementById("wps_state_tr").style.display = "";
-		document.getElementById("wps_state_td").innerHTML = wps_infos0[0].firstChild.nodeValue ;
+		document.getElementById("wps_state_td").innerHTML = htmlEnDeCode.htmlEncode(wps_infos0[0].firstChild.nodeValue);
 		if(productid=="RT-AC55U" || productid=="RT-AC55UHP")
 		   	if(wlan0_radio_flag == "0")
 		   		document.getElementById("wps_state_td").innerHTML += " (2.4G is disabled)";
 
-		document.getElementById("wps_state_td").innerHTML += " / " + wps_infos1[0].firstChild.nodeValue ;
+		document.getElementById("wps_state_td").innerHTML += " / " + htmlEnDeCode.htmlEncode(wps_infos1[0].firstChild.nodeValue);
 		if(productid=="RT-AC55U" || productid=="RT-AC55UHP")
 		   	if( wlan1_radio_flag == "0")
 	   			document.getElementById("wps_state_td").innerHTML += " (5G is disabled)";
@@ -646,6 +662,26 @@ function _change_wl_advanced_unit_status(__unit){
 	document.titleForm.next_page.value = "Advanced_WAdvanced_Content.asp?af=wl_radio";
 	change_wl_unit_status(__unit);
 }
+
+function checkWLReady(){
+	$.ajax({
+	    url: '/ajax_wl_ready.asp',
+	    dataType: 'script',	
+	    error: function(xhr) {
+			setTimeout("checkWLReady();", 1000);
+	    },
+	    success: function(response){
+	    	if(wave_ready != 1){
+	    		$("#lantiq_ready").show();
+	    		setTimeout("checkWLReady();", 1000);
+	    	}
+	    	else{
+	    		$("#lantiq_ready").hide();
+	    	}
+			
+	    }
+  	});
+}
 </script>
 </head>
 
@@ -703,6 +739,7 @@ function _change_wl_advanced_unit_status(__unit){
 		  <div class="formfonttitle"><#menu5_1#> - <#menu5_1_2#></div>
 		  <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 		  <div class="formfontdesc"><#WLANConfig11b_display6_sectiondesc#></div>
+		  <div id="lantiq_ready" style="display:none;color:#FC0;margin-left:5px;font-size:13px;">Wireless is setting...</div>
 		  <div id="WPS_hideSSID_hint" class="formfontdesc" style="display:none;color:#FFCC00;"></div>		  
 
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0"  class="FormTable">

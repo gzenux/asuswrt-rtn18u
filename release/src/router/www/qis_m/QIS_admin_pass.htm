@@ -17,7 +17,7 @@
 var wanstate = -1;
 var wansbstate = -1;
 var wanauxstate = -1;
-var accounts = [<% get_all_accounts(); %>];
+var accounts = [<% get_all_accounts(); %>][0];
 <% wanstate(); %>
 var autodet_state = '<% nvram_get("autodet_state"); %>';
 var autodet_auxstate = '<% nvram_get("autodet_auxstate"); %>';
@@ -77,7 +77,7 @@ function submitForm(){
 	else{
 		var alert_str = validator.hostName(document.form.http_username);
 		if(alert_str != ""){
-			document.getElementById("alert_msg1").innerHTML = alert_str;
+			document.getElementById("alert_msg1").innerHTML = htmlEnDeCode.htmlEncode(alert_str);
 			document.getElementById("alert_msg1").style.display = "";
 			document.form.http_username.focus();
 			document.form.http_username.select();

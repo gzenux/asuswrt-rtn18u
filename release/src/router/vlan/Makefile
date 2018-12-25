@@ -42,9 +42,9 @@ $(VCONFIG): $(VLAN_OBJS)
 
 
 install: $(VCONFIG)
-	install -d $(INSTALLDIR)/vlan/usr/sbin
-	install -m 755 vconfig $(INSTALLDIR)/vlan/usr/sbin
-	$(STRIP) $(INSTALLDIR)/vlan/usr/sbin/vconfig
+	install -d $(INSTALLDIR)/usr/sbin
+	install -m 755 vconfig $(INSTALLDIR)/usr/sbin
+	$(STRIP) $(INSTALLDIR)/usr/sbin/vconfig
 
 $(ALL_OBJS): %.o: %.c %.h
 	@echo " "

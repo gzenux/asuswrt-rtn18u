@@ -14,7 +14,11 @@ struct model_s {
 };
 
 static const struct model_s model_list[] = {
-#if defined(RTCONFIG_RALINK)
+#if defined(RTCONFIG_REALTEK)
+	{ "RP-AC68U",   MODEL_RPAC68U   },
+	{ "RP-AC53",	MODEL_RPAC53	},
+	{ "RP-AC55",	MODEL_RPAC55	},
+#elif defined(RTCONFIG_RALINK)
 #ifdef RTCONFIG_DSL
 	{ "DSL-N55U",	MODEL_DSLN55U	},
 	{ "DSL-N55U-B",	MODEL_DSLN55U	},
@@ -35,35 +39,63 @@ static const struct model_s model_list[] = {
 	{ "RT-N65U",	MODEL_RTN65U	},
 	{ "RT-N67U",	MODEL_RTN67U	},
 	{ "RT-AC1200HP",MODEL_RTAC1200HP},
+	{ "RT-AC1200",	MODEL_RTAC1200	},
+	{ "RT-N600",	MODEL_RTAC1200	},
+	{ "RT-AC1200GA1",MODEL_RTAC1200GA1	},
+	{ "RT-AC1200GU",MODEL_RTAC1200GU	},
+	{ "RT-AC51U+",	MODEL_RTAC51UP	},
+	{ "RT-AC53",	MODEL_RTAC53	},
+	{ "RT-N11P_B1", MODEL_RTN11P_B1},
+	{ "RT-N10P_V3", MODEL_RTN11P_B1},
+	{ "RP-AC87", MODEL_RPAC87},	
+	{ "RT-AC85U", MODEL_RTAC85U},
+	{ "RT-AC65U", MODEL_RTAC85U},
 #elif defined(RTCONFIG_QCA)
 	{ "RT-AC55U",	MODEL_RTAC55U	},
 	{ "RT-AC55UHP",	MODEL_RTAC55UHP	},
 	{ "4G-AC55U",	MODEL_RT4GAC55U	},
-	{ "PL-N11",	MODEL_PLN11	},
 	{ "PL-N12",	MODEL_PLN12	},
 	{ "PL-AC56",	MODEL_PLAC56	},
 	{ "PL-AC66U",	MODEL_PLAC66U	},
+	{ "RP-AC66",	MODEL_RPAC66	},
+	{ "RP-AC51",	MODEL_RPAC51	},
 	{ "RT-AC58U",	MODEL_RTAC58U	},
+	{ "4G-AC53U",	MODEL_RT4GAC53U	},
 	{ "RT-AC82U",	MODEL_RTAC82U	},
+	{ "MAP-AC1300",	MODEL_MAPAC1300	},
+	{ "MAP-AC2200",	MODEL_MAPAC2200	},
+	{ "VZW-AC1300",	MODEL_VZWAC1300	},
+	{ "MAP-AC1750",	MODEL_MAPAC1750	},
+	{ "MAP-AC3000",	MODEL_MAPAC3000	},
 	{ "RT-AC88N",	MODEL_RTAC88N	},
-	{ "BRT-AC828",MODEL_BRTAC828},
+	{ "BRT-AC828",	MODEL_BRTAC828},
 	{ "RT-AC88S",	MODEL_RTAC88S	},
+	{ "RT-AD7200",	MODEL_RTAD7200	},
+	{ "GT-AX6000",	MODEL_GTAX6000	},
+	{ "GT-AX6000N",	MODEL_GTAX6000N	},
+	{ "GT-AX6000S",	MODEL_GTAX6000S	},
+#elif defined(RTCONFIG_ALPINE)
+	{ "GT-AC9600",	MODEL_GTAC9600	},
+#elif defined(RTCONFIG_LANTIQ)
+	{ "BLUECAVE",	MODEL_BLUECAVE	},
+	{ "BLUE_CAVE",	MODEL_BLUECAVE	},
 #else
 	{ "RT-N66U",	MODEL_RTN66U	},
 	{ "RT-AC56S",	MODEL_RTAC56S	},
 	{ "RT-AC56U",	MODEL_RTAC56U	},
 	{ "RT-AC66U",	MODEL_RTAC66U	},
 	{ "RT-AC68U",	MODEL_RTAC68U	},
-	{ "RP-AC68U",	MODEL_RPAC68U	},
-	{ "RT-AC68A",   MODEL_RTAC68U   },
-	{ "4G-AC68U",   MODEL_RTAC68U   },
+	{ "RT-AC68A",	MODEL_RTAC68U	},
+	{ "4G-AC68U",	MODEL_RTAC68U	},
 	{ "RT-AC87U",	MODEL_RTAC87U	},
 	{ "RT-AC53U",	MODEL_RTAC53U	},
 	{ "RT-AC3200",	MODEL_RTAC3200	},
 	{ "RT-AC88U",	MODEL_RTAC88U	},
+	{ "RT-AC86U",	MODEL_RTAC86U	},
+	{ "AC2900",	MODEL_RTAC86U	},
 	{ "RT-AC3100",	MODEL_RTAC3100	},
 	{ "RT-AC5300",	MODEL_RTAC5300	},
-	{ "RT-AC5300R",	MODEL_RTAC5300R	},
+	{ "GT-AC5300",	MODEL_GTAC5300	},
 	{ "RT-N53",	MODEL_RTN53	},
 	{ "RT-N16",	MODEL_RTN16	},
 	{ "RT-N18U",	MODEL_RTN18U	},
@@ -131,16 +163,16 @@ int get_blver(char *bls) {
 	char buf[32], *bp=NULL;
 
 	memset(buf, 0, sizeof(buf));
-        if(bls)
+	if(bls)
 		strcpy(buf, bls);
 	bp = buf;
 	while((tok = strsep((char**)&bp, delim)))
 		if(i < BLV_MAX)
 			bv[i++] = atoi(tok);
 
-        blver = BL_VERSION(bv[0], bv[1], bv[2], bv[3]);
+	blver = BL_VERSION(bv[0], bv[1], bv[2], bv[3]);
 
-        return blver;
+	return blver;
 }
 
 int get_fwver(char *buildno, char *extendno) {
@@ -166,6 +198,20 @@ int get_model(void)
 			break;
 		}
 	}
+	
+#ifdef RTCONFIG_REALTEK
+	if(model==MODEL_UNKNOWN || !pid[0]) {
+	#ifdef RTCONFIG_RTL819X
+		nvram_set("productid", "RT-RTL8881A");
+		nvram_set("productid", "RP-AC53");
+	#else
+		nvram_set("productid", "RT-RTL8198C");
+		nvram_set("productid", "RP-AC68U");//bruce
+	#endif
+	}
+	cprintf("%s:%d current productid is %s\n",__FILE__,__LINE__,nvram_get("productid"));
+#endif
+
 #if defined(RTCONFIG_RALINK)
 #elif defined(RTCONFIG_QCA)
 #else
@@ -205,10 +251,6 @@ int get_switch(void)
 	if (sw_model != SWITCH_UNKNOWN)
 		return sw_model;
 
-#ifdef BCM5301X
-	sw_model = SWITCH_BCM5301x;
-#else
 	sw_model = get_switch_model();
-#endif
 	return sw_model;
 }

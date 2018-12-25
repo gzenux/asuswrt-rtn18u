@@ -467,7 +467,7 @@ void rpc_update_macmode(const char *mac_address_filtering)
 		dbG("rpc_qcsapi_set_mac_address_filtering %s error, return: %d\n", WIFINAME, ret);
 	}
 
-	if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
+	if (sw_mode() == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
 		return;
 
 	for (i = 1; i < 4; i++)
@@ -1313,7 +1313,7 @@ void rpc_update_wlmaclist(void)
 	if (ret < 0)
 		dbG("rpc_qcsapi_set_wlmaclist %s error, return: %d\n", WIFINAME, ret);
 
-	if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
+	if (sw_mode() == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
                 return;
 
 	for (i = 1; i < 4; i++)
@@ -1535,7 +1535,7 @@ void rpc_update_mbss(const char* name, const char *value)
 	unsigned long long macvalue;
 	unsigned char *macp;
 
-        if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
+        if (sw_mode() == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
                 return;
 
 	if (!rpc_qtn_ready())
@@ -1954,7 +1954,7 @@ ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	ret += ej_wl_sta_list_qtn(eid, wp, argc, argv, WIFINAME);
 
-        if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
+        if (sw_mode() == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
                 return ret;
 
 	for (i = 1; i < 4; i++) {
@@ -1983,7 +1983,7 @@ ej_wl_stainfo_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	ret += ej_wl_stainfo_list_qtn(eid, wp, argc, argv, WIFINAME);
 
-        if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
+        if (sw_mode() == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
                 return ret;
 
 	for (i = 1; i < 4; i++) {
@@ -2144,7 +2144,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	ret += ej_wl_status_qtn(eid, wp, argc, argv, WIFINAME);
 
-        if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
+        if (sw_mode() == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
                 return ret;
 
 	for (i = 1; i < 4; i++) {

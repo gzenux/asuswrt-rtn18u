@@ -8,8 +8,8 @@ if [ -z "$1" ] || [ -z "$2" ]; then
 fi
 
 port_num=`nvram get ehci_ports |awk '{print NF}'`
-pool_name=`echo "$2" |awk '{FS="/"; print $NF}'`
-disk_name=`echo "$pool_name" |awk '{FS="[1-9]"; print $1}'`
+pool_name=`echo "$2" |awk 'BEGIN{FS="/"}{print $NF}'`
+disk_name=`echo "$pool_name" |awk 'BEGIN{FS="[1-9]"}{print $1}'`
 if [ -z "$port_num" ]; then
 	port_num=0
 fi

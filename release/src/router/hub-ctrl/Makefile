@@ -4,6 +4,9 @@ CFLAGS += -s -I$(SRCBASE)/include
 CFLAGS  += -Os
 CFLAGS  += -ffunction-sections -fdata-sections
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifeq ($(HND_ROUTER),y)
+LDFLAGS += -lgcc_s
+endif
 
 UTILS := hub-ctrl
 

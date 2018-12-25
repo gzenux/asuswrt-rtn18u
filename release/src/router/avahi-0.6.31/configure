@@ -20599,6 +20599,7 @@ if test "${with_xml+set}" = set; then :
 fi
 
 use_expat=false
+use_hnd_expat=false
 use_bsdxml=false
 
 # See what we have
@@ -20720,6 +20721,8 @@ elif test "x$with_xml" = "xexpat"; then
 	if ! $have_expat ; then
 		as_fn_error $? "*** libexpat requested, but not found ***" "$LINENO" 5
 	fi
+elif test "x$with_xml" = "xhnd_expat"; then
+	use_hnd_expat=true
 elif test "x$with_xml" = "xbsdxml"; then
 	use_bsdxml=true
 	if ! $have_bsdxml ; then
@@ -20742,6 +20745,10 @@ if $use_expat; then
 	XML_CFLAGS=-DUSE_EXPAT_H
 	XML_LIBS=-lexpat
 fi
+if $use_hnd_expat; then
+	with_xml=expat
+	XML_CFLAGS=-DUSE_EXPAT_H
+fi
 if $use_bsdxml; then
 	with_xml=bsdxml
 	XML_CFLAGS=-DUSE_BSDXML_H
@@ -20750,7 +20757,7 @@ fi
 
 
 
-if $use_expat || $use_bsdxml; then
+if $use_expat || $use_hnd_expat || $use_bsdxml; then
 	HAVE_XML=yes
 fi
 
@@ -27112,6 +27119,7 @@ echo "
 "
 
 BUILD_DAEMON="no   (You need libdaemon and expat/bsdxml!)"
+BUILD_DAEMON=yes
 
 if test "x$HAVE_XML" = "xyes" -a "x$HAVE_LIBDAEMON" = "xyes" ; then
     BUILD_DAEMON=yes

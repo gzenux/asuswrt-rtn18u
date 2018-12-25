@@ -311,7 +311,7 @@ function QIS_load_body(){
 	showCase = (document.getElementById("flag").value == "") ? "welcome" : document.getElementById("flag").value;
 	winW_H();
 
-	if(based_modelid == "4G-AC55U" && sim_state == "1" && modem_autoapn == "1" && usb_modem_auto_spn.length == 0)
+	if((based_modelid == "4G-AC53U" || based_modelid == "4G-AC55U" || based_modelid == "4G-AC68U") && sim_state == "1" && modem_autoapn == "1" && usb_modem_auto_spn.length == 0)
 		update_apn_progress();
 	else{
 		//document.getElementById("apn_div").style.display = "none";	
@@ -501,7 +501,7 @@ function gotoIndex(){
 		location.href = '/QIS_wizard_m.htm?flag=wireless';
 	}
 	else
-		location.href = '/index.asp';
+		location.href = "<% abs_index_page(); %>";
 }
 
 function check_DUT(){
@@ -531,16 +531,16 @@ function detect_httpd(){
     			document.getElementById('loading_block1').style.display = "none";
     			document.getElementById('loading_block2').style.display = "none";
     			document.getElementById('loading_block3').style.display = "";
-				if(findasus_support){
+				/*if(findasus_support){
     				document.getElementById('loading_block3').innerHTML = "<div><#OP_AP_hint#></div>";
-				}else{
+				}else{*/
 					document.getElementById('loading_block3').innerHTML = "<div><#Main_alert_proceeding_desc3#>.<#LANConfig_ChangedLANIP#></div>";
-				}						
+				//}						
     		}
     	},
     	success: function(){
     		setTimeout("hideLoadingBar();",1000);
-      		location.href = "index.asp";
+      		location.href = "<% abs_index_page(); %>";
   		}
   	});
 }

@@ -228,9 +228,6 @@ static void send_config_pppol2tp(int mtu,
 	}
 	netif_set_mtu(ifunit, mtu);
 
-	if (pppol2tp_fd < 0)
-		return;
-
 	reorderto[0] = '\0';
 	if (pppol2tp_reorder_timeout > 0)
 		sprintf(&reorderto[0], "%d ", pppol2tp_reorder_timeout);

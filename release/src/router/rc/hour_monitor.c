@@ -3,11 +3,11 @@
 */
 
 #include <rc.h>
+#include <time.h>
 
 // define function bit, you can define more functions as below
 #define TRAFFIC_LIMITER		0x01
 #define TRAFFIC_ANALYZER	0x02
-#define NETWORKMAP		0x04
 
 static int sig_cur = -1;
 static int debug = 0;
@@ -17,86 +17,33 @@ static int hm_alarm_status = 0;
 
 void hm_traffic_analyzer_save()
 {
-	char *db_type;
-	char buf[128]; // path buff = 128
-	int db_mode;
+	char info[32];
 
 	// check file size is over 30MB or not
 	long int size = 30 * 1024; // 30MB
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "bwdpi_sqlite -d %ld", size);
-	system(buf);
+	snprintf(info, sizeof(info), "%ld", size);
+	eval("TrafficAnalyzer", "-d", info);
 
-	if(nvram_get_int("hour_monitor_debug") || nvram_get_int("sqlite_debug"))
-		debug = 1;
-	else
-		debug = 0;
-
-	if(!f_exists("/dev/detector") || !f_exists("/dev/idpfw")){
+	if (!f_exists("/dev/detector") || !f_exists("/dev/idpfw")) {
 		_dprintf("%s : dpi engine doesn't exist, not to save any database\n", __FUNCTION__);
 		logmessage("hour monitor", "dpi engine doesn't exist");
 		return;
 	}
 
-	memset(buf, 0, sizeof(buf));
-
-	// bwdpi_db_type
-	db_type = nvram_safe_get("bwdpi_db_type");
-	if(!strcmp(db_type, "") || db_type == NULL)
-		db_mode = 0;
-	else
-		db_mode = atoi(db_type);
-
-	if(db_mode == 0)
-	{
-		snprintf(buf, sizeof(buf), "bwdpi_sqlite -e -s NULL");
-	}
-	else if(db_mode == 1)
-	{
-		if(!strcmp(nvram_safe_get("bwdpi_db_path"), ""))
-			snprintf(buf, sizeof(buf), "bwdpi_sqlite -e -s NULL");
-		else
-			snprintf(buf, sizeof(buf), "bwdpi_sqlite -e -p %s -s NULL", nvram_safe_get("bwdpi_db_path"));
-	}
-	else if(db_mode == 2)
-	{
-		// cloud server : not ready
-		_dprintf("traffic statistics not support cloud server yet!!\n");
-	}
-	else
-	{
-		_dprintf("Not such database type!!\n");
-		return;
-	}
-
-	if(debug) {
-		logmessage("hour monitor", "buf=%s", buf);
-		dbg("%s : db_mode = %d, buf = %s\n", __FUNCTION__, db_mode, buf);
-	}
-
-	system(buf);
+	eval("TrafficAnalyzer", "-e");
 }
 
 void hm_traffic_limiter_save()
 {
-	if(nvram_get_int("hour_monitor_debug"))
+	if (nvram_get_int("hour_monitor_debug"))
 		debug = 1;
 	else
 		debug = 0;
-	
-	if(debug) dbg("%s : traffic_limiter is saving ... \n", __FUNCTION__);
+
+	if (debug) dbg("%s : traffic_limiter is saving ... \n", __FUNCTION__);
 
 	eval("traffic_limiter", "-w");
 }
-
-#if 0
-static void hm_networkmap_rescan()
-{
-	nvram_set("client_info_tmp", "");
-	nvram_set("refresh_networkmap", "1");
-	eval("killall", "-SIGUSR1", "networkmap");
-}
-#endif
 
 int hour_monitor_function_check()
 {
@@ -106,21 +53,14 @@ int hour_monitor_function_check()
 	value = 0;
 
 	// traffic limiter
-	if(nvram_get_int("tl_enable"))
+	if (nvram_get_int("tl_enable"))
 		value |= TRAFFIC_LIMITER;
 
 	// traffic analyzer
-	if(nvram_get_int("bwdpi_db_enable"))
+	if (nvram_get_int("bwdpi_db_enable"))
 		value |= TRAFFIC_ANALYZER;
 
-#if 0
-	//disable for preventing wake up sleep device
-	// networkmap
-	if(pidof("networkmap") != -1)
-		value |= NETWORKMAP;
-#endif
-	
-	if(debug)
+	if (debug)
 	{
 		dbg("%s : value = %d(0x%x)\n", __FUNCTION__, value, value);
 		logmessage("hour monitor", "value = %d(0x%x)", value, value);
@@ -132,20 +72,14 @@ int hour_monitor_function_check()
 static void hour_monitor_call_fucntion()
 {
 	// check function enable or not
-	if(!hour_monitor_function_check())
+	if (!hour_monitor_function_check())
 		return;
 
-	if((value & TRAFFIC_LIMITER) != 0)
+	if ((value & TRAFFIC_LIMITER) != 0)
 		hm_traffic_limiter_save();
 
-	if((value & TRAFFIC_ANALYZER) != 0)
+	if ((value & TRAFFIC_ANALYZER) != 0)
 		hm_traffic_analyzer_save();
-
-#if 0
-	//disable for preventing wake up sleep device
-	if((value & NETWORKMAP) != 0)
-		hm_networkmap_rescan();
-#endif
 }
 
 static void hour_monitor_save_database()
@@ -153,13 +87,13 @@ static void hour_monitor_save_database()
 	/* use for save database only */
 
 	// check function enable or not
-	if(!hour_monitor_function_check())
+	if (!hour_monitor_function_check())
 		return;
 
-	if((value & TRAFFIC_LIMITER) != 0)
+	if ((value & TRAFFIC_LIMITER) != 0)
 		hm_traffic_limiter_save();
 
-	if((value & TRAFFIC_ANALYZER) != 0)
+	if ((value & TRAFFIC_ANALYZER) != 0)
 		hm_traffic_analyzer_save();
 }
 
@@ -190,12 +124,12 @@ int hour_monitor_main(int argc, char **argv)
 	debug = nvram_get_int("hour_monitor_debug");
 
 	/* starting message */
-	if(debug) _dprintf("%s: daemong is starting ... \n", __FUNCTION__);
+	if (debug) _dprintf("%s: daemong is starting ... \n", __FUNCTION__);
 	logmessage("hour monitor", "daemon is starting");
 
 	/* check need to enable monitor fucntion or not */
-	if(!hour_monitor_function_check()){
-		if(debug) _dprintf("%s: terminate ... \n", __FUNCTION__);
+	if (!hour_monitor_function_check()) {
+		if (debug) _dprintf("%s: terminate ... \n", __FUNCTION__);
 		logmessage("hour monitor", "daemon terminates");
 		exit(0);
 	}
@@ -216,12 +150,12 @@ int hour_monitor_main(int argc, char **argv)
 	signal(SIGTERM, catch_sig);
 	signal(SIGALRM, catch_sig);
 
-	if(debug) {
+	if (debug) {
 		_dprintf("%s: ntp_ready=%d, DST=%s\n", __FUNCTION__, nvram_get_int("ntp_ready"), nvram_safe_get("time_zone_x"));
 		logmessage("hour monitor", "ntp_ready=%d, DST=%s", nvram_get_int("ntp_ready"), nvram_safe_get("time_zone_x"));
 	}
 
-	while(1)
+	while (1)
 	{
 		if (nvram_get_int("ntp_ready"))
 		{
@@ -233,28 +167,28 @@ int hour_monitor_main(int argc, char **argv)
 
 			time(&now);
 			localtime_r(&now, &local);
-			if(debug) dbg("%s: %d-%d-%d, %d:%d:%d\n", __FUNCTION__,
+			if (debug) dbg("%s: %d-%d-%d, %d:%d:%d\n", __FUNCTION__,
 				local.tm_year+1900, local.tm_mon+1, local.tm_mday, local.tm_hour, local.tm_min, local.tm_sec);
-			if(debug) logmessage("hour_monitor", "%d-%d-%d, %d:%d:%d\n", 
+			if (debug) logmessage("hour_monitor", "%d-%d-%d, %d:%d:%d\n", 
 				local.tm_year+1900, local.tm_mon+1, local.tm_mday, local.tm_hour, local.tm_min, local.tm_sec);
 
 			/* every hour */
-			if((local.tm_min != 0) || (local.tm_sec != 0)){
+			if ((local.tm_min != 0) || (local.tm_sec != 0)) {
 				diff_sec = 3600 - (local.tm_min * 60 + local.tm_sec);
 
 				// delay 15 sec to wait for DST NTP sync done
 				if (strstr(nvram_safe_get("time_zone_x"), "DST")) diff_sec += 15;
 			}
-			else{
+			else {
 				diff_sec = 3600;
 			}
 
-			if(is_first){
+			if (is_first) {
 				diff_sec = 120;
 				is_first = 0;
 			}
-			
-			if(debug) {
+
+			if (debug) {
 				_dprintf("%s: diff_sec=%d\n", __FUNCTION__, diff_sec);
 				logmessage("hour monitor", "diff_sec=%d", diff_sec);
 			}
@@ -263,7 +197,7 @@ int hour_monitor_main(int argc, char **argv)
 		}
 		else
 		{
-			if(debug) _dprintf("%s: ntp is not syn ... \n", __FUNCTION__);
+			if (debug) _dprintf("%s: ntp is not syn ... \n", __FUNCTION__);
 			hm_alarm_status = 0;
 			alarm(120);
 		}

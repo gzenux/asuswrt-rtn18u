@@ -1,0 +1,7 @@
+/* BCM89500 */
+#define BCM89500_VENDOR_ID                0x0362
+#define BCM89500_DEVICE_ID                0x5d30
+#define BCM89500_MODEL                    0x9500
+#define BCM89500_PROBEINFO            0x00040230
+#define BCM89500_REV_A0                     0x00
+

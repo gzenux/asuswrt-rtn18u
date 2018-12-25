@@ -15,8 +15,9 @@
 #define QUERY_PIN			"/aae/querypin"
 #define UNREGISTER			"/aae/unregister"
 #define UPDATE_ICE_INFO		"/aae/updateiceinfo"
-#define KEEP_ALIVE		"/aae/keepalive"
-#define PUSH_SENDMSG	"/aae/wlpush_sendmsg"
+#define KEEP_ALIVE			"/aae/keepalive"
+#define PUSH_SENDMSG		"/aae/wlpush_sendmsg"
+#define PNS_SENDMSG			"/aae/pns_sendmsg"
 
 
 #define MAX_STATUS_LEN 	32
@@ -35,22 +36,22 @@
 #define MAX_DEV_TICKET_EXP_LEN 	64
 #define MAX_ID_LEN		64
 #define MAX_STATUS_LEN		32
-#define MAX_DESC_LEN		64
+#define MAX_DESC_LEN		128
 #define MAX_PIN_LEN		64
-#define MAX_IP_LEN		128 	//32
+#define MAX_IP_ADDR_LEN		128 	//32
 
 typedef struct _GetServiceArea
 {
 	char 	status[MAX_STATUS_LEN];
 	char 	servicearea[MAX_URL_LEN];
 	char	time[MAX_TIME_LEN];
-	char	srcip[MAX_IP_LEN];
+	char	srcip[MAX_IP_ADDR_LEN];
 }GetServiceArea, *pGetServiceArea;
 
 typedef struct _SrvInfo
 {
 	struct _SrvInfo* next;
-	char	srv_ip[MAX_IP_LEN];
+	char	srv_ip[MAX_IP_ADDR_LEN];
 } SrvInfo, *pSrvInfo;
 
 typedef struct _Login{
@@ -150,7 +151,7 @@ typedef struct _Updateiceinfo{
 
 typedef struct _Keepalive{
 	char	status[MAX_STATUS_LEN];
-	//char	deviceticketexpiretime[MAX_DEV_TICKET_EXP_LEN];
+	char	deviceticketexpiretime[MAX_DEV_TICKET_EXP_LEN];
 	char	time[MAX_TIME_LEN];
 }Keepalive, *pKeepalive;
 
@@ -159,6 +160,18 @@ typedef struct _Push_Msg
 	char 	status[MAX_STATUS_LEN];
 	char	time[MAX_TIME_LEN];
 } Push_Msg;
+
+typedef struct _PnsSendMsg
+{
+	char 	status[MAX_STATUS_LEN];
+	char	time[MAX_TIME_LEN];
+} PnsSendMsg, *pPnsSendMsg;
+
+typedef struct _IftttNotification
+{
+	char 	status[MAX_STATUS_LEN];
+	char	message[MAX_DEVICEID_LEN];
+} IftttNotification, *pIftttNotification;
 
 typedef enum _ws_status_code
 {
@@ -187,6 +200,7 @@ int send_loginbyticket_req(
 
 int send_getservicearea_req(
 	const char* server, 
+	const char* serviceid, 
 	const char* userid, 
 	const char* passwd,
 	GetServiceArea* pGSA//out put
@@ -287,5 +301,23 @@ int send_push_msg_req(
 	const char *token,
 	const char *msg,
 	Push_Msg *pPm
+);
+
+int send_pns_sendmsg_req(
+	const char *server,
+	const char *cusid,
+	const char *deviceid,
+	const char *deviceticket,
+    const char *appids,
+	const char *todeviceid,
+	const char *msg,
+	PnsSendMsg *pPsm
+);
+
+int send_ifttt_notification_req(
+	const char *server,
+	const char *trigger,
+	const char *msg,
+	IftttNotification *pIftttnotification
 );
 #endif

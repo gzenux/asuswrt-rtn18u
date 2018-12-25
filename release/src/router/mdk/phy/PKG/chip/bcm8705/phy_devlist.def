@@ -1,0 +1,3 @@
+#if PHY_CONFIG_INCLUDE_BCM8705 == 1 || defined(PHY_DEVLIST_INCLUDE_ALL)
+PHY_DEVLIST_ENTRY(BCM8705, bcm8705, 0, "Serial 10-Gigabit Ethernet/Fibre Channel Transceiver with WIS Layer and XAUI Interface", 0, 0)
+#endif

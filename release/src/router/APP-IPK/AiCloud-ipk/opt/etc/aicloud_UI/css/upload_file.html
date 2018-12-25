@@ -118,14 +118,14 @@ $("document").ready(function() {
 	
 	var msg = "";
 	if (!navigator.javaEnabled()) {
-    showEnableJAVAUI();
-    return;
+		showEnableJAVAUI();
+   		return;
 	}
 	
 	var is_java_enabled = false;
 	if (deployJava.versionCheck("1.6.0+") || deployJava.versionCheck("1.4") || deployJava.versionCheck("1.5.0*")) {
-  	is_java_enabled = true;
-  }
+  		is_java_enabled = true;
+  	}
 	
 	if(!is_java_enabled){
 		showInstallJAVAUI();
@@ -135,8 +135,9 @@ $("document").ready(function() {
 	var media_hostName = window.location.host;
 	if(media_hostName.indexOf(":")!=-1)
 		media_hostName = media_hostName.substring(0, media_hostName.indexOf(":"));		
-	var jar_file = "http://" + media_hostName + ":" + g_storage.get("http_port") + '/smb/css/CloudUtil.jar';
-				
+	//var jar_file = "http://" + media_hostName + ":" + g_storage.get("http_port") + '/smb/css/CloudUtil.jar';
+	var jar_file = '/smb/css/CloudUtil.jar';
+			
 	var applet_html = '<applet name="AiCloud_Applet" id="AiCloud_Applet" ARCHIVE="';
 	applet_html += jar_file;
 	applet_html += '" code="com.asus.aicloud.UploadFile.class" width="100%" height="100%" >';
@@ -155,17 +156,6 @@ $("document").ready(function() {
 function doCancel(e) {
 	parent.closeJqmWindow(1);
 };
-
-function getUrlVars(){
-	var vars = [], hash;
-  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-  for(var i = 0; i < hashes.length; i++){
-  	hash = hashes[i].split('=');
-    vars.push(hash[0]);
-    vars[hash[0]] = hash[1];
-  }
-  return vars;
-}
 
 function get_user_agent(){
 	return g_storage.get('user_agent');
@@ -196,11 +186,11 @@ function finish_upload(){
 } 
 
 function refresh_hint_status(status){
-	$("span#hint").text(decodeURI(status));
+	$("span#hint").text(decodeURIComponent(status));
 }
 
 function refresh_status(status){
-	$("span#progress").text(decodeURI(status));
+	$("span#progress").text(decodeURIComponent(status));
 }
     
 function refresh_progress(progress){
@@ -235,8 +225,7 @@ function refresh_progress(progress){
   	<td>
   	<div class="table_block_footer" style="float:right;height:30px;">
   		<button id="cancel" class="btnStyle" onClick="doCancel();">Close</button>
-  		<div id="save">
-			</div>
+  		<div id="save"></div>
     </div>
     </td>
   </tr>

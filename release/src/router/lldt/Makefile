@@ -11,7 +11,11 @@ CFLAGS += -I$(SRCBASE)/include
 LDFLAGS += -L$(TOP)/shared -lshared
 LDFLAGS += -L$(TOP)/nvram -lnvram
 
-include $(SRCBASE)/.config
+include $(SRCBASE)/router/.config
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
 
 depend:
 	$(CC) $(CFLAGS) -M $(DCFILES) >.depend
@@ -32,6 +36,9 @@ else ifeq ($(RTN56U), y)
 else ifeq ($(DSLN55U), y)
 	install -D icon.DSL-N55U.ico $(INSTALLDIR)/rom/etc/icon.ico
 	install -D icon.large.DSL-N55U.ico $(INSTALLDIR)/rom/etc/icon.large.ico
+else ifeq ($(RTN11PB1), y)
+	install -D icon.RT-N300.ico $(INSTALLDIR)/rom/etc/icon.ico
+	install -D icon.large.RT-N300.ico $(INSTALLDIR)/rom/etc/icon.large.ico
 else
 	install -D icon.ico $(INSTALLDIR)/rom/etc/icon.ico
 	install -D icon.large.ico $(INSTALLDIR)/rom/etc/icon.large.ico

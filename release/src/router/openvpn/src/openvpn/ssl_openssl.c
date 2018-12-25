@@ -187,9 +187,9 @@ tls_ctx_set_options (struct tls_root_ctx *ctx, unsigned int ssl_flags)
 #if P2MP_SERVER
   if (ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED)
     {
-      msg (M_WARN, "WARNING: POTENTIALLY DANGEROUS OPTION "
-	  "--client-cert-not-required may accept clients which do not present "
-	  "a certificate");
+      //msg (M_WARN, "WARNING: POTENTIALLY DANGEROUS OPTION "
+	  //"--client-cert-not-required may accept clients which do not present "
+	  //"a certificate");
     }
   else
 #endif

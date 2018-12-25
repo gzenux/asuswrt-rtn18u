@@ -1667,8 +1667,8 @@ static int __init bled_init(void)
 	}
 	bled_device = tmp_device;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
-	bled_pdentry= proc_create(BLED_NAME, 0444, NULL,&proc_bled_operations);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,14)
+	bled_pdentry = proc_create(BLED_NAME, 0444, NULL, &proc_bled_operations);
 #else
 	bled_pdentry = create_proc_entry(BLED_NAME, 0444, NULL);
 #endif
@@ -1677,10 +1677,10 @@ static int __init bled_init(void)
 		rc  = -ENOMEM;
 		goto cleanup;
 	}
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,14)
 	bled_pdentry->proc_fops = &proc_bled_operations;
 #endif
+
 	bled_start = 1;
 
 	return 0;

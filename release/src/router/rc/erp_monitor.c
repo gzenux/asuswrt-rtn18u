@@ -11,6 +11,11 @@
 
 #if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
 #include <rc.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <wlioctl.h>
+#include <wlutils.h>
+#include <limits.h>
 
 // ErP debug
 #define ERP_DEBUG  "/tmp/ERP_DEBUG"
@@ -38,6 +43,12 @@ static int erp_led_period = 0;             // led mode for flashing
 static int erp_count = ERP_DEFAULT_COUNT;  // ERP_DEFAULT_COUNT * 10 sec
 static int erp_status = ERP_WAKEUP;        // init status is under wakeup mode
 static int erp_led_switch = 0;             // control led on or off
+
+// ErP Wifi station counter
+#define MAX_SUBIF_NUM 4
+#define MAX_STA_COUNT 128
+#define ERP_ZERO_STA_COUNT 6	// Zero sta state over 6 * 10 sec = 60 sec, force to flush arp table if necessary
+static unsigned int erp_zero_sta_cnt = 0;
 
 static int erp_check_usb_stat()
 {
@@ -75,12 +86,60 @@ static int erp_check_wl_stat(int model)
 	if (nvram_get_int("wl1_radio")) ret++;
 
 	/* special case */
-	if (model == MODEL_RTAC5300 || model == MODEL_RTAC3200)
+	if (model == MODEL_RTAC5300 || model == MODEL_RTAC3200 || model == MODEL_GTAC5300)
 	{
 		if (nvram_get_int("wl2_radio")) ret++;
 	}
 
 	return ret;
+}
+
+static int erp_check_wl_auth_stat()
+{
+	char ifname[128], name[128], *next;
+	char prefix[32], tmp[128];
+	int unit, sub_unit;
+	struct maclist *mac_list;
+	int mac_list_size;
+	int total_sta_cnt = 0;
+
+	unit = 0;
+	mac_list_size = sizeof(mac_list->count) + MAX_STA_COUNT * sizeof(struct ether_addr);
+	mac_list = malloc(mac_list_size);
+	if(!mac_list)
+                goto exit;
+
+	foreach(ifname, nvram_safe_get("wl_ifnames"), next) {
+		for(sub_unit = 0; sub_unit < MAX_SUBIF_NUM; sub_unit++) {
+			if(sub_unit > 0) {
+				snprintf(prefix, sizeof(prefix), "wl%d.%d", unit, sub_unit);
+				snprintf(name, sizeof(name), "wl%d.%d", unit, sub_unit);
+			}
+			else {
+				snprintf(prefix, sizeof(prefix), "wl%d", unit);
+				snprintf(name, sizeof(name), "%s", ifname);
+			}
+			if( !nvram_match(strcat_r(prefix, "_radio", tmp), "1") ) continue;
+			if( !nvram_match(strcat_r(prefix, "_bss_enabled", tmp), "1") ) continue;
+
+			memset(mac_list, 0, mac_list_size);
+			/* query authentication sta list */
+			strcpy((char*) mac_list, "authe_sta_list");
+			if(wl_ioctl(name, WLC_GET_VAR, mac_list, mac_list_size))
+				goto exit;
+
+			ERP_DBG("%s: station count = %d\n", name, mac_list->count);
+			total_sta_cnt += mac_list->count;
+		}
+		unit++;
+	}
+
+	return total_sta_cnt;
+
+exit:
+        if(mac_list) free(mac_list);
+	return -1;
+
 }
 
 static int erp_check_arp_stat(int model)
@@ -269,13 +328,21 @@ static void erp_standby_mode(int model)
 	ERP_DBG("enter standby mode, model = %d\n", model);
 
 	// step1. wireless interface down
-	eval("wl", "-i", "eth1", "down"); // turn off 2g radio
-
-	/* TODO : add different platform or model case here */
-	if (model != MODEL_RTAC87U) {
-		eval("wl", "-i", "eth2", "down"); // turn off 5g radio
+	switch(model) {
+		case MODEL_RTAC87U:
+			eval("wl", "-i", "eth1", "down");
+			break;
+		case MODEL_GTAC5300:
+			eval("wl", "-i", "eth6", "down");
+			eval("wl", "-i", "eth7", "down"); // turn off 5g radio
+			break;
+		default:
+			eval("wl", "-i", "eth1", "down");
+			eval("wl", "-i", "eth2", "down"); // turn off 5g radio
+			break;
 	}
 
+	/* TODO : add different platform or model case here */
 	if (model == MODEL_RTAC87U) {
 		eval("qcsapi_sockrpc", "pm", "suspend");
 		eval("qcsapi_sockrpc", "pm", "idle");
@@ -285,6 +352,11 @@ static void erp_standby_mode(int model)
 	{
 		// triple band
 		eval("wl", "-i", "eth3", "down"); // turn off 5g-2 radio
+	}
+
+	if (model == MODEL_GTAC5300) {
+		// triple band
+		eval("wl", "-i", "eth8", "down"); // turn off 5g-2 radio
 	}
 
 	if (model == MODEL_DSLAC68U) {
@@ -437,7 +509,8 @@ static void ERP_CHECK_MODE()
 		&& model != MODEL_RTAC87U
 		&& model != MODEL_DSLAC68U
 		&& model != MODEL_RTAC66U
-		&& model != MODEL_RTN66U)
+		&& model != MODEL_RTN66U
+		&& model != MODEL_GTAC5300)
 	{
 		ERP_DBG("The model isn't under support list!\n");
 		return;
@@ -460,14 +533,34 @@ static void ERP_CHECK_MODE()
 	}
 
 	// step4. check wl, gphy ,arp, and dsl status
+	int erp_wl_sta_num = -1;
 	int erp_usb  = erp_check_usb_stat();
 	int erp_wl   = erp_check_wl_stat(model);
 	int erp_arp  = erp_check_arp_stat(model);
 	int erp_gphy = erp_check_gphy_stat(model);
 	int erp_dsl  = erp_check_dsl_stat(model); // DSL model
+	if (model == MODEL_GTAC5300)
+		erp_wl_sta_num = erp_check_wl_auth_stat();
 
-	ERP_DBG("erp_usb=%d, erp_wl=%d, erp_arp=%d, erp_gphy=%d, erp_dsl=%d, erp_status=%d, erp_count=%d\n",
-		erp_usb, erp_wl, erp_arp, erp_gphy, erp_dsl, erp_status, erp_count);
+	ERP_DBG("erp_usb=%d, erp_wl=%d, erp_arp=%d, erp_gphy=%d, erp_dsl=%d, erp_status=%d, erp_wl_sta_num=%d, erp_count=%d\n",
+		erp_usb, erp_wl, erp_arp, erp_gphy, erp_dsl, erp_status, erp_wl_sta_num, erp_count);
+
+	/* force to flust arp table in case arp table does not free*/
+	if(erp_status == ERP_WAKEUP) {
+		if((erp_arp > 0 && erp_gphy == 0 && (erp_wl == 0 || erp_wl == 1)) && erp_wl_sta_num == 0) {
+			ERP_DBG("erp_zero_sta_cnt = %d\n", erp_zero_sta_cnt);
+			erp_zero_sta_cnt = (erp_zero_sta_cnt == UINT_MAX) ? 1 : erp_zero_sta_cnt + 1;
+		}
+		else
+			erp_zero_sta_cnt = 0;
+
+		if (erp_zero_sta_cnt >= ERP_ZERO_STA_COUNT) {
+			ERP_DBG("force to flush arp table...\n");
+			doSystem("ip -s neigh flush all > /dev/null");
+			erp_zero_sta_cnt = 0;
+			goto wakeup;
+		}
+	}
 
 	// usb enabled
 	if (erp_usb == 1) goto wakeup;

@@ -41,24 +41,24 @@ fi
 
 if [ "$forsq" == "1" ]; then
 	if [ "$model_31" == "1" ]; then
-		echo "---- update sq normal for model_31 ----" >> /tmp/webs_upgrade.log
+		echo "---- update sq normal for model_31 ----" > /tmp/webs_upgrade.log
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/wlan_update_31.zip -O /tmp/wlan_update.txt
 	elif [ "$model_30" == "1" ]; then
-		echo "---- update sq normal for model_30 ----" >> /tmp/webs_upgrade.log
+		echo "---- update sq normal for model_30 ----" > /tmp/webs_upgrade.log
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/wlan_update_30.zip -O /tmp/wlan_update.txt
 	else
-		echo "---- update sq normal----" >> /tmp/webs_upgrade.log
+		echo "---- update sq normal----" > /tmp/webs_upgrade.log
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/wlan_update_v2.zip -O /tmp/wlan_update.txt		
 	fi
 else
 	if [ "$model_31" == "1" ]; then
-		echo "---- update real normal for model_31 ----" >> /tmp/webs_upgrade.log
+		echo "---- update real normal for model_31 ----" > /tmp/webs_upgrade.log
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless/wlan_update_31.zip -O /tmp/wlan_update.txt
 	elif [ "$model_30" == "1" ]; then
-		echo "---- update real normal for model_30 ----" >> /tmp/webs_upgrade.log
+		echo "---- update real normal for model_30 ----" > /tmp/webs_upgrade.log
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless/wlan_update_30.zip -O /tmp/wlan_update.txt
 	else
-		echo "---- update real normal----" >> /tmp/webs_upgrade.log
+		echo "---- update real normal----" > /tmp/webs_upgrade.log
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless/wlan_update_v2.zip -O /tmp/wlan_update.txt
 	fi
 fi	
@@ -156,7 +156,7 @@ else
 		if [ "$IS_SUPPORT_NOTIFICATION_CENTER" != "" ]; then
 			if [ "$last_webs_state_info" != "$update_webs_state_info" ]; then
 				#if [ "$current_firm_1st_bit" != 9 ]; then
-				Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "New FW Available now."	#Send Event to Notification Center
+				Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "{\"fw_ver\":\"$update_webs_state_info\"}"	#Send Event to Notification Center
 				nvram set webs_last_info="$update_webs_state_info"
 				#fi	
 			fi
@@ -168,7 +168,7 @@ else
 				if [ "$IS_SUPPORT_NOTIFICATION_CENTER" != "" ]; then
 					if [ "$last_webs_state_info" != "$update_webs_state_info" ]; then
 						#if [ "$current_firm_1st_bit" != 9 ]; then
-						Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "New FW Available now."	#Send Event to Notification Center
+						Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "{\"fw_ver\":\"$update_webs_state_info\"}"	#Send Event to Notification Center
 						nvram set webs_last_info="$update_webs_state_info"
 						#fi	
 					fi
@@ -180,7 +180,7 @@ else
 				if [ "$IS_SUPPORT_NOTIFICATION_CENTER" != "" ]; then
 					if [ "$last_webs_state_info" != "$update_webs_state_info" ]; then
 						#if [ "$current_firm_1st_bit" != 9 ]; then
-						Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "New FW Available now."	#Send Event to Notification Center
+						Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "{\"fw_ver\":\"$update_webs_state_info\"}"	#Send Event to Notification Center
 						nvram set webs_last_info="$update_webs_state_info"
 						#fi	
 					fi

@@ -367,6 +367,7 @@ start_pppoe_relay(char *wan_if)
 	char *pppoerelay_argv[] = {"/usr/sbin/pppoe-relay",
 		"-C", "br0",
 		"-S", wan_if,
+		nvram_match("hide_relayid","1")?"-H":"",
 		"-F", NULL};
 	pid_t pid;
 	int ret = 0;

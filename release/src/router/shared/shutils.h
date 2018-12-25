@@ -9,12 +9,13 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: shutils.h,v 1.8 2005/03/07 08:35:32 kanki Exp $
+ * $Id: shutils.h 625086 2016-03-15 12:51:47Z $
  */
 
 #ifndef _shutils_h_
 #define _shutils_h_
 #include <string.h>
+#include <stdlib.h>
 #include <rtconfig.h>
 
 #ifndef MAX_NVPARSE
@@ -251,6 +252,11 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 /* Return NUL instead of NULL if undefined */
 #define safe_getenv(s) (getenv(s) ? : "")
 
+static inline int safe_atoi(const char *s)
+{
+    return (int)strtol(s, NULL, 10);
+}
+
 #define ONE_ENTRANT()                               \
 do {                                                            \
 	static int served = 0;  \
@@ -278,6 +284,20 @@ extern void cprintf(const char *format, ...);
  *		for unit and/or subuint to ignore the value.
  */
 extern int get_ifname_unit(const char* ifname, int *unit, int *subunit);
+
+/* This utility routine builds the wl prefixes from wl_unit.
+ * Input is expected to be a null terminated string
+ *
+ * @param       prefix          Pointer to prefix buffer
+ * @param       prefix_size     Size of buffer
+ * @param       Mode            If set generates unit.subunit output
+ *                              if not set generates unit only
+ * @param       ifname          Optional interface name string
+ *
+ *
+ * @return                              pointer to prefix, NULL if error.
+ */
+extern char* make_wl_prefix(char *prefix, int prefix_size, int mode, char *ifname);
 
 /*
  * Set the ip configuration index given the eth name
@@ -360,10 +380,15 @@ struct strbuf {
 
 extern void str_binit(struct strbuf *b, char *buf, unsigned int size);
 extern int str_bprintf(struct strbuf *b, const char *fmt, ...);
-
-#endif /* _shutils_h_ */
+extern int generate_wireless_key(unsigned char *key);
 
 extern int strArgs(int argc, char **argv, char *fmt, ...);
 extern char *trimNL(char *str);
 extern pid_t get_pid_by_name(char *name);
 extern char *get_process_name_by_pid(const int pid);
+extern char *ether_etoa2(const unsigned char *e, char *a);
+extern char *ATE_FACTORY_MODE_STR();
+extern char *ATE_UPGRADE_MODE_STR();
+extern int hex2str(unsigned char *hex, char *str, int hex_len);
+
+#endif /* _shutils_h_ */

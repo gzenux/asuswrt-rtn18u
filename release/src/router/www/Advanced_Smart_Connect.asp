@@ -374,7 +374,7 @@ function gen_bsd_steering_div(flag){
 		code +='<td width="27%" align="center" >2.4GHz</td><td width="27%" align="center" >5GHz-1</td><td width="27%" align="center" >5GHz-2</td>';
 	code +='</tr>';
 
-	code +='<tr><th>Enable Load Balance</th>';
+	code +='<tr><th><#enable_Load_Balance#></th>';
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
 		code +='<td>';
 		code +='<input onclick="change_lb(1,'+i+');" type="radio" name="wl'+i+'_bsd_steering_balance" value="1"><#checkbox_Yes#>';
@@ -398,15 +398,15 @@ function gen_bsd_steering_div(flag){
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
 		code +='<td><span class="steering_on_'+i+'"><div><table><tr><td style="border:0px; padding-left:0px">';
 		code +='<select class="input_option" name="wl'+i+'_bsd_steering_rssi_s">';
-		code +='<option selected="" value="0" class="content_input_fd">Less</option>';
-		code +='<option value="1" class="content_input_fd">Greater</option>';
+		code +='<option selected="" value="0" class="content_input_fd"><#option_less#></option>';
+		code +='<option value="1" class="content_input_fd"><#option_greater#></option>';
 		code +='</select></td>';
 		code +='<td style="border:0px; padding-left:0px">';
 		code +='<input type="text" onkeypress="return validator.isNegativeNumber(this,event)" value="100" class="input_3_table" id="wl'+i+'_bsd_steering_rssi" name="wl'+i+'_bsd_steering_rssi" maxlength="4">';
 		code +='<label style="margin-left:5px;">dBm</label></td></tr></table></div></span><span class="steering_unuse_off_'+i+'">- -</span></td>';
 	}
 	code +='</tr>';
-		code +='<tr><th>PHY Rate Less</th>';
+		code +='<tr><th><#PHY_Rate_Less#></th>';
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
 		code +='<td><span class="steering_on_'+i+'"><div><table><tr><td style="border:0px;width:35px; padding-left:0px">';
 		code +='<div id="slider_wl'+i+'_bsd_steering_phy_l" style="width:80px;"></div></td>';
@@ -417,7 +417,7 @@ function gen_bsd_steering_div(flag){
 	}
 	code +='</tr>';
 
-	code +='<tr><th>PHY Rate Greater</th>';
+	code +='<tr><th><#PHY_Rate_Greater#></th>';
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
 		code +='<td><span class="steering_on_'+i+'"><div><table><tr>';
 		code +='<td style="border:0px;width:35px; padding-left:0px">';
@@ -459,8 +459,8 @@ function gen_bsd_sta_select_div(){
 			code +='<td width="27%"><div><table><tr>';
 		code +='<td style="border:0px; padding-left:0px;">';
 		code +='<select class="input_option" name="wl'+i+'_bsd_sta_select_policy_rssi_s">';
-		code +='<option selected="" value="0" class="content_input_fd">Less</option>';
-		code +='<option value="1" class="content_input_fd">Greater</option>';
+		code +='<option selected="" value="0" class="content_input_fd"><#option_less#></option>';
+		code +='<option value="1" class="content_input_fd"><#option_greater#></option>';
 		code +='</select></td>';
 		code +='<td style="border:0px; padding-left:0px">';
 		code +='<input type="text" onkeypress="return validator.isNegativeNumber(this,event)" value="100" class="input_3_table" id="wl'+i+'_bsd_sta_select_policy_rssi" name="wl'+i+'_bsd_sta_select_policy_rssi" maxlength="4">';
@@ -469,7 +469,7 @@ function gen_bsd_sta_select_div(){
 	}
 	code +='</tr>';
 
-	code +='<tr><th>PHY Rate Less</th>';
+	code +='<tr><th><#PHY_Rate_Less#></th>';
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
 		code +='<td><div><table><tr>';
 		code +='<td style="border:0px;width:35px; padding-left:0px">';
@@ -481,7 +481,7 @@ function gen_bsd_sta_select_div(){
 	}
 	code +='</tr>';
 
-	code +='<tr><th>PHY Rate Greater</th>';
+	code +='<tr><th><#PHY_Rate_Greater#></th>';
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
 		code +='<td><div><table><tr>';
 		code +='<td style="border:0px;width:35px; padding-left:0px">';
@@ -835,7 +835,7 @@ function restoreRule(){
 		document.form.wl1_bsd_if_qualify_policy_x.value = '<% nvram_default_get("wl1_bsd_if_qualify_policy_x"); %>';
 		document.form.wl2_bsd_if_qualify_policy_x.value = '<% nvram_default_get("wl2_bsd_if_qualify_policy_x"); %>';
 		document.form.bsd_bounce_detect_x.value = '<% nvram_default_get("bsd_bounce_detect_x"); %>';
-		document.form.bsd_ifnames_x.value = '<% nvram_default_get("bsd_ifnames"); %>';
+		document.form.bsd_ifnames_x.value = '<% nvram_default_get("bsd_ifnames_x"); %>';
 	}else{
 		document.form.wl0_bsd_steering_policy.value = '<% nvram_default_get("wl0_bsd_steering_policy"); %>';
 		document.form.wl1_bsd_steering_policy.value = '<% nvram_default_get("wl1_bsd_steering_policy"); %>';
@@ -904,7 +904,7 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" || 
 				based_modelid == "RT-AC3100")?1000:600,
 			value:1,
@@ -921,8 +921,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?1000:600,
 			value:1,
 			slide:function(event, ui){
@@ -938,8 +940,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -955,8 +959,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -972,8 +978,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -989,8 +997,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -1006,8 +1016,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?1000:600,
 			value:1,
 			slide:function(event, ui){
@@ -1023,8 +1035,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?1000:600,
 			value:1,
 			slide:function(event, ui){
@@ -1040,8 +1054,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -1057,8 +1073,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -1074,8 +1092,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -1091,8 +1111,10 @@ function register_event(){
 			range: "min",
 			min:0,
 			max: (based_modelid == "RT-AC5300" || 
-				based_modelid == "RT-AC5300R" || 
+				based_modelid == "GT-AC5300" || 
 				based_modelid == "RT-AC88U" ||
+				based_modelid == "RT-AC86U" ||
+				based_modelid == "AC2900" ||
 				based_modelid == "RT-AC3100")?2167:1300,
 			value:1,
 			slide:function(event, ui){
@@ -1162,8 +1184,10 @@ function check_power(power_value,flag){
 	}else if(flag == 'phyrate'){
 		var power_value_limit;
 		if(based_modelid == "RT-AC5300" || 
-			based_modelid == "RT-AC5300R" || 
+			based_modelid == "GT-AC5300" || 
 			based_modelid == "RT-AC88U" ||
+			based_modelid == "RT-AC86U" ||
+			based_modelid == "AC2900" ||
 			based_modelid == "RT-AC3100")
 			power_value_limit = 2167;
 		else
@@ -1187,8 +1211,10 @@ function set_lg_power(power_value,flag,idx){
 	var divd;
 	if(idx == 0){
 		if(based_modelid == "RT-AC5300" || 
-			based_modelid == "RT-AC5300R" || 
+			based_modelid == "GT-AC5300" || 
 			based_modelid == "RT-AC88U" ||
+			based_modelid == "RT-AC86U" ||
+			based_modelid == "AC2900" ||
 			based_modelid == "RT-AC3100")
 			divd = 10;
 		else
@@ -1196,8 +1222,10 @@ function set_lg_power(power_value,flag,idx){
 	}
 	else{
 		if(based_modelid == "RT-AC5300" || 
-			based_modelid == "RT-AC5300R" || 
+			based_modelid == "GT-AC5300" || 
 			based_modelid == "RT-AC88U" ||
+			based_modelid == "RT-AC86U" ||
+			based_modelid == "AC2900" ||
 			based_modelid == "RT-AC3100")
 			divd = 21;
 		else
@@ -1240,7 +1268,7 @@ function set_lg_power(power_value,flag,idx){
 <input type="hidden" name="action_wait" value="3">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
-<input type="hidden" name="bsd_ifnames" value="eth1 eth2 eth3" disabled>
+<input type="hidden" name="bsd_ifnames" value="<% nvram_get("bsd_ifnames"); %>" disabled>
 <input type="hidden" name="wl0_bsd_steering_policy" value="" disabled>
 <input type="hidden" name="wl1_bsd_steering_policy" value="" disabled>
 <input type="hidden" name="wl2_bsd_steering_policy" value="" disabled>
@@ -1269,7 +1297,7 @@ function set_lg_power(power_value,flag,idx){
 <input type="hidden" name="wl1_bsd_if_qualify_policy" id="wl1_bsd_if_qualify_policy" value="" disabled>
 <input type="hidden" name="wl2_bsd_if_qualify_policy" id="wl2_bsd_if_qualify_policy" value="" disabled>
 <input type="hidden" name="bsd_bounce_detect" value=""  disabled>
-<input type="hidden" name="bsd_ifnames_x" value="eth2 eth3" disabled>
+<input type="hidden" name="bsd_ifnames_x" value="<% nvram_get("bsd_ifnames_x"); %>" disabled>
 <input type="hidden" name="wl1_bsd_steering_policy_x" value="" disabled>
 <input type="hidden" name="wl2_bsd_steering_policy_x" value="" disabled>
 <input type="hidden" name="wl1_bsd_sta_select_policy_x" value="" disabled>
@@ -1304,7 +1332,7 @@ function set_lg_power(power_value,flag,idx){
 		  <div class="formfonttitle"><#menu5_1#> - <#smart_connect_rule#></div>
      	  <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
       	  <div class="formfontdesc"><#smart_connect_hint#></div>
-		  <div style="text-align:right;margin-top:-36px;padding-bottom:3px;"><input type="button" class="button_gen" value="View List" onClick="pop_clientlist_listview(true)"></div>
+		  <div style="text-align:right;margin-top:-36px;padding-bottom:3px;"><input type="button" class="button_gen" value="<#View_List#>" onClick="pop_clientlist_listview(true)"></div>
 		  <div id="bsd_steering_div"></div>
 
 		  <div id="bsd_sta_select_div"></div>

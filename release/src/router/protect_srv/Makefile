@@ -16,6 +16,15 @@ LDFLAGS += -L$(TOP)/sqlite/.libs -lsqlite3
 LDFLAGS += -lpthread #Depend on sqlite
 endif
 
+ifeq ($(RTCONFIG_QTN),y)
+CFLAGS += -I$(TOP)/libqcsapi_client -I$(TOP)/httpd -I./sysdeps/qtn
+LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
+
 ifeq ($(CONFIG_KERNEL_PTHREAD_ONE),y)
 CFLAGS += -DCONFIG_LINUX3X_OR_4X
 endif
@@ -23,23 +32,19 @@ ifeq ($(HND_ROUTER),y)
 CFLAGS += -DNON_P_THREAD
 endif
 
-LDFLAGS += -L$(TOP)/nvram$(BCMEX) ${EXTRA_NV_LDFLAGS} -lnvram
+LDFLAGS += -L$(TOP)/nvram$(BCMEX)${EX7} ${EXTRA_NV_LDFLAGS} -lnvram
 LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += -L$(TOP)/protect_srv/lib/ -lptcsrv
-ifeq ($(RTCONFIG_QTN),y)
-CFLAGS += -I$(TOP)/libqcsapi_client
-LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
-endif
+
 LIBS = -lpthread -lgcc_s
 
 MDIRS = lib
 
 ifeq ($(wildcard $(SRCBASE)/router/protect_srv/*.c),)
 all: 
-	-cp -f prebuilt/protect_srv protect_srv
-	-cp -f prebuilt/Send_Event2ptcsrv Send_Event2ptcsrv
-	-cp -f lib/prebuilt/libptcsrv.so lib
-	-cp -f lib/prebuilt/*.h lib
+	-cp -f prebuild/protect_srv protect_srv
+	-cp -f prebuild/Send_Event2ptcsrv Send_Event2ptcsrv
+	-cp -f lib/prebuild/libptcsrv.so lib
 
 else
 all: ptcsrvdir Send_Event2ptcsrv protect_srv

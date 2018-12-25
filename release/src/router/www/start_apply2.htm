@@ -105,14 +105,27 @@ function showWlHint(updateFlag){
 		var wlc_psta = '<% nvram_get("wlc_psta"); %>';
 		var wlc_express = '<% nvram_get("wlc_express"); %>';
 
-		if(((sw_mode == '2' && wlc_psta == '0') || (sw_mode == '3' && wlc_psta == '2')) && wlc_express == '0') ui_sw_mode = "re"; // Repeater
-		else if(sw_mode == '3' && wlc_psta == '0') ui_sw_mode = "ap"; // AP
-		else if((sw_mode == '3' && wlc_psta == '1') || (sw_mode == '3' && wlc_psta == '3')) ui_sw_mode = "mb"; // MediaBridge
-		else if(sw_mode == '2' && wlc_express != '0') ui_sw_mode = "ew"; // Express Way
-		else if(sw_mode == '5') ui_sw_mode = 'hs'; // Hotspot
+		if(((sw_mode == '2' && wlc_psta == '0') || (sw_mode == '3' && wlc_psta == '2')) && wlc_express == '0'){ // Repeater
+			ui_sw_mode = "re";
+		}
+		else if((sw_mode == '3' && wlc_psta == '0') || (sw_mode == '3' && wlc_psta == '')){     // Access Point
+			ui_sw_mode = "ap";
+		}
+		else if((sw_mode == '3' && wlc_psta == '1' && wlc_express == '0') || (sw_mode == '3' && wlc_psta == '3' && wlc_express == '0') || (sw_mode == '2' && wlc_psta == '1' && wlc_express == '0')){   // MediaBridge
+			ui_sw_mode = "mb";
+		}
+		else if(sw_mode == '2' && wlc_psta == '0' && wlc_express == '1'){       // Express Way 2G
+			ui_sw_mode = "ew2";
+		}
+		else if(sw_mode == '2' && wlc_psta == '0' && wlc_express == '2'){       // Express Way 5G
+			ui_sw_mode = "ew5";
+		}
+		else if(sw_mode == '5'){        // Hotspot
+			ui_sw_mode = 'hs';
+		}
 		else ui_sw_mode = "rt"; // Router
 
-		return (ui_sw_mode == mode);
+		return (ui_sw_mode.search(mode) !== -1);
 	}
 
 	if(!isSwMode('rt') && !isSwMode('ap')) return false;
@@ -310,7 +323,9 @@ function showWlHint(updateFlag){
 		wlHintCss += "}}";
 		wlHintCss += "</style>";
 
-		var wlHintJs = '<script>setInterval(function(){var a;if(window.XMLHttpRequest)a=new XMLHttpRequest;else{if(!window.ActiveXObject)return!1;a=new ActiveXObject("Microsoft.XMLHTTP")}a.onreadystatechange=function(){4==a.readyState&&200==a.status&&(top.location.href="/")},a.open("GET","/httpd_check.xml",!0),a.send(null)},3e3);<\x2Fscript>';
+		var wlHintJs = '<script>setInterval(function(){var a;if(window.XMLHttpRequest)a=new XMLHttpRequest;else{if(!window.ActiveXObject)return!1;a=new ActiveXObject("Microsoft.XMLHTTP")}a.onreadystatechange=function(){4==a.readyState&&200==a.status&&(top.location.href="/")},a.open("GET","/httpd_check.xml",!0),a.send(null)},';
+		wlHintJs += (action_script == "reboot")?restart_time*1000:"3e3";
+		wlHintJs += ');<\x2Fscript>';
 
 		var wlHintHtml = '';
 		wlHintHtml += '<meta content="telephone=no" name="format-detection"><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">';
@@ -333,8 +348,8 @@ function showWlHint(updateFlag){
 			wlHintHtml += '</b></div>';
 		}
 		wlHintHtml += '</div></div></div></div>';
-
 		top.document.write(wlHintCss + wlHintJs + wlHintHtml);
+
 	})(genWlObj);
 }
 
@@ -351,7 +366,7 @@ function showdr_advise(setting){
 		}
 
 		makeRequest.start('/httpd_check.xml', function(xhr){
-			if(xhr.responseText.search("Main_Login.asp") !== -1) top.location.href = "/index.asp";
+			if(xhr.responseText.search("Main_Login.asp") !== -1) top.location.href = "<% abs_index_page(); %>";
 
 			var httpds = xhr.responseXML.getElementsByTagName("httpd");
 			if (httpds !== null && httpds[0] !== null) {
@@ -414,7 +429,9 @@ function initial(){
 	var isWLclient = function () {  //detect login client is by wireless or wired
 		<% login_state_hook(); %>
 		var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-						
+		if(wireless[0] == undefined)
+			return false;
+
 		if(wireless.length > 0) {
 			for(var i = 0; i < wireless.length; i += 1) {
 				if(wireless[i][0].toUpperCase() == login_mac_str().toUpperCase()) {
@@ -486,7 +503,7 @@ function initial(){
 				showWlHint();
 				return;
 			}
-			if(current_page.indexOf("index.asp") >= 0){
+			if(current_page.indexOf("<% abs_index_page(); %>") >= 0){
 				parent.showLoading(restart_time, "waiting");
 			}
 		}
@@ -500,11 +517,11 @@ function initial(){
 			}
 		} 
 		else if(getflag == "adv_ap_mode"){
-			if(parent.findasus_support){
+			/*if(parent.findasus_support){
 				parent.parent.document.getElementById('drword').innerHTML = "<#OP_AP_hint#>";
-			}else{
+			}else{*/
 				parent.parent.document.getElementById('drword').innerHTML = "<#Main_alert_proceeding_desc3#>.<#LANConfig_ChangedLANIP#>";
-			}
+			//}
 			setTimeout("parent.parent.hideLoading();	",15000);
 			setTimeout("parent.parent.dr_advise();",15000);
 		}

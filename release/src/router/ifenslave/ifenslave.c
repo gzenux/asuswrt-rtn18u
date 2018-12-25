@@ -87,7 +87,7 @@
  *	   would fail and generate an error message in the system log.
  * 	 - For opt_c: slave should not be set to the master's setting
  *	   while it is running. It was already set during enslave. To
- *	   simplify things, it is now handeled separately.
+ *	   simplify things, it is now handled separately.
  *
  *    - 2003/12/01 - Shmulik Hen <shmulik.hen at intel dot com>
  *	 - Code cleanup and style changes
@@ -693,13 +693,7 @@ static int enslave(char *master_ifname, char *slave_ifname)
 		/* Older bonding versions would panic if the slave has no IP
 		 * address, so get the IP setting from the master.
 		 */
-		res = set_if_addr(master_ifname, slave_ifname);
-		if (res) {
-			fprintf(stderr,
-				"Slave '%s': Error: set address failed\n",
-				slave_ifname);
-			return res;
-		}
+		set_if_addr(master_ifname, slave_ifname);
 	} else {
 		res = clear_if_addr(slave_ifname);
 		if (res) {
@@ -762,7 +756,7 @@ static int enslave(char *master_ifname, char *slave_ifname)
 		 */
 		if (abi_ver < 1) {
 			/* For old ABI, the master needs to be
-			 * down before setting it's hwaddr
+			 * down before setting its hwaddr
 			 */
 			res = set_if_down(master_ifname, master_flags.ifr_flags);
 			if (res) {
@@ -1085,10 +1079,9 @@ static int set_if_addr(char *master_ifname, char *slave_ifname)
 				slave_ifname, ifra[i].req_name,
 				strerror(saved_errno));
 
-			return res;
 		}
 
-		ipaddr = (unsigned char *)(ifr.ifr_addr.sa_data);
+		ipaddr = (unsigned char *)ifr.ifr_addr.sa_data;
 		v_print("Interface '%s': set IP %s to %d.%d.%d.%d\n",
 			slave_ifname, ifra[i].desc,
 			ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3]);
@@ -1107,4 +1100,3 @@ static int set_if_addr(char *master_ifname, char *slave_ifname)
  *  compile-command: "gcc -Wall -Wstrict-prototypes -O -I/usr/src/linux/include ifenslave.c -o ifenslave"
  * End:
  */
-

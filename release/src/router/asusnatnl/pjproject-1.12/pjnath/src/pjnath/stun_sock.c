@@ -66,6 +66,11 @@ struct pj_stun_sock
     pj_uint16_t		 tsx_id[6];	/* .. to match STUN msg	    */
     pj_stun_session	*stun_sess;	/* STUN session		    */
     pj_grp_lock_t	*grp_lock;	/* Session group lock	    */
+
+    /**
+     * Last error (if session was terminated because of error)
+     */
+    pj_status_t	    last_status;
 };
 
 /* 
@@ -206,6 +211,7 @@ PJ_DEF(pj_status_t) pj_stun_sock_create( pj_stun_config *stun_cfg,
     stun_sock->sock_fd = PJ_INVALID_SOCKET;
     pj_memcpy(&stun_sock->stun_cfg, stun_cfg, sizeof(*stun_cfg));
     pj_memcpy(&stun_sock->cb, cb, sizeof(*cb));
+	stun_sock->last_status = 0;
 
     stun_sock->ka_interval = cfg->ka_interval;
     if (stun_sock->ka_interval == 0)
@@ -410,8 +416,10 @@ PJ_DEF(pj_status_t) pj_stun_sock_start( pj_stun_sock *stun_sock,
 	    unsigned cnt = 1;
 
 	    status = pj_getaddrinfo(stun_sock->af, domain, &cnt, &ai);
-	    if (status != PJ_SUCCESS)
-		return status;
+	    if (status != PJ_SUCCESS) {
+    		pj_grp_lock_release(stun_sock->grp_lock);
+			return status;
+		}
 
 	    pj_sockaddr_cp(&stun_sock->srv_addr, &ai.ai_addr);
 	}
@@ -444,19 +452,19 @@ static void stun_sock_destructor(void *obj)
     */
 
     if (stun_sock->pool) {
-	pj_pool_t *pool = stun_sock->pool;
-	stun_sock->pool = NULL;
-	pj_pool_release(pool);
-    }
-
-    TRACE_(("", "STUN sock %p destroyed", stun_sock));
+		pj_pool_t *pool = stun_sock->pool;
+		stun_sock->pool = NULL;
+		PJ_LOG(4, (stun_sock->obj_name, " stun_sock->pool released"));
+		pj_pool_release(pool);
+	}
+	PJ_LOG(4, (THIS_FILE, "STUN socket destroyed"));
 
 }
 
 /* Destroy */
 PJ_DEF(pj_status_t) pj_stun_sock_destroy(pj_stun_sock *stun_sock)
 {
-    TRACE_((stun_sock->obj_name, "STUN sock %p request, ref_cnt=%d",
+    PJ_LOG(4,(stun_sock->obj_name, "STUN sock %p request, ref_cnt=%d",
 	    stun_sock, pj_grp_lock_get_ref(stun_sock->grp_lock)));
 
     pj_grp_lock_acquire(stun_sock->grp_lock);
@@ -617,7 +625,10 @@ PJ_DEF(pj_status_t) pj_stun_sock_get_info( pj_stun_sock *stun_sock,
 
     PJ_ASSERT_RETURN(stun_sock && info, PJ_EINVAL);
 
-    pj_grp_lock_acquire(stun_sock->grp_lock);
+	pj_grp_lock_acquire(stun_sock->grp_lock);
+
+	/* Prepare last status */
+	info->last_status = stun_sock->last_status;
 
     /* Copy STUN server address and mapped address */
     pj_memcpy(&info->srv_addr, &stun_sock->srv_addr,
@@ -735,8 +746,10 @@ PJ_DEF(pj_status_t) pj_stun_sock_sendto( pj_stun_sock *stun_sock,
 
 	size = pkt_len;
 
-	if (!stun_sock || !stun_sock->active_sock)
+	if (!stun_sock || !stun_sock->active_sock) {
+		pj_grp_lock_release(stun_sock->grp_lock);
 		return PJ_EINVALIDOP;
+	}
 
 	/* Check that this is STUN message */
 	status = pj_stun_msg_check((const pj_uint8_t*)pkt, size, 
@@ -747,7 +760,7 @@ PJ_DEF(pj_status_t) pj_stun_sock_sendto( pj_stun_sock *stun_sock,
 		is_tnl_data = (((pj_uint8_t*)pkt)[pkt_len] == 1);
 
 	if(is_stun || !is_tnl_data) {
-		pj_ioqueue_op_key_t *op_key = (pj_ioqueue_op_key_t*)pj_mem_alloc(sizeof(pj_ioqueue_op_key_t));
+		pj_ioqueue_op_key_t *op_key = (pj_ioqueue_op_key_t*)malloc(sizeof(pj_ioqueue_op_key_t));
 		pj_ioqueue_op_key_init(op_key, sizeof(pj_ioqueue_op_key_t));
 		status = pj_activesock_sendto(stun_sock->active_sock, op_key,
 			pkt, &size, (flag | PJ_IOQUEUE_URGENT_DATA), dst_addr, addr_len);
@@ -794,7 +807,7 @@ static pj_status_t sess_on_send_msg(pj_stun_session *sess,
 
 	size = pkt_size;
 	if(is_stun || !is_tnl_data) {
-		pj_ioqueue_op_key_t *op_key = (pj_ioqueue_op_key_t*)pj_mem_alloc(sizeof(pj_ioqueue_op_key_t));
+		pj_ioqueue_op_key_t *op_key = (pj_ioqueue_op_key_t*)malloc(sizeof(pj_ioqueue_op_key_t));
 		pj_ioqueue_op_key_init(op_key, sizeof(pj_ioqueue_op_key_t));
 		return pj_activesock_sendto(stun_sock->active_sock, op_key,
 			pkt, &size, PJ_IOQUEUE_URGENT_DATA, dst_addr, addr_len);
@@ -828,7 +841,10 @@ static void sess_on_request_complete(pj_stun_session *sess,
     PJ_UNUSED_ARG(tdata);
     PJ_UNUSED_ARG(token);
     PJ_UNUSED_ARG(src_addr);
-    PJ_UNUSED_ARG(src_addr_len);
+	PJ_UNUSED_ARG(src_addr_len);
+
+	/* Save last status */
+	stun_sock->last_status = status;
 
     /* Check if this is a keep-alive or the first Binding request */
     if (pj_sockaddr_has_addr(&stun_sock->mapped_addr))
@@ -1087,4 +1103,8 @@ PJ_DEF(void) pj_stun_sock_set_previous_local_addr(pj_stun_sock *stun_sock, pj_so
 
 PJ_DEF(int) pj_stun_sock_get_addr_family(pj_stun_sock *stun_sock) {
 	return stun_sock->af;
+}
+
+PJ_DEF(pj_status_t) pj_stun_sock_get_last_status(pj_stun_sock *stun_sock) {
+	return stun_sock->last_status;
 }

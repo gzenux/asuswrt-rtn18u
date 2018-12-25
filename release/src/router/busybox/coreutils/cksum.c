@@ -4,9 +4,18 @@
  *
  * Copyright (C) 2006 by Rob Sullivan, with ideas from code by Walter Harms
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+
+//usage:#define cksum_trivial_usage
+//usage:       "FILES..."
+//usage:#define cksum_full_usage "\n\n"
+//usage:       "Calculate the CRC32 checksums of FILES"
+
 #include "libbb.h"
+#include "common_bufsiz.h"
+
+/* This is a NOEXEC applet. Be very careful! */
 
 int cksum_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int cksum_main(int argc UNUSED_PARAM, char **argv)
@@ -16,7 +25,6 @@ int cksum_main(int argc UNUSED_PARAM, char **argv)
 	off_t length, filesize;
 	int bytes_read;
 	int exit_code = EXIT_SUCCESS;
-	uint8_t *cp;
 
 #if ENABLE_DESKTOP
 	getopt32(argv, ""); /* coreutils 6.9 compat */
@@ -25,6 +33,7 @@ int cksum_main(int argc UNUSED_PARAM, char **argv)
 	argv++;
 #endif
 
+	setup_common_bufsiz();
 	do {
 		int fd = open_or_warn_stdin(*argv ? *argv : bb_msg_standard_input);
 
@@ -36,12 +45,9 @@ int cksum_main(int argc UNUSED_PARAM, char **argv)
 		length = 0;
 
 #define read_buf bb_common_bufsiz1
-		while ((bytes_read = safe_read(fd, read_buf, sizeof(read_buf))) > 0) {
-			cp = (uint8_t *) read_buf;
+		while ((bytes_read = safe_read(fd, read_buf, COMMON_BUFSIZE)) > 0) {
 			length += bytes_read;
-			do {
-				crc = (crc << 8) ^ crc32_table[(crc >> 24) ^ *cp++];
-			} while (--bytes_read);
+			crc = crc32_block_endian1(crc, read_buf, bytes_read, crc32_table);
 		}
 		close(fd);
 

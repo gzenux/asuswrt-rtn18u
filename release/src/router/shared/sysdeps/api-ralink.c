@@ -27,7 +27,7 @@
 
 typedef uint32_t __u32;
 
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) ||defined(RTAC54U)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) ||defined(RTAC54U) || defined(RTAC51UP)|| defined(RTAC53) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC1200) || defined(RTN11P_B1) || defined(RPAC87) || defined(RTAC85U) || defined(RTAC65U)
 const char WIF_5G[]	= "rai0";
 const char WIF_2G[]	= "ra0";
 const char WDSIF_5G[]	= "wdsi";
@@ -75,7 +75,15 @@ uint32_t set_gpio(uint32_t gpio, uint32_t value)
 
 int get_switch_model(void)
 {
-	// TODO
+#if defined(RTCONFIG_RALINK_RT3052)
+	return SWITCH_RT3052;
+#elif defined(RTCONFIG_RALINK_MT7620)
+	return SWITCH_MT7620;
+#elif defined(RTCONFIG_RALINK_MT7621)
+	return SWITCH_MT7621;
+#elif defined(RTCONFIG_RALINK_MT7628)
+	return SWITCH_MT7628;
+#endif
 	return SWITCH_UNKNOWN;
 }
 
@@ -104,150 +112,7 @@ uint32_t set_phy_ctrl(uint32_t portmask, int ctrl)
 		(((__u32)(x) & (__u32)0x00ff0000UL) >>  8) | \
 		(((__u32)(x) & (__u32)0xff000000UL) >> 24) ))
 
-/* 0: it is not a legal image
- * 1: it is legal image
- */
-int check_imageheader(char *buf, long *filelen)
-{
-	uint32_t checksum;
-	image_header_t header2;
-	image_header_t *hdr, *hdr2;
 
-	hdr  = (image_header_t *) buf;
-	hdr2 = &header2;
-
-	/* check header magic */
-	if (SWAP_LONG(hdr->ih_magic) != IH_MAGIC) {
-		_dprintf ("Bad Magic Number\n");
-		return 0;
-	}
-
-	/* check header crc */
-	memcpy (hdr2, hdr, sizeof(image_header_t));
-	hdr2->ih_hcrc = 0;
-	checksum = crc_calc(0, (const char *)hdr2, sizeof(image_header_t));
-	_dprintf("header crc: %X\n", checksum);
-	_dprintf("org header crc: %X\n", SWAP_LONG(hdr->ih_hcrc));
-	if (checksum != SWAP_LONG(hdr->ih_hcrc))
-	{
-		_dprintf("Bad Header Checksum\n");
-		return 0;
-	}
-
-	{
-		if(strcmp(buf+36, nvram_safe_get("productid"))==0) {
-			*filelen  = SWAP_LONG(hdr->ih_size);
-			*filelen += sizeof(image_header_t);
-#ifdef RTCONFIG_DSL
-			// DSL product may have modem firmware
-			*filelen+=(512*1024);			
-#endif		
-			_dprintf("image len: %x\n", *filelen);	
-			return 1;
-		}
-	}
-	return 0;
-}
-
-int
-checkcrc(char *fname)
-{
-	int ifd = -1;
-	uint32_t checksum;
-	struct stat sbuf;
-	unsigned char *ptr = NULL;
-	image_header_t *hdr;
-	char *imagefile;
-	int ret = -1;
-	int len;
-
-	imagefile = fname;
-//	fprintf(stderr, "img file: %s\n", imagefile);
-
-	ifd = open(imagefile, O_RDONLY|O_BINARY);
-
-	if (ifd < 0) {
-		_dprintf("Can't open %s: %s\n",
-			imagefile, strerror(errno));
-		goto checkcrc_end;
-	}
-
-	/* We're a bit of paranoid */
-#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
-	(void) fdatasync (ifd);
-#else
-	(void) fsync (ifd);
-#endif
-	if (fstat(ifd, &sbuf) < 0) {
-		_dprintf("Can't stat %s: %s\n",
-			imagefile, strerror(errno));
-		goto checkcrc_fail;
-	}
-
-	ptr = (unsigned char *)mmap(0, sbuf.st_size,
-				    PROT_READ, MAP_SHARED, ifd, 0);
-	if (ptr == (unsigned char *)MAP_FAILED) {
-		_dprintf("Can't map %s: %s\n",
-			imagefile, strerror(errno));
-		goto checkcrc_fail;
-	}
-	hdr = (image_header_t *)ptr;
-
-	/* check image header */
-	if(check_imageheader((char*)hdr, (long*)&len) == 0)
-	{
-		_dprintf("Check image heaer fail !!!\n");
-		goto checkcrc_fail;
-	}
-
-	len = SWAP_LONG(hdr->ih_size);
-	if (sbuf.st_size < (len + sizeof(image_header_t))) {
-		_dprintf("Size mismatch %lx/%lx !!!\n", sbuf.st_size, (len + sizeof(image_header_t)));
-		goto checkcrc_fail;
-	}
-
-	/* check body crc */
-	_dprintf("Verifying Checksum ... ");
-	checksum = crc_calc(0, (const char *)ptr + sizeof(image_header_t), len);
-	if(checksum != SWAP_LONG(hdr->ih_dcrc))
-	{
-		_dprintf("Bad Data CRC\n");
-		goto checkcrc_fail;
-	}
-	_dprintf("OK\n");
-
-	ret = 0;
-
-	/* We're a bit of paranoid */
-checkcrc_fail:
-	if(ptr != NULL)
-		munmap(ptr, sbuf.st_size);
-#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
-	(void) fdatasync (ifd);
-#else
-	(void) fsync (ifd);
-#endif
-	if (close(ifd)) {
-		_dprintf("Read error on %s: %s\n",
-			imagefile, strerror(errno));
-		ret=-1;
-	}
-checkcrc_end:
-	return ret;
-}
-
-/* 
- * 0: legal image
- * 1: illegal image
- *
- * check product id, crc ..
- */
-
-int check_imagefile(char *fname)
-{
-	if(checkcrc(fname)==0) return 0;
-	return 1;
-}
 
 int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq)
 {
@@ -316,7 +181,7 @@ void set_radio(int on, int unit, int subunit)
 		doSystem("iwpriv %s set RadioOn=%d", WIF_2G, on);
 	else doSystem("iwpriv %s set RadioOn=%d", WIF_5G, on);
 
-#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2)//5G:7612E 2G:7603E
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC65U) //5G:7612E 2G:7603E
 	led_onoff(unit);
 #endif	
 }
@@ -329,7 +194,9 @@ char *wif_to_vif(char *wif)
 
 	vif[0] = '\0';
 
-	for (unit = 0; unit < 2; unit++)
+	for (unit = 0; unit < MAX_NR_WL_IF; unit++)
+	{
+		SKIP_ABSENT_BAND(unit);
 		for (subunit = 1; subunit < 4; subunit++)
 		{
 			snprintf(prefix, sizeof(prefix), "wl%d.%d", unit, subunit);
@@ -340,6 +207,7 @@ char *wif_to_vif(char *wif)
 				goto RETURN_VIF;
 			}
 		}
+	}
 
 RETURN_VIF:
 	return vif;
@@ -405,6 +273,7 @@ unsigned char A_BAND_REGION_18_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 1
 unsigned char A_BAND_REGION_19_CHANNEL_LIST[]={56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161};
 unsigned char A_BAND_REGION_20_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 149, 153, 157, 161};
 unsigned char A_BAND_REGION_21_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161};
+unsigned char A_BAND_REGION_22_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 132, 136, 140, 149, 153, 157, 161 ,165};
 
 unsigned char G_BAND_REGION_0_CHANNEL_LIST[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 unsigned char G_BAND_REGION_1_CHANNEL_LIST[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
@@ -432,6 +301,7 @@ unsigned char G_BAND_REGION_5_CHANNEL_LIST[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 #define A_BAND_REGION_19			19
 #define A_BAND_REGION_20			20
 #define A_BAND_REGION_21			21
+#define A_BAND_REGION_22			22
 
 #define G_BAND_REGION_0				0
 #define G_BAND_REGION_1				1
@@ -744,6 +614,10 @@ int get_channel_list_via_country(int unit, const char *country_code, char *buffe
 			num = sizeof(A_BAND_REGION_21_CHANNEL_LIST)/sizeof(unsigned char);
 			pChannelListTemp = A_BAND_REGION_21_CHANNEL_LIST;
 			break;
+		case A_BAND_REGION_22:
+			num = sizeof(A_BAND_REGION_22_CHANNEL_LIST)/sizeof(unsigned char);
+			pChannelListTemp = A_BAND_REGION_22_CHANNEL_LIST;
+			break;
 		default:	// Error. should never happen
 			dbg("countryregionA=%d not support", allCountry[index].RegDomainNum11A);
 			break;
@@ -790,16 +664,16 @@ int get_channel_list_via_country(int unit, const char *country_code, char *buffe
 }
 
 
-#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2)
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC65U)
 void led_onoff(int unit)
 {   
 #if defined(RTAC1200HP)
 	if(unit==1)
 #endif		
 		if(get_radio(unit, 0))
-			led_control(unit?LED_5G:LED_2G, LED_ON);	
+			led_control(get_wl_led_id(unit), LED_ON);
 		else
-			led_control(unit?LED_5G:LED_2G, LED_OFF);	
+			led_control(get_wl_led_id(unit), LED_OFF);
 }
 #endif
 
@@ -826,6 +700,11 @@ char *get_2g_hwaddr(void)
         return get_wan_hwaddr();
 }
 
+char *get_label_mac()
+{
+	return get_2g_hwaddr();
+}
+
 char *get_lan_hwaddr(void)
 {
 	/* TODO: handle exceptional model */
@@ -837,3 +716,117 @@ char *get_wan_hwaddr(void)
 	/* TODO: handle exceptional model */
         return nvram_safe_get("et1macaddr");
 }
+
+/**
+ * Generate interface name based on @band and @subunit. (@subunit is NOT y in wlX.Y)
+ * @band:
+ * @subunit:
+ * @buf:
+ * @return:
+ */
+char *__get_wlifname(int band, int subunit, char *buf)
+{
+	if (!buf)
+		return buf;
+
+	strcpy(buf, (!band)? WIF_2G:WIF_5G);
+	if (subunit) {
+		sprintf(buf + strlen(buf) - 1, "%d", subunit);
+	}
+
+	return buf;
+}
+
+char *get_wlifname(int unit, int subunit, int subunit_x, char *buf)
+{
+	char wifbuf[32];
+	char prefix[]="wlXXXXXX_", tmp[100];
+#if defined(RTCONFIG_WIRELESSREPEATER)
+	if (sw_mode() == SW_MODE_REPEATER
+#if !defined(RTCONFIG_CONCURRENTREPEATER)
+	 && nvram_get_int("wlc_band") == unit
+#endif
+	 && subunit==1)
+	{
+		if(unit == 1)
+			sprintf(buf, "%s", APCLI_5G);
+		else
+			sprintf(buf, "%s", APCLI_2G);
+	}	
+	else
+#endif /* RTCONFIG_WIRELESSREPEATER */
+	{
+		memset(wifbuf, 0, sizeof(wifbuf));
+
+		if(unit==0) strncpy(wifbuf, WIF_2G, strlen(WIF_2G)-1);
+#if defined(RTCONFIG_HAS_5G)
+		else strncpy(wifbuf, WIF_5G, strlen(WIF_5G)-1);
+#endif	/* RTCONFIG_HAS_5G */
+
+		snprintf(prefix, sizeof(prefix), "wl%d.%d_", unit, subunit);
+		if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1"))
+			sprintf(buf, "%s%d", wifbuf, subunit_x);
+		else
+			sprintf(buf, "%s", "");
+	}	
+	return buf;
+}
+
+/**
+ * Generate VAP interface name of wlX.Y for Guest network, Free Wi-Fi, and Facebook Wi-Fi
+ * @x:		X of wlX.Y, aka unit
+ * @y:		Y of wlX.Y
+ * @buf:	Pointer to buffer of VAP interface name. Must greater than or equal to IFNAMSIZ
+ * @return:
+ * 	NULL	Invalid @buf
+ * 	""	Invalid parameters
+ *  otherwise	VAP interface name of wlX.Y
+ */
+char *get_wlxy_ifname(int x, int y, char *buf)
+{
+	int i, sidx;
+	char prefix[sizeof("wlX.Yxxx")];
+
+	if (!buf)
+		return buf;
+
+	if (x < 0 || y < 0 || y >= MAX_NO_MSSID)
+		return "";
+
+	if (y == 0) {
+		__get_wlifname(x, 0, buf);
+		return buf;
+	}
+
+	*buf = '\0';
+	for (i = 1, sidx = 1; i < MAX_NO_MSSID; ++i) {
+		if (i == y) {
+			__get_wlifname(x, sidx, buf);
+			break;
+		}
+
+		snprintf(prefix, sizeof(prefix), "wl%d.%d_", x, i);
+		if (nvram_pf_match(prefix, "bss_enabled", "1"))
+			sidx++;
+	}
+
+	return buf;
+}
+
+#ifdef RTCONFIG_AMAS
+void add_beacon_vsie(char *hexdata)
+{
+}
+
+void del_beacon_vsie(char *hexdata)
+{
+}
+
+void add_obd_probe_req_vsie(char *hexdata)
+{
+}
+
+void del_obd_probe_req_vsie(char *hexdata)
+{
+}
+#endif /* RTCONFIG_AMAS */

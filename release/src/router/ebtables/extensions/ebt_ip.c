@@ -16,7 +16,11 @@
 #include <getopt.h>
 #include <netdb.h>
 #include "../include/ebtables_u.h"
+#ifdef HND_ROUTER
+#include "../include/linux/netfilter_bridge/ebt_ip.h"
+#else
 #include <linux/netfilter_bridge/ebt_ip.h>
+#endif
 
 #define IP_SOURCE '1'
 #define IP_DEST   '2'
@@ -24,6 +28,9 @@
 #define IP_PROTO  '4'
 #define IP_SPORT  '5'
 #define IP_DPORT  '6'
+#ifdef HND_ROUTER
+#define IP_myDSCP '7'
+#endif
 
 static struct option opts[] =
 {
@@ -38,6 +45,9 @@ static struct option opts[] =
 	{ "ip-sport"            , required_argument, 0, IP_SPORT  },
 	{ "ip-destination-port" , required_argument, 0, IP_DPORT  },
 	{ "ip-dport"            , required_argument, 0, IP_DPORT  },
+#ifdef HND_ROUTER
+	{ "ip-dscp"             , required_argument, 0, IP_myDSCP },
+#endif
 	{ 0 }
 };
 
@@ -103,6 +113,9 @@ static void print_help()
 "--ip-src    [!] address[/mask]: ip source specification\n"
 "--ip-dst    [!] address[/mask]: ip destination specification\n"
 "--ip-tos    [!] tos           : ip tos specification\n"
+#ifdef HND_ROUTER
+"--ip-dscp   [!] dscp          : ip dscp specification\n"
+#endif
 "--ip-proto  [!] protocol      : ip protocol specification\n"
 "--ip-sport  [!] port[:port]   : tcp/udp source port or port range\n"
 "--ip-dport  [!] port[:port]   : tcp/udp destination port or port range\n");
@@ -122,6 +135,10 @@ static void init(struct ebt_entry_match *match)
 #define OPT_PROTO  0x08
 #define OPT_SPORT  0x10
 #define OPT_DPORT  0x20
+#ifdef HND_ROUTER
+#define OPT_DSCP   0x40
+#endif
+
 static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
    unsigned int *flags, struct ebt_entry_match **match)
 {
@@ -180,7 +197,18 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 		ipinfo->tos = i;
 		ipinfo->bitmask |= EBT_IP_TOS;
 		break;
-
+#ifdef HND_ROUTER
+	case IP_myDSCP:
+		ebt_check_option2(flags, OPT_DSCP);
+		if (ebt_check_inverse2(optarg))
+			ipinfo->invflags |= EBT_IP_DSCP;
+		i = strtol(optarg, &end, 16);
+		if (i < 0 || i > 255 || (i & 0x3) || *end != '\0')
+			ebt_print_error("Problem with specified IP dscp");
+		ipinfo->dscp = i;
+		ipinfo->bitmask |= EBT_IP_DSCP;
+		break;
+#endif
 	case IP_PROTO:
 		ebt_check_option2(flags, OPT_PROTO);
 		if (ebt_check_inverse2(optarg))
@@ -280,6 +308,14 @@ static void print(const struct ebt_u_entry *entry,
 			printf("! ");
 		print_port_range(ipinfo->dport);
 	}
+#ifdef HND_ROUTER
+	if (ipinfo->bitmask & EBT_IP_DSCP) {
+		printf("--ip-dscp ");
+		if (ipinfo->invflags & EBT_IP_DSCP)
+			printf("! ");
+		printf("0x%02X ", ipinfo->dscp);
+	}
+#endif
 }
 
 static int compare(const struct ebt_entry_match *m1,
@@ -322,6 +358,12 @@ static int compare(const struct ebt_entry_match *m1,
 		   ipinfo1->dport[1] != ipinfo2->dport[1])
 			return 0;
 	}
+#ifdef HND_ROUTER
+	if (ipinfo1->bitmask & EBT_IP_DSCP) {
+		if (ipinfo1->dscp != ipinfo2->dscp)
+			return 0;
+	}
+#endif
 	return 1;
 }
 

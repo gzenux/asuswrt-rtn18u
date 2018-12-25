@@ -1,0 +1,7 @@
+/* BCM53019 */
+#define BCM53019_VENDOR_ID                0x600d
+#define BCM53019_DEVICE_ID                0x87c0
+#define BCM53019_MODEL                    0x3019
+#define BCM53019_PROBEINFO            0x14040230
+#define BCM53019_REV_A0                     0x00
+

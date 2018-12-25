@@ -1,0 +1,8 @@
+#if CDK_CONFIG_INCLUDE_BCM53118_A0 == 1
+CDK_DEVLIST_ENTRY(BCM53118, BCM53118_VENDOR_ID, BCM53118_DEVICE_ID, BCM53118_REV_A0, \
+                  0, 0, \
+                  bcm53118_a0, bcm53118_a0, bcm53118_a0, \
+                  CDK_DEV_ARCH_ROBO, "Blackbird", "BCM53118", \
+                  "9-Port GbE Switch With 8 Integrated PHYs", 0, 0)
+#endif
+

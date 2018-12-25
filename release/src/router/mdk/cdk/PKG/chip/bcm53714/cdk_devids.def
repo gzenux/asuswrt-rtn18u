@@ -1,0 +1,7 @@
+/* BCM53714 */
+#define BCM53714_VENDOR_ID                0x14e4
+#define BCM53714_DEVICE_ID                0xc71b
+#define BCM53714_REV_A0                     0x01
+#define BCM53714_REV_A1                     0x02
+#define BCM53714_REV_A2                     0x03
+

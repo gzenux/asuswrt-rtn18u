@@ -11,7 +11,7 @@ config CAL
 	bool "cal"
 	default y
 	help
-	  cal is used to display a monthly calender.
+	  cal is used to display a monthly calendar.
 
 config CATV
 	bool "catv"
@@ -86,44 +86,6 @@ config CUT
 	help
 	  cut is used to print selected parts of lines from
 	  each file to stdout.
-
-config DD
-	bool "dd"
-	default y
-	help
-	  dd copies a file (from standard input to standard output,
-	  by default) using specific input and output blocksizes,
-	  while optionally performing conversions on it.
-
-config FEATURE_DD_SIGNAL_HANDLING
-	bool "Enable DD signal handling for status reporting"
-	default y
-	depends on DD
-	help
-	  Sending a SIGUSR1 signal to a running `dd' process makes it
-	  print to standard error the number of records read and written
-	  so far, then to resume copying.
-
-	  $ dd if=/dev/zero of=/dev/null&
-	  $ pid=$! kill -USR1 $pid; sleep 1; kill $pid
-	  10899206+0 records in
-	  10899206+0 records out
-
-config FEATURE_DD_THIRD_STATUS_LINE
-	bool "Enable the third status line upon signal"
-	default y
-	depends on DD && FEATURE_DD_SIGNAL_HANDLING
-	help
-	  Displays a coreutils-like third status line with transferred bytes,
-	  elapsed time and speed.
-
-config FEATURE_DD_IBS_OBS
-	bool "Enable ibs, obs and conv options"
-	default y
-	depends on DD
-	help
-	  Enables support for writing a certain number of bytes in and out,
-	  at a time, and performing conversions on the data stream.
 
 config DF
 	bool "df"
@@ -269,19 +231,6 @@ config FEATURE_FANCY_HEAD
 	help
 	  This enables the head options (-c, -q, and -v).
 
-config HOSTID
-	bool "hostid"
-	default y
-	help
-	  hostid prints the numeric identifier (in hexadecimal) for
-	  the current host.
-
-config ID
-	bool "id"
-	default y
-	help
-	  id displays the current user and group ID names.
-
 config INSTALL
 	bool "install"
 	default y
@@ -295,11 +244,11 @@ config FEATURE_INSTALL_LONG_OPTIONS
 	help
 	  Support long options for the install applet.
 
-config LENGTH
-	bool "length"
-	default y
-	help
-	  length is used to print out the length of a specified string.
+####config LENGTH
+####	bool "length"
+####	default y
+####	help
+####	  length is used to print out the length of a specified string.
 
 config LN
 	bool "ln"
@@ -527,6 +476,12 @@ config SHA512SUM
 	help
 	  Compute and check SHA512 message digest
 
+config SHA3SUM
+	bool "sha3sum"
+	default y
+	help
+	  Compute and check SHA3 (512-bit) message digest
+
 config SLEEP
 	bool "sleep"
 	default y
@@ -588,21 +543,6 @@ config FEATURE_SPLIT_FANCY
 	  Supports additional suffixes 'b' for 512 bytes,
 	  'g' for 1GiB for the -b option.
 
-config STAT
-	bool "stat"
-	default y
-	help
-	  display file or filesystem status.
-
-config FEATURE_STAT_FORMAT
-	bool "Enable custom formats (-c)"
-	default y
-	depends on STAT
-	help
-	  Without this, stat will not support the '-c format' option where
-	  users can pass a custom format string for output. This adds about
-	  7k to a nonstatic build on amd64.
-
 config STTY
 	bool "stty"
 	default y
@@ -614,12 +554,6 @@ config SUM
 	default y
 	help
 	  checksum and count the blocks in a file
-
-config SYNC
-	bool "sync"
-	default y
-	help
-	  sync is used to flush filesystem buffers.
 
 config TAC
 	bool "tac"
@@ -639,12 +573,13 @@ config FEATURE_FANCY_TAIL
 	default y
 	depends on TAIL
 	help
-	  The options (-q, -s, and -v) are provided by GNU tail, but
+	  The options (-q, -s, -v and -F) are provided by GNU tail, but
 	  are not specific in the SUSv3 standard.
 
 	    -q      Never output headers giving file names
 	    -s SEC  Wait SEC seconds between reads with -f
 	    -v      Always output headers giving file names
+	    -F      Same as -f, but keep retrying
 
 config TEE
 	bool "tee"
@@ -659,13 +594,6 @@ config FEATURE_TEE_USE_BLOCK_IO
 	depends on TEE
 	help
 	  Enable this option for a faster tee, at expense of size.
-
-config TOUCH
-	bool "touch"
-	default y
-	help
-	  touch is used to create or change the access and/or
-	  modification timestamp of specified files.
 
 config TRUE
 	bool "true"
@@ -685,6 +613,14 @@ config UNAME
 	default y
 	help
 	  uname is used to print system information.
+
+config UNAME_OSNAME
+	string "Operating system name"
+	default "GNU/Linux"
+	depends on UNAME
+	help
+	  Sets the operating system name reported by uname -o.  The
+	  default is "GNU/Linux".
 
 config UNEXPAND
 	bool "unexpand"
@@ -737,13 +673,6 @@ config FEATURE_WC_LARGE
 	help
 	  Use "unsigned long long" in wc for counter variables.
 
-config WHO
-	bool "who"
-	default y
-	depends on FEATURE_UTMP
-	help
-	  who is used to show who is logged on.
-
 config WHOAMI
 	bool "whoami"
 	default y
@@ -757,6 +686,16 @@ config YES
 	help
 	  yes is used to repeatedly output a specific string, or
 	  the default string `y'.
+
+comment "Common options"
+
+config FEATURE_VERBOSE
+	bool "Support verbose options (usually -v) for various applets"
+	default y
+	help
+	  Enable cp -v, rm -v and similar messages.
+	  Also enables long option (--verbose) if it exists.
+	  Without this option, -v is accepted but ignored.
 
 comment "Common options for cp and mv"
 	depends on CP || MV
@@ -792,13 +731,13 @@ config FEATURE_HUMAN_READABLE
 	help
 	  Allow df, du, and ls to have human readable output.
 
-comment "Common options for md5sum, sha1sum, sha256sum, sha512sum"
-	depends on MD5SUM || SHA1SUM || SHA256SUM || SHA512SUM
+comment "Common options for md5sum, sha1sum, sha256sum, sha512sum, sha3sum"
+	depends on MD5SUM || SHA1SUM || SHA256SUM || SHA512SUM || SHA3SUM
 
 config FEATURE_MD5_SHA1_SUM_CHECK
 	bool "Enable -c, -s and -w options"
 	default y
-	depends on MD5SUM || SHA1SUM || SHA256SUM || SHA512SUM
+	depends on MD5SUM || SHA1SUM || SHA256SUM || SHA512SUM || SHA3SUM
 	help
 	  Enabling the -c options allows files to be checked
 	  against pre-calculated hash values.

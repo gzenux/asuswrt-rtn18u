@@ -68,6 +68,7 @@
 #endif
 
 
+
 #if defined(RTCONFIG_RALINK_MT7620)
 //gpio 0~23
 #define	RALINK_GPIO2300_SET_DIR		0x01 
@@ -162,6 +163,7 @@
 #define RALINK_REG_PIORESET		(RALINK_PRGIO_ADDR + 0x30)
 
 #elif defined(RTCONFIG_RALINK_MT7621)
+/*
 #define RALINK_REG_INTENA               (RALINK_IRQ_ADDR   + 0x80)
 #define RALINK_REG_INTDIS               (RALINK_IRQ_ADDR   + 0x78)
    
@@ -173,9 +175,24 @@
 #define RALINK_REG_PIODIR               (RALINK_PRGIO_ADDR + 0x00)
 #define RALINK_REG_PIOSET               (RALINK_PRGIO_ADDR + 0x30)
 #define RALINK_REG_PIORESET             (RALINK_PRGIO_ADDR + 0x40)
+*/
+#define RALINK_REG_INTENA		(RALINK_IRQ_ADDR + 0x34)
+#define RALINK_REG_INTDIS		(RALINK_IRQ_ADDR + 0x38)
+
+#define RALINK_PRGIO_ADDR		RALINK_PIO_BASE // Programmable I/O
+#define RALINK_REG_PIOINT		(RALINK_PRGIO_ADDR + 0)
+#define RALINK_REG_PIOEDGE		(RALINK_PRGIO_ADDR + 0x04)
+#define RALINK_REG_PIORENA		(RALINK_PRGIO_ADDR + 0x08)
+#define RALINK_REG_PIOFENA		(RALINK_PRGIO_ADDR + 0x0C)
+#define RALINK_REG_PIODATA		(RALINK_PRGIO_ADDR + 0x20)
+#define RALINK_REG_PIODIR		(RALINK_PRGIO_ADDR + 0x24)
+#define RALINK_REG_PIOSET		(RALINK_PRGIO_ADDR + 0x2C)
+#define RALINK_REG_PIORESET		(RALINK_PRGIO_ADDR + 0x30)
 #else
 # error "Invalid Gpio Reg"
 #endif
+
+
 /*
  * Values for the GPIOMODE Register
  */
@@ -209,6 +226,7 @@
 #else
 # error "Invalid Gpio Mode"
 #endif
+
 
 /*
 #define RALINK_GPIOMODE_PCM		0x01	// GPIO_PCM

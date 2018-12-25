@@ -160,7 +160,7 @@ function init()
 	watchdogReset();
 
 	ref.start();
-	document.getElementById("faq0").href = "http://www.asus.com"+ href_lang +"support/Search-Result-Detail/69B50762-C9C0-15F1-A5B8-C7B652F50ACF/?keyword=ASUSWRT%20Traffic%20Monitor" ;
+	document.getElementById("faq0").href = "https://www.asus.com/support/FAQ/114483/" ;
 
 	var ctf_disable = '<% nvram_get("ctf_disable"); %>';
 	if(ctf_disable == "0"){
@@ -258,9 +258,9 @@ function switchPage(page){
           				<td align="left" valign="middle">
 							<!-- add some hard code of style attributes to wordkaround for IE 11-->
 							<table width="95%" border="1" align="left" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="DescTable" style="font-size:12px; font-family:Arial, Helvetica, sans-serif;	border: 1px solid #000000; border-collapse: collapse;">
-								<tr><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="16%"></th><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="26%"><#Internet#></th><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="29%"><#tm_wired#></th><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="29%"><#tm_wireless#></th></tr>
-								<tr><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;"><#tm_reception#></th><td style="color:#FF9000;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_recp_int#></td><td style="color:#3CF;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_recp_wired#></td><td style="color:#3CF;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_recp_wireless#></td></tr>
-								<tr><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;"><#tm_transmission#></th><td style="color:#3CF;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_trans_int#></td><td style="color:#FF9000;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_trans_wired#></td><td style="color:#FF9000;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_trans_wireless#></td></tr>
+								<tr><th style="font-family:Arial, Helvetica, sans-serif; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border-collapse: collapse;" width="16%"></th><th class="tm_title_bg" style="font-family:Arial, Helvetica, sans-serif;color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;padding-left: 10px;border-collapse: collapse;" width="26%"><#Internet#></th><th class="tm_title_bg" style="font-family:Arial, Helvetica, sans-serif;color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;border-collapse: collapse;" width="29%"><#tm_wired#></th><th class="tm_title_bg" style="font-family:Arial, Helvetica, sans-serif; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border-collapse: collapse;" width="29%"><#tm_wireless#></th></tr>
+								<tr><th class="tm_title_bg" style="	font-family:Arial, Helvetica, sans-serif;color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border-collapse: collapse;"><#tm_reception#></th><td style="color:#FF9000;padding-left: 10px;	border-collapse: collapse;"><#tm_recp_int#></td><td style="color:#3CF;padding-left: 10px;border-collapse: collapse;"><#tm_recp_wired#></td><td style="color:#3CF;padding-left: 10px;border-collapse: collapse;"><#tm_recp_wireless#></td></tr>
+								<tr><th class="tm_title_bg" style="font-family:Arial, Helvetica, sans-serif; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;border-collapse: collapse;"><#tm_transmission#></th><td style="color:#3CF;padding-left: 10px;border-collapse: collapse;"><#tm_trans_int#></td><td style="color:#FF9000;padding-left: 10px;;border-collapse: collapse;"><#tm_trans_wired#></td><td style="color:#FF9000;padding-left: 10px;border-collapse: collapse;"><#tm_trans_wireless#></td></tr>
 							</table>
 							<!--End-->
           				</td>
@@ -272,7 +272,7 @@ function switchPage(page){
 							<div id="ctfLevelDesc" style="display:none" class="formfontcontent">
 								<p class="formfontcontent">
 									<b><#ADSL_FW_note#></b> <#traffic_monitor_desc3#>
-									Click <a style="text-decoration:underline" href="Advanced_SwitchCtrl_Content.asp?af=ctf_disable_force">HERE</a> to disable NAT Acceleration.  
+									<#ctfLevelDesc#>  
 								</p>
 							</div>
 
@@ -282,7 +282,8 @@ function switchPage(page){
 
         			<tr>
         				<td>
-							<span id="tab-area"></span>									
+							<span id="tab-area"></span>
+							<span id="iftitle" style="font-weight: bold; color: #A0B06B; position: absolute; margin-top: 30px; margin-left: 41%; min-width: 180px;"></span>
 							<!--========= svg =========-->
 							<!--[if IE]>
 								<div id="svg-table" align="left" class="IE8HACK">

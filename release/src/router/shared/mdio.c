@@ -36,7 +36,8 @@
 #include "shared.h"
 
 #if defined(RTCONFIG_SWITCH_RTL8370M_PHY_QCA8033_X2) || \
-    defined(RTCONFIG_SWITCH_RTL8370MB_PHY_QCA8033_X2)
+    defined(RTCONFIG_SWITCH_RTL8370MB_PHY_QCA8033_X2) || \
+		defined(RTCONFIG_EXT_RTL8370MB)
 /**
  * @ifname:
  * @location:

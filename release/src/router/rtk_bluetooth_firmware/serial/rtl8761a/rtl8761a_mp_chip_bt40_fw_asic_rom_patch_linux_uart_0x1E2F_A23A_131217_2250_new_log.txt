@@ -1,0 +1,37 @@
+NAME=rtl8761a_mp_chip_bt40_fw_asic_rom_patch_linux_uart
+
+===============================================================================
+              RTL8761A Linux Uart Bluetooth Patch Code Released Note
+===============================================================================
+   Build Time   : 2013/12/17  AM 22:50:51
+   Output File  : NAME_0x1E2F_A23A_131217_2250_new.dll
+   File Version : 0x1E2F_A23A
+===============================================================================
+
+* HCI Sub-Version : 0x1E2E
+* LMP Sub-Version : 0xDB60
+* SVN Version : 10318
+* BTCOEX Version : 20130613-3736
+* Offset : 0x00000030 / Size : 9048 bytes
+* Updated Note :
+
+
+* HCI Sub-Version : 0x1E2F
+* LMP Sub-Version : 0xA1D1
+* SVN Version : 11290
+* BTCOEX Version : 20130613-3736
+* Offset : 0x00002400 / Size : 18852 bytes
+* Updated Note :
+
+
+* HCI Sub-Version : 0x1E2F
+* LMP Sub-Version : 0xA1D1
+* SVN Version : 11291
+* BTCOEX Version : 20130613-3736
+* Offset : 0x00006E00 / Size : 20952 bytes
+* Updated Note :
+
+
+
+
+

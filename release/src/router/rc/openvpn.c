@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+ #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
 #include <time.h>
@@ -241,10 +242,13 @@ void start_vpnclient(int clientNum)
 			fprintf(fp, "route-gateway %s\n", nvram_safe_get(&buffer[0]));
 		fprintf(fp, "redirect-gateway def1\n");
 	}
-	if ( (nvi = nvram_get_int("vpn_loglevel")) >= 0 )
-                fprintf(fp, "verb %d\n", nvi);
-        else
-                fprintf(fp, "verb 3\n");
+	sprintf(&buffer[0], "vpn_client%d_verb", clientNum);
+	if( !nvram_is_empty(&buffer[0]) && (nvi = nvram_get_int(&buffer[0])) >= 0 )
+		fprintf(fp, "verb %d\n", nvi);
+	else if ( (nvi = nvram_get_int("vpn_loglevel")) >= 0 )
+		fprintf(fp, "verb %d\n", nvi);
+	else
+		fprintf(fp, "verb 3\n");
 	if ( cryptMode == TLS )
 	{
 		sprintf(&buffer[0], "vpn_client%d_reneg", clientNum);
@@ -771,6 +775,7 @@ void start_vpnserver(int serverNum)
 	sprintf(&buffer[0], "vpn_server%d_proto", serverNum);
 	fprintf(fp, "proto %s\n", nvram_safe_get(&buffer[0]));
 	if(!strcmp(nvram_safe_get(&buffer[0]), "udp")) {
+		fprintf(fp, "proto udp\n");
 		fprintf(fp, "multihome\n");
 		fprintf(fp_client, "proto %s\n", nvram_safe_get(&buffer[0]));
 	}
@@ -807,7 +812,10 @@ void start_vpnserver(int serverNum)
 	fprintf(fp, "keepalive 15 60\n");
 	fprintf(fp_client, "keepalive 15 60\n");
 
-	if ( (nvi = nvram_get_int("vpn_loglevel")) >= 0 )
+	sprintf(&buffer[0], "vpn_server%d_verb", serverNum);
+	if( !nvram_is_empty(&buffer[0]) && (nvi = nvram_get_int(&buffer[0])) >= 0 )
+		fprintf(fp, "verb %d\n", nvi);
+	else if ( (nvi = nvram_get_int("vpn_loglevel")) >= 0 )
 		fprintf(fp, "verb %d\n", nvi);
 	else
 		fprintf(fp, "verb 3\n");
@@ -1284,8 +1292,11 @@ void start_vpnserver(int serverNum)
 
         if (taskset_ret != 0)
 #endif
-
+#ifdef HND_ROUTER
+	sprintf(&buffer[0], "/etc/openvpn/vpnserver%d --sndbuf 262144 --rcvbuf 262144 --cd /etc/openvpn/server%d --config config.ovpn", serverNum, serverNum);
+#else
 	sprintf(&buffer[0], "/etc/openvpn/vpnserver%d --cd /etc/openvpn/server%d --config config.ovpn", serverNum, serverNum);
+#endif
 	vpnlog(VPN_LOG_INFO,"Starting OpenVPN: %s",&buffer[0]);
 	for (argv[argc=0] = strtok(&buffer[0], " "); argv[argc] != NULL; argv[++argc] = strtok(NULL, " "));
 	if ( _eval(argv, NULL, 0, &pid) )
@@ -1693,6 +1704,7 @@ void create_openvpn_passwd()
 	char *username, *passwd;
 	FILE *fp1, *fp2, *fp3;
 	int id = 200;
+	char dec_passwd[256];
 
 	strcpy(salt, "$1$");
 	f_read("/dev/urandom", s, 6);
@@ -1715,7 +1727,11 @@ void create_openvpn_passwd()
 		while ((b = strsep(&nvp, "<")) != NULL) {
 			if((vstrsep(b, ">", &username, &passwd)!=2)) continue;
 			if(strlen(username)==0||strlen(passwd)==0) continue;
-
+#ifdef RTCONFIG_NVRAM_ENCRYPT
+			memset(dec_passwd, 0, sizeof(dec_passwd));
+			pw_dec(passwd, dec_passwd);
+			passwd = dec_passwd;
+#endif
 			p = crypt(passwd, salt);
 			fprintf(fp1, "%s:%s:0:0:99999:7:0:0:\n", username, p);
 			fprintf(fp2, "%s:x:%d:%d:::\n", username, id, id);
@@ -1727,37 +1743,4 @@ void create_openvpn_passwd()
 	fclose(fp1);
 	fclose(fp2);
 	fclose(fp3);
-}
-
-void update_ovpn_profie_remote()
-{
-	char file_path[128];
-	char address[64];
-	char buffer[256], *cur;
-	int nums[5], i;
-
-	strlcpy(buffer, nvram_safe_get("vpn_serverx_eas"), sizeof(buffer));
-
-	i = 0;
-	for( cur = strtok(buffer,","); cur != NULL && i < 5; cur = strtok(NULL, ",")) { nums[i++] = atoi(cur); }
-	if(i < 5) nums[i] = 0;
-	for( i = 0; nums[i] > 0 && i < 5; i++ )
-	{
-		if(!nvram_get_int("VPNServer_enable")) continue;
-
-		snprintf(file_path, sizeof(file_path), "/etc/openvpn/server%d/client.ovpn", nums[i]);
-		if(f_exists(file_path) && f_size(file_path) > 0)
-		{
-			if( nvram_match("ddns_enable_x", "1")
-			 && nvram_match("ddns_status", "1")
-			) {
-				strlcpy(address, nvram_safe_get("ddns_hostname_x"), sizeof(address));
-			}
-			else {
-				strlcpy(address, nvram_safe_get("wan0_ipaddr"), sizeof(address));
-			}
-			snprintf(buffer, sizeof(buffer), "sed -i 's/remote [A-Za-z0-9.-]*/remote %s/ ' %s", address, file_path);
-			system(buffer);
-		}
-	}
 }

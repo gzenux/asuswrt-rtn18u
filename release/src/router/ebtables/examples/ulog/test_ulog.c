@@ -96,15 +96,15 @@ recv_new:
 		pkts_per_msg = 0;
 		len = recvfrom(sfd, buf, BUFLEN, 0,
 		               (struct sockaddr *)&sa_kernel, &addrlen);
-		if (errno == EINTR)
-			goto recv_new;
 		if (addrlen != sizeof(sa_kernel)) {
-			printf("addrlen %d != %d\n", addrlen,
-			       sizeof(sa_kernel));
+			printf("addrlen %u != %u\n", addrlen,
+			       (uint32_t)sizeof(sa_kernel));
 			exit(-1);
 		}
 		if (len == -1) {
 			perror("recvmsg");
+			if (errno == EINTR)
+				goto recv_new;
 			exit(-1);
 		}
 		nlh = (struct nlmsghdr *)buf;
@@ -130,6 +130,10 @@ recv_new:
 	return msg;
 }
 
+
+extern void get_global_mutex();
+extern void release_global_mutex();
+
 int main(int argc, char **argv)
 {
 	int i, curr_len, pktcnt = 0;
@@ -142,6 +146,7 @@ int main(int argc, char **argv)
 	struct icmphdr *icmph;
 	struct tm* ptm;
 	char time_str[40], *ctmp;
+	get_global_mutex();
 
 	if (argc == 2) {
 		i = strtoul(argv[1], &ctmp, 10);
@@ -157,12 +162,14 @@ int main(int argc, char **argv)
 	sfd = socket(PF_NETLINK, SOCK_RAW, NETLINK_NFLOG);
 	if (!sfd) {
 		perror("socket");
+		release_global_mutex();
 		exit(-1);
 	}
 
 	if (bind(sfd, (struct sockaddr *)(&sa_local), sizeof(sa_local)) ==
 	    -1) {
 		perror("bind");
+		release_global_mutex();
 		exit(-1);
 	}
 	i = setsockopt(sfd, SOL_SOCKET, SO_RCVBUF, &rcvbufsize,
@@ -281,12 +288,13 @@ truncated_icmp:
 		printf("ICMP_ECHO SEQ NR=%u\n", ntohs(icmph->un.echo.sequence));
 
 letscontinue:
-		printf("===>Total Packet length: %d, of which we examined "
+		printf("===>Total Packet length: %ld, of which we examined "
 		       "%d bytes\n", msg->data_len, curr_len);
 		printf("###############################\n"
 		       "######END#OF##PACKET#DUMP######\n"
 		       "###############################\n");
 	}
+	release_global_mutex();
 
 	return 0;
 }

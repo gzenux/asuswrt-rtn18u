@@ -2525,8 +2525,12 @@ int CUDT::processData(CUnit* unit)
    if ((offset < 0) || (offset >= m_pRcvBuffer->getAvailBufSize()))
       return -1;
 
-   if (m_pRcvBuffer->addData(unit, offset) < 0)
+   if (m_pRcvBuffer->addData(unit, offset) < 0) {
+#ifdef HTTP_DEBUG
+      PJ_LOG(4, ("core.cpp", "addData failed!!!"));
+#endif
       return -1;
+   }
 
    // Loss detection.
    if (CSeqNo::seqcmp(packet.m_iSeqNo, CSeqNo::incseq(m_iRcvCurrSeqNo)) > 0)

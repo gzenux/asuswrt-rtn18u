@@ -26,6 +26,7 @@
 #define HUB_RESET_TT		9
 #define HUB_GET_TT_STATE	10
 #define HUB_STOP_TT		11
+#define HUB_SET_DEPTH		12
 
 /*
  * Hub Class feature numbers
@@ -54,6 +55,12 @@
 #define USB_PORT_FEAT_TEST              21
 #define USB_PORT_FEAT_INDICATOR         22
 #define USB_PORT_FEAT_C_PORT_L1         23
+#define USB_PORT_FEAT_C_PORT_LINK_STATE	25
+#define USB_PORT_FEAT_C_PORT_CONFIG_ERROR	26
+#define USB_PORT_FEAT_PORT_REMOTE_WAKE_MASK	27
+#define USB_PORT_FEAT_BH_PORT_RESET	28
+#define USB_PORT_FEAT_C_BH_PORT_RESET	29
+#define USB_PORT_FEAT_FORCE_LINKPM_ACCEPT	30
 
 /*
  * Hub Status and Hub Change results
@@ -81,7 +88,14 @@ struct usb_port_status {
 #define USB_PORT_STAT_TEST              0x0800
 #define USB_PORT_STAT_INDICATOR         0x1000
 /* bits 13 to 15 are reserved */
+#define USB_PORT_STAT_LINK_STATE	0x01e0
+#define USB_SS_PORT_STAT_POWER		0x0200
+#define USB_SS_PORT_STAT_SPEED		0x1c00
 #define USB_PORT_STAT_SUPER_SPEED	0x8000	/* Linux-internal */
+#define USB_SS_PORT_STAT_MASK (USB_PORT_STAT_CONNECTION | \
+				USB_PORT_STAT_ENABLE | \
+				USB_PORT_STAT_OVERCURRENT | \
+				USB_PORT_STAT_RESET)
 
 /*
  * wPortChange bit field
@@ -94,6 +108,9 @@ struct usb_port_status {
 #define USB_PORT_STAT_C_OVERCURRENT	0x0008
 #define USB_PORT_STAT_C_RESET		0x0010
 #define USB_PORT_STAT_C_L1		0x0020
+#define USB_PORT_STAT_C_BH_RESET	0x0020
+#define USB_PORT_STAT_C_LINK_STATE	0x0040
+#define USB_PORT_STAT_C_CONFIG_ERROR	0x0080
 
 /*
  * wHubCharacteristics (masks)
@@ -128,7 +145,9 @@ struct usb_hub_status {
  */
 
 #define USB_DT_HUB			(USB_TYPE_CLASS | 0x09)
+#define USB_DT_SS_HUB			(USB_TYPE_CLASS | 0x0a)
 #define USB_DT_HUB_NONVAR_SIZE		7
+#define USB_DT_SS_HUB_SIZE		12
 
 struct usb_hub_descriptor {
 	__u8  bDescLength;
@@ -137,9 +156,18 @@ struct usb_hub_descriptor {
 	__le16 wHubCharacteristics;
 	__u8  bPwrOn2PwrGood;
 	__u8  bHubContrCurrent;
+	union {
+		struct {
 		/* add 1 bit for hub status change; round to bytes */
 	__u8  DeviceRemovable[(USB_MAXCHILDREN + 1 + 7) / 8];
 	__u8  PortPwrCtrlMask[(USB_MAXCHILDREN + 1 + 7) / 8];
+	}  __attribute__ ((packed)) hs;
+		struct {
+			__u8 bHubHdrDecLat;
+			__u16 wHubDelay;
+			__u16 DeviceRemovable;
+		}  __attribute__ ((packed)) ss;
+	} u;
 } __attribute__ ((packed));
 
 

@@ -130,7 +130,7 @@ function ajax_detectWAN(){
 			setTimeout("ajax_detectWAN();", 1000);
 		},
 		success: function(response){
-			if(based_modelid == "4G-AC55U"){
+			if(based_modelid == "4G-AC53U" || based_modelid == "4G-AC55U" || based_modelid == "4G-AC68U"){
 				getDualWANState();		
 			}
 
@@ -160,7 +160,7 @@ function successstatus(){
 	var ssid_5g = '<% nvram_char_to_ascii("WLANConfig11b", "wl1_ssid"); %>';
 
 	if(wanstate == 2 && wanauxstate != 1){
-		if(based_modelid == "4G-AC55U"){
+		if(based_modelid == "4G-AC53U" || based_modelid == "4G-AC55U" || based_modelid == "4G-AC68U"){
 			if(usb_wanstate == 2 && usb_wansbstate == 0 && usb_wanauxstate == 0))
 				gotoPage('/qis/QIS_wireless.htm', '', 0);
 			else
@@ -264,7 +264,7 @@ function gotoPage(dst_url, flag, isParent){
 		<div class='apply_gen'>
 			<div id="fresharea" style="display:none">
 				<input type="button" class="button_gen" width="72" onclick="gotoPage('/qis/QIS_detect.htm', '', 0);" value="<#QKSet_detect_freshbtn#>">
-				<input type="button" class="button_gen" width="72" onclick="parent.location.href='/index.asp';" value="<#CTL_Setting#>">
+				<input type="button" class="button_gen" width="72" onclick="parent.location.href='<% abs_index_page(); %>';" value="<#CTL_Setting#>">
 			</div>
 		</div>
 

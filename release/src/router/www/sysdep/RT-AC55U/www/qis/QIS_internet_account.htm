@@ -97,44 +97,34 @@ function QKaccount_load_body(){
 	if(!document.getElementById('vpn_client_check').checked)
 		document.form.wan_proto.value = "pppoe";
 
-	if( parent.based_modelid != "RT-AC3200" &&
-		parent.based_modelid != "RT-AC87U" && 
-		parent.based_modelid != "RT-AC68U" &&
-		parent.based_modelid != "RT-AC66U" &&
-		parent.based_modelid != "RT-AC51U" &&
-		parent.based_modelid != "RT-N66U" &&
-		parent.based_modelid != "RT-N18U"
-	){	// MODELDEP: RT-AC3200, RT-AC87U, RT-AC68U, RT-AC66U, RT-AC51U, RT-N66U, RT-N18U
+	if( !parent.meoVoda_support ){	// MODELDEP: RT-AC3200, RT-AC87U, RT-AC68U, RT-AC66U, RT-AC51U, RT-N66U, RT-N18U
 		document.getElementById('meoOption').outerHTML = "";
 		document.getElementById('vodafoneOption').outerHTML = "";
 	}
 	
-	if( parent.based_modelid != "RT-AC5300" &&
-		parent.based_modelid != "RT-AC3200" &&
-		parent.based_modelid != "RT-AC3100" &&
-		parent.based_modelid != "RT-AC88U" &&
-		parent.based_modelid != "RT-AC87U" && 
-		parent.based_modelid != "RT-AC68U" &&
-		parent.based_modelid != "RT-AC66U" &&
-		parent.based_modelid != "RT-AC56U" &&
-		//based_modelid != "RT-AC51U" &&
-		parent.based_modelid != "RT-N66U" &&
-		parent.based_modelid != "RT-N18U"
-        ){      
+	if( !parent.movistarTriple_support ){
 		document.getElementById('movistarOption').outerHTML = "";
 	}
 
-	if(parent.based_modelid == "RT-AC5300R"){ //MODELDEP: RT-AC5300R : TRUNK ports
-		document.getElementById("voip_lan").innerHTML = "LAN4";	//P3
-		document.getElementById("iptv_lan").innerHTML = "LAN8"; //P4
-		document.getElementById("voip_port3").innerHTML = "VoIP (LAN port 4):"; //P3
-		document.getElementById("iptv_port4").innerHTML = "IPTV (LAN port 8):"; //P4
+	if(!parent.nz_isp_support){
+		document.getElementById('sfOption').outerHTML = "";
+	}
+
+	if(parent.based_modelid == "GT-AC5300" || parent.based_modelid == "GT-AC9600"){ //MODELDEP: GT-AC5300 : TRUNK ports
+		document.getElementById("voip_lan").innerHTML = "LAN4";
+		document.getElementById("iptv_lan").innerHTML = "LAN8";
+		document.getElementById("voip_port3").innerHTML = "VoIP (LAN port 4):";
+		document.getElementById("iptv_port4").innerHTML = "IPTV (LAN port 8):";
+		document.getElementById("voip_triple").innerHTML = "LAN4";
+		document.getElementById("iptv_triple").innerHTML = "LAN8";
 	}
 	else if(parent.based_modelid == "RT-AC53"){
 		document.getElementById("voip_lan").innerHTML = "LAN1";
 		document.getElementById("iptv_lan").innerHTML = "LAN2";
 		document.getElementById("voip_port3").innerHTML = "VoIP (LAN port 1):";
 		document.getElementById("iptv_port4").innerHTML = "IPTV (LAN port 2):";
+		document.getElementById("voip_triple").innerHTML = "LAN1";
+		document.getElementById("iptv_triple").innerHTML = "LAN2";
 	}
 	
 	
@@ -544,8 +534,14 @@ function ISP_Profile_Selection(isp){
 		document.getElementById("manual_settings").style.display = "none";
 		document.form.switch_wantag.value = "vodafone";
 		document.getElementById("iptv_configuration").style.display = "none";
+	}
+	else if(isp == "stuff_fibre"){
+		document.getElementById("port_settings").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.form.switch_wantag.value = "stuff_fibre";
+		document.getElementById("iptv_configuration").style.display = "none";
 	}	
-    else if(isp == "hinet"){
+	else if(isp == "hinet"){
 		document.getElementById("port_settings").style.display = "";
 		document.getElementById("wan_iptv_line").style.display = "";
 		document.getElementById("wan_iptv_x").style.display = "";
@@ -554,7 +550,7 @@ function ISP_Profile_Selection(isp){
 		document.getElementById("manual_settings").style.display = "none";
 		document.form.switch_wantag.value = "hinet";
 		document.getElementById("iptv_configuration").style.display = "none";
-    }
+	}
 	else if(isp == "manual"){
 		document.getElementById("port_settings").style.display = "";
 		document.getElementById("wan_iptv_line").style.display = "";
@@ -580,7 +576,7 @@ function ISP_Profile_Selection(isp){
 
 function set_ISP_profile(){
     if(document.form.switch_wantag.value == "unifi_home") {
-		document.form.switch_stb_x.value = "4";
+	document.form.switch_stb_x.value = "4";
         document.form.switch_wan0tagid.value = "500";
         document.form.switch_wan0prio.value = "0";
         document.form.switch_wan1tagid.value = "600";
@@ -589,7 +585,7 @@ function set_ISP_profile(){
         document.form.switch_wan2prio.value = "0";
     }
     else if(document.form.switch_wantag.value == "unifi_biz") {
-		document.form.switch_stb_x.value = "0";
+	document.form.switch_stb_x.value = "0";
         document.form.switch_wan0tagid.value = "500";
         document.form.switch_wan0prio.value = "0";
         document.form.switch_wan1tagid.value = "0";
@@ -598,22 +594,22 @@ function set_ISP_profile(){
         document.form.switch_wan2prio.value = "0";
     }
     else if(document.form.switch_wantag.value == "singtel_mio") {
-		document.form.switch_stb_x.value = "6";
-	    document.form.switch_wan0tagid.value = "10";
-	    document.form.switch_wan0prio.value = "0";
-	    document.form.switch_wan1tagid.value = "20";
-	    document.form.switch_wan1prio.value = "4";
-	    document.form.switch_wan2tagid.value = "30";
-	    document.form.switch_wan2prio.value = "4";
+	document.form.switch_stb_x.value = "6";
+	document.form.switch_wan0tagid.value = "10";
+	document.form.switch_wan0prio.value = "0";
+	document.form.switch_wan1tagid.value = "20";
+	document.form.switch_wan1prio.value = "4";
+	document.form.switch_wan2tagid.value = "30";
+	document.form.switch_wan2prio.value = "4";
     }
     else if(document.form.switch_wantag.value == "singtel_others") {
-		document.form.switch_stb_x.value = "4";
-		document.form.switch_wan0tagid.value = "10";
-		document.form.switch_wan0prio.value = "0";
-		document.form.switch_wan1tagid.value = "20";
-		document.form.switch_wan1prio.value = "4";
-		document.form.switch_wan2tagid.value = "0";
-		document.form.switch_wan2prio.value = "0";
+	document.form.switch_stb_x.value = "4";
+	document.form.switch_wan0tagid.value = "10";
+	document.form.switch_wan0prio.value = "0";
+	document.form.switch_wan1tagid.value = "20";
+	document.form.switch_wan1prio.value = "4";
+	document.form.switch_wan2tagid.value = "0";
+	document.form.switch_wan2prio.value = "0";
     }
     else if(document.form.switch_wantag.value == "m1_fiber") {
         document.form.switch_stb_x.value = "3";
@@ -670,7 +666,16 @@ function set_ISP_profile(){
         document.form.switch_wan1prio.value = "0";
         document.form.switch_wan2tagid.value = "105";
         document.form.switch_wan2prio.value = "1";
-    }   
+    }
+    else if(document.form.switch_wantag.value == "stuff_fibre") {
+	document.form.switch_stb_x.value = "0";
+	document.form.switch_wan0tagid.value = "10";
+	document.form.switch_wan0prio.value = "0";
+	document.form.switch_wan1tagid.value = "0";
+	document.form.switch_wan1prio.value = "0";
+	document.form.switch_wan2tagid.value = "0";
+	document.form.switch_wan2prio.value = "0";
+    }
     else if(document.form.switch_wantag.value == "hinet") {
         document.form.switch_stb_x.value = "4";
         document.form.switch_wan0tagid.value = "";
@@ -875,6 +880,7 @@ function pass_checked_iptv(obj){
 							<option id="meoOption" value="meo" <% nvram_match("switch_wantag", "meo", "selected"); %>>Meo</option>
 							<option id="vodafoneOption" value="vodafone" <% nvram_match("switch_wantag", "vodafone", "selected"); %>>Vodafone</option>
 							<option value="hinet" <% nvram_match( "switch_wantag", "hinet", "selected"); %>>Hinet MOD</option>
+							<option id="sfOption" value="stuff_fibre" <% nvram_match("switch_wantag", "stuff_fibre", "selected"); %>>Stuff-Fibre</option>
 							<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
 						</select></td>
 					</tr>
@@ -895,12 +901,12 @@ function pass_checked_iptv(obj){
 					<tr id="wan_voip_line"><td colspan="2"><div style="margin: 5px 5px 5px 10px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div></td></tr>
 					<tr id="wan_voip_x">
 						<th><span id="voip_title">VoIP Port: </span></th>
-						<td>LAN3</td>
+						<td id="voip_lan">LAN3</td>
 					</tr>
 					<tr id="wan_iptv_line"><td colspan="2"><div style="margin: 5px 5px 5px 10px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div></td></tr>
 					<tr id="wan_iptv_x">
 						<th><span id="iptv_title">IPTV STB Port: </span></th>
-						<td>LAN4</td>
+						<td id="iptv_lan">LAN4</td>
 					</tr>
 				</table>
 				</div>
@@ -916,14 +922,14 @@ function pass_checked_iptv(obj){
 							</td>
 						</tr>
 						<tr>
-							<th>IPTV (LAN port 4):</th>
+							<th id="iptv_port4">IPTV (LAN port 4):</th>
 							<td>
 								VID:<input type="text" name="switch_wan1tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan1tagid"); %>" autocorrect="off" autocapitalize="off">
 								&nbsp;PRIO:<input type="text" name="switch_wan1prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan1prio"); %>" autocorrect="off" autocapitalize="off">
 							</td>
 						</tr>
 						<tr>
-							<th>VoIP (LAN port 3):</th>
+							<th id="voip_port3">VoIP (LAN port 3):</th>
 							<td>
 								VID:<input type="text" name="switch_wan2tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan2tagid"); %>" autocorrect="off" autocapitalize="off">
 								&nbsp;PRIO:<input type="text" name="switch_wan2prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan2prio"); %>" autocorrect="off" autocapitalize="off">
@@ -937,12 +943,12 @@ function pass_checked_iptv(obj){
 					<table class="iptvTable">
 						<tr>
 							<th>VoIP Port: </th>
-							<td>LAN3</td>
+							<td id="voip_triple">LAN3</td>
 						</tr>
 						<tr><td colspan="2"><div style="margin: 5px 5px 5px 11px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div></td></tr>
 						<tr>
 							<th>IPTV STB Port: </th>
-							<td>LAN4</td>
+							<td id="iptv_triple">LAN4</td>
 						</tr>			
 						<tr>
 							<th><#Layer3Forwarding_x_ConnectionType_itemname#>: </th>

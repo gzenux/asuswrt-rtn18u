@@ -50,7 +50,7 @@ struct frsapi_Info {
 	uint32_t unknown2;
 	uint32_t offset;
 	uint32_t blob_len;
-	DATA_BLOB blob;/* [subcontext(0),subcontext_size(length-offset),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB blob;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(length-offset)] */
 };
 
 enum frsapi_ReplicaSetType
@@ -179,8 +179,8 @@ struct frsapi_ForceReplication {
 	struct {
 		struct GUID *replica_set_guid;/* [unique] */
 		struct GUID *connection_guid;/* [unique] */
-		const char *replica_set_name;/* [unique,charset(UTF16)] */
-		const char *partner_dns_name;/* [charset(UTF16),unique] */
+		const char *replica_set_name;/* [charset(UTF16),unique] */
+		const char *partner_dns_name;/* [unique,charset(UTF16)] */
 	} in;
 
 	struct {

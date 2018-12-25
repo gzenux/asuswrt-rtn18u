@@ -83,10 +83,17 @@ function chg_pvc_0() {
 	document.form.dsl_subunit.disabled = true;
 	change_dsl_unit_idx(8,0);
 	
-	document.form.dsl_proto.options[3] = null;	//remove beidge while edit Internet PVC		
+	free_options(document.form.dsl_proto);			//remove beidge while edit Internet PVC
+	var var_item0 = new Option("<#BOP_ctype_title1#>", "dhcp");
+	var var_item1 = new Option("<#BOP_ctype_title5#>", "static");
+	var var_item2 = new Option("PPPoE", "pppoe");
+	document.form.dsl_proto.options.add(var_item0);	
+	document.form.dsl_proto.options.add(var_item1);
+	document.form.dsl_proto.options.add(var_item2);
 		
-	change_dsl_type(document.form.dsl_proto.value);
-	fixed_change_dsl_type(document.form.dsl_proto.value);
+	document.form.dsl_proto.value ="<% nvram_get("dsl8_proto"); %>";
+	change_dsl_type("<% nvram_get("dsl8_proto"); %>");
+	fixed_change_dsl_type("<% nvram_get("dsl8_proto"); %>");
 }
 
 function chg_pvc_sub(pvc_to_chg) {
@@ -172,10 +179,17 @@ function add_pvc_0() {
 	enable_all_ctrl();
 	document.form.dsl_subunit.disabled = true;
 	
-	document.form.dsl_proto.options[3] = null;	//remove beidge while edit Internet PVC		
+	free_options(document.form.dsl_proto);			//remove beidge while edit Internet PVC
+	var var_item0 = new Option("<#BOP_ctype_title1#>", "dhcp");
+	var var_item1 = new Option("<#BOP_ctype_title5#>", "static");
+	var var_item2 = new Option("PPPoE", "pppoe");
+	document.form.dsl_proto.options.add(var_item0);	
+	document.form.dsl_proto.options.add(var_item1);
+	document.form.dsl_proto.options.add(var_item2);	
 
-	change_dsl_type(document.form.dsl_proto.value);
-	fixed_change_dsl_type(document.form.dsl_proto.value);
+	document.form.dsl_proto.value = "<% nvram_get("dsl8_proto"); %>";
+	change_dsl_type("<% nvram_get("dsl8_proto"); %>");
+	fixed_change_dsl_type("<% nvram_get("dsl8_proto"); %>");
 }
 
 function del_pvc_0(){
@@ -267,7 +281,7 @@ function showDSLWANList(){
 							cell[4].style.color = "white";
 
 							cell[5] = addRow.insertCell(5);
-							cell[5].innerHTML = '<center><span style="cursor:pointer;" onclick="chg_pvc_0();"><img src="/images/New_ui/accountedit.png"></span></center>';
+							cell[5].innerHTML = '<center><span style="cursor:pointer;" onclick="chg_pvc_0();"><input class="edit_btn"></span></center>';
 							cell[5].style.color = "white";
 
 							cell[6] = addRow.insertCell(6);
@@ -297,7 +311,6 @@ function showDSLWANList(){
 							cell[4].innerHTML = '<center><img src=images/checked.gif border=0></center>';
 							cell[4].style.color = "white";
 							cell[5] = addRow.insertCell(5);
-							//cell[5].innerHTML = '<center><span style="cursor:pointer;" onclick="chg_pvc_sub('+i.toString()+')"><img src="/images/New_ui/accountedit.png"></span></center>';
 							cell[5].innerHTML = "";
 							cell[5].style.color = "white";
 							cell[6] = addRow.insertCell(6);
@@ -418,8 +431,6 @@ function change_dsl_unit_idx(idx,iptv_row){
 	document.form.dsl_vid.value = DSLWANList[iptv_row][3];
 	document.form.dsl_dot1p.value = DSLWANList[iptv_row][4];
 
-	change_dsl_dhcp_enable();
-	change_dsl_dns_enable();
 	document.getElementById("dslSettings").style.display = "";
 	if (document.form.dsl_proto.value != "bridge") {
 		document.getElementById("IPsetting").style.display = "";
@@ -1283,7 +1294,7 @@ function pass_checked(obj){
 										</tr>
 										<tr>
 											<th>
-												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,18);">Host-Uniq (Hexadecimal)</a><!--untranslated-->
+												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,18);">Host-Uniq (<#Hexadecimal#>)</a>
 											</th>
 											<td align="left">
 												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_hostuniq" value="<% nvram_get("dslx_pppoe_hostuniq"); %>" onkeypress="return validator.isString(this, event);" autocorrect="off" autocapitalize="off"/>

@@ -56,6 +56,8 @@ function initial(){
 
 function applyRule(){
 	if(validForm()){
+		if(based_modelid == "MAP-AC1300" || based_modelid == "MAP-AC2200" || based_modelid == "VZW-AC1300" || based_modelid == "MAP-AC1750")
+			alert("By applying new LAN settings, please reboot all Lyras connected to main Lyra manually.");
 		showLoading();
 		document.form.submit();
 	}
@@ -151,9 +153,7 @@ function validForm(){
 	
 	var ip_obj = document.form.lan_ipaddr;
 	var ip_num = inet_network(ip_obj.value);
-	var ip_class = "";	
-	
-	if(!valid_IP(ip_obj, "")) return false;  //LAN IP 
+	var ip_class = "";
 
 	// test if netmask is valid.
 	var netmask_obj = document.form.lan_netmask;
@@ -202,7 +202,7 @@ function validForm(){
   // No matter it changes or not, it will submit the form
   //Viz modify 2011.10 for DHCP pool issue {
 	if(sw_mode == "1"){
-		var pool_change = changed_DHCP_IP_pool();
+		var pool_change = calculatorIPPoolRange();
 		if(!pool_change)
 			return false;
 		else{
@@ -219,78 +219,43 @@ function done_validating(action){
 	refreshpage();
 }
 
-// step1. check IP changed. // step2. check Subnet is the same 
-function changed_DHCP_IP_pool(){
-	if(document.form.lan_ipaddr.value != origin_lan_ip){ // IP changed
-		if(!validator.matchSubnet(document.form.lan_ipaddr.value, document.form.dhcp_start.value, 3) ||
-				!validator.matchSubnet(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3)){ // Different Subnet
-				document.form.dhcp_start.value = subnetPrefix(document.form.lan_ipaddr.value, document.form.dhcp_start.value, 3);
-				document.form.dhcp_end.value = subnetPrefix(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3);				
-		}
-	}
-	
-	var post_lan_netmask='';
-	var pool_start='';
-	var pool_end='';
-	var nm = new Array("0", "128", "192", "224", "240", "248", "252");
-	// --- get lan_ipaddr post set .xxx  By Viz 2011.10
-	z=0;
-	tmp_ip=0;
-	for(i=0;i<document.form.lan_ipaddr.value.length;i++){
-			if (document.form.lan_ipaddr.value.charAt(i) == '.')	z++;
-			if (z==3){ tmp_ip=i+1; break;}
-	}		
-	post_lan_ipaddr = document.form.lan_ipaddr.value.substr(tmp_ip,3);
-	// --- get lan_netmask post set .xxx	By Viz 2011.10
-	c=0;
-	tmp_nm=0;
-	for(i=0;i<document.form.lan_netmask.value.length;i++){
-			if (document.form.lan_netmask.value.charAt(i) == '.')	c++;
-			if (c==3){ tmp_nm=i+1; break;}
-	}		
-	post_lan_netmask = document.form.lan_netmask.value.substr(tmp_nm,3);
 
-// Viz add 2011.10 default DHCP pool range{
-	for(i=0;i<nm.length;i++){
-		if(post_lan_netmask==nm[i]){
-			gap=256-Number(nm[i]);							
-			subnet_set = 256/gap;
-			for(j=1;j<=subnet_set;j++){
-				if(post_lan_ipaddr < j*gap && post_lan_ipaddr == (j-1)*gap+1){	//Viz add to avoid default (1st) LAN ip in DHCP pool
-					pool_start=(j-1)*gap+2;
-					pool_end=j*gap-2;
-					break;
-				}
-				else if(post_lan_ipaddr < j*gap && post_lan_ipaddr == j*gap-2){    //Viz add to avoid default (last) LAN ip in DHCP pool
-					pool_start=(j-1)*gap+1;
-					pool_end=j*gap-3;
-					break;
-				}
-				else if(post_lan_ipaddr < j*gap){
-					pool_start=(j-1)*gap+1;
-					pool_end=j*gap-2;
-					break;						
-				}
-			}																	
-			break;
-		 }
+function calculatorIPPoolRange() {
+	var gatewayIPArray = document.form.lan_ipaddr.value.split(".");
+	var netMaskArray = document.form.lan_netmask.value.split(".");
+	var ipPoolStartArray  = new Array();
+	var ipPoolEndArray  = new Array();
+	var ipPoolStart = "";
+	var ipPoolEnd = "";
+
+	ipPoolStartArray[0] = (gatewayIPArray[0] & 0xFF) & (netMaskArray[0] & 0xFF);
+	ipPoolStartArray[1] = (gatewayIPArray[1] & 0xFF) & (netMaskArray[1] & 0xFF);
+	ipPoolStartArray[2] = (gatewayIPArray[2] & 0xFF) & (netMaskArray[2] & 0xFF);
+	ipPoolStartArray[3] = (gatewayIPArray[3] & 0xFF) & (netMaskArray[3] & 0xFF);
+	ipPoolStartArray[3] += 1;
+
+	ipPoolEndArray[0] = (gatewayIPArray[0] & 0xFF) | (~netMaskArray[0] & 0xFF);
+	ipPoolEndArray[1] = (gatewayIPArray[1] & 0xFF) | (~netMaskArray[1] & 0xFF);
+	ipPoolEndArray[2] = (gatewayIPArray[2] & 0xFF) | (~netMaskArray[2] & 0xFF);
+	ipPoolEndArray[3] = (gatewayIPArray[3] & 0xFF) | (~netMaskArray[3] & 0xFF);
+	ipPoolEndArray[3] -= 1;
+
+	ipPoolStart = ipPoolStartArray[0] + "." + ipPoolStartArray[1] + "." + ipPoolStartArray[2] + "." + ipPoolStartArray[3];
+	if(inet_network(ipPoolStart) <= inet_network(document.form.lan_ipaddr.value)) {
+		ipPoolStart = ipPoolStartArray[0] + "." + ipPoolStartArray[1] + "." + ipPoolStartArray[2] + "." + (parseInt(ipPoolStartArray[3]) + 1);
 	}
-	
-		var update_pool_start = subnetPostfix(document.form.dhcp_start.value, pool_start, 3);
-		var update_pool_end = subnetPostfix(document.form.dhcp_end.value, pool_end, 3);	
-		if((document.form.dhcp_start.value != update_pool_start) || (document.form.dhcp_end.value != update_pool_end)){
-				if(confirm("<#JS_DHCP1#>")){
-						document.form.dhcp_start.value = update_pool_start;
-						document.form.dhcp_end.value = update_pool_end;
-				}else{
-						return false;	
-				}
-		}	
-				
-	//alert(document.form.dhcp_start.value+" , "+document.form.dhcp_end.value);//Viz
+	ipPoolEnd = ipPoolEndArray[0] + "." + ipPoolEndArray[1] + "." + ipPoolEndArray[2] + "." + ipPoolEndArray[3];
+
+	if((document.form.dhcp_start.value != ipPoolStart) || (document.form.dhcp_end.value != ipPoolEnd)){
+			if(confirm("<#JS_DHCP1#>")){
+				document.form.dhcp_start.value = ipPoolStart;
+				document.form.dhcp_end.value = ipPoolEnd;
+			}else{
+				return false;
+			}
+	}
+
 	return true;
-	// } Viz add 2011.10 default DHCP pool range	
-	
 }
 
 function display_lan_dns(flag){

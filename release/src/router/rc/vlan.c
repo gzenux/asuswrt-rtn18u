@@ -157,8 +157,7 @@ void clean_vlan_ifnames(void)
 
 void set_vlan_ifnames(int index, int wlmap, char *subnet_name, char *vlan_if)
 {
-	int unit = 0, subunit = 0, subunit_x = 0;
-	int max_mssid = num_of_mssid_support(unit);
+	int unit = 0, subunit = 0, subunit_x = 0, max_mssid;
 	char brif[8] = "brXXX", tmp[100], lan_prefix[] = "lanXXXXXXXXX_";
 	char word[256], *next;
 	char wl_ifnames[32], nv[32];
@@ -183,6 +182,7 @@ void set_vlan_ifnames(int index, int wlmap, char *subnet_name, char *vlan_if)
 	}
 
 	foreach (word, nvram_safe_get("wl_ifnames"), next) {		
+		SKIP_ABSENT_BAND_AND_INC_UNIT(unit);
 		memset(nv, 0x0, sizeof(nv));
 		snprintf(nv, sizeof(nv), "wl%d_radio", unit);
 		wl_radio = nvram_get_int(nv);
@@ -201,6 +201,7 @@ void set_vlan_ifnames(int index, int wlmap, char *subnet_name, char *vlan_if)
 			}
 
 			/* Virtual wl */
+			max_mssid = num_of_mssid_support(unit);
 			for (subunit = 1; subunit < max_mssid + 1; subunit++)
 			{
 				int wl_vif_map = (wlmap >> (unit * 4 + subunit)) & 0x1;
@@ -272,6 +273,7 @@ void change_lan_ifnames(void)
 	p = lan_ifnames;
 
 	foreach (word, nvram_safe_get("lan_ifnames"), next) {		
+		SKIP_ABSENT_FAKE_IFACE(word);
 		if (strncmp(word, "vlan", 4)) {
 			if (!check_if_exist_vlan_ifnames(word))
 				p += sprintf(p, "%s ", word);
@@ -370,6 +372,7 @@ void start_vlan_ifnames(void)
 				while ((ifname = strsep(&p, " ")) != NULL) {
 					while (*ifname == ' ') ++ifname;
 					if (*ifname == 0) break;
+					SKIP_ABSENT_FAKE_IFACE(ifname);
 
 					// bring up interface
 					if (strncmp(ifname, "vlan", 4) == 0) {
@@ -475,6 +478,7 @@ void stop_vlan_ifnames(void)
 				while ((ifname = strsep(&p, " ")) != NULL) {
 					while (*ifname == ' ') ++ifname;
 					if (*ifname == 0) break;
+					SKIP_ABSENT_FAKE_IFACE(ifname);
 
 #ifdef CONFIG_BCMWL5
 #ifdef RTCONFIG_QTN
@@ -536,6 +540,7 @@ void start_vlan_wl_ifnames(void)
 				while ((ifname = strsep(&p, " ")) != NULL) {
 					while (*ifname == ' ') ++ifname;
 					if (*ifname == 0) break;
+					SKIP_ABSENT_FAKE_IFACE(ifname);
 
 					// bring up interface
 					if (strncmp(ifname, "vlan", 4) == 0) {
@@ -600,6 +605,7 @@ void stop_vlan_wl_ifnames(void)
 				while ((ifname = strsep(&p, " ")) != NULL) {
 					while (*ifname == ' ') ++ifname;
 					if (*ifname == 0) break;
+					SKIP_ABSENT_FAKE_IFACE(ifname);
 #ifdef CONFIG_BCMWL5
 #ifdef RTCONFIG_QTN
 					if (!strcmp(ifname, "wifi0")) continue;
@@ -667,13 +673,13 @@ int check_used_subnet(char *subnet_name, char *brif)
 		char nv[32];
 
 		memset(nv, 0x0, sizeof(nv));
-		sprintf(nv, "lan%d_subnet", i);
+		snprintf(nv, sizeof(nv), "lan%d_subnet", i);
 		lan_subnet = nvram_safe_get(nv);
 
 		if (lan_subnet != NULL && strcmp(lan_subnet, "none") && strcmp(subnet_name, lan_subnet) == 0) {
 			memset(nv, 0x0, sizeof(nv));
-			sprintf(nv, "lan%d_ifname", i);
-			sprintf(brif, "%s", nvram_safe_get(nv));
+			snprintf(nv, sizeof(nv), "lan%d_ifname", i);
+			snprintf(brif, sizeof(brif), "%s", nvram_safe_get(nv));
 			result = 1;
 			break;
 		}
@@ -1149,7 +1155,7 @@ void vlan_lanaccess_mssid_ban(const char *limited_ifname, char *ip, char *netmas
 
 	if (limited_ifname == NULL) return;
 
-	if (nvram_get_int("sw_mode") != SW_MODE_ROUTER) return;
+	if (!is_router_mode()) return;
 
 	eval("ebtables", "-A", "FORWARD", "-i", (char*)limited_ifname, "-j", "DROP"); //ebtables FORWARD: "for frames being forwarded by the bridge"
 	eval("ebtables", "-A", "FORWARD", "-o", (char*)limited_ifname, "-j", "DROP"); // so that traffic via host and nat is passed
@@ -1187,6 +1193,7 @@ void vlan_lanaccess_wl(void)
 			while ((ifname = strsep(&p, " ")) != NULL) {
 				while (*ifname == ' ') ++ifname;
 				if (*ifname == 0) break;
+				SKIP_ABSENT_FAKE_IFACE(ifname);
 #ifdef CONFIG_BCMWL5
 				if (strncmp(ifname, "wl", 2) == 0 && strchr(ifname, '.')) {
 					if (get_ifname_unit(ifname, &unit, &subunit) < 0)
@@ -1195,7 +1202,7 @@ void vlan_lanaccess_wl(void)
 				else continue;
 
 #ifdef RTCONFIG_WIRELESSREPEATER
-				if(nvram_get_int("sw_mode")==SW_MODE_REPEATER && unit==nvram_get_int("wlc_band") && subunit==1) continue;
+				if(sw_mode()==SW_MODE_REPEATER && unit==nvram_get_int("wlc_band") && subunit==1) continue;
 #endif
 #elif defined RTCONFIG_RALINK
 				if (!strncmp(ifname, "ra", 2) && !strchr(ifname, '0'))

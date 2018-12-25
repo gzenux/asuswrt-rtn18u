@@ -90,6 +90,7 @@ var fbwifi_5g_2_index = '<% nvram_get("fbwifi_5g_2"); %>';
 if(fbwifi_5g_2_index == "")
 	fbwifi_5g_2_index = "off";
 var fbwifi_id = '<% nvram_get("fbwifi_id"); %>';
+var fbwifi_wl_idx = "";
 window.onresize = function() {
 	if(document.getElementById("fbwifi_page_setting").style.display == "block") {
 		cal_panel_block("fbwifi_page_setting", 0.35);
@@ -98,29 +99,15 @@ window.onresize = function() {
 function initial(){
 	show_menu();
 
-	//find empty guestnetwork
-	var find_empty_wl_idx = function(_gn_array, _idx) {
-		var empty_idx = "off";
-		var wl_vifnames = '<% nvram_get("wl_vifnames"); %>';
-		var gn_count = wl_vifnames.split(" ").length;
-		var gn_interface = "";
-		for(var wl_idx = 0; wl_idx < gn_count; wl_idx += 1) {
-			if(_gn_array[wl_idx][0] == "0") {
-				empty_idx = "wl" + _idx + "." + (wl_idx + 1);
-				break;
-			}
-		}
-		return empty_idx;
-	};
-	
+	fbwifi_wl_idx = get_captive_portal_wl_idx("facebookWiFi");
 	if(wl_info.band2g_support && fbwifi_2g_index == "off") {
-		fbwifi_2g_index = find_empty_wl_idx(gn_array_2g, "0");
+		fbwifi_2g_index = "wl0." + fbwifi_wl_idx;
 	}
 	if(wl_info.band5g_support && fbwifi_5g_index == "off") {
-		fbwifi_5g_index = find_empty_wl_idx(gn_array_5g, "1");
+		fbwifi_5g_index = "wl1." + fbwifi_wl_idx;
 	}
 	if(wl_info.band5g_2_support && fbwifi_5g_2_index == "off") {
-		fbwifi_5g_2_index = find_empty_wl_idx(gn_array_5g_2, "2");
+		fbwifi_5g_2_index = "wl2." + fbwifi_wl_idx;
 	}
 
 	if(fbwifi_enable == "on") {
@@ -361,7 +348,7 @@ function fbwifiShowAndHide(flag) {
 
 function configure_fbwifi() {
 	var url = "https://www.facebook.com/wifiauth/config?gw_id=" + fbwifi_id;
-	window.open(url, '_blank', 'toolbar=no, location=no, menubar=no, top=0, left=0, width=700, height=600');
+	window.open(url, '_blank', 'toolbar=no, location=no, menubar=no, top=0, left=0, width=700, height=600, scrollbars=1');
 }
 
 function checkFBWiFiID() {
@@ -431,27 +418,48 @@ function applyRuleFBWiFi(){
 			if(wl_info.band5g_2_support)
 				document.form.fbwifi_5g_2.value = "off";
 			var fbwifi_unit = document.form.fbwifi_unit.value;
+			var gn_overwrite_hint = "";
+			var fbwifi_2g_org = '<% nvram_get("fbwifi_2g"); %>';
+			var fbwifi_5g_org = '<% nvram_get("fbwifi_5g"); %>';
+			var fbwifi_5g_2_org = '<% nvram_get("fbwifi_5g_2"); %>';
+			var gen_overwrite_hint = function(_fbwifi_wl_idx, _gn_array, fbwifi_wl_org, _wl_band) {
+				var hint = "";
+				if(!check_gn_if_status(_fbwifi_wl_idx, _gn_array) && fbwifi_wl_org == "off")
+					hint += "<#Guest_Network#> " + _fbwifi_wl_idx + " - " + wl_nband_title[_wl_band] + " will be overwrite.\n\n";
+				return hint;
+			};
 			switch(fbwifi_unit) {
 				case "2.4GHz" :
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_2g, fbwifi_2g_org, 0);
 					document.form.fbwifi_2g.value = fbwifi_2g_index;
 					break;
 				case "5GHz" :
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_5g, fbwifi_5g_org, 1);
 					document.form.fbwifi_5g.value = fbwifi_5g_index;
 					break;
 				case "5GHz-2" :
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_5g_2, fbwifi_5g_2_org, 2);
 					document.form.fbwifi_5g_2.value = fbwifi_5g_2_index;
 					break;
 				case "2.4GHz+5GHz" :
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_2g, fbwifi_2g_org, 0);
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_5g, fbwifi_5g_org, 1);
 					document.form.fbwifi_2g.value = fbwifi_2g_index;
 					document.form.fbwifi_5g.value = fbwifi_5g_index;
 					break;
 				case "2.4GHz+5GHz+5GHz-2" :
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_2g, fbwifi_2g_org, 0);
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_5g, fbwifi_5g_org, 1);
+					gn_overwrite_hint += gen_overwrite_hint(fbwifi_wl_idx, gn_array_5g_2, fbwifi_5g_2_org, 2);
 					document.form.fbwifi_2g.value = fbwifi_2g_index;
 					document.form.fbwifi_5g.value = fbwifi_5g_index;
 					document.form.fbwifi_5g_2.value = fbwifi_5g_2_index;
 					break;
 
 			}
+
+			if(gn_overwrite_hint != "")
+				alert(gn_overwrite_hint);
 
 			document.form.fbwifi_enable.value = fbwifi_enable;
 			document.form.fbwifi_ssid.value = document.form.fbwifi_ssid.value;
@@ -485,6 +493,11 @@ function agreement_confirm() {
 	$("#agreement_panel").fadeOut(300);
 	document.getElementById("hiddenMask").style.visibility = "hidden";
 	fbwifiShowAndHide(1);
+}
+function check_gn_if_status(_subunit, _gn_array) {
+	var _gn_status = false;
+	_gn_status = (_gn_array[(_subunit - 1)][0] == "0") ? true : false;
+	return _gn_status;
 }
 </script>
 
@@ -660,7 +673,7 @@ function agreement_confirm() {
 										<tr>
 											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 1);"><#QIS_finish_wireless_item1#></a></th>
 											<td>
-												<input type="text" maxlength="32" class="input_32_table" name="fbwifi_ssid" value="<% nvram_get("fbwifi_ssid"); %>" onkeypress="return is_string(this, event)">
+												<input type="text" maxlength="32" class="input_32_table" name="fbwifi_ssid" value="<% nvram_get("fbwifi_ssid"); %>" onkeypress="return validator.isString(this, event)">
 											</td>
 										</tr>
 										<tr>

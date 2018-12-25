@@ -2,7 +2,7 @@
 	when traffic analyzer is enabled, bwdpi_db_10 will start to save database each minute, after 10 mins, it will be killed.
 */
 #include <rc.h>
-#include <bwdpi.h>
+#include <bwdpi_common.h>
 
 static int sig_cur = -1;
 static int count = 0;
@@ -11,8 +11,7 @@ static void save_database_10()
 {
 	count++;
 
-	int debug = nvram_get_int("sqlite_debug");
-	if(debug) dbg("[bwdpi_db_10] count=%d\n", count);
+	BWSQL_DBG("count=%d\n", count);
 
 	if(count >= 10){
 		remove("/var/run/bwdpi_db_10.pid");
@@ -25,17 +24,16 @@ static void save_database_10()
 
 static void catch_sig(int sig)
 {
-	int debug = nvram_get_int("sqlite_debug");
 	sig_cur = sig;
 	
 	if(sig == SIGALRM)
 	{
-		if(debug) dbg("[bwdpi_db_10] check alive...\n");
+		BWSQL_DBG("check alive...\n");
 		save_database_10();
 	}
 	else if (sig == SIGTERM)
 	{
-		if(debug) dbg("[bwdpi_db_10] killed!!\n");
+		BWSQL_DBG("KILL!!\n");
 		remove("/var/run/bwdpi_db_10.pid");
 		exit(0);
 	}
@@ -43,8 +41,6 @@ static void catch_sig(int sig)
 
 int bwdpi_db_10_main(int argc, char **argv)
 {
-	int debug = nvram_get_int("sqlite_debug");
-
 	FILE *fp;
 	sigset_t sigs_to_catch;
 
@@ -66,7 +62,7 @@ int bwdpi_db_10_main(int argc, char **argv)
 
 	while(1)
 	{
-		if(debug) dbg("[bwdpi_db_10] set alarm, count=%d\n", count);
+		BWSQL_DBG("set alarm, count=%d\n", count);
 		if(count <= 6) alarm(10);
 		else if(count > 6) alarm(60);
 		pause();

@@ -122,6 +122,10 @@ OUT:
 	return total;
 }
 
+#ifdef HND_ROUTER
+#define __offmax_t  uint64_t
+#endif
+
 static int mssl_seek(void *cookie, __offmax_t *pos, int whence)
 {
 	_dprintf("%s()\n", __FUNCTION__);

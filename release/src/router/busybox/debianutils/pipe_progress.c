@@ -4,8 +4,21 @@
  *
  * Copyright (C) 2003 by Rob Landley <rob@landley.net>, Joey Hess
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config PIPE_PROGRESS
+//config:	bool "pipe_progress"
+//config:	default y
+//config:	help
+//config:	  Display a dot to indicate pipe activity.
+
+//applet:IF_PIPE_PROGRESS(APPLET(pipe_progress, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_PIPE_PROGRESS) += pipe_progress.o
+
+//usage:#define pipe_progress_trivial_usage NOUSAGE_STR
+//usage:#define pipe_progress_full_usage ""
+
 #include "libbb.h"
 
 #define PIPE_PROGRESS_SIZE 4096

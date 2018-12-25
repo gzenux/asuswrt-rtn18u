@@ -13,7 +13,7 @@
 
 struct EFS_HASH_BLOB {
 	uint32_t cbData;
-	uint8_t *pbData;/* [size_is(cbData),unique] */
+	uint8_t *pbData;/* [unique,size_is(cbData)] */
 };
 
 struct ENCRYPTION_CERTIFICATE_HASH {
@@ -25,13 +25,13 @@ struct ENCRYPTION_CERTIFICATE_HASH {
 
 struct ENCRYPTION_CERTIFICATE_HASH_LIST {
 	uint32_t nCert_Hash;
-	struct ENCRYPTION_CERTIFICATE_HASH **pUsers;/* [unique,size_is(nCert_Hash)] */
+	struct ENCRYPTION_CERTIFICATE_HASH **pUsers;/* [size_is(nCert_Hash),unique] */
 };
 
 struct EFS_CERTIFICATE_BLOB {
 	uint32_t dwCertEncodingType;
 	uint32_t cbData;
-	uint8_t *pbData;/* [unique,size_is(cbData)] */
+	uint8_t *pbData;/* [size_is(cbData),unique] */
 };
 
 struct ENCRYPTION_CERTIFICATE {
@@ -122,7 +122,7 @@ struct EfsRpcQueryUsersOnFile {
 	} in;
 
 	struct {
-		struct ENCRYPTION_CERTIFICATE_HASH_LIST **pUsers;/* [unique,ref] */
+		struct ENCRYPTION_CERTIFICATE_HASH_LIST **pUsers;/* [ref,unique] */
 		WERROR result;
 	} out;
 

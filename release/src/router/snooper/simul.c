@@ -112,13 +112,15 @@ static void free_entries(void)
 
 int switch_init(char *ifname, int vid, int cputrap)
 {
-	lan_portmap = (1 << (PORT_MAX + 1)) - 1;
-	log_switch("%-5s map@%s = " FMT_PORTS, "read",
-	    ifname, ARG_PORTS(lan_portmap));
+	int esw_portmap = (1 << (PORT_MAX + 1)) - 1;
 
 	cpu_portmap = 1 << PORT_CPU;
-	log_switch("%-5s cpu@%s = " FMT_PORTS, "read",
+	log_switch("%-5s cpu@%s = " FMT_PORTS, "init",
 	    ifname, ARG_PORTS(cpu_portmap));
+
+	lan_portmap = esw_portmap & ~cpu_portmap;
+	log_switch("%-5s lan@%s = " FMT_PORTS, "init",
+	    ifname, ARG_PORTS(lan_portmap));
 
 	cpu_forward = cputrap;
 
@@ -135,8 +137,8 @@ int switch_get_port(unsigned char *haddr)
 	struct entry *entry = get_entry(haddr);
 	int ports = entry ? entry->ports : -1;
 
-	log_switch("%-5s [" FMT_EA "] = " FMT_PORTS, "read",
-	    ARG_EA(haddr), ARG_PORTS((ports < 0) ? -1 : 1 << ports));
+	log_switch("%-5s [" FMT_EA "] = 0x%x", "read",
+	    ARG_EA(haddr), ports);
 
 	return ports;
 }
@@ -185,24 +187,23 @@ int switch_clr_portmap(unsigned char *maddr)
 int switch_set_floodmap(unsigned char *raddr, int portmap)
 {
 	if (!cpu_forward)
-		return -1;
+		return 0;
 
-	portmap &= lan_portmap & ~cpu_portmap;
 	log_switch("%-5s [" FMT_EA "] = " FMT_PORTS, "flood",
 	    ARG_EA(raddr), ARG_PORTS(portmap));
 
-	return portmap;
+	return (portmap & lan_portmap) ? 0 : 1;
 }
 
 int switch_clr_floodmap(unsigned char *raddr)
 {
 	if (!cpu_forward)
-		return -1;
+		return 0;
 
 	log_switch("%-5s [" FMT_EA "] = " FMT_PORTS, "flood",
-	    ARG_EA(raddr), ARG_PORTS(lan_portmap));
+	    ARG_EA(raddr), ARG_PORTS(-1));
 
-	return lan_portmap;
+	return 0;
 }
 
 #ifdef TEST

@@ -11,7 +11,7 @@ enum {
 	SW_MODE_HOTSPOT
 };
 
-enum {
+enum wan_unit_e {
 	WAN_UNIT_NONE=-1,
 	WAN_UNIT_FIRST=0,
 #if defined(RTCONFIG_DUALWAN) || defined(RTCONFIG_USB_MODEM)
@@ -163,6 +163,17 @@ enum {
 };
 
 #ifdef RTCONFIG_USB
+#if defined(RTCONFIG_ALPINE) || defined(RTCONFIG_LANTIQ)
+#define USB_XHCI_PORT_1 "2-1"
+#define USB_XHCI_PORT_2 "2-2"
+#define USB_EHCI_PORT_1 "1-1"
+#define USB_EHCI_PORT_2 "1-2"
+#define USB_OHCI_PORT_1 "3-1"
+#define USB_OHCI_PORT_2 "3-2"
+#define USB_EHCI_PORT_3 "1-3"
+#define USB_OHCI_PORT_3 "3-3"
+#endif
+
 enum {
 	USB_HOST_NONE=0,
 	USB_HOST_OHCI,
@@ -293,9 +304,7 @@ enum {
 #define WANS_DUALWAN_IF_2G      5
 #define WANS_DUALWAN_IF_5G      6
 #define WANS_DUALWAN_IF_WAN2	7
-#ifdef RTCONFIG_USB_MULTIMODEM
 #define WANS_DUALWAN_IF_USB2    8
-#endif
 
 // the following definition is for free_caches()
 #define FREE_MEM_NONE  "0"
@@ -303,15 +312,31 @@ enum {
 #define FREE_MEM_INODE "2"
 #define FREE_MEM_ALL   "3"
 
-#define is_routing_enabled() (nvram_get_int("sw_mode")==SW_MODE_ROUTER||nvram_get_int("sw_mode")==SW_MODE_HOTSPOT)
-#define is_nat_enabled()     ((nvram_get_int("sw_mode")==SW_MODE_ROUTER||nvram_get_int("sw_mode")==SW_MODE_HOTSPOT)&&nvram_get_int("wan0_nat_x")==1)
+#ifdef RTCONFIG_DEFAULT_REPEATER_MODE
+#define sw_mode()            (nvram_get("sw_mode") ? nvram_get_int("sw_mode") : SW_MODE_REPEATER)
+#else
+#define sw_mode()            (nvram_get("sw_mode") ? nvram_get_int("sw_mode") : SW_MODE_ROUTER)
+#endif
+#define is_routing_enabled() (sw_mode()==SW_MODE_ROUTER||sw_mode()==SW_MODE_HOTSPOT)
+#define is_router_mode()     (sw_mode()==SW_MODE_ROUTER)
+#if defined(RTCONFIG_DUALWAN)
+extern int is_nat_enabled(void);
+#else
+#define is_nat_enabled()     ((sw_mode()==SW_MODE_ROUTER||sw_mode()==SW_MODE_HOTSPOT)&&nvram_get_int("wan0_nat_x")==1)
+#endif
 #define is_lan_connected()   (nvram_get_int("lan_state")==LAN_STATE_CONNECTED)
 #ifdef RTCONFIG_WIRELESSWAN
-#define is_wirelesswan_enabled() (nvram_get_int("sw_mode")==SW_MODE_HOTSPOT)
+#define is_wirelesswan_enabled() (sw_mode()==SW_MODE_HOTSPOT)
 #endif
 // todo: multiple wan
 
 extern int wan_primary_ifunit(void);
+#ifdef RTCONFIG_REALTEK
+/* The fuction is avoiding watchdog segfault on RP-AC68U.
+ * This is a workaround solution.
+**/
+extern int rtk_wan_primary_ifunit(void);
+#endif
 extern int wan_primary_ifunit_ipv6(void);
 extern int get_wan_state(int unit);
 extern int get_wan_sbstate(int unit);

@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM53313_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53313, BCM53313_VENDOR_ID, BCM53313_DEVICE_ID, BCM53313_REV_A0, \
+                  0, 0, \
+                  bcm53314_a0, bcm53313_a0, bcm53313_a0, \
+                  CDK_DEV_ARCH_XGS, "Hawkeye", "BCM53310", \
+                  "16-Port GbE Highly-Integrated Multilayer Switch", 0, 0)
+#endif
+#endif
+

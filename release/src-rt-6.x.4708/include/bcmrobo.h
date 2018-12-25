@@ -185,4 +185,6 @@ extern void robo_fa_aux_enable(robo_info_t *robo, bool enable);
 extern void robo_fa_enable(robo_info_t *robo, bool on, bool bhdr);
 #endif
 
+extern void bcm_robo_check_gphy_reset(robo_info_t *robo, uint8 page, uint8 reg,
+	void *val, int len);
 #endif /* _bcm_robo_h_ */

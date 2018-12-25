@@ -258,12 +258,34 @@ char *processPacket(int sockfd, char *pdubuf, unsigned short cli_port)
 			}
 #endif
 #ifdef RTCONFIG_WIRELESSREPEATER
-			if (nvram_get_int("sw_mode") == SW_MODE_REPEATER)
+			if (sw_mode() == SW_MODE_REPEATER)
 			{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+				if (nvram_get_int("wlc_band") < 0 || nvram_get_int("wlc_express") == 0)
+					snprintf(prefix, sizeof(prefix), "wl0.1_");
+				else if (nvram_get_int("wlc_express") == 1)
+					snprintf(prefix, sizeof(prefix), "wl1.1_");
+				else if (nvram_get_int("wlc_express") == 2)
+					snprintf(prefix, sizeof(prefix), "wl0.1_");
+				else
+
+#endif
 				snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
 				strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), 32);
 			}
 			else
+#ifdef RTCONFIG_REALTEK
+			if (sw_mode() == SW_MODE_AP && nvram_get_int("wlc_psta") == 1)
+			{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+				snprintf(prefix, sizeof(prefix), "wl0_");
+#else
+				snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
+#endif
+				strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), 32);		
+			}
+			else
+#endif
 #endif
 #ifdef RTCONFIG_BCMWL6
 #ifdef RTCONFIG_PROXYSTA
@@ -281,7 +303,7 @@ char *processPacket(int sockfd, char *pdubuf, unsigned short cli_port)
 		     strcpy(ginfo->ProductID, productid_g);	// disable for tmp
 		     strcpy(ginfo->FirmwareVersion, firmver_g);	// disable for tmp
 		     memcpy(ginfo->MacAddress, mac, 6);
-		     ginfo->sw_mode = nvram_get_int("sw_mode");
+		     ginfo->sw_mode = sw_mode();
 #ifdef WCLIENT
 		     ginfo->OperationMode = OPERATION_MODE_WB;
 		     ginfo->Regulation = 0xff;
@@ -328,12 +350,33 @@ char *processPacket(int sockfd, char *pdubuf, unsigned short cli_port)
 			}
 #endif
 #ifdef RTCONFIG_WIRELESSREPEATER
-			if (nvram_get_int("sw_mode") == SW_MODE_REPEATER)
+			if (sw_mode() == SW_MODE_REPEATER)
 			{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+				if (nvram_get_int("wlc_band") < 0 || nvram_get_int("wlc_express") == 0)
+					snprintf(prefix, sizeof(prefix), "wl0.1_");
+				else if (nvram_get_int("wlc_express") == 1)
+					snprintf(prefix, sizeof(prefix), "wl1.1_");
+				else if (nvram_get_int("wlc_express") == 2)
+					snprintf(prefix, sizeof(prefix), "wl0.1_");
+				else
+#endif
 				snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
 				strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), 32);
 			}
 			else
+#ifdef RTCONFIG_REALTEK
+			if (sw_mode() == SW_MODE_AP && nvram_get_int("wlc_psta") == 1)
+			{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+				snprintf(prefix, sizeof(prefix), "wl0_");
+#else
+				snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
+#endif
+				strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), 32);		
+			}
+			else
+#endif
 #endif
 #ifdef RTCONFIG_BCMWL6
 #ifdef RTCONFIG_PROXYSTA
@@ -351,7 +394,7 @@ char *processPacket(int sockfd, char *pdubuf, unsigned short cli_port)
 		     strcpy(ginfo->ProductID, productid_g);	// disable for tmp
 		     strcpy(ginfo->FirmwareVersion, firmver_g); // disable for tmp
 		     memcpy(ginfo->MacAddress, mac, 6);
-		     ginfo->sw_mode = nvram_get_int("sw_mode");
+		     ginfo->sw_mode = sw_mode();
 
 #ifdef WAVESERVER    // eric++
 	     	     // search /tmp/waveserver and get information

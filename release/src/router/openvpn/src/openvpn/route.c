@@ -1319,7 +1319,9 @@ add_route (struct route *r,
     goto done;
 
   //Sam.B	2013/10/31
-  if(current_route(htonl(r->network), htonl(r->netmask))) {
+  if(current_route(htonl(r->network), htonl(r->netmask))
+	|| current_addr(htonl(r->network))
+  ) {
     msg(M_WARN, "Ignore conflicted routing rule: %s %s", network, netmask);
     update_nvram_status(ROUTE_CONFLICTED);
     goto done;

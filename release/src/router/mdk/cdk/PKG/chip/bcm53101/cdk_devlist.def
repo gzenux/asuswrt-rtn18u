@@ -1,0 +1,18 @@
+#if CDK_CONFIG_INCLUDE_BCM53101_A0 == 1
+CDK_DEVLIST_ENTRY(BCM53101, BCM53101_VENDOR_ID, BCM53101_DEVICE_ID, BCM53101_REV_A0, \
+                  0, 0, \
+                  bcm53101_a0, bcm53101_a0, bcm53101_a0, \
+                  CDK_DEV_ARCH_ROBO, "Lotus", "BCM53101", \
+                  "6-Port FE Switch With 5 Integrated PHYs", 0, 0)
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM53101_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM53101, BCM53101_VENDOR_ID, BCM53101_DEVICE_ID, BCM53101_REV_B0, \
+                  0, 0, \
+                  bcm53101_a0, bcm53101_a0, bcm53101_b0, \
+                  CDK_DEV_ARCH_ROBO, "Lotus", "BCM53101", \
+                  "6-Port FE Switch With 5 Integrated PHYs", 0, 0)
+#endif
+#endif
+

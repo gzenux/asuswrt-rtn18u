@@ -1,6 +1,6 @@
 PROG        = usb_modeswitch
 VERS        = 1.2.3
-CC          = gcc
+CC          ?= gcc
 CFLAGS      += -Wall
 LIBS        = -l usb
 RM          = /bin/rm -f

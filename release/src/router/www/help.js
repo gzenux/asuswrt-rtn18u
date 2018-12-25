@@ -1,9 +1,9 @@
 var Untranslated = {
 	fw_size_higher_mem : 'Memory space is NOT enough to upgrade on internet. Please wait for rebooting.',
 	the_array_is_end : "end here.",
-	ASUSGATE_note9 : "Your DSL line appears to be unstable. DLA (Dynamic Line Adjustment) which enabled by default already adopted necessary changes and ensure stability. However if interruption continues please submit a feedback form for our analysis.",
-	ASUSGATE_note6 : "Your DSL line appears to be unstable. We strongly recommend that you submit a feedback form for our analysis.",
-	ASUSGATE_note7 : "If you are experiencing any DSL related issues or have any comments / suggestions, please feel free to inform our support team.",
+	ASUSGATE_note9 : "Your DSL (Digital Suscriber Line) seems unstable. DLA (Dynamic Line Adjustment) enabled by default has modified the necessary setting to improve the network stability. If failed, please submit feedback to our support team.",
+	ASUSGATE_note6 : "Your DSL (Digital Suscriber Line) seems unstable. We strongly recommend that you submit feedback to our support team.",
+	ASUSGATE_note7 : "If you are experiencing any DSL related issues or you have any comments, please feel free to inform our support team.",
 	JS_validclientname : "Client device name only accept alphanumeric characters, under line and dash symbol. The first character cannot be dash \"-\" or under line \"_\".",
 	ASUSGATE_act_feedback : "Feedback now",
 	ASUSGATE_DSL_setting : "Go setting DSL",
@@ -14,15 +14,7 @@ var Untranslated = {
 var clicked_help_string = "<#Help_init_word1#> <a class=\"hintstyle\" style=\"background-color:#7aa3bd\"><#Help_init_word2#></a> <#Help_init_word3#>";
 
 var rc_support = '<% nvram_get("rc_support"); %>';
-function isSupport(_ptn){
-	return (rc_support.search(_ptn) == -1) ? false : true;
-}
-if(isSupport("tmo"))
-        var theUrl = "cellspot.router";
-else
-        var theUrl = "router.asus.com";
-
-var gobi_support = isSupport("gobi");
+var gobi_support = (rc_support.search("gobi") == -1) ? false : true;
 
 /* convert some special character for shown string */
 function handle_show_str(show_str)
@@ -177,21 +169,27 @@ function gotoDSL_log(){
 }
 
 function gotoModem(){
-	document.titleForm.wan_unit.disabled = false;	
-	document.titleForm.wan_unit.value = usb_index;
-	if( usb_index == -1){
-		top.location.href = "/Advanced_WANPort_Content.asp";	
+	if(dualWAN_support){
+		document.titleForm.wan_unit.disabled = false;
+		document.titleForm.wan_unit.value = usb_index;
+		if( usb_index == -1){
+			top.location.href = "/Advanced_WANPort_Content.asp";
+		}
+		else{
+			if(gobi_support)
+				document.titleForm.current_page.value = "Advanced_MobileBroadband_Content.asp?af=pincode";
+			else
+				document.titleForm.current_page.value = "Advanced_Modem_Content.asp";
+			document.titleForm.action_mode.value = "change_wan_unit";
+			document.titleForm.action = "apply.cgi";
+			document.titleForm.target = "";
+			document.titleForm.submit();
+		}
 	}
 	else{
-		if(gobi_support)
-			document.titleForm.current_page.value = "Advanced_MobileBroadband_Content.asp?af=pincode";
-		else
-			document.titleForm.current_page.value = "Advanced_Modem_Content.asp";
-		document.titleForm.action_mode.value = "change_wan_unit";
-		document.titleForm.action = "apply.cgi";
-		document.titleForm.target = "";
-		document.titleForm.submit();		
+		top.location.href = "/Advanced_Modem_Content.asp";
 	}
+
 }
 
 function setTrafficLimit(){
@@ -230,16 +228,18 @@ function overHint(itemNum){
 	}
 		
 	if(itemNum == 85){
-		statusmenu ="<span>Manually prioritize apps category depending on your preference.</span>";		/* untranslated */
+		statusmenu ="<span><#Adaptive_Custom_desc#></span>";
 	}
 	else if(itemNum == 86){
-		statusmenu ="<span>This mode is suitable for playing internet game and boost your gaming bandwidth.<br><#Adaptive_Category1#></span>";		/* untranslated */
+		//statusmenu ="<span><#Adaptive_Game_desc#><br><#Adaptive_Category1#></span>";
+		statusmenu ="<span>For optimize online gaming process bandwidth including  Diablo, WOW, Steam games and XBOX, ect.<br><#Adaptive_Category1#></span>";		/* untranslated */
 	}
 	else if(itemNum == 87){
-		statusmenu ="<span>This mode is suitable for playing video streaming and make sure your viewing experience.<br><#Adaptive_Category2#></span>";	/* untranslated */
+		//statusmenu ="<span><#Adaptive_Stream_desc#><br><#Adaptive_Category2#></span>";
+		statusmenu ="<span>For faster video streaming experience including Youtube, Netflix and Spotify, ect.<br><#Adaptive_Category2#></span>";	/* untranslated */
 	}
 	else if(itemNum == 88){
-		statusmenu ="<span>This mode is suitable for general web browsing and avoid to networking latency while?file transferring.<br><#Adaptive_Category4#></span>";	/* untranslated */
+		statusmenu ="<span><#Adaptive_WebSurf_desc#><br><#Adaptive_Category4#></span>";
 	}
 	else if(itemNum == 89){
 		statusmenu ="<span>Enable this function allow block advertisement in the streaming video.</span>";
@@ -339,6 +339,10 @@ function overHint(itemNum){
 	else if(itemNum == 10)		
 		statusmenu += "<span><#AiProtection_scan_note10#></span>";	
 	
+	//Reboot
+	if(itemNum == 26)
+		statusmenu += "<span>Reboot the System</span>";
+
 	// Viz add 2015.07 bwdpi : Adpative QoS mode start
 	if(itemNum == "A"){
 		statusmenu = "<div class='StatusHint'><#Adaptive_QoS#> :</div>";
@@ -359,21 +363,81 @@ function overHint(itemNum){
 	}
 	// Viz add 2015.07 bwdpi : Adpative QoS mode end
 	
+	if(itemNum == 27){ //Feedback Diagnostic
+		if(diag_dblog_enable == "1") {
+			var lineDesc = "";
+			statusmenu = "<div class='StatusHint'>System Diagnostic :</div>"; /* untranslated */
+			lineDesc = "Diagnostic debug log capture in progress.<br>"; /* Untranslated */
+			statusmenu += "<span>" + lineDesc + "</span>";
+
+			statusmenu += "<div class='StatusHint'><#btn_Enabled#> :</div>";
+			lineDesc = ""; /* Untranslated */
+
+			var transform_dblog_service = function() {
+				var dblog_service = parseInt('<% nvram_get("dblog_service"); %>');
+				var dblog_service_mapping = ["", "Wi-Fi", "Download Master", "<#UPnPMediaServer#>", "AiMesh"];/* untranslated */
+				var dblog_service_text = "";
+				for(var i = 1; dblog_service != 0 && i <= 4; i++) {
+					if(dblog_service & 1) {
+						if(dblog_service_text != "")
+							dblog_service_text += ", " + dblog_service_mapping[i];
+						else
+							dblog_service_text += dblog_service_mapping[i];
+					}
+					dblog_service = dblog_service >> 1;
+				}
+				return dblog_service_text;
+			};
+			lineDesc += transform_dblog_service();
+			statusmenu += "<span>" + lineDesc + "</span>";
+
+			statusmenu += "<div class='StatusHint'><#mssid_time_remaining#> :</div>";
+			lineDesc = ""; /* Untranslated */
+
+			var transform_dblog_remaining = function() {
+				var dblog_remaining = parseInt(diag_dblog_remaining);
+				var days = Math.floor(dblog_remaining / 60 / 60 / 24);
+				var hours = Math.floor(dblog_remaining / 60 / 60 % 24);
+				var minutes = Math.floor(dblog_remaining / 60 % 60);
+				var seconds = Math.floor(dblog_remaining % 60);
+				var remaining_time_str = "";
+
+				if(dblog_remaining == 0) {
+					remaining_time_str += "0" + " <#Second#> ";
+					return remaining_time_str;
+				}
+				if(days)
+					remaining_time_str += days + " <#Day#> ";
+				if(hours)
+					remaining_time_str += hours + " <#Hour#> ";
+				if(minutes)
+					remaining_time_str += minutes + " <#Minute#> ";
+				if(seconds)
+					remaining_time_str += seconds + " <#Second#> ";
+				return remaining_time_str;
+			};
+			lineDesc += transform_dblog_remaining();
+			statusmenu += "<span>" + lineDesc + "</span>";
+		}
+	}
+
 	// Viz add 2013.04 for dsl sync status
-	if(itemNum == 9){		
+	if(itemNum == 9){
+		var lineDesc = "";
 		statusmenu = "<div class='StatusHint'>DSL :</div>";
+		if(wan_line_state == "up")
+                        lineDesc += "Link up";
+                else if(wan_line_state == "wait for init")
+                        lineDesc += "Wait for init";
+                else if(wan_line_state == "init" || wan_line_state == "initializing")
+                        lineDesc += "Initializing";
+                else
+                        lineDesc += "Link down";
+
 		if(wan_diag_state == "1" && allUsbStatus.search("storage") >= 0){
-			lineDesc = "Diagnostic debug log capture in progress.<br>";
+			lineDesc += "<br>Diagnostic debug log capture in progress.<br>";	/* Untranslated */
 			lineDesc += show_diagTime(boottime_update);
 		}
-		else if(wan_line_state == "up")
-			lineDesc = "Link up";
-		else if(wan_line_state == "wait for init")	
-			lineDesc = "Wait for init";
-		else if(wan_line_state == "init" || wan_line_state == "initializing")
-			lineDesc = "Initializing";
-		else
-			lineDesc = "Link down";
 					
 		statusmenu += "<span>" + lineDesc + "</span>";		
 	}
@@ -930,12 +994,20 @@ function cancel_diag(){
 		parent.document.canceldiagForm.submit();
 }
 
+function cancel_dblog(){
+	parent.document.canceldblogForm.submit();
+}
+
 function openHint(hint_array_id, hint_show_id, flag){
 	statusmenu = "";
 	if(hint_array_id == 24){
 		var _caption = "";
 
-		if(hint_show_id == 9){	//2015.07 Viz add for bwdpi : Adaptive QoS mode
+		if(hint_show_id == 10){ // Feedback System Diagnostic Capture
+			statusmenu = "<span class='StatusClickHint' onclick='cancel_dblog();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>Cancel debug capture</span>";
+			_caption = "System Diagnostic capture";
+		}
+		else if(hint_show_id == 9){	//2015.07 Viz add for bwdpi : Adaptive QoS mode
 			statusmenu = "<span class='StatusClickHint' onclick='priority_change();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>Change priority mode</span><br>";	/* untranslated */
 			statusmenu += "<span class='StatusClickHint' onclick='qos_disable();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>Disable QoS</span>";	/* untranslated */
 			_caption = "<#Adaptive_QoS#>";
@@ -946,19 +1018,25 @@ function openHint(hint_array_id, hint_show_id, flag){
 		}
 		else if(hint_show_id == 7){
 			statusmenu = "<span class='StatusClickHint' onclick='gotoModem();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>";
-			if(usb_index == -1){
-				statusmenu += "<#Activate_usb#></span>"
-				_caption = "<#dualwan#>";
+			if(dualWAN_support){
+				if(usb_index == -1){
+					statusmenu += "<#Activate_usb#></span>"
+					_caption = "<#dualwan#>";
+				}
+				else{
+					if(gobi_support){
+						statusmenu += "<#Mobile_setting_page#></span>"
+						_caption = "<#Mobile_title#>";
+					}
+					else{		
+						statusmenu += "<#GO_HSDPA_SETTING#></span>"
+						_caption = "<#menu5_4_4#>";
+					}
+				}
 			}
 			else{
-				if(gobi_support){
-					statusmenu += "<#Mobile_setting_page#></span>"
-					_caption = "<#Mobile_title#>";
-				}
-				else{		
-					statusmenu += "<#GO_HSDPA_SETTING#></span>"
-					_caption = "<#menu5_4_4#>";
-				}	
+				statusmenu += "<#GO_HSDPA_SETTING#></span>"
+				_caption = "<#menu5_4_4#>";			
 			}
 		}
 		else if(hint_show_id == 6){	// Viz add 2013.04 for dsl sync status
@@ -1056,7 +1134,7 @@ function openHint(hint_array_id, hint_show_id, flag){
 				}
 			}
 			else if(sw_mode == 2){
-				statusmenu = "<span class='StatusClickHint' onclick='top.location.href=\"http://"+ theUrl +"/QIS_wizard.htm?flag=sitesurvey_rep\";' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#APSurvey_action_search_again_hint2#></span>";
+				statusmenu = "<span class='StatusClickHint' onclick='top.location.href=\"/QIS_wizard.htm?flag=sitesurvey_rep\";' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#APSurvey_action_search_again_hint2#></span>";
 			}
 			else if(sw_mode == 4){
 				statusmenu = "<span class='StatusClickHint' onclick='top.location.href=\"/QIS_wizard.htm?flag=sitesurvey_mb\";' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#APSurvey_action_search_again_hint2#></span>";

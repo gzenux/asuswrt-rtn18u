@@ -13,10 +13,8 @@ var g_storage = new myStorage();
 var g_bLoginFacebook = false;
 var g_token = "";
 var g_uid = "";
-//var g_app_id = "445909645479173";
-//var server_url = "http://develop.stage612.url.tw/auth/";
 var g_app_id = "697618710295679";
-var server_url = "http://oauth.asus.com/aicloud/";
+var g_server_url = "http://oauth.asus.com/aicloud/";
 var ajax_dataType = "json";
 var g_uploadfile_url_array = new Array();
 var g_uploadfile_title_array = new Array();
@@ -52,7 +50,7 @@ var g_uploadfile_item = {
 
 $(document).ready(function(){
 	
-	var loc_lan = String(window.navigator.userLanguage || window.navigator.language).toLowerCase();		
+	var loc_lan = String(window.navigator.userLanguage || window.navigator.language).toLowerCase();
 	var lan = ( g_storage.get('lan') == undefined ) ? loc_lan : g_storage.get('lan');
 	m.setLanguage(lan);
 
@@ -86,7 +84,7 @@ $(document).ready(function(){
 		var is_dir = param[1];
 		var this_filename = decodeURIComponent( uploadfile_url.substr( uploadfile_url.lastIndexOf("/") + 1, uploadfile_url.length-1 ) );
 		var filext = getFileExt(uploadfile_url);
-		var icon_url = server_url + "images/";
+		var icon_url = g_server_url + "images/";
 		
 		upload_html += '<table class="x-table ' +　className + '" width="100%" height="100%" style="display: table;border-collapse: separate;border-spacing: 2px;border-color: gray;">';
         upload_html += '<tr>';
@@ -209,17 +207,13 @@ function onFacebookLogin( token, uid ){
 	facebook_get_userprofile();
 }
 
-function facebook_login(){
-	
-	window._onFacebookLogin = this.onFacebookLogin;
-	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
+function facebook_login(){	
+	window._onFacebookLogin = this.onFacebookLogin;	
+	var host_url = g_storage.get('request_host_url');
 	var callback_function = "_onFacebookLogin";
-	
-	var auth_url = server_url + "fb_authorize.html?callback=" + callback_function + "&ps5host=";
-	var redirect_url = window.location.href.slice(0,b) + "/smb/css/service/callback.html&response_type=token";
-	//var url = "http://www.facebook.com/dialog/oauth/?scope=photo_upload%2Cpublish_stream%2Cread_stream%2Cpublish_stream%2Cuser_photos%2Coffline_access&client_id=" + g_app_id + "&display=popup&redirect_uri=" + encodeURIComponent(auth_url) + redirect_url;
+	var auth_url = g_server_url + "fb_authorize.html?callback=" + callback_function + "&ps5host=";
+	var redirect_url = host_url + "/smb/css/service/callback.html&response_type=token";	
 	var url = "http://www.facebook.com/dialog/oauth/?scope=publish_stream%2Cuser_photos%2Coffline_access&client_id=" + g_app_id + "&display=popup&redirect_uri=" + encodeURIComponent(auth_url) + redirect_url;
-	
 	window.open(url,"mywindow","menubar=1,resizable=1,width=630,height=250, top=100, left=300");
 }
 

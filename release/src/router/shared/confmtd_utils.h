@@ -1,7 +1,7 @@
 /*
  * Shell-like utility functions
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -24,7 +24,11 @@
 
 /* CONFMTD ramfs directories */
 #define RAMFS_CONFMTD_DIR		"/tmp/confmtd"
+#ifdef BCA_HNDROUTER
+#define NAND_DIR			"/data"
+#else /* ! BCA_HNDROUTER */
 #define NAND_DIR			"/tmp/media/nand"
+#endif /* ! BCA_HNDROUTER */
 #define NAND_FILE			NAND_DIR"/config.tgz"
 #define CONFMTD_TGZ_TMP_FILE		"/tmp/config.tgz"
 

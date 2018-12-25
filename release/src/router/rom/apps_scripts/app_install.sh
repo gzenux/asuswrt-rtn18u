@@ -61,7 +61,7 @@ _check_package(){
 # $1: package name, $2: ipkg server name, $3: force(1/0).
 _get_pkg_file_name_old(){
 	pkg_file_full=`/usr/sbin/app_get_field.sh $1 Filename 2`
-	old_pkg_file=`echo "$pkg_file_full" |awk '{FS=".ipk";print $1}'`
+	old_pkg_file=`echo "$pkg_file_full" |awk 'BEGIN{FS=".ipk"}{print $1}'`
 	pkg_file=`echo "$old_pkg_file" |sed 's/\./-/g'`
 
 	if [ "$3" == "1" ] || [ "$2" != "$ASUS_SERVER" ]; then
@@ -86,7 +86,7 @@ _check_log_message(){
 	if [ "$action" == "Installing" ] || [ "$action" == "Configuring" ]; then
 		target=`echo $got_log |awk '{print $2}'`
 	elif [ "$action" == "Downloading" ]; then
-		target=`echo $got_log |awk '{print $2}' |awk '{FS="/"; print $NF}' |awk '{FS="_"; print $1}'`
+		target=`echo $got_log |awk '{print $2}' |awk 'BEGIN{FS="/"}{print $NF}' |awk 'BEGIN{FS="_"}{print $1}'`
 	elif [ "$action" == "Successfully" ]; then
 		target="terminated"
 	elif [ "$action" == "update-alternatives:" ]; then
@@ -178,10 +178,10 @@ _download_package(){
 	fi
 
 	if [ -n "$installed_ipk_path" ]; then
-		list_ver4=`/usr/sbin/app_get_field.sh $1 Version 2 |awk '{FS=".";print $4}'`
-		file_name=`echo $installed_ipk_path |awk '{FS="/"; print $NF}'`
-		file_ver=`echo $file_name |awk '{FS="_"; print $2}'`
-		file_ver4=`echo $file_ver |awk '{FS="."; print $4}'`
+		list_ver4=`/usr/sbin/app_get_field.sh $1 Version 2 |awk 'BEGIN{FS="."}{print $4}'`
+		file_name=`echo $installed_ipk_path |awk 'BEGIN{FS="/"}{print $NF}'`
+		file_ver=`echo $file_name |awk 'BEGIN{FS="_"}{print $2}'`
+		file_ver4=`echo $file_ver |awk 'BEGIN{FS="."}{print $4}'`
 echo "file_ver4=$file_ver4, list_ver4=$list_ver4."
 
 		if [ -z "$list_ver4" ] || [ "$list_ver4" -le "$file_ver4" ]; then
@@ -642,8 +642,8 @@ need_asuslighttpd=0
 need_asusffmpeg=0
 need_smartsync=0
 if [ "$1" == "downloadmaster" ]; then
-	DM_version1=`/usr/sbin/app_get_field.sh downloadmaster Version 2 |awk '{FS=".";print $1}'`
-	DM_version4=`/usr/sbin/app_get_field.sh downloadmaster Version 2 |awk '{FS=".";print $4}'`
+	DM_version1=`/usr/sbin/app_get_field.sh downloadmaster Version 2 |awk 'BEGIN{FS="."}{print $1}'`
+	DM_version4=`/usr/sbin/app_get_field.sh downloadmaster Version 2 |awk 'BEGIN{FS="."}{print $4}'`
 
 	if [ "$DM_version1" -gt "3" ]; then
 		need_asuslighttpd=1
@@ -651,8 +651,8 @@ if [ "$1" == "downloadmaster" ]; then
 		need_asuslighttpd=1
 	fi
 elif [ "$1" == "mediaserver" ]; then
-	MS_version1=`/usr/sbin/app_get_field.sh mediaserver Version 2 |awk '{FS=".";print $1}'`
-	MS_version4=`/usr/sbin/app_get_field.sh mediaserver Version 2 |awk '{FS=".";print $4}'`
+	MS_version1=`/usr/sbin/app_get_field.sh mediaserver Version 2 |awk 'BEGIN{FS="."}{print $1}'`
+	MS_version4=`/usr/sbin/app_get_field.sh mediaserver Version 2 |awk 'BEGIN{FS="."}{print $4}'`
 
 	if [ "$MS_version1" -gt "1" ]; then
 		need_asuslighttpd=1
@@ -666,8 +666,8 @@ elif [ "$1" == "mediaserver" ]; then
 		need_asusffmpeg=1
 	fi
 elif [ "$1" == "aicloud" ]; then
-	AC_version1=`/usr/sbin/app_get_field.sh aicloud Version 2 |awk '{FS=".";print $1}'`
-	AC_version4=`/usr/sbin/app_get_field.sh aicloud Version 2 |awk '{FS=".";print $4}'`
+	AC_version1=`/usr/sbin/app_get_field.sh aicloud Version 2 |awk 'BEGIN{FS="."}{print $1}'`
+	AC_version4=`/usr/sbin/app_get_field.sh aicloud Version 2 |awk 'BEGIN{FS="."}{print $4}'`
 
 	if [ "$AC_version1" -gt "1" ]; then
 		need_smartsync=1
@@ -874,7 +874,7 @@ echo "Enabling the package: $1..."
 /usr/sbin/app_set_enabled.sh $1 "yes"
 
 if [ "$link_internet" == "2" ]; then
-	/usr/sbin/app_update.sh&
+	/usr/sbin/app_update.sh &
 fi
 
 test_of_var_files "$APPS_MOUNTED_PATH"

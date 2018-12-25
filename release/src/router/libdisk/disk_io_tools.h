@@ -21,7 +21,10 @@
 
 typedef unsigned char u8;
 typedef unsigned short u16;
+#ifndef U32
+#define U32
 typedef unsigned int u32;
+#endif
 typedef unsigned long long u64;
 
 #if defined(WL500)

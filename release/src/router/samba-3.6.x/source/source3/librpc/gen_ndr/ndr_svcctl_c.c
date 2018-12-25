@@ -955,7 +955,7 @@ struct tevent_req *dcerpc_svcctl_QueryServiceObjectSecurity_send(TALLOC_CTX *mem
 								 struct dcerpc_binding_handle *h,
 								 struct policy_handle *_handle /* [in] [ref] */,
 								 uint32_t _security_flags /* [in]  */,
-								 uint8_t *_buffer /* [out] [ref,size_is(offered)] */,
+								 uint8_t *_buffer /* [out] [size_is(offered),ref] */,
 								 uint32_t _offered /* [in] [range(0,0x40000)] */,
 								 uint32_t *_needed /* [out] [ref,range(0,0x40000)] */)
 {
@@ -1065,7 +1065,7 @@ NTSTATUS dcerpc_svcctl_QueryServiceObjectSecurity(struct dcerpc_binding_handle *
 						  TALLOC_CTX *mem_ctx,
 						  struct policy_handle *_handle /* [in] [ref] */,
 						  uint32_t _security_flags /* [in]  */,
-						  uint8_t *_buffer /* [out] [ref,size_is(offered)] */,
+						  uint8_t *_buffer /* [out] [size_is(offered),ref] */,
 						  uint32_t _offered /* [in] [range(0,0x40000)] */,
 						  uint32_t *_needed /* [out] [ref,range(0,0x40000)] */,
 						  WERROR *result)
@@ -1189,7 +1189,7 @@ struct tevent_req *dcerpc_svcctl_SetServiceObjectSecurity_send(TALLOC_CTX *mem_c
 							       struct dcerpc_binding_handle *h,
 							       struct policy_handle *_handle /* [in] [ref] */,
 							       uint32_t _security_flags /* [in]  */,
-							       uint8_t *_buffer /* [in] [size_is(offered),ref] */,
+							       uint8_t *_buffer /* [in] [ref,size_is(offered)] */,
 							       uint32_t _offered /* [in]  */)
 {
 	struct tevent_req *req;
@@ -1285,7 +1285,7 @@ NTSTATUS dcerpc_svcctl_SetServiceObjectSecurity(struct dcerpc_binding_handle *h,
 						TALLOC_CTX *mem_ctx,
 						struct policy_handle *_handle /* [in] [ref] */,
 						uint32_t _security_flags /* [in]  */,
-						uint8_t *_buffer /* [in] [size_is(offered),ref] */,
+						uint8_t *_buffer /* [in] [ref,size_is(offered)] */,
 						uint32_t _offered /* [in]  */,
 						WERROR *result)
 {
@@ -2053,11 +2053,11 @@ struct tevent_req *dcerpc_svcctl_ChangeServiceConfigW_send(TALLOC_CTX *mem_ctx,
 							   enum svcctl_StartType _start_type /* [in]  */,
 							   enum svcctl_ErrorControl _error_control /* [in]  */,
 							   const char *_binary_path /* [in] [unique,charset(UTF16)] */,
-							   const char *_load_order_group /* [in] [unique,charset(UTF16)] */,
+							   const char *_load_order_group /* [in] [charset(UTF16),unique] */,
 							   uint32_t *_tag_id /* [out] [ref] */,
 							   const char *_dependencies /* [in] [unique,charset(UTF16)] */,
-							   const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
-							   const char *_password /* [in] [charset(UTF16),unique] */,
+							   const char *_service_start_name /* [in] [charset(UTF16),unique] */,
+							   const char *_password /* [in] [unique,charset(UTF16)] */,
 							   const char *_display_name /* [in] [charset(UTF16),unique] */)
 {
 	struct tevent_req *req;
@@ -2170,11 +2170,11 @@ NTSTATUS dcerpc_svcctl_ChangeServiceConfigW(struct dcerpc_binding_handle *h,
 					    enum svcctl_StartType _start_type /* [in]  */,
 					    enum svcctl_ErrorControl _error_control /* [in]  */,
 					    const char *_binary_path /* [in] [unique,charset(UTF16)] */,
-					    const char *_load_order_group /* [in] [unique,charset(UTF16)] */,
+					    const char *_load_order_group /* [in] [charset(UTF16),unique] */,
 					    uint32_t *_tag_id /* [out] [ref] */,
 					    const char *_dependencies /* [in] [unique,charset(UTF16)] */,
-					    const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
-					    const char *_password /* [in] [charset(UTF16),unique] */,
+					    const char *_service_start_name /* [in] [charset(UTF16),unique] */,
+					    const char *_password /* [in] [unique,charset(UTF16)] */,
 					    const char *_display_name /* [in] [charset(UTF16),unique] */,
 					    WERROR *result)
 {
@@ -2308,9 +2308,9 @@ struct tevent_req *dcerpc_svcctl_CreateServiceW_send(TALLOC_CTX *mem_ctx,
 						     enum svcctl_StartType _start_type /* [in]  */,
 						     enum svcctl_ErrorControl _error_control /* [in]  */,
 						     const char *_binary_path /* [in] [charset(UTF16)] */,
-						     const char *_LoadOrderGroupKey /* [in] [charset(UTF16),unique] */,
+						     const char *_LoadOrderGroupKey /* [in] [unique,charset(UTF16)] */,
 						     uint32_t *_TagId /* [in,out] [unique] */,
-						     uint8_t *_dependencies /* [in] [size_is(dependencies_size),unique] */,
+						     uint8_t *_dependencies /* [in] [unique,size_is(dependencies_size)] */,
 						     uint32_t _dependencies_size /* [in]  */,
 						     const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
 						     uint8_t *_password /* [in] [unique,size_is(password_size)] */,
@@ -2439,9 +2439,9 @@ NTSTATUS dcerpc_svcctl_CreateServiceW(struct dcerpc_binding_handle *h,
 				      enum svcctl_StartType _start_type /* [in]  */,
 				      enum svcctl_ErrorControl _error_control /* [in]  */,
 				      const char *_binary_path /* [in] [charset(UTF16)] */,
-				      const char *_LoadOrderGroupKey /* [in] [charset(UTF16),unique] */,
+				      const char *_LoadOrderGroupKey /* [in] [unique,charset(UTF16)] */,
 				      uint32_t *_TagId /* [in,out] [unique] */,
-				      uint8_t *_dependencies /* [in] [size_is(dependencies_size),unique] */,
+				      uint8_t *_dependencies /* [in] [unique,size_is(dependencies_size)] */,
 				      uint32_t _dependencies_size /* [in]  */,
 				      const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
 				      uint8_t *_password /* [in] [unique,size_is(password_size)] */,
@@ -2583,7 +2583,7 @@ struct tevent_req *dcerpc_svcctl_EnumDependentServicesW_send(TALLOC_CTX *mem_ctx
 							     enum svcctl_ServiceState _state /* [in]  */,
 							     uint8_t *_service_status /* [out] [ref,size_is(offered)] */,
 							     uint32_t _offered /* [in] [range(0,0x40000)] */,
-							     uint32_t *_needed /* [out] [ref,range(0,0x40000)] */,
+							     uint32_t *_needed /* [out] [range(0,0x40000),ref] */,
 							     uint32_t *_services_returned /* [out] [ref,range(0,0x40000)] */)
 {
 	struct tevent_req *req;
@@ -2696,7 +2696,7 @@ NTSTATUS dcerpc_svcctl_EnumDependentServicesW(struct dcerpc_binding_handle *h,
 					      enum svcctl_ServiceState _state /* [in]  */,
 					      uint8_t *_service_status /* [out] [ref,size_is(offered)] */,
 					      uint32_t _offered /* [in] [range(0,0x40000)] */,
-					      uint32_t *_needed /* [out] [ref,range(0,0x40000)] */,
+					      uint32_t *_needed /* [out] [range(0,0x40000),ref] */,
 					      uint32_t *_services_returned /* [out] [ref,range(0,0x40000)] */,
 					      WERROR *result)
 {
@@ -2824,10 +2824,10 @@ struct tevent_req *dcerpc_svcctl_EnumServicesStatusW_send(TALLOC_CTX *mem_ctx,
 							  struct policy_handle *_handle /* [in] [ref] */,
 							  uint32_t _type /* [in]  */,
 							  enum svcctl_ServiceState _state /* [in]  */,
-							  uint8_t *_service /* [out] [ref,size_is(offered)] */,
+							  uint8_t *_service /* [out] [size_is(offered),ref] */,
 							  uint32_t _offered /* [in] [range(0,0x40000)] */,
-							  uint32_t *_needed /* [out] [range(0,0x40000),ref] */,
-							  uint32_t *_services_returned /* [out] [ref,range(0,0x40000)] */,
+							  uint32_t *_needed /* [out] [ref,range(0,0x40000)] */,
+							  uint32_t *_services_returned /* [out] [range(0,0x40000),ref] */,
 							  uint32_t *_resume_handle /* [in,out] [unique] */)
 {
 	struct tevent_req *req;
@@ -2945,10 +2945,10 @@ NTSTATUS dcerpc_svcctl_EnumServicesStatusW(struct dcerpc_binding_handle *h,
 					   struct policy_handle *_handle /* [in] [ref] */,
 					   uint32_t _type /* [in]  */,
 					   enum svcctl_ServiceState _state /* [in]  */,
-					   uint8_t *_service /* [out] [ref,size_is(offered)] */,
+					   uint8_t *_service /* [out] [size_is(offered),ref] */,
 					   uint32_t _offered /* [in] [range(0,0x40000)] */,
-					   uint32_t *_needed /* [out] [range(0,0x40000),ref] */,
-					   uint32_t *_services_returned /* [out] [ref,range(0,0x40000)] */,
+					   uint32_t *_needed /* [out] [ref,range(0,0x40000)] */,
+					   uint32_t *_services_returned /* [out] [range(0,0x40000),ref] */,
 					   uint32_t *_resume_handle /* [in,out] [unique] */,
 					   WERROR *result)
 {
@@ -3078,8 +3078,8 @@ static void dcerpc_svcctl_OpenSCManagerW_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_svcctl_OpenSCManagerW_send(TALLOC_CTX *mem_ctx,
 						     struct tevent_context *ev,
 						     struct dcerpc_binding_handle *h,
-						     const char *_MachineName /* [in] [unique,charset(UTF16)] */,
-						     const char *_DatabaseName /* [in] [unique,charset(UTF16)] */,
+						     const char *_MachineName /* [in] [charset(UTF16),unique] */,
+						     const char *_DatabaseName /* [in] [charset(UTF16),unique] */,
 						     uint32_t _access_mask /* [in]  */,
 						     struct policy_handle *_handle /* [out] [ref] */)
 {
@@ -3181,8 +3181,8 @@ NTSTATUS dcerpc_svcctl_OpenSCManagerW_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_svcctl_OpenSCManagerW(struct dcerpc_binding_handle *h,
 				      TALLOC_CTX *mem_ctx,
-				      const char *_MachineName /* [in] [unique,charset(UTF16)] */,
-				      const char *_DatabaseName /* [in] [unique,charset(UTF16)] */,
+				      const char *_MachineName /* [in] [charset(UTF16),unique] */,
+				      const char *_DatabaseName /* [in] [charset(UTF16),unique] */,
 				      uint32_t _access_mask /* [in]  */,
 				      struct policy_handle *_handle /* [out] [ref] */,
 				      WERROR *result)
@@ -3529,7 +3529,7 @@ struct tevent_req *dcerpc_svcctl_QueryServiceConfigW_send(TALLOC_CTX *mem_ctx,
 							  struct policy_handle *_handle /* [in] [ref] */,
 							  struct QUERY_SERVICE_CONFIG *_query /* [out] [ref] */,
 							  uint32_t _offered /* [in] [range(0,8192)] */,
-							  uint32_t *_needed /* [out] [range(0,8192),ref] */)
+							  uint32_t *_needed /* [out] [ref,range(0,8192)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_svcctl_QueryServiceConfigW_state *state;
@@ -3633,7 +3633,7 @@ NTSTATUS dcerpc_svcctl_QueryServiceConfigW(struct dcerpc_binding_handle *h,
 					   struct policy_handle *_handle /* [in] [ref] */,
 					   struct QUERY_SERVICE_CONFIG *_query /* [out] [ref] */,
 					   uint32_t _offered /* [in] [range(0,8192)] */,
-					   uint32_t *_needed /* [out] [range(0,8192),ref] */,
+					   uint32_t *_needed /* [out] [ref,range(0,8192)] */,
 					   WERROR *result)
 {
 	struct svcctl_QueryServiceConfigW r;
@@ -4187,8 +4187,8 @@ struct tevent_req *dcerpc_svcctl_GetServiceDisplayNameW_send(TALLOC_CTX *mem_ctx
 							     struct tevent_context *ev,
 							     struct dcerpc_binding_handle *h,
 							     struct policy_handle *_handle /* [in] [ref] */,
-							     const char *_service_name /* [in] [unique,charset(UTF16)] */,
-							     const char **_display_name /* [out] [ref,charset(UTF16)] */,
+							     const char *_service_name /* [in] [charset(UTF16),unique] */,
+							     const char **_display_name /* [out] [charset(UTF16),ref] */,
 							     uint32_t *_display_name_length /* [in,out] [unique] */)
 {
 	struct tevent_req *req;
@@ -4294,8 +4294,8 @@ NTSTATUS dcerpc_svcctl_GetServiceDisplayNameW_recv(struct tevent_req *req,
 NTSTATUS dcerpc_svcctl_GetServiceDisplayNameW(struct dcerpc_binding_handle *h,
 					      TALLOC_CTX *mem_ctx,
 					      struct policy_handle *_handle /* [in] [ref] */,
-					      const char *_service_name /* [in] [unique,charset(UTF16)] */,
-					      const char **_display_name /* [out] [ref,charset(UTF16)] */,
+					      const char *_service_name /* [in] [charset(UTF16),unique] */,
+					      const char **_display_name /* [out] [charset(UTF16),ref] */,
 					      uint32_t *_display_name_length /* [in,out] [unique] */,
 					      WERROR *result)
 {
@@ -4418,7 +4418,7 @@ struct tevent_req *dcerpc_svcctl_GetServiceKeyNameW_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
 							 struct policy_handle *_handle /* [in] [ref] */,
-							 const char *_service_name /* [in] [charset(UTF16),unique] */,
+							 const char *_service_name /* [in] [unique,charset(UTF16)] */,
 							 const char **_key_name /* [out] [charset(UTF16),ref] */,
 							 uint32_t *_display_name_length /* [in,out] [unique] */)
 {
@@ -4525,7 +4525,7 @@ NTSTATUS dcerpc_svcctl_GetServiceKeyNameW_recv(struct tevent_req *req,
 NTSTATUS dcerpc_svcctl_GetServiceKeyNameW(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
 					  struct policy_handle *_handle /* [in] [ref] */,
-					  const char *_service_name /* [in] [charset(UTF16),unique] */,
+					  const char *_service_name /* [in] [unique,charset(UTF16)] */,
 					  const char **_key_name /* [out] [charset(UTF16),ref] */,
 					  uint32_t *_display_name_length /* [in,out] [unique] */,
 					  WERROR *result)
@@ -4867,10 +4867,10 @@ struct tevent_req *dcerpc_svcctl_ChangeServiceConfigA_send(TALLOC_CTX *mem_ctx,
 							   enum svcctl_StartType _start_type /* [in]  */,
 							   enum svcctl_ErrorControl _error_control /* [in]  */,
 							   const char *_binary_path /* [in] [charset(UTF16),unique] */,
-							   const char *_load_order_group /* [in] [unique,charset(UTF16)] */,
+							   const char *_load_order_group /* [in] [charset(UTF16),unique] */,
 							   uint32_t *_tag_id /* [out] [ref] */,
 							   const char *_dependencies /* [in] [unique,charset(UTF16)] */,
-							   const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
+							   const char *_service_start_name /* [in] [charset(UTF16),unique] */,
 							   const char *_password /* [in] [unique,charset(UTF16)] */,
 							   const char *_display_name /* [in] [charset(UTF16),unique] */)
 {
@@ -4984,10 +4984,10 @@ NTSTATUS dcerpc_svcctl_ChangeServiceConfigA(struct dcerpc_binding_handle *h,
 					    enum svcctl_StartType _start_type /* [in]  */,
 					    enum svcctl_ErrorControl _error_control /* [in]  */,
 					    const char *_binary_path /* [in] [charset(UTF16),unique] */,
-					    const char *_load_order_group /* [in] [unique,charset(UTF16)] */,
+					    const char *_load_order_group /* [in] [charset(UTF16),unique] */,
 					    uint32_t *_tag_id /* [out] [ref] */,
 					    const char *_dependencies /* [in] [unique,charset(UTF16)] */,
-					    const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
+					    const char *_service_start_name /* [in] [charset(UTF16),unique] */,
 					    const char *_password /* [in] [unique,charset(UTF16)] */,
 					    const char *_display_name /* [in] [charset(UTF16),unique] */,
 					    WERROR *result)
@@ -5125,8 +5125,8 @@ struct tevent_req *dcerpc_svcctl_CreateServiceA_send(TALLOC_CTX *mem_ctx,
 						     const char *_LoadOrderGroupKey /* [in] [charset(UTF16),unique] */,
 						     uint32_t *_TagId /* [out] [unique] */,
 						     const char *_dependencies /* [in] [charset(UTF16),unique] */,
-						     const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
-						     const char *_password /* [in] [unique,charset(UTF16)] */)
+						     const char *_service_start_name /* [in] [charset(UTF16),unique] */,
+						     const char *_password /* [in] [charset(UTF16),unique] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_svcctl_CreateServiceA_state *state;
@@ -5248,8 +5248,8 @@ NTSTATUS dcerpc_svcctl_CreateServiceA(struct dcerpc_binding_handle *h,
 				      const char *_LoadOrderGroupKey /* [in] [charset(UTF16),unique] */,
 				      uint32_t *_TagId /* [out] [unique] */,
 				      const char *_dependencies /* [in] [charset(UTF16),unique] */,
-				      const char *_service_start_name /* [in] [unique,charset(UTF16)] */,
-				      const char *_password /* [in] [unique,charset(UTF16)] */,
+				      const char *_service_start_name /* [in] [charset(UTF16),unique] */,
+				      const char *_password /* [in] [charset(UTF16),unique] */,
 				      WERROR *result)
 {
 	struct svcctl_CreateServiceA r;
@@ -6976,8 +6976,8 @@ struct tevent_req *dcerpc_svcctl_GetServiceDisplayNameA_send(TALLOC_CTX *mem_ctx
 							     struct tevent_context *ev,
 							     struct dcerpc_binding_handle *h,
 							     struct policy_handle *_handle /* [in] [ref] */,
-							     const char *_service_name /* [in] [charset(UTF16),unique] */,
-							     const char **_display_name /* [out] [ref,charset(UTF16)] */,
+							     const char *_service_name /* [in] [unique,charset(UTF16)] */,
+							     const char **_display_name /* [out] [charset(UTF16),ref] */,
 							     uint32_t *_display_name_length /* [in,out] [unique] */)
 {
 	struct tevent_req *req;
@@ -7083,8 +7083,8 @@ NTSTATUS dcerpc_svcctl_GetServiceDisplayNameA_recv(struct tevent_req *req,
 NTSTATUS dcerpc_svcctl_GetServiceDisplayNameA(struct dcerpc_binding_handle *h,
 					      TALLOC_CTX *mem_ctx,
 					      struct policy_handle *_handle /* [in] [ref] */,
-					      const char *_service_name /* [in] [charset(UTF16),unique] */,
-					      const char **_display_name /* [out] [ref,charset(UTF16)] */,
+					      const char *_service_name /* [in] [unique,charset(UTF16)] */,
+					      const char **_display_name /* [out] [charset(UTF16),ref] */,
 					      uint32_t *_display_name_length /* [in,out] [unique] */,
 					      WERROR *result)
 {
@@ -7207,7 +7207,7 @@ struct tevent_req *dcerpc_svcctl_GetServiceKeyNameA_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
 							 struct policy_handle *_handle /* [in] [ref] */,
-							 const char *_service_name /* [in] [unique,charset(UTF16)] */,
+							 const char *_service_name /* [in] [charset(UTF16),unique] */,
 							 const char **_key_name /* [out] [charset(UTF16),ref] */,
 							 uint32_t *_display_name_length /* [in,out] [unique] */)
 {
@@ -7314,7 +7314,7 @@ NTSTATUS dcerpc_svcctl_GetServiceKeyNameA_recv(struct tevent_req *req,
 NTSTATUS dcerpc_svcctl_GetServiceKeyNameA(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
 					  struct policy_handle *_handle /* [in] [ref] */,
-					  const char *_service_name /* [in] [unique,charset(UTF16)] */,
+					  const char *_service_name /* [in] [charset(UTF16),unique] */,
 					  const char **_key_name /* [out] [charset(UTF16),ref] */,
 					  uint32_t *_display_name_length /* [in,out] [unique] */,
 					  WERROR *result)
@@ -8838,12 +8838,12 @@ struct tevent_req *dcerpc_EnumServicesStatusExW_send(TALLOC_CTX *mem_ctx,
 						     uint32_t _info_level /* [in]  */,
 						     uint32_t _type /* [in]  */,
 						     enum svcctl_ServiceState _state /* [in]  */,
-						     uint8_t *_services /* [out] [size_is(offered),ref] */,
+						     uint8_t *_services /* [out] [ref,size_is(offered)] */,
 						     uint32_t _offered /* [in] [range(0,0x40000)] */,
-						     uint32_t *_needed /* [out] [range(0,0x40000),ref] */,
-						     uint32_t *_service_returned /* [out] [range(0,0x40000),ref] */,
-						     uint32_t *_resume_handle /* [in,out] [range(0,0x40000),unique] */,
-						     const char *_group_name /* [in] [unique,charset(UTF16)] */)
+						     uint32_t *_needed /* [out] [ref,range(0,0x40000)] */,
+						     uint32_t *_service_returned /* [out] [ref,range(0,0x40000)] */,
+						     uint32_t *_resume_handle /* [in,out] [unique,range(0,0x40000)] */,
+						     const char *_group_name /* [in] [charset(UTF16),unique] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_EnumServicesStatusExW_state *state;
@@ -8963,12 +8963,12 @@ NTSTATUS dcerpc_EnumServicesStatusExW(struct dcerpc_binding_handle *h,
 				      uint32_t _info_level /* [in]  */,
 				      uint32_t _type /* [in]  */,
 				      enum svcctl_ServiceState _state /* [in]  */,
-				      uint8_t *_services /* [out] [size_is(offered),ref] */,
+				      uint8_t *_services /* [out] [ref,size_is(offered)] */,
 				      uint32_t _offered /* [in] [range(0,0x40000)] */,
-				      uint32_t *_needed /* [out] [range(0,0x40000),ref] */,
-				      uint32_t *_service_returned /* [out] [range(0,0x40000),ref] */,
-				      uint32_t *_resume_handle /* [in,out] [range(0,0x40000),unique] */,
-				      const char *_group_name /* [in] [unique,charset(UTF16)] */,
+				      uint32_t *_needed /* [out] [ref,range(0,0x40000)] */,
+				      uint32_t *_service_returned /* [out] [ref,range(0,0x40000)] */,
+				      uint32_t *_resume_handle /* [in,out] [unique,range(0,0x40000)] */,
+				      const char *_group_name /* [in] [charset(UTF16),unique] */,
 				      WERROR *result)
 {
 	struct EnumServicesStatusExW r;

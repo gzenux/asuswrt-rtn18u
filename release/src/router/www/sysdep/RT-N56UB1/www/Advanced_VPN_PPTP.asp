@@ -942,7 +942,7 @@ function check_vpn_conflict() {		//if conflict with LAN ip & DHCP ip pool & stat
 											<td>
 												<input type="radio" value="1" name="pptpd_broadcast_option" onClick="setBroadcast(this);"/><#checkbox_Yes#>
 												<input type="radio" value="0" name="pptpd_broadcast_option" onClick="setBroadcast(this);"/><#checkbox_No#>
-												<span id="pptpd_broadcast_hint" style="font-family: Lucida Console;color: #FFCC00;display: none;">When Network Place enabled, this must be enabled</span>
+												<span id="pptpd_broadcast_hint" style="font-family: Lucida Console;color: #FFCC00;display: none;"><#PPTP_broadcast_hint#></span>
 											</td>
 										</tr>
 										<tr>

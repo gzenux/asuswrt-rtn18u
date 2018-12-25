@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56686_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56686, BCM56686_VENDOR_ID, BCM56686_DEVICE_ID, BCM56686_REV_B0, \
+                  0, 0, \
+                  bcm56680_b0, bcm56686_b0, bcm56686_b0, \
+                  CDK_DEV_ARCH_XGS, "Valkyrie", "BCM56680", \
+                  "6-Port, 144-Gbps Lossless Switch Fabric", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56686_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56686, BCM56686_VENDOR_ID, BCM56686_DEVICE_ID, BCM56686_REV_B1, \
+                  0, 0, \
+                  bcm56680_b0, bcm56686_b0, bcm56686_b1, \
+                  CDK_DEV_ARCH_XGS, "Valkyrie", "BCM56680", \
+                  "6-Port, 144-Gbps Lossless Switch Fabric", 0, 0)
+#endif
+#endif
+

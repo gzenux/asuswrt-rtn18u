@@ -18,6 +18,7 @@
 #define CA_FILES_MAX_NUM 32
 
 #define FILE_PATH_IPSEC_SH    "/tmp/etc/ipsec_exe.sh"
+#define FILE_PATH_IPSEC_IPTABLES_RULE    "/tmp/ipsec_iptables_rules"
 #define FILE_PATH_CA_CHECK_SH "/jffs/ca_files/awk.sh"
 #define FILE_PATH_CA_GEN_SH   "/jffs/ca_files/pki_genkey.sh"
 #define FILE_PATH_CA_ETC      "/jffs/ca_files/"
@@ -66,6 +67,7 @@ typedef enum vpn_type_s{
 typedef enum flag_type_s{
     FLAG_IKE_ENCRYPT,
     FLAG_ESP_HASH,
+    FLAG_DH_GROUP,
     FLAG_KEY_CHAG_VER,
     FLAG_NONE,
 }flag_type_t;
@@ -76,6 +78,12 @@ typedef enum ike_version_type_s{
     IKE_TYPE_V2,
     IKE_TYPE_MAX_NUM, /*do not remove it*/
 }ike_version_type_t;
+
+typedef enum ike_exchange_mode_s{
+    IKE_MAIN_MODE = 0,
+    IKE_AGGRESSIVE_MODE,
+}ike_exchange_mode_t;
+
 
 typedef enum encryption_type_s{
     ENCRYPTION_TYPE_DES,
@@ -112,6 +120,13 @@ typedef enum dh_group_type_s{
     DH_GROUP_MAX_NUM, /*don't remove it*/
 }dh_group_type_t;
 
+typedef enum dpd_action_s{
+	DPD_NONE = 0,
+	DPD_CLEAR,
+	DPD_HOLD,
+	DPD_RESTART,
+}dpd_action_t;
+
 typedef enum ipsec_conn_en_s{
    IPSEC_CONN_EN_DOWN = 0,
    IPSEC_CONN_EN_UP,
@@ -125,7 +140,7 @@ typedef enum ipsec_auth2_type_s{
 }ipsec_auth2_type_t;
 
 typedef struct ipsec_samba_s{
-    int samba_en;
+    //int samba_en;
     char dns1[SZ_MIN];
     char dns2[SZ_MIN];
     char nbios1[SZ_MIN];
@@ -136,14 +151,14 @@ typedef struct ipsec_prof_s{
     uint8_t vpn_type;
     char profilename[SZ_MIN];
     char remote_gateway_method[SZ_MIN];
-    char remote_gateway[SZ_MIN]; 
+    char remote_gateway[SZ_128BUF]; 
     char local_public_interface[SZ_MIN];
-    char local_pub_ip[SZ_MIN];      /*local_public_ip*/
+    char local_pub_ip[SZ_128BUF];      /*local_public_ip*/
     uint8_t auth_method;
     char auth_method_key[SZ_MIN];           /*auth_menthod_value*/
-    char local_subnet[SZ_MIN];
+    char local_subnet[SZ_128BUF];
     uint16_t local_port; 
-    char remote_subnet[SZ_MIN];
+    char remote_subnet[SZ_128BUF];
     uint16_t remote_port;
     char tun_type[SZ_MIN]; /*transport/tunnel type*/
     char virtual_ip_en[SZ_MIN]; /*virtual ip set or not*/
@@ -169,7 +184,13 @@ typedef struct ipsec_prof_s{
     uint16_t hash_p2;
     uint32_t keylife_p2;           /*IPSEC default: 28800 seconds, 8hr*/
     uint16_t keyingtries;
+	char samba_settings[SZ_64BUF];
     uint8_t ipsec_conn_en;  /*1: up ; 0:down*/
+	uint16_t encryption_p1_ext;
+	uint16_t hash_p1_ext;
+	uint16_t dh_group;
+	uint16_t encryption_p2_ext;
+	uint16_t hash_p2_ext;
 }ipsec_prof_t;
 
 
@@ -181,7 +202,18 @@ typedef struct pki_ca_s{
 }pki_ca_t;
 
 extern void rc_ipsec_config_init();
-extern void rc_ipsec_topology_set();
+
+#if defined(RTCONFIG_QUICKSEC)
+typedef struct qs_virtual_ip_s{
+    char ip_start[SZ_MIN];
+    char ip_end[SZ_MIN];
+    char subnet[SZ_MIN];
+}qs_virtual_ip_t;
+
+//extern void *get_virtual_ip_format(char *virtual_subnet);
+extern void rc_ipsec_topology_set_XML();
+#endif
+
 extern void rc_ipsec_set(ipsec_conn_status_t conn_status, ipsec_prof_type_t prof_type);
 
 extern void rc_ipsec_ca_import();

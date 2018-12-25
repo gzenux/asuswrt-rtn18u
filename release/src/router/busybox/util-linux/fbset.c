@@ -4,13 +4,28 @@
  *
  * Copyright (C) 1999 by Randolph Chung <tausq@debian.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
  * This is a from-scratch implementation of fbset; but the de facto fbset
  * implementation was a good reference. fbset (original) is released under
  * the GPL, and is (c) 1995-1999 by:
  *     Geert Uytterhoeven (Geert.Uytterhoeven@cs.kuleuven.ac.be)
  */
+
+//usage:#define fbset_trivial_usage
+//usage:       "[OPTIONS] [MODE]"
+//usage:#define fbset_full_usage "\n\n"
+//usage:       "Show and modify frame buffer settings"
+//usage:
+//usage:#define fbset_example_usage
+//usage:       "$ fbset\n"
+//usage:       "mode \"1024x768-76\"\n"
+//usage:       "	# D: 78.653 MHz, H: 59.949 kHz, V: 75.694 Hz\n"
+//usage:       "	geometry 1024 768 1024 768 16\n"
+//usage:       "	timings 12714 128 32 16 4 128 4\n"
+//usage:       "	accel false\n"
+//usage:       "	rgba 5/11,6/5,5/0,0/0\n"
+//usage:       "endmode\n"
 
 #include "libbb.h"
 
@@ -26,7 +41,7 @@ enum {
 
 struct fb_bitfield {
 	uint32_t offset;                /* beginning of bitfield */
-	uint32_t length;		/* length of bitfield */
+	uint32_t length;                /* length of bitfield */
 	uint32_t msb_right;             /* !=0: Most significant bit is right */
 };
 struct fb_var_screeninfo {
@@ -52,7 +67,7 @@ struct fb_var_screeninfo {
 	uint32_t height;                /* height of picture in mm */
 	uint32_t width;                 /* width of picture in mm */
 
-	uint32_t accel_flags;		/* acceleration flags (hints) */
+	uint32_t accel_flags;           /* acceleration flags (hints) */
 
 	/* Timing: All values in pixclocks, except pixclock (of course) */
 	uint32_t pixclock;              /* pixel clock in ps (pico seconds) */
@@ -149,6 +164,7 @@ static const struct cmdoptions_t {
 	const unsigned char code;
 } g_cmdoptions[] = {
 	/*"12345678" + NUL */
+//TODO: convert to index_in_strings()
 	{ "fb"      , 1, CMD_FB       },
 	{ "db"      , 1, CMD_DB       },
 	{ "a"       , 0, CMD_ALL      },
@@ -233,12 +249,12 @@ static int read_mode_db(struct fb_var_screeninfo *base, const char *fn,
 		if (!p)
 			continue;
 		s = p + strlen(mode);
-		//bb_info_msg("CHECK[%s][%s][%d]", mode, p-1, *s);
+		//bb_error_msg("CHECK[%s][%s][%d]", mode, p-1, *s);
 		/* exact match? */
 		if (((!*s || isspace(*s)) && '"' != s[-1]) /* end-of-token */
 		 || ('"' == *s && '"' == p[-1]) /* ends with " but starts with " too! */
 		) {
-			//bb_info_msg("FOUND[%s][%s][%s][%d]", token[1], p, mode, isspace(*s));
+			//bb_error_msg("FOUND[%s][%s][%s][%d]", token[1], p, mode, isspace(*s));
 			break;
 		}
 	}
@@ -249,14 +265,14 @@ static int read_mode_db(struct fb_var_screeninfo *base, const char *fn,
 	while (config_read(parser, token, 2, 1, "# \t", PARSE_NORMAL)) {
 		int i;
 
-//bb_info_msg("???[%s][%s]", token[0], token[1]);
+//bb_error_msg("???[%s][%s]", token[0], token[1]);
 		if (strcmp(token[0], "endmode") == 0) {
-//bb_info_msg("OK[%s]", mode);
+//bb_error_msg("OK[%s]", mode);
 			return 1;
 		}
 		p = token[1];
 		i = index_in_strings(
-			"geometry\0timings\0interlaced\0double\0vsync\0hsync\0csync\0extsync\0",
+			"geometry\0timings\0interlaced\0double\0vsync\0hsync\0csync\0extsync\0rgba\0",
 			token[0]);
 		switch (i) {
 		case 0:
@@ -279,7 +295,7 @@ static int read_mode_db(struct fb_var_screeninfo *base, const char *fn,
 				base->yres_virtual = base_yres_virtual;
 				base->bits_per_pixel = base_bits_per_pixel;
 			}
-//bb_info_msg("GEO[%s]", p);
+//bb_error_msg("GEO[%s]", p);
 			break;
 		case 1:
 			if (sizeof(int) == sizeof(base->xres)) {
@@ -306,27 +322,51 @@ static int read_mode_db(struct fb_var_screeninfo *base, const char *fn,
 				base->hsync_len = base_hsync_len;
 				base->vsync_len = base_vsync_len;
 			}
-//bb_info_msg("TIM[%s]", p);
+//bb_error_msg("TIM[%s]", p);
 			break;
 		case 2:
 		case 3: {
 			static const uint32_t syncs[] = {FB_VMODE_INTERLACED, FB_VMODE_DOUBLE};
 			ss(&base->vmode, syncs[i-2], p, "false");
-//bb_info_msg("VMODE[%s]", p);
+//bb_error_msg("VMODE[%s]", p);
 			break;
 		}
 		case 4:
 		case 5:
-		case 6:	{
+		case 6: {
 			static const uint32_t syncs[] = {FB_SYNC_VERT_HIGH_ACT, FB_SYNC_HOR_HIGH_ACT, FB_SYNC_COMP_HIGH_ACT};
 			ss(&base->sync, syncs[i-4], p, "low");
-//bb_info_msg("SYNC[%s]", p);
+//bb_error_msg("SYNC[%s]", p);
 			break;
 		}
 		case 7:
 			ss(&base->sync, FB_SYNC_EXT, p, "false");
-//bb_info_msg("EXTSYNC[%s]", p);
+//bb_error_msg("EXTSYNC[%s]", p);
 			break;
+		case 8: {
+			int red_offset, red_length;
+			int green_offset, green_length;
+			int blue_offset, blue_length;
+			int transp_offset, transp_length;
+
+			sscanf(p, "%d/%d,%d/%d,%d/%d,%d/%d",
+				&red_length, &red_offset,
+				&green_length, &green_offset,
+				&blue_length, &blue_offset,
+				&transp_length, &transp_offset);
+			base->red.offset = red_offset;
+			base->red.length = red_length;
+			base->red.msb_right = 0;
+			base->green.offset = green_offset;
+			base->green.length = green_length;
+			base->green.msb_right = 0;
+			base->blue.offset = blue_offset;
+			base->blue.length = blue_length;
+			base->blue.msb_right = 0;
+			base->transp.offset = transp_offset;
+			base->transp.length = transp_length;
+			base->transp.msb_right = 0;
+		}
 		}
 	}
 	return 0;
@@ -370,14 +410,14 @@ int fbset_main(int argc, char **argv)
 		OPT_CHANGE   = (1 << 0),
 		OPT_SHOW     = (1 << 1),
 		OPT_READMODE = (1 << 2),
-		OPT_ALL      = (1 << 9),
+		OPT_ALL      = (1 << 3),
 	};
 	struct fb_var_screeninfo var_old, var_set;
 	int fh, i;
 	unsigned options = 0;
 
 	const char *fbdev = DEFAULTFBDEV;
-	const char *modefile = DEFAULTFBMODE;
+	IF_FEATURE_FBSET_READMODE(const char *modefile = DEFAULTFBMODE;)
 	char *thisarg;
 	char *mode = mode; /* for compiler */
 
@@ -387,7 +427,14 @@ int fbset_main(int argc, char **argv)
 	argv++;
 	argc--;
 	for (; argc > 0 && (thisarg = *argv) != NULL; argc--, argv++) {
-		if (thisarg[0] == '-') for (i = 0; i < ARRAY_SIZE(g_cmdoptions); i++) {
+		if (thisarg[0] != '-') {
+			if (!ENABLE_FEATURE_FBSET_READMODE || argc != 1)
+				bb_show_usage();
+			mode = thisarg;
+			options |= OPT_READMODE;
+			goto contin;
+		}
+		for (i = 0; i < ARRAY_SIZE(g_cmdoptions); i++) {
 			if (strcmp(thisarg + 1, g_cmdoptions[i].name) != 0)
 				continue;
 			if (argc <= g_cmdoptions[i].param_count)
@@ -398,7 +445,7 @@ int fbset_main(int argc, char **argv)
 				fbdev = argv[1];
 				break;
 			case CMD_DB:
-				modefile = argv[1];
+				IF_FEATURE_FBSET_READMODE(modefile = argv[1];)
 				break;
 			case CMD_ALL:
 				options |= OPT_ALL;
@@ -456,10 +503,7 @@ int fbset_main(int argc, char **argv)
 			argv += g_cmdoptions[i].param_count;
 			goto contin;
 		}
-		if (!ENABLE_FEATURE_FBSET_READMODE || argc != 1)
-			bb_show_usage();
-		mode = *argv;
-		options |= OPT_READMODE;
+		bb_show_usage();
  contin: ;
 	}
 
@@ -471,6 +515,7 @@ int fbset_main(int argc, char **argv)
 		if (!read_mode_db(&var_old, modefile, mode)) {
 			bb_error_msg_and_die("unknown video mode '%s'", mode);
 		}
+		options |= OPT_CHANGE;
 #endif
 	}
 

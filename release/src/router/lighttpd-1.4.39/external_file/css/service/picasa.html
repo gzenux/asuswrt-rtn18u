@@ -14,7 +14,7 @@ var g_bLoginGoogle = false;
 var g_token = "";
 var g_uid = "";
 var g_app_id = "103584452676-oo7gkbh8dg7nm07lao9a0i3r9jh6jfra.apps.googleusercontent.com";
-var server_url = "http://oauth.asus.com/aicloud/";
+var g_server_url = "http://oauth.asus.com/aicloud/";
 var ajax_dataType = "json";
 var g_uploadfile_url_array = new Array();
 var g_uploadfile_title_array = new Array();
@@ -83,7 +83,7 @@ $(document).ready(function(){
 		var is_dir = param[1];
 		var this_filename = decodeURIComponent( uploadfile_url.substr( uploadfile_url.lastIndexOf("/") + 1, uploadfile_url.length-1 ) );
 		var filext = getFileExt(uploadfile_url);
-		var icon_url = server_url + "images/";
+		var icon_url = g_server_url + "images/";
 		
 		upload_html += '<table class="x-table ' +　className + '" width="100%" height="100%" style="display: table;border-collapse: separate;border-spacing: 2px;border-color: gray;">';
         upload_html += '<tr>';
@@ -193,20 +193,18 @@ $(document).ready(function(){
 	});
 });
 
-function google_login(){
-	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
+function google_login(){	
 	var callback_function = "onGoogleLogin";
-		
-	var auth_url = server_url + "google_authorize.html";
-	var redirect_url = window.location.href.slice(0,b) + "/smb/css/service/callback.html";
-		
+	var host_url = g_storage.get('request_host_url');	
+	var auth_url = g_server_url + "google_authorize.html";
+	var redirect_url = host_url + "/smb/css/service/callback.html";
 	var url = "https://accounts.google.com/o/oauth2/auth?" +
 			  "response_type=token" +				  
 			  "&redirect_uri=" + encodeURIComponent(auth_url) + 
 			  "&client_id=" + g_app_id +
 			  "&scope=https://www.googleapis.com%2Fauth%2Fuserinfo.email+https://www.googleapis.com%2Fauth%2Fuserinfo.profile+https://picasaweb.google.com%2Fdata" + 
 			  "&state=/callback=" + callback_function + "+ps5host=" + redirect_url;
-		
+    	
 	window.open(url,"mywindow","menubar=1,resizable=1,width=630,height=250, top=100, left=300");
 }
 

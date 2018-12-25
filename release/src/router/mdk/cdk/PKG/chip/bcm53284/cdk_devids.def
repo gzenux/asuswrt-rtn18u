@@ -1,0 +1,10 @@
+/* BCM53284 */
+#define BCM53284_VENDOR_ID                0x0362
+#define BCM53284_DEVICE_ID                0x5e90
+#define BCM53284_MODEL                    0x0007
+#define BCM53284_PROBEINFO            0x000800e8
+#define BCM53284_REV_A0                     0x00
+#define BCM53284_REV_B0                     0x04
+#define BCM53284_REV_B1                     0x05
+#define BCM53284_REV_B2                     0x06
+

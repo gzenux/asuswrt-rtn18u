@@ -17,14 +17,14 @@ extern smallint oneline;
 extern char _SL_;
 
 #ifndef IPPROTO_ESP
-#define IPPROTO_ESP	50
+#define IPPROTO_ESP  50
 #endif
 #ifndef IPPROTO_AH
-#define IPPROTO_AH	51
+#define IPPROTO_AH  51
 #endif
 
 #define SPRINT_BSIZE 64
-#define SPRINT_BUF(x)	char x[SPRINT_BSIZE]
+#define SPRINT_BUF(x)  char x[SPRINT_BSIZE]
 
 extern void incomplete_command(void) NORETURN;
 
@@ -58,32 +58,34 @@ struct ipx_addr {
 
 extern uint32_t get_addr32(char *name);
 extern int get_addr_1(inet_prefix *dst, char *arg, int family);
-/*extern int get_prefix_1(inet_prefix *dst, char *arg, int family);*/
+/*extern void get_prefix_1(inet_prefix *dst, char *arg, int family);*/
 extern int get_addr(inet_prefix *dst, char *arg, int family);
-extern int get_prefix(inet_prefix *dst, char *arg, int family);
+extern void get_prefix(inet_prefix *dst, char *arg, int family);
 
 extern unsigned get_unsigned(char *arg, const char *errmsg);
 extern uint32_t get_u32(char *arg, const char *errmsg);
 extern uint16_t get_u16(char *arg, const char *errmsg);
 
-extern const char *rt_addr_n2a(int af, void *addr, char *buf, int buflen);
+extern const char *rt_addr_n2a(int af, void *addr);
 #ifdef RESOLVE_HOSTNAMES
-extern const char *format_host(int af, int len, void *addr, char *buf, int buflen);
+extern const char *format_host(int af, int len, void *addr);
 #else
-#define format_host(af, len, addr, buf, buflen) \
-	rt_addr_n2a(af, addr, buf, buflen)
+#define format_host(af, len, addr) \
+	rt_addr_n2a(af, addr)
 #endif
 
-void invarg(const char *, const char *) NORETURN;
+void invarg_1_to_2(const char *, const char *) NORETURN;
 void duparg(const char *, const char *) NORETURN;
 void duparg2(const char *, const char *) NORETURN;
-int inet_addr_match(inet_prefix *a, inet_prefix *b, int bits);
+int inet_addr_match(const inet_prefix *a, const inet_prefix *b, int bits);
 
 const char *dnet_ntop(int af, const void *addr, char *str, size_t len);
 int dnet_pton(int af, const char *src, void *addr);
 
 const char *ipx_ntop(int af, const void *addr, char *str, size_t len);
 int ipx_pton(int af, const char *src, void *addr);
+
+unsigned get_hz(void);
 
 POP_SAVED_FUNCTION_VISIBILITY
 

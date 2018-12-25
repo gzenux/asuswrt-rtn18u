@@ -19,6 +19,9 @@
  */
 #include <pjsua-lib/pjsua.h>
 #include <pjsua-lib/pjsua_internal.h>
+#if defined(ENABLE_MEMWATCH) && ENABLE_MEMWATCH != 0
+#include <memwatch.h>
+#endif
 
 
 #define THIS_FILE		"pjsua_call.c"
@@ -134,7 +137,7 @@ static void reset_call(pjsua_inst_id inst_id, pjsua_call_id id)
     call->rem_nat_type = PJ_STUN_NAT_TYPE_UNKNOWN;
     call->rem_srtp_use = PJMEDIA_SRTP_DISABLED;
     call->local_hold = PJ_FALSE;
-    call->tnl_stream = NULL;
+    //call->tnl_stream = NULL;
 	call->local_path_selected = PJ_FALSE;
 	call->user_last_code = 0;
 	call->curr_sip_idx = 0;
@@ -993,6 +996,7 @@ pj_bool_t pjsua_call_on_incoming(pjsip_rx_data *rdata)
 	return PJ_TRUE;
 	} 
 
+#if !defined(PJMEDIA_DISABLE_SCTP) || (PJMEDIA_DISABLE_SCTP==0)
 	/* Remote peer requires SCTP*/
 	if ((options & PJSIP_INV_TNL_REQUIRE_SCTP) > 0) {
 		call->use_sctp = 1;
@@ -1000,6 +1004,7 @@ pj_bool_t pjsua_call_on_incoming(pjsip_rx_data *rdata)
 		if (call->med_orig)
 			call->med_orig->use_sctp = 1;  // dtls
 	}
+#endif
 
 
     /* Get suitable Contact header */

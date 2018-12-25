@@ -11,7 +11,7 @@
 #include <string.h>
 #include <getopt.h>
 #include "../include/ebtables_u.h"
-#include <linux/netfilter_bridge/ebt_mark_t.h>
+#include "../include/linux/netfilter_bridge/ebt_mark_t.h"
 
 static int mark_supplied;
 
@@ -20,6 +20,8 @@ static int mark_supplied;
 #define MARK_ORMARK  '3'
 #define MARK_ANDMARK '4'
 #define MARK_XORMARK '5'
+#define MARK_SETVTAG '6'
+
 static struct option opts[] =
 {
 	{ "mark-target" , required_argument, 0, MARK_TARGET },
@@ -30,6 +32,7 @@ static struct option opts[] =
 	{ "mark-or"     , required_argument, 0, MARK_ORMARK  },
 	{ "mark-and"    , required_argument, 0, MARK_ANDMARK },
 	{ "mark-xor"    , required_argument, 0, MARK_XORMARK },
+	{ "vtag-set"    , required_argument, 0, MARK_SETVTAG },
 	{ 0 }
 };
 
@@ -41,6 +44,7 @@ static void print_help()
 	" --mark-or  value     : Or nfmark with value (nfmark |= value)\n"
 	" --mark-and value     : And nfmark with value (nfmark &= value)\n"
 	" --mark-xor value     : Xor nfmark with value (nfmark ^= value)\n"
+	" --vtag-set value     : Set vlan tag value\n"
 	" --mark-target target : ACCEPT, DROP, RETURN or CONTINUE\n");
 }
 
@@ -59,6 +63,7 @@ static void init(struct ebt_entry_target *target)
 #define OPT_MARK_ORMARK   0x04
 #define OPT_MARK_ANDMARK  0x08
 #define OPT_MARK_XORMARK  0x10
+#define OPT_MARK_SETVTAG  0x20
 static int parse(int c, char **argv, int argc,
    const struct ebt_u_entry *entry, unsigned int *flags,
    struct ebt_entry_target **target)
@@ -100,6 +105,10 @@ static int parse(int c, char **argv, int argc,
 			ebt_print_error2("--mark-xor cannot be used together with specific --mark option");
 		markinfo->target = (markinfo->target & EBT_VERDICT_BITS) | MARK_XOR_VALUE;
                 break;
+	case MARK_SETVTAG:
+		ebt_check_option2(flags, OPT_MARK_SETVTAG);
+		markinfo->target = (markinfo->target & EBT_VERDICT_BITS) | VTAG_SET_VALUE;
+		break;
 	 default:
 		return 0;
 	}
@@ -140,6 +149,8 @@ static void print(const struct ebt_u_entry *entry,
 		printf("--mark-xor");
 	else if (tmp == MARK_AND_VALUE)
 		printf("--mark-and");
+	else if (tmp == VTAG_SET_VALUE)
+		printf("--vtag-set");
 	else
 		ebt_print_error("oops, unknown mark action, try a later version of ebtables");
 	printf(" 0x%lx", markinfo->mark);

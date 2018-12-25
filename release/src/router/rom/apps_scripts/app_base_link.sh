@@ -2,6 +2,7 @@
 
 
 f=`nvram get apps_install_folder`
+
 case $f in
 	"asusware.arm")
 		pkg_type=`echo $f|sed -e "s,asusware\.,,"`
@@ -72,8 +73,9 @@ if [ "$APPS_MOUNTED_TYPE" != "vfat" ] && [ "$APPS_MOUNTED_TYPE" != "tfat" ]; the
 	if [ "$APP_FS_TYPE" != "fuseblk" ] ; then
 		chown -R "$user_account":root $APPS_INSTALL_PATH
 	fi
-	rm -rf $APP_LINK_DIR
-	ln -sf $APPS_INSTALL_PATH $APP_LINK_DIR
+		rm -rf $APP_LINK_DIR
+		ln -sf $APPS_INSTALL_PATH $APP_LINK_DIR
+
 	exit 0
 fi
 

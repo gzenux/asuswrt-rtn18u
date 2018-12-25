@@ -516,7 +516,7 @@ var retValHandler = {
 				clearInterval(Counter.ajaxTimer)
 				viewHandler.forceHideLoading();
 				var isIPChanged = false;
-				if(window.location.hostName != (retValHandler.dutIP.split("://")[1] || window.location.hostName))
+				if(window.location.hostname != (retValHandler.dutIP.split("://")[1] || window.location.hostname))
 					isIPChanged = true;
 	
 				// case handler
@@ -783,7 +783,7 @@ function updateRepeaterState() {
 			htmlCode += '<span style="color:#FFCC00;line-height:25px;">';
 			if(wlc_state_ajax == 2 && wlc_sbstate_ajax == 1){ //connected
 				htmlCode += '<#APSurvey_action_ConnectingStatus24#>';
-				setTimeout('parent.location.href = "/index.asp";', 2000);
+				setTimeout('parent.location.href = "<% abs_index_page(); %>";', 2000);
 			}
 			else if(wlc_state_ajax == 3 && wlc_sbstate_ajax == 2){  //auth failure
 				htmlCode += '<span style="font-weight:bolder;">' + parent.document.getElementById("stassid").innerHTML + '</span> <#APSurvey_action_ConnectingStatus1#>';
@@ -818,7 +818,7 @@ function updateMediaBridgeState() {
 			htmlCode += '<span style="color:#FFCC00;line-height:25px;">';
 			if(wlc_state_ajax == 1 && wlc_sbstate_ajax == 0){ //connected
 				htmlCode += '<#APSurvey_action_ConnectingStatus24#>';
-				setTimeout('parent.location.href = "/index.asp";', 2000);
+				setTimeout('parent.location.href = "<% abs_index_page(); %>";', 2000);
 			}
 			else if(wlc_state_ajax == 2 && wlc_sbstate_ajax == 1){  //auth failure
 				htmlCode += '<span style="font-weight:bolder;">' + parent.document.getElementById("stassid").innerHTML + '</span> <#APSurvey_action_ConnectingStatus1#>';

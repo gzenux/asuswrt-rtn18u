@@ -30,7 +30,11 @@ void udt_cleanup()
 
 int udt_socket()
 {
-    struct addrinfo hints, *local;
+	struct addrinfo hints, *local;
+	int buf_size = 1460*64;
+	int mss = 1456;
+	bool udt_syn = true;
+	bool rendezvous_mode = true;
 
     memset(&hints, 0, sizeof(struct addrinfo));
 
@@ -49,24 +53,24 @@ int udt_socket()
     // UDT Options
     //UDT::setsockopt(fd, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
     //UDT::setsockopt(fd, 0, UDT_MSS, new int(9000), sizeof(int));
-   UDT::setsockopt(fd, 0, UDT_SNDBUF, new int(1460*64), sizeof(int));
-   UDT::setsockopt(fd, 0, UDT_RCVBUF, new int(1460*64), sizeof(int));
+   UDT::setsockopt(fd, 0, UDT_SNDBUF, &buf_size, sizeof(int));
+   UDT::setsockopt(fd, 0, UDT_RCVBUF, &buf_size, sizeof(int));
 
     // Windows UDP issue
     // For better performance, modify HKLM\System\CurrentControlSet\Services\Afd\Parameters\FastSendDatagramThreshold
     #ifdef WIN32
 	//UDT::setsockopt(fd, 0, UDT_MSS, new int(1052), sizeof(int));
 	//UDT::setsockopt(fd, 0, UDT_MSS, new int(1500), sizeof(int));
-	UDT::setsockopt(fd, 0, UDT_MSS, new int(1456), sizeof(int));
+	UDT::setsockopt(fd, 0, UDT_MSS, &mss, sizeof(int));
     #endif
 
 	//UDT::setsockopt(fd, 0, UDT_LINGER, new int(1), sizeof(int));
 
-	UDT::setsockopt(fd, 1, UDT_RCVSYN, new bool(true), sizeof(bool));
-	UDT::setsockopt(fd, 1, UDT_SNDSYN, new bool(true), sizeof(bool));
+	UDT::setsockopt(fd, 1, UDT_RCVSYN, &udt_syn, sizeof(bool));
+	UDT::setsockopt(fd, 1, UDT_SNDSYN, &udt_syn, sizeof(bool));
 
     // for rendezvous connection, enable the code below
-    UDT::setsockopt(fd, 0, UDT_RENDEZVOUS, new bool(true), sizeof(bool));
+    UDT::setsockopt(fd, 0, UDT_RENDEZVOUS, &rendezvous_mode, sizeof(bool));
     //if (UDT::ERROR == UDT::bind(fd, local->ai_addr, local->ai_addrlen)) {
 	//cout << "bind: " << UDT::getlasterror().getErrorMessage() << endl;
 	//return 0;

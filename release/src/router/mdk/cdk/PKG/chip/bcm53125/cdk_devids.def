@@ -1,0 +1,6 @@
+/* BCM53125 */
+#define BCM53125_VENDOR_ID                0x0362
+#define BCM53125_DEVICE_ID                0x5f20
+#define BCM53125_REV_A0                     0x00
+#define BCM53125_REV_B0                     0x04
+

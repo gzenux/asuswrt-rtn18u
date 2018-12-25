@@ -1214,6 +1214,8 @@ typedef struct {
 
 #define WL_STA_AID(a)		((a) &~ 0xc000)
 
+#define STAMON_MODULE_VER	1
+
 /* Flags for sta_info_t indicating properties of STA */
 #define WL_STA_BRCM		0x00000001	/* Running a Broadcom driver */
 #define WL_STA_WME		0x00000002	/* WMM association */
@@ -1316,10 +1318,21 @@ typedef struct channel_info {
 } channel_info_t;
 
 /* For ioctls that take a list of MAC addresses */
-struct maclist {
+typedef struct maclist {
 	uint count;			/* number of MAC addresses */
 	struct ether_addr ea[1];	/* variable length array of MAC addresses */
-};
+} maclist_t;
+
+typedef struct stamon_data {
+	struct ether_addr  ea;
+	int rssi;
+} stamon_data_t;
+
+typedef struct stamon_info {
+	int version;
+	uint count;
+	stamon_data_t sta_data[1];
+} stamon_info_t;
 
 #ifndef LINUX_POSTMOGRIFY_REMOVAL
 /* get pkt count struct passed through ioctl */
@@ -6100,7 +6113,8 @@ typedef enum wl_stamon_cfg_cmd_type {
 	STAMON_CFG_CMD_DEL = 0,
 	STAMON_CFG_CMD_ADD = 1,
 	STAMON_CFG_CMD_ENB = 2,
-	STAMON_CFG_CMD_DSB = 3
+	STAMON_CFG_CMD_DSB = 3,
+	STAMON_CFG_CMD_GET_STATS =4
 } wl_stamon_cfg_cmd_type_t;
 
 typedef struct wlc_stamon_sta_config {

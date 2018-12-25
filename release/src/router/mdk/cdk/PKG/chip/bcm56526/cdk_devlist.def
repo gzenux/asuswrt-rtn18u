@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56526_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56526, BCM56526_VENDOR_ID, BCM56526_DEVICE_ID, BCM56526_REV_A0, \
+                  0, 0, \
+                  bcm56634_a0, bcm56526_a0, bcm56526_a0, \
+                  CDK_DEV_ARCH_XGS, "Apollo", "BCM56520", \
+                  "28-Port GbE Multilayer Switch with Six 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56526_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56526, BCM56526_VENDOR_ID, BCM56526_DEVICE_ID, BCM56526_REV_B0, \
+                  0, 0, \
+                  bcm56634_b0, bcm56526_b0, bcm56526_b0, \
+                  CDK_DEV_ARCH_XGS, "Apollo", "BCM56520", \
+                  "28-Port GbE Multilayer Switch with Six 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+

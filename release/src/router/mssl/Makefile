@@ -16,7 +16,11 @@ all: libmssl.so libmssl.a
 
 libmssl.so: $(OBJ)
 ifeq ($(RTCONFIG_BCMARM),y)
+ifeq ($(HND_ROUTER),y)
+	$(CC) -shared -o $@ $^ $(LIBS)
+else
 	$(LD) $(LIBS) -shared -o $@ $^
+endif
 else
 	$(CC) -shared -o $@ $^ $(LIBS)
 endif

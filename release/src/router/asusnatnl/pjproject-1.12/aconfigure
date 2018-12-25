@@ -706,6 +706,8 @@ ac_no_g7221_codec
 ac_no_speex_codec
 ac_no_ilbc_codec
 ac_no_ssl
+ac_no_sctp
+ac_no_umem
 openssl_h_present
 libssl_present
 libcrypto_present
@@ -11931,6 +11933,40 @@ echo "${ECHO_T}Skipping libsamplerate detection" >&6; }
 fi
 
 
+# Check whether --disable-sctp was given.
+if test "${enable_sctp+set}" = set; then
+  enableval=$enable_sctp;
+    if test "$enable_sctp" = "no"; then
+     ac_no_sctp=1
+     { echo "$as_me:$LINENO: result: Checking if SCTP support is disabled... yes" >&5
+echo "${ECHO_T}Checking if SCTP support is disabled... yes" >&6; }
+          fi
+
+else
+
+    { echo "$as_me:$LINENO: result: checking for SCTP installations.." >&5
+echo "${ECHO_T}checking for SCTP installations.." >&6; }
+fi
+
+
+
+
+# Check whether --disable-umem was given.
+if test "${enable_umem+set}" = set; then
+  enableval=$enable_umem;
+    if test "$enable_umem" = "no"; then
+     ac_no_umem=1
+     { echo "$as_me:$LINENO: result: Checking if UMEM support is disabled... yes" >&5
+echo "${ECHO_T}Checking if UMEM support is disabled... yes" >&6; }
+          fi
+
+else
+
+    { echo "$as_me:$LINENO: result: checking for UMEM installations.." >&5
+echo "${ECHO_T}checking for UMEM installations.." >&6; }
+fi
+
+
 
 # Check whether --enable-ipp was given.
 if test "${enable_ipp+set}" = set; then
@@ -13674,12 +13710,14 @@ ac_no_g7221_codec!$ac_no_g7221_codec$ac_delim
 ac_no_speex_codec!$ac_no_speex_codec$ac_delim
 ac_no_ilbc_codec!$ac_no_ilbc_codec$ac_delim
 ac_no_ssl!$ac_no_ssl$ac_delim
+ac_no_sctp!$ac_no_sctp$ac_delim
+ac_no_umem!$ac_no_umem$ac_delim
 openssl_h_present!$openssl_h_present$ac_delim
 libssl_present!$libssl_present$ac_delim
 libcrypto_present!$libcrypto_present$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 99; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

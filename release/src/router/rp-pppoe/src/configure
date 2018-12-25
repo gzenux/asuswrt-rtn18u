@@ -3679,6 +3679,8 @@ do :
 #include<net/ethernet.h>
 #include<linux/if.h>
 #include<linux/in.h>
+/* realtek */
+#include<linux/in6.h>
 
 "
 if test "x$ac_cv_header_linux_if_pppox_h" = x""yes; then :

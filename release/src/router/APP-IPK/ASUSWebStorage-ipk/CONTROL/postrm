@@ -8,8 +8,8 @@ APPS_INSTALL_PATH=$APPS_MOUNTED_PATH/$APPS_INSTALL_FOLDER
 #rm progress
 rm -rf $APPS_INSTALL_PATH/bin/asuswebstorage
 #rm libs
-rm -rf $APPS_INSTALL_PATH/lib/libssl.so.0.9.8
-rm -rf $APPS_INSTALL_PATH/lib/libcrypto.so.0.9.8
+#rm -rf $APPS_INSTALL_PATH/lib/libssl.so.0.9.8
+#rm -rf $APPS_INSTALL_PATH/lib/libcrypto.so.0.9.8
 #rm ui
 #rm -rf $APPS_INSTALL_PATH/etc/downloadmaster/cloudui
 #rm -rf $APPS_INSTALL_PATH/etc/www/cloudui

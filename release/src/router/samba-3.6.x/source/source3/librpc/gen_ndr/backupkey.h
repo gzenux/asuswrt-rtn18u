@@ -25,14 +25,14 @@ struct bkrp_exported_RSA_key_pair {
 	uint32_t magic3;/* [value(0x32415352)] */
 	uint32_t magic4;/* [value(0x00000800)] */
 	DATA_BLOB public_exponent;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(4)] */
-	DATA_BLOB modulus;/* [subcontext_size(256),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB prime1;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(128)] */
-	DATA_BLOB prime2;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(128)] */
-	DATA_BLOB exponent1;/* [subcontext(0),subcontext_size(128),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB exponent2;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(128)] */
-	DATA_BLOB coefficient;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB modulus;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(256)] */
+	DATA_BLOB prime1;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB prime2;/* [subcontext_size(128),flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
+	DATA_BLOB exponent1;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(128)] */
+	DATA_BLOB exponent2;/* [subcontext_size(128),flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
+	DATA_BLOB coefficient;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(128)] */
 	DATA_BLOB private_exponent;/* [subcontext_size(256),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB cert;/* [flag(LIBNDR_FLAG_REMAINING),subcontext_size(certificate_len),subcontext(0)] */
+	DATA_BLOB cert;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(certificate_len)] */
 };
 
 struct bkrp_dc_serverwrap_key {
@@ -51,7 +51,7 @@ struct bkrp_client_side_wrapped {
 
 struct bkrp_client_side_unwrapped {
 	uint32_t magic;/* [value(0x00000000)] */
-	DATA_BLOB secret;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
+	DATA_BLOB secret;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
 };
 
 struct bkrp_encrypted_secret_v2 {
@@ -110,7 +110,7 @@ union bkrp_data_in_blob {
 struct bkrp_BackupKey {
 	struct {
 		struct GUID *guidActionAgent;/* [ref] */
-		uint8_t *data_in;/* [size_is(data_in_len),ref] */
+		uint8_t *data_in;/* [ref,size_is(data_in_len)] */
 		uint32_t data_in_len;
 		uint32_t param;
 	} in;

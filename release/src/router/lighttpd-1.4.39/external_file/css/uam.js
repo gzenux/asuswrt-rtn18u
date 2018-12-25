@@ -81,6 +81,7 @@ $("document").ready(function() {
 		}
 	}
 	else if (res == "failed") {
+		alert("The account and password you entered don't match.");
 		document.getElementById('chal').value = challenge;
 		document.getElementById('uamip').value = uamip;
 		document.getElementById('uamport').value = uamport;
@@ -103,9 +104,30 @@ function formSubmit(auth)
 	param.uamip = document.getElementById('uamip').value;
 	param.uamport = document.getElementById('uamport').value;
 	param.userurl = document.getElementById('userurl').value;
-	if (auth == 1) {
-		param.UserName = document.getElementById('UserName').value;
-		param.Password = document.getElementById('Password').value;
+	switch(auth) {
+		case 0 :
+			break;
+		case 1 : //captive portal
+			document.getElementById('UserName').value = document.getElementById('splash_page_account').value;
+			if(document.getElementById('splash_page_password') == null)
+				document.getElementById('Password').value = "noauth";
+			else
+				document.getElementById('Password').value = document.getElementById('splash_page_password').value;
+
+			param.UserName = document.getElementById('UserName').value;
+			param.Password = document.getElementById('Password').value;
+			break;
+		case 2 : //free wifi passcode
+			document.getElementById('UserName').value = "noauth";
+
+			if(document.getElementById('splash_template_passcode') == null)
+				document.getElementById('Password').value = "noauth";
+			else
+				document.getElementById('Password').value = document.getElementById('splash_template_passcode').value;
+
+			param.UserName = document.getElementById('UserName').value;
+			param.Password = document.getElementById('Password').value;
+			break;
 	}
 	param.login = "login";
 

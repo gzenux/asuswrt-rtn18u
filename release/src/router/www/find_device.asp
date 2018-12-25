@@ -141,7 +141,6 @@
 <script>
 var rescan = 0;
 
-
 var DEVICE_TYPE = ["", "<#Device_type_01_PC#>", "<#Device_type_02_RT#>", "<#Device_type_03_AP#>", "<#Device_type_04_NS#>", "<#Device_type_05_IC#>", "<#Device_type_06_OD#>", "Printer", "TV Game Console"];
 
 var thisDevice;
@@ -376,7 +375,7 @@ function showclient_list(list){
 	document.getElementById("client_list_Block").style.display = "none";
 
 	if(direct_dut == 1)
-  		location.href = "index.asp";
+  		location.href = '<% abs_index_page(); %>';
 
 	if(document.getElementById('client_list_table').innerHTML == "<tbody></tbody>"){
 		code ='<tr><td style="color:#FFCC00;" colspan="4"><#IPConnection_VSList_Norule#></td></tr>'

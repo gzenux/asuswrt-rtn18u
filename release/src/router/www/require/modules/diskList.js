@@ -2,6 +2,9 @@
 	var diskList = {
 		list: function(){
 			var usb_port_storage_status = [<% usb_port_stor_act(); %>][0];
+			//workaround for hook is empty.
+			if(usb_port_storage_status == undefined)
+				usb_port_storage_status = [];
 			<% available_disk_names_and_sizes(); %>
 			<% disk_pool_mapping_info(); %>
 			<% get_printer_info(); %>

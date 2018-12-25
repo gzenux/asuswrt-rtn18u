@@ -22,7 +22,11 @@ LDFLAGS += -L.
 
 vpath %.c $(SRCBASE)/bcmcrypto
 ifeq ($(RTCONFIG_BCMARM),y)
+ifeq ($(HND_ROUTER),y)
+vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.hnd
+else
 vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.arm
+endif
 else ifeq ($(RTCONFIG_RALINK),y)
 vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.mipsel
 else ifeq ($(RTCONFIG_QCA_ARM),y)
@@ -33,6 +37,10 @@ vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.qca.ipq806x
 else
 vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.qca
 endif
+else ifeq ($(RTCONFIG_ALPINE),y)
+vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.alpine
+else ifeq ($(RTCONFIG_LANTIQ),y)
+vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.lantiq
 else
 vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.mipsel
 endif

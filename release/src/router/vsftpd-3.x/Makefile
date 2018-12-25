@@ -32,7 +32,10 @@ CFLAGS	+=	-I$(OPENSSLINC)
 endif
 
 CFLAGS  += 	-I$(SRCBASE)/include -I$(TOP)/shared -I$(TOP)/libdisk
-LDFLAGS  +=	-L$(TOP)/nvram${BCMEX} -lnvram -L$(TOP)/shared -lshared -L$(TOP)/libdisk -ldisk
+LDFLAGS  +=	-L$(TOP)/nvram${BCMEX}${EX7} -lnvram -L$(TOP)/shared -lshared -L$(TOP)/libdisk -ldisk
+ifeq ($(RTCONFIG_HND_ROUTER),y)
+LDFLAGS += -L$(TOP)/wlcsm -lwlcsm
+endif
 ifeq ($(RTCONFIG_BCMARM),y)
 CFLAGS += -I$(SRCBASE)/common/include
 LDFLAGS += -lgcc_s
@@ -40,6 +43,21 @@ endif
 
 ifeq ($(RTCONFIG_QTN),y)
 LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
+
+ifeq ($(RTCONFIG_PERMISSION_MANAGEMENT),y)
+ifeq ($(RTCONFIG_QCA),y)
+LDFLAGS += -lpthread -ldl
+endif
+CFLAGS += -I$(TOP)/sqlCipher
+CFLAGS += -I$(TOP)/PMS_DBapis
+LDFLAGS += -L$(TOP)/openssl -lcrypto
+LDFLAGS += -L$(TOP)/sqlCipher/.libs -lsqlcipher
+LDFLAGS += -L$(TOP)/PMS_DBapis -lpms_sql
 endif
 
 OBJS	=	main.o utility.o prelogin.o ftpcmdio.o postlogin.o privsock.o \

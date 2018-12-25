@@ -110,7 +110,8 @@ extern "C" {
 
 	int msg_send_msg(pjmedia_transport *tp, uint16_t client_id, uint32_t pkt_id,
 		uint8_t type, char *data, int data_len, uint8_t proto,
-		uint8_t qos_priority, uint8_t disable_flow_control, uint16_t speed_limit);
+		uint8_t qos_priority, uint8_t disable_flow_control, uint16_t speed_limit,
+		int sleep_while_sent);
 	int msg_send_hello(pjmedia_transport *tp, char *host, char *port, uint16_t req_id, uint8_t sock_type,
 		uint8_t qos_priority, uint8_t disable_flow_control, uint16_t speed_limit);
 
@@ -131,7 +132,7 @@ extern "C" {
 		hdr->proto = proto;
 		hdr->qos_priority = qos_priority;
 		hdr->disable_flow_control = disable_flow_control;
-		hdr->speed_limit = speed_limit;
+		hdr->speed_limit = htons(speed_limit);
 		memset(hdr->reserved, 0, sizeof(hdr->reserved));
 	}
 
@@ -172,7 +173,7 @@ extern "C" {
 
 	static _inline_ uint16_t msg_get_speed_limit(msg_hdr_t *h)
 	{
-		return h->speed_limit;
+		return ntohs(h->speed_limit);
 	}
 
 #ifdef __cplusplus

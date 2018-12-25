@@ -44,8 +44,8 @@ static void xhci_hub_descriptor(struct xhci_hcd *xhci,
 	desc->bDescLength = 7 + 2 * temp;
 
 	/* Why does core/hcd.h define bitmap?  It's just confusing. */
-	memset(&desc->DeviceRemovable[0], 0, temp);
-	memset(&desc->DeviceRemovable[temp], 0xff, temp);
+	memset(&desc->u.hs.DeviceRemovable[0], 0, temp);
+	memset(&desc->u.hs.DeviceRemovable[temp], 0xff, temp);
 
 	/* Using table 11-13 in USB 2.0 spec. */
 	temp = 0;

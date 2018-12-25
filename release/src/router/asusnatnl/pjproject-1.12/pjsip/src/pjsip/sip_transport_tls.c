@@ -1459,7 +1459,9 @@ static pj_bool_t on_connect_complete(pj_ssl_sock_t *ssock,
 	    switch (serv_cert->subj_alt_name.entry[i].type) {
 	    case PJ_SSL_CERT_NAME_DNS:
 	    case PJ_SSL_CERT_NAME_IP:
-		matched = !pj_stricmp(remote_name, cert_name);
+		// Dean, compare for partial matched.
+		//matched = !pj_stricmp(remote_name, cert_name);
+		matched = (pj_strstr(remote_name, cert_name) != NULL);
 		break;
 	    case PJ_SSL_CERT_NAME_URI:
 		if (pj_strnicmp2(cert_name, "sip:", 4) == 0 ||

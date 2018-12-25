@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56333_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56333, BCM56333_VENDOR_ID, BCM56333_DEVICE_ID, BCM56333_REV_A0, \
+                  0, 0, \
+                  bcm56334_a0, bcm56333_a0, bcm56333_a0, \
+                  CDK_DEV_ARCH_XGS, "Enduro", "BCM56334", \
+                  "16-Port GbE Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56333_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56333, BCM56333_VENDOR_ID, BCM56333_DEVICE_ID, BCM56333_REV_B0, \
+                  0, 0, \
+                  bcm56334_b0, bcm56333_b0, bcm56333_b0, \
+                  CDK_DEV_ARCH_XGS, "Enduro", "BCM56334", \
+                  "16-Port GbE Multilayer Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56333_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56333, BCM56333_VENDOR_ID, BCM56333_DEVICE_ID, BCM56333_REV_B1, \
+                  0, 0, \
+                  bcm56334_b0, bcm56333_b0, bcm56333_b1, \
+                  CDK_DEV_ARCH_XGS, "Enduro", "BCM56334", \
+                  "16-Port GbE Multilayer Switch", 0, 0)
+#endif
+#endif
+

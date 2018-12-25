@@ -1,0 +1,30 @@
+#if CDK_CONFIG_INCLUDE_BCM56644_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56644, BCM56644_VENDOR_ID, BCM56644_DEVICE_ID, BCM56644_REV_A0, \
+                  0, 0, \
+                  bcm56640_a0, bcm56644_a0, bcm56644_a0, \
+                  CDK_DEV_ARCH_XGSM, "Triumph3", "BCM56640", \
+                  "Extensible 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56644_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56644, BCM56644_VENDOR_ID, BCM56644_DEVICE_ID, BCM56644_REV_A1, \
+                  0, 0, \
+                  bcm56640_a0, bcm56644_a0, bcm56644_a1, \
+                  CDK_DEV_ARCH_XGSM, "Triumph3", "BCM56640", \
+                  "Extensible 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56644_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56644, BCM56644_VENDOR_ID, BCM56644_DEVICE_ID, BCM56644_REV_B0, \
+                  0, 0, \
+                  bcm56640_b0, bcm56644_b0, bcm56644_b0, \
+                  CDK_DEV_ARCH_XGSM, "Triumph3", "BCM56640", \
+                  "Extensible 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+

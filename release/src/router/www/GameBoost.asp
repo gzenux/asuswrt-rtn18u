@@ -100,6 +100,10 @@ function initial(){
 }
 function check_game_boost(){
 	if(document.getElementById("game_boost_enable").checked){
+		if(!reset_wan_to_fo(document.form, 1)) {
+			document.getElementById("game_boost_enable").checked = false;
+			return false;
+		}
 		document.form.qos_enable.value = '1';
 		document.form.qos_type.value = '1';
 		document.form.bwdpi_app_rulelist.disabled = false;
@@ -161,7 +165,7 @@ function check_game_boost(){
 				<div id="tabMenu" style="*margin-top: -160px;"></div>
 				<br>
 		<!--=====Beginning of Main Content=====-->
-				<div id="applist_table" style="background:url('images/New_ui/mainimage_img_Game.jpg');background-repeat: no-repeat;border-radius:3px;">
+				<div id="FormTitle" style="background:url('images/New_ui/mainimage_img_Game.jpg');background-repeat: no-repeat;margin-top:-15px;border-radius:3px;">
 					<table style="padding-left:10px;">
 						<tr>
 							<td class="formfonttitle">

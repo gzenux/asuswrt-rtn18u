@@ -44,7 +44,7 @@ else if(support_site_modelid == "DSL-N55U-B"){	//MODELDEP : DSL-N55U-B
 else if(support_site_modelid == "RT-AC68R"){	//MODELDEP : RT-AC68R
 	real_model_name = "RT-AC68R";
 }
-else if(support_site_modelid == "RT-AC66U_B1"){    //MODELDEP : RT-AC66U B1
+else if(support_site_modelid == "RT-AC66U_B1" || support_site_modelid == "RT-AC1750_B1"){     //MODELDEP : RT-AC66U B1
         real_model_name = "RT-AC66U-B1";
 }
 else if(support_site_modelid == "RT-N66U_C1"){	//MODELDEP : RT-N66U_C1
@@ -54,4 +54,3 @@ else if(support_site_modelid == "RT-N66U_C1"){	//MODELDEP : RT-N66U_C1
 return real_model_name;
 }	
 
-	

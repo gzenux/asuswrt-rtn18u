@@ -1,0 +1,87 @@
+# Copyright (c) 2011, 2015 Qualcomm Atheros, Inc.
+# All Rights Reserved.
+# Qualcomm Atheros Confidential and Proprietary.
+#
+CFLAGS+=-I$(TOP)/qca-mcs-apps.ipq40xx/include -I$(TOP)/qca-libhyficommon.ipq40xx -I$(TOP)/qca-ssdk-shell.ipq40xx/source/include -I$(TOP)/qca-mcs-apps.ipq40xx/core -I$(TOP)/qca-mcs-apps.ipq40xx/managers/wlanManager -I$(TOP)/qca-mcs-apps.ipq40xx/managers/mcManager -I$(TOP)/qca-mcs-apps.ipq40xx/services/dbgService
+LDFLAGS+=-L$(TOP)/qca-libhyficommon.ipq40xx -lhyficommon -L$(TOP)/qca-mcs-apps.ipq40xx/plugins/manager -L$(TOP)/qca-mcs-apps.ipq40xx/plugins/mcfwdtbl-wlan5g -L$(TOP)/qca-mcs-apps.ipq40xx/plugins/mcfwdtbl-wlan2g -L$(TOP)/qca-mcs-apps.ipq40xx/plugins/mcfwdtbl-eswitch -L$(TOP)/qca-mcs-apps.ipq40xx/managers/wlanManager -L$(TOP)/qca-mcs-apps.ipq40xx/managers/mcManager -L$(TOP)/qca-mcs-apps.ipq40xx/core -L$(TOP)/qca-mcs-apps.ipq40xx/services/dbgService -L$(LIBDIR) -ldl
+
+INSTALL_ROOT = $(TOP)/qca-mcs-apps.ipq40xx
+ATHDIR = $(TOP)/qca-wifi
+KERNELPATH = $(TOP)/qca-wifi/os/linux
+
+# MCS_MODULE_WLAN -- if we should enable WLAN module
+ifndef MCS_MODULE_WLAN
+export MCS_MODULE_WLAN=y
+endif
+
+# MCS_MODULE_PLC -- if we should enable PLC module
+#ifndef MCS_MODULE_PLC
+#export MCS_MODULE_PLC=y
+#endif
+
+
+# MCS_DBG_MENU -- if we should enable debug menu
+ifndef MCS_DBG_MENU
+export MCS_DBG_MENU=y
+endif
+
+# MCS_MODULE_DBG -- if we should enable DBG module
+ifndef MCS_MODULE_DBG
+export MCS_MODULE_DBG=y
+endif
+
+ifeq ($(MCS_MODULE_WLAN),y)
+CFLAGS += -DMCS_MODULE_WLAN
+endif
+
+ifeq ($(MCS_MODULE_PLC),y)
+CFLAGS += -DMCS_MODULE_PLC
+endif
+
+ifeq ($(MCS_MODULE_ETH),y)
+CFLAGS += -DMCS_MODULE_ETH
+endif
+
+ifeq ($(MCS_DBG_MENU),y)
+CFLAGS += -DMCS_DBG_MENU
+endif
+
+ifeq ($(MCS_MODULE_DBG),y)
+CFLAGS += -DMCS_MODULE_DBG
+endif
+
+CFLAGS += -D_BYTE_ORDER=_BIG_ENDIAN
+CFLAGS += -DATH_SUPPORT_LINKDIAG_EXT=1
+CFLAGS += -DATH_SUPPORT_HYFI_ENHANCEMENTS=1
+CFLAGS += -DUMAC_SUPPORT_HMWDS -DBOARD_TYPE=$(BOARD_TYPE) -DUMAC_SUPPORT_WDS
+
+# Generate each function and global in a separate section
+# This allows the linker to remove unused functions.
+CFLAGS += -ffunction-sections -fdata-sections
+LIBS += -lhyficommon
+
+MCSTOP = $(TOP)/qca-mcs-apps.ipq40xx
+MCS_INSTALL_ROOT := $(MCSTOP)/install
+MCSINCLUDE ?= $(MCS_INSTALL_ROOT)/include
+vpath %.h . $(MCSINCLUDE)
+MCSLIB ?= $(MCS_INSTALL_ROOT)/lib
+MCSLIB_STATIC ?= $(MCSLIB)
+vpath %.a . $(MCSLIB_STATIC)
+
+
+LDFLAGS += -L$(GWLIB) -L$(MCSLIB_STATIC) -L$(MCSTOP)/managers/plcManager
+CFLAGS += -I .\
+          -I $(ATHDIR) -I $(ATHDIR)/include -I $(ATHDIR)/include/sys \
+          -I $(ATHDIR)/os/linux/include -I $(ATHDIR)/lmac/ath_dev \
+          -I $(KERNELPATH)/include \
+          -I $(MCSTOP)/src \
+          -I $(MCSTOP)/managers/wlanManager \
+          -I $(MCSTOP)/managers/plcManager \
+          -I $(KMCDIR) \
+          -I $(QCASSDKDIR)
+
+
+# Generate dependencies and symbols
+CFLAGS += -MMD -g
+-include $(wildcard *.d)
+

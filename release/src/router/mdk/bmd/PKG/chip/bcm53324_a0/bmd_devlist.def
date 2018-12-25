@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM53324_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM53324_A0
+BMD_DEVLIST_ENTRY(BCM53324, BCM53324_VENDOR_ID, BCM53324_DEVICE_ID, BCM53324_REV_A0, \
+                  0, 0, \
+                  bcm53324_a0, bcm53324_a0, bcm53324_a0, \
+                  CDK_DEV_ARCH_XGS, "Hawkeye EEE", "BCM53324", \
+                  "24-Port GbE Highly-Integrated Multilayer Switch", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm53324_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

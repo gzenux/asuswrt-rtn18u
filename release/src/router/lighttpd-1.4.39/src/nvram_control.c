@@ -37,6 +37,7 @@
 #define TIMEZONE "Timezone_Entry"
 #define FIREWALL "Firewall_Entry"
 #define WANDUCK	"Wanduck_Common"
+#define WAN_COMMON "Wan_Common"
 #define DDNS_ENANBLE_X	"Active"	// #define DDNS_ENANBLE_X	"ddns_enable_x"
 #define DDNS_SERVER_X	"SERVERNAME"	// #define DDNS_SERVER_X	"ddns_server_x"
 #define DDNS_HOST_NAME_X	"MYHOST"	// #define DDNS_HOST_NAME_X	"ddns_hostname_x"
@@ -148,7 +149,6 @@
 
 static const char base64_xlat[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-
 int base64_encode(const unsigned char *in, char *out, int inlen)
 {
         char *o;
@@ -179,8 +179,7 @@ int base64_encode(const unsigned char *in, char *out, int inlen)
         return out - o;
 }
 
-
-int base64_decode_t(const char *in, unsigned char *out, int inlen)
+int base64_decode(const char *in, unsigned char *out, int inlen)
 {
         char *p;
         int n;
@@ -268,39 +267,40 @@ int f_write(const char *path, const void *buffer, int len, unsigned flags, unsig
 
 int f_read(const char *path, void *buffer, int max)
 {
-        int f;
-        int n;
+	int f;
+	int n;
 
-        if ((f = open(path, O_RDONLY)) < 0) return -1;
-        n = read(f, buffer, max);
-        close(f);
-        return n;
+    if ((f = open(path, O_RDONLY)) < 0) return -1;
+    n = read(f, buffer, max);
+    close(f);
+    return n;
 }
 
 static int _f_read_alloc(const char *path, char **buffer, int max, int z)
 {
-        unsigned long n;
+	unsigned long n;
 
-        *buffer = NULL;
-        if (max >= 0) {
-                if ((n = f_size(path)) != (unsigned long)-1) {
-                        if (n < max) max = n;
-                        if ((!z) && (max == 0)) return 0;
-                        if ((*buffer = malloc(max + z)) != NULL) {
-                                if ((max = f_read(path, *buffer, max)) >= 0) {
-                                        if (z) *(*buffer + max) = 0;
-                                        return max;
-                                }
-                                free(buffer);
-                        }
-                }
-        }
-        return -1;
+	*buffer = NULL;
+	if (max >= 0) {
+		if ((n = f_size(path)) != (unsigned long)-1) {
+			if (n < max) max = n;
+			if ((!z) && (max == 0)) return 0;
+			if ((*buffer = malloc(max + z)) != NULL) {
+				if ((max = f_read(path, *buffer, max)) >= 0) {
+					if (z) *(*buffer + max) = 0;
+					return max;
+				}
+				free(buffer);
+			}
+		}
+	}
+
+	return -1;
 }
 
 int f_read_alloc(const char *path, char **buffer, int max)
 {
-        return _f_read_alloc(path, buffer, max, 0);
+	return _f_read_alloc(path, buffer, max, 0);
 }
 
 char *get_productid(void)
@@ -415,7 +415,6 @@ char *nvram_get(char *name)
 #endif
 //char *nvram_get(char *name)
 {
-    fprintf(stderr,"name = %s\n",name);
 #if 0
 
     if(strcmp(name,"webdav_aidisk")==0 ||strcmp(name,"webdav_proxy")==0||strcmp(name,"webdav_smb_pc")==0
@@ -450,10 +449,10 @@ char *nvram_get(char *name)
     //value=(char *)malloc(256);
     //memset(value,'\0',sizeof(value));
     int file_size = f_size("/tmp/webDAV.conf");
-    char *tmp=(char *)malloc(sizeof(char)*(file_size+1));
+    char *tmp = (char *)malloc(sizeof(char)*(file_size+1));
     while(!feof(fp)){
-        memset(tmp,'\0',sizeof(tmp));
-        fgets(tmp,file_size+1,fp);
+        memset(tmp, '\0', sizeof(tmp));
+        fgets(tmp, file_size+1, fp);
         if(strncmp(tmp,name,strlen(name))==0)
         {
             if(tmp[strlen(tmp)-1] == 10)
@@ -612,7 +611,7 @@ int nvram_get_file(const char *key, const char *fname, int max)
         n = strlen(p);
         if (n <= max) {
                 if ((b = malloc(base64_decoded_len(n) + 128)) != NULL) {
-                        n = base64_decode_t(p, b, n);
+                        n = base64_decode(p, b, n);
                         if (n > 0) r = (f_write(fname, b, n, 0, 0644) == n);
                         free(b);
                 }
@@ -622,30 +621,30 @@ int nvram_get_file(const char *key, const char *fname, int max)
 
 int nvram_set_file(const char *key, const char *fname, int max)
 {
-        char *in;
-        char *out;
-        long len;
-        int n;
-        int r;
+	char *in;
+	char *out;
+	long len;
+	int n;
+	int r;
 
-        if ((len = f_size(fname)) > max) return 0;
-        max = (int)len;
-        r = 0;
-        if (f_read_alloc(fname, &in, max) == max) {
-                if ((out = malloc(base64_encoded_len(max) + 128)) != NULL) {
-                        n = base64_encode(in, out, max);
-                        out[n] = 0;
-                        nvram_set(key, out);
-                        free(out);
-                        r = 1;
-                }
-                free(in);
-        }
-        return r;
+	if ((len = f_size(fname)) > max) return 0;
+	max = (int)len;
+	r = 0;
+	if (f_read_alloc(fname, &in, max) == max) {
+		if ((out = malloc(base64_encoded_len(max) + 128)) != NULL) {
+			n = base64_encode(in, out, max);
+			out[n] = 0;
+			nvram_set(key, out);
+			free(out);
+			r = 1;
+		}
+		free(in);
+	}
+	return r;
 }
+
 void start_ssl()
 {
-    fprintf(stderr,"\nstart ssl\n");
     int ok;
     int save;
     int retry;
@@ -1388,12 +1387,62 @@ int nvram_wan_primary_ifunit(void)
 char* nvram_get_wan_ip(void)
 {
 #ifdef USE_TCAPI
-	static char wan_ip[16]= {0};
+	/*
+    static char wan_ip[16]= {0};
 	char prefix[32] = {0};
 	int unit = nvram_wan_primary_ifunit();
 	snprintf(prefix, sizeof(prefix), "wan%d_ipaddr", unit);
 	tcapi_get(WANDUCK, prefix, wan_ip);
 	return wan_ip;
+	*/
+
+    int unit = 0;
+	static char wan_ip[16]= {0};
+	char prefix[32] = {0};
+	static char wans_dualwan[16]= {0};
+	tcapi_get(DUALWAN, "wans_dualwan", wans_dualwan);
+
+	if(strstr(wans_dualwan, "none")){
+		unit = nvram_wan_primary_ifunit();
+		snprintf(prefix, sizeof(prefix), "wan%d_ipaddr", unit);
+		tcapi_get(WANDUCK, prefix, wan_ip);
+	}
+	else{
+		char * pch;
+		pch = strtok(wans_dualwan, " ");
+		while(pch!=NULL){
+			if(strncmp(pch, "lan", 3)==0){
+			   unit = 12;
+			   snprintf(prefix, sizeof(prefix), "wan%d_ipaddr", unit);
+			   tcapi_get(WANDUCK, prefix, wan_ip);																								}
+			else if(strncmp(pch, "usb", 3)==0){
+			   unit = 11;
+			   snprintf(prefix, sizeof(prefix), "wan%d_ipaddr", unit);
+			   tcapi_get(WANDUCK, prefix, wan_ip);																								}																													                else if(strncmp(pch, "wan", 3)==0){
+				unit = 10;
+				snprintf(prefix, sizeof(prefix), "wan%d_ipaddr", unit);																				tcapi_get(WANDUCK, prefix, wan_ip);																								}
+			else if(strncmp(pch, "dsl", 3)==0){
+				char dsl_mode[32] = {0};
+				tcapi_get(WAN_COMMON, "DSLMode", dsl_mode);
+				if(strncmp(dsl_mode, "VDSL", 4)==0){
+					unit = 8;
+				}																																	else
+					unit = 0;
+
+				snprintf(prefix, sizeof(prefix), "wan%d_ipaddr", unit);
+				tcapi_get(WANDUCK, prefix, wan_ip);
+			}
+
+			if((strcmp(wan_ip, "")!=0) && (strcmp(wan_ip, "0.0.0.0")!=0))
+				break;
+
+			//- Next
+			pch = strtok(NULL," ");
+		}
+	}
+
+	return wan_ip;
+
 #else
 	char *wan_ip;
 	char tmp[32], prefix[] = "wanXXXXXXXXXX_";
@@ -1589,11 +1638,11 @@ char* nvram_get_uamsecret(const char *str)
 #ifdef USE_TCAPI
         //Todo
 #else
-        if(!strncmp(str, nvram_get("chilli_net"), 11)){
-           return nvram_get("chilli_uamsecret");
-        }else{
-           return nvram_get("cp_uamsecret");
-        }
+    	if(!strncmp(str, nvram_get("chilli_net"), 11)){ 
+	   return nvram_get("chilli_uamsecret");
+	}else{
+	   return nvram_get("cp_uamsecret");
+	}
 #endif
 }
 #endif

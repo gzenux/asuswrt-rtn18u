@@ -1,0 +1,4 @@
+VERSION:2.8.0
+NAME:bcm53010_a0
+ARCH:robo
+DEPEND:

@@ -1,0 +1,20 @@
+#if CDK_CONFIG_INCLUDE_BCM56638_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56638, BCM56638_VENDOR_ID, BCM56638_DEVICE_ID, BCM56638_REV_A0, \
+                  0, 0, \
+                  bcm56634_a0, bcm56638_a0, bcm56638_a0, \
+                  CDK_DEV_ARCH_XGS, "Triumph2", "BCM56630", \
+                  "4-Port 10-GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56638_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56638, BCM56638_VENDOR_ID, BCM56638_DEVICE_ID, BCM56638_REV_B0, \
+                  0, 0, \
+                  bcm56634_b0, bcm56638_b0, bcm56638_b0, \
+                  CDK_DEV_ARCH_XGS, "Triumph2", "BCM56630", \
+                  "4-Port 10-GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+

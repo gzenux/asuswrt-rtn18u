@@ -472,12 +472,16 @@ EXPORT_SYMBOL(hyfi_ecm_is_port_on_hyfi_bridge);
 struct hyfi_net_bridge * hyfi_ecm_bridge_attached(const char *br_name)
 {
 	struct net_device *br_dev = NULL;
+	struct hyfi_net_bridge *hyfi_br = NULL;
 
 	br_dev = dev_get_by_name(&init_net, br_name);
-	if (br_dev)
-		return hyfi_bridge_get_by_dev(br_dev);
-	else
+	if (unlikely(!br_dev))
 		return NULL;
+
+	hyfi_br = hyfi_bridge_get_by_dev(br_dev);
+
+	dev_put(br_dev);
+	return hyfi_br;
 }
 
 EXPORT_SYMBOL(hyfi_ecm_bridge_attached);

@@ -3,20 +3,8 @@
 AM_CFLAGS        = ${regular_CFLAGS}
 AM_CPPFLAGS      = ${regular_CPPFLAGS} -I${top_builddir}/include -I${top_srcdir}/include ${kinclude_CPPFLAGS}
 
-lib_LTLIBRARIES       = libxtables.la
-libxtables_la_SOURCES = xtables.c xtoptions.c
-libxtables_la_LDFLAGS = -version-info ${libxtables_vcurrent}:0:${libxtables_vage}
-if ENABLE_SHARED
-libxtables_la_CFLAGS  = ${AM_CFLAGS}
-libxtables_la_LIBADD  = -ldl
-else
-libxtables_la_CFLAGS  = ${AM_CFLAGS} -DNO_SHARED_LIBS=1
-libxtables_la_LIBADD  =
-endif
-
 xtables_multi_SOURCES  = xtables-multi.c iptables-xml.c
 xtables_multi_CFLAGS   = ${AM_CFLAGS}
-xtables_multi_LDFLAGS  = -rdynamic
 xtables_multi_LDADD    = ../extensions/libext.a
 if ENABLE_STATIC
 xtables_multi_CFLAGS  += -DALL_INCLUSIVE
@@ -34,7 +22,7 @@ xtables_multi_CFLAGS  += -DENABLE_IPV6
 xtables_multi_LDADD   += ../libiptc/libip6tc.la ../extensions/libext6.a
 endif
 xtables_multi_SOURCES += xshared.c
-xtables_multi_LDADD   += libxtables.la -lm -ldl
+xtables_multi_LDADD   += ../libxtables/libxtables.la -lm -ldl
 
 sbin_PROGRAMS    = xtables-multi
 man_MANS         = iptables.8 iptables-restore.8 iptables-save.8 \
@@ -60,7 +48,7 @@ pkgconfig_DATA = xtables.pc
 
 # Using if..fi avoids an ugly "error (ignored)" message :)
 install-exec-hook:
-	-if test -z "${DESTDIR}"; then /sbin/ldconfig; fi;
+#	-if test -z "${DESTDIR}"; then /sbin/ldconfig; fi;
 	${INSTALL} -dm0755 "${DESTDIR}${bindir}";
 	for i in ${vx_bin_links}; do ${LN_S} -f "${sbindir}/xtables-multi" "${DESTDIR}${bindir}/$$i"; done;
 	for i in ${v4_sbin_links}; do ${LN_S} -f xtables-multi "${DESTDIR}${sbindir}/$$i"; done;

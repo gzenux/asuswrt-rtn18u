@@ -11,6 +11,10 @@
 #include <bcmnvram.h>
 #if defined(RTCONFIG_QCA)
 #include <mtd/mtd-user.h>
+#elif defined(RTCONFIG_ALPINE)
+#include <mtd/mtd-user.h>
+#elif defined(RTCONFIG_LANTIQ)
+#include <mtd/mtd-user.h>
 #elif defined(LINUX26)
 #include <linux/compiler.h>
 #include <mtd/mtd-user.h>
@@ -25,6 +29,10 @@
 #include "ralink.h"
 #elif defined(RTCONFIG_QCA)
 #include "qca.h"
+#elif defined(RTCONFIG_ALPINE)
+#include "alpine.h"
+#elif defined(RTCONFIG_LANTIQ)
+#include "lantiq.h"
 #else
 #error unknown platform
 #endif
@@ -320,7 +328,7 @@ int CalRead(const unsigned char *buf, int offset, int count)
 	/// TBD. MTDPartitionRead will fail...
 	return VVPartitionRead(CALDATA_MTD_NAME, buf, offset, count);
 }
-#endif	/* RTCONFIG_QCA && RTCONFIG_WIFI_QCA9557_QCA9882 */
+#endif	/* RTCONFIG_QCA && (RTCONFIG_WIFI_QCA9557_QCA9882 || RTCONFIG_QCA953X || RTCONFIG_QCA956X) */
 
 /**
  * Read data from Factory partition.
@@ -341,6 +349,9 @@ int FactoryRead(const unsigned char *buf, int offset, int count)
  */
 int linuxRead(const unsigned char *buf, int offset, int count)
 {
+#if defined(RTCONFIG_ALPINE) || defined(BLUECAVE)
+	return -1;
+#endif
 	return MTDPartitionRead(LINUX_MTD_NAME, buf, offset, count);
 }
 
@@ -511,6 +522,9 @@ int MTDPartitionWrite(const char *mtd_name, const unsigned char *buf, int offset
 	struct erase_info_user ei;
 	struct mtd_info info, *mi = &info;
 	int old_offset, old_count;
+#ifdef RTCONFIG_MTK_NAND
+	unsigned int erase_offset = 0;
+#endif
 
 	if (!mtd_name || *mtd_name == '\0' || !buf || offset < 0 || count <= 0 || get_mtd_info(mtd_name, mi) < 0)
 		return -1;
@@ -600,6 +614,18 @@ int MTDPartitionWrite(const char *mtd_name, const unsigned char *buf, int offset
 			break;
 		}
 		//erase
+#ifdef RTCONFIG_MTK_NAND
+		//erase mtd with mi->size
+		for (erase_offset = 0; erase_offset < mi->size; erase_offset += mi->erasesize) {
+			ei.start = erase_offset;
+			ei.length = mi->erasesize;
+			//fprintf(stderr, "%s: erase_offset(%x), erase_size(%x)\n", __func__, ei.start, ei.length);
+			if (ioctl(fd, MEMERASE, &ei) < 0) {
+				fprintf(stderr, "%s: failed to erase %s start 0x%x length 0x%x. errno %d (%s)\n",
+					__func__, mi->dev, ei.start, ei.length, errno, strerror(errno));
+			}
+		}
+#else
 		ei.start = o;
 		ei.length = mi->erasesize;
 		if (ioctl(fd, MEMERASE, &ei) < 0) {
@@ -608,6 +634,7 @@ int MTDPartitionWrite(const char *mtd_name, const unsigned char *buf, int offset
 			ret = -6;
 			break;
 		}
+#endif
 		//write
 		lseek(fd, o, SEEK_SET);
 #ifdef DEBUG

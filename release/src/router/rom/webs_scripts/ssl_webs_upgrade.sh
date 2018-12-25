@@ -16,12 +16,16 @@ update_url=`cat /tmp/update_url`
 
 # current firmware information
 firmware_path=`nvram get firmware_path`
-get_productid=`nvram get productid`
+productid=`nvram get productid`
+if [ "$productid" == "BLUECAVE" ]; then
+       rc rc_service stop_wrs_force
+fi
+
+get_productid=`echo $productid | sed s/+/plus/;`    #replace 'plus' to '+' for one time
 odmpid_support=`nvram get webs_state_odm`
 if [ "$odmpid_support" == "1" ]; then
 	get_productid=`nvram get odmpid`
 fi
-get_productid=`echo $get_productid | sed s/+/plus/;`	#replace 'plus' to '+' for one time
 
 if [ "$firmware_path" = "1" ]; then
 	firmware_file=`echo $get_productid`_`nvram get webs_state_info_beta`_un.zip
@@ -54,25 +58,25 @@ urlpath=`nvram get webs_state_url`
 echo 3 > /proc/sys/vm/drop_caches
 if [ "$update_url" != "" ]; then
 	echo "---- wget fw nvram webs_state_url ----" > /tmp/webs_upgrade.log
-	wget $wget_options ${update_url}/$firmware_file -O $firmware_path
+	wget -t 2 -T $wget_timeout --no-check-certificate --output-file=/tmp/fwget_log ${update_url}/$firmware_file -O $firmware_path
 	if [ "$rsa_enabled" != "" ]; then
 		wget $wget_options ${update_url}/$firmware_rsasign -O /tmp/rsasign.bin
 	fi
 elif [ "$forsq" == "1" ]; then
 	echo "---- wget fw sq ----" > /tmp/webs_upgrade.log
-	wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/$firmware_file -O $firmware_path
+	wget -t 2 -T $wget_timeout --no-check-certificate --output-file=/tmp/fwget_log https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/$firmware_file -O $firmware_path
 	if [ "$rsa_enabled" != "" ]; then
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/$firmware_rsasign -O /tmp/rsasign.bin
 	fi
 elif [ "$urlpath" == "" ]; then
 	echo "---- wget fw Real ----" > /tmp/webs_upgrade.log
-	wget $wget_options https://dlcdnets.asus.com/pub/ASUS/wireless/ASUSWRT/$firmware_file -O $firmware_path
+	wget -t 2 -T $wget_timeout --no-check-certificate --output-file=/tmp/fwget_log https://dlcdnets.asus.com/pub/ASUS/wireless/ASUSWRT/$firmware_file -O $firmware_path
 	if [ "$rsa_enabled" != "" ]; then
 		wget $wget_options https://dlcdnets.asus.com/pub/ASUS/wireless/ASUSWRT/$firmware_rsasign -O /tmp/rsasign.bin
 	fi
 else
 	echo "---- wget fw URL ----" > /tmp/webs_upgrade.log
-	wget $wget_options $urlpath/$firmware_file -O $firmware_path
+	wget -t 2 -T $wget_timeout --no-check-certificate --output-file=/tmp/fwget_log $urlpath/$firmware_file -O $firmware_path
 	if [ "$rsa_enabled" != "" ]; then
 		wget $wget_options $urlpath/$firmware_rsasign -O /tmp/rsasign.bin
 	fi
@@ -108,6 +112,9 @@ else
 	else
 		echo "---- fw check error ----" >> /tmp/webs_upgrade.log
 		nvram set webs_state_error=3	# wrong fw
+		if [ "$productid" == "BLUECAVE" ]; then
+			rc rc_service start_wrs
+		fi
 	fi
 fi
 

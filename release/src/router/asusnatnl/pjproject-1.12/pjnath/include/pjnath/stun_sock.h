@@ -213,6 +213,11 @@ typedef struct pj_stun_sock_info
      */
     pj_sockaddr	    aliases[PJ_ICE_ST_MAX_CAND];
 
+    /**
+     * Last error (if session was terminated because of error)
+     */
+    pj_status_t	    last_status;
+
 } pj_stun_sock_info;
 
 
@@ -479,6 +484,8 @@ PJ_DECL(pj_sockaddr*) pj_stun_sock_get_previous_local_addr(pj_stun_sock *stun_so
 PJ_DECL(void) pj_stun_sock_set_previous_local_addr(pj_stun_sock *stun_sock, pj_sockaddr* local_addr);
 
 PJ_DECL(int) pj_stun_sock_get_addr_family(pj_stun_sock *stun_sock);
+
+PJ_DECL(pj_status_t) pj_stun_sock_get_last_status(pj_stun_sock *stun_sock);
 /**
  * @}
  */

@@ -19,15 +19,19 @@
 
 include $(TOP)/.config
 
-CFLAGS += -I. -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/common/include -I$(LINUXDIR)/include -I$(TOP)/busybox-1.x
+CFLAGS += -I. -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/common/include -I$(LINUXDIR)/include -I$(TOP)/$(BUSYBOX_DIR)
 
-LDFLAGS += -L$(TOP)/nvram$(BCMEX) -L$(PLATFORMDIR)/install/nvram/usr/lib -lnvram
+LDFLAGS += -L$(TOP)/nvram$(BCMEX)$(EX7) -L$(PLATFORMDIR)/install/nvram/usr/lib -lnvram ${EXTRA_NV_LDFLAGS}
 LDFLAGS += -L$(TOP)/shared -L$(PLATFORMDIR)/install/shared/usr/lib -lshared
 LDFLAGS += -lgcc_s
 
 ifeq ($(RTCONFIG_QTN),y)
 CFLAGS += -I$(TOP)/libqcsapi_client -I$(TOP)/httpd -I./sysdeps/qtn
 LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
 endif
 
 OBJS := dhd_monitor.o

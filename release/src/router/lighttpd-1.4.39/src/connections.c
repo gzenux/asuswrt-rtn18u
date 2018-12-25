@@ -662,157 +662,8 @@ static int connection_handle_write(server *srv, connection *con) {
 
 static int parser_share_link(server *srv, connection *con){	
 	int result=0;
-	
-	if(strncmp(con->request.uri->ptr, "/ASUSHARE", 9)==0){
-		
-		char mac[20]="\0";		
-		char* decode_str=NULL;
-		int bExpired=0;
 
-	#if EMBEDDED_EANBLE
-		#ifdef APP_IPKG
-		char *router_mac=nvram_get_router_mac();
-      	sprintf(mac,"%s",router_mac);
-		free(router_mac);
-		#else
-		char *router_mac=nvram_get_router_mac();
-		strcpy(mac, (router_mac==NULL) ? "00:12:34:56:78:90" : router_mac);
-		#endif
-	#else
-		get_mac_address("eth0", &mac);					
-	#endif
-		
-		Cdbg(DBE, "mac=%s", mac);
-		
-		char* key = ldb_base64_encode(mac, strlen(mac));		
-		int y = strstr (con->request.uri->ptr+1, "/") - (con->request.uri->ptr);
-		
-		if(y<=9){
-			if(key){
-				free(key);
-				key=NULL;
-			}
-			return -1;
-		}
-		
-		buffer* filename = buffer_init();
-		buffer_copy_string_len(filename, con->request.uri->ptr+1+y, con->request.uri->used-2-y);
-		
-		buffer* substrencode = buffer_init();
-		buffer_copy_string_len(substrencode,con->request.uri->ptr+9,y-9);
-
-		decode_str = x123_decode(substrencode->ptr, key, &decode_str);		
-		Cdbg(DBE, "decode_str=%s", decode_str);
-
-		if(decode_str){
-			int x = strstr (decode_str,"?") - decode_str;
-
-			int param_len = strlen(decode_str) - x;
-			buffer* param = buffer_init();
-			buffer* user = buffer_init();
-			buffer* pass = buffer_init();
-			buffer* expire = buffer_init();
-			buffer_copy_string_len(param, decode_str + x + 1, param_len);
-			//Cdbg(DBE, "123param=[%s]", param->ptr);
-
-			char * pch;
-			pch = strtok(param->ptr, "&");
-			while(pch!=NULL){
-			
-				if(strncmp(pch, "auth=", 5)==0){
-
-					int len = strlen(pch)-5;				
-					char* temp = (char*)malloc(len+1);
-					memset(temp,'\0', len);				
-					strncpy(temp, pch+5, len);
-					temp[len]='\0';
-
-					buffer_copy_string( con->share_link_basic_auth, "Basic " );
-					buffer_append_string( con->share_link_basic_auth, temp );
-
-					if(temp){
-						free(temp);
-						temp=NULL;
-					}
-				}
-				else if(strncmp(pch, "expire=", 7)==0){
-					int len = strlen(pch)-7;				
-					char* temp2 = (char*)malloc(len+1);
-					memset(temp2,'\0', len);				
-					strncpy(temp2, pch+7, len);
-					temp2[len]='\0';
-					Cdbg(DBE, "expire(temp2) = %s", temp2);
-
-					unsigned long expire_time = atol(temp2);
-					time_t cur_time = time(NULL);
-					unsigned long cur_time2 = cur_time;
-					
-					//double offset = difftime((time_t)expire_time, cur_time);
-					unsigned long offset = expire_time - cur_time;
-					Cdbg(DBE, "expire_time=%lu, cur_time2=%lu, offset = %lu", expire_time, cur_time2, offset);
-					if( offset < 0.0 ){
-						buffer_reset(con->share_link_basic_auth);	
-						bExpired = 1;
-					}
-					
-					if(temp2){
-						free(temp2);
-						temp2=NULL;
-					}
-				}
-				
-				pch = strtok( NULL, "&" );
-			}
-
-			buffer_free(param);
-			buffer_free(user);
-			buffer_free(pass);
-			buffer_free(expire);
-			
-			buffer_copy_string( con->share_link_shortpath, "ASUSHARE");
-			buffer_append_string_buffer( con->share_link_shortpath, substrencode );
-			buffer_append_slash(con->share_link_shortpath);
-			
-			buffer_copy_string_len( con->share_link_realpath, decode_str, x );
-			buffer_append_slash(con->share_link_realpath);
-
-			buffer_urldecode_path(filename);
-			buffer_copy_buffer( con->share_link_filename, filename );
-
-			buffer_reset(con->request.uri);
-			buffer_copy_buffer(con->request.uri, con->share_link_realpath);
-			buffer_append_string_buffer(con->request.uri, filename);
-
-			con->share_link_type = 0;
-			
-			if(decode_str){
-				free(decode_str);
-				decode_str = NULL;
-			}
-		
-		}
-		
-		buffer_free(substrencode);		
-		buffer_free(filename);
-
-		if(key){
-			free(key);
-			key=NULL;
-		}
-
-		Cdbg(DBE, "con->share_link_basic_auth=%s", con->share_link_basic_auth->ptr);
-		Cdbg(DBE, "con->share_link_shortpath=%s", con->share_link_shortpath->ptr);
-		Cdbg(DBE, "con->share_link_realpath=%s", con->share_link_realpath->ptr);
-		Cdbg(DBE, "con->share_link_filename=%s", con->share_link_filename->ptr);
-		Cdbg(DBE, "con->request.uri=%s", con->request.uri->ptr);
-
-		if(bExpired==0)
-			result = 1;
-		else if(bExpired==1)
-			result = -1;
-		
-	}
-	else if(strncmp(con->request.uri->ptr, "/AICLOUD", 8)==0){
+	if(strncmp(con->request.uri->ptr, "/AICLOUD", 8)==0){
 		int is_illegal = 0;
 		int y = strstr (con->request.uri->ptr+1,"/") - (con->request.uri->ptr);
 		
@@ -927,7 +778,7 @@ static int redirect_mobile_share_link(server *srv, connection *con){
 	strcpy(file_ext, aa);
 	for (int i = 0; file_ext[i]; i++)
 		file_ext[i] = tolower(file_ext[i]);
-
+	
 	if( con->share_link_basic_auth->used &&
 		ds_userAgent && 
 		con->srv_socket->is_ssl &&
@@ -979,6 +830,8 @@ static int redirect_mobile_share_link(server *srv, connection *con){
 		con->file_finished = 1;
 		con->http_status = 200; 
 
+		open_close_streaming_port(srv, 1);
+		
 		return 1;
 	}
 	else if( con->share_link_basic_auth->used &&
@@ -1001,11 +854,26 @@ static int redirect_mobile_share_link(server *srv, connection *con){
 	#else
 		char* webdav_http_port = "8082";
 	#endif
-	
-		buffer_append_string_len(out, CONST_STR_LEN("<div id=\"http_port\" content=\""));				
+		
+		char* b = strstr(con->request.http_host->ptr, ":");
+		
+		buffer_append_string_len(out, CONST_STR_LEN("<div id=\"header_info\""));				
+		buffer_append_string_len(out, CONST_STR_LEN(" port=\""));
 		buffer_append_string(out, webdav_http_port);
-		buffer_append_string_len(out, CONST_STR_LEN("\"></div>\n"));
+		buffer_append_string_len(out, CONST_STR_LEN("\""));
+		buffer_append_string_len(out, CONST_STR_LEN(" host=\""));
 
+		if(b!=NULL)
+			buffer_append_string_len(out, con->request.http_host->ptr, b-con->request.http_host->ptr);
+		else
+			buffer_append_string_buffer(out, con->request.http_host);
+		
+		buffer_append_string_len(out, CONST_STR_LEN("\""));
+		buffer_append_string_len(out, CONST_STR_LEN(" path=\""));
+		buffer_append_string_buffer(out, con->request.orig_uri);
+		buffer_append_string_len(out, CONST_STR_LEN("\""));
+		buffer_append_string_len(out, CONST_STR_LEN("></div>\n"));
+		
 		chunkqueue_append_buffer(con->write_queue, out);
 		buffer_free(out);
 		
@@ -1022,6 +890,7 @@ static int redirect_mobile_share_link(server *srv, connection *con){
 #ifndef APP_IPKG
 		if( strncmp(file_ext, "mp3", 3) == 0 )
 			buffer_copy_string(html_file, "/usr/lighttpd/css/iaudio.html");
+			//buffer_copy_string(html_file, "/usr/lighttpd/css/ivideo.html");
 		else if( strncmp(file_ext, "mp4", 3) == 0 ||
 				 strncmp(file_ext, "m4v", 3) == 0 )
 			buffer_copy_string(html_file, "/usr/lighttpd/css/ivideo.html");
@@ -1046,7 +915,9 @@ static int redirect_mobile_share_link(server *srv, connection *con){
 			http_chunk_append_file(srv, con, html_file, 0, sce->st.st_size);
 			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
 			con->file_finished = 1;
-			con->http_status = 200; 				
+			con->http_status = 200;
+
+			open_close_streaming_port(srv, 1);
 		}
 		else{
 			con->file_finished = 1;
@@ -1092,8 +963,8 @@ static void check_available_temp_space(server *srv, connection *con){
 			char querycmd[100] = "\0";		
 			char disk_full_path[100] = "\0";
 			
-			sprintf(disk_full_path, "%s%s", disk_path, de->d_name);
-			sprintf(querycmd, "df|grep -i '%s'", disk_full_path);
+			snprintf(disk_full_path, sizeof(disk_full_path), "%s%s", disk_path, de->d_name);
+			snprintf(querycmd, sizeof(querycmd), "df|grep -i '%s'", disk_full_path);
 			
 			char mybuffer[BUFSIZ]="\0";
 			FILE* fp = popen( querycmd, "r");
@@ -1788,9 +1659,11 @@ connection *connection_accept(server *srv, server_socket *srv_socket) {
 		}
 #endif
 
-		if(!srv_socket->is_ssl){			
-			srv->last_no_ssl_connection_ts = srv->cur_ts;
-			//Cdbg(1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa srv->last_no_ssl_connection_ts=%d", srv->last_no_ssl_connection_ts);
+		if(srv_socket->is_ssl){
+			srv->last_ts_of_network_access_connection = srv->cur_ts;
+		}
+		else{
+			srv->last_ts_of_streaming_connection = srv->cur_ts;
 		}
 		
 		return con;
@@ -1852,12 +1725,12 @@ int connection_state_machine(server *srv, connection *con) {
 				break;
 			}
 			////////////////////////////////////////////////////////////////////////////////////////
-			
+#if 0	
 			if( redirect_mobile_share_link(srv, con) == 1 ){
 				connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);				
 				break;
 			}
-
+#endif
 			//- sungmin add
 			char buf[1024]; // cookie content
 		    char key[32] = "asus_token";   // <AuthName> key

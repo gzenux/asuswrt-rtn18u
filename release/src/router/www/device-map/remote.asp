@@ -12,7 +12,7 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script>
-if(parent.location.pathname.search("index") === -1) top.location.href = "../index.asp";
+if(parent.location.pathname.search("index") === -1) top.location.href = "../"+'<% networkmap_page(); %>';
 
 var remoteIP = '<% nvram_get("lan_gateway_now"); %>';
 remoteIP = (remoteIP == '')?'<% nvram_get("lan_gateway_now"); %>';

@@ -4,9 +4,19 @@
  *
  * Copyright (C) 2009 Bernhard Reutner-Fischer
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
  */
+
+//usage:#define beep_trivial_usage
+//usage:       "-f FREQ -l LEN -d DELAY -r COUNT -n"
+//usage:#define beep_full_usage "\n\n"
+//usage:       "	-f	Frequency in Hz"
+//usage:     "\n	-l	Length in ms"
+//usage:     "\n	-d	Delay in ms"
+//usage:     "\n	-r	Repetitions"
+//usage:     "\n	-n	Start new tone"
+
 #include "libbb.h"
 
 #include <linux/kd.h>
@@ -78,7 +88,7 @@ int beep_main(int argc, char **argv)
 			bb_show_usage();
 		}
 		while (rep) {
-//bb_info_msg("rep[%d] freq=%d, length=%d, delay=%d", rep, freq, length, delay);
+//bb_error_msg("rep[%d] freq=%d, length=%d, delay=%d", rep, freq, length, delay);
 			xioctl(speaker, KIOCSOUND, (void*)(uintptr_t)tickrate_div_freq);
 			usleep(1000 * length);
 			ioctl(speaker, KIOCSOUND, (void*)0);

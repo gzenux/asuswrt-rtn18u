@@ -113,11 +113,18 @@ OpenAndConfSSDPReceiveSocket(void)
 	memset(&sockname, 0, sizeof(struct sockaddr_in));
 	sockname.sin_family = AF_INET;
 	sockname.sin_port = htons(SSDP_PORT);
+#ifdef __linux__
 	/* NOTE: Binding a socket to a UDP multicast address means, that we just want
 	 * to receive datagramms send to this multicast address.
 	 * To specify the local nics we want to use we have to use setsockopt,
 	 * see AddMulticastMembership(...). */
 	sockname.sin_addr.s_addr = inet_addr(SSDP_MCAST_ADDR);
+#else
+	/* NOTE: Binding to SSDP_MCAST_ADDR on Darwin & *BSD causes NOTIFY replies are
+	 * sent from SSDP_MCAST_ADDR what forces some clients to ignore subsequent
+	 * unsolicited NOTIFY packets from the real interface address. */
+	sockname.sin_addr.s_addr = htonl(INADDR_ANY);
+#endif
 
 	if (bind(s, (struct sockaddr *)&sockname, sizeof(struct sockaddr_in)) < 0)
 	{
@@ -136,12 +143,9 @@ OpenAndConfSSDPNotifySocket(struct lan_addr_s *iface)
 {
 	int s;
 	unsigned char loopchar = 0;
-	/* no need
-	int bcast = 1;
-	*/
 	uint8_t ttl = 2; /* UDA v1.1 says :
-		The TTL for the IP packet SHOULD default to 2 and
-		SHOULD be configurable. */
+			  * The TTL for the IP packet SHOULD default to 2 and
+			  * SHOULD be configurable. */
 	struct in_addr mc_if;
 	struct sockaddr_in sockname;
 	
@@ -169,15 +173,6 @@ OpenAndConfSSDPNotifySocket(struct lan_addr_s *iface)
 	}
 
 	setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
-
-	/* no need
-	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof(bcast)) < 0)
-	{
-		DPRINTF(E_ERROR, L_SSDP, "setsockopt(udp_notify, SO_BROADCAST): %s\n", strerror(errno));
-		close(s);
-		return -1;
-	}
-	*/
 
 	memset(&sockname, 0, sizeof(struct sockaddr_in));
 	sockname.sin_family = AF_INET;
@@ -224,12 +219,12 @@ _usleep(long usecs)
  * to a SSDP "M-SEARCH" */
 static void
 SendSSDPResponse(int s, struct sockaddr_in sockname, int st_no,
-                  const char *host, unsigned short port)
+		 const char *host, unsigned short port, socklen_t len_r)
 {
 	int l, n;
 	char buf[512];
 	char tmstr[30];
-	time_t tm = time(NULL);
+	time_t tm = uptime();
 
 	/*
 	 * follow guideline from document "UPnP Device Architecture 1.0"
@@ -261,9 +256,8 @@ SendSSDPResponse(int s, struct sockaddr_in sockname, int st_no,
 	DPRINTF(E_DEBUG, L_SSDP, "Sending M-SEARCH response to %s:%d ST: %s\n",
 		inet_ntoa(sockname.sin_addr), ntohs(sockname.sin_port),
 		known_service_types[st_no]);
- 
 	n = sendto(s, buf, l, 0,
-	           (struct sockaddr *)&sockname, sizeof(struct sockaddr_in) );
+	           (struct sockaddr *)&sockname, len_r);
 	if (n < 0)
 		DPRINTF(E_ERROR, L_SSDP, "sendto(udp): %s\n", strerror(errno));
 }
@@ -497,6 +491,7 @@ ProcessSSDPRequest(int s, unsigned short port)
 	int i;
 	char *st = NULL, *mx = NULL, *man = NULL, *mx_end = NULL;
 	int man_len = 0;
+	socklen_t len_r = sizeof(struct sockaddr_in);
 #ifdef __linux__
 	char cmbuf[CMSG_SPACE(sizeof(struct in_pktinfo))];
 	struct iovec iovec = {
@@ -514,10 +509,10 @@ ProcessSSDPRequest(int s, unsigned short port)
 
 	n = recvmsg(s, &mh, 0);
 #else
-	socklen_t len_r = sizeof(struct sockaddr_in);
 
 	n = recvfrom(s, bufr, sizeof(bufr)-1, 0,
 	             (struct sockaddr *)&sendername, &len_r);
+	len_r = MIN(len_r, sizeof(struct sockaddr_in));
 #endif
 	if (n < 0)
 	{
@@ -613,7 +608,6 @@ ProcessSSDPRequest(int s, unsigned short port)
 			{
 				st = bufr+i+3;
 				st_len = 0;
-
 				while (*st == ' ' || *st == '\t')
 					st++;
 				while (st[st_len]!='\r' && st[st_len]!='\n')
@@ -732,7 +726,7 @@ ProcessSSDPRequest(int s, unsigned short port)
 				}
 				_usleep(random()>>20);
 				SendSSDPResponse(s, sendername, i,
-						host, port);
+						 host, port, len_r);
 				return;
 			}
 			/* Responds to request with ST: ssdp:all */
@@ -743,7 +737,7 @@ ProcessSSDPRequest(int s, unsigned short port)
 				{
 					l = strlen(known_service_types[i]);
 					SendSSDPResponse(s, sendername, i,
-							host, port);
+							 host, port, len_r);
 				}
 			}
 		}

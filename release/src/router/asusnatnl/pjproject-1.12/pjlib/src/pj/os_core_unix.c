@@ -658,8 +658,10 @@ PJ_DEF(pj_status_t) pj_thread_create( pj_pool_t *pool,
 	rec->inst_id = pool->factory->inst_id;
     rc = pthread_create( &rec->thread, &thread_attr, &thread_main, rec);
     if (rc != 0) {
+        pthread_attr_destroy(&thread_attr);
 	return PJ_RETURN_OS_ERROR(rc);
     }
+    pthread_attr_destroy(&thread_attr);
 
     *ptr_thread = rec;
 

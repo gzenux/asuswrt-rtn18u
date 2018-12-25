@@ -47,12 +47,17 @@ static void copy_table_names()
 	strcpy(replace[2].name, "broute");
 }
 
+extern void get_global_mutex();
+extern void release_global_mutex();
+
 int main(int argc_, char *argv_[])
 {
 	char *argv[EBTD_ARGC_MAX], *args[4], name[] = "mkdir",
 	     mkdir_option[] = "-p", mkdir_dir[] = EBTD_PIPE_DIR,
 	     cmdline[EBTD_CMDLINE_MAXLN];
 	int readfd, base = 0, offset = 0, n = 0, ret = 0, quotemode = 0;
+
+	get_global_mutex();
 
 	/* Make sure the pipe directory exists */
 	args[0] = name;
@@ -369,6 +374,7 @@ write_msg:
 	}
 do_exit:
 	unlink(EBTD_PIPE);
-	
+	release_global_mutex();
+    
 	return 0;
 }

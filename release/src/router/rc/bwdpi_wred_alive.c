@@ -3,22 +3,19 @@
 */
 
 #include <rc.h>
-#include <bwdpi.h>
+#include <bwdpi_common.h>
 
 static void check_wred_alive()
 {
-	debug = nvram_get_int("bwdpi_debug");
-	if(debug) dbg("[bwdpi_wred_alive] check_wred_alive...\n");
-
 	int enabled = check_bwdpi_nvram_setting();
 
 	if(enabled){
-		if(debug) dbg("[bwdpi_wred_alive] start_wrs and start_data_colld...\n");
+		BWDPI_DBG("start_wrs and start_data_colld\n");
 		// start wrs
 		start_wrs();
 		// start data_colld
 		start_dc(NULL);
-		alarm(60);
+		alarm(120);
 	}
 }
 
@@ -27,7 +24,6 @@ static int sig_cur = -1;
 static void catch_sig(int sig)
 {
 	sig_cur = sig;
-	debug = nvram_get_int("bwdpi_debug");
 	
 	if (sig == SIGTERM)
 	{
@@ -36,16 +32,12 @@ static void catch_sig(int sig)
 	}
 	else if(sig == SIGALRM)
 	{
-		if(debug) dbg("[bwdpi_wred_alive] SIGALRM ...\n");
 		check_wred_alive();
 	}
 }
 
 int bwdpi_wred_alive_main(int argc, char **argv)
 {
-	debug = nvram_get_int("bwdpi_debug");
-	if(debug) dbg("[bwdpi_wred_alive] starting...\n");
-
 	FILE *fp;
 	sigset_t sigs_to_catch;
 
@@ -67,8 +59,7 @@ int bwdpi_wred_alive_main(int argc, char **argv)
 
 	while(1)
 	{
-		if(debug) dbg("[bwdpi_wred_alive] set alarm 60 secs and pause...\n");
-		alarm(60);
+		alarm(120);
 		pause();
 	}
 

@@ -15,8 +15,7 @@ var g_token = "";
 var g_uid = "";
 var g_api_key = "hBQrdHdHClXylEI6by40DTMVA";
 var g_api_secret = "2PlfH4Bx9XVZTYjOz3hoeqAY31aPUx916hU0R4gu0D0uCZ4Y4L";
-var server_url = "https://oauth.asus.com/aicloud/twitter/";
-//var server_url = "https://www.efroip.com/ischool/auth/twitter/";
+var g_server_url = "https://oauth.asus.com/aicloud/twitter/";
 var ajax_dataType = "json";
 var g_photo_size_limit = 0;
 var g_uploadfile_url_array = new Array();
@@ -85,7 +84,7 @@ $(document).ready(function(){
 		var is_dir = param[1];
 		var this_filename = decodeURIComponent( uploadfile_url.substr( uploadfile_url.lastIndexOf("/") + 1, uploadfile_url.length-1 ) );
 		var filext = getFileExt(uploadfile_url);
-		var icon_url = server_url + "images/";
+		var icon_url = g_server_url + "images/";
 		
 		upload_html += '<table class="x-table ' +　className + '" width="100%" height="100%" style="display: table;border-collapse: separate;border-spacing: 2px;border-color: gray;">';
         upload_html += '<tr>';
@@ -173,14 +172,10 @@ $(document).ready(function(){
 });
 
 function twitter_login(){
-	
 	var callback_function = "onTwitterLogin";
-	
-	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
-	var redirect_url = window.location.href.slice(0,b) + "/smb/css/service/callback.html";
-	
-	//var url = server_url + "twitter_authorize.html?action=login&callback="+callback_function+"&redirect_uri=" + encodeURIComponent(redirect_url);
-	var url = server_url + "twitter_utils.php?action=login&callback="+callback_function+"&redirect_uri=" + encodeURIComponent(redirect_url);
+	var host_url = g_storage.get('request_host_url');
+	var redirect_url = host_url + "/smb/css/service/callback.html";	
+	var url = g_server_url + "twitter_utils.php?action=login&callback="+callback_function+"&redirect_uri=" + encodeURIComponent(redirect_url);
 	window.open(url);
 }
 
@@ -207,7 +202,7 @@ function twitter_get_userprofile(){
 	sParameter = "action=getuser&token=" + token + "&secret=" + token_secret;
 	
 	$.ajax({
-		url: server_url + "twitter_utils.php",
+		url: g_server_url + "twitter_utils.php",
         type: 'GET',
         dataType: 'jsonp',
         data: sParameter,
@@ -288,7 +283,7 @@ function twitter_upload_photo(){
 	//alert(sParameter);
 	
 	$.ajax({
-		url: server_url + "twitter_utils.php",
+		url: g_server_url + "twitter_utils.php",
         type: 'GET',
         dataType: 'jsonp',
         data: sParameter,
@@ -330,10 +325,10 @@ function twitter_upload_photo(){
 					return;
 							
 				var uploadfile_obj = g_uploadfile_item.get(0);
-						
+				
 				if(uploadfile_obj==null)
 					return;
-						
+					
 				var url = uploadfile_obj.url;
 				var filename = myencodeURI(uploadfile_obj.filename);
 				var title = myencodeURI($("textarea." + uploadfile_obj.textAreaClassName).val());
@@ -399,7 +394,8 @@ function doCancel(e) {
             	<div class=" x-panel x-panel-noborder">
             		<div class="x-panel-bwrap" id="ext-gen85">
             			<div class="x-panel-body x-panel-body-noheader x-panel-body-noborder" id="ext-gen86">
-                        	<div id="default_user_pic" class="user_image"></div>
+                        	<div id="default_user_pic" class="user_image">
+                        	</div>
             				<img id="user_pic" border="0" height="50px">
             				<img class="loading-img" src="/smb/css/load.gif" style="visibility: hidden;">
             				<span id="user_authorize" class="user_login_option">Login</span>
@@ -417,7 +413,8 @@ function doCancel(e) {
 		</tr>
 		<tr>
         	<td class="x-table-layout-cell" colspan="1" id="ext-gen90" >
-            	<span id="max_upload_file_size" style="color:#ff0000"></span>
+            	<span id="max_upload_file_size" style="color:#ff0000">
+            	</span>
             </td>
         </tr>
        	<tr>

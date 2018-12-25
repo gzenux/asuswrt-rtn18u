@@ -16,12 +16,15 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script>
 <% wl_get_parameter(); %>
 
-
 function initial(){
 	show_menu();
+	if(lantiq_support){
+		checkWLReady();
+	}
 
 	// special case after modifing GuestNetwork
 	if("<% nvram_get("wl_unit"); %>" == "-1" && "<% nvram_get("wl_subunit"); %>" == "-1"){
@@ -37,18 +40,25 @@ function initial(){
 	if(!band5g_support || based_modelid == "RT-AC87U")
 		document.getElementById("wl_unit_field").style.display = "none";
 
-	if(smart_connect_support && '<% nvram_get("smart_connect_x"); %>' == '1')
+	if(smart_connect_support && '<% nvram_get("smart_connect_x"); %>' == '1' && (isSwMode("rt") || isSwMode("ap")))
 		document.getElementById("wl_unit_field").style.display = "none";
 
-	if((sw_mode == 2 || sw_mode == 4) && '<% nvram_get("wl_unit"); %>' == '<% nvram_get("wlc_band"); %>'){
+	if(((sw_mode == 2 || sw_mode == 4) && '<% nvram_get("wl_unit"); %>' == '<% nvram_get("wlc_band"); %>') ||
+	   (based_modelid == "RT-AD7200" && '<% nvram_get("wl_unit"); %>' == '3')){
 		for(var i=4; i>=2; i--)
 			document.getElementById("MainTable1").deleteRow(i);
+		document.getElementById("repeaterModeHint_desc").innerHTML = "<#CTL_nonsupported#>";
 		document.getElementById("repeaterModeHint").style.display = "";
 		document.getElementById("submitBtn").style.display = "none";
 	}
 }
 
 function applyRule(){
+	if(lantiq_support && wave_ready != 1){
+		alert("Please wait a minute for wireless ready");
+		return false;
+	}
+	
 	if(validForm()){
 		showLoading()
 		document.form.submit();
@@ -103,6 +113,26 @@ function ipv6_valid(obj){
 			return false;
 	}
 }
+
+function checkWLReady(){
+	$.ajax({
+	    url: '/ajax_wl_ready.asp',
+	    dataType: 'script',	
+	    error: function(xhr) {
+			setTimeout("checkWLReady();", 1000);
+	    },
+	    success: function(response){
+	    	if(wave_ready != 1){
+	    		$("#lantiq_ready").show();
+	    		setTimeout("checkWLReady();", 1000);
+	    	}
+	    	else{
+	    		$("#lantiq_ready").hide();
+	    	}
+			
+	    }
+  	});
+}
 </script>
 </head>
 
@@ -149,7 +179,7 @@ function ipv6_valid(obj){
 		  <div class="formfonttitle"><#menu5_1#> - <#menu5_1_5#></div>
 		  <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 		  <div class="formfontdesc"><#WLANAuthentication11a_display1_sectiondesc#></div>
-		  
+		  <div id="lantiq_ready" style="display:none;color:#FC0;margin-left:5px;font-size:13px;">Wireless is setting...</div>
 		<table id="MainTable1" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
 
 		<tr id="wl_unit_field">
@@ -163,7 +193,7 @@ function ipv6_valid(obj){
 	  </tr>
 
 		<tr id="repeaterModeHint" style="display:none;">
-			<td colspan="2" style="color:#FFCC00;height:30px;" align="center"><#page_not_support_mode_hint#></td>
+			<td id="repeaterModeHint_desc" colspan="2" style="color:#FFCC00;height:30px;" align="center"><#page_not_support_mode_hint#></td>
 		</tr>
 
 		<tr>

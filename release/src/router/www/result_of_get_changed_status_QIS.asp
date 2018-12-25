@@ -2,14 +2,26 @@
 <% wanstate(); %>
 var autodet_plc_state = "<% nvram_get("autodet_plc_state"); %>";
 var wans_dualwan = '<% nvram_get("wans_dualwan"); %>'.split(" ");
-if(wans_dualwan != ""){
-	var ewan_index = wans_dualwan.indexOf("wan");
-	var autodet_state = (ewan_index == 0)? '<% nvram_get("autodet_state"); %>': '<% nvram_get("autodet1_state"); %>';
-	var autodet_auxstate = (ewan_index == 0)? '<% nvram_get("autodet_auxstate"); %>': '<% nvram_get("autodet1_auxstate"); %>';
+if(wans_dualwan[0].indexOf("wan") != -1  && wans_dualwan[1].indexOf("wan") != -1)
+	var dual_ewan = true;
+else
+	var dual_ewan = false;
+if(dual_ewan){
+	var autodet_state = '<% nvram_get("autodet_state"); %>';
+	var autodet_auxstate = '<% nvram_get("autodet_auxstate"); %>';
+	var autodet1_state = '<% nvram_get("autodet1_state"); %>';
+	var autodet1_auxstate = '<% nvram_get("autodet1_auxstate"); %>';
 }
 else{
-	var autodet_state = '<% nvram_get("autodet_state"); %>';
-	var autodet_auxstate = '<% nvram_get("autodet_auxstate"); %>';	
+	if(wans_dualwan != ""){
+		var ewan_index = wans_dualwan.indexOf("wan");
+		var autodet_state = (ewan_index == 0)? '<% nvram_get("autodet_state"); %>': '<% nvram_get("autodet1_state"); %>';
+		var autodet_auxstate = (ewan_index == 0)? '<% nvram_get("autodet_auxstate"); %>': '<% nvram_get("autodet1_auxstate"); %>';
+	}
+	else{
+		var autodet_state = '<% nvram_get("autodet_state"); %>';
+		var autodet_auxstate = '<% nvram_get("autodet_auxstate"); %>';
+	}
 }
 parent.allUsbStatusArray = <% show_usb_path(); %>;
 var link_wan_status = "<% nvram_get("link_wan"); %>";

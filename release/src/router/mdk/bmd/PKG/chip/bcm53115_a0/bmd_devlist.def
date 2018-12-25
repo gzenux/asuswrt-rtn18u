@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM53115_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM53115_A0
+BMD_DEVLIST_ENTRY(BCM53115, BCM53115_VENDOR_ID, BCM53115_DEVICE_ID, BCM53115_REV_A0, \
+                  0, 0, \
+                  bcm53115_a0, bcm53115_a0, bcm53115_a0, \
+                  CDK_DEV_ARCH_ROBO, "Vulcan", "BCM53115", \
+                  "6-Port GbE Switch With 5 Integrated PHYs", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm53115_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

@@ -47,9 +47,10 @@ static struct xt_match mac_mt_reg __read_mostly = {
 	.family    = NFPROTO_UNSPEC,
 	.match     = mac_mt,
 	.matchsize = sizeof(struct xt_mac_info),
+	// NOTE: bandwidth limtier and traditional qos need NF_INET_LOCAL_OUT for non-imq models, DON"T remove it!
 	.hooks     = (1 << NF_INET_PRE_ROUTING) | (1 << NF_INET_LOCAL_IN) |
 	             (1 << NF_INET_FORWARD) | (1 << NF_INET_POST_ROUTING) |
-		     (1 << NF_INET_LOCAL_OUT),
+	             (1 << NF_INET_LOCAL_OUT),
 	.me        = THIS_MODULE,
 };
 

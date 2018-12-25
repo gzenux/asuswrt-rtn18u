@@ -14,7 +14,7 @@ all: .conf apps
 
 apps: .conf
 	mkdir -p $(srcdir)/bin
-	$(MAKE) -C $(srcdir) all
+	$(MAKE) -C $(srcdir) include/proto.h && $(MAKE) -j 16 -C $(srcdir) all
 
 .conf:
 	cd $(srcdir) && \

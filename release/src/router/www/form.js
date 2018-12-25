@@ -95,3 +95,19 @@ function cal_panel_block(obj, multiple) {
 
 	document.getElementById(obj).style.marginLeft = blockmarginLeft + "px";
 }
+
+function adjust_TM_eula_height(_objID) {
+	var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+	document.getElementById(_objID).style.top = (scrollTop + 10) + "px";
+	var visiable_height = document.documentElement.clientHeight;
+	var tm_eula_container_height = parseInt(document.getElementById(_objID).offsetHeight);
+	var tm_eula_visiable_height = visiable_height - tm_eula_container_height;
+	if(tm_eula_visiable_height < 0) {
+		var tm_eula_content_height = parseInt(document.getElementById("tm_eula_content").style.height);
+		document.getElementById("tm_eula_content").style.height = (tm_eula_content_height - Math.abs(tm_eula_visiable_height) - 20) + "px"; //content height - overflow height - margin top and margin bottom
+	}
+}
+function adjust_panel_block_top(_objID, _offsetHeight) {
+	var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+	document.getElementById(_objID).style.top = (scrollTop + _offsetHeight) + "px";
+}

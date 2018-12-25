@@ -173,7 +173,11 @@ install: all #$(IWLIB_INSTALL) install-bin install-hdr install-man
 ifneq ($(or $(RTN56U),$(DSLN55U)),y)
 	install -D iwlist $(INSTALLDIR)/bin/iwlist
 endif
+#ifeq ($(RPAC87),y)
+#	install -D iwevent $(INSTALLDIR)/bin/iwevent
+#endif	
 	install -D $(IWLIB) $(INSTALLDIR)/lib/$(IWLIB)
+
 
 # Install the dynamic library
 install-dynamic:: $(DYNAMIC)

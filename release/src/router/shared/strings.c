@@ -152,3 +152,16 @@ int remove_word(char *buffer, const char *word)
 
 	return 1;
 }
+
+void trim_space(char *str)
+{
+	char *pt;
+	if (!str) return;
+	pt = str+strlen(str)-1;
+	while (pt > str) {
+		if (*pt==' ')
+			*pt--='\0';
+		else
+			break;
+	}
+}

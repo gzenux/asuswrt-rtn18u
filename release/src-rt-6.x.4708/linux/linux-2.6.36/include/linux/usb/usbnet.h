@@ -22,6 +22,10 @@
 #ifndef	__LINUX_USB_USBNET_H
 #define	__LINUX_USB_USBNET_H
 
+#ifdef HNDCTF
+#include <ctf/hndctf.h>
+#endif /* HNDCTF */
+
 /* interface from usbnet core to each USB networking link we handle */
 struct usbnet {
 	/* housekeeping */
@@ -60,15 +64,20 @@ struct usbnet {
 
 	struct work_struct	kevent;
 	unsigned long		flags;
-#		define EVENT_TX_HALT	0
-#		define EVENT_RX_HALT	1
-#		define EVENT_RX_MEMORY	2
-#		define EVENT_STS_SPLIT	3
-#		define EVENT_LINK_RESET	4
-#		define EVENT_RX_PAUSED	5
-#		define EVENT_DEV_WAKING 6
-#		define EVENT_DEV_ASLEEP 7
-#		define EVENT_DEV_OPEN	8
+#define EVENT_TX_HALT	0
+#define EVENT_RX_HALT	1
+#define EVENT_RX_MEMORY	2
+#define EVENT_STS_SPLIT	3
+#define EVENT_LINK_RESET	4
+#define EVENT_RX_PAUSED	5
+#define EVENT_DEV_WAKING 6
+#define EVENT_DEV_ASLEEP 7
+#define EVENT_DEV_OPEN	8
+
+#ifdef HNDCTF
+	void *osh;	/* pointer to os handle */
+	ctf_t *cih;	/* ctf instance handle */
+#endif /* HNDCTF */
 };
 
 static inline struct usb_driver *driver_of(struct usb_interface *intf)

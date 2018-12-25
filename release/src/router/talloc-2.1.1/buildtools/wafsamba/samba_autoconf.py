@@ -121,7 +121,6 @@ def CHECK_HEADERS(conf, headers, add_headers=False, together=False, lib=None):
     when together==True, then the headers accumulate within this test.
     This is useful for interdependent headers
     '''
-    #print "headers=%s" %(headers)
     ret = True
     if not add_headers and together:
         saved_hlist = conf.env.hlist[:]
@@ -133,7 +132,6 @@ def CHECK_HEADERS(conf, headers, add_headers=False, together=False, lib=None):
             ret = False
     if not add_headers and together:
         conf.env.hlist = saved_hlist
-    #print "end check_headers"	
     return ret
 
 
@@ -474,7 +472,6 @@ def CHECK_CFLAGS(conf, cflags, fragment='int main(void) { return 0; }\n'):
 def CHECK_LDFLAGS(conf, ldflags):
     '''check if the given ldflags are accepted by the linker
     '''
-    print "ldflags=%s" %(ldflags)	
     return conf.check(fragment='int main(void) { return 0; }\n',
                       execute=0,
                       ldflags=ldflags,
@@ -637,9 +634,6 @@ def CHECK_FUNCS_IN(conf, list, library, mandatory=False, checklibc=False,
 @conf
 def IN_LAUNCH_DIR(conf):
     '''return True if this rule is being run from the launch directory'''
-    print "call os.path.realpath.realpath"
-    print "os.path.realpath=%s" %(os.path.realpath(Options.launch_dir))
-    print "os.path.realpath(conf.curdir)=%s" %(os.path.realpath(conf.curdir))		
     return os.path.realpath(conf.curdir) == os.path.realpath(Options.launch_dir)
 Options.Handler.IN_LAUNCH_DIR = IN_LAUNCH_DIR
 
@@ -647,19 +641,15 @@ Options.Handler.IN_LAUNCH_DIR = IN_LAUNCH_DIR
 @conf
 def SAMBA_CONFIG_H(conf, path=None):
     '''write out config.h in the right directory'''
-    print "SAMBA_CONFIG_H start"	
     # we don't want to produce a config.h in places like lib/replace
     # when we are building projects that depend on lib/replace
     if not IN_LAUNCH_DIR(conf):
-	print "11"
         return
 
     if Options.options.debug:
-	print "22"
         conf.ADD_CFLAGS('-g', testflags=True)
 
     if Options.options.developer:
-	print "33"
         conf.env.DEVELOPER_MODE = True
 
         conf.ADD_CFLAGS('-g', testflags=True)
@@ -685,7 +675,6 @@ def SAMBA_CONFIG_H(conf, path=None):
         conf.ADD_CFLAGS('-Wformat=2 -Wno-format-y2k', testflags=True)
         # This check is because for ldb_search(), a NULL format string
         # is not an error, but some compilers complain about that.
-	print "call CHECK_CFLAGS"
         if CHECK_CFLAGS(conf, ["-Werror=format", "-Wformat=2"], '''
 int testformat(char *format, ...) __attribute__ ((format (__printf__, 1, 2)));
 
@@ -712,7 +701,6 @@ int main(void) {
         conf.write_config_header('config.h', top=True)
     else:
         conf.write_config_header(path)
-    print "call SAMBA_CROSS_CHECK_COMPLETE"		
     conf.SAMBA_CROSS_CHECK_COMPLETE()
 
 

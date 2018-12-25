@@ -29,12 +29,17 @@
 #include <sys/sysinfo.h>
 #include <sys/mman.h>
 #ifdef LINUX26
+#ifndef HND_ROUTER
 #include <linux/compiler.h>
+#endif
 #include <mtd/mtd-user.h>
 #else
 #include <linux/mtd/mtd.h>
 #endif
 #include <stdint.h>
+#ifdef RTCONFIG_REALTEK
+#include <linux/fs.h>
+#endif
 #include <arpa/inet.h>
 
 #include <trxhdr.h>
@@ -47,6 +52,9 @@
 #endif
 //	#define DEBUG_SIMULATE
 
+#ifdef RTCONFIG_REALTEK
+#include "../shared/sysdeps/realtek/realtek.h"
+#endif
 
 struct code_header {
 	char magic[4];
@@ -59,16 +67,6 @@ struct code_header {
 	unsigned short flags;
 	unsigned char res3[10];
 } ;
-
-// -----------------------------------------------------------------------------
-
-static uint32 *crc_table = NULL;
-
-static void crc_done(void)
-{
-	free(crc_table);
-	crc_table = NULL;
-}
 
 // -----------------------------------------------------------------------------
 
@@ -127,8 +125,10 @@ static int _unlock_erase(const char *mtdname, int erase)
 				if (erase) {
 					if (ioctl(mf, MEMERASE, &ei) != 0) {
 						perror("MEMERASE");
+#if !defined(RTCONFIG_MTK_NAND)
 						r = 0;
 						break;
+#endif
 					}
 				}
 			}
@@ -160,7 +160,7 @@ static int _unlock_erase(const char *mtdname, int erase)
 	set_action(ACT_IDLE);
 
 	if (r) printf("\"%s\" successfully %s.\n", mtdname, erase ? "erased" : "unlocked");
-        else printf("\nError %sing MTD\n", erase ? "eras" : "unlock");
+	else printf("\nError %sing MTD\n", erase ? "eras" : "unlock");
 
 	sleep(1);
 	return r;
@@ -189,6 +189,9 @@ int mtd_unlock_erase_main(int argc, char *argv[])
 	int c;
 	char *dev = NULL;
 
+#ifdef RTCONFIG_LANTIQ
+	nvram_set(ASUS_STOP_COMMIT, "1");
+#endif
 	while ((c = getopt(argc, argv, "d:")) != -1) {
 		switch (c) {
 		case 'd':
@@ -203,6 +206,137 @@ int mtd_unlock_erase_main(int argc, char *argv[])
 
 	return _unlock_erase(dev, strstr(argv[0], "erase") ? 1 : 0);
 }
+
+#ifdef RTCONFIG_REALTEK
+int asusimg2rtkimg(char *src_name)
+{
+		FILE *pSrcFile = NULL, *pDstFile = NULL;
+		unsigned char buf[4096] = {0};
+		long filesize, kernelsize;
+		int first_read_kernel = 1, first_read_root = 1, last_read_kernel = 0, count;
+
+		pSrcFile = fopen(src_name, "r");
+		pDstFile = fopen("/tmp/linux.trx.tmp", "w");
+		if (pSrcFile && pDstFile) {
+			/* Get image size */
+			fseek(pSrcFile, 0, SEEK_END);
+			filesize = ftell(pSrcFile);
+
+			/* Skip ASUS trx header */
+			fseek(pSrcFile, 64, SEEK_SET);
+			filesize -= 64;
+
+			do {
+				if (last_read_kernel) {
+					count = fread(buf, 1, kernelsize, pSrcFile);
+					last_read_kernel = 0;
+				}
+				else
+					count = fread(buf, 1, sizeof(buf), pSrcFile);
+
+				if (first_read_kernel) {
+					/* Set Start address+3 byte first bit is 1 */
+					*(buf+7) |= 1;
+
+					/* Get kernel size */
+					kernelsize = (*(buf+12) << 24) + (*(buf+13) << 16) + (*(buf+14) << 8) + *(buf+15);
+					first_read_kernel = 0;
+					kernelsize += 16; // Need to add kernel signature size.
+				}
+				if (kernelsize > 0) { // Write Kernel + Kernrl signature
+					fwrite(buf, 1, count, pDstFile);
+					kernelsize -= count;
+
+					if (kernelsize > 0 && kernelsize <= sizeof(buf))
+						last_read_kernel = 1;
+				}
+				else { // Write Rootfs
+					if (first_read_root) {
+						fwrite(buf+16, 1, count-16, pDstFile);
+						first_read_root = 0;
+					}
+					else
+						fwrite(buf, 1, count, pDstFile);
+				}
+
+				filesize -= count;
+
+			} while(filesize > 0);
+
+			fclose(pSrcFile);
+			fclose(pDstFile);
+
+			if (remove(src_name) == 0) { // Delete asus trx image
+				if (rename("/tmp/linux.trx.tmp", "/tmp/linux.trx") == 0) // rename rtk trx image
+					return 1;
+				else {
+					_dprintf("rename failed\n");
+					return 0;
+				}
+			}
+			else {
+				_dprintf("Delete linux.trx failed\n");
+				return 0;
+			}
+		}
+		else {
+			_dprintf("Open file failed\n");
+			return 0;
+		}
+
+	return 0;
+}
+int copy_file2file(char * src_name,long src_offset, char *dst_name,long dst_offset,char* errorInfo)
+{
+	int fsrc=-1,fdst=-1;
+	int retval=0,readSize=0,writeSize=0,tobeWriteSize=0;
+	unsigned char buff[(4096 * 1024)]={0};
+	int i=0;
+	long readoffset=src_offset,writeoffset=dst_offset;
+	if(!src_name || !dst_name || !errorInfo)
+	{
+		strcpy(errorInfo,"invalid input!");
+		retval= -1;
+		goto FAIL;
+	}
+
+	fsrc= open(src_name, O_RDONLY);
+	if(fsrc<0){ sprintf(errorInfo,"open %s fail!",src_name); retval= -1;goto FAIL;}
+	fdst= open(dst_name, O_WRONLY);
+	if(fdst<0){ sprintf(errorInfo,"open %s fail!",dst_name); retval= -1;goto FAIL;}
+	lseek(fsrc,src_offset,SEEK_SET);
+	lseek(fdst,dst_offset,SEEK_SET);
+
+	do
+	{
+		bzero(buff,sizeof(buff));
+		readSize=read(fsrc,buff,sizeof(buff));
+		readoffset+=readSize;
+		tobeWriteSize=readSize;
+
+		writeSize=write(fdst,buff,tobeWriteSize);
+		writeoffset+=writeSize;
+
+		sync();
+
+//#ifdef KERNEL_3_10
+		if(ioctl(fdst,BLKFLSBUF,NULL) < 0){
+			_dprintf("flush mtd system cache error\n");
+		}
+//#endif
+		//_dprintf("%s %d readoffset=%x readSize=%x writeoffset=%x writeSize=%x src_name=%s dst_name=%s\n", __FUNCTION__,__LINE__,readoffset,readSize,writeoffset,writeSize,src_name,dst_name);
+		/*if(writeSize!=sizeof(buff))
+		{
+			 sprintf(errorInfo,"write %s fail!",dst_name); retval= -1;goto FAIL;
+		}*/
+	}while(readSize==sizeof(buff));
+
+	FAIL:
+		if(fsrc>0) close(fsrc);
+		if(fdst>0) close(fdst);
+		return retval;
+}
+#endif /* RTCONFIG_REALTEK */
 
 #ifdef RTCONFIG_BCMARM
 int mtd_write_main_old(int argc, char *argv[])
@@ -249,6 +383,75 @@ int mtd_write_main(int argc, char *argv[])
 	}
 
 	set_action(ACT_WEB_UPGRADE);
+#ifdef RTCONFIG_REALTEK
+
+		if (!asusimg2rtkimg(iname))
+			goto ERROR;
+
+		if(strcmp(iname,"/tmp/linux.trx")==0)
+		{
+#ifdef CONFIG_MTD_NAND
+			if(mtd_erase("/dev/mtdblock2") == 0){
+				printf("%s %d\n", __FUNCTION__,__LINE__);
+			}
+			if(copy_file2file("/tmp/linux.trx",0,"/dev/mtdblock2",0x0,msg_buf)<0)
+#else
+			if(copy_file2file("/tmp/linux.trx",0,"/dev/mtdblock2",0x0,msg_buf)<0)
+#endif
+			{
+			//	_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+				error=msg_buf;
+			}
+		//	_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+#ifdef CONFIG_ASUS_DUAL_IMAGE_ENABLE
+#ifdef CONFIG_MTD_NAND
+			if(mtd_erase("/dev/mtdblock4") == 0){
+				printf("%s %d\n", __FUNCTION__,__LINE__);
+			}
+			if(copy_file2file("/tmp/linux.trx",0,"/dev/mtdblock4",0x0,msg_buf)<0)
+#else
+			if(copy_file2file("/tmp/linux.trx",0,"/dev/mtdblock2",0x0,msg_buf)<0)
+#endif
+			{
+			//	_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+				error=msg_buf;
+			}
+#endif
+		}else
+		if(strcmp(iname,"/tmp/root.trx")==0)
+		{
+			//_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+#ifdef CONFIG_MTD_NAND
+			if(mtd_erase("/dev/mtdblock3") == 0){
+				printf("%s %d\n", __FUNCTION__,__LINE__);
+			}
+			if(copy_file2file("/tmp/root.trx",0,"/dev/mtdblock3",0,msg_buf)<0)
+#else
+			if(copy_file2file("/tmp/root.trx",0,"/dev/mtdblock3",0,msg_buf)<0)
+#endif
+			{
+			//	_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+				error=msg_buf;
+			}
+			//_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+#ifdef CONFIG_ASUS_DUAL_IMAGE_ENABLE
+#ifdef CONFIG_MTD_NAND
+			if(mtd_erase("/dev/mtdblock5") == 0){
+				printf("%s %d\n", __FUNCTION__,__LINE__);
+			}
+			if(copy_file2file("/tmp/root.trx",0,"/dev/mtdblock5",0,msg_buf)<0)
+#else
+			if(copy_file2file("/tmp/root.trx",0,"/dev/mtdblock3",0,msg_buf)<0)
+#endif
+			{
+			//	_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+				error=msg_buf;
+			}
+#endif
+		}
+		//_dprintf("%s %d\n", __FUNCTION__,__LINE__);
+	goto RTK_FINISH;
+#endif /* RTCONFIG_REALTEK */
 
 	if ((f = fopen(iname, "r")) == NULL) {
 		error = "Error opening input file";
@@ -278,7 +481,11 @@ int mtd_write_main(int argc, char *argv[])
 
 	_dprintf("mtd size=%x, erasesize=%x, writesize=%x, type=%x\n", mi.size, mi.erasesize, mi.writesize, mi.type);
 
+#if defined(RTCONFIG_MTK_NAND)
+	unit_len = mi.erasesize;
+#else
 	unit_len = ROUNDUP(filelen, mi.erasesize);
+#endif
 	if (unit_len > mi.size) {
 		error = "File is too big to fit in MTD";
 		goto ERROR;
@@ -295,7 +502,10 @@ int mtd_write_main(int argc, char *argv[])
 			unit_len = mi.erasesize;
 	}
 
-	if (mi.type == MTD_UBIVOLUME) {
+#if !defined(RTCONFIG_MTK_NAND)
+	if (mi.type == MTD_UBIVOLUME)
+#endif
+	{
 		if (!(bounce_buf = malloc(mi.writesize))) {
 			error = "Not enough memory";
 			goto ERROR;
@@ -321,7 +531,10 @@ int mtd_write_main(int argc, char *argv[])
 	     ofs += n, ei.start += unit_len)
 	{
 		wlen = n = MIN(unit_len, filelen - ofs);
-		if (mi.type == MTD_UBIVOLUME) {
+#if !defined(RTCONFIG_MTK_NAND)
+		if (mi.type == MTD_UBIVOLUME)
+#endif
+		{
 			if (n >= mi.writesize) {
 				n &= ~(mi.writesize - 1);
 				wlen = n;
@@ -352,8 +565,14 @@ int mtd_write_main(int argc, char *argv[])
 			ioctl(mf, MEMUNLOCK, &ei);
 			if (ioctl(mf, MEMERASE, &ei) != 0) {
 				snprintf(msg_buf, sizeof(msg_buf), "Error erasing MTD block. (errno %d (%s))", errno, strerror(errno));
+#if defined(RTCONFIG_MTK_NAND)
+				//_dprintf("%s\n", msg_buf);
+				filelen += n;
+				continue;
+#else
 				error = msg_buf;
 				break;
+#endif
 			}
 		}
 		if (write(mf, p, wlen) != wlen) {
@@ -387,8 +606,9 @@ ERROR:
 	}
 	if (f) fclose(f);
 
-	crc_done();
-
+#ifdef RTCONFIG_REALTEK
+RTK_FINISH:
+#endif
 	set_action(ACT_IDLE);
 
 	_dprintf("%s\n",  error ? error : "Image successfully flashed");
@@ -406,26 +626,26 @@ ERROR:
 int
 mtd_open(const char *mtd, int flags)
 {
-        FILE *fp;
-        char dev[PATH_MAX];
-        int i;
+	FILE *fp;
+	char dev[PATH_MAX];
+	int i;
 
-        if ((fp = fopen("/proc/mtd", "r"))) {
-                while (fgets(dev, sizeof(dev), fp)) {
-                        if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
+	if ((fp = fopen("/proc/mtd", "r"))) {
+		while (fgets(dev, sizeof(dev), fp)) {
+			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
 #ifdef LINUX26
-                                snprintf(dev, sizeof(dev), "/dev/mtd%d", i);
+				snprintf(dev, sizeof(dev), "/dev/mtd%d", i);
 #else
-                                snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
+				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
 #endif
-                                fclose(fp);
-                                return open(dev, flags);
-                        }
-                }
-                fclose(fp);
-        }
+				fclose(fp);
+				return open(dev, flags);
+			}
+		}
+		fclose(fp);
+	}
 
-        return open(mtd, flags);
+	return open(mtd, flags);
 }
 
 /*
@@ -436,195 +656,195 @@ mtd_open(const char *mtd, int flags)
 int
 mtd_erase(const char *mtd)
 {
-        int mtd_fd;
-        mtd_info_t mtd_info;
-        erase_info_t erase_info;
+	int mtd_fd;
+	mtd_info_t mtd_info;
+	erase_info_t erase_info;
 #ifdef RTAC87U
 	char erase_err[255] = {0};
 #endif
 
-        /* Open MTD device */
-        if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0) {
-                perror(mtd);
-                return errno;
-        }
+	/* Open MTD device */
+	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0) {
+		perror(mtd);
+		return errno;
+	}
 
-        /* Get sector size */
-        if (ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0) {
-                perror(mtd);
-                close(mtd_fd);
-                return errno;
-        }
+	/* Get sector size */
+	if (ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0) {
+		perror(mtd);
+		close(mtd_fd);
+		return errno;
+	}
 
-        erase_info.length = mtd_info.erasesize;
+	erase_info.length = mtd_info.erasesize;
 
-        for (erase_info.start = 0;
-             erase_info.start < mtd_info.size;
-             erase_info.start += mtd_info.erasesize) {
-                (void) ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-                if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-                        perror(mtd);
-                        close(mtd_fd);
+	for (erase_info.start = 0;
+	     erase_info.start < mtd_info.size;
+	     erase_info.start += mtd_info.erasesize) {
+		(void) ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+			perror(mtd);
+			close(mtd_fd);
 #ifdef RTAC87U
 						sprintf(erase_err, "logger -t ATE mtd_erase failed: [%d]", errno);
 						system(erase_err);
 #endif
-                        return errno;
-                }
-        }
+			return errno;
+		}
+	}
 
-        close(mtd_fd);
+	close(mtd_fd);
 #ifdef RTAC87U
 	sprintf(erase_err, "logger -t ATE mtd_erase OK:[%d]", errno);
 	system(erase_err);
 #endif
-        return 0;
+	return 0;
 }
 
 static char *
 base64enc(const char *p, char *buf, int len)
 {
-        char al[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-                "0123456789+/";
-        char *s = buf;
+	char al[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+		"0123456789+/";
+	char *s = buf;
 
-        while (*p) {
-                if (s >= buf+len-4)
-                        break;
-                *(s++) = al[(*p >> 2) & 0x3F];
-                *(s++) = al[((*p << 4) & 0x30) | ((*(p+1) >> 4) & 0x0F)];
-                *s = *(s+1) = '=';
-                *(s+2) = 0;
-                if (! *(++p)) break;
-                *(s++) = al[((*p << 2) & 0x3C) | ((*(p+1) >> 6) & 0x03)];
-                if (! *(++p)) break;
-                *(s++) = al[*(p++) & 0x3F];
-        }
+	while (*p) {
+		if (s >= buf+len-4)
+			break;
+		*(s++) = al[(*p >> 2) & 0x3F];
+		*(s++) = al[((*p << 4) & 0x30) | ((*(p+1) >> 4) & 0x0F)];
+		*s = *(s+1) = '=';
+		*(s+2) = 0;
+		if (! *(++p)) break;
+		*(s++) = al[((*p << 2) & 0x3C) | ((*(p+1) >> 6) & 0x03)];
+		if (! *(++p)) break;
+		*(s++) = al[*(p++) & 0x3F];
+	}
 
-        return buf;
+	return buf;
 }
 
 enum {
-        METHOD_GET,
-        METHOD_POST
+	METHOD_GET,
+	METHOD_POST
 };
 
 static int
 wget(int method, const char *server, char *buf, size_t count, off_t offset)
 {
-        char url[PATH_MAX] = { 0 }, *s;
-        char *host = url, *path = "", auth[128] = { 0 }, line[512];
-        unsigned short port = 80;
-        int fd;
-        FILE *fp;
-        struct sockaddr_in sin;
-        int chunked = 0, len = 0;
+	char url[PATH_MAX] = { 0 }, *s;
+	char *host = url, *path = "", auth[128] = { 0 }, line[512];
+	unsigned short port = 80;
+	int fd;
+	FILE *fp;
+	struct sockaddr_in sin;
+	int chunked = 0, len = 0;
 
-        if (server == NULL || !strcmp(server, "")) {
-                _dprintf("wget: null server input\n");
-                return (0);
-        }
+	if (server == NULL || !strcmp(server, "")) {
+		_dprintf("wget: null server input\n");
+		return (0);
+	}
 
-        strncpy(url, server, sizeof(url));
+	strncpy(url, server, sizeof(url));
 
-        /* Parse URL */
-        if (!strncmp(url, "http://", 7)) {
-                port = 80;
-                host = url + 7;
-        }
-        if ((s = strchr(host, '/'))) {
-                *s++ = '\0';
-                path = s;
-        }
-        if ((s = strchr(host, '@'))) {
-                *s++ = '\0';
-                base64enc(host, auth, sizeof(auth));
-                host = s;
-        }
-        if ((s = strchr(host, ':'))) {
-                *s++ = '\0';
-                port = atoi(s);
-        }
+	/* Parse URL */
+	if (!strncmp(url, "http://", 7)) {
+		port = 80;
+		host = url + 7;
+	}
+	if ((s = strchr(host, '/'))) {
+		*s++ = '\0';
+		path = s;
+	}
+	if ((s = strchr(host, '@'))) {
+		*s++ = '\0';
+		base64enc(host, auth, sizeof(auth));
+		host = s;
+	}
+	if ((s = strchr(host, ':'))) {
+		*s++ = '\0';
+		port = atoi(s);
+	}
 
-        /* Open socket */
-        if (!inet_aton(host, &sin.sin_addr))
-                return 0;
-        sin.sin_family = AF_INET;
-        sin.sin_port = htons(port);
-        _dprintf("Connecting to %s:%u...\n", host, port);
-        if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ||
-            connect(fd, (struct sockaddr *) &sin, sizeof(sin)) < 0 ||
-            !(fp = fdopen(fd, "r+"))) {
-                perror(host);
-                if (fd >= 0)
-                        close(fd);
-                return 0;
-        }
-        _dprintf("connected!\n");
+	/* Open socket */
+	if (!inet_aton(host, &sin.sin_addr))
+		return 0;
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(port);
+	_dprintf("Connecting to %s:%u...\n", host, port);
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ||
+	    connect(fd, (struct sockaddr *) &sin, sizeof(sin)) < 0 ||
+	    !(fp = fdopen(fd, "r+"))) {
+		perror(host);
+		if (fd >= 0)
+			close(fd);
+		return 0;
+	}
+	_dprintf("connected!\n");
 
-        /* Send HTTP request */
-        fprintf(fp, "%s /%s HTTP/1.1\r\n", method == METHOD_POST ? "POST" : "GET", path);
-        fprintf(fp, "Host: %s\r\n", host);
-        fprintf(fp, "User-Agent: wget\r\n");
-        if (strlen(auth))
-                fprintf(fp, "Authorization: Basic %s\r\n", auth);
-        if (offset)
-                fprintf(fp, "Range: bytes=%ld-\r\n", offset);
-        if (method == METHOD_POST) {
-                fprintf(fp, "Content-Type: application/x-www-form-urlencoded\r\n");
-                fprintf(fp, "Content-Length: %d\r\n\r\n", (int) strlen(buf));
-                fputs(buf, fp);
-        } else
-                fprintf(fp, "Connection: close\r\n\r\n");
+	/* Send HTTP request */
+	fprintf(fp, "%s /%s HTTP/1.1\r\n", method == METHOD_POST ? "POST" : "GET", path);
+	fprintf(fp, "Host: %s\r\n", host);
+	fprintf(fp, "User-Agent: wget\r\n");
+	if (strlen(auth))
+		fprintf(fp, "Authorization: Basic %s\r\n", auth);
+	if (offset)
+		fprintf(fp, "Range: bytes=%ld-\r\n", offset);
+	if (method == METHOD_POST) {
+		fprintf(fp, "Content-Type: application/x-www-form-urlencoded\r\n");
+		fprintf(fp, "Content-Length: %d\r\n\r\n", (int) strlen(buf));
+		fputs(buf, fp);
+	} else
+		fprintf(fp, "Connection: close\r\n\r\n");
 
-        /* Check HTTP response */
-        _dprintf("HTTP request sent, awaiting response...\n");
-        if (fgets(line, sizeof(line), fp)) {
-                _dprintf("%s", line);
-                for (s = line; *s && !isspace((int)*s); s++);
-                for (; isspace((int)*s); s++);
-                switch (atoi(s)) {
-                case 200: if (offset) goto done; else break;
-                case 206: if (offset) break; else goto done;
-                default: goto done;
-                }
-        }
-        /* Parse headers */
-        while (fgets(line, sizeof(line), fp)) {
-                _dprintf("%s", line);
-                for (s = line; *s == '\r'; s++);
-                if (*s == '\n')
-                        break;
-                if (!strncasecmp(s, "Content-Length:", 15)) {
-                        for (s += 15; isblank(*s); s++);
-                        chomp(s);
-                        len = atoi(s);
-                }
-                else if (!strncasecmp(s, "Transfer-Encoding:", 18)) {
-                        for (s += 18; isblank(*s); s++);
-                        chomp(s);
-                        if (!strncasecmp(s, "chunked", 7))
-                                chunked = 1;
-                }
-        }
+	/* Check HTTP response */
+	_dprintf("HTTP request sent, awaiting response...\n");
+	if (fgets(line, sizeof(line), fp)) {
+		_dprintf("%s", line);
+		for (s = line; *s && !isspace((int)*s); s++);
+		for (; isspace((int)*s); s++);
+		switch (atoi(s)) {
+		case 200: if (offset) goto done; else break;
+		case 206: if (offset) break; else goto done;
+		default: goto done;
+		}
+	}
+	/* Parse headers */
+	while (fgets(line, sizeof(line), fp)) {
+		_dprintf("%s", line);
+		for (s = line; *s == '\r'; s++);
+		if (*s == '\n')
+			break;
+		if (!strncasecmp(s, "Content-Length:", 15)) {
+			for (s += 15; isblank(*s); s++);
+			chomp(s);
+			len = atoi(s);
+		}
+		else if (!strncasecmp(s, "Transfer-Encoding:", 18)) {
+			for (s += 18; isblank(*s); s++);
+			chomp(s);
+			if (!strncasecmp(s, "chunked", 7))
+				chunked = 1;
+		}
+	}
 
-        if (chunked && fgets(line, sizeof(line), fp))
-                len = strtol(line, NULL, 16);
+	if (chunked && fgets(line, sizeof(line), fp))
+		len = strtol(line, NULL, 16);
 
-        len = (len > count) ? count : len;
-        len = fread(buf, 1, len, fp);
+	len = (len > count) ? count : len;
+	len = fread(buf, 1, len, fp);
 
 done:
-        /* Close socket */
-        fflush(fp);
-        fclose(fp);
-        return len;
+	/* Close socket */
+	fflush(fp);
+	fclose(fp);
+	return len;
 }
 
 int
 http_get(const char *server, char *buf, size_t count, off_t offset)
 {
-        return wget(METHOD_GET, server, buf, count, offset);
+	return wget(METHOD_GET, server, buf, count, offset);
 }
 
 /*
@@ -636,105 +856,105 @@ http_get(const char *server, char *buf, size_t count, off_t offset)
 int
 mtd_write(const char *path, const char *mtd)
 {
-        int mtd_fd = -1;
-        mtd_info_t mtd_info;
-        erase_info_t erase_info;
+	int mtd_fd = -1;
+	mtd_info_t mtd_info;
+	erase_info_t erase_info;
 
-        struct sysinfo info;
-        struct trx_header trx;
-        unsigned long crc;
+	struct sysinfo info;
+	struct trx_header trx;
+	unsigned long crc;
 
-        FILE *fp;
-        char *buf = NULL;
-        long count, len, off;
-        int ret = -1;
+	FILE *fp;
+	char *buf = NULL;
+	long count, len, off;
+	int ret = -1;
 
-        /* Examine TRX header */
-        if ((fp = fopen(path, "r")))
-                count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
-        else
-                count = http_get(path, (char *) &trx, sizeof(struct trx_header), 0);
-        if (count < sizeof(struct trx_header)) {
-                fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
-                goto fail;
-        }
+	/* Examine TRX header */
+	if ((fp = fopen(path, "r")))
+		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
+	else
+		count = http_get(path, (char *) &trx, sizeof(struct trx_header), 0);
+	if (count < sizeof(struct trx_header)) {
+		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
+		goto fail;
+	}
 
-        /* Open MTD device and get sector size */
-        if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 ||
-            ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
-            mtd_info.erasesize < sizeof(struct trx_header)) {
-                perror(mtd);
-                goto fail;
-        }
+	/* Open MTD device and get sector size */
+	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 ||
+	    ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
+	    mtd_info.erasesize < sizeof(struct trx_header)) {
+		perror(mtd);
+		goto fail;
+	}
 
-        if (trx.magic != TRX_MAGIC ||
-            trx.len > mtd_info.size ||
-            trx.len < sizeof(struct trx_header)) {
-                fprintf(stderr, "%s: Bad trx header\n", path);
-                goto fail;
-        }
+	if (trx.magic != TRX_MAGIC ||
+	    trx.len > mtd_info.size ||
+	    trx.len < sizeof(struct trx_header)) {
+		fprintf(stderr, "%s: Bad trx header\n", path);
+		goto fail;
+	}
 
-        /* Allocate temporary buffer */
-        /* See if we have enough memory to store the whole file */
-        sysinfo(&info);
-        if (info.freeram >= trx.len) {
-                erase_info.length = ROUNDUP(trx.len, mtd_info.erasesize);
-                if (!(buf = malloc(erase_info.length)))
-                        erase_info.length = mtd_info.erasesize;
-        }
-        /* fallback to smaller buffer */
-        else {
-                erase_info.length = mtd_info.erasesize;
-                buf = NULL;
-        }
-        if (!buf && (!(buf = malloc(erase_info.length)))) {
-                perror("malloc");
-                goto fail;
-        }
+	/* Allocate temporary buffer */
+	/* See if we have enough memory to store the whole file */
+	sysinfo(&info);
+	if (info.freeram >= trx.len) {
+		erase_info.length = ROUNDUP(trx.len, mtd_info.erasesize);
+		if (!(buf = malloc(erase_info.length)))
+			erase_info.length = mtd_info.erasesize;
+	}
+	/* fallback to smaller buffer */
+	else {
+		erase_info.length = mtd_info.erasesize;
+		buf = NULL;
+	}
+	if (!buf && (!(buf = malloc(erase_info.length)))) {
+		perror("malloc");
+		goto fail;
+	}
 
-        /* Calculate CRC over header */
-        crc = hndcrc32((uint8 *) &trx.flag_version,
-                       sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version),
-                       CRC32_INIT_VALUE);
+	/* Calculate CRC over header */
+	crc = hndcrc32((uint8 *) &trx.flag_version,
+		       sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version),
+		       CRC32_INIT_VALUE);
 
-        if (trx.flag_version & TRX_NO_HEADER)
-                trx.len -= sizeof(struct trx_header);
+	if (trx.flag_version & TRX_NO_HEADER)
+		trx.len -= sizeof(struct trx_header);
 
-        /* Write file or URL to MTD device */
-        for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
-                len = MIN(erase_info.length, trx.len - erase_info.start);
-                if ((trx.flag_version & TRX_NO_HEADER) || erase_info.start)
-                        count = off = 0;
-                else {
-                        count = off = sizeof(struct trx_header);
-                        memcpy(buf, &trx, sizeof(struct trx_header));
-                }
-                if (fp)
-                        count += safe_fread(&buf[off], 1, len - off, fp);
-                else
-                        count += http_get(path, &buf[off], len - off, erase_info.start + off);
-                if (count < len) {
-                        fprintf(stderr, "%s: Truncated file (actual %ld expect %ld)\n", path,
-                                count - off, len - off);
-                        goto fail;
-                }
-                /* Update CRC */
-                crc = hndcrc32((uint8 *)&buf[off], count - off, crc);
-                /* Check CRC before writing if possible */
-                if (count == trx.len) {
-                        if (crc != trx.crc32) {
-                                fprintf(stderr, "%s: Bad CRC\n", path);
-                                goto fail;
-                        }
-                }
-                /* Do it */
-                (void) ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-                if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0 ||
-                    write(mtd_fd, buf, count) != count) {
-                        perror(mtd);
-                        goto fail;
-                }
-        }
+	/* Write file or URL to MTD device */
+	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
+		len = MIN(erase_info.length, trx.len - erase_info.start);
+		if ((trx.flag_version & TRX_NO_HEADER) || erase_info.start)
+			count = off = 0;
+		else {
+			count = off = sizeof(struct trx_header);
+			memcpy(buf, &trx, sizeof(struct trx_header));
+		}
+		if (fp)
+			count += safe_fread(&buf[off], 1, len - off, fp);
+		else
+			count += http_get(path, &buf[off], len - off, erase_info.start + off);
+		if (count < len) {
+			fprintf(stderr, "%s: Truncated file (actual %ld expect %ld)\n", path,
+				count - off, len - off);
+			goto fail;
+		}
+		/* Update CRC */
+		crc = hndcrc32((uint8 *)&buf[off], count - off, crc);
+		/* Check CRC before writing if possible */
+		if (count == trx.len) {
+			if (crc != trx.crc32) {
+				fprintf(stderr, "%s: Bad CRC\n", path);
+				goto fail;
+			}
+		}
+		/* Do it */
+		(void) ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0 ||
+		    write(mtd_fd, buf, count) != count) {
+			perror(mtd);
+			goto fail;
+		}
+	}
 
 #ifdef PLC
   eval("gigle_util restart");
@@ -742,21 +962,230 @@ mtd_write(const char *path, const char *mtd)
   nvram_commit();
 #endif
 
-        printf("%s: CRC OK\n", mtd);
-        ret = 0;
+	printf("%s: CRC OK\n", mtd);
+	ret = 0;
 
 fail:
-        if (buf) {
-                /* Dummy read to ensure chip(s) are out of lock/suspend state */
-                (void) read(mtd_fd, buf, 2);
-                free(buf);
-        }
+	if (buf) {
+		/* Dummy read to ensure chip(s) are out of lock/suspend state */
+		(void) read(mtd_fd, buf, 2);
+		free(buf);
+	}
 
-        if (mtd_fd >= 0)
-                close(mtd_fd);
-        if (fp)
-                fclose(fp);
-        return ret;
+	if (mtd_fd >= 0)
+		close(mtd_fd);
+	if (fp)
+		fclose(fp);
+	return ret;
+}
+
+#endif
+
+#ifdef HND_ROUTER
+
+#define TEMP_KERNEL_NVRM_FILE "/var/.temp.kernel.nvram"
+#define PRE_COMMIT_KERNEL_NVRM_FILE "/var/.kernel_nvram.setting.prec"
+#define TEMP_KERNEL_NVRAM_FILE_NAME "/var/.kernel_nvram.setting.temp"
+#define KERNEL_NVRAM_FILE_NAME "/data/.kernel_nvram.setting"
+
+int hnd_nvram_erase()
+{
+	int err = 0;
+
+	if (access(PRE_COMMIT_KERNEL_NVRM_FILE, F_OK) != -1 &&
+		unlink(PRE_COMMIT_KERNEL_NVRM_FILE) < 0) {
+		_dprintf("*** Failed to delete file %s. Error: %s\n",
+			PRE_COMMIT_KERNEL_NVRM_FILE, strerror(errno));
+		err = errno;
+	}
+
+	if (access(TEMP_KERNEL_NVRAM_FILE_NAME, F_OK) != -1 &&
+		unlink(TEMP_KERNEL_NVRAM_FILE_NAME) < 0) {
+		_dprintf("*** Failed to delete file %s. Error: %s\n",
+			TEMP_KERNEL_NVRAM_FILE_NAME, strerror(errno));
+		err = errno;
+	}
+
+	if (access(TEMP_KERNEL_NVRM_FILE, F_OK) != -1 &&
+		unlink(TEMP_KERNEL_NVRM_FILE) < 0) {
+		_dprintf("*** Failed to delete file %s. Error: %s\n",
+			TEMP_KERNEL_NVRM_FILE, strerror(errno));
+		err = errno;
+	}
+
+	if (access(KERNEL_NVRAM_FILE_NAME, F_OK) != -1 &&
+		unlink(KERNEL_NVRAM_FILE_NAME) < 0) {
+		_dprintf("*** Failed to delete file %s. Error: %s\n",
+			KERNEL_NVRAM_FILE_NAME, strerror(errno));
+		err = errno;
+	}
+
+	sync();
+	_dprintf("Erasing nvram done\n");
+	return err;
+}
+
+/*****************************************************************************
+ * Image interface handler. Used for accessing/writing flash device.
+ *****************************************************************************/
+IMGIF_HANDLE imgifHandle = NULL;
+
+CmsImageFormat parseImgHdr(UINT8 *bufP, UINT32 bufLen)
+{
+   int result = CMS_IMAGE_FORMAT_FLASH;
+
+   return result;
+}
+
+/*****************************************************************************
+ *  FUNCTION:  bca_sys_upgrade
+ *  PURPOSE:   Receiving an image content from httpd and writing to NAND flash.
+ *  PARAMETERS:
+ *      path (IN) - pipe file path.
+ *  RETURNS:
+ *      0 - succeeded.
+ *      errno - failed operation.
+ *  NOTES:
+ *       The calling sequence:
+ *  This function is called from the context of the /sbin/init programm process.
+ *  The /sbin/init process is "forked" by HTTPD process and it is the child of
+ *  HTTPD process.
+ *  The communication between HTTPD (parent) and bca_sys_upgrade is hold via pipe.
+ *****************************************************************************/
+
+int
+bca_sys_upgrade(const char *path)
+{
+	int ret = 0;
+	pid_t pid = getpid();
+	int imgsz, ulimgsz = 0;
+#if 0
+	int spsz;
+#endif
+	int r_count, w_count;
+	FILE *fp = NULL;
+	char *buf = NULL;
+	uint bufsz = 0;
+	imgif_flash_info_t flash_info;
+	uint blknum = 0;
+
+	/* Opening communication pipe between HTTPD parent process */
+	if ((fp = fopen(path, "r")) == NULL) {
+		_dprintf("*** Filed open a file %s. Error: %s. Aborting \n",
+				path, strerror(errno));
+		ret = errno;
+		goto fail;
+	}
+
+	/* HTTPD parent process supposed to send the image size. reading it. */
+#if 0
+	if (nvram_match("uup", "1")) {
+		r_count = safe_fread((void*)&imgsz, 1, sizeof(imgsz), fp);
+		if (r_count < sizeof(imgsz)) {
+			_dprintf("*** Error(pid:%d): %s@%d Pipe read failed. Expected:%d,read:%d. Aborting\n",
+				pid, __FUNCTION__, __LINE__, sizeof(imgsz), r_count);
+			ret = EPIPE;
+			goto fail;
+		}
+		nvram_set("uup", "0");
+		_dprintf("%s@%d(pid:%d): image size=%d.\n",
+			__FUNCTION__, __LINE__, pid, imgsz);
+	} else if ((spsz = atoi(nvram_safe_get("spsz")))) {
+		imgsz = spsz;
+		_dprintf("\nnonui update(spsz): imgsz is %d\n", imgsz);
+		nvram_set("spsz", "0");
+		nvram_set("fakelive", "0");
+	} else {	// liveupdate
+#else
+	{
+#endif
+#if 0
+		nvram_set("fakelive", "0");
+#endif
+		fseek(fp, 0, SEEK_END);
+
+		imgsz = ftell(fp);
+#if 0
+		_dprintf("\nnonui update: imgsz is %d\n", imgsz);
+#endif
+		fseek(fp, 0, SEEK_SET);
+	}
+
+	/* Initialize IMGIF context */
+	imgifHandle = imgif_open(parseImgHdr, NULL);
+	if (imgifHandle == NULL) {
+		_dprintf("*** Error(pid:%d): %s@%d Failed to create image ifc context. Aborting\n",
+			pid, __FUNCTION__, __LINE__);
+		ret = EIO;
+		goto fail;
+	}
+
+	/* query flash device information */
+	if (imgif_get_flash_info(imgifHandle, &flash_info) < 0) {
+		_dprintf("*** Error(pid:%d): %s@%d Failed to get flash info. Aborting\n",
+			getpid(), __FUNCTION__, __LINE__);
+		ret = EIO;
+		goto fail;
+	}
+
+	/* evaluate image size */
+	if (((imgsz + CMS_IMAGE_OVERHEAD) > flash_info.flashSize) ||
+	    (imgsz < CMS_IMAGE_MIN_LEN)) {
+		ret = EINVAL;
+		goto fail;
+	}
+
+	/* setting image upload buf size equals to flash block size */
+	bufsz = flash_info.eraseSize;
+
+	/* Allocating image upload buffer */
+	if ((buf = malloc(bufsz)) == NULL) {
+		_dprintf("*** Error(pid:%d) %s@%d malloc failed. %s\n",
+				getpid(), __FUNCTION__, __LINE__, strerror(errno));
+		ret = errno;
+		goto fail;
+	}
+
+	printf("\nUpgrading: ");
+	/* uploading entire image by chunks */
+	for (ulimgsz = 0, blknum = 1; ulimgsz < imgsz; ulimgsz += r_count, blknum++) {
+		r_count = safe_fread((void*)buf, 1, bufsz, fp);
+		if ((r_count < bufsz) && ((r_count + ulimgsz) != imgsz)) {
+			/* This must be the last chunk, othrwise fail */
+			_dprintf("*** Error(pid:%d): %s@%d Pipe read failed. Expected:%d,read:%d. Aborting\n",
+			pid, __FUNCTION__, __LINE__, bufsz, r_count);
+			ret = EPIPE;
+			goto fail;
+		}
+		/* Write chunk to the flash. */
+		w_count = imgif_write(imgifHandle, (UINT8*)buf, r_count);
+		if ((w_count < 0) || (w_count != r_count)) {
+			_dprintf("\nimgif_write() failed, towrite=%d, ret=%d",
+				     w_count, r_count);
+			ret = EIO;
+			goto fail;
+		}
+		_dprintf(".");
+	}
+
+ fail:
+	if (buf != NULL)
+		free(buf);
+	if (fp != NULL)
+		fclose(fp);
+	if (imgifHandle != NULL) {
+		if (imgif_close(imgifHandle, (ret != 0)) == 0) {
+			if (ret == 0)
+				_dprintf("\nDone. (written %d bytes, %d blocks with size %d\n",
+					ulimgsz, blknum, flash_info.eraseSize);
+		} else {
+			if (ret == 0)
+				_dprintf("\n*** Fail to write the image\n");
+			ret = EIO;
+		}
+	}
+
+	return ret;
 }
 
 #endif

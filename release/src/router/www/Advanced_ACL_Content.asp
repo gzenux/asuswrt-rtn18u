@@ -49,9 +49,16 @@ Object.prototype.getKey = function(value) {
 };
 
 function initial(){
-	show_menu();
+	if(isSwMode("re") && concurrep_support){
+		document.form.wl_subunit.value = 1;
+		if('<% nvram_get("wl_subunit"); %>' != '1') change_wl_unit();
+	}
 
+	show_menu();
 	regen_band(document.form.wl_unit);
+	if(lantiq_support){
+		checkWLReady();
+	}	
 
 	if(!band5g_support)
 		document.getElementById("wl_unit_field").style.display = "none";
@@ -68,7 +75,7 @@ function initial(){
 		manually_maclist_list_array[wl_maclist_x_row[i]] = clientName;
 	}
 
-	if((sw_mode == 2 || sw_mode == 4) && document.form.wl_unit.value == '<% nvram_get("wlc_band"); %>'){
+	if((sw_mode == 2 || sw_mode == 4) && document.form.wl_unit.value == '<% nvram_get("wlc_band"); %>' && !concurrep_support){
 		for(var i=3; i>=3; i--)
 			document.getElementById("MainTable1").deleteRow(i);
 		for(var i=2; i>=0; i--)
@@ -77,8 +84,9 @@ function initial(){
 		document.getElementById("wl_maclist_x_Block").style.display = "none";
 		document.getElementById("submitBtn").style.display = "none";
 	}
-	else
+	else{
 		show_wl_maclist_x();
+	}
 
 	setTimeout("showDropdownClientList('setClientmac', 'mac', 'wl', 'WL_MAC_List_Block', 'pull_arrow', 'all');", 1000);
 	check_macMode();
@@ -196,6 +204,11 @@ function addRow(obj, upper){
 }
 
 function applyRule(){
+	if(lantiq_support && wave_ready != 1){
+		alert("Please wait a minute for wireless ready");
+		return false;
+	}
+	
 	var rule_num = document.getElementById('wl_maclist_x_table').rows.length;
 	var item_num = document.getElementById('wl_maclist_x_table').rows[0].cells.length;
 	var tmp_value = "";
@@ -310,6 +323,25 @@ function enable_macMode(){
 		document.form.wl_maclist_x.disabled = true;
 	}	
 }
+
+function checkWLReady(){
+	$.ajax({
+	    url: '/ajax_wl_ready.asp',
+	    dataType: 'script',	
+	    error: function(xhr) {
+			setTimeout("checkWLReady();", 1000);
+	    },
+	    success: function(response){
+	    	if(wave_ready != 1){
+	    		$("#lantiq_ready").show();
+	    		setTimeout("checkWLReady();", 1000);
+	    	}
+	    	else{
+	    		$("#lantiq_ready").hide();
+	    	}	
+	    }
+  	});
+}
 </script>
 </head>
 
@@ -352,6 +384,7 @@ function enable_macMode(){
 					<div class="formfonttitle"><#menu5_1#> - <#menu5_1_4#></div>
 					<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 					<div class="formfontdesc"><#DeviceSecurity11a_display1_sectiondesc#></div>
+					<div id="lantiq_ready" style="display:none;color:#FC0;margin-left:5px;font-size:13px;">Wireless is setting...</div>
 					<table id="MainTable1" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 						<thead>
 						  <tr>
@@ -398,7 +431,7 @@ function enable_macMode(){
 							</tr>
 						</thead>
 							<tr>
-								<th width="80%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,10);">Client Name (MAC address)<!--untranslated--></th> 
+								<th width="80%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,10);"><#Client_Name#> (<#PPPConnection_x_MacAddressForISP_itemname#>)</th> 
 								<th width="20%"><#list_add_delete#></th>
 							</tr>
 							<tr>

@@ -28,7 +28,7 @@ static inline int hyfi_fdb_should_update(struct hyfi_net_bridge *hyfi_br,
 
 int hyfi_fdb_init(void);
 void hyfi_fdb_fini(void);
-
+void hyfi_fdb_perport(struct hyfi_net_bridge *hyfi_br, struct __switchport_index *pid);
 /*
  * Fill buffer with forwarding table records in
  * the API format.

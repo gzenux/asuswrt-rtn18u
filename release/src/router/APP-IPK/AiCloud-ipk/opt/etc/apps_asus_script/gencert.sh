@@ -18,11 +18,18 @@ for CN in $NVCN; do
 done
 
 # create the key and certificate request
-aicloud_openssl req -new -out /tmp/cert.csr -config openssl.config -keyout /tmp/privkey.pem -newkey rsa:1024 -passout pass:password
+#aicloud_openssl req -new -out /tmp/cert.csr -config openssl.config -keyout /tmp/privkey.pem -newkey rsa:1024 -passout pass:password
 # remove the passphrase from the key
-aicloud_openssl rsa -in /tmp/privkey.pem -out key.pem -passin pass:password
+#aicloud_openssl rsa -in /tmp/privkey.pem -out key.pem -passin pass:password
 # convert the certificate request into a signed certificate
-aicloud_openssl x509 -in /tmp/cert.csr -out cert.pem -req -signkey key.pem -setstartsecs $SECS -days 3653 -set_serial $1
+#aicloud_openssl x509 -in /tmp/cert.csr -out cert.pem -req -signkey key.pem -setstartsecs $SECS -days 3653 -set_serial $1
+
+# create the key and certificate request
+OPENSSL_CONF=/etc/openssl.config aicloud_openssl req -new -out /tmp/cert.csr -keyout /tmp/privkey.pem -newkey rsa:1024 -passout pass:password
+# remove the passphrase from the key
+OPENSSL_CONF=/etc/openssl.cnf aicloud_openssl rsa -in /tmp/privkey.pem -out key.pem -passin pass:password
+# convert the certificate request into a signed certificate
+OPENSSL_CONF=/etc/openssl.cnf RANDFILE=/dev/urandom aicloud_openssl x509 -in /tmp/cert.csr -out cert.pem -req -signkey key.pem -days 3653
 
 #	openssl x509 -in /etc/cert.pem -text -noout
 

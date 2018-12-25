@@ -7,7 +7,7 @@ ret_dir=/tmp/fsck_ret
 
 # $1: device path, $2: error code.
 _set_fsck_code(){
-	pool_name=`echo "$1" |awk '{FS="/"; print $NF}'`
+	pool_name=`echo "$1" |awk 'BEGIN{FS="/"}{print $NF}'`
 
 	if [ ! -d "$ret_dir" ]; then
 		rm -rf $ret_dir
@@ -20,7 +20,7 @@ _set_fsck_code(){
 
 # $1: device path.
 _get_fsck_logfile(){
-	pool_name=`echo "$1" |awk '{FS="/"; print $NF}'`
+	pool_name=`echo "$1" |awk 'BEGIN{FS="/"}{print $NF}'`
 
 	if [ ! -d "$ret_dir" ]; then
 		rm -rf $ret_dir

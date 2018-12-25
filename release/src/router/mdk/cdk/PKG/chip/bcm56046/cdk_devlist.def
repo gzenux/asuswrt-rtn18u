@@ -1,0 +1,10 @@
+#if CDK_CONFIG_INCLUDE_BCM56046_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56046, BCM56046_VENDOR_ID, BCM56046_DEVICE_ID, BCM56046_REV_B0, \
+                  0, 0, \
+                  bcm56640_b0, bcm56046_b0, bcm56046_b0, \
+                  CDK_DEV_ARCH_XGSM, "Ranger+", "BCM56640", \
+                  "Extensible 1/10/40-GbE Multilayer Ethernet Switch", 0, 0)
+#endif
+#endif
+

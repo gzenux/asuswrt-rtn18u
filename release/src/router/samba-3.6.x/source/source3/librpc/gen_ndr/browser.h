@@ -13,7 +13,7 @@
 
 struct BrowserrSrvInfo100Ctr {
 	uint32_t entries_read;
-	struct srvsvc_NetSrvInfo100 *entries;/* [size_is(entries_read),unique] */
+	struct srvsvc_NetSrvInfo100 *entries;/* [unique,size_is(entries_read)] */
 };
 
 struct BrowserrSrvInfo101Ctr {
@@ -22,8 +22,8 @@ struct BrowserrSrvInfo101Ctr {
 };
 
 union BrowserrSrvInfoUnion {
-	struct BrowserrSrvInfo100Ctr *info100;/* [unique,case(100)] */
-	struct BrowserrSrvInfo101Ctr *info101;/* [case(101),unique] */
+	struct BrowserrSrvInfo100Ctr *info100;/* [case(100),unique] */
+	struct BrowserrSrvInfo101Ctr *info101;/* [unique,case(101)] */
 }/* [switch_type(uint32)] */;
 
 struct BrowserrSrvInfo {

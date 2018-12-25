@@ -40,31 +40,53 @@ a:active {
 <script type="text/javascript" src="/require/require.min.js"></script>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script>
-if(parent.location.pathname.search("index") === -1) top.location.href = "../index.asp";
+if(parent.location.pathname.search("index") === -1) top.location.href = "../"+'<% networkmap_page(); %>';
 
 var diskOrder = parent.getSelectedDiskOrder();
 var diskmon_status = '<% nvram_get("diskmon_status"); %>';
 var diskmon_usbport = '<% nvram_get("diskmon_usbport"); %>';
-var usb_path1_diskmon_freq = '<% nvram_get("usb_path1_diskmon_freq"); %>';
-var usb_path1_diskmon_freq_time = '<% nvram_get("usb_path1_diskmon_freq_time"); %>';
-var usb_path2_diskmon_freq = '<% nvram_get("usb_path2_diskmon_freq"); %>';
-var usb_path2_diskmon_freq_time = '<% nvram_get("usb_path2_diskmon_freq_time"); %>';
+var usb_path_diskmon_freq_array = [];
+for(var i = 1; i <= parent.usbPortMax; i += 1) {
+	switch(i) {
+		case 1 :
+			usb_path_diskmon_freq_array.push({'freq':'<% nvram_get("usb_path1_diskmon_freq"); %>','freq_time':'<% nvram_get("usb_path1_diskmon_freq_time"); %>'});
+			break;
+		case 2 :
+			usb_path_diskmon_freq_array.push({'freq':'<% nvram_get("usb_path2_diskmon_freq"); %>','freq_time':'<% nvram_get("usb_path2_diskmon_freq_time"); %>'});
+			break;
+		case 3 :
+			usb_path_diskmon_freq_array.push({'freq':'<% nvram_get("usb_path3_diskmon_freq"); %>','freq_time':'<% nvram_get("usb_path3_diskmon_freq_time"); %>'});
+			break;
+	}
+}
 
 var set_diskmon_time = "";
 var progressBar;
 var timer;
-var diskmon_freq_row;
+var diskmon_freq_row = [""];
 
 var stopScan = 0;
 var scan_done = 0;
 
 function initial(){
-	document.getElementById("t0").className = "tab_NW";
-	document.getElementById("t1").className = "tabclick_NW";
-
 	load_schedule_value();
 	freq_change();
 	check_status(parent.usbPorts[diskOrder-1]);
+
+	var disk_list_array = new Array();
+	var usb_fatfs_mod = '<% nvram_get("usb_fatfs_mod"); %>';
+	var usb_ntfs_mod = '<% nvram_get("usb_ntfs_mod"); %>';
+	var usb_hfs_mod = '<% nvram_get("usb_hfs_mod"); %>';
+
+	disk_list_array = { "info" : ["<#diskUtility_information#>", "disk.asp"], "health" : ["<#diskUtility#>", "disk_utility.asp"], "format" : ["<#CTL_format#>", "disk_format.asp"]};
+	if(!parent.diskUtility_support) {
+		delete disk_list_array.health;
+		delete disk_list_array.format;
+	}
+	if(usb_fatfs_mod != "tuxera" && usb_ntfs_mod != "tuxera" && usb_hfs_mod != "tuxera") {
+		delete disk_list_array.format;
+	}
+	$('#diskTab').html(parent.gen_tab_menu(disk_list_array, "health"));
 }
 
 function load_schedule_value(){
@@ -73,13 +95,10 @@ function load_schedule_value(){
 		document.usbUnit_form.submit();
 	}
 
-	if(parseInt(parent.usbPorts[diskOrder-1].usbPath) == 1){
-		document.form.diskmon_freq.value = usb_path1_diskmon_freq;
-		diskmon_freq_row = usb_path1_diskmon_freq_time.split('&#62');
-	}
-	else{
-		document.form.diskmon_freq.value = usb_path2_diskmon_freq;
-		diskmon_freq_row = usb_path2_diskmon_freq_time.split('&#62');
+	var disk_array_idx = parseInt(parent.usbPorts[diskOrder-1].usbPath) - 1;
+	if(usb_path_diskmon_freq_array[disk_array_idx] != undefined) {
+		document.form.diskmon_freq.value = usb_path_diskmon_freq_array[disk_array_idx].freq;
+		diskmon_freq_row = usb_path_diskmon_freq_array[disk_array_idx].freq_time.split('&#62');
 	}
 
 	for(var i=0; i<3; i++){
@@ -203,7 +222,12 @@ function show_loadingBar_field(){
 	
 	parent.document.getElementById('ring_USBdisk_'+diskOrder).style.display = "";
 	parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundImage = "url(/images/New_ui/networkmap/backgroud_move_8P_2.0.gif)";
-	parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '0% 2%';
+	if(parent.based_modelid == "GT-AC5300" || parent.based_modelid == "GT-AC9600"){
+		parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundRepeat = "no-repeat";
+		parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '32px -3px';
+	}
+	else
+		parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '-1px -1px';
 }
 
 function showLoadingUpdate(){
@@ -237,7 +261,7 @@ function showLoadingUpdate(){
 				else if (progressBar >= 40)	
 					progressBar = 40;
 					
-				document.getElementById('scan_message').innerHTML = "Disk scanning ...";					
+				document.getElementById('scan_message').innerHTML = "<#diskUtility_scan#>";					
 			}	
 			else if(scan_status == 4 && stopScan == 0){
 				if(progressBar <= 40)
@@ -332,7 +356,6 @@ function check_status(_device){
 
 	document.getElementById('scan_status_field').style.display = "";
 	parent.document.getElementById('ring_USBdisk_'+diskOrder).style.display = "";
-	parent.document.getElementById('iconUSBdisk_'+diskOrder).style.marginLeft = "35px";
 
 	var i, j;
 	var got_code_0, got_code_1, got_code_2, got_code_3;
@@ -361,9 +384,9 @@ function check_status(_device){
 
 		if(stopScan == 1 || scan_done == 1){
 			parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundImage = "url(/images/New_ui/networkmap/white_04.gif)";
-			parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '0% 99%';
+			parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '0px -184px';
 		}
-		parent.document.getElementById('iconUSBdisk_'+diskOrder).style.backgroundPosition = '0% -202px';
+		parent.document.getElementById('iconUSBdisk_'+diskOrder).style.backgroundPosition = '1px -206px';
 	}
 	else if(got_code_2){
 		if(stopScan == 1){
@@ -382,9 +405,13 @@ function check_status(_device){
 		document.getElementById('scan_status_image').src = "/images/New_ui/networkmap/blue.png";
 		if(stopScan == 1 || scan_done == 1){
 			parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundImage = "url(/images/New_ui/networkmap/white_04.gif)";
-			parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '0% 50%';
+			parent.document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '0px -92px';
 		}
-		parent.document.getElementById('iconUSBdisk_'+diskOrder).style.backgroundPosition = '0px -103px';
+
+		if(parent.based_modelid == "GT-AC5300" || parent.based_modelid == "GT-AC9600")
+			parent.document.getElementById('iconUSBdisk_'+diskOrder).style.backgroundPosition = '1px -95px';
+		else
+			parent.document.getElementById('iconUSBdisk_'+diskOrder).style.backgroundPosition = '1px -105px';
 	}
 
 	get_disk_log();
@@ -428,28 +455,11 @@ function reset_force_stop(){
 <input type="hidden" name="diskmon_freq_time" value="<% nvram_get("diskmon_freq_time"); %>">
 <input type="hidden" name="diskmon_policy" value="disk">
 <input type="hidden" name="diskmon_part" value="">
-<table height="30px;">
-	<tr>
-		<td>		
-			<table width="100px" border="0" align="left" style="margin-left:5px;" cellpadding="0" cellspacing="0">
-			<td>
-					<div id="t0" class="tabclick_NW" align="center" style="font-weight: bolder;margin-right:2px;" onclick="location.href='disk.asp'">
-						<span style="cursor:pointer;font-weight: bolder;"><#diskUtility_information#></span>
-					</div>
-				</td>
-			<td>
-					<div id="t1" class="tab_NW" align="center" style="font-weight: bolder;margin-right:2px;" onclick="location.href='disk_utility.asp'">
-						<span style="cursor:pointer;font-weight: bolder;"><#diskUtility#></span>
-					</div>
-				</td>
-			</table>
-		</td>
-	</tr>
-</table>
 
-<table  width="313px;"  align="center"  style="margin-top:-8px;margin-left:3px;" cellspacing="5">
+<div id="diskTab" class='tab_table'></div>
+<table width="95%" align="center" cellspacing="0">
   <tr >
-    <td style="background-color:#4D595D">
+    <td class="list_bg">
 		<div id="scan_status_field" style="margin-top:10px;">
 			<table>
 				<tr class="font_style">
@@ -484,21 +494,21 @@ function reset_force_stop(){
 			<table border="0" width="98%" align="center" height="100px;"><tr>
 				<td style="vertical-align:top" height="100px;">
 					<span id="log_field" >
-						<textarea cols="15" rows="13" readonly="readonly" id="textarea_disk0" style="resize:none;display:none;width:98%; font-family:'Courier New', Courier, mono; font-size:11px;background:#475A5F;color:#FFFFFF;"></textarea>
+						<textarea cols="15" rows="13" readonly="readonly" id="textarea_disk0" class="textarea_bg" style="resize:none;display:none;width:98%; font-family:'Courier New', Courier, mono; font-size:11px;color:#FFFFFF;"></textarea>
 					</span>
 				</td>
 			</tr></table>
 		</div>
 		<div style="margin-top:20px;margin-bottom:10px;"align="center">
 			<input id="btn_scan" type="button" class="button_gen" onclick="go_scan();" value="<#QIS_rescan#>">
-			<input id="btn_abort" type="button" class="button_gen" onclick="abort_scan();" value="Abort" style="display:none">
+			<input id="btn_abort" type="button" class="button_gen" onclick="abort_scan();" value="<#CTL_Cancel#>" style="display:none">
 			<img id="loadingIcon" style="display:none;margin-right:10px;" src="/images/InternetScan.gif">
 		</div>
     </td>
   </tr>
 
   <tr>
-    <td style="background-color:#4D595D;" >
+    <td class="list_bg">
 		<div class="font_style" style="margin-left:12px;margin-top:10px;"><#diskUtility_schedule#></div>
 		<img style="margin-top:5px;margin-left:10px; *margin-top:-5px;" src="/images/New_ui/networkmap/linetwo2.png">
 			<div style="margin-left:10px;">
@@ -515,7 +525,7 @@ function reset_force_stop(){
 						</td>							
 						<td >
 							<div id="date_field">
-								<div style="margin-bottom:5px;">Date</div>
+								<div style="margin-bottom:5px;"><#Date#></div>
 								<select name="freq_mon" class="input_option" onchange="freq_change();">
 									<option value="1">1</option>
 									<option value="2">2</option>

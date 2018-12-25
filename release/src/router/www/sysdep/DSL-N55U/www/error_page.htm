@@ -148,7 +148,7 @@ function initial(){
 		$("#suggestion").hide();
 	}
 	else{
-		parent.location = "/index.asp";
+		parent.location = "<% abs_index_page(); %>";
 	}
 }
 
@@ -175,7 +175,7 @@ function detectLink(){
 }
 
 function manually_start_wan_Link(){
-	location.href = "/index.asp?flag=Internet";
+	location.href = "<% abs_index_page(); %>?flag=Internet";
 }
 
 function change_lan_subnet(){

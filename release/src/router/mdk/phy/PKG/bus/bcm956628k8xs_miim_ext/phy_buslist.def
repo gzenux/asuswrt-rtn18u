@@ -1,0 +1,3 @@
+#define PHY_BUS_BCM956628K8XS_MIIM_EXT_INSTALLED
+extern phy_bus_t phy_bus_bcm956628k8xs_miim_ext;
+

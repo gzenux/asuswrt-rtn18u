@@ -8,13 +8,28 @@
  *
  * busyboxed 20 March 2001, Larry Doolittle <ldoolitt@recycle.lbl.gov>
  *
- * Licensed under GPLv2 or later, see file License in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
-#include "libbb.h"
-#include <sys/timex.h>
+//usage:#define adjtimex_trivial_usage
+//usage:       "[-q] [-o OFF] [-f FREQ] [-p TCONST] [-t TICK]"
+//usage:#define adjtimex_full_usage "\n\n"
+//usage:       "Read or set kernel time variables. See adjtimex(2)\n"
+//usage:     "\n	-q	Quiet"
+//usage:     "\n	-o OFF	Time offset, microseconds"
+//usage:     "\n	-f FREQ	Frequency adjust, integer kernel units (65536 is 1ppm)"
+//usage:     "\n	-t TICK	Microseconds per tick, usually 10000"
+//usage:     "\n		(positive -t or -f values make clock run faster)"
+//usage:     "\n	-p TCONST"
 
-static const uint16_t statlist_bit[] = {
+#include "libbb.h"
+#ifdef __BIONIC__
+# include <linux/timex.h>
+#else
+# include <sys/timex.h>
+#endif
+
+static const uint16_t statlist_bit[] ALIGN2 = {
 	STA_PLL,
 	STA_PPSFREQ,
 	STA_PPSTIME,
@@ -30,7 +45,7 @@ static const uint16_t statlist_bit[] = {
 	STA_CLOCKERR,
 	0
 };
-static const char statlist_name[] =
+static const char statlist_name[] ALIGN1 =
 	"PLL"       "\0"
 	"PPSFREQ"   "\0"
 	"PPSTIME"   "\0"
@@ -46,7 +61,7 @@ static const char statlist_name[] =
 	"CLOCKERR"
 ;
 
-static const char ret_code_descript[] =
+static const char ret_code_descript[] ALIGN1 =
 	"clock synchronized" "\0"
 	"insert leap second" "\0"
 	"delete leap second" "\0"
@@ -96,13 +111,13 @@ int adjtimex_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	if (!(opt & OPT_quiet)) {
-		int sep;
+		const char *sep;
 		const char *name;
 
 		printf(
 			"    mode:         %d\n"
-			"-o  offset:       %ld\n"
-			"-f  frequency:    %ld\n"
+			"-o  offset:       %ld us\n"
+			"-f  freq.adjust:  %ld (65536 = 1ppm)\n"
 			"    maxerror:     %ld\n"
 			"    esterror:     %ld\n"
 			"    status:       %d (",
@@ -110,15 +125,14 @@ int adjtimex_main(int argc UNUSED_PARAM, char **argv)
 		txc.esterror, txc.status);
 
 		/* representative output of next code fragment:
-		   "PLL | PPSTIME" */
+		 * "PLL | PPSTIME"
+		 */
 		name = statlist_name;
-		sep = 0;
+		sep = "";
 		for (i = 0; statlist_bit[i]; i++) {
 			if (txc.status & statlist_bit[i]) {
-				if (sep)
-					fputs(" | ", stdout);
-				fputs(name, stdout);
-				sep = 1;
+				printf("%s%s", sep, name);
+				sep = " | ";
 			}
 			name += strlen(name) + 1;
 		}
@@ -128,9 +142,9 @@ int adjtimex_main(int argc UNUSED_PARAM, char **argv)
 			descript = nth_string(ret_code_descript, ret);
 		printf(")\n"
 			"-p  timeconstant: %ld\n"
-			"    precision:    %ld\n"
+			"    precision:    %ld us\n"
 			"    tolerance:    %ld\n"
-			"-t  tick:         %ld\n"
+			"-t  tick:         %ld us\n"
 			"    time.tv_sec:  %ld\n"
 			"    time.tv_usec: %ld\n"
 			"    return value: %d (%s)\n",

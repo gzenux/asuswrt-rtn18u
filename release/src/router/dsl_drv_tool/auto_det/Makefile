@@ -22,6 +22,11 @@ CFLAGS += -Wall -O
 CFLAGS += -DASUS
 CFLAGS += -I$(TOP)/shared -I$(SRCBASE)/include
 LDFLAGS = -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX} -lnvram
+
+ifeq ($(RTCONFIG_AMAS),y)
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
+endif
+
 INSTALL = install
 
 ifeq ($(RTCONFIG_DSL_TCLINUX),y)

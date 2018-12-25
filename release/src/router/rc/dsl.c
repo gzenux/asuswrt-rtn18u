@@ -396,7 +396,7 @@ void start_dsl()
 		for(x=2; x<=config_num; x++) {
 			sprintf(wan_num, "%d", x);
 #ifdef RTCONFIG_RALINK
-			sprintf(wan_if, "eth2.1.%d", x);
+			snprintf(wan_if, sizeof(wan_if), "eth2.1.%d", x);
 			eval("vconfig", "add", "eth2.1", wan_num);
 #else
 			/* create IPTV PVC interface and begin from eth0.3881 */

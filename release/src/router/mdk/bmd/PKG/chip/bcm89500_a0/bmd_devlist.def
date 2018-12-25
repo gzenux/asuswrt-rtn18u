@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM89500_A0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM89500_A0
+BMD_DEVLIST_ENTRY(BCM89500, BCM89500_VENDOR_ID, BCM89500_DEVICE_ID, BCM89500_REV_A0, \
+                  BCM89500_MODEL, BCM89500_PROBEINFO, \
+                  bcm89500_a0, bcm89500_a0, bcm89500_a0, \
+                  CDK_DEV_ARCH_ROBO, "Polar", "BCM89500", \
+                  "6-Port GE Switch With 1 intergrated Qual PHY", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm89500_a0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

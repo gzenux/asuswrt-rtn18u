@@ -427,12 +427,14 @@ static pj_bool_t options_on_rx_request(pjsip_rx_data *rdata)
 			  (pjsip_hdr*) pjsip_hdr_clone(tdata->pool, cap_hdr));
 	}
 
+#if !defined(PJMEDIA_DISABLE_SCTP) || (PJMEDIA_DISABLE_SCTP == 0)
 	/* Add Tnl-Supported header */
 	cap_hdr = pjsip_endpt_get_capability(pjsua_var[inst_id].endpt, PJSIP_H_TNL_SUPPORTED, NULL);
 	if (cap_hdr) {
 		pjsip_msg_add_hdr(tdata->msg, 
 			(pjsip_hdr*) pjsip_hdr_clone(tdata->pool, cap_hdr));
 	}
+#endif
 
     /* Add Allow-Events header from the evsub module */
     cap_hdr = pjsip_evsub_get_allow_events_hdr(NULL);
@@ -1564,6 +1566,7 @@ PJ_DEF(pj_status_t) pjsua_destroy2(pjsua_inst_id inst_id, unsigned flags)
 			pjsua_var[inst_id].monitor_thread[i] = NULL;
 		}
 	}
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 2..."));
     
     if (pjsua_var[inst_id].endpt) {
 	unsigned max_wait;
@@ -1572,6 +1575,7 @@ PJ_DEF(pj_status_t) pjsua_destroy2(pjsua_inst_id inst_id, unsigned flags)
 	if ((flags & PJSUA_DESTROY_NO_TX_MSG) == 0) {
 	    pjsua_call_hangup_all(inst_id);
 	}
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 3..."));
 
 	/* Set all accounts to offline */
 	for (i=0; i<(int)PJ_ARRAY_SIZE(pjsua_var[inst_id].acc); ++i) {
@@ -1580,12 +1584,35 @@ PJ_DEF(pj_status_t) pjsua_destroy2(pjsua_inst_id inst_id, unsigned flags)
 	    pjsua_var[inst_id].acc[i].online_status = PJ_FALSE;
 	    pj_bzero(&pjsua_var[inst_id].acc[i].rpid, sizeof(pjrpid_element));
 	}
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 4..."));
 
 	/* Terminate all presence subscriptions. */
 	pjsua_pres_shutdown(inst_id, flags);
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 5..."));
 
 	/* Destroy media (to shutdown media transports etc) */
 	pjsua_media_subsys_destroy(inst_id, flags);
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 6..."));
+
+    /* Second stage, wait for all calls released */
+    max_wait = 15000;
+    for (i=0; i<(int)(max_wait/50); ++i) {
+        unsigned j;
+        for (j=0; j<PJ_ARRAY_SIZE(pjsua_var[inst_id].calls); j++) {
+            if (!pjsua_var[inst_id].calls[j].tnl_stream) {
+                PJ_LOG(4,(THIS_FILE, " Call[%d] has been destroyed.", j));
+                continue;
+            } else {
+                PJ_LOG(4,(THIS_FILE, " Wait for call[%d] destroying.", j));
+                break;
+            }
+        }
+        if (j != PJ_ARRAY_SIZE(pjsua_var[inst_id].calls))
+        busy_sleep(inst_id, 50);
+        else
+        break;
+    }
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 7..."));
 
 	/* Wait for sometime until all publish client sessions are done
 	 * (ticket #364)
@@ -1598,13 +1625,14 @@ PJ_DEF(pj_status_t) pjsua_destroy2(pjsua_inst_id inst_id, unsigned flags)
 	    if (pjsua_var[inst_id].acc[i].cfg.unpublish_max_wait_time_msec > max_wait)
 		max_wait = pjsua_var[inst_id].acc[i].cfg.unpublish_max_wait_time_msec;
 	}
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 8..."));
 	
 	/* No waiting if RX is disabled */
 	if (flags & PJSUA_DESTROY_NO_RX_MSG) {
 	    max_wait = 0;
 	}
 
-	/* Second stage, wait for unpublications to complete */
+	/* Third stage, wait for unpublications to complete */
 	for (i=0; i<(int)(max_wait/50); ++i) {
 	    unsigned j;
 	    for (j=0; j<PJ_ARRAY_SIZE(pjsua_var[inst_id].acc); ++j) {
@@ -1619,8 +1647,9 @@ PJ_DEF(pj_status_t) pjsua_destroy2(pjsua_inst_id inst_id, unsigned flags)
 	    else
 		break;
 	}
+    PJ_LOG(4,(THIS_FILE, "Shutting down, 9..."));
 
-	/* Third stage, forcefully destroy unfinished unpublications */
+	/* Forth stage, forcefully destroy unfinished unpublications */
 	for (i=0; i<(int)PJ_ARRAY_SIZE(pjsua_var[inst_id].acc); ++i) {
 	    if (pjsua_var[inst_id].acc[i].publish_sess) {
 		pjsip_publishc_destroy(pjsua_var[inst_id].acc[i].publish_sess);

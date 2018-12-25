@@ -20,7 +20,6 @@ conf.CHECK_C_PROTOTYPE('getgrent_r',
                        define='SOLARIS_GETGRENT_R', headers='grp.h')
 
 conf.CHECK_FUNCS('getgrouplist')
-#print "check get#########"
 conf.CHECK_HEADERS('ctype.h locale.h langinfo.h')
 conf.CHECK_HEADERS('fnmatch.h locale.h langinfo.h')
 conf.CHECK_HEADERS('sys/ipc.h sys/mman.h sys/shm.h')

@@ -524,6 +524,10 @@ struct pjmedia_transport
 	int dtls_retry_count;
 	int udt_retry_count;
 	int sctp_retry_count;
+
+	// the stun and turn error status.
+	int stun_last_status;
+	int turn_last_status;
 };
 
 /**

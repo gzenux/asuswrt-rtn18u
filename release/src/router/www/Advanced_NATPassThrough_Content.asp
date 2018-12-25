@@ -17,6 +17,19 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script>function initial(){
 	show_menu();
+	update_pppoerelay_option();
+}
+
+function update_pppoerelay_option(){
+	var wans_dualwan_array = '<% nvram_get("wans_dualwan"); %>'.split(" ");
+	var wans_mode = '<%nvram_get("wans_mode");%>';
+	if(document.form.fw_pt_pppoerelay.value == "0" || !dualWAN_support || wans_mode != "lb" || wans_dualwan_array.indexOf("none") != -1){
+		document.getElementById("pppoerelay_unit_th").style.display = "none";
+		document.getElementById("pppoerelay_unit_td").style.display = "none";
+	}else{
+		document.getElementById("pppoerelay_unit_th").style.display = "";
+		document.getElementById("pppoerelay_unit_td").style.display = "";
+	}
 }
 
 function applyRule(){
@@ -67,7 +80,7 @@ function applyRule(){
 										
 										<tr>
 											<th><#NAT_PPTP_Passthrough#></th>
-											<td>
+											<td colspan=3>
 												<select name="fw_pt_pptp" class="input_option">
 													<option class="content_input_fd" value="0" <% nvram_match("fw_pt_pptp", "0","selected"); %>><#btn_disable#></option>
 													<option class="content_input_fd" value="1"<% nvram_match("fw_pt_pptp", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
@@ -77,7 +90,7 @@ function applyRule(){
 							
 										<tr>
 											<th><#NAT_L2TP_Passthrough#></th>
-											<td>
+											<td colspan=3>
 												<select name="fw_pt_l2tp" class="input_option">
 													<option class="content_input_fd" value="0" <% nvram_match("fw_pt_l2tp", "0","selected"); %>><#btn_disable#></option>
 													<option class="content_input_fd" value="1"<% nvram_match("fw_pt_l2tp", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
@@ -87,7 +100,7 @@ function applyRule(){
 							
 										<tr>
 											<th><#NAT_IPSec_Passthrough#></th>
-											<td>
+											<td colspan=3>
 												<select name="fw_pt_ipsec" class="input_option">
 													<option class="content_input_fd" value="0" <% nvram_match("fw_pt_ipsec", "0","selected"); %>><#btn_disable#></option>
 													<option class="content_input_fd" value="1"<% nvram_match("fw_pt_ipsec", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
@@ -97,7 +110,7 @@ function applyRule(){
 
 						<tr>
   	         					<th><#NAT_RTSP_Passthrough#></th>
-    	       					<td>
+						<td colspan=3>
 												<select name="fw_pt_rtsp" class="input_option">
 													<option class="content_input_fd" value="0" <% nvram_match("fw_pt_rtsp", "0","selected"); %>><#btn_disable#></option>
 													<option class="content_input_fd" value="1"<% nvram_match("fw_pt_rtsp", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
@@ -107,7 +120,7 @@ function applyRule(){
 
 						<tr>
 							<th><#NAT_H323_Passthrough#></th>
-						<td>
+						<td colspan=3>
 												<select name="fw_pt_h323" class="input_option">
 													<option class="content_input_fd" value="0" <% nvram_match("fw_pt_h323", "0","selected"); %>><#btn_disable#></option>
 													<option class="content_input_fd" value="1"<% nvram_match("fw_pt_h323", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
@@ -117,7 +130,7 @@ function applyRule(){
 
 						<tr>
 							<th><#NAT_SIP_Passthrough#></th>
-						<td>
+						<td colspan=3>
 												<select name="fw_pt_sip" class="input_option">
 													<option class="content_input_fd" value="0" <% nvram_match("fw_pt_sip", "0","selected"); %>><#btn_disable#></option>
 													<option class="content_input_fd" value="1"<% nvram_match("fw_pt_sip", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
@@ -128,12 +141,19 @@ function applyRule(){
 										<tr>
 							<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,11);"><#PPPConnection_x_PPPoERelay_itemname#></a></th>
     	       					<td>
-												<select name="fw_pt_pppoerelay" class="input_option">
+												<select name="fw_pt_pppoerelay" class="input_option" onChange="update_pppoerelay_option();">
 													<option class="content_input_fd" value="0" <% nvram_match("fw_pt_pppoerelay", "0","selected"); %>><#btn_disable#></option>
 													<option class="content_input_fd" value="1"<% nvram_match("fw_pt_pppoerelay", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
 												</select>
 						</td>
-						</tr>
+										<th id="pppoerelay_unit_th"><#wan_interface#></th>
+										<td id="pppoerelay_unit_td">
+												<select name="pppoerelay_unit" class="input_option">
+													<option class="content_input_fd" value="0" <% nvram_match("pppoerelay_unit", "0","selected"); %>><#dualwan_primary#></option>
+													<option class="content_input_fd" value="1"<% nvram_match("pppoerelay_unit", "1","selected"); %>><#dualwan_secondary#></option>
+												</select>
+										</td>
+										</tr>
 							
 									</table>
 											

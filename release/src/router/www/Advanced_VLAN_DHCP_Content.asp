@@ -502,11 +502,11 @@ function calculatorIPPoolRange() {
 									<table id="tbVLANGroup" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
 									<thead>
 										<tr>
-											<td colspan="2">Configuration</td>
+											<td colspan="2"><#Configuration#></td>
 										</tr>
 									</thead>
 										<tr>
-											<th>Subnet</th>
+											<th><#Subnet#></th>
 											<td>
 												<select name="selSubnet" class="input_option" onchange="switchSubnetValue(this.value)">
 													<option value="LAN1">LAN1</option>
@@ -536,7 +536,7 @@ function calculatorIPPoolRange() {
 										</tr>
 										<tr>
 										<tr>
-											<th>Subnet Mask</th>
+											<th><#IPConnection_x_ExternalSubnetMask_itemname#></th>
 											<td>
 												<input type="text" maxlength="15" class="input_25_table" name="tSubnetMask" onBlur="checkMaskLegality();" onKeyPress="return is_ipaddr(this,event);">
 											</td>
@@ -555,7 +555,7 @@ function calculatorIPPoolRange() {
 											</td>
 										</tr>
 										<tr>
-											<th>Lease Time</th>
+											<th><#LANHostConfig_LeaseTime_itemname#></th>
 											<td>
 												<input type="text" maxlength="6" class="input_25_table" name="tLeaseTime" onKeyPress="return is_number(this,event);">
 											</td>

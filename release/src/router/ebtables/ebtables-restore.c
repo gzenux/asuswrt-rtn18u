@@ -36,6 +36,9 @@ static void copy_table_names()
 	strcpy(replace[2].name, "broute");
 }
 
+extern void get_global_mutex();
+extern void release_global_mutex();
+
 #define ebtrest_print_error(format, args...) do {fprintf(stderr, "ebtables-restore: "\
                                              "line %d: "format".\n", line, ##args); exit(-1);} while (0)
 int main(int argc_, char *argv_[])
@@ -43,6 +46,8 @@ int main(int argc_, char *argv_[])
 	char *argv[EBTD_ARGC_MAX], cmdline[EBTD_CMDLINE_MAXLN];
 	int i, offset, quotemode = 0, argc, table_nr = -1, line = 0, whitespace;
 	char ebtables_str[] = "ebtables";
+
+	get_global_mutex();
 
 	if (argc_ != 1)
 		ebtrest_print_error("options are not supported");
@@ -131,5 +136,8 @@ int main(int argc_, char *argv_[])
 		ebt_deliver_table(&replace[table_nr]);
 		ebt_deliver_counters(&replace[table_nr]);
 	}
+    
+	release_global_mutex();
+    
 	return 0;
 }

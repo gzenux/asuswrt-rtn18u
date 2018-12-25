@@ -22,6 +22,7 @@
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 #holder {
     height: 330px;
@@ -64,7 +65,19 @@
 	background-image: url("data:image/svg+xml;charset=US-ASCII,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22iso-8859-1%22%3F%3E%0A%3Csvg%20version%3D%221.1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20x%3D%220px%22%20y%3D%220px%22%0A%09%20viewBox%3D%220%200%20402.5%20402.5%22%20enable-background%3D%22new%200%200%20402.5%20402.5%22%20xml%3Aspace%3D%22preserve%22%3E%0A%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M200.9%2C401C90.7%2C400.6%2C1.2%2C310.9%2C1.5%2C201C1.8%2C90.7%2C92.1%2C0.8%2C201.9%2C1.5C312.2%2C2.2%2C401.5%2C91.9%2C401%2C201.7%0A%09C400.5%2C311.9%2C310.7%2C401.4%2C200.9%2C401z%20M164.7%2C286.6l116.2-67.1c6.5-3.8%2C10.5-10.7%2C10.5-18.2s-4-14.5-10.5-18.2l-116.2-67.1%0A%09c-3.3-1.9-6.9-2.8-10.5-2.8c-3.6%2C0-7.3%2C0.9-10.5%2C2.8c-6.5%2C3.8-10.5%2C10.7-10.5%2C18.2v134.2c0%2C7.5%2C4%2C14.5%2C10.5%2C18.2%0A%09c3.3%2C1.9%2C6.9%2C2.8%2C10.5%2C2.8C157.8%2C289.4%2C161.4%2C288.5%2C164.7%2C286.6z%22%2F%3E%0A%3C%2Fsvg%3E");
 }
 .icon_play_active{
-	background-image: url("data:image/svg+xml;charset=US-ASCII,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22iso-8859-1%22%3F%3E%0A%3Csvg%20version%3D%221.1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20x%3D%220px%22%20y%3D%220px%22%0A%09%20viewBox%3D%220%200%20402.5%20402.5%22%20enable-background%3D%22new%200%200%20402.5%20402.5%22%20xml%3Aspace%3D%22preserve%22%3E%0A%3Cpath%20fill%3D%22%2369DAFE%22%20d%3D%22M200.9%2C401C90.7%2C400.6%2C1.2%2C310.9%2C1.5%2C201C1.8%2C90.7%2C92.1%2C0.8%2C201.9%2C1.5C312.2%2C2.2%2C401.5%2C91.9%2C401%2C201.7%0A%09C400.5%2C311.9%2C310.7%2C401.4%2C200.9%2C401z%20M164.7%2C286.6l116.2-67.1c6.5-3.8%2C10.5-10.7%2C10.5-18.2s-4-14.5-10.5-18.2l-116.2-67.1%0A%09c-3.3-1.9-6.9-2.8-10.5-2.8c-3.6%2C0-7.3%2C0.9-10.5%2C2.8c-6.5%2C3.8-10.5%2C10.7-10.5%2C18.2v134.2c0%2C7.5%2C4%2C14.5%2C10.5%2C18.2%0A%09c3.3%2C1.9%2C6.9%2C2.8%2C10.5%2C2.8C157.8%2C289.4%2C161.4%2C288.5%2C164.7%2C286.6z%22%2F%3E%0A%3C%2Fsvg%3E%0A");	}
+	background-image: url("data:image/svg+xml;charset=US-ASCII,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22iso-8859-1%22%3F%3E%0A%3Csvg%20version%3D%221.1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20x%3D%220px%22%20y%3D%220px%22%0A%09%20viewBox%3D%220%200%20402.5%20402.5%22%20enable-background%3D%22new%200%200%20402.5%20402.5%22%20xml%3Aspace%3D%22preserve%22%3E%0A%3Cpath%20fill%3D%22%2369DAFE%22%20d%3D%22M200.9%2C401C90.7%2C400.6%2C1.2%2C310.9%2C1.5%2C201C1.8%2C90.7%2C92.1%2C0.8%2C201.9%2C1.5C312.2%2C2.2%2C401.5%2C91.9%2C401%2C201.7%0A%09C400.5%2C311.9%2C310.7%2C401.4%2C200.9%2C401z%20M164.7%2C286.6l116.2-67.1c6.5-3.8%2C10.5-10.7%2C10.5-18.2s-4-14.5-10.5-18.2l-116.2-67.1%0A%09c-3.3-1.9-6.9-2.8-10.5-2.8c-3.6%2C0-7.3%2C0.9-10.5%2C2.8c-6.5%2C3.8-10.5%2C10.7-10.5%2C18.2v134.2c0%2C7.5%2C4%2C14.5%2C10.5%2C18.2%0A%09c3.3%2C1.9%2C6.9%2C2.8%2C10.5%2C2.8C157.8%2C289.4%2C161.4%2C288.5%2C164.7%2C286.6z%22%2F%3E%0A%3C%2Fsvg%3E%0A");
+}
+.clean_log {
+	float: right;
+	background-image: url("images/New_ui/delete.svg");
+	height: 35px;
+	width: 35px;
+	background-repeat: no-repeat;
+	margin-right: 10px;
+	cursor: pointer;
+}
+.clean_log:hover {
+	background-image: url("images/New_ui/delete_hover.svg");
 }
 </style>
 <script>
@@ -81,7 +94,7 @@ function initial(){
 	load_time();
 	
 	if(document.form.bwdpi_db_enable.value == 1){
-		document.getElementById('statistic_hint').innerHTML = "*Data will be refreshed on the hour";
+		document.getElementById('statistic_hint').innerHTML = "* <#Traffic_Analyzer_refresh_note#>";
 		document.getElementById('statistic_hint').style.display = "none";
 		document.getElementById("demo_background").style.zIndex = "0";
 	}
@@ -91,7 +104,7 @@ function initial(){
 			document.cookie = "demo=1";
 		}
 		
-		document.getElementById('statistic_hint').innerHTML = "*You should turn on the Traffic Statistic to record the traffic information";	
+		document.getElementById('statistic_hint').innerHTML = "* <#Traffic_Analyzer_note#>";	
 	}
 	
 	get_every_client_data("all", "detail", "24", date_second, date_string);		//get clients and find top 5 clients' traffic last 24 hours
@@ -143,21 +156,21 @@ function get_client_used_apps_info(client_index, used_data_array, top5_info, typ
 	var code = "";
 
 	if(type == "router"){
-		document.getElementById('info_block_title').innerHTML = "Monthly Top 5 Clients Used";
-		document.getElementById('top_client_title').innerHTML = "Client:";
+		document.getElementById('info_block_title').innerHTML = "<#traffic_analysis_top5client_monthly#>";
+		document.getElementById('top_client_title').innerHTML = "<#Client_Name#>:";
 	}
 	else{
-		document.getElementById('info_block_title').innerHTML = "Monthly Top 5 Apps Used";
+		document.getElementById('info_block_title').innerHTML = "<#traffic_analysis_top5app_monthly#>";
 		document.getElementById('top_client_title').innerHTML = "App:";
 	}
 	
 	if(top5_info == ""){
 		if(type == "router")
-			document.getElementById('top_client_name').innerHTML = "No Client";
+			document.getElementById('top_client_name').innerHTML = "<#traffic_analysis_noclients#>";
 		else
-			document.getElementById('top_client_name').innerHTML = "No App";
+			document.getElementById('top_client_name').innerHTML = "<#traffic_analysis_noapps#>";
 			
-		document.getElementById('top_client_traffic').innerHTML = "No Traffic";
+		document.getElementById('top_client_traffic').innerHTML = "<#traffic_analysis_notraffic#>";
 	}
 	else{
 		if(type_detail == "detail"){
@@ -292,23 +305,13 @@ function get_client_info(list_info, type){
 	var match_flag = 0;
 	var temp_array = new Array();
 	if(type == "router")
-		code = "<option value='all' selected>All Clients</option>";
+		code = "<option value='all' selected><#traffic_analysis_allclients#></option>";
 	else
-		code = "<option value='all' selected>All apps</option>";
+		code = "<option value='all' selected><#traffic_analysis_allapps#></option>";
 	top5_client_array = [];
 	top5_app_array = [];
 
-	for(i=0;i<list_info.length;i++){
-		/*if(i<6){
-			if(type == "router")
-				top5_client_array[i] = all_client_traffic[i][0];	
-			else
-				top5_app_array[i] = all_app_traffic[i][0];
-		}*/	
-		
-		//total_client_tx += all_client_traffic[i][1];
-		//total_client_rx += all_client_traffic[i][2];	
-		
+	for(i=0;i<list_info.length;i++){		
 		if(type == "router"){
 			for(j=0;j<clientList.length;j++){
 				if(all_client_traffic[i][0] == clientList[j]){
@@ -378,7 +381,6 @@ function get_client_info(list_info, type){
 	else
 		draw_pie_chart(list_info, top5_app_array, type);	//list_info : all_app_traffic
 	
-	//draw_pie_chart();
 	document.getElementById('client_option').innerHTML = code;
 }
 
@@ -472,6 +474,7 @@ function get_app_data(client, mode, dura, time, date_string){
 		},
 		success: function(response){
 			all_client_traffic = array_statistics;
+			draw_flow(date_string, array_statistics);
 		}
 	});
 }
@@ -519,9 +522,9 @@ function show_detail_info(mac, used_data_array, type){
 	code += '<tr style="font-size:14px;">';
 	if(type == "router"){
 		if(clientList[mac] == undefined)
-			code += '<th colspan="4">Client: '+ mac +'</th>';
+			code += '<th colspan="4"><#Client_Name#>: '+ mac +'</th>';
 		else
-			code += '<th colspan="4">Client: '+ getClientCurrentName(mac); +'</th>';	
+			code += '<th colspan="4"><#Client_Name#>: '+ getClientCurrentName(mac); +'</th>';	
 	}
 	else{
 		code += '<th colspan="4">App: '+ mac +'</th>';	
@@ -530,15 +533,15 @@ function show_detail_info(mac, used_data_array, type){
 	code += '</tr>';
 	code += '<tr style="font-size:13px;">';
 	if(type == "router"){
-		code += '<th style="width:55%;text-align:left;">App\'s Name</th>';	
+		code += "<th style='width:55%;text-align:left;'><#traffic_analysis_appname#></th>";	
 	}
 	else{
-		code += '<th style="width:55%;text-align:left;">Client\'s Name</th>';
+		code += '<th style="width:55%;text-align:left;"><#Client_Name#></th>';
 	}
 	
-	code += '<th style="width:15%;text-align:right;">Upload</th>';
-	code += '<th style="width:15%;text-align:right;">Download</th>';
-	code += '<th style="width:15%;text-align:right;">Total</th>';
+	code += '<th style="width:15%;text-align:right;"><#option_upload#></th>';
+	code += '<th style="width:15%;text-align:right;"><#option_download#></th>';
+	code += '<th style="width:15%;text-align:right;"><#Total#></th>';
 	code += '</tr>';
 	for(i=0;i<used_data_array.length;i++){
 		code += '<tr>';
@@ -572,16 +575,16 @@ function show_all_info(mac, type){
 	if(type == "router"){
 		code += "<tr style='font-size:14px;'>";
 		if(clientList[mac] == undefined)
-			code += "<th colspan='4'>Client's Name: "+ mac +"</th>";
+			code += "<th colspan='4'><#Client_Name#>: "+ mac +"</th>";
 		else
-			code += "<th colspan='4'>Client's Name: "+ getClientCurrentName(mac) +"</th>";
+			code += "<th colspan='4'><#Client_Name#>: "+ getClientCurrentName(mac) +"</th>";
 		
 		code += "</tr>";
 		code += '<tr style="font-size:13px;">';
-		code += "<th style='width:55%;text-align:left;'>App's Name</th>";
-		code += '<th style="width:15%;text-align:right;">Upload</th>';
-		code += '<th style="width:15%;text-align:right;">Download</th>';
-		code += '<th style="width:15%;text-align:right;">Total</th>';
+		code += "<th style='width:55%;text-align:left;'><#traffic_analysis_appname#></th>";
+		code += '<th style="width:15%;text-align:right;"><#option_upload#></th>';
+		code += '<th style="width:15%;text-align:right;"><#option_download#></th>';
+		code += '<th style="width:15%;text-align:right;"><#Total#></th>';
 		code += '</tr>';
 					
 					
@@ -599,13 +602,13 @@ function show_all_info(mac, type){
 	}
 	else{
 		code += "<tr style='font-size:14px;'>";
-		code += "<th colspan='4'>App's Name: "+ mac +"</th>";		
+		code += "<th colspan='4'><#traffic_analysis_appname#> : "+ mac +"</th>";		
 		code += "</tr>";
 		code += '<tr style="font-size:13px;">';
-		code += "<th style='width:55%;text-align:left;'>Client's Name</th>";
-		code += '<th style="width:15%;text-align:right;">Upload</th>';
-		code += '<th style="width:15%;text-align:right;">Download</th>';
-		code += '<th style="width:15%;text-align:right;">Total</th>';
+		code += "<th style='width:55%;text-align:left;'><#Client_Name#></th>";
+		code += '<th style="width:15%;text-align:right;"><#option_upload#></th>';
+		code += '<th style="width:15%;text-align:right;"><#option_download#></th>';
+		code += '<th style="width:15%;text-align:right;"><#Total#></th>';
 		code += '</tr>';
 					
 					
@@ -790,11 +793,7 @@ function register_event(){
 			document.getElementById('apps').className = "block_filter";
 			document.getElementById('graphical_info_block').style.display = "";
 			document.getElementById('detail_info_block').style.display = "none";
-			document.getElementById('top5_info_block').style.backgroundColor = color[0];
-			/*setTimeout(function(){		
-				get_client_info();
-				get_client_used_app_data(top5_client_array[0], "detail", duration, date_second, date_string);
-			}, 3000);*/		
+			document.getElementById('top5_info_block').style.backgroundColor = color[0];	
 		}
 	 });
 	 
@@ -912,15 +911,6 @@ function switch_date_type(obj){
 	get_wan_data("all", mode, duration, date_second, date_string);
 	document.getElementById('graphical_info_block').style.display = "block";
 	document.getElementById('detail_info_block').style.display = "none";
-	
-	//get_client_info();		//generate Top 5 clients' select option
-	/*setTimeout(function (){
-		get_client_info();
-	},1000);
-	setTimeout(function (){
-		get_client_used_app_data(top5_client_array[0], "detail", duration, date_second, date_string);
-	},3000);*/
-
 	document.getElementById('top5_info_block').style.backgroundColor = color[0];
 }
 
@@ -1100,7 +1090,7 @@ function draw_pie_chart(list_info, top5_info, type){
 			id: "0"
 		}];
 		
-		code = '<div style="width:110px;word-wrap:break-word;padding-left:5px;background-color:#B3645B;margin-right:-10px;border-top-left-radius:10px;border-bottom-left-radius:10px;">No Client</div>';		
+		code = '<div style="width:110px;word-wrap:break-word;padding-left:5px;background-color:#B3645B;margin-right:-10px;border-top-left-radius:10px;border-bottom-left-radius:10px;"><#traffic_analysis_noclients#></div>';		
 	}
 	else{
 		for(i=0;i<top5_info.length && i<6;i++){		
@@ -1450,6 +1440,9 @@ function cal_agreement_block(){
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	document.form.bwdpi_db_enable.value = 1;
+	$("#agreement_panel").fadeOut(100);
+	document.getElementById("hiddenMask").style.visibility = "hidden";
+	document.form.action_wait.value = "15";
 	applyRule();
 }
 
@@ -1458,11 +1451,21 @@ function cancel(){
 	$('#iphone_switch').animate({backgroundPosition: -37}, "slow", function() {});
 	$("#agreement_panel").fadeOut(100);
 	document.getElementById("hiddenMask").style.visibility = "hidden";
+	htmlbodyforIE = parent.document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
+	htmlbodyforIE[0].style.overflow = "scroll";	  //hidden the Y-scrollbar for preventing from user scroll it.	
 }
 
 function applyRule(){
 	document.form.action_script.value = "restart_wrs;restart_firewall";
-	document.form.submit();
+	
+	if(reset_wan_to_fo(document.form, document.form.bwdpi_db_enable.value)) {
+		document.form.submit();
+	}
+	else {
+		curState = 0;
+		document.form.bwdpi_db_enable.value = 0;
+		$('#traffic_analysis_enable').find('.iphone_switch').animate({backgroundPosition: -37}, "slow");
+	}
 }
 
 function setHover_css(){
@@ -1494,19 +1497,22 @@ function getClientCurrentName(_mac) {
 	}
 	return clientName;
 }
+function updateTrafficAnalyzer() {
+	initial();
+}
 </script>
 </head>
 <body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="panel_folder" style="margin-top: -100px;display:none;position:absolute;"></div>
+<div id="agreement_panel" class="eula_panel_container"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
 	</table>
 	<!--[if lte IE 11]><iframe class="hackiframe"></iframe><![endif]-->
 </div>
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
-<div id="client_all_info_block" style="background-color:#2F3E44;width:730px;height:700px;position:absolute;z-index:100;margin-left:235px;border-radius:10px;display:none"></div>
+<div id="client_all_info_block" class="analysis_bg" style="width:730px;height:700px;position:absolute;z-index:100;margin-left:235px;border-radius:10px;display:none"></div>
 <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
@@ -1546,32 +1552,67 @@ function getClientCurrentName(_mac) {
 										<table width="100%">
 											<tr>
 												<td class="formfonttitle" align="left">								
-													<div><#Traffic_Analyzer#> - Statistic</div>
+													<div><#Traffic_Analyzer#> - <#Statistic#></div>
 												</td>
 												<td>
 													<div>
 														<table align="right">
 															<tr>
 																<td style="cursor:pointer;" onclick="introduce_demo();" id="introduce_demo"><div id="play_icon" class="icon_play" style="padding:1px;display:table-cell;width:22px;height:22px;"></div><div style="display:table-cell;font-size:16px;text-decoration:underline;padding-left:7px;" ><#Introduce_demo#></div></td>
-																<!--td>														
-																	<div class="formfonttitle" style="margin-bottom:0px;margin-left:20px;" title="<#traffic_analysis_desc#>">Traffic Statistic</div>
-																</td-->
 																<td >
 																	<div align="center" class="left" style="width:94px; float:left; cursor:pointer;" id="traffic_analysis_enable"></div>
 																	<script type="text/javascript">
 																		$('#traffic_analysis_enable').iphoneSwitch('<% nvram_get("bwdpi_db_enable"); %>',
 																			function(){
 																				if(document.form.TM_EULA.value == 0){
-																					if(document.form.preferred_lang.value == "JP"){
-																						$.get("JP_tm_eula.htm", function(data){
-																							document.getElementById('agreement_panel').innerHTML= data;
-																						});
-																					}
-																					else{
-																						$.get("tm_eula.htm", function(data){
-																							document.getElementById('agreement_panel').innerHTML= data;
-																						});
-																					}	
+																					var adjust_TM_eula_height = function(_objID) {
+																						var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+																						document.getElementById(_objID).style.top = (scrollTop + 10) + "px";
+																						var visiable_height = document.documentElement.clientHeight;
+																						var tm_eula_container_height = parseInt(document.getElementById(_objID).offsetHeight);
+																						var tm_eula_visiable_height = visiable_height - tm_eula_container_height;
+																						if(tm_eula_visiable_height < 0) {
+																							var tm_eula_content_height = parseInt(document.getElementById("tm_eula_content").style.height);
+																							document.getElementById("tm_eula_content").style.height = (tm_eula_content_height - Math.abs(tm_eula_visiable_height) - 20) + "px"; //content height - overflow height - margin top and margin bottom
+																						}
+																					};
+
+																			if(document.form.preferred_lang.value == "JP"){
+																				$.get("JP_tm_eula.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "TW"){
+																				$.get("tm_eula_TC.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "CN"){
+																				$.get("tm_eula_SC.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "FR"){
+																				$.get("tm_eula_FR.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}
+																			else if(document.form.preferred_lang.value == "RU"){
+																				$.get("tm_eula_RU.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}																			
+																			else{
+																				$.get("tm_eula.htm", function(data){
+																					document.getElementById('agreement_panel').innerHTML= data;
+																					adjust_TM_eula_height("agreement_panel");
+																				});
+																			}	
 																					
 																					dr_advise();
 																					cal_agreement_block();
@@ -1596,65 +1637,69 @@ function getClientCurrentName(_mac) {
 											</tr>
 										</table>								
 									</div>
-									<!--div class="formfonttitle">Adaptive QoS - Traffic Statistic</div-->
 									<div style="margin-left:5px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
+									<div class="formfontdesc"><#Traffic_Analyzer_desc#></div>
 									<div style="margin-left:10px;">
 										<label style="font-size:16px;"><#Statistic_last_date#>:</label>
 										<input class="input_12_table" id="datepicker" value="">	
 										<div id="statistic_hint" style="text-align:right;margin-top:-21px;padding-right:15px;color:#FC0;font-size:14px;">* <#Traffic_Analyzer_note#></div>
 									</div>
 									<div style="margin:10px 0 10px 4px;">
-										<table>
-											<tr>
-												<td style="width:400px">
-													<div>
-														<table>
-															<tr>
-																<td>
-																	<div style="font-size:16px;"><#Statistic_display_type#>:</div>
-																</td>
-																<td>
-																	<div id="router" style="width:100px;text-align:center;font-size:14px;border-radius:5px" class="block_filter_pressed" onclick="switch_content(this);"><#Device_type_02_RT#></div>
-																</td>
-																<td>
-																	<div id="apps" style="width:100px;text-align:center;font-size:14px;border-radius:5px" class="block_filter" onclick="switch_content(this);"><#Apps#></div>
-																</td>
-																<!--td>
-																	<div id="details" style="width:80px;text-align:center;font-size:14px;border-radius:5px" class="block_filter" onclick="switch_content(this);">Details</div>
-																</td-->															
-															</tr>
-														</table>
-													</div>
-												</td>
-												<td>
-													<div>
-														<table>
-															<tr>
-																<td>
-																	<div style="font-size:16px;">Show by:</div>
-																</td>
-																<td>
-																	<select class="input_option" id="traffic_option" onChange="change_traffic_direction(this);">
-																		<option value="both" selected><#option_both_direction#></option>
-																		<option value="down"><#option_download#></option>
-																		<option value="up"><#option_upload#></option>																		
-																	</select>
-																</td>
-																<td>
-																	<select class="input_option" id="duration_option" onChange="switch_date_type(this);">
-																		<option value="monthly"><#diskUtility_monthly#></option>
-																		<option value="weekly"><#diskUtility_weekly#></option>
-																		<option value="daily" selected><#diskUtility_daily#></option>																
-																	</select>		
-																</td>	
-															</tr>
-														</table>										
-													</div>
-												</td>
-											</tr>
-										</table>
+										<div style="float:left;">
+											<table>
+												<tr>
+													<td style="width:400px">
+														<div>
+															<table>
+																<tr>
+																	<td>
+																		<div style="font-size:16px;"><#Statistic_display_type#>:</div>
+																	</td>
+																	<td>
+																		<div id="router" style="width:100px;text-align:center;font-size:14px;border-radius:5px" class="block_filter_pressed" onclick="switch_content(this);">Clients</div>
+																	</td>
+																	<td>
+																		<div id="apps" style="width:100px;text-align:center;font-size:14px;border-radius:5px" class="block_filter" onclick="switch_content(this);"><#Apps#></div>
+																	</td>
+																	<!--td>
+																		<div id="details" style="width:80px;text-align:center;font-size:14px;border-radius:5px" class="block_filter" onclick="switch_content(this);">Details</div>
+																	</td-->
+																</tr>
+															</table>
+														</div>
+													</td>
+													<td>
+														<div>
+															<table>
+																<tr>
+																	<td>
+																		<div style="font-size:16px;"><#Statistic_show_type#>:</div>
+																	</td>
+																	<td>
+																		<select class="input_option" id="traffic_option" onChange="change_traffic_direction(this);">
+																			<option value="both" selected><#option_both_direction#></option>
+																			<option value="down"><#option_download#></option>
+																			<option value="up"><#option_upload#></option>
+																		</select>
+																	</td>
+																	<td>
+																		<select class="input_option" id="duration_option" onChange="switch_date_type(this);">
+																			<option value="monthly"><#diskUtility_monthly#></option>
+																			<option value="weekly"><#diskUtility_weekly#></option>
+																			<option value="daily" selected><#diskUtility_daily#></option>
+																		</select>
+																	</td>
+																</tr>
+															</table>
+														</div>
+													</td>
+												</tr>
+											</table>
+										</div>
+										<div class="clean_log" onClick="httpApi.cleanLog('traffic_analyzer', updateTrafficAnalyzer);"></div>
+										<div style="clear:both;"></div>
 									</div>
-									<div style="background-color:#2f3e44;border-radius:10px;width:100%">
+									<div class="analysis_bg" style="border-radius:4px;width:100%">
 										<div style="padding-top:5px;">
 											<table style="width:99%;">
 												<tr>
@@ -1683,7 +1728,7 @@ function getClientCurrentName(_mac) {
 													<canvas id="pie_chart" width="300" height="300"></canvas>
 												</td>
 												<td style="vertical-align:top;width:110px;" id="top5_client_banner">
-													<div onclick="change_top5_clients(0);" style="width:100px;word-wrap:break-word;padding-left:5px;background-color:#B3645B;margin-right:-10px;border-top-left-radius:10px;border-bottom-left-radius:10px;">No Client</div>
+													<div onclick="change_top5_clients(0);" style="width:100px;word-wrap:break-word;padding-left:5px;background-color:#B3645B;margin-right:-10px;border-top-left-radius:10px;border-bottom-left-radius:10px;"><#traffic_analysis_noclients#></div>
 												</td>
 												<td>
 													<div id="top5_info_block" style="width:310px;min-height:330px;;background-color:#B3645B;border-bottom-right-radius:10px;border-bottom-left-radius:10px;border-top-right-radius:10px;box-shadow: 3px 5px 5px #2E3537;">
@@ -1697,7 +1742,7 @@ function getClientCurrentName(_mac) {
 																<td style="font-size:14px;" id="top_client_traffic"></td>
 															</tr>
 															<tr>
-																<th style="font-size:16px;text-align:left;padding-left:10px;width:140px;color:#ADADAD">Top 5 apps used:</th>
+																<th style="font-size:16px;text-align:left;padding-left:10px;width:140px;color:#ADADAD"><#Traffic_Analyzer_TopApps#> :</th>
 																<td></td>
 															</tr>													
 														</table>
@@ -1707,13 +1752,13 @@ function getClientCurrentName(_mac) {
 											</tr>
 											<tr>
 												<td colspan="3">
-													<div style="font-size:16px;color:#FC0;text-align:center;" id="info_block_title">Daily Top 5 Clients Used</div>
+													<div style="font-size:16px;color:#FC0;text-align:center;" id="info_block_title"><#traffic_analysis_top5client_daily#></div>
 												</td>
 											</td>
 										</table>
 									</div>	
 
-									<div id="detail_info_block" style="background-color:#2f3e44;border-radius:10px;width:100%;min-height:350px;margin-top:10px;overflow-y:auto;height:370px;display:none"></div>
+									<div id="detail_info_block" class="analysis_bg" style="border-radius:4px;width:100%;min-height:350px;margin-top:10px;overflow-y:auto;height:370px;display:none"></div>
 								</td>
 							</tr>
 						</table>

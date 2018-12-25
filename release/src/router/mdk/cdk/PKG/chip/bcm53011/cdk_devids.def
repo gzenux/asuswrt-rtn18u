@@ -1,0 +1,8 @@
+/* BCM53011 */
+#define BCM53011_VENDOR_ID                0x600d
+#define BCM53011_DEVICE_ID                0x8760
+#define BCM53011_MODEL                    0x3011
+#define BCM53011_PROBEINFO            0x14040230
+#define BCM53011_REV_A0                     0x00
+#define BCM53011_REV_A2                     0x02
+

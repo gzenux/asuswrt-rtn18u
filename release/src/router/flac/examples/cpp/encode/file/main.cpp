@@ -33,6 +33,8 @@
 #include "FLAC++/metadata.h"
 #include "FLAC++/encoder.h"
 
+#include <string.h> //2016.8.15 tina add
+
 class OurEncoder: public FLAC::Encoder::File {
 public:
 	OurEncoder(): FLAC::Encoder::File() { }

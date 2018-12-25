@@ -42,6 +42,8 @@ void ff_pred8x8_0lt_dc_neon(uint8_t *src, int stride);
 void ff_pred8x8_l00_dc_neon(uint8_t *src, int stride);
 void ff_pred8x8_0l0_dc_neon(uint8_t *src, int stride);
 
+void ff_h264_pred_init_neon(H264PredContext *h, int codec_id);
+
 #if HAVE_NEON
 static void ff_h264_pred_init_neon(H264PredContext *h, int codec_id)
 {

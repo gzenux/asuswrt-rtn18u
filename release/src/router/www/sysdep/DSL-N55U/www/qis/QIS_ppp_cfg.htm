@@ -241,15 +241,13 @@ function haveIPTVService() {
 function showHideIPTVList(iptv_enable) {
 	if(iptv_enable.checked) {
 		document.form.dsltmp_cfg_iptv_enable.value = "1";
-		document.getElementById("special_ISP_img").style.display = "";
-		document.getElementById("ISP_table").style.visibility = "visible";
+		document.getElementById("ISP_table").style.display = "";
 		showCountryList();
 		showISPList("");
 	}
 	else {
 		document.form.dsltmp_cfg_iptv_enable.value = "0";
-		document.getElementById("special_ISP_img").style.display = "none";
-		document.getElementById("ISP_table").style.visibility = "hidden";
+		document.getElementById("ISP_table").style.display = "none";
 		showhide("STBPortMsg", 0);
 	}
 }
@@ -396,7 +394,7 @@ function gotoHome() {
 		location.href = '/qis/QIS_wireless.htm';
 	}
 	else {
-		parent.location.href = '/index.asp';
+		parent.location.href = "<% abs_index_page(); %>";
 	}
 }
 </script>
@@ -506,7 +504,7 @@ function gotoHome() {
 
 	<div>
 	<table id="iptv_manual_setting" width="92%" border="0" align="left" cellpadding="3" cellspacing="0" style="margin-left:8%;">
-			<tr id="specialISP_tr">
+			<tr>
 				<td>
 					<input type="checkbox" id="specialisp" name="specialisp" onclick="showHideIPTVList(this);">
 					<label for="specialisp">
@@ -516,47 +514,33 @@ function gotoHome() {
 				</td>
 			</tr>
 	</table>
-	</div>
+	</div>	
 
-	<div id="special_ISP_img_div"><img id="special_ISP_img" width="505px" height="105px" style="margin-top:0px;margin-left:73px;display:none;" src="/images/qis/border.png"></div>
-
-	<div style="margin-left:-80px;margin-top:-90px;">
+	<div style="margin-left:-80px;">
 	<table id="ISP_table" class="FormTable" width="475px" border="0" align="center" cellpadding="3" cellspacing="0">
 		<tbody>
-			<tr id="Country_tr">
+			<tr>
 				<th width="40%"><#Manual_Setting_contry#></th>
 				<td>
 					<div id="CountryList"></div>
 				</td>
-			</tr>
-			<!--tr id="City_tr">
-				<th width="40%"><#Manual_Setting_contry#></th>
-				<td>
-					<div id="CityList"></div>
-				</td>
-			</tr-->
-			<tr id="ISP_tr">
+			</tr>			
+			<tr>
 				<th width="40%"><#HSDPAConfig_ISP_itemname#> & <#qis_service#></th>
 				<td>
 					<div id="ISPnServiceList"></div>
 				</td>
-			</tr>
-			<!--tr id="Service_tr">
-				<th width="40%"><#qis_service#></th>
-				<td>
-					<div id="Service"></div>
-				</td>
-			</tr-->
+			</tr>			
 		</tbody>
 	</table>
 	</div>
 
-	<div class="apply_gen" style="margin-top:30px">
-		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" onclick="gotoprev(document.form);" class="button_gen" tabindex="5">
+	<div class="apply_gen" style="margin-top:20px">
+		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" onclick="gotoprev(document.form);" class="button_gen_long" tabindex="5">
 <!--
 		<input type="button" id="nextButton" value="Ethernet WAN" onclick="redirect_page('internet_type');" class="button_gen" >
 -->
-		<input type="button" id="nextButton" value="<#CTL_next#>" onclick="submitForm();" class="button_gen" tabindex="4">
+		<input type="button" id="nextButton" value="<#CTL_next#>" onclick="submitForm();" class="button_gen_long" tabindex="4">
 	</div>
 
 </div>

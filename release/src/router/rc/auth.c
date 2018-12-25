@@ -124,7 +124,7 @@ wpacli_main(int argc, char **argv)
 	if (strncmp(argv[2], "EAP-FAILURE", sizeof("EAP-FAILURE")) == 0)
 	{
 		/* Called every/multiple times on (re)auth fail and/or timeout */
-		if (nvram_get_int(strcat_r(prefix, "state_t", tmp)) != WAN_STATE_STOPPED)
+		if(get_wan_state(unit) != WAN_STATE_STOPPED)
 			logmessage("802.1x client", "authentication failed");
 
 		/* Reuse auth-fail state */

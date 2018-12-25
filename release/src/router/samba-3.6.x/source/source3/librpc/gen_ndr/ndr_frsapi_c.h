@@ -126,8 +126,8 @@ struct tevent_req *dcerpc_frsapi_ForceReplication_send(TALLOC_CTX *mem_ctx,
 						       struct dcerpc_binding_handle *h,
 						       struct GUID *_replica_set_guid /* [in] [unique] */,
 						       struct GUID *_connection_guid /* [in] [unique] */,
-						       const char *_replica_set_name /* [in] [unique,charset(UTF16)] */,
-						       const char *_partner_dns_name /* [in] [charset(UTF16),unique] */);
+						       const char *_replica_set_name /* [in] [charset(UTF16),unique] */,
+						       const char *_partner_dns_name /* [in] [unique,charset(UTF16)] */);
 NTSTATUS dcerpc_frsapi_ForceReplication_recv(struct tevent_req *req,
 					     TALLOC_CTX *mem_ctx,
 					     WERROR *result);
@@ -135,8 +135,8 @@ NTSTATUS dcerpc_frsapi_ForceReplication(struct dcerpc_binding_handle *h,
 					TALLOC_CTX *mem_ctx,
 					struct GUID *_replica_set_guid /* [in] [unique] */,
 					struct GUID *_connection_guid /* [in] [unique] */,
-					const char *_replica_set_name /* [in] [unique,charset(UTF16)] */,
-					const char *_partner_dns_name /* [in] [charset(UTF16),unique] */,
+					const char *_replica_set_name /* [in] [charset(UTF16),unique] */,
+					const char *_partner_dns_name /* [in] [unique,charset(UTF16)] */,
 					WERROR *result);
 
 #endif /* _HEADER_RPC_frsapi */

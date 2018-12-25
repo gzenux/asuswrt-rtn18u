@@ -13,12 +13,12 @@ var g_storage = new myStorage();
 var g_bLoginFlickr = false;
 var g_token = "";
 var g_uid = "";
-//var g_app_id = "37140360286c5cd9952023fa8b662a64";
-//var g_shared_key = "804b51d14d840d6e";
-//var server_url = "http://develop.stage612.url.tw/auth/";
-var g_app_id = "c0466d7736e0275d062ce64aefaacfe0";
-var g_shared_key = "228e160cf8805246";
-var server_url = "http://oauth.asus.com/aicloud/";
+//var g_app_id = "c0466d7736e0275d062ce64aefaacfe0";
+//var g_shared_key = "228e160cf8805246";
+//var g_server_url = "http://oauth.asus.com/aicloud/";
+var g_app_id = "5b8492ea9f86f64fb48137a5d68add36";
+var g_shared_key = "66a18b683bebce0b";
+var g_server_url = "http://www.efroip.com/auth/";
 var ajax_dataType = "json";
 var g_uploadfile_url_array = new Array();
 var g_uploadfile_title_array = new Array();
@@ -88,7 +88,7 @@ $(document).ready(function(){
 		var is_dir = param[1];
 		var this_filename = decodeURIComponent( uploadfile_url.substr( uploadfile_url.lastIndexOf("/") + 1, uploadfile_url.length-1 ) );
 		var filext = getFileExt(uploadfile_url);
-		var icon_url = server_url + "images/";
+		var icon_url = g_server_url + "images/";
 		
 		upload_html += '<table class="x-table ' +　className + '" width="100%" height="100%" style="display: table;border-collapse: separate;border-spacing: 2px;border-color: gray;">';
         upload_html += '<tr>';
@@ -215,36 +215,11 @@ function getSignature(sSecretKey, sParameter) {
 
 function flickr_login(){
 	window._onFlickrLogin = this.onFlickrLogin;
-	
-	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
-	var redirect_url = window.location.href.slice(0,b) + "/smb/css/service/callback.html";
-	
-	var url = server_url + "flickr_authorize.html?action=login&callback=_onFlickrLogin&redirect_uri=" + encodeURIComponent(redirect_url);
+	var host_url = g_storage.get('request_host_url');	
+	var redirect_url = host_url + "/smb/css/service/callback.html";	
+	var url = g_server_url + "flickr_authorize.html?action=login&callback=_onFlickrLogin&redirect_uri=" + encodeURIComponent(redirect_url);
+	alert(url);
 	window.open(url);
-}
-
-function flickr_login3(){
-	window._onFlickrLogin = this.onFlickrLogin;
-	
-	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
-	var redirect_url = window.location.href.slice(0,b) + "/smb/css/flickr/callback.html";
-	
-	var sParameter = '?perms=write&api_key=' + g_app_id;
-	var api_sig = getSignature(g_shared_key, sParameter);
-	
-	var url = "http://flickr.com/services/auth/" + sParameter + "&api_sig=" + api_sig + "&redircet="+redirect_url;
-	
-	window.open(url,"mywindow","menubar=1,resizable=0,width=630,height=250, top=100, left=300")
-}
-
-function flickr_login2(){
-	window._onFlickrLogin = this.onFlickrLogin;
-	
-	var b = window.location.href.indexOf("/",window.location.protocol.length+2);
-	var redirect_url = window.location.href.slice(0,b) + "/smb/css/flickr/callback.html";
-	
-	var url = server_url + "flickr_authorize.php?redirect_uri=" + encodeURIComponent(redirect_url);
-	window.open(url,"mywindow","menubar=1,resizable=0,width=630,height=250, top=100, left=300")
 }
 
 function onFlickrLogin( token, uid ){
@@ -553,7 +528,8 @@ function getMouseXY(e) {
     	<tr>
             <td>
                 <div style="background-color:#FF9100;width:99%;padding:5px;">
-                    <span id="sharelink_warning" name="sharelink_warning" style="color:#fff"></span>
+                    <span id="sharelink_warning" name="sharelink_warning" style="color:#fff">
+                    </span>
                 </div>
             </td>
         </tr>
@@ -562,7 +538,8 @@ function getMouseXY(e) {
             	<div class=" x-panel x-panel-noborder">
             		<div class="x-panel-bwrap" id="ext-gen85">
             			<div class="x-panel-body x-panel-body-noheader x-panel-body-noborder" id="ext-gen86">
-                        	<div id="default_user_pic" class="user_image"></div>
+                        	<div id="default_user_pic" class="user_image">
+                        	</div>
             				<img id="user_pic" border="0">
             				<img class="loading-img" src="/smb/css/load.gif" style="visibility: hidden;">
             				<span id="user_authorize" class="user_login_option">Login</span>
@@ -582,7 +559,8 @@ function getMouseXY(e) {
         	<td class="x-table-layout-cell" colspan="1" id="ext-gen90" >
             	<label id="ext-comp-1011" name="ext-comp-1011">Upload Album：</label>
                 <div class="x-form-field-wrap x-form-field-trigger-wrap x-item-disabled" id="ext-gen92" style="width: 320px;">
-            		<select id="album_combo" name="album_combo" class="x-form-text x-form-field x-form-empty-field" style="width: 295px;" ></select>
+            		<select id="album_combo" name="album_combo" class="x-form-text x-form-field x-form-empty-field" style="width: 295px;">
+            		</select>
                     <!--<button id="open_addalbum_dialog" class="btnStyle x-form-addalbum">+</button>-->
                 </div>
             </td>

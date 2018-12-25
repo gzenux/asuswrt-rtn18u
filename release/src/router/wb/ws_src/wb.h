@@ -6,6 +6,29 @@
 #define SKIP_HOSTNAME_VERFICATION	// define for the ssl settings
 #include <ws_api.h>
 
+#define my_memcpy(dst, src, dst_len, src_len) {memcpy(dst, src, dst_len < src_len ? dst_len : src_len);}
+
+/**
+	Retreive a string value to specific buffer. The buffer is a char pointer.
+ */
+#define GET_JSON_STRING_FIELD_EX(json_obj, name, buffer) { \
+			struct json_object *obj = NULL;\
+			json_object_object_get_ex(json_obj, name, &obj); \
+			if (obj) buffer = (char *)json_object_get_string(obj); \
+		}
+
+/**
+	Retreive a string value to specific array buffer. The buffer is a char array.
+ */
+#define GET_JSON_STRING_FIELD_TO_ARRARY(json_obj, name, dest) {\
+			char *tmp = NULL; \
+			GET_JSON_STRING_FIELD_EX(json_obj, name, tmp); \
+			if (tmp) { \
+	            memset(dest, 0, sizeof(dest)); \
+	            my_memcpy(dest, tmp, sizeof(dest), strlen(tmp)); \
+        	} \
+		}
+
 typedef enum _ws_device_status
 {
 	Online=2,
@@ -40,7 +63,9 @@ typedef enum _WS_ID
 	e_unregister,
 	e_updateiceinfo,
 	e_keepalive,
-	e_pushsendmsg
+	e_pushsendmsg,
+	e_pnssendmsg,
+	e_iftttnotification
 }WS_ID;
 
 typedef struct _WS_MANAGER{

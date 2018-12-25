@@ -66,24 +66,41 @@ unsigned long crc32_no_comp(unsigned long crc,const unsigned char* buf, int len)
 int separate_tc_fw_from_trx(char* trxpath)
 {
 	FILE* FpTrx;
-	char TrxHdrBuf[512];
-	char buf[4096];
+	char TrxHdrBuf[512] = {0};
+	char buf[4096] = {0};
 	unsigned int *pTrxSize;
 	unsigned int TrxSize = 0;
 	unsigned int filelen;
 	unsigned int TcFwSize;
 	int RetVal = 0;
+	size_t len_trxhdrbuf = 0;
+	size_t r_counts = 0;
+	size_t w_counts = 0;
+	size_t buf_size = sizeof(buf);
+	size_t TrxHdrBuf_size = sizeof(TrxHdrBuf);
 
 	FILE* fpSrc = NULL;
 	FILE* fpDst = NULL;
 
 	FpTrx = fopen(trxpath, "rb");
-	if (FpTrx == NULL) goto err;
-	fread(TrxHdrBuf,1,sizeof(TrxHdrBuf),FpTrx);
-	fseek( FpTrx, 0, SEEK_END);
-	filelen = ftell( FpTrx );
-	fclose(FpTrx);
+	if (FpTrx == NULL)
+	{
+		goto err;
+	}
 
+	len_trxhdrbuf = fread(TrxHdrBuf,1,TrxHdrBuf_size,FpTrx);
+	if(len_trxhdrbuf == TrxHdrBuf_size)
+	{
+		fseek( FpTrx, 0, SEEK_END);
+		filelen = ftell( FpTrx );
+		fclose(FpTrx);
+	}
+	else
+	{
+		cprintf("Cannot read trx file[%40s] correctly!!\n", trxpath);
+		fclose(FpTrx);
+		goto err;
+	}
 	pTrxSize = (unsigned int*)(TrxHdrBuf+4);	//bcm
 	TrxSize = *pTrxSize;
 	cprintf("trx size %u, file size %u\n", TrxSize, filelen);
@@ -101,9 +118,23 @@ int separate_tc_fw_from_trx(char* trxpath)
 
 			fseek(fpSrc, TrxSize, SEEK_SET);
 
-			fread(buf, 1, TC_HDR_LEN, fpSrc);
-			fwrite(buf, 1, TC_HDR_LEN, fpDst);
-			TcFwSize -= TC_HDR_LEN;
+			r_counts = fread(buf, 1, TC_HDR_LEN, fpSrc);
+			if(r_counts == TC_HDR_LEN)
+			{
+				w_counts = fwrite(buf, 1, TC_HDR_LEN, fpDst);
+				if(w_counts == TC_HDR_LEN)
+				{
+					TcFwSize -= TC_HDR_LEN;
+				}
+				else
+				{
+					goto err;
+				}
+			}
+			else
+			{
+				goto err;
+			}
 
 			cprintf("tcfw magic : %c%c%c%c\n",buf[0],buf[1],buf[2],buf[3]);
 			if (strncmp(&buf[0], "2RDH", 4))
@@ -111,17 +142,45 @@ int separate_tc_fw_from_trx(char* trxpath)
 
 			while (TcFwSize > 0)
 			{
-				if (TcFwSize > sizeof(buf))
+				if (TcFwSize > buf_size)
 				{
-					fread(buf, 1, sizeof(buf), fpSrc);
-					fwrite(buf, 1, sizeof(buf), fpDst);
-					TcFwSize -= sizeof(buf);
+					r_counts = fread(buf, 1, buf_size, fpSrc);
+					if(r_counts == buf_size)
+					{
+						w_counts = fwrite(buf, 1, buf_size, fpDst);
+						if(w_counts == buf_size)
+						{
+							TcFwSize -= buf_size;
+						}
+						else
+						{
+							goto err;
+						}
+					}
+					else
+					{
+						goto err;
+					}
 				}
 				else
 				{
-					fread(buf, 1, TcFwSize, fpSrc);
-					fwrite(buf, 1, TcFwSize, fpDst);
-					TcFwSize = 0;
+					r_counts = fread(buf, 1, TcFwSize, fpSrc);
+					if(r_counts == TcFwSize)
+					{
+						w_counts = fwrite(buf, 1, TcFwSize, fpDst);
+						if(w_counts == TcFwSize)
+						{
+							TcFwSize = 0;
+						}
+						else
+						{
+							goto err;
+						}
+					}
+					else
+					{
+						goto err;
+					}
 				}
 			}
 		}
@@ -162,6 +221,9 @@ int check_tc_firmware_crc()
 	int skip_flag = 0;
 	int RetVal = 0;
 	char buf[4096] = {0};
+	size_t r_counts = 0;
+	size_t w_counts = 0;
+	size_t buf_size = sizeof(buf);
 
 	fpSrc = fopen("/tmp/tcfw.bin", "rb");
 	if (fpSrc==NULL)
@@ -176,15 +238,28 @@ int check_tc_firmware_crc()
 		goto exit;
 	}
 
-	fread(buf, 1, 0x100, fpSrc);
+	r_counts = fread(buf, 1, 0x100, fpSrc);
+	if(r_counts == 0x100)
+	{
+		trxlenptr=(unsigned long*)(buf+8);
+		trxlen=*trxlenptr;
+		trxlen=SWAP_LONG(trxlen);
+		cprintf("tcfw len: %lu\n", trxlen);
+	}
+	else
+	{
+		goto exit;
+	}
 
-	trxlenptr=(unsigned long*)(buf+8);
-	trxlen=*trxlenptr;
-	trxlen=SWAP_LONG(trxlen);
-	cprintf("tcfw len: %lu\n", trxlen);
-
-	fwrite(buf, 1, 0x100, fpDst);
-	trxlen -= 0x100;
+	w_counts = fwrite(buf, 1, 0x100, fpDst);
+	if(w_counts == 0x100)
+	{
+		trxlen -= 0x100;
+	}
+	else
+	{
+		goto exit;
+	}
 
 	crc_value_ptr=(unsigned long*)(buf+12);
 	ulfw_crc=*crc_value_ptr;
@@ -195,19 +270,47 @@ int check_tc_firmware_crc()
 
 	while(trxlen>0)
 	{
-		if (trxlen > sizeof(buf))
+		if (trxlen > buf_size)
 		{
-			fread(buf, 1, sizeof(buf), fpSrc);
-			fwrite(buf, 1, sizeof(buf), fpDst);
-			calc_crc = crc32_no_comp(calc_crc, (unsigned char*)buf, sizeof(buf));
-			trxlen-=sizeof(buf);
+			r_counts = fread(buf, 1, buf_size, fpSrc);
+			if(r_counts == buf_size)
+			{
+				w_counts = fwrite(buf, 1, buf_size, fpDst);
+				if(w_counts == buf_size)
+				{
+					calc_crc = crc32_no_comp(calc_crc, (unsigned char*)buf, buf_size);
+					trxlen -= buf_size;
+				}
+				else
+				{
+					goto exit;
+				}
+			}
+			else
+			{
+				goto exit;
+			}
 		}
 		else
 		{
-			fread(buf, 1, trxlen, fpSrc);
-			fwrite(buf, 1, trxlen, fpDst);
-			calc_crc = crc32_no_comp(calc_crc, (unsigned char*)buf, trxlen);
-			trxlen=0;
+			r_counts = fread(buf, 1, trxlen, fpSrc);
+			if(r_counts == trxlen)
+			{
+				w_counts = fwrite(buf, 1, trxlen, fpDst);
+				if(w_counts == trxlen)
+				{
+					calc_crc = crc32_no_comp(calc_crc, (unsigned char*)buf, trxlen);
+					trxlen=0;
+				}
+				else
+				{
+					goto exit;
+				}
+			}
+			else
+			{
+				goto exit;
+			}
 		}
 	}
 
@@ -243,12 +346,14 @@ exit:
 
 void do_upgrade_adsldrv(void)
 {
-	char UpdateFwBuf[256];
-	char ipaddr[80];
+	char UpdateFwBuf[256] = {0};
+	char ipaddr[80] = {0};
 	FILE* fp;
 	int ret;
 	int skip_flag = 0, force_flag = 0;
 	unsigned long old_crc = 0, new_crc = 0;
+	size_t r_counts = 0;
+	size_t ulong_size = sizeof(unsigned long);
 
 	cprintf("%s\n", __FUNCTION__);
 
@@ -265,25 +370,41 @@ void do_upgrade_adsldrv(void)
 		force_flag = 1;
 	}
 
-	strcpy(UpdateFwBuf,"cd /tmp; tftp -p -l tclinux.bin ");
-	strcat(UpdateFwBuf,ipaddr);
+	snprintf(UpdateFwBuf, sizeof(UpdateFwBuf), "cd /tmp; tftp -p -l tclinux.bin ");
+	snprintf(UpdateFwBuf+strlen(UpdateFwBuf), sizeof(UpdateFwBuf)-strlen(UpdateFwBuf), "%s", ipaddr);
 
 	fp = fopen("/tmp/adsl/tc_hdr.bin", "rb");
 	if (fp)
 	{
 		fseek(fp, 12L, SEEK_SET);
-		fread(&old_crc, 1, sizeof(unsigned long), fp);
-		old_crc = SWAP_LONG(old_crc);
-		cprintf("old crc: %lx\n", old_crc);
+		r_counts = fread(&old_crc, 1, ulong_size, fp);
+		if(r_counts == ulong_size)
+		{
+			old_crc = SWAP_LONG(old_crc);
+			cprintf("old crc: %lx\n", old_crc);
+		}
+		else
+		{
+			skip_flag = 1;
+			cprintf("Error on reading crc of [tc_hdr.bin]\n");
+		}
 		fclose(fp);
 	}
 	fp = fopen("/tmp/tclinux.bin", "rb");
 	if (fp)
 	{
 		fseek(fp, 12L, SEEK_SET);
-		fread(&new_crc, 1, sizeof(unsigned long), fp);
-		new_crc = SWAP_LONG(new_crc);
-		cprintf("new crc: %lx\n", new_crc);
+		r_counts = fread(&new_crc, 1, ulong_size, fp);
+		if(r_counts == ulong_size)
+		{
+			new_crc = SWAP_LONG(new_crc);
+			cprintf("new crc: %lx\n", new_crc);
+		}
+		else
+		{
+			skip_flag = 1;
+			cprintf("Error on reading crc of [tclinux.bin]\n");
+		}
 		fclose(fp);
 	}
 

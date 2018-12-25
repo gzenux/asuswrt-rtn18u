@@ -1,0 +1,17 @@
+#if CDK_CONFIG_INCLUDE_BCM56640_B0 == 1
+#ifndef BMD_CONFIG_EXCLUDE_BCM56640_B0
+BMD_DEVLIST_ENTRY(BCM56640, BCM56640_VENDOR_ID, BCM56640_DEVICE_ID, BCM56640_REV_B0, \
+                  0, 0, \
+                  bcm56640_b0, bcm56640_b0, bcm56640_b0, \
+                  CDK_DEV_ARCH_XGSM, "Triumph3", "BCM56640", \
+                  "Extensible 1/10/40/100-GbE Multilayer Ethernet Switch", 0, 0)
+#ifndef BMD_DEVLIST_SINGLE_PREFIX
+#  define BMD_DEVLIST_SINGLE_PREFIX bcm56640_b0_
+#else
+#  ifndef BMD_DEVLIST_MULTIPLE
+#    define BMD_DEVLIST_MULTIPLE
+#  endif
+#endif
+#endif
+#endif
+

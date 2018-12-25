@@ -1,0 +1,9 @@
+Package: qca-hyctl
+Version: g2ab931a-1
+Depends: libc, kmod-qca-hyfi-bridge, qca-libhyfi-bridge
+Source: qca/feeds/hyfi/qca-hyfi-bridging/qca-hyctl
+Section: QCA
+Maintainer: Qualcomm Atheros, Inc.
+Architecture: ipq806x
+Installed-Size: 8693
+Description:  This package installs the Hy-Fi control command line utility

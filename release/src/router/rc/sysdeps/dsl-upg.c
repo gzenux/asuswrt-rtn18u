@@ -345,7 +345,7 @@ int check_tc_firmware_crc(void)
 		if(!strncmp(ver_info_buf, (char*)bBuf+read_idx+4, 20))	//ASUS_AnnexB_20111031
 #else
 		if(!strncmp(ver_info_buf, (char*)bBuf+read_idx+4, 24))	//ASUS_ANNEXAIJLM_20120423
-#endif		
+#endif
 			update_tc_fw = 0;
 		else
 			update_tc_fw = 1;

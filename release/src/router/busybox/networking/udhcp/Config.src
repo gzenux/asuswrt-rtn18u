@@ -8,6 +8,7 @@ INSERT
 config UDHCPD
 	bool "udhcp server (udhcpd)"
 	default y
+	select PLATFORM_LINUX
 	help
 	  udhcpd is a DHCP server geared primarily toward embedded systems,
 	  while striving to be fully functional and RFC compliant.
@@ -65,6 +66,7 @@ config DHCPD_LEASES_FILE
 config UDHCPC
 	bool "udhcp client (udhcpc)"
 	default y
+	select PLATFORM_LINUX
 	help
 	  udhcpc is a DHCP client geared primarily toward embedded systems,
 	  while striving to be fully functional and RFC compliant.
@@ -112,6 +114,14 @@ config UDHCP_DEBUG
 
 	  Bigger values result in bigger code. Levels above 1
 	  are very verbose and useful for debugging only.
+
+config FEATURE_UDHCP_RFC5969
+	bool "Support for RFC5969 IPv6 Rapid Deployment (6RD)"
+	default y
+	depends on UDHCPC && FEATURE_IPV6
+	help
+	  If selected, client will support passing of 6rd delegated
+	  prefix via option 212, specified in RFC 5969.
 
 config FEATURE_UDHCP_RFC3397
 	bool "Support for RFC3397 domain search (experimental)"

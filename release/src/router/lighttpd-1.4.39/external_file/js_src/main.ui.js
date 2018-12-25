@@ -297,6 +297,7 @@ function createLayout(){
 		layout_html += "</div>";
 		layout_html += "</div>";
 	}	
+	
 	/////////////////////////////////////
 	
   	layout_html += "</div>";
@@ -314,7 +315,7 @@ function createLayout(){
 	  	//layout_html += "<dd><a id='test_func'>" + m.getString('title_test') + "</a></dt>";
 		//layout_html += "<dd><a id='test_func2'>" + m.getString('title_test') + "</a></dt>";
 	  
-	  	layout_html += "<dd class='nav_option'><a id='web_help' href='http://aicloud-faq.asuscomm.com/aicloud-faq/' target='_blank'>" + m.getString('title_help') + "</a></dd>";
+	  	layout_html += "<dd class='nav_option'><a id='web_help' href='https://www.asus.com/us/support/faq/1010005/' target='_blank'>" + m.getString('title_help') + "</a></dd>";
 		layout_html += "<dd class='nav_option'><a id='web_feedback' href='https://vip.asus.com/VIP2/Services/QuestionForm/TechQuery' target='_blank'>" + m.getString('title_feedback') + "</a></dd>";
 	  	layout_html += "<dd class='nav_option'><a id='version'>" + m.getString('title_version') + "</a></dd>";		
 	  	layout_html += "<dd class='nav_option'><a id='crt'>" + m.getString('title_crt') + "</a></dd>";
@@ -434,7 +435,9 @@ function createLayout(){
 	
 	$(".navigation li").click(function(){
 		clearInterval(navigation_dd_show_timer);
-		$(this).find(".nav_option").fadeIn("fast");
+		$(this).find(".nav_option").fadeIn("fast", function(){
+		  $(this).css("display", "block");
+		});
 	});
 	
 	$(".navigation li").mouseenter(function(){
@@ -443,7 +446,9 @@ function createLayout(){
 		clearInterval(navigation_dd_show_timer);
 		
 		navigation_dd_show_timer = setTimeout(function(){
-			self.find(".nav_option").fadeIn("fast");
+			self.find(".nav_option").fadeIn("fast", function(){
+                $(this).css("display", "block");
+            });
 		}, 500);
 	});
 	
@@ -511,7 +516,7 @@ function createHostList(query_type, g_folder_array){
 	//alert("on_rescan_samba_count: " + on_rescan_samba_count+", on_rescan_samba="+on_rescan_samba);
 	if(query_type==2){	
 		for(var i=0;i<g_folder_array.length;i++){	
-			var s = g_folder_array[i].href + "|" + 
+			var s = g_folder_array[i].furl + "|" + 
 							g_folder_array[i].name + "|" + 
 							g_folder_array[i].online + "|" + 
 							g_folder_array[i].ip + "|" + 
@@ -763,11 +768,16 @@ function createClassificationView(content, type){
 		var loc = g_storage.get('openurl');
 		loc = (loc==undefined) ? "/" : loc;
 			
-		var media_hostName = window.location.host;					
-		if(media_hostName.indexOf(":")!=-1){
-			media_hostName = media_hostName.substring(0, media_hostName.indexOf(":"));
-		}
-		media_hostName = "http://" + media_hostName + ":" + g_storage.get("http_port") + "/";
+		//var media_hostName = g_storage.get('request_host_url');
+    
+        //if(media_hostName.indexOf("://")!=-1){
+        //    media_hostName = media_hostName.substr(media_hostName.indexOf("://")+3); 
+        //}
+    					
+		//if(media_hostName.indexOf(":")!=-1){
+		//	media_hostName = media_hostName.substring(0, media_hostName.indexOf(":"));
+		//}
+		//media_hostName = "http://" + media_hostName + ":" + g_storage.get("http_port") + "/";
 				
 		g_webdav_client.GETMUSICPLAYLIST(loc, $(this).attr("data-id"), function(error, statusstring, content){
 			if(error==200){
@@ -775,14 +785,16 @@ function createClassificationView(content, type){
 				var x = $(data);
 				var play_list = Array();
 				$(data).find("item").each(function(i) {
+					var media_hostName = g_storage.get('request_host_url');
 					var this_file_name = $(this).find("title").text();
-					var sharelink = media_hostName+$(this).find("sharelink").text();
+					var sharelink = media_hostName + "/" + $(this).find("sharelink").text();
 							
 					var obj = [];
 					obj['name'] = mydecodeURI(this_file_name);
 					obj['mp3'] = sharelink;
 					play_list.push(obj);
 				});
+				
 				openAudioPlayerByPlayList(play_list);
 			}
 		});
@@ -845,25 +857,33 @@ function createOpenUrlUI(open_url){
 
 function adjustLayout(){		
 	var page_size = getPageSize();
-	var page_width = page_size[0];
+	var page_width = page_size[0];	
 	var page_height = page_size[1];
 	var mainRegion_width = page_size[0];
-	var mainRegion_height = page_height - 
-							35 - //$('#header_region').height() - 											
-							33;//$('#bottom_region').height();
+	var mainRegion_height = page_size[1];//$(document).height();
 	
-	//$('#main_region').css('width', mainRegion_width);							
-	$('#main_region').css('height', mainRegion_height);	
-	//alert($('#bottom_region').height()+", "+$('#header_region').height()+", "+page_height+", "+mainRegion_height);
-	$('#main_region #main_right_region').css('width', mainRegion_width-parseInt($('#main_region #main_right_region').css("left")));
-	//$('#main_region #main_right_region').css('height', mainRegion_height-parseInt($('#main_region #button_panel').height())+7);
-	$('#main_region #main_right_region').css('height', mainRegion_height-parseInt($('#main_region #button_panel').height()));
+	var main_right_region_height = mainRegion_height - 
+	                               $("#header_region").height() - 
+	                               $("#bottom_region").height();
 	
-	//$("#main_region #button_panel").css("left", $("#main_region #main_left_region").width()-9);
+	/*
+	console.log("$(window).height()=" + $(window).height());
+	console.log("$(body).height()=" + $("body").height());
+    console.log("$(document).height()=" + $(document).height());
+    console.log("main_right_region_height=" + main_right_region_height);
+	console.log("$(#header_region).height()=" + $("#header_region").height());
+	console.log("$(#bottom_region).height()=" + $("#bottom_region").height());
+	console.log("$(#main_region #button_panel).height()=" + $("#main_region #button_panel").height());
+	console.log("$(#main_right_region #infobar).height()=" + $("#main_right_region #infobar").height());
+	*/
+		
+	$('#main_region #main_right_region').css('width', mainRegion_width - parseInt($('#main_region #main_right_region').css("left")));	
+			
 	$("#main_region #button_panel").css("left", $("#main_region #main_right_region").css("left"));
 	$("#main_region #button_panel").css("width", $("#main_region #main_right_region").width());
+	$("#main_region #button_panel").css("bottom", $("#bottom_region").height());
 	
-	var hostview_height = $('#main_left_region').height() - $('#main_left_region #infobar').height();
+	var hostview_height = main_right_region_height - $('#main_left_region #infobar').height();
 	$('#hostview').css("height", hostview_height);
 	
 	var albutton_width=0;	
@@ -879,9 +899,10 @@ function adjustLayout(){
 	
 	createOpenUrlUI(g_storage.get('openurl'));
 	
-	var h = $("#main_right_container").height() - $("#main_right_region #infobar").height();
+	var h = main_right_region_height - $("#main_right_region #infobar").height() - $('#main_region #button_panel').height();
 	if($("#main_right_container #hintbar").css("display")=="block") h -= $("#main_right_container #hintbar").height();
 	$("#fileview").css("height", h);
+	$("#upload_panel").css("height", h);
 		
 	$("#function_help").css("left", $("#main_left_region").width());
 	
@@ -961,8 +982,6 @@ function showHideEditUIRegion(show){
 	
 	if(g_select_file_count>0||g_select_folder_count>0){
 			
-		//showHideEditUIRegion(true);
-			
 		if(isAiModeView()<0) $("#btnDeleteSel").removeClass("disable");
 		
 		if(g_select_folder_count>0)
@@ -985,6 +1004,11 @@ function showHideEditUIRegion(show){
 	}
 	else{
 		$("#btnRename").addClass("disable");
+	}
+
+    if(g_query_type!=0){
+        $("#btnRename").addClass("disable");
+        $("#btnDeleteSel").addClass("disable");
 	}
 		
 	g_bshowHideEditUIRegion = show;
@@ -1025,11 +1049,15 @@ function show_hint_no_mediaserver(){
 	var http_enable = g_storage.get('http_enable'); //- 0: http, 1: https, 2: both
 	var misc_http_enable = g_storage.get('misc_http_enable');
 	var misc_http_port = g_storage.get('misc_http_port');
-	var misc_https_port = g_storage.get('misc_https_port');
-	var location_host = window.location.host;
+	var misc_https_port = g_storage.get('misc_https_port');	
 	var misc_protocol = "http";
 	var misc_port = misc_http_port;
-	    
+	var location_host = g_storage.get('request_host_url');//window.location.host;
+	
+	if(location_host.indexOf("://")!=-1){
+        location_host = location_host.substr(location_host.indexOf("://")+3); 
+    }
+                        
 	if(misc_http_enable==0){
 		if( !isPrivateIP() ){
 	    	$("#main_right_container #hintbar").html(m.getString("msg_no_mediaserver"));

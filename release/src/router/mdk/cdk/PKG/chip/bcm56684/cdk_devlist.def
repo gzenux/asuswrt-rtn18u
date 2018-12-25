@@ -1,0 +1,40 @@
+#if CDK_CONFIG_INCLUDE_BCM56684_A0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56684, BCM56684_VENDOR_ID, BCM56684_DEVICE_ID, BCM56684_REV_A0, \
+                  0, 0, \
+                  bcm56680_a0, bcm56684_a0, bcm56684_a0, \
+                  CDK_DEV_ARCH_XGS, "Valkyrie", "BCM56680", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56684_A1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56684, BCM56684_VENDOR_ID, BCM56684_DEVICE_ID, BCM56684_REV_A1, \
+                  0, 0, \
+                  bcm56680_a0, bcm56684_a0, bcm56684_a1, \
+                  CDK_DEV_ARCH_XGS, "Valkyrie", "BCM56680", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56684_B0 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56684, BCM56684_VENDOR_ID, BCM56684_DEVICE_ID, BCM56684_REV_B0, \
+                  0, 0, \
+                  bcm56680_b0, bcm56684_b0, bcm56684_b0, \
+                  CDK_DEV_ARCH_XGS, "Valkyrie", "BCM56680", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+
+#if CDK_CONFIG_INCLUDE_BCM56684_B1 == 1
+#ifdef CDK_DEVLIST_INCLUDE_ALL
+CDK_DEVLIST_ENTRY(BCM56684, BCM56684_VENDOR_ID, BCM56684_DEVICE_ID, BCM56684_REV_B1, \
+                  0, 0, \
+                  bcm56680_b0, bcm56684_b0, bcm56684_b1, \
+                  CDK_DEV_ARCH_XGS, "Valkyrie", "BCM56680", \
+                  "24-Port GbE Multilayer Switch with Four 10-GbE/HiGig2 Uplink Ports", 0, 0)
+#endif
+#endif
+

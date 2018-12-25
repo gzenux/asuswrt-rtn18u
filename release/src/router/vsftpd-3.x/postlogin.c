@@ -37,6 +37,11 @@
 #include <disk_io_tools.h>
 #include <disk_share.h>
 
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+#include <PMS_DBAPIs.h>
+#endif
+
+
 /* Private local functions */
 static void handle_pwd(struct vsf_session* p_sess);
 static void handle_cwd(struct vsf_session* p_sess);
@@ -227,6 +232,16 @@ process_post_login(struct vsf_session* p_sess)
 	char *mount_path = NULL, *share_name = NULL;
 	int len = 0;
 	int chk_path = 0;
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+	int group_right = 0;
+	int acc_num;
+	PMS_ACCOUNT_INFO_T *account_list, *follow_account;
+	int group_num;
+	PMS_ACCOUNT_GROUP_INFO_T *group_list;
+	PMS_OWNED_INFO_T *owned_group = NULL;
+	PMS_ACCOUNT_GROUP_INFO_T *group_member;
+	char char_user[64];
+#endif
 
 	chk_path = 0;
 	for(target_cmd = cmds_about_shared_folder; *target_cmd; ++target_cmd){
@@ -354,14 +369,69 @@ process_post_login(struct vsf_session* p_sess)
 		}
 	}
 
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+	if(!p_sess->is_anonymous){
+		if(PMS_GetAccountInfo(PMS_ACTION_GET_FULL, &account_list, &group_list, &acc_num, &group_num) < 0){
+			cmd_ok = 0;
+			PMS_FreeAccInfo(&account_list, &group_list);
+			goto VSFTPD_CMD;
+		}
+
+		for(follow_account = account_list; follow_account != NULL; follow_account = follow_account->next){
+			memset(char_user, 0, sizeof(char_user));
+			ascii_to_char_safe(char_user, follow_account->name, sizeof(char_user));
+
+			if(!strcmp(char_user, str_getbuf(&p_sess->user_str)))
+				break;
+		}
+		if(follow_account == NULL){
+			cmd_ok = 0;
+			PMS_FreeAccInfo(&account_list, &group_list);
+			goto VSFTPD_CMD;
+		}
+
+		owned_group = follow_account->owned_group;
+	}
+#endif
+
 	for(target_cmd = need_read_right_commands; *target_cmd; ++target_cmd){
 		if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd)){
 			if(layer >= SHARE_LAYER && !p_sess->is_anonymous){
-				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+				while(owned_group != NULL){
+					group_member = (PMS_ACCOUNT_GROUP_INFO_T *)owned_group->member;
+
+					memset(char_user, 0, sizeof(char_user));
+					ascii_to_char_safe(char_user, group_member->name, sizeof(char_user));
+
+					group_right = get_permission(char_user, mount_path, share_name, "ftp", 1);
+#ifdef UNION_PERMISSION
+					if(group_right >= 1)
+						break;
+#else
+					if(group_right < 1){
+						cmd_ok = 0;
+						PMS_FreeAccInfo(&account_list, &group_list);
+						goto VSFTPD_CMD;
+					}
+#endif
+
+					owned_group = owned_group->next;
+				}
+
+#endif
+				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp", 0);
+#ifdef UNION_PERMISSION
+				if(user_right < 1 && group_right < 1)
+#else
 				if(user_right < 1)
+#endif
 					cmd_ok = 0;
 			}
 
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+			PMS_FreeAccInfo(&account_list, &group_list);
+#endif
 			goto VSFTPD_CMD;
 		}
 	}
@@ -371,11 +441,41 @@ process_post_login(struct vsf_session* p_sess)
 			if(layer < SHARE_LAYER)
 				cmd_ok = 0;
 			else if(!p_sess->is_anonymous){
-				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
-				if(user_right == 2) // only upload mode
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+				while(owned_group != NULL){
+					group_member = (PMS_ACCOUNT_GROUP_INFO_T *)owned_group->member;
+
+					memset(char_user, 0, sizeof(char_user));
+					ascii_to_char_safe(char_user, group_member->name, sizeof(char_user));
+
+					group_right = get_permission(char_user, mount_path, share_name, "ftp", 1);
+#ifdef UNION_PERMISSION
+					if(group_right >= 1 && group_right != 2)
+						break;
+#else
+					if(group_right < 1 || group_right == 2){
+						cmd_ok = 0;
+						PMS_FreeAccInfo(&account_list, &group_list);
+						goto VSFTPD_CMD;
+					}
+#endif
+
+					owned_group = owned_group->next;
+				}
+
+#endif
+				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp", 0);
+#ifdef UNION_PERMISSION
+				if((user_right < 1 || user_right == 2) && (group_right < 1 || group_right == 2))
+#else
+				if(user_right < 1 || user_right == 2) // only upload mode
+#endif
 					cmd_ok = 0;
 			}
 
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+			PMS_FreeAccInfo(&account_list, &group_list);
+#endif
 			goto VSFTPD_CMD;
 		}
 	}
@@ -386,11 +486,41 @@ process_post_login(struct vsf_session* p_sess)
 			if(layer < SHARE_LAYER)
 				cmd_ok = 0;
 			else if(!p_sess->is_anonymous){
-				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+				while(owned_group != NULL){
+					group_member = (PMS_ACCOUNT_GROUP_INFO_T *)owned_group->member;
+
+					memset(char_user, 0, sizeof(char_user));
+					ascii_to_char_safe(char_user, group_member->name, sizeof(char_user));
+
+					group_right = get_permission(char_user, mount_path, share_name, "ftp", 1);
+#ifdef UNION_PERMISSION
+					if(group_right >= 2)
+						break;
+#else
+					if(group_right < 2){
+						cmd_ok = 0;
+						PMS_FreeAccInfo(&account_list, &group_list);
+						goto VSFTPD_CMD;
+					}
+#endif
+
+					owned_group = owned_group->next;
+				}
+
+#endif
+				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp", 0);
+#ifdef UNION_PERMISSION
+				if(user_right < 2 && group_right < 2)
+#else
 				if(user_right < 2)
+#endif
 					cmd_ok = 0;
 			}
 
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+			PMS_FreeAccInfo(&account_list, &group_list);
+#endif
 			goto VSFTPD_CMD;
 		}
 	}
@@ -398,12 +528,36 @@ process_post_login(struct vsf_session* p_sess)
 	for(target_cmd = need_delete_right_commands; *target_cmd; ++target_cmd){
 		if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd)){
 			if(layer >= SHARE_LAYER && !p_sess->is_anonymous){
-				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
-                                //user_right = 3;
-				if(user_right < 3)
-				{
-					cmd_ok = 0;
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+				while(owned_group != NULL){
+					group_member = (PMS_ACCOUNT_GROUP_INFO_T *)owned_group->member;
+
+					memset(char_user, 0, sizeof(char_user));
+					ascii_to_char_safe(char_user, group_member->name, sizeof(char_user));
+
+					group_right = get_permission(char_user, mount_path, share_name, "ftp", 1);
+#ifdef UNION_PERMISSION
+					if(group_right >= 3)
+						break;
+#else
+					if(group_right < 3){
+						cmd_ok = 0;
+						PMS_FreeAccInfo(&account_list, &group_list);
+						goto VSFTPD_CMD;
+					}
+#endif
+
+					owned_group = owned_group->next;
 				}
+
+#endif
+				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp", 0);
+#ifdef UNION_PERMISSION
+				if(user_right < 3 && group_right < 3)
+#else
+				if(user_right < 3)
+#endif
+					cmd_ok = 0;
 			}
 
 			// Can't execute when no right or no record.
@@ -412,6 +566,9 @@ process_post_login(struct vsf_session* p_sess)
 				cmd_ok = 0;
 			}
 
+#ifdef RTCONFIG_PERMISSION_MANAGEMENT
+			PMS_FreeAccInfo(&account_list, &group_list);
+#endif
 			goto VSFTPD_CMD;
 		}
 	}
