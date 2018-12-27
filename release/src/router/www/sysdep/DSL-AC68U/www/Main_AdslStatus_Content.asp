@@ -15,7 +15,7 @@
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script>
 
 var adsl_timestamp = parseInt("<% nvram_get("adsl_timestamp"); %>");
@@ -45,6 +45,7 @@ var log_PowerDown;
 var log_PowerUp;
 var log_CRCDown;
 var log_CRCUp;
+var log_VDSL_CurrentProfile;
 
 function update_log(){
 	$.ajax({
@@ -81,6 +82,7 @@ function update_log(){
 				document.getElementById("up_power_up").innerHTML = log_PowerUp;
 				document.getElementById("up_CRC_down").innerHTML = log_CRCDown;
 				document.getElementById("up_CRC_up").innerHTML = log_CRCUp;				
+				document.getElementById("div_VDSL_CurrentProfile").innerHTML = log_VDSL_CurrentProfile;
 				check_adsl_state_up();				
 					
 				setTimeout("update_log();", 5000);
@@ -253,6 +255,12 @@ function showadslbootTime(){
 								<th width="20%"><#dslsetting_disc2#></th>
 								<td>
 									<div id="up_annex"></div>
+								</td>
+							</tr>
+							<tr>
+								<th width="20%">Current Profile</th>
+								<td>
+									<div id="div_VDSL_CurrentProfile"><% nvram_get("dsllog_vdslcurrentprofile"); %></div>
 								</td>
 							</tr>
 							<tr>

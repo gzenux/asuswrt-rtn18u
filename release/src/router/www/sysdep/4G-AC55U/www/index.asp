@@ -170,7 +170,7 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
 	
@@ -396,7 +396,7 @@ function show_ddns_status(){
     else{
         document.getElementById("ddnsHostName").innerHTML = '<span>'+ ddnsName +'</span>';
         if( ddns_enable == '1' ){
-			if((link_status != undefined || link_ausstatus != undefined) && !((link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")) ) //link down
+			if((link_status != undefined || link_auxstatus != undefined) && !((link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")) ) //link down
 				document.getElementById("ddns_fail_hint").className = "notificationon";
 			
 			if( ddns_server_x == 'WWW.ASUS.COM' ) { //ASUS DDNS
@@ -944,68 +944,76 @@ function change_wan_state(primary_status, secondary_status){
 
 	if(wans_mode == "fo" || wans_mode == "fb"){
 		if(wan_unit == 0){
-			document.getElementById('primary_status').innerHTML = primary_status;
-			if(primary_status == "Disconnected"){				
+			if(primary_status == "Disconnected"){
+				document.getElementById('primary_status').innerHTML = "<#Disconnected#>";			
 				document.getElementById('primary_line').className = "primary_wan_disconnected";
-			}	
+			}
 			else{
+				document.getElementById('primary_status').innerHTML = "<#Connected#>";				
 				document.getElementById('primary_line').className = "primary_wan_connected";
 			}
 			
 			if(secondary_wanlink_ipaddr != '0.0.0.0' && secondary_status != 'Disconnected')
 				secondary_status = "Standby";	
 				
-			document.getElementById('seconday_status').innerHTML = secondary_status;	
 			if(secondary_status == 'Disconnected'){
+				document.getElementById('seconday_status').innerHTML = "<#Disconnected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_disconnected";
-			}	
+			}
 			else if(secondary_status == 'Standby'){
+				document.getElementById('seconday_status').innerHTML = "<#Status_Standby#>";
 				document.getElementById('secondary_line').className = "secondary_wan_standby";
-			}	
+			}
 			else{
+				document.getElementById('seconday_status').innerHTML = "<#Connected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_connected";
 			}
 		}
 		else{	//wan_unit : 1
 			if(first_wanlink_ipaddr != '0.0.0.0' && primary_status != 'Disconnected')
 				primary_status = "Standby";
-				
-			document.getElementById('primary_status').innerHTML = primary_status;
+
 			if(primary_status == 'Disconnected'){
+				document.getElementById('primary_status').innerHTML = "<#Disconnected#>";
 				document.getElementById('primary_line').className = "primary_wan_disconnected";
-			}	
+			}
 			else if(primary_status == 'Standby'){
+				document.getElementById('primary_status').innerHTML = "<#Status_Standby#>";
 				document.getElementById('primary_line').className = "primary_wan_standby";
-			}	
+			}
 			else{
+				document.getElementById('primary_status').innerHTML = "<#Connected#>";
 				document.getElementById('primary_line').className = "primary_wan_connected";
 			}
 			
-			document.getElementById('seconday_status').innerHTML = secondary_status;
 			if(secondary_status == "Disconnected"){
+				document.getElementById('seconday_status').innerHTML = "<#Disconnected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_disconnected";
-			}	
+			}
 			else{
+				document.getElementById('seconday_status').innerHTML = "<#Connected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_connected";
 			}
-		}	
+		}
 	}
 	else{	//lb
-		document.getElementById('primary_status').innerHTML = primary_status;
-		document.getElementById('seconday_status').innerHTML = secondary_status;
-		if(primary_status == "Disconnected"){				
+		if(primary_status == "Disconnected"){
+			document.getElementById('primary_status').innerHTML = "<#Disconnected#>";
 			document.getElementById('primary_line').className = "primary_wan_disconnected";
-		}	
+		}
 		else{
+			document.getElementById('primary_status').innerHTML = "<#Connected#>";
 			document.getElementById('primary_line').className = "primary_wan_connected";
 		}
 		
 		if(secondary_status == "Disconnected"){
+			document.getElementById('seconday_status').innerHTML = "<#Disconnected#>";
 			document.getElementById('secondary_line').className = "secondary_wan_disconnected";
-		}	
+		}
 		else{
+			document.getElementById('seconday_status').innerHTML = "<#Connected#>";
 			document.getElementById('secondary_line').className = "secondary_wan_connected";
-		}	
+		}
 	}
 }
 

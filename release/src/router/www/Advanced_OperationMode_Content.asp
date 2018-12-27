@@ -14,7 +14,7 @@
 <link rel="stylesheet" type="text/css" href="usp_style.css">
 <link rel="stylesheet" type="text/css" href="other.css">
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
@@ -99,7 +99,7 @@ window.onresize = function() {
 		cal_panel_block("routerSSID", 0.25);
 	}
 } 
-if(based_modelid == "RT-AC3200" && sw_mode_orig == 3 && '<% nvram_get("wlc_psta"); %>' == 2)
+if(sw_mode_orig == 3 && '<% nvram_get("wlc_psta"); %>' == 2)
 	sw_mode_orig = 2;
 
 function initial(){
@@ -427,7 +427,7 @@ function setScenerion(mode, express){
 		document.form.wlc_express.value = 0;
 		$("#Senario").css({"height": "", "background": "url(/images/New_ui/ap.jpg) center no-repeat", "margin-bottom": "30px"});
 		if(findasus_support){
-			$("#mode_desc").html("<#OP_AP_desc#><br/><span style=\"color:#FC0\">You can also go to <a href=\"http://findasus.local\" style=\"font-family:Lucida Console;text-decoration:underline;color:#FC0;\">http://findasus.local</a> to search and enter device config page.</span>");
+			$("#mode_desc").html("<#OP_AP_desc#><br/><span style=\"color:#FC0\"><#OP_AP_hint#></span>");
 		}else{
 			$("#mode_desc").html("<#OP_AP_desc#><br/><span style=\"color:#FC0\"><#deviceDiscorvy3#></span>");
 		}

@@ -12,7 +12,7 @@
 <link href="/form_style.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <style type="text/css">
 .title{
 	font-size:16px;
@@ -78,6 +78,14 @@
 
 .cpu_div{
 	margin-top:-5px;
+}
+
+.status_bar{
+  -webkit-transition: all 0.5s ease-in-out;
+  -moz-transition: all 0.5s ease-in-out;
+  -o-transition: all 0.5s ease-in-out;
+  transition: all 0.5s ease-in-out;
+
 }
 </style>
 <script>

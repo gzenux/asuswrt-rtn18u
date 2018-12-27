@@ -479,6 +479,8 @@ document.getElementById("nonstd_vectoring").style.display = (_value == "0") ? "n
 					<select id="" class="input_option" name="dslx_vdsl_profile">
 						<option value="0" <% nvram_match("dslx_vdsl_profile", "0", "selected"); %>>30a multi mode</option>
 						<option value="1" <% nvram_match("dslx_vdsl_profile", "1", "selected"); %>>17a multi mode</option>
+						<option value="2" <% nvram_match("dslx_vdsl_profile", "2", "selected"); %>>12a multi mode</option>
+						<option value="3" <% nvram_match("dslx_vdsl_profile", "3", "selected"); %>>8a multi mode</option>
 					</select>
 				</td>
 			</tr>

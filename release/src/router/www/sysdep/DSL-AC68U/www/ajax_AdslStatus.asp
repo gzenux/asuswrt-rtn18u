@@ -22,5 +22,5 @@ log_PowerDown="<% nvram_get("dsllog_powerdown"); %>";
 log_PowerUp="<% nvram_get("dsllog_powerup"); %>";
 log_CRCDown="<% nvram_get("dsllog_crcdown"); %>";
 log_CRCUp="<% nvram_get("dsllog_crcup"); %>";
-
+log_VDSL_CurrentProfile="<% nvram_get("dsllog_vdslcurrentprofile"); %>";
 

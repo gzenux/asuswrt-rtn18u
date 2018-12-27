@@ -87,6 +87,26 @@ function initial(){
 	show_menu();
 	show_http_clientlist();
 	display_spec_IP(document.form.http_client.value);
+
+	if(reboot_schedule_support){
+		document.form.reboot_date_x_Sun.checked = getDateCheck(document.form.reboot_schedule.value, 0);
+		document.form.reboot_date_x_Mon.checked = getDateCheck(document.form.reboot_schedule.value, 1);
+		document.form.reboot_date_x_Tue.checked = getDateCheck(document.form.reboot_schedule.value, 2);
+		document.form.reboot_date_x_Wed.checked = getDateCheck(document.form.reboot_schedule.value, 3);
+		document.form.reboot_date_x_Thu.checked = getDateCheck(document.form.reboot_schedule.value, 4);
+		document.form.reboot_date_x_Fri.checked = getDateCheck(document.form.reboot_schedule.value, 5);
+		document.form.reboot_date_x_Sat.checked = getDateCheck(document.form.reboot_schedule.value, 6);
+		document.form.reboot_time_x_hour.value = getrebootTimeRange(document.form.reboot_schedule.value, 0);
+		document.form.reboot_time_x_min.value = getrebootTimeRange(document.form.reboot_schedule.value, 1);
+		document.getElementById('reboot_schedule_enable_tr').style.display = "";
+		hide_reboot_option('<% nvram_get("reboot_schedule_enable"); %>');
+	}
+	else{
+		document.getElementById('reboot_schedule_enable_tr').style.display = "none";
+		document.getElementById('reboot_schedule_date_tr').style.display = "none";
+		document.getElementById('reboot_schedule_time_tr').style.display = "none";
+	}
+
 	corrected_timezone();
 	load_timezones();
 	parse_dstoffset();
@@ -214,6 +234,10 @@ function applyRule(){
 			return false;
 		}
 
+		if(document.form.http_clientlist.value != '<% nvram_get("http_clientlist"); %>'){
+			document.form.action_script.value = "restart_time;restart_httpd";
+		}
+
 		if(document.form.http_passwd2.value.length > 0){
 			document.form.http_passwd.value = document.form.http_passwd2.value;
 			document.form.http_passwd.disabled = false;
@@ -290,6 +314,10 @@ function applyRule(){
 				document.form.btn_ez_mode.value=0;				
 		}
 		
+		if(reboot_schedule_support == 1){               
+			updateDateTime();
+		}
+
 		showLoading();
 		document.form.submit();
 	}
@@ -342,36 +370,58 @@ function validForm(){
 		}
 	}
 
+	if(document.form.http_passwd2.value.length > 0 && document.form.http_passwd2.value.length < 5){
+		showtext(document.getElementById("alert_msg2"),"* <#JS_short_password#>");
+		document.form.http_passwd2.focus();
+		document.form.http_passwd2.select();
+		return false;
+	}	
+
 	if(document.form.http_passwd2.value != document.form.v_password2.value){
-		showtext(document.getElementById("alert_msg2"),"*<#File_Pop_content_alert_desc7#>");
+		showtext(document.getElementById("alert_msg2"),"* <#File_Pop_content_alert_desc7#>");
 		if(document.form.http_passwd2.value.length <= 0){
 			document.form.http_passwd2.focus();
 			document.form.http_passwd2.select();
 		}else{
 			document.form.v_password2.focus();
 			document.form.v_password2.select();
-		}	
-
+		}
 		return false;
 	}
 
 	if(is_KR_sku){		/* MODELDEP by Territory Code */
 		if(document.form.http_passwd2.value.length > 0 || document.form.http_passwd2.value.length > 0){
-				if(!validator.string_KR(document.form.http_passwd2)){
-						document.form.http_passwd2.focus();
-						document.form.http_passwd2.select();
-						return false;
-				}
+			if(!validator.string_KR(document.form.http_passwd2)){
+				document.form.http_passwd2.focus();
+				document.form.http_passwd2.select();
+				return false;
+			}
 		}
 	}
 	else{
 		if(!validator.string(document.form.http_passwd2)){
-				document.form.http_passwd2.focus();
-				document.form.http_passwd2.select();
-				return false;
+			document.form.http_passwd2.focus();
+			document.form.http_passwd2.select();
+			return false;
 		}	
 	}	
+
+	if(document.form.http_passwd2.value == '<% nvram_default_get("http_passwd"); %>'){	
+		showtext(document.getElementById("alert_msg2"),"* <#QIS_adminpass_confirm0#>");
+		document.form.http_passwd2.focus();
+		document.form.http_passwd2.select();
+		return false;
+	}	
 	
+	//confirm common string combination	#JS_common_passwd#
+	var is_common_string = check_common_string(document.form.http_passwd2.value, "httpd_password");
+	if(document.form.http_passwd2.value.length > 0 && is_common_string){
+			if(confirm("<#JS_common_passwd#>")){
+				document.form.http_passwd2.focus();
+				document.form.http_passwd2.select();
+				return false;	
+			}	
+	}
 
 	if(!validator.ipAddrFinal(document.form.log_ipaddr, 'log_ipaddr')
 			|| !validator.string(document.form.ntp_server0)
@@ -385,10 +435,7 @@ function validForm(){
 			&& document.form.dst_start_d.value == document.form.dst_end_d.value){
 		alert("<#FirewallConfig_URLActiveTime_itemhint4#>");	//At same day
 		return false;
-	}
-
-	if(document.form.http_passwd2.value.length > 0)
-		alert("<#File_Pop_content_alert_desc10#>");
+	}	
 		
 	if (document.form.misc_http_x[0].checked) {
 		if (!validator.range(document.form.misc_httpport_x, 1024, 65535))
@@ -436,6 +483,17 @@ function validForm(){
 	else if(!validator.rangeAllowZero(document.form.http_autologout, 10, 999, '<% nvram_get("http_autologout"); %>'))
 		return false;
 
+	if(reboot_schedule_support == 1){
+		if(document.form.reboot_schedule_enable[0].checked == 1){
+			if(!validate_timerange(document.form.reboot_time_x_hour, 0)
+				|| !validate_timerange(document.form.reboot_time_x_min, 1))
+				return false;
+		}
+	}
+
+	if(document.form.http_passwd2.value.length > 0)	//password setting changed
+		alert("<#File_Pop_content_alert_desc10#>");
+		
 	return true;
 }
 
@@ -969,6 +1027,42 @@ function display_spec_IP(flag){
 			document.getElementById("http_clientlist_Block").style.display = "";
 	}
 }
+
+function hide_reboot_option(flag){
+	document.getElementById("reboot_schedule_date_tr").style.display = (flag == 1) ? "" : "none";
+	document.getElementById("reboot_schedule_time_tr").style.display = (flag == 1) ? "" : "none";
+}
+
+
+function getrebootTimeRange(str, pos)
+{
+	if (pos == 0)
+		return str.substring(7,9);
+	else if (pos == 1)
+		return str.substring(9,11);
+}
+
+function setrebootTimeRange(rd, rh, rm)
+{
+	return(rd.value+rh.value+rm.value);
+}
+
+function updateDateTime()
+{
+	document.form.reboot_schedule.value = setDateCheck(
+	document.form.reboot_date_x_Sun,
+	document.form.reboot_date_x_Mon,
+	document.form.reboot_date_x_Tue,
+	document.form.reboot_date_x_Wed,
+	document.form.reboot_date_x_Thu,
+	document.form.reboot_date_x_Fri,
+	document.form.reboot_date_x_Sat);
+	document.form.reboot_schedule.value = setrebootTimeRange(
+	document.form.reboot_schedule,
+	document.form.reboot_time_x_hour,
+	document.form.reboot_time_x_min)
+}
+
 </script>
 </head>
 
@@ -996,6 +1090,8 @@ function display_spec_IP(flag){
 <input type="hidden" name="http_passwd" value="" disabled>
 <input type="hidden" name="http_clientlist" value="<% nvram_get("http_clientlist"); %>">
 <input type="hidden" name="btn_ez_mode" value="<% nvram_get("btn_ez_mode"); %>">
+<input type="hidden" name="reboot_schedule" value="<% nvram_get_x("","reboot_schedule"); %>">
+<input type="hidden" name="reboot_schedule_enable" value="<% nvram_get_x("","reboot_schedule_enable"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
   <tr>
@@ -1133,6 +1229,33 @@ function display_spec_IP(flag){
 						<input type="radio" name="btn_ez_radiotoggle" id="turn_LED" class="input" style="display:none;" value="0" <% nvram_match_x("", "btn_ez_mode", "1", "checked"); %>><label for="turn_LED" id="turn_LED_str">Turn LED On/Off</label>
 					</td>
 				</tr>				
+				</tr>
+                                <tr id="reboot_schedule_enable_tr">
+                                        <th width="40%" align="right">Enable Reboot Schedule</th>
+                                        <td width="300"><input type="radio" value="1" name="reboot_schedule_enable"  onClick="hide_reboot_option(1);return change_common_radio(this, 'LANHostConfig', 'reboot_schedule_enable', '1')" <% nvram_match_x("LANHostConfig","reboot_schedule_enable", "1", "checked"); %>><#checkbox_Yes#>
+                                        <input type="radio" value="0" name="reboot_schedule_enable"  onClick="hide_reboot_option(0);return change_common_radio(this, 'LANHostConfig', 'reboot_schedule_enable', '0')" <% nvram_match_x("LANHostConfig","reboot_schedule_enable", "0", "checked"); %>><#checkbox_No#>
+                                        </td>
+                                </tr>
+                                <tr id="reboot_schedule_date_tr">
+                                        <th>Date to Reboot</th>
+                                        <td>
+                                        <input type="checkbox" name="reboot_date_x_Sun" class="input" onChange="return changeDate();"><#date_Sun_itemdesc#>
+                                        <input type="checkbox" name="reboot_date_x_Mon" class="input" onChange="return changeDate();"><#date_Mon_itemdesc#>
+                                        <input type="checkbox" name="reboot_date_x_Tue" class="input" onChange="return changeDate();"><#date_Tue_itemdesc#>
+                                        <input type="checkbox" name="reboot_date_x_Wed" class="input" onChange="return changeDate();"><#date_Wed_itemdesc#>
+                                        <input type="checkbox" name="reboot_date_x_Thu" class="input" onChange="return changeDate();"><#date_Thu_itemdesc#>
+                                        <input type="checkbox" name="reboot_date_x_Fri" class="input" onChange="return changeDate();"><#date_Fri_itemdesc#>
+                                        <input type="checkbox" name="reboot_date_x_Sat" class="input" onChange="return changeDate();"><#date_Sat_itemdesc#>
+                                        </td>
+                                </tr>
+                                <tr id="reboot_schedule_time_tr">
+                                        <th>Time of Day to Reboot</th>
+                                        <td>
+                                        <input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_hour" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 0);" autocorrect="off" autocapitalize="off"> :
+                                        <input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_min" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 1);" autocorrect="off" autocapitalize="off">
+                                        </td>
+                                </tr>
+
 				<tr>
 					<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
 					<td><input type="text" maxlength="15" class="input_15_table" name="log_ipaddr" value="<% nvram_get("log_ipaddr"); %>" onKeyPress="return validator.isIPAddr(this, event)" autocorrect="off" autocapitalize="off"></td>
@@ -1147,27 +1270,27 @@ function display_spec_IP(flag){
 					</td>
 				</tr>
 				<tr id="dst_changes_start" style="display:none;">
-					<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,7)">DST time zone changes starts</a></th>
+					<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,7)"><#LANHostConfig_x_TimeZone_DSTStart#></a></th>
 					<td>
 								<div id="dst_start" style="color:white;display:none;">
 									<div>
-										<select name="dst_start_m" class="input_option"></select>&nbsp;month &nbsp;
+										<select name="dst_start_m" class="input_option"></select>&nbsp;<#month#> &nbsp;
 										<select name="dst_start_w" class="input_option"></select>&nbsp;
-										<select name="dst_start_d" class="input_option"></select>&nbsp;weekday &nbsp;
-										<select name="dst_start_h" class="input_option"></select>&nbsp;hour &nbsp;
+										<select name="dst_start_d" class="input_option"></select>&nbsp;<#weekday#> &nbsp;
+										<select name="dst_start_h" class="input_option"></select>&nbsp;<#hour_time#> &nbsp;
 									</div>
 								</div>
 					</td>	
 				</tr>
 				<tr id="dst_changes_end" style="display:none;">
-					<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,8)">DST time zone changes ends</a></th>
+					<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,8)"><#LANHostConfig_x_TimeZone_DSTEnd#></a></th>
 					<td>
 								<div id="dst_end" style="color:white;display:none;">
 									<div>
-										<select name="dst_end_m" class="input_option"></select>&nbsp;month &nbsp;
+										<select name="dst_end_m" class="input_option"></select>&nbsp;<#month#> &nbsp;
 										<select name="dst_end_w" class="input_option"></select>&nbsp;
-										<select name="dst_end_d" class="input_option"></select>&nbsp;weekday &nbsp;
-										<select name="dst_end_h" class="input_option"></select>&nbsp;hour &nbsp;
+										<select name="dst_end_d" class="input_option"></select>&nbsp;<#weekday#> &nbsp;
+										<select name="dst_end_h" class="input_option"></select>&nbsp;<#hour_time#> &nbsp;
 									</div>
 								</div>
 					</td>
@@ -1232,7 +1355,7 @@ function display_spec_IP(flag){
 				</tr>
 
 				<tr>
-					<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(11,6);">Enable WAN down browser redirect notice</a></th>
+					<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(11,6);"><#Enable_redirect_notice#></a></th>
 					<td>
 						<input type="radio" name="nat_redirect_enable" class="input" value="1" <% nvram_match_x("","nat_redirect_enable","1", "checked"); %> ><#checkbox_Yes#>
 						<input type="radio" name="nat_redirect_enable" class="input" value="0" <% nvram_match_x("","nat_redirect_enable","0", "checked"); %> ><#checkbox_No#>

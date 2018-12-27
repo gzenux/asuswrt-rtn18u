@@ -118,12 +118,6 @@ static inline int before(int ver1, int ver2)
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
-#ifdef RTCONFIG_OLD_PARENTALCTRL
-int nvram_set_by_seq(char *name, unsigned int seq, char *value);
-char * nvram_get_by_seq(char *name, unsigned int seq);
-int parental_ctrl(void);
-#endif	/* RTCONFIG_OLD_PARENTALCTRL */
-
 //	#define DEBUG_IPTFILE
 //	#define DEBUG_RCTEST
 //	#define DEBUG_NOISY

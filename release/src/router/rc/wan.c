@@ -923,6 +923,10 @@ void update_wan_state(char *prefix, int state, int reason)
 		nvram_set(strcat_r(prefix, "6rd_prefix", tmp), "");
 		nvram_set(strcat_r(prefix, "6rd_prefixlen", tmp), "");
 #endif
+#ifdef RTCONFIG_TR069
+//		nvram_unset(strcat_r(prefix, "tr_acs_url", tmp));
+//		nvram_unset(strcat_r(prefix, "tr_pvgcode", tmp));
+#endif
 	}
 	else if (state == WAN_STATE_STOPPED) {
 		// Save Stopped Reason
@@ -2360,8 +2364,11 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	/* Set default route to gateway if specified */
 	if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) {
 		/* the gateway is in the local network */
-		if (gateway)
+		if (gateway &&
+		    inet_addr_(gateway) != inet_addr_(nvram_safe_get(strcat_r(prefix, "ipaddr", tmp))))
 			route_add(wan_ifname, 0, gateway, NULL, "255.255.255.255");
+		/* replaced with add_multi_routes()
+		route_add(wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0"); */
 	}
 
 	/* hack: avoid routing cycles, when both peer and server has the same IP */
@@ -2375,7 +2382,7 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	add_wan_routes(wan_ifname);
 
 	nvram_set(strcat_r(prefix, "gw_ifname", tmp), wan_ifname);
-	
+
 	/* setup static wan routes via physical device */
 	if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) {
 		nvram_set(strcat_r(prefix, "xgateway", tmp), gateway ? : "0.0.0.0");

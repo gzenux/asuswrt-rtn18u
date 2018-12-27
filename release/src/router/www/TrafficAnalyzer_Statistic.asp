@@ -13,7 +13,7 @@
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <link rel="stylesheet" type="text/css" href="usp_style.css">
 <link rel="stylesheet" type="text/css" href="datepicker.css">
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/calendar/jquery-ui.js"></script> 
 <script type="text/javascript" src="/chart.js"></script>
 <script type="text/javascript" src="/state.js"></script>
@@ -199,7 +199,7 @@ function get_client_used_apps_info(client_index, used_data_array, top5_info, typ
 				code += "<td style='padding:5px 0px 0px 20px;font-size:14px;width:100px;cursor:pointer' onClick=\"show_individual_info_block(\'"+used_data_array[i][0]+"\', \'"+ type +"\')\">" + used_data_array[i][0] + "</td>";
 			else{
 				if(clientList[used_data_array[i][0]] != undefined)
-					code += "<td style='padding:5px 0px 0px 20px;font-size:14px;width:100px;cursor:pointer' onClick=\"show_individual_info_block(\'"+used_data_array[i][0]+"\', \'"+ type +"\')\">" + clientList[used_data_array[i][0]].name + "</td>";
+					code += "<td style='padding:5px 0px 0px 20px;font-size:14px;width:100px;cursor:pointer' onClick=\"show_individual_info_block(\'"+used_data_array[i][0]+"\', \'"+ type +"\')\">" + getClientCurrentName(used_data_array[i][0]) + "</td>";
 				else
 					code += "<td style='padding:5px 0px 0px 20px;font-size:14px;width:100px;cursor:pointer' onClick=\"show_individual_info_block(\'"+used_data_array[i][0]+"\', \'"+ type +"\')\">" + used_data_array[i][0] + "</td>";
 			}	
@@ -288,12 +288,13 @@ function get_client_info(list_info, type){
 			}
 	
 			if(match_flag == 1){
-				code += "<option value=" + all_client_traffic[i][0] + ">" + clientList[all_client_traffic[i][0]].name + "</option>";
+				var clientName = getClientCurrentName(all_client_traffic[i][0]);
+				code += "<option value=" + all_client_traffic[i][0] + ">" + clientName + "</option>";
 				if(i<6){
 					top5_client_array[i] = all_client_traffic[i][0];	
 					top5_client_array[all_client_traffic[i][0]] = {
 					"mac":all_client_traffic[i][0], 
-					"name":clientList[all_client_traffic[i][0]].name,
+					"name":clientName,
 					"tx":all_client_traffic[i][1],				
 					"rx":all_client_traffic[i][2]};
 				}
@@ -473,7 +474,7 @@ function show_detail_info(mac, used_data_array, type){
 	if(clientList[mac] == undefined)
 		code += '<th colspan="4">Client: '+ mac +'</th>';
 	else
-		code += '<th colspan="4">Client: '+ clientList[mac].name +'</th>';
+		code += '<th colspan="4">Client: '+ getClientCurrentName(mac); +'</th>';
 	
 	code += '</tr>';
 	code += '<tr style="font-size:13px;">';
@@ -510,7 +511,7 @@ function show_all_info(mac, type){
 		if(clientList[mac] == undefined)
 			code += "<th colspan='4'>Client's Name: "+ mac +"</th>";
 		else
-			code += "<th colspan='4'>Client's Name: "+ clientList[mac].name +"</th>";
+			code += "<th colspan='4'>Client's Name: "+ getClientCurrentName(mac) +"</th>";
 		
 		code += "</tr>";
 		code += '<tr style="font-size:13px;">';
@@ -1092,6 +1093,7 @@ function draw_flow(date, traffic){
 	var traffic_unit = new Array();
 	var traffic_temp = new Array();	
 	var hour_temp = date_array[3], date_temp = date_array[2], month_temp = date_array[1], year_temp = date_array[0];
+	router_total_traffic = 0;
 	if(document.getElementById('duration_option').value == "daily"){	
 		for(i=0;i<24;i++){
 			if(traffic[i] == undefined)
@@ -1369,7 +1371,6 @@ function setHover_css(){
 }
 var time_flag;
 function introduce_demo(){
-	console.log("2");
 	cal_panel_block("demo_background");
 	document.getElementById("demo_background").style.display = "";
 	document.getElementById("demo_background").style.zIndex = "5";
@@ -1377,6 +1378,15 @@ function introduce_demo(){
 	document.getElementById("demo_background").style.display = "";
 	time_flag = setTimeout(function(){cancel_demo();}, "41000");
 
+}
+
+function getClientCurrentName(_mac) {
+	var clientName = _mac;
+	var clientObj = clientList[_mac];
+	if(clientObj) {
+		clientName = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
+	}
+	return clientName;
 }
 </script>
 </head>
@@ -1427,7 +1437,7 @@ function introduce_demo(){
 										<table width="100%">
 											<tr>
 												<td class="formfonttitle" align="left">								
-													<div>Traffic Analyzer - Statistic</div>
+													<div><#Traffic_Analyzer#> - Statistic</div>
 												</td>
 												<td>
 													<div>

@@ -34,7 +34,7 @@
 #include <bcmparams.h>
 #include <bcmdevs.h>
 #include <shared.h>
-#ifdef RTCONFIG_BCMFA
+#ifdef RTCONFIG_BCMARM
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
 #endif
@@ -449,7 +449,7 @@ int start_vlan(void)
 		char vlan_id[16];
 		char *hwname, *hwaddr;
 		char prio[8];
-#ifdef RTCONFIG_BCMFA
+#ifdef RTCONFIG_BCMARM
 		struct ethtool_drvinfo info;
 #endif
 		/* get the address of the EMAC on which the VLAN sits */
@@ -471,7 +471,7 @@ int start_vlan(void)
 				continue;
 			if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER)
 				continue;
-#ifdef RTCONFIG_BCMFA
+#ifdef RTCONFIG_BCMARM
 			if (bcmp(ifr.ifr_hwaddr.sa_data, ea, ETHER_ADDR_LEN))
 				continue;
 
@@ -508,12 +508,18 @@ int start_vlan(void)
 	}
 	close(s);
 
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1)|| defined(RTAC54U)
-	eval("vconfig", "set_egress_map", "vlan2", "0", nvram_safe_get("switch_wan0prio"));
-#elif defined(RTCONFIG_QCA)
+#if (defined(RTCONFIG_QCA) || (defined(RTCONFIG_RALINK) && (defined(RTCONFIG_RALINK_MT7620) || defined(RTCONFIG_RALINK_MT7621))))
 	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", ""))
 	{
+#if defined(RTCONFIG_QCA)
 		char *wan_base_if = "eth0";
+#elif defined(RTCONFIG_RALINK)
+#if defined(RTCONFIG_RALINK_MT7620) /* RT-N14U, RT-AC52U, RT-AC51U, RT-N11P, RT-N54U, RT-AC1200HP, RT-AC54U */
+		char *wan_base_if = "eth2";
+#elif defined(RTCONFIG_RALINK_MT7621) /* RT-N56UB1 */
+		char *wan_base_if = "eth3";
+#endif
+#endif
 		set_wan_tag(wan_base_if);
 	}
 #endif

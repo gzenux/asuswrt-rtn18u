@@ -239,13 +239,16 @@ function setTimeRange(sh, sm, eh, em){
 function change_firewall(r){
 	if (r == "0"){
 		inputCtrl(document.form.fw_log_x, 0);
+		inputRCtrl1(document.form.fw_dos_x, 0);
 		inputRCtrl1(document.form.misc_ping_x, 0);
 	}
 	else{		//r=="1"
 		inputCtrl(document.form.fw_log_x, 1);
+		inputRCtrl1(document.form.fw_dos_x, 1);
 		inputRCtrl1(document.form.misc_ping_x, 1);
 	}
 }
+
 function change_wireless_bridge(m){
 	if (m == "0"){
 		inputRCtrl2(document.form.wl_wdsapply_x, 1);
@@ -1504,8 +1507,12 @@ function limit_auth_method(g_unit){
 		else{
 			if((based_modelid == "RT-AC87U" && '<% nvram_get("wl_unit"); %>' == '1') || (based_modelid == "RT-AC87U" && g_unit))
 				var auth_array = [["Open System", "open"], ["WPA2-Personal", "psk2"], ["WPA-Auto-Personal", "pskpsk2"]];
-			else
-				var auth_array = [["Open System", "open"], ["Shared Key", "shared"], ["WPA-Personal", "psk"], ["WPA2-Personal", "psk2"], ["WPA-Auto-Personal", "pskpsk2"], ["WPA-Enterprise", "wpa"], ["WPA2-Enterprise", "wpa2"], ["WPA-Auto-Enterprise", "wpawpa2"], ["Radius with 802.1x", "radius"]];
+			else{
+				if(wifi_logo_support)
+					var auth_array = [["Open System", "open"], ["WPA2-Personal", "psk2"], ["WPA-Auto-Personal", "pskpsk2"], ["WPA-Enterprise", "wpa"], ["WPA2-Enterprise", "wpa2"], ["WPA-Auto-Enterprise", "wpawpa2"]];
+				else
+					var auth_array = [["Open System", "open"], ["Shared Key", "shared"], ["WPA-Personal", "psk"], ["WPA2-Personal", "psk2"], ["WPA-Auto-Personal", "pskpsk2"], ["WPA-Enterprise", "wpa"], ["WPA2-Enterprise", "wpa2"], ["WPA-Auto-Enterprise", "wpawpa2"], ["Radius with 802.1x", "radius"]];
+			}	
 			
 		}
 	}

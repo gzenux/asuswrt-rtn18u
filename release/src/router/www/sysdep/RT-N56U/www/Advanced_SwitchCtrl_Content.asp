@@ -22,7 +22,7 @@
 
 function initial(){
 	show_menu();
-	if(based_modelid == "RT-N14U" || based_modelid == "RT-N11P" ||
+	if(based_modelid == "RT-N14U" || based_modelid == "RT-N11P" || based_modelid == "RT-N300" ||
 	   based_modelid == "RT-AC52U" || based_modelid == "RT-AC51U" || based_modelid == "RT-N54U")
 	{
 		inputCtrl(document.form.switch_ctrlrate_unknown_unicast, 0);

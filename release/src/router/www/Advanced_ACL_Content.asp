@@ -19,7 +19,7 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/jquery.xdomainajax.js"></script>
 <style>
@@ -91,6 +91,9 @@ function initial(){
 	show_menu();
 
 	regen_band(document.form.wl_unit);
+
+	if(!band5g_support)
+		document.getElementById("wl_unit_field").style.display = "none";
 
 	var wl_maclist_x_row = wl_maclist_x_array.split('&#60');
 	var clientName = "New device";

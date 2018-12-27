@@ -277,6 +277,7 @@ extern int ej_wps_info(int eid, webs_t wp, int argc, char_t **argv);
 
 #ifdef RTCONFIG_HTTPS
 extern char *pwenc(const char *input);
+extern int check_model_name(void);
 #endif
 
 #endif /* _httpd_h_ */

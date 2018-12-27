@@ -3,7 +3,7 @@
 <title><#Web_Title#> Web Manager</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="/form_style.css" media="screen"></link>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script language="javascript">
 function onSubmitCtrl(o, s) {
 	document.form.action_mode.value = s;
@@ -64,6 +64,22 @@ function checkCmdRet(){
 		}
 	});
 }
+function upnp() {
+	location.href='upnpc_xml.log';
+}
+function smb() {
+	location.href='smb.log';
+}
+function dnsnet() {
+        location.href='mDNSNetMonitor.log';
+}
+function networkmap() {
+	location.href='networkmap.tar';
+}
+function uploadIconFile() {
+	location.href='uploadIconFile.tar';
+}
+
 </script>
 </head>  
 
@@ -108,6 +124,20 @@ function checkCmdRet(){
 			<textarea cols="80" rows="27" wrap="off" readonly="readonly" id="textarea" style="width:99%;font-family:Courier New, Courier, mono; font-size:11px;background:#475A5F;color:#FFFFFF;"></textarea>
 		</td>
 	</tr>
+	<tr>
+		<td>
+			<!--input class="button_gen" onclick="upnp();" type="button" value="upnp" name="btUpnp" />
+			<input class="button_gen" onclick="smb();" type="button" value="smb" name="btSmb" />
+			<input class="button_gen" onclick="dnsnet();" type="button" value="mDNS" name="btDnsnet" /-->
+			<input class="button_gen" onclick="networkmap();" type="button" value="networkmaplog" name="btNetworkmap" />
+		</td>
+	</tr>
+	<!--tr>
+		<td>
+			Dump the file from jffs/usericon
+			<input class="button_gen" onclick="uploadIconFile();" type="button" value="UploadIconFile" name="btUploadIconFile" />
+		</td>
+	</tr-->
 	</tbody>
 </table>	
 

@@ -16,7 +16,7 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/calendar/jquery-ui.js"></script> 
 <style>
 .ui-slider {
@@ -133,7 +133,6 @@ for(i=0;i<bl_version_array.length;i++){
 }
 
 <% wl_get_parameter(); %>
-
 var mcast_rates = [
 	["HTMIX 6.5/15", "14", 0, 1, 1],
 	["HTMIX 13/30",	 "15", 0, 1, 1],
@@ -155,9 +154,6 @@ var mcast_rates = [
 	["CCK 11",	 "6",  1, 0, 1]
 ];
 
-var wl_version = "<% nvram_get("wl_version"); %>";
-var sdk_version_array = new Array();
-sdk_version_array = wl_version.split(".");
 var sdk_6 = sdk_version_array[0] == "6" ? true:false
 var sdk_7 = sdk_version_array[0] == "7" ? true:false
 var wl_user_rssi_onload = '<% nvram_get("wl_user_rssi"); %>';
@@ -211,7 +207,7 @@ function initial(){
 		document.getElementById("DLSCapable").style.display = "none";	
 		document.getElementById("PktAggregate").style.display = "none";
 		
-		if('<% nvram_get("wl_unit"); %>' == '1' || sdk_6){	// MODELDEP: for Broadcom SDK 6.x model
+		if('<% nvram_get("wl_unit"); %>' == '1' || sdk_version_array[0] >= 6 ){	// MODELDEP: for Broadcom SDK 6.x model
 			inputCtrl(document.form.wl_noisemitigation, 0);
 		}
 	}
@@ -257,7 +253,7 @@ function initial(){
 			based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "DSL-AC68U" ||
 			based_modelid == "RT-AC87U" || based_modelid == "EA-AC87" ||
 			based_modelid == "RT-AC88U" || based_modelid == "RT-AC3100" || 
-			based_modelid == "RT-AC5300")
+			based_modelid == "RT-AC5300" || based_modelid == "RT-AC1200G" || based_modelid == "RT-AC1200G+")
 		{
 			document.getElementById('wl_txbf_desc').innerHTML = "802.11ac Beamforming";
 			inputCtrl(document.form.wl_txbf, 1);
@@ -266,6 +262,15 @@ function initial(){
 				
 		if( based_modelid == "RT-AC55U" || based_modelid == "RT-AC55UHP")
 			inputCtrl(document.form.traffic_5g, 1);
+			
+		if( based_modelid == "RT-AC88U" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC5300"){
+			inputCtrl(document.form.wl_turbo_qam, 1);
+			$("#turbo_qam_title").html("Modulation Scheme");		//untranslated string
+			var desc =  ["Up to MCS 9 (802.11ac)", "Up to MCS 11 (NitroQAM/1024-QAM)"];
+			var value = ["1", "2"];
+			add_options_x2(document.form.wl_turbo_qam, desc, value, '<% nvram_get("wl_turbo_qam"); %>');
+			$('#turbo_qam_hint').click(function(){openHint(3,33);});
+		}		
 	}
 	else{ // 2.4GHz
 		if(	based_modelid == "RT-AC3200" ||
@@ -292,8 +297,16 @@ function initial(){
 		{
 			if(based_modelid == "RT-N18U" && bootLoader_ver < 2000)
 				inputCtrl(document.form.wl_turbo_qam, 0);
-			else
+			else{
 				inputCtrl(document.form.wl_turbo_qam, 1);
+				if( based_modelid == "RT-AC88U" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC5300"){
+					$("#turbo_qam_title").html("Modulation Scheme");		//untranslated string
+					var desc = ["Up to MCS 7 (802.11n)", "Up to MCS 9 (TurboQAM/256-QAM)", "Up to MCS 11 (NitroQAM/1024-QAM)"];
+					var value = ["0", "1", "2"];
+					add_options_x2(document.form.wl_turbo_qam, desc, value, '<% nvram_get("wl_turbo_qam"); %>');
+					$('#turbo_qam_hint').click(function(){openHint(3,33);});
+				}	
+			}
 				
 			document.getElementById('wl_txbf_desc').innerHTML = "<#WLANConfig11b_x_ExpBeam#>";
 			inputCtrl(document.form.wl_txbf, 1);
@@ -315,9 +328,7 @@ function initial(){
 			continue;
 		if (Rawifi_support && HtTxStream < mcast_rates[i][4]) // ralink && HtTxStream
 			continue;
-		add_option(document.form.wl_mrate_x,
-			mcast_rates[i][0], mcast_rates[i][1],
-			(mcast_rate == mcast_rates[i][1]) ? 1 : 0);
+		add_option(document.form.wl_mrate_x, mcast_rates[i][0], mcast_rates[i][1], (mcast_rate == mcast_rates[i][1]) ? 1 : 0);
 	}
 
 	if(repeater_support || psta_support){		//with RE mode
@@ -359,7 +370,9 @@ function initial(){
 	if(	based_modelid == "RT-N18U" ||
 		based_modelid == "RT-AC56U" || based_modelid == "RT-AC56S" ||
 		based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "DSL-AC68U" ||
-		based_modelid == "RT-AC69U" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC3200"){
+		based_modelid == "RT-AC69U" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC3200" ||
+		based_modelid == "RT-AC88U" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC5300" ||
+		based_modelid == "RT-AC1200G+"){
 		
 		inputCtrl(document.form.wl_atf, 1);
 		if(based_modelid == "RT-AC87U" && '<% nvram_get("wl_unit"); %>' == '1')	
@@ -390,22 +403,31 @@ function initial(){
 /* MODELDEP by Territory Code */
 function generate_region(){
 	//var region_name = ["Asia", "Australia", "Brazil", "Canada", "China", "Europe", "Japan", "Korea", "Malaysia", "Middle East", "Russia", "Singapore", "Turkey", "Taiwan", "Ukraine", "United States"];
-	var region_name = ["Asia", "China", "Europe", "Korea", "Russia", "Singapore", "United States"];	//Viz mod 2015.06.15
 	//var region_value = ["APAC", "AU", "BZ", "CA", "CN", "EU", "JP", "KR", "MY", "ME", "RU", "SG", "TR", "TW", "UA", "US"];
-	region_value = ["AP", "CN", "EU", "KR", "RU", "SG", "US"]; //Viz mod 2015.06.15
+	var region_name = ["Asia", "China", "Europe", "Korea", "Russia", "Singapore", "United States"];	//Viz mod 2015.06.15
+	var region_value = ["AP", "CN", "EU", "KR", "RU", "SG", "US"]; //Viz mod 2015.06.15
 	var current_region = '<% nvram_get("location_code"); %>';
-	if(current_region == '')
-		current_region = ttc.split("/")[0];
-
 	var is_CN_sku = (function(){
-		if(productid !== "RT-AC87U" && productid !== "RT-AC68U" && productid !== "RT-AC66U" && productid !== "RT-N66U")	return false;
+		if( productid !== "RT-AC87U" && productid !== "RT-AC68U" && productid !== "RT-AC66U" && productid !== "RT-N66U" && productid !== "RT-N18U" && productid != "RT-AC51U" &&
+			productid !== "RT-N12+" && productid !== "RT-N12D1" && productid !== "RT-N12HP_B1" && productid !== "RT-N12HP" && productid !== "RT-AC55U" && productid !== "RT-AC1200" && productid != "RT-AC51U" &&
+			productid !== "RT-AC88U" && productid !== "RT-AC5300" && productid !== "RT-AC55U"
+		  )	return false;
 		return ('<% nvram_get("territory_code"); %>'.search("CN") == -1) ? false : true;
 	})();
+
+	if(current_region == '')
+		current_region = ttc.split("/")[0];
 
 	if(is_CN_sku){
 		region_name.push("Australia");
 		region_value.push("XX");
 	} 
+
+	if(productid == "RT-AC51U"){
+		var idx = region_value.getIndexByValue("US");
+		region_value.splice(idx, 1);
+		region_name.splice(idx, 1);
+	}
 
 	add_options_x2(document.form.location_code, region_name, region_value, current_region);
 }
@@ -941,6 +963,11 @@ function save_wifi_schedule(){
 									
 		time_temp += start_day.toString() + "0" + start_time.toString() + "00";	
 	}
+
+	if(time_temp == ""){
+		alert("If you want to deny WiFi radio all time, you should check the '<#WLANConfig11b_x_RadioEnable_itemname#>' to No");
+		return false;
+	}	
 	
 	wifi_schedule_value = time_temp;
 	document.getElementById("schedule_block").style.display = "none";
@@ -1209,9 +1236,9 @@ function control_TimeField(){
 								<option value="0" <% nvram_match("wl_user_rssi", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
 							</select>
 							<span id="rssiDbm" style="color:#FFF">
-								Disconnect clients with RSSI lower than
+								<!-- untranslated -->Disconnect clients with RSSI lower than
 			  				<input type="text" maxlength="3" name="wl_user_rssi" class="input_3_table" value="<% nvram_get("wl_user_rssi"); %>" autocorrect="off" autocapitalize="off">
-								dB
+								dBm
 							</span>
 						</td>
 					</tr>
@@ -1399,7 +1426,7 @@ function control_TimeField(){
 						</td>
 					</tr>
 					<tr>
-						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3,28);"><#WLANConfig11b_x_TurboQAM#></a></th>
+						<th id="turbo_qam_title"><a id="turbo_qam_hint" class="hintstyle" href="javascript:void(0);" onClick="openHint(3,28);"><#WLANConfig11b_x_TurboQAM#></a></th>
 						<td>
 							<select name="wl_turbo_qam" class="input_option">
 									<option value="0" <% nvram_match("wl_turbo_qam", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>

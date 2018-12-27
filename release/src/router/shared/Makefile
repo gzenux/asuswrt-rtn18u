@@ -73,6 +73,9 @@ OBJS += bcmwifi_channels.o
 endif
 ifeq ($(RTCONFIG_BCM_7114),y)
 OBJS += confmtd_utils.o
+ifeq ($(RTCONFIG_GMAC3),y)
+OBJS += et_linux.o
+endif
 endif
 
 ifeq ($(RTCONFIG_RALINK),y)
@@ -81,7 +84,7 @@ OBJS += flash_mtd.o api-ralink.o
 ifeq ($(RTCONFIG_RALINK_RT3052),y)
 OBJS += ra3052.o
 endif
-ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN54U)$(RTAC1200HP)$(RTN56UB1)$(RTAC54U),y)
+ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN300)$(RTN54U)$(RTAC1200HP)$(RTN56UB1)$(RTAC54U),y)
 CFLAGS += -DRA_ESW
 OBJS += mt7620.o
 else
@@ -140,6 +143,10 @@ endif
 
 ifeq ($(RTCONFIG_TCODE),y)
 OBJS    += tcode.o
+endif
+
+ifeq ($(RTCONFIG_BCM5301X_TRAFFIC_MONITOR),y)
+OBJS    += private.o
 endif
 
 vpath %.c sysdeps $(SRCBASE)/shared/ $(WLAN_ComponentSrcDirs)

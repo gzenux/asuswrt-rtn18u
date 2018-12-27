@@ -1169,7 +1169,8 @@ int rpc_update_ap_isolate(const char *ifname, const int isolate)
 	}else{
 		dbG("qcsapi_wifi_set_ap_isolate OK\n");
 	}
-	qcsapi_wifi_rfenable((qcsapi_unsigned_int) 1 /* on */);
+	if(nvram_get_int("wl1_radio") == 1)
+		qcsapi_wifi_rfenable((qcsapi_unsigned_int) 1 /* on */);
 
 	return 0;
 }

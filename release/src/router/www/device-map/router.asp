@@ -11,7 +11,8 @@
 <link href="/form_style.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
@@ -66,11 +67,16 @@ function initial(){
 			}
 		}
 		else{
-			if('<% nvram_get("wl_unit"); %>' == '<% nvram_get("wlc_band"); %>' && wl_subunit != '1'){
-				tabclickhandler('<% nvram_get("wl_unit"); %>');
+			if(!parent.concurrep_support){
+				if('<% nvram_get("wl_unit"); %>' == '<% nvram_get("wlc_band"); %>' && wl_subunit != '1'){
+					tabclickhandler('<% nvram_get("wl_unit"); %>');
+				}
+				else if('<% nvram_get("wl_unit"); %>' != '<% nvram_get("wlc_band"); %>' && wl_subunit == '1'){
+					tabclickhandler('<% nvram_get("wl_unit"); %>');
+				}
 			}
-			else if('<% nvram_get("wl_unit"); %>' != '<% nvram_get("wlc_band"); %>' && wl_subunit == '1'){
-				tabclickhandler('<% nvram_get("wl_unit"); %>');
+			else{
+				if(wl_subunit != '1') tabclickhandler('<% nvram_get("wl_unit"); %>');
 			}
 		}
 	}
@@ -94,7 +100,11 @@ function initial(){
 		document.form.wl_subunit.value = 1;
 	else
 		document.form.wl_subunit.value = -1;
-	
+
+	// modify wlX.1_ssid(SSID to end clients) under concurrent repeater mode
+	if(parent.sw_mode == 2 && parent.concurrep_support)
+		document.form.wl_subunit.value = 1;
+
 	if(smart_connect_support){
 		if(based_modelid == "RT-AC5300"){
 			if('<% nvram_get("smart_connect_x"); %>' !=0)
@@ -148,6 +158,8 @@ function initial(){
 		parent.show_middle_status(document.form.wl_auth_mode_x.value, parseInt(document.form.wl_wep_x.value));
 
 	flash_button();	
+
+	if(history.pushState != undefined) history.pushState("", document.title, window.location.pathname);
 }
 
 function change_tabclick(){
@@ -169,10 +181,12 @@ function tabclickhandler(wl_unit){
 		if(parent.sw_mode == 2 && parent.wlc_express != 0){
 			document.form.wl_subunit.value = 1;
 		}
-		else if((parent.sw_mode == 2 || parent.sw_mode == 4) && '<% nvram_get("wlc_band"); %>' == wl_unit)
+		else if((parent.sw_mode == 2 || parent.sw_mode == 4) && '<% nvram_get("wlc_band"); %>' == wl_unit){
 			document.form.wl_subunit.value = 1;
-		else
+		}
+		else{
 			document.form.wl_subunit.value = -1;
+		}
 
 		document.form.wl_unit.value = wl_unit;
 
@@ -437,6 +451,16 @@ function submitForm(){
 			if(!validator.psk(document.form.wl_wpa_psk))
 				return false;
 		}
+		
+		//confirm common string combination	#JS_common_passwd#
+		var is_common_string = check_common_string(document.form.wl_wpa_psk.value, "wpa_key");
+		if(is_common_string){
+			if(confirm("<#JS_common_passwd#>")){
+				document.form.wl_wpa_psk.focus();
+				document.form.wl_wpa_psk.select();
+				return false;	
+			}	
+		}		
 	}
 	else if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "wpawpa2" || auth_mode == "radius"){
 		document.form.target = "";
@@ -644,7 +668,7 @@ function change_smart_connect(v){
                                <select style="*margin-top:-7px;" name="smart_connect_t" class="input_option" onchange="change_smart_connect(this.value);">
                                        <option value="0" <% nvram_match("smart_connect_x", "0", "selected"); %>>none</option>
                                        <option value="1" <% nvram_match("smart_connect_x", "1", "selected"); %>>Tri-band Smart Connect</option>
-                                       <option value="2" <% nvram_match("smart_connect_x", "2", "selected"); %>>5Ghz Smart Connect</option>
+                                       <option value="2" <% nvram_match("smart_connect_x", "2", "selected"); %>>5GHz Smart Connect</option>
                                </select>                               
                                <img style="margin-top:5px; *margin-top:-10px;"src="/images/New_ui/networkmap/linetwo2.png">
                        </td>

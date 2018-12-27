@@ -10,10 +10,10 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script>
-var wl0_ssid_orig = '<% nvram_get("wl0_ssid"); %>';
-var wl1_ssid_orig = '<% nvram_get("wl1_ssid"); %>';
+var wl0_ssid_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl0_ssid"); %>');
+var wl1_ssid_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl1_ssid"); %>');
 
 if('<% nvram_get("x_Setting"); %>' == '0')
 	var smart_connect_tmp = '1';
@@ -329,6 +329,16 @@ function submitForm(){
 					return false;
 				}
 			}
+
+			//confirm common string combination     #JS_common_passwd#
+			var is_common_string0 = check_common_string(document.form.wl0_wpa_psk.value, "wpa_key");
+			if(is_common_string0){
+				if(confirm("<#JS_common_passwd#>")){
+					document.form.wl0_wpa_psk.focus();
+					document.form.wl0_wpa_psk.select();
+					return false;   
+				}       
+			}
 		}else
 		{
 			document.form.wl0_auth_mode_x.value = "open";
@@ -412,6 +422,16 @@ function submitForm(){
 							return false;
 						}
 					}
+					
+					//confirm common string combination     #JS_common_passwd#
+					var is_common_string1 = check_common_string(document.form.wl1_wpa_psk.value, "wpa_key");
+					if(is_common_string1){
+						if(confirm("<#JS_common_passwd#>")){
+							document.form.wl1_wpa_psk.focus();
+							document.form.wl1_wpa_psk.select();
+							return false;   
+						}       
+					}
 				}
 				else{
 					document.form.wl1_auth_mode_x.value = "open";
@@ -494,6 +514,16 @@ function submitForm(){
 								changeiuiBackground(0);
 								return false;
 						}
+					}
+
+					//confirm common string combination     #JS_common_passwd#
+					var is_common_string2 = check_common_string(document.form.wl2_wpa_psk.value, "wpa_key");
+					if(is_common_string2){
+						if(confirm("<#JS_common_passwd#>")){
+							document.form.wl2_wpa_psk.focus();
+							document.form.wl2_wpa_psk.select();
+							return false;   
+						}       
 					}
 				}else
 				{
@@ -694,7 +724,7 @@ function submitForm(){
 			document.getElementById("wl2_key4").name = "wl2.1_key4";
 		}
 
-		if(based_modelid == "RT-AC3200"){
+		if(sdk_7_up){
 			document.form.sw_mode.value = 3;
 			document.form.wlc_psta.value = 2;
 		}else{
@@ -758,6 +788,7 @@ function submitForm(){
 					document.form.time_zone_dst.value = "0";	//Do disable manual dstoff
 				}
 
+				parent.restartTime = true;
 				timezone_by_preferred_lang(document.form.time_zone.value);
 	}
 
@@ -912,20 +943,22 @@ function Sync_2ghz(band){
 		}else if(document.form.sync_with_2ghz.checked == true){
 				document.form.wl1_wpa_psk.value = document.form.wl0_wpa_psk.value;
 				if(document.form.wl0_ssid.value != wl0_ssid_orig)
-					document.form.wl1_ssid.value = document.form.wl0_ssid.value + "_5G";
+					document.form.wl1_ssid.value = document.form.wl0_ssid.value.substring(0,29) + "_5G";
 
 				if(wl_info.band5g_2_support && document.form.sync_with_5ghz.checked == true){
 					document.form.wl2_wpa_psk.value = document.form.wl0_wpa_psk.value;
 					if(document.form.wl0_ssid.value != wl0_ssid_orig)
-						document.form.wl2_ssid.value = document.form.wl0_ssid.value + "_5G-2";
+						document.form.wl2_ssid.value = document.form.wl0_ssid.value.substring(0,27) + "_5G-2";
 				}
 		}
 	}else
 		document.form.sync_with_2ghz.checked = false;
 		if(wl_info.band5g_2_support && document.form.sync_with_5ghz.checked == true){
 			document.form.wl2_wpa_psk.value = document.form.wl1_wpa_psk.value;
-			if(document.form.wl1_ssid.value != wl1_ssid_orig)
-				document.form.wl2_ssid.value = document.form.wl1_ssid.value + "-2";
+			if(document.form.wl1_ssid.value != wl1_ssid_orig){
+				if(document.form.wl1_ssid.value.length < 30)
+					document.form.wl2_ssid.value = document.form.wl1_ssid.value + "-2";
+			}
 		}
 }
 
@@ -945,8 +978,12 @@ function Sync_5ghz(band){
 	if(band == 2){
 		if(document.form.sync_with_5ghz.checked == true){
 			document.form.wl2_wpa_psk.value = document.form.wl1_wpa_psk.value;
-			if(document.form.wl1_ssid.value != wl1_ssid_orig)
-				document.form.wl2_ssid.value = document.form.wl1_ssid.value + "-2";
+			if(document.form.wl1_ssid.value != wl1_ssid_orig){
+				if(document.form.wl1_ssid.value.substring(29,32) == "_5G")
+					document.form.wl2_ssid.value = document.form.wl1_ssid.value.substring(0,27).concat(document.form.wl1_ssid.value.substring(29,32)) + "-2";
+				else
+					document.form.wl2_ssid.value = document.form.wl1_ssid.value.substring(0,30) + "-2";
+			}
 		}
 	}
 	else

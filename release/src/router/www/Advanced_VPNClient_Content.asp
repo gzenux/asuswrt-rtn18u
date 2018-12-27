@@ -15,7 +15,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
@@ -101,6 +101,7 @@ function Add_profile(){
 	document.form.vpnc_account_edit.value = "";
 	document.form.vpnc_pwd_edit.value = "";
 	document.form.selPPTPOption.value = "auto";	
+	document.getElementById("pptpOptionHint").style.display = "none";
 	document.vpnclientForm.vpnc_openvpn_des.value = "";
 	document.vpnclientForm.vpnc_openvpn_username.value = "";
 	document.vpnclientForm.vpnc_openvpn_pwd.value = "";	
@@ -965,6 +966,7 @@ function Edit_Row(rowdata, flag){
 	}
 	
 	document.form.selPPTPOption.value = pptpOptionValue;
+	pptpOptionChange();
 	if(vpnc_clientlist_col[1] == "OpenVPN"){
 		document.vpnclientForm.file.value = "";
 		document.openvpnCAForm.file.value = "";
@@ -1283,6 +1285,12 @@ function addOpenvpnProfile(){
 	document.vpnclientForm.encoding = "application/x-www-form-urlencoded";
 	addRow_Group(10, save_flag, idx_tmp);
 }
+function pptpOptionChange() {
+	document.getElementById("pptpOptionHint").style.display = "none";
+	if(document.form.selPPTPOption.value == "+mppe-40") {
+		document.getElementById("pptpOptionHint").style.display = "";
+	}
+}
 </script>
 </head>
 
@@ -1353,26 +1361,29 @@ function addOpenvpnProfile(){
 						</td>
 					</tr>  		
 					<tr>
-						<th><#PPPConnection_UserName_itemname#></th>
+						<th><#HSDPAConfig_Username_itemname#></th>
 						<td>
 							<input type="text" maxlength="64" name="vpnc_account_edit" value="" class="input_32_table" style="float:left;" autocomplete="off" autocorrect="off" autocapitalize="off"></input>
 						</td>
 					</tr>  		
 					<tr>
-						<th><#PPPConnection_Password_itemname#></th>
+						<th><#HSDPAConfig_Password_itemname#></th>
 						<td>
 							<input type="text" maxlength="64" name="vpnc_pwd_edit" value="" class="input_32_table" style="float:left;" autocomplete="off" autocorrect="off" autocapitalize="off"></input>
 						</td>
 					</tr>
 					<tr id="trPPTPOptions">
-						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,17);"><#PPPConnection_x_PPTPOptions_itemname#></a></th>
+						<th><#PPPConnection_x_PPTPOptions_itemname#></th>
 						<td>
-							<select name="selPPTPOption" class="input_option">
+							<select name="selPPTPOption" class="input_option" onchange="pptpOptionChange();">
 								<option value="auto"><#Auto#></option>
 								<option value="-mppc"><#No_Encryp#></option>
 								<option value="+mppe-40">MPPE 40</option>
 								<option value="+mppe-128">MPPE 128</option>
 							</select>
+							<div id="pptpOptionHint" style="display:none;">
+								<span><#PPTPOptions_OpenVPN_hint#><!--untranslated--></span>
+							</div>
 						</td>	
 					</tr>		 
 		 		</table>
@@ -1499,13 +1510,13 @@ function addOpenvpnProfile(){
 							</td>
 						</tr>  			
 						<tr>
-							<th><#PPPConnection_UserName_itemname#> (option)</th>
+							<th><#HSDPAConfig_Username_itemname#> (option)</th>
 							<td>
 								<input type="text" maxlength="64" name="vpnc_openvpn_username" value="" class="input_32_table" style="float:left;" autocomplete="off" autocorrect="off" autocapitalize="off"></input>
 							</td>
 						</tr>  
 						<tr>
-							<th><#PPPConnection_Password_itemname#> (option)</th>
+							<th><#HSDPAConfig_Password_itemname#> (option)</th>
 							<td>
 								<input type="text" maxlength="64" name="vpnc_openvpn_pwd" value="" class="input_32_table" style="float:left;" autocomplete="off" autocorrect="off" autocapitalize="off"></input>
 							</td>
@@ -1685,31 +1696,31 @@ function addOpenvpnProfile(){
 												<tr>
 													<th id="manualCa">Certificate Authority</th>
 													<td>
-														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_ca" name="edit_vpn_crt_client_ca" cols="65" maxlength="2999"></textarea>
+														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_ca" name="edit_vpn_crt_client_ca" cols="65" maxlength="3999"></textarea>
 													</td>
 												</tr>
 												<tr>
 													<th id="manualCert">Client Certificate</th>
 													<td>
-														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_crt" name="edit_vpn_crt_client_crt" cols="65" maxlength="2999"></textarea>
+														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_crt" name="edit_vpn_crt_client_crt" cols="65" maxlength="3999"></textarea>
 													</td>
 												</tr>
 												<tr>
 													<th id="manualKey">Client Key</th>
 													<td>
-														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_key" name="edit_vpn_crt_client_key" cols="65" maxlength="2999"></textarea>
+														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_key" name="edit_vpn_crt_client_key" cols="65" maxlength="3999"></textarea>
 													</td>
 												</tr>
 												<tr>
 													<th id="manualStatic">Static Key (Optional)</th>
 													<td>
-														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_static" name="edit_vpn_crt_client_static" cols="65" maxlength="2999"></textarea>
+														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_static" name="edit_vpn_crt_client_static" cols="65" maxlength="3999"></textarea>
 													</td>
 												</tr>
 												<tr>
 													<th id="manualCRList">Certificate Revocation List (Optional)</th>
 													<td>
-														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_crl" name="edit_vpn_crt_client_crl" cols="65" maxlength="2999"></textarea>
+														<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client_crl" name="edit_vpn_crt_client_crl" cols="65" maxlength="3999"></textarea>
 													</td>
 												</tr>
 											</table>

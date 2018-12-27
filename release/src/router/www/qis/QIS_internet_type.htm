@@ -25,7 +25,7 @@
 }
 </style>
 <script type="text/javascript" src="/qis/QISMobilePlugin.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript">
 var now_flag = '<% get_parameter("flag"); %>';
 var original_switch_wantag = '<% nvram_get("switch_wantag"); %>';
@@ -77,13 +77,14 @@ function QKinternettype_load_body(){
 	
 		ISP_Profile_Selection(original_switch_wantag);
 		hide_specialISP();
-		if( based_modelid != "RT-N66U" && 
-			based_modelid != "RT-AC66U" && 
-			based_modelid != "RT-AC68U" &&
-			based_modelid != "RT-AC87U" &&
-			based_modelid != "RT-AC3200" &&
-			based_modelid != "RT-N18U"
-		){	// MODELDEP: RT-N66U, RT-AC66U, RT-AC68U, RT-AC87U, RT-AC3200
+		if( parent.based_modelid != "RT-AC3200" &&
+			parent.based_modelid != "RT-AC87U" &&
+			parent.based_modelid != "RT-AC68U" &&
+			parent.based_modelid != "RT-AC66U" &&
+			parent.based_modelid != "RT-AC51U" &&
+			parent.based_modelid != "RT-N66U" &&
+			parent.based_modelid != "RT-N18U"
+		){	// MODELDEP: RT-AC3200, RT-AC87U@sysdep/RT-AC55U, RT-AC68U, RT-AC66U, RT-AC51U, RT-N66U, RT-N18U
 			document.getElementById('meoOption').outerHTML = "";
 		}	
 	
@@ -370,7 +371,7 @@ function set_ISP_profile(){
 		document.applyForm.mr_enable_x.value = "1";
 		document.applyForm.emf_enable.value = "1";
 	}
-        if(document.form.switch_wantag.value == "meo")
+        if(document.applyForm.switch_wantag.value == "meo")
                 document.applyForm.ttl_inc_enable = "1";
 }
 
@@ -600,7 +601,7 @@ function detect_if_wan_plug(flag){
 				<option value="maxis_fiber_iptv" <% nvram_match("switch_wantag", "maxis_fiber_iptv", "selected"); %>>Maxis-Fiber-IPTV</option>
 				<option value="maxis_fiber_sp_iptv" <% nvram_match("switch_wantag", "maxis_fiber_sp_iptv", "selected"); %>>Maxis-Fiber-Special-IPTV</option>
 -->				
-				<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>>Manual</option>
+				<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
 			</select>
 		</span>
 

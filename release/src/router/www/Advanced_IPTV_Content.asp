@@ -66,13 +66,14 @@ function initial(){
 		document.form.switch_stb_x.remove(1);	//LAN1
 	}
 
-	if( based_modelid != "RT-N66U" && 
-		based_modelid != "RT-AC66U" && 
+	if( based_modelid != "RT-AC3200" &&
+		based_modelid != "RT-AC87U" && 
 		based_modelid != "RT-AC68U" &&
-		based_modelid != "RT-AC87U" &&
-		based_modelid != "RT-AC3200" &&
+		based_modelid != "RT-AC66U" &&
+		based_modelid != "RT-AC51U" &&
+		based_modelid != "RT-N66U" &&
 		based_modelid != "RT-N18U"
-	){	// MODELDEP: RT-N66U, RT-AC66U, RT-AC68U, RT-AC87U, RT-AC3200
+	){	// MODELDEP: RT-AC3200, RT-AC87U, RT-AC68U, RT-AC66U, RT-AC51U, RT-N66U, RT-N18U
 		document.getElementById('meoOption').outerHTML = "";
 	}
 }
@@ -132,7 +133,7 @@ function load_ISP_profile(){
 		document.form.emf_enable.value = "1";
 	}
 	if(document.form.switch_wantag.value == "meo")
-		document.from.ttl_inc_enable = "1";
+		document.form.ttl_inc_enable.value = "1";
 }
 
 function ISP_Profile_Selection(isp){

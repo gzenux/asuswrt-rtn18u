@@ -10,7 +10,7 @@
 <link rel="stylesheet" type="text/css" href="/form_style.css">
 <link rel="stylesheet" type="text/css" href="/usp_style.css">
 <script type="text/javascript" src="/qis/QISMobilePlugin.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript">
 <% start_autodet(); %> // initial QIS detecting process.
 <% check_modem_sim(); %>
@@ -76,6 +76,13 @@ function assign_color(){
 }
 
 function QKinternettype_load_body(){
+
+	if('<% check_asus_model(); %>' == '0'){
+		document.getElementById("warming_field").style.display ="";
+		document.getElementById("main_manual").style.display ="none";
+		disable_button();
+	}
+
 	if(wanstate == 4 && wansbstate == 4){
 		gotoPage("/error_page.htm", "6", 1);
 		return;
@@ -418,6 +425,13 @@ function uploadSetting(){
 	}	
 }
 
+function disable_button(){
+	var disable_button_x = document.getElementsByClassName('button_gen');
+	for(x=disable_button_x.length-1;x>=0;x--){
+		disable_button_x[x].disabled = true;
+	}
+}
+
 </script>
 </head>  
 <body onLoad="QKinternettype_load_body();" onunload="" onKeyPress="submitenter(this,event)">
@@ -438,6 +452,7 @@ function uploadSetting(){
 		<tr>
 			<td>
 				<div style="margin:5px;"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
+				<div id="warming_field" style="display:none" class="warming_desc">Note: the router you are using is not an ASUS device or has not been authorised by ASUS. ASUSWRT might not work properly on this device.</div>
 			</td>
 		</tr>	
 		<tr>
@@ -489,7 +504,7 @@ function uploadSetting(){
 						<span><#QKset_skip_setup#> </span>
 						<span><#QKset_setup_manual_1#> <#OP_AP_item#></span>
 						<span id="repeater_title" style="display:none">/ <#OP_RE_item#></span>
-						<span id="mediaBridge_title" style="display:none">/ Media Bridge</span>
+						<span id="mediaBridge_title" style="display:none">/ <#OP_MB_item#></span>
 						<span id="wisp_title" style="display:none">/ <#OP_WISP_item#></span>
 						<span>. </span>
 						<span><#QKset_restore_0#></span>

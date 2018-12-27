@@ -38,6 +38,7 @@ body{
 .p1{
 	font-size: 16pt;
 	color:#fff;
+	width:480px;
 }
 .button{
 	background-color:#007AFF;
@@ -106,6 +107,11 @@ body{
 .main_field_gap{
 	margin:100px auto 0;
 }
+.warming_desc{
+	font-size: 16px;
+	color:#FC0;
+	width: 600px;
+}
 
 /*for mobile device*/
 @media screen and (max-width: 1000px){
@@ -120,6 +126,7 @@ body{
 	}
 	.p1{
 		font-size: 12pt;
+		width:100%;
 	}
 	.login_img{
 		background-size: 75%;
@@ -165,11 +172,21 @@ body{
 		padding-right:0;
 		vertical-align:middle;
 	}
+	.warming_desc{
+		margin: 10px 15px;
+		width: 100%; 
+	}
 }
 </style>
 <script>
 function initial(){
 	var flag = '<% get_parameter("error_status"); %>';
+
+	if('<% check_asus_model(); %>' == '0'){
+		document.getElementById("warming_field").style.display ="";
+		disable_input();
+		disable_button();
+	}
 
 	if(flag != ""){
 		document.getElementById("error_status_field").style.display ="";
@@ -201,7 +218,7 @@ function initial(){
 					return false;
 					}
 				})
-				return '<div style="margin-top:15px;word-wrap:break-word;word-break:break-all">* <#login_hint1#> ' + loginUserIp + hostName + '</div>';
+				return "<div style='margin-top:15px;word-wrap:break-word;word-break:break-all'>* <#login_hint1#> " + loginUserIp + hostName + "</div>";
 			};
 
 			document.getElementById("logined_ip_str").innerHTML = getLoginUser();
@@ -216,14 +233,29 @@ function initial(){
 
 	/*register keyboard event*/
 	document.form.login_username.onkeyup = function(e){
+		e=e||event;
 		if(e.keyCode == 13){
 			document.form.login_passwd.focus();
+			return false;
 		}
+	};
+	document.form.login_username.onkeypress = function(e){
+		e=e||event;
+		if(e.keyCode == 13){
+			return false;		}
 	};
 
 	document.form.login_passwd.onkeyup = function(e){
+		e=e||event;
 		if(e.keyCode == 13){
 			login();
+			return false;
+		}
+	};
+	document.form.login_passwd.onkeypress = function(e){
+		e=e||event;
+		if(e.keyCode == 13){
+			return false;
 		}
 	};
 
@@ -293,12 +325,21 @@ function login(){
 	document.form.login_authorization.value = btoa(document.form.login_username.value + ':' + document.form.login_passwd.value);
 	document.form.login_username.disabled = true;
 	document.form.login_passwd.disabled = true;
-	document.form.foilautofill.disabled = true;
 	if(redirect_page == "" || redirect_page == "Logout.asp" || redirect_page == "Main_Login.asp")
 		document.form.next_page.value = "index.asp";
 	else
 		document.form.next_page.value = redirect_page;
 	document.form.submit();
+}
+
+function disable_input(){
+	var disable_input_x = document.getElementsByClassName('form_input');
+	for(i=0;i<disable_input_x.length;i++)
+		disable_input_x[i].disabled = true;
+}
+
+function disable_button(){
+	document.getElementsByClassName('button')[0].style.display = "none";
 }
 </script>
 </head>
@@ -313,9 +354,9 @@ function login(){
 <input type="hidden" name="current_page" value="Main_Login.asp">
 <input type="hidden" name="next_page" value="Main_Login.asp">
 <input type="hidden" name="login_authorization" value="">
-<input name="foilautofill" style="display: none;" type="password">
 <div class="div_table main_field_gap">
 	<div class="div_tr">
+		<div id="warming_field" style="display:none;" class="warming_desc">Note: the router you are using is not an ASUS device or has not been authorised by ASUS. ASUSWRT might not work properly on this device.</div>
 		<div class="title_name">
 			<div class="div_td img_gap">
 				<div class="login_img"></div>
@@ -331,7 +372,7 @@ function login(){
 				<input type="text" id="login_username" name="login_username" tabindex="1" class="form_input" maxlength="20" autocapitalization="off" autocomplete="off" placeholder="<#HSDPAConfig_Username_itemname#>">
 			</div>
 			<div class="password_gap">
-				<input type="password" name="login_passwd" tabindex="2" class="form_input" maxlength="16" onpaste="return false;" placeholder="<#HSDPAConfig_Password_itemname#>" autocapitalization="off" autocomplete="off">
+				<input type="password" name="login_passwd" tabindex="2" class="form_input" maxlength="16" placeholder="<#HSDPAConfig_Password_itemname#>" autocapitalization="off" autocomplete="off">
 			</div>
 			<div class="error_hint" style="display:none;" id="error_status_field"></div>
 				<div class="button" onclick="login();"><#CTL_signin#></div>

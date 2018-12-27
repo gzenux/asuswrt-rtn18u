@@ -9,7 +9,7 @@
 <script type="text/JavaScript" src="/state.js"></script>
 <script type="text/JavaScript" src="/general.js"></script>
 <script type="text/JavaScript" src="/help.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/JavaScript">
 function QKInternet_load_body(){
 	if(parent.ISMOBILE){
@@ -191,7 +191,7 @@ function submitenter(myfield,e){
 		</span>
 		&nbsp;&nbsp;
 		<span id="MBMode">
-			<input type="radio" id="sw_mode4_radio" name="sw_mode_radio" class="input" value="4" tabindex="4" onclick="setScenerion(4);" <% nvram_match("sw_mode", "4", "checked"); %>><label for="sw_mode4_radio">Media bridge</label>
+			<input type="radio" id="sw_mode4_radio" name="sw_mode_radio" class="input" value="4" tabindex="4" onclick="setScenerion(4);" <% nvram_match("sw_mode", "4", "checked"); %>><label for="sw_mode4_radio"><#OP_MB_item#></label>
 		</span>
 	</span>
 

@@ -61,7 +61,7 @@
 	box-shadow: 3px 3px 10px #000;
 }
 #custom_image table{
-	border: 1px solid #000000;
+	border: 1px solid #1A1C1D;
 	border-collapse: collapse;
 }
 #custom_image div{
@@ -96,7 +96,7 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script language="JavaScript" type="text/javascript" src="/form.js"></script>
 <script type="text/javascript" src="/jquery.xdomainajax.js"></script>
@@ -301,6 +301,11 @@ function initial(){
 	document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value = MULTIFILTER_MACFILTER_DAYTIME_orig;
 	setClientListOUI();
 	updateClientsCount();
+
+	if(isSwMode("mb")){
+		document.getElementById("wlSecurityContext").style.display = "none";
+		document.getElementById("mbModeContext").style.display = "";
+	}
 }
 
 function show_smart_connect_status(){
@@ -331,7 +336,7 @@ function show_ddns_status(){
     else{
         document.getElementById("ddnsHostName").innerHTML = '<span>'+ ddnsName +'</span>';
         if(ddns_enable == '1'){
-			if((link_status != undefined || link_ausstatus != undefined) && !((link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")) ) //link down
+			if((link_status != undefined || link_auxstatus != undefined) && !((link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")) ) //link down
 				document.getElementById("ddns_fail_hint").className = "notificationon";
 					
 			if( ddns_server_x == 'WWW.ASUS.COM' ) { //ASUS DDNS
@@ -766,7 +771,7 @@ function check_status(_device){
 	if(got_code_1){
 		// red
 		document.getElementById('iconUSBdisk_'+diskOrder).style.backgroundPosition = '0px -6px';
-		document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '0% 99%';
+		document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundPosition = '0px -186px';
 	}
 	else if(got_code_2 || got_code_3){
 		// white
@@ -859,68 +864,76 @@ function change_wan_state(primary_status, secondary_status){
 
 	if(wans_mode == "fo" || wans_mode == "fb"){
 		if(wan_unit == 0){
-			document.getElementById('primary_status').innerHTML = primary_status;
-			if(primary_status == "Disconnected"){				
+			if(primary_status == "Disconnected"){
+				document.getElementById('primary_status').innerHTML = "<#Disconnected#>";
 				document.getElementById('primary_line').className = "primary_wan_disconnected";
-			}	
+			}
 			else{
+				document.getElementById('primary_status').innerHTML = "<#Connected#>";
 				document.getElementById('primary_line').className = "primary_wan_connected";
 			}
 			
 			if(secondary_wanlink_ipaddr != '0.0.0.0' && secondary_status != 'Disconnected')
-				secondary_status = "Standby";	
-				
-			document.getElementById('seconday_status').innerHTML = secondary_status;	
+				secondary_status = "Standby";
+					
 			if(secondary_status == 'Disconnected'){
+				document.getElementById('seconday_status').innerHTML = "<#Disconnected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_disconnected";
-			}	
+			}
 			else if(secondary_status == 'Standby'){
+				document.getElementById('seconday_status').innerHTML = "<#Status_Standby#>";
 				document.getElementById('secondary_line').className = "secondary_wan_standby";
-			}	
+			}
 			else{
+				document.getElementById('seconday_status').innerHTML = "<#Connected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_connected";
 			}
 		}
 		else{	//wan_unit : 1
 			if(first_wanlink_ipaddr != '0.0.0.0' && primary_status != 'Disconnected')
 				primary_status = "Standby";
-				
-			document.getElementById('primary_status').innerHTML = primary_status;
+
 			if(primary_status == 'Disconnected'){
+				document.getElementById('primary_status').innerHTML = "<#Disconnected#>";
 				document.getElementById('primary_line').className = "primary_wan_disconnected";
-			}	
+			}
 			else if(primary_status == 'Standby'){
+				document.getElementById('primary_status').innerHTML = "<#Status_Standby#>";
 				document.getElementById('primary_line').className = "primary_wan_standby";
-			}	
+			}
 			else{
+				document.getElementById('primary_status').innerHTML = "<#Connected#>";
 				document.getElementById('primary_line').className = "primary_wan_connected";
 			}
 			
-			document.getElementById('seconday_status').innerHTML = secondary_status;
 			if(secondary_status == "Disconnected"){
+				document.getElementById('seconday_status').innerHTML = "<#Disconnected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_disconnected";
-			}	
+			}
 			else{
+				document.getElementById('seconday_status').innerHTML = "<#Connected#>";
 				document.getElementById('secondary_line').className = "secondary_wan_connected";
 			}
-		}	
+		}
 	}
 	else{	//lb
-		document.getElementById('primary_status').innerHTML = primary_status;
-		document.getElementById('seconday_status').innerHTML = secondary_status;
-		if(primary_status == "Disconnected"){				
+		if(primary_status == "Disconnected"){
+			document.getElementById('primary_status').innerHTML = "<#Disconnected#>";
 			document.getElementById('primary_line').className = "primary_wan_disconnected";
-		}	
+		}
 		else{
+			document.getElementById('primary_status').innerHTML = "<#Connected#>";
 			document.getElementById('primary_line').className = "primary_wan_connected";
 		}
 		
 		if(secondary_status == "Disconnected"){
+			document.getElementById('seconday_status').innerHTML = "<#Disconnected#>";
 			document.getElementById('secondary_line').className = "secondary_wan_disconnected";
-		}	
+		}
 		else{
+			document.getElementById('seconday_status').innerHTML = "<#Connected#>";
 			document.getElementById('secondary_line').className = "secondary_wan_connected";
-		}	
+		}
 	}
 }
 
@@ -1027,7 +1040,10 @@ function validForm(){
 		document.getElementById('client_name').select();
 		document.getElementById('client_name').value = "";		
 		return false;
-	}	
+	}
+	else if(!validator.haveFullWidthChar(document.getElementById('client_name'))) {
+		return false;
+	}
 
 	return true;
 }	
@@ -1070,7 +1086,7 @@ function edit_confirm(){
 		document.list_form.custom_clientlist.value = custom_name;
 
 		// static IP list
-		if(document.list_form.dhcp_staticlist.value == dhcp_staticlist_orig){
+		if(document.list_form.dhcp_staticlist.value == dhcp_staticlist_orig || sw_mode != "1"){
 			document.list_form.action_script.value = "saveNvram";
 			document.list_form.action_wait.value = "1";
 			document.list_form.flag.value = "background";
@@ -1088,8 +1104,8 @@ function edit_confirm(){
 		}
 
 		//  block Mac list
-		if(document.list_form.MULTIFILTER_MAC.value == MULTIFILTER_MAC_orig && document.list_form.MULTIFILTER_ENABLE.value == MULTIFILTER_ENABLE_orig && 
-			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value == MULTIFILTER_MACFILTER_DAYTIME_orig){
+		if((document.list_form.MULTIFILTER_MAC.value == MULTIFILTER_MAC_orig && document.list_form.MULTIFILTER_ENABLE.value == MULTIFILTER_ENABLE_orig && 
+			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value == MULTIFILTER_MACFILTER_DAYTIME_orig) || sw_mode != "1"){
 			document.list_form.MULTIFILTER_ALL.disabled = true;
 			document.list_form.MULTIFILTER_ENABLE.disabled = true;
 			document.list_form.MULTIFILTER_MAC.disabled = true;
@@ -1299,6 +1315,10 @@ function oui_query(mac){
 }
 
 function popupEditBlock(clientObj){
+	if(bwdpi_support) {
+		document.getElementById("time_scheduling_title").innerHTML = "<#Time_Scheduling#>";
+	}
+
 	firstTimeOpenBlock = false;
 	
 	var clientName = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
@@ -1315,14 +1335,10 @@ function popupEditBlock(clientObj){
 		document.getElementById("divDropClientImage").ondrop = null;
 		document.getElementById("internetTimeScheduling").style.display = "none";
 		if(sw_mode == "1") {
-			document.getElementById('trBlockInternet').style.display = "";
-			document.getElementById('trTimeScheduling').style.display = "";
-			document.getElementById('trIPBinding').style.display = "";
+			document.getElementById('tr_adv_setting').style.display = "";
 		}
 		else {
-			document.getElementById('trBlockInternet').style.display = "none";
-			document.getElementById('trTimeScheduling').style.display = "none";
-			document.getElementById('trIPBinding').style.display = "none";
+			document.getElementById('tr_adv_setting').style.display = "none";
 		}
 		document.getElementById("custom_image").style.display = "none";
 		document.getElementById("changeIconTitle").innerHTML = "Change";/*untranslated*/
@@ -1406,7 +1422,7 @@ function popupEditBlock(clientObj){
 		}
 
 		if(clientObj.opMode != 0) {
-			var opModeDes = ["none", "<#wireless_router#>", "<#OP_RE_item#>", "<#OP_AP_item#>", "Media bridge"];
+			var opModeDes = ["none", "<#wireless_router#>", "<#OP_RE_item#>", "<#OP_AP_item#>", "<#OP_MB_item#>"];
 			document.getElementById('client_opMode').style.display = "";
 			document.getElementById('client_opMode').innerHTML = opModeDes[clientObj.opMode];
 		}
@@ -1414,15 +1430,26 @@ function popupEditBlock(clientObj){
 		document.getElementById('client_name').value = clientName;
 		document.getElementById('ipaddr_field_orig').value = clientObj.ip;
 		document.getElementById('ipaddr_field').value = clientObj.ip;
-		document.getElementById("ipaddr_field").onkeypress = function() {
-			if(!ipBindingFlag) {
-				$('#radio_IPBinding_enable').click();
-				ipBindingFlag = true;
-			}			
-		}
-		document.getElementById("ipaddr_field").onblur = function() {
-			delFromList(document.getElementById("macaddr_field").value);
-			addToList(document.getElementById("macaddr_field").value);
+
+		document.getElementById('ipaddr_field').disabled = true;
+		$("#ipaddr_field").addClass("client_input_text_disabled");
+		if(sw_mode == "1") {
+			$("#ipaddr_field").removeClass("client_input_text_disabled");
+			document.getElementById('ipaddr_field').disabled = false;
+			document.getElementById("ipaddr_field").onkeypress = function() {
+				if(!ipBindingFlag) {
+					$('#radio_IPBinding_enable').click();
+					ipBindingFlag = true;
+				}	
+			}
+			document.getElementById("ipaddr_field").onblur = function() {
+				if(!ipBindingFlag) {
+					$('#radio_IPBinding_enable').click();
+					ipBindingFlag = true;
+				}				
+				delFromList(document.getElementById("macaddr_field").value);
+				addToList(document.getElementById("macaddr_field").value);	
+			}
 		}
 		document.getElementById('macaddr_field').value = clientObj.mac;
 		var deviceTitle = (clientObj.dpiDevice == "") ? clientObj.dpiVender : clientObj.dpiDevice;
@@ -2005,7 +2032,7 @@ function setDefaultIcon() {
 		</tr>
 		<tr>
 			<td colspan="2">
-				<img style="width:100%;height:2px" src="/images/New_ui/networkmap/linetwo2.png">
+				<div class="clientList_line"></div>
 			</td>
 		</tr>
 		<tr>
@@ -2106,23 +2133,31 @@ function setDefaultIcon() {
 		 		</div>	
 			</td>
 		</tr>
-		<tr id="trBlockInternet" style="display:none;">
+		<tr id="tr_adv_setting">
 			<td colspan="2">
-				<div style="width:65%;float:left;line-height:30px;" onmouseover="return overlib('Enable this button to block this device to access internet.');" onmouseout="return nd();">Block Internet Access<!--untranslated--></div>
-				<div class="left" style="cursor:pointer;float:right;" id="radio_BlockInternet_enable"></div>
-			</td>
-		</tr>
-		<tr id="trTimeScheduling" style="display:none;">
-			<td colspan="2">	
-				<div style="width:65%;float:left;line-height:30px;" onmouseover="return overlib('Time Scheduling allows you to set the time limit for a client\'s network usage.');" onmouseout="return nd();"><#Time_Scheduling#></div><!--untranslated-->
-				<div align="center" class="left" style="cursor:pointer;float:right;" id="radio_TimeScheduling_enable"></div>
-				<div id="internetTimeScheduling" class="internetTimeEdit" style="float:right;margin-right:10px;" title="Time Scheduling" onclick="redirectTimeScheduling();" ></div><!--untranslated-->
-			</td>
-		</tr>
-		<tr id="trIPBinding" style="display:none;">
-			<td colspan="2">
-				<div style="width:65%;float:left;line-height:30px;" onmouseover="return overlib('Enable this button to bind specific IP with MAC Address of this device.');" onmouseout="return nd();">MAC and IP address Binding<!--untranslated--></div>
-				<div align="center" class="left" style="cursor:pointer;float:right;" id="radio_IPBinding_enable" ></div>
+				<div class="clientList_line"></div>
+				<div style="height:32px;width:100%;margin:5px 0;">
+					<div style="width:65%;float:left;line-height:32px;">
+						<span onmouseover="return overlib('Enable this button to block this device to access internet.');" onmouseout="return nd();">Block Internet Access<!--untranslated--></span>
+					</div>
+					<div class="left" style="cursor:pointer;float:right;" id="radio_BlockInternet_enable"></div>
+				</div>
+				<div class="clientList_line"></div>
+				<div style="height:32px;width:100%;margin:5px 0;">
+					<div style="width:65%;float:left;line-height:32px;">
+						<span id="time_scheduling_title" onmouseover="return overlib('Time Scheduling allows you to set the time limit for a client\'s network usage.');" onmouseout="return nd();"><#Parental_Control#></span><!--untranslated-->
+					</div>
+					<div align="center" class="left" style="cursor:pointer;float:right;" id="radio_TimeScheduling_enable"></div>
+					<div id="internetTimeScheduling" class="internetTimeEdit" style="float:right;margin-right:10px;" title="<#Time_Scheduling#>" onclick="redirectTimeScheduling();" ></div>
+				</div>
+				<div class="clientList_line"></div>
+				<div style="height:32px;width:100%;margin:5px 0;">
+					<div style="width:65%;float:left;line-height:32px;">
+						<span onmouseover="return overlib('Enable this button to bind specific IP with MAC Address of this device.');" onmouseout="return nd();">MAC and IP address Binding<!--untranslated--></span>
+					</div>
+					<div align="center" class="left" style="cursor:pointer;float:right;" id="radio_IPBinding_enable" ></div>
+				</div>
+				<div class="clientList_line"></div>
 			</td>
 		</tr>
 		<tr>
@@ -2259,11 +2294,20 @@ function setDefaultIcon() {
 						<strong id="SmartConnectStatus" class="index_status" style="font-size:14px; display:none"><a style="color:#FFF;text-decoration:underline;" href="/
 						Advanced_Wireless_Content.asp">On</a></strong>
 						</div>
-						<span style="font-size:14px;font-family: Verdana, Arial, Helvetica, sans-serif;"><#Security_Level#>: </span>
-						<br/>  
-						<strong id="wl_securitylevel_span" class="index_status"></strong>
-						<img id="iflock">
-						
+
+						<div id="wlSecurityContext">
+							<span style="font-size:14px;font-family: Verdana, Arial, Helvetica, sans-serif;"><#Security_Level#>: </span>
+							<br/>  
+							<strong id="wl_securitylevel_span" class="index_status"></strong>
+							<img id="iflock">
+						</div>
+
+						<div id="mbModeContext" style="display:none">
+							<span style="font-size:14px;font-family: Verdana, Arial, Helvetica, sans-serif;"><#menu5_6_1#>: </span>
+							<br/>
+							<br/>
+							<strong class="index_status"><#OP_MB_item#></strong>
+						</div>
 					</td>
 
 				</tr>			

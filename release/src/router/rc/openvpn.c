@@ -50,7 +50,7 @@ void start_vpnclient(int clientNum)
 	FILE *fp;
 	char iface[IF_SIZE];
 	char buffer[BUF_SIZE];
-	char buffer2[3000];
+	char buffer2[4000];
 	char *argv[6];
 	int argc = 0;
 	enum { TLS, SECRET, CUSTOM } cryptMode = CUSTOM;
@@ -566,7 +566,7 @@ void start_vpnserver(int serverNum)
 	FILE *fp, *ccd, *fp_client;
 	char iface[IF_SIZE];
 	char buffer[BUF_SIZE];
-	char buffer2[3000];
+	char buffer2[4000];
 	char *argv[6], *chp, *route;
 	int argc = 0;
 	int c2c = 0;
@@ -582,6 +582,7 @@ void start_vpnserver(int serverNum)
 	char nv1[32], nv2[32], nv3[32], fpath[128];
 	int valid = 0;
 	int useronly = 0;
+	int dhkeysize = 0;
 
 	sprintf(&buffer[0], "start_vpnserver%d", serverNum);
 	if (getpid() != 1) {
@@ -1184,6 +1185,7 @@ void start_vpnserver(int serverNum)
 			fprintf(fp_client, "</key>\n");
 		//}
 
+		valid = 0;
 		sprintf(&buffer[0], "vpn_crt_server%d_dh", serverNum);
 		if ( !ovpn_crt_is_empty(&buffer[0]) )
 		{
@@ -1193,13 +1195,28 @@ void start_vpnserver(int serverNum)
 			sprintf(&buffer[0], "vpn_crt_server%d_dh", serverNum);
 			fprintf(fp, "%s", get_parsed_crt(&buffer[0], buffer2, sizeof(buffer2)));
 			fclose(fp);
+			//verify dh key size
+			sprintf(&buffer[0], "openssl dh -in /etc/openvpn/server%d/dh.pem -text |grep \"DH Parameters\" > /tmp/output.txt", serverNum);
+			system(&buffer[0]);
+			if(f_read_string("/tmp/output.txt", &buffer[0], 64)) {
+				if(sscanf(strstr(&buffer[0], "DH Parameters"), "DH Parameters: (%d bit)", &dhkeysize)) {
+					//_dprintf("dhkeysize = %d\n", dhkeysize);
+					if(dhkeysize >= 768)
+						valid = 1;
+					else
+						logmessage("openvpn", "DH parameter will be replaced since key size %d is too small", dhkeysize);
+				}
+			}
+			unlink("/tmp/output.txt");
 		}
-		else
+		if(valid == 0)
 		{	//generate dh param file
 			sprintf(fpath, "/etc/openvpn/server%d/dh.pem", serverNum);
-			eval("openssl", "dhparam", "-out", fpath, "1024");
+			//eval("openssl", "dhparam", "-out", fpath, "1024");
+			eval("cp", "/rom/dh2048.pem", fpath);
 			fp = fopen(fpath, "r");
 			if(fp) {
+				sprintf(&buffer[0], "vpn_crt_server%d_dh", serverNum);
 				set_crt_parsed(&buffer[0], fpath);
 				fclose(fp);
 			}
@@ -1687,7 +1704,7 @@ void create_openvpn_passwd()
 	fp3=fopen("/etc/group.openvpn", "w");
 	if (!fp1 || !fp2 || !fp3) return;
 
-	nv = nvp = strdup(nvram_safe_get("vpn_server_clientlist"));
+	nv = nvp = strdup(nvram_safe_get("vpn_serverx_clientlist"));
 
 	if(nv) {
 		while ((b = strsep(&nvp, "<")) != NULL) {

@@ -402,6 +402,9 @@ if [ "$modem_type" == "tty" -o "$modem_type" == "qmi" -o "$modem_type" == "mbim"
 			sleep 3
 		else
 			# set the default profile to auto-connect.
+			if [ -z "$modem_isp" ]; then
+				modem_isp="space"
+			fi
 			echo -n "5,$modem_pdp,$modem_isp,$modem_apn,$modem_authmode,$modem_user,$modem_pass" >> $cmd_pipe
 			sleep 1
 		fi
@@ -421,10 +424,14 @@ if [ "$modem_type" == "tty" -o "$modem_type" == "qmi" -o "$modem_type" == "mbim"
 	if [ "$at_ret" == "OK" ]; then
 		echo "COPS: Can execute +COPS..."
 
-		at_ret=`$at_lock modem_at.sh '+COPS=2' "$modem_reg_time" |grep "OK" 2>/dev/null`
-		if [ "$at_ret" != "OK" ]; then
-			echo "Can't deregister from network."
-			exit 6
+		if [ "$modem_vid" == "6797" -a "$modem_pid" == "4098" ]; then # BandLuxe C120.
+			echo "COPS: BandLuxe C120 start with CFUN=0, so don't need to unregister the network."
+		else
+			at_ret=`$at_lock modem_at.sh '+COPS=2' "$modem_reg_time" |grep "OK" 2>/dev/null`
+			if [ "$at_ret" != "OK" ]; then
+				echo "Can't deregister from network."
+				exit 6
+			fi
 		fi
 
 		# Home service.
@@ -559,8 +566,18 @@ if [ "$modem_type" == "tty" -o "$modem_type" == "qmi" -o "$modem_type" == "mbim"
 		fi
 
 		echo "QMI($wdm): set the ISP profile."
-		uqmi -d $wdm --keep-client-id wds --start-network $modem_apn $flag_auth
-		if [ "$?" != "0" ]; then
+		tries=1
+		ret=1
+		while [ $tries -le 6 -a "$ret" != "0" ]; do
+			echo "QMI: set the ISP profile $tries times..."
+			uqmi -d $wdm --keep-client-id wds --start-network $modem_apn $flag_auth
+			ret=$?
+
+			sleep 1
+			tries=$((tries+1))
+		done
+
+		if [ "$ret" != "0" ]; then
 			echo "QMI: Fail to set the profile."
 			exit 0
 		elif [ "$modem_vid" == "4817" -a "$modem_pid" == "5132" ]; then

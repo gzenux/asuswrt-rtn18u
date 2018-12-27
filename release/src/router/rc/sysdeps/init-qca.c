@@ -128,8 +128,7 @@ static void init_switch_qca(void)
 #endif
 
 #ifdef RTCONFIG_SHP
-	if (nvram_get_int("qos_enable") || nvram_get_int("macfilter_enable_x")
-	    || nvram_get_int("lfp_disable_force")) {
+	if (nvram_get_int("qos_enable") || nvram_get_int("lfp_disable_force")) {
 		nvram_set("lfp_disable", "1");
 	} else {
 		nvram_set("lfp_disable", "0");
@@ -559,6 +558,8 @@ static const char * country_to_code(char *ctry, int band)
 		return "702";
 	else if (strcmp(ctry, "HU") == 0)
 		return "348";
+	else if (strcmp(ctry, "AU") == 0)
+		return "37";
 	else { // "DB"
 		if (band == 2)
 			return "392"; // ch1-ch14
@@ -900,6 +901,24 @@ void init_syspara(void)
 
 #if !defined(RTCONFIG_TCODE) // move the verification later bcz TCODE/LOC
 	verify_ctl_table();
+#endif
+
+#ifdef RTCONFIG_QCA_PLC_UTILS
+	getPLC_MAC(macaddr);
+	nvram_set("plc_macaddr", macaddr);
+#endif
+
+#ifdef RTCONFIG_DEFAULT_AP_MODE
+	char dhcp = '0';
+
+	if (FRead(&dhcp, OFFSET_FORCE_DISABLE_DHCP, 1) < 0) {
+		_dprintf("READ Disable DHCP: Out of scope\n");
+	} else {
+		if (dhcp == '1')
+			nvram_set("ate_flag", "1");
+		else
+			nvram_set("ate_flag", "0");
+	}
 #endif
 }
 

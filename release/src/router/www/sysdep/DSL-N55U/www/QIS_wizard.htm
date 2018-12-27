@@ -31,6 +31,8 @@ var autodet_annex_counter = 0;	//for QIS_detect to switch dslx_annex value
 var x_Setting = "<% nvram_get("x_Setting"); %>";
 var w_Setting = "<% nvram_get("w_Setting"); %>";
 var w_Setting_tmp = '<% nvram_get("w_Setting"); %>';
+var sysReboot = false;
+var rebootTime = eval("<% get_default_reboot_time(); %>");
 
 function set_step(focus_id){
 	if(focus_id == "t1" || focus_id == "t0")

@@ -92,7 +92,11 @@ define platformKernelConfig
 				cp -f $(SRCBASE)/router/dpsta/bcm7_3200/dpsta.o $(SRCBASE)/router/dpsta/linux; \
 			fi; \
 		elif [ "$(BCM_7114)" = "y" ]; then \
-			cp -f $(SRCBASE)/router/ctf_arm/bcm_7114/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
+			if [ "$(GMAC3)" = "y" ]; then \
+				cp -f $(SRCBASE)/router/ctf_arm/bcm_7114_gmac3/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
+			else \
+				cp -f $(SRCBASE)/router/ctf_arm/bcm_7114/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
+			fi; \
 		elif [ "$(BCM10)" = "y" ]; then \
 			if [ "$(ARMCPUSMP)" = "up" ]; then \
 				cp -f $(SRCBASE)/router/ctf_arm/bcm7_up/ctf.* $(SRCBASE)/router/ctf_arm/linux/; \
@@ -254,7 +258,7 @@ define platformKernelConfig
 			fi; \
 			if [ -d $(SRCBASE)/router/wl_arm_7/prebuilt ]; then \
 				mkdir $(SRCBASE)/wl/linux ; \
-				cp $(SRCBASE)/router/wl_arm_7/prebuilt/wl_apsta.o $(SRCBASE)/wl/linux ; \
+				cp $(SRCBASE)/router/wl_arm_7/prebuilt/wl*.o $(SRCBASE)/wl/linux ; \
 				mkdir -p $(SRCBASE)/../../dhd/src/dhd/linux ; \
 				cp $(SRCBASE)/router/wl_arm_7/prebuilt/dhd.o $(SRCBASE)/../../dhd/src/dhd/linux ; \
 			fi; \
@@ -266,12 +270,12 @@ define platformKernelConfig
 		elif [ "$(BCM_10)" = "y" ]; then \
 			if [ -d $(SRCBASE)/router/wl_arm_10/prebuilt ]; then \
 				mkdir $(SRCBASE)/wl/linux ; \
-				cp $(SRCBASE)/router/wl_arm_10/prebuilt/wl_apsta.o $(SRCBASE)/wl/linux ; \
+				cp $(SRCBASE)/router/wl_arm_10/prebuilt/wl*.o $(SRCBASE)/wl/linux ; \
 			fi; \
 		else \
 			if [ -d $(SRCBASE)/router/wl_arm/prebuilt ]; then \
 				mkdir $(SRCBASE)/wl/linux ; \
-				cp $(SRCBASE)/router/wl_arm/prebuilt/wl_apsta.o $(SRCBASE)/wl/linux ; \
+				cp $(SRCBASE)/router/wl_arm/prebuilt/wl*.o $(SRCBASE)/wl/linux ; \
 			elif [ -d $(SRCBASE)/wl/sysdeps/$(BUILD_NAME) ]; then \
 				if [ -d $(SRCBASE)/wl/sysdeps/$(BUILD_NAME)/linux ]; then \
 					cp -rf $(SRCBASE)/wl/sysdeps/$(BUILD_NAME)/linux $(SRCBASE)/wl/. ; \

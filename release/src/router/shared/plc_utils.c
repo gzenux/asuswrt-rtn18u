@@ -59,6 +59,33 @@ key_etoa(const unsigned char *e, char *a)
 }
 
 /*
+ * increase n to mac last 24 bits and handle a carry problem
+ */
+static void inc_mac(unsigned char n, unsigned char *mac)
+{
+	int c = 0;
+
+	//dbg("MAC + %u\n", n);
+
+	if (mac[5] >= (0xff - n + 1))
+		c = 1;
+	else
+		c = 0;
+	mac[5] += n;
+
+	if (c == 1) {
+		if (mac[4] >= 0xff)
+			c = 1;
+		else
+			c = 0;
+		mac[4] += 1;
+
+		if (c == 1)
+			mac[3] += 1;
+	}
+}
+
+/*
  * check PLC MAC/Key
  * reference isValidMacAddr() in rc/ate.c
  */
@@ -153,6 +180,7 @@ static int __getPLC_PWD(unsigned char *emac, char *pwd)
 	int len;
 	char cmd[64], buf[32];
 
+	inc_mac(2, emac);
 	sprintf(cmd, "/usr/local/bin/mac2pw -q %02x%02x%02x%02x%02x%02x", emac[0], emac[1], emac[2], emac[3], emac[4], emac[5]);
 	fp = popen(cmd, "r");
 	if (fp) {
@@ -261,11 +289,13 @@ void ate_ctl_plc_led(void)
 	int i = 0;
 
 	for (i = 0; i < 18; i++) {
-		if (i == 11) /* Power event */
-			continue;
 #if defined(RTCONFIG_AR7420)
+		if (i == 7) /* Power event */
+			continue;
 		modify_pib_byte((0x1B13 + (8 * i)), 0x1);
 #elif defined(RTCONFIG_QCA7500)
+		if (i == 11) /* Power event */
+			continue;
 		modify_pib_byte((0x21A7 + (8 * i)), 0x1);
 #endif
 	}
@@ -278,7 +308,7 @@ int set_plc_all_led_onoff(int on)
 {
 	if (on) {
 #if defined(RTCONFIG_AR7420)
-		modify_pib_byte(0x1B69, 0x61);	/* GPIO 0, 5, 6 */
+		modify_pib_byte(0x1B49, 0x61);	/* GPIO 0, 5, 6 */
 #elif defined(RTCONFIG_QCA7500)
 		modify_pib_byte(0x21FD, 0xC0);	/* GPIO 6, 7 */
 		modify_pib_byte(0x21FE, 0x0);
@@ -286,7 +316,7 @@ int set_plc_all_led_onoff(int on)
 	}
 	else {
 #if defined(RTCONFIG_AR7420)
-		modify_pib_byte(0x1B69, 0x0);
+		modify_pib_byte(0x1B49, 0x0);
 #elif defined(RTCONFIG_QCA7500)
 		modify_pib_byte(0x21FD, 0x0);
 		modify_pib_byte(0x21FE, 0x02);	/* GPIO 9 */
@@ -708,7 +738,9 @@ void turn_led_pwr_off(void)
 	if (!nvram_match("asus_mfg", "0"))
 		return;
 
-#if defined(PLN12)
+	nvram_set("plc_ready", "1");
+
+#if (defined(PLN12) || defined(PLAC56))
 	led_control(LED_POWER_RED, LED_OFF);
 #endif
 }

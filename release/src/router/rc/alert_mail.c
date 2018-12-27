@@ -110,7 +110,7 @@ void am_send_mail(int type, char *path)
 		fprintf(fp, "2. Ensure your device is up to time in all its operating system patches as well as updates to all apps or programs.\n");
 		fprintf(fp, "3. You should take this opportunity to check for, and install, any router firmware updates.\n");
 		fprintf(fp, "4. If you continue to receive such alerts for similar attempted connections, investigation into the cause will be necessary.\n");
-		fprintf(fp, "Meanwhile, rest assured that AiProtection continues to help kepp you safe on the Internet.\n");
+		fprintf(fp, "Meanwhile, rest assured that AiProtection continues to help keep you safe on the Internet.\n");
 		fprintf(fp, "\n");
 		fprintf(fp, "You also can link to trend micro website to download security trial software for your client device protection.\n");
 		fprintf(fp, "http://www.trendmicro.com/\n");

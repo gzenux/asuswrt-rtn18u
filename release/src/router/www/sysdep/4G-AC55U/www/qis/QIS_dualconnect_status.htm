@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link type="text/css" rel="stylesheet" href="/form_style.css">
 <script type="text/javascript" src="/qis/QISMobilePlugin.js"></script>
-<script type="text/JavaScript" src="/jquery.js"></script>
+<script type="text/JavaScript" src="/js/jquery.js"></script>
 <script type="text/javascript">
 var now_flag = '<% get_parameter("flag"); %>';
 var wantype = '';
@@ -61,7 +61,7 @@ function initial(){
 			document.getElementById("success_desc").innerHTML = "<#QIS_dualconnect_desc1#>";
 			document.getElementById("success_desc").style.display = "";
 			hint_str = "<style style=\"text/css\"> a{text-decoration:underline;font-weight: bold; font-style: italic; cursor: pointer;} a:hover{text-decoration:underline;}</style>";
-			hint_str += "<#QIS_dualconnect_hint11#>";
+			hint_str += "<#QIS_dualconnect_hint11#> ";
 			hint_str += "<#QIS_dualconnect_hint12#>";
 			document.getElementById("dualwan_hint").innerHTML = hint_str;
 			eth_wan = 1;

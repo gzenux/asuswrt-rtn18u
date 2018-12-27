@@ -631,10 +631,25 @@ function validForm(){
 	if(document.form.dsl_proto.value == "pppoe"
 			|| document.form.dsl_proto.value == "pppoa"
 			){
-		if(!validator.string(document.form.dslx_pppoe_username)
-				|| !validator.string(document.form.dslx_pppoe_passwd)
-				)
+				
+		if(document.form.dslx_pppoe_username.value.length <= 0){
+			alert("<#WANJS9Text#>");
+			document.form.dslx_pppoe_username.focus();
 			return false;
+		}
+		if(!validator.string(document.form.dslx_pppoe_username)){
+			document.form.dslx_pppoe_username.focus();
+			return false;
+		}
+		if(document.form.dslx_pppoe_passwd.value.length <= 0){
+			alert("<#WANJS9Text#>");
+			document.form.dslx_pppoe_passwd.focus();
+			return false;
+		}
+		if(!validator.string(document.form.dslx_pppoe_passwd)){
+			document.form.dslx_pppoe_passwd.focus();
+			return false;
+		}				
 
 		if(!validator.numberRange(document.form.dslx_pppoe_idletime, 0, 4294967295))
 			return false;

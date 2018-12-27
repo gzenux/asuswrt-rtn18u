@@ -676,6 +676,7 @@ int get_dhcpd_lmax()
 
 void stop_hour_monitor_service()
 {
+	//logmessage("hour monitor", "stop_hour_monitor_service");
 	killall("hour_monitor", SIGTERM);
 }
 
@@ -687,8 +688,10 @@ void start_hour_monitor_service()
 	if(nvram_get_int("sw_mode") != SW_MODE_ROUTER)
 		return;
 	
-	if(!pids("hour_monitor"))
+	if(!pids("hour_monitor")){
+	//logmessage("hour monitor", "start again due to not pid");
 		_eval(cmd, NULL, 0, &pid);
+	}
 }
 
 void check_hour_monitor_service()
@@ -886,6 +889,9 @@ static void link_up(void)
 int restart_dnsmasq(int need_link_DownUp)
 {
 	if (need_link_DownUp) {
+#if (defined(PLN12) || defined(PLAC56))
+		nvram_set("plc_ready", "0");
+#endif
 		link_down();
 		sleep(9);
 	}
@@ -894,8 +900,12 @@ int restart_dnsmasq(int need_link_DownUp)
 	sleep(1);
 	start_dnsmasq();
 
-	if (need_link_DownUp)
+	if (need_link_DownUp) {
 		link_up();
+#if (defined(PLN12) || defined(PLAC56))
+		nvram_set("plc_ready", "1");
+#endif
+	}
 
 	return 0;
 }
@@ -970,7 +980,11 @@ void start_dnsmasq(void)
 #ifdef RTCONFIG_REDIRECT_DNAME
 	if (nvram_get_int("sw_mode") == SW_MODE_AP) {
 #ifdef RTCONFIG_DHCP_OVERRIDE
-		if (nvram_match("dhcp_enable_x", "1") && nvram_match("dnsqmode", "2")) {
+		if (nvram_match("dhcp_enable_x", "1") && nvram_match("dnsqmode", "2") 
+#ifdef RTCONFIG_DEFAULT_AP_MODE
+				&& !nvram_match("ate_flag", "1")
+#endif
+		) {
 			if ((fp = fopen("/etc/dnsmasq.conf", "w+")) != NULL) {
 				/* DHCP range */
 				char dhcp_start[16], dhcp_end[16], lan_netmask[16];
@@ -1079,6 +1093,9 @@ void start_dnsmasq(void)
 		char *dhcp_start, *dhcp_end;
 		int dhcp_lease;
 		char buffer[64];
+#if defined(RTCONFIG_TR069) && !defined(RTCONFIG_TR181)
+		unsigned char hwaddr[6];
+#endif
 
 		have_dhcp |= 1; /* DHCPv4 */
 
@@ -1141,27 +1158,22 @@ void start_dnsmasq(void)
 			/*	    "dhcp-option=lan,46,8\n"*/);
 		}
 #endif
-#if (defined(RTCONFIG_TR069) && !defined(RTCONFIG_TR181))
-		unsigned char hwaddr[6];
-		char buf[13];
-
-		ether_atoe(get_lan_hwaddr(), hwaddr);
-		snprintf(buf, sizeof(buf), "%02X%02X%02X",
-			 hwaddr[0], hwaddr[1], hwaddr[2]);
-
-		fprintf(fp, "dhcp-option=cpewan-id,vi-encap:3561,4,\"%s\"\n", buf);
-
-		ether_atoe(get_lan_hwaddr, hwaddr);
-		snprintf(buf, sizeof(buf), "%02X%02X%02X%02X%02X%02X",
-			 hwaddr[0], hwaddr[1], hwaddr[2],
-			 hwaddr[3], hwaddr[4], hwaddr[5]);
-
-		fprintf(fp, "dhcp-option=cpewan-id,vi-encap:3561,5,\"%s\"\n", buf);
-		//fprintf(fp, "dhcp-option=cpewan-id,vi-encap:3561,6,\"Wireless Router\"\n");
-		fprintf(fp, "dhcp-option=cpewan-id,vi-encap:3561,6,\"%s\"\n", nvram_safe_get("productid"));
-#endif
 		/* Shut up WPAD info requests */
 		fprintf(fp, "dhcp-option=lan,252,\"\\n\"\n");
+
+#if defined(RTCONFIG_TR069) && !defined(RTCONFIG_TR181)
+		if (ether_atoe(get_lan_hwaddr(), hwaddr)) {
+			snprintf(buffer, sizeof(buffer), "%02X%02X%02X", hwaddr[0], hwaddr[1], hwaddr[2]);
+			fprintf(fp, "dhcp-option-force=cpewan-id,vi-encap:%d,%d,\"%s\"\n",
+				3561, 4, buffer);
+			snprintf(buffer, sizeof(buffer), "%02X%02X%02X%02X%02X%02X",
+				 hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+			fprintf(fp, "dhcp-option-force=cpewan-id,vi-encap:%d,%d,\"%s\"\n",
+				3561, 5, buffer);
+			fprintf(fp, "dhcp-option-force=cpewan-id,vi-encap:%d,%d,\"%s\"\n",
+				3561, 6, nvram_safe_get("productid"));
+		}
+#endif
 	}
 
 #ifdef RTCONFIG_IPV6
@@ -1960,7 +1972,6 @@ stop_dcsd(void)
 }
 #endif /* BCM_DCS */
 
-
 //2008.10 magic{
 int start_networkmap(int bootwait)
 {
@@ -1990,6 +2001,56 @@ int start_networkmap(int bootwait)
 void stop_networkmap(void)
 {
 	killall_tk("networkmap");
+}
+
+int start_netmonitor(void)
+{
+_dprintf(">>>>>>>>> NetMonitor <<<<<<<<\n");
+        char *netmonitor_argv[] = {"mDNSNetMonitor", NULL};
+        pid_t pid;
+
+        _eval(netmonitor_argv, NULL, 0, &pid);
+
+        return 0;
+}
+
+#ifdef RTCONFIG_JFFS2USERICON
+void stop_lltdc(void)
+{
+        if (pids("lld2c"))
+                killall_tk("lld2c");
+}
+
+int start_lltdc(void)
+{
+        char *lld2c_argv[] = {"lld2c", "br0", NULL};
+        pid_t pid;
+
+	if (pids("lld2c"))
+		return 0;
+
+        _eval(lld2c_argv, NULL, 0, &pid);
+
+        return 0;
+}
+#endif
+
+void stop_miniupnpc(void)
+{
+        if (pids("miniupnpc"))
+                killall_tk("miniupnpc");
+}
+
+int start_miniupnpc(void)
+{
+        pid_t pid;
+
+        if (pids("miniupnpc"))
+		return 0;
+
+	xstart("miniupnpc", "-m", "br0", "-t");
+
+        return 0;
 }
 
 #ifdef RTCONFIG_LLDP
@@ -2560,6 +2621,10 @@ _dprintf("%s:\n", __FUNCTION__);
 	start_syslogd();
 	start_klogd();
 
+#ifdef DUMP_PREV_OOPS_MSG && defined(RTCONFIG_BCMARM)
+	eval("et", "dump_oops");
+#endif
+
 	return 0;
 }
 
@@ -2678,6 +2743,7 @@ stop_misc(void)
 	stop_wps();
 #ifdef RTCONFIG_BCMWL6
 #endif
+	stop_upnp();
 	stop_lltd();
 	stop_rstats();
 #ifdef RTCONFIG_DSL
@@ -2743,7 +2809,7 @@ start_telnetd(void)
 		return 0;
 	}
 
-	if (!nvram_match("telnetd_enable", "1") && !nvram_match("Ate_telnet", "1"))
+	if (!nvram_match("telnetd_enable", "1"))
 		return 0;
 
 	if (pids("telnetd"))
@@ -2915,7 +2981,7 @@ void start_upnp(void)
 	int i;
 
 	if (getpid() != 1) {
-		notify_rc_and_period_wait("start_upnp", 25);
+		notify_rc("start_upnp");
 		return;
 	}
 
@@ -3033,7 +3099,7 @@ void start_upnp(void)
 void stop_upnp(void)
 {
 	if (getpid() != 1) {
-		notify_rc_and_period_wait("stop_upnp", 25);
+		notify_rc("stop_upnp");
 		return;
 	}
 
@@ -3468,6 +3534,43 @@ start_plchost(void)
 
 	return _eval(plchost_argv, NULL, 0, &pid);
 }
+
+void
+reset_plc(void)
+{
+	FILE *fp;
+	int rlen;
+	char buf[1024], plc_mac[18];
+
+#if defined(PLN12)
+	if (!get_qca8337_PHY_power(1))
+		doSystem("swconfig dev %s port 1 set power 1", MII_IFNAME);
+#elif defined(PLAC56)
+	int wake_gpio = nvram_get_int("plc_wake_gpio") & 0xff;
+
+	if (get_gpio(wake_gpio))
+		set_gpio(wake_gpio, 0);
+#endif
+
+	memset(plc_mac, 0, sizeof(plc_mac));
+	strcpy(plc_mac, nvram_safe_get("plc_macaddr"));
+
+	while (1) {
+		fp = popen("/usr/local/bin/plctool -i br0 -I -e", "r");
+		rlen = fread(buf, 1, sizeof(buf), fp);
+		pclose(fp);
+		if (rlen > 1) {
+			buf[rlen-1] = '\0';
+			if (strstr(buf, plc_mac))
+				break;
+		}
+		dbg("%s: wait Powerline wake up...\n", __func__);
+		sleep(1);
+	}
+
+	stop_plchost();
+	eval("/usr/local/bin/plctool", "-i", "br0", "-R");
+}
 #endif
 
 #ifdef RTCONFIG_DHCP_OVERRIDE
@@ -3493,7 +3596,7 @@ int
 start_services(void)
 {
 	_dprintf("%s %d\n", __FUNCTION__, __LINE__);	// tmp test
-
+	
 #ifdef __CONFIG_NORTON__
 	start_norton();
 #endif /* __CONFIG_NORTON__ */
@@ -3547,7 +3650,7 @@ start_services(void)
 	start_cron();
 #endif
 	start_infosvr();
-	start_networkmap(1);
+
 	restart_rstats();
 #ifdef RTCONFIG_DSL
 	start_spectrum(); //Ren
@@ -3556,7 +3659,7 @@ start_services(void)
 	start_traffic_control_init();
 #endif
 	start_watchdog();
-#ifndef RT4GAC55U
+#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 	start_watchdog02();
 #endif
 #ifdef SW_DEVLED
@@ -3565,7 +3668,6 @@ start_services(void)
 #ifdef RTCONFIG_DUALWAN
 	restart_dualwan();
 #endif
-	start_hour_monitor_service();
 #ifdef RTCONFIG_FANCTRL
 	start_phy_tempsense();
 #endif
@@ -3574,7 +3676,7 @@ start_services(void)
 	start_psta_monitor();
 #endif
 #endif
-#ifdef RTCONFIG_LLDP
+#if 0
 	start_lldpd();
 #else
 	start_lltd();
@@ -3583,6 +3685,17 @@ start_services(void)
 	start_toads();
 #endif
 	start_upnp();
+
+        start_netmonitor();
+#ifdef RTCONFIG_JFFS2USERICON
+        start_lltdc();
+#endif
+	start_miniupnpc();
+	start_networkmap(1);
+
+#if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
+	start_pptpd();
+#endif
 
 #ifdef RTCONFIG_USB
 //	_dprintf("restart_nas_services(%d): test 8.\n", getpid());
@@ -3610,6 +3723,7 @@ start_services(void)
 #ifdef RTCONFIG_BWDPI
 	start_bwdpi_check();
 #endif
+	start_hour_monitor_service();
 
 #ifdef RTCONFIG_IPERF
 	start_iperf();
@@ -3646,6 +3760,9 @@ start_services(void)
 #if defined(RTCONFIG_KEY_GUARD)
 	start_keyguard();
 #endif
+
+	start_ecoguard();
+
 	return 0;
 
 }
@@ -3666,6 +3783,7 @@ stop_services(void)
 	stop_lteled();
 #endif
 
+	stop_hour_monitor_service();
 #ifdef RTCONFIG_BWDPI
 	stop_bwdpi_wred_alive();
 	stop_bwdpi_check();
@@ -3698,7 +3816,6 @@ stop_services(void)
 	stop_upnp();
 	stop_lltd();
 	stop_watchdog();
-	stop_hour_monitor_service();
 #ifdef RTCONFIG_FANCTRL
 	stop_phy_tempsense();
 #endif
@@ -3879,12 +3996,14 @@ stop_watchdog(void)
 	killall_tk("watchdog");
 }
 
+#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 void
 stop_watchdog02(void)
 {
 	/* do nothing */
 	return;
 }
+#endif  /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
 
 void
 stop_sw_devled(void)
@@ -3914,6 +4033,7 @@ start_watchdog(void)
 	return _eval(watchdog_argv, NULL, 0, &whpid);
 }
 
+#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 int
 start_watchdog02(void)
 {
@@ -3924,6 +4044,7 @@ start_watchdog02(void)
 
 	return _eval(watchdog_argv, NULL, 0, &whpid);
 }
+#endif  /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
 
 int
 start_sw_devled(void)
@@ -4216,8 +4337,7 @@ again:
 		g_reboot = 1;
 
 #ifdef RTCONFIG_QCA_PLC_UTILS
-		stop_plchost();
-		eval("/usr/local/bin/plctool", "-i", "br0", "-R");
+		reset_plc();
 		sleep(1);
 #endif
 
@@ -4276,21 +4396,23 @@ again:
 		if (nvram_contains_word("rc_support", "nandflash"))	/* RT-AC56S,U/RT-AC68U/RT-N18U */
 			eval("mtd-erase2", "nvram");
 		else
-#if defined(RTAC1200G)
+#if defined(RTAC1200G) || defined(RTAC1200GP)
 			eval("mtd-erase2", "nvram");
 #else
 			eval("mtd-erase", "-d", "nvram");
 #endif
 
 #ifdef RTCONFIG_QCA_PLC_UTILS
-		stop_plchost();
-		eval("/usr/local/bin/plctool", "-i", "br0", "-R");
+		reset_plc();
 		eval("mtd-erase", "-d", "plc");
 #endif
 
 		kill(1, SIGTERM);
 	}
 	else if (strcmp(script, "all") == 0) {
+#ifdef RTCONFIG_QCA_PLC_UTILS
+		reset_plc();
+#endif
 		sleep(2); // wait for all httpd event done
 		stop_lan_port();
 		start_lan_port(6);
@@ -4298,6 +4420,7 @@ again:
 	}
 	else if(strcmp(script, "upgrade") == 0) {
 		if(action&RC_SERVICE_STOP) {
+			stop_hour_monitor_service();
 #if defined(RTCONFIG_USB_MODEM) && (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
 			_dprintf("modem data: save the data during upgrading\n");
 			eval("modem_status.sh", "bytes+");
@@ -4351,8 +4474,7 @@ again:
 			stop_networkmap();
 
 #ifdef RTCONFIG_QCA_PLC_UTILS
-			stop_plchost();
-			eval("/usr/local/bin/plctool", "-i", "br0", "-R");
+			reset_plc();
 #endif
 			// TODO free necessary memory here
 		}
@@ -4435,7 +4557,7 @@ again:
 				if (nvram_contains_word("rc_support", "nandflash"))	/* RT-AC56S,U/RT-AC68U/RT-N16UHP */
 					eval("mtd-write2", upgrade_file, "linux");
 				else
-#if defined(RTAC1200G)
+#if defined(RTAC1200G) || defined(RTAC1200GP)
 					eval("mtd-write2", upgrade_file, "linux");
 #else
 					eval("mtd-write", "-i", upgrade_file, "-d", "linux");
@@ -4480,6 +4602,7 @@ again:
 #endif
 #endif
 		stop_wps();
+		stop_upnp();
 		stop_lltd();	// 1017 add
 		stop_wanduck();
 		stop_logger();
@@ -4505,6 +4628,8 @@ again:
 #if defined(RTCONFIG_MDNS)
 			stop_mdns();
 #endif
+			stop_upnp();
+			stop_lltd();
 #ifdef RTCONFIG_BCMWL6
 			stop_acsd();
 #ifdef BCM_BSD
@@ -4575,8 +4700,11 @@ again:
 #endif
 			start_acsd();
 #endif
+			start_lltd();
 			/* Link-up LAN ports after DHCP server ready. */
 			start_lan_port(0);
+
+			start_upnp();
 
 			start_httpd();
 			start_networkmap(0);
@@ -4601,6 +4729,8 @@ again:
 #if defined(RTCONFIG_MDNS)
 			stop_mdns();
 #endif
+			stop_upnp();
+			stop_lltd();
 #ifdef RTCONFIG_BCMWL6
 			stop_acsd();
 #ifdef BCM_BSD
@@ -4664,8 +4794,11 @@ again:
 #endif
 			start_acsd();
 #endif
+			start_lltd();
 			/* Link-up LAN ports after DHCP server ready. */
 			start_lan_port(0);
+
+			start_upnp();
 
 			start_httpd();
 			start_networkmap(0);
@@ -4707,6 +4840,9 @@ again:
 #if defined(RTCONFIG_MDNS)
 			stop_mdns();
 #endif
+			//Andy Chiu, 2015/09/16.
+			stop_upnp();
+			stop_lltd();
 #ifdef RTCONFIG_BCMWL6
 			stop_acsd();
 #ifdef BCM_BSD
@@ -4778,8 +4914,12 @@ again:
 #endif
 			start_acsd();
 #endif
+			start_lltd();
 			/* Link-up LAN ports after DHCP server ready. */
 			start_lan_port(6);
+
+			//Andy Chiu, 2015/09/16
+			start_upnp();
 
 			start_httpd();
 			start_networkmap(0);
@@ -4924,6 +5064,7 @@ _dprintf("multipath(%s): unit_now: (%d, %d, %s), unit_next: (%d, %d, %s).\n", mo
 #ifdef RTCONFIG_USB_PRINTER
 			start_u2ec();
 #endif
+			start_ecoguard(); //for app eco mode
 		}
 	}
 #ifdef CONFIG_BCMWL5
@@ -5004,11 +5145,13 @@ check_ddr_done:
 	else if (strcmp(script, "wan") == 0) {
 		if(action & RC_SERVICE_STOP) 
 		{
+			stop_upnp();
 			stop_wan();
 		}
 		if(action & RC_SERVICE_START)
 		{
 			start_wan();
+			start_upnp();
 		}
 	}
 	else if (strcmp(script, "wan_if") == 0) {
@@ -5723,6 +5866,7 @@ check_ddr_done:
 	else if (strcmp(script, "time") == 0)
 	{
 		if(action & RC_SERVICE_STOP) {
+			stop_hour_monitor_service();
 			stop_telnetd();
 #ifdef RTCONFIG_SSH
 			stop_sshd();
@@ -5739,6 +5883,7 @@ check_ddr_done:
 #endif
 			//start_httpd();
 			start_firewall(wan_primary_ifunit(), 0);
+			start_hour_monitor_service();
 		}
 	}
 	else if (strcmp(script, "wps_method")==0)
@@ -5862,6 +6007,7 @@ check_ddr_done:
 	// handle button action
 	else if (strcmp(script, "wan_disconnect")==0) {
 		logmessage("wan", "disconnected manually");
+		stop_upnp();
 		stop_wan();
 	}
 	else if (strcmp(script,"wan_connect")==0)
@@ -5872,6 +6018,7 @@ check_ddr_done:
 		start_wan();
 		sleep(2);
 		// TODO: function to force ppp connection
+		start_upnp();
 	}
 #if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
 	else if (strcmp(script, "pptpd") == 0)
@@ -6160,6 +6307,14 @@ _dprintf("test 2. turn off the USB power during %d seconds.\n", reset_seconds[re
 	}
 #endif
 #endif
+#ifdef RTCONFIG_JFFS2USERICON
+        else if (strcmp(script, "lltdc") == 0) {
+                if(action&RC_SERVICE_START) start_lltdc();
+        }
+#endif
+        else if (strcmp(script, "miniupnpc") == 0) {
+                if(action&RC_SERVICE_START) start_miniupnpc();
+        }
 #ifdef RTCONFIG_TOR
 	else if (strcmp(script, "tor") == 0)
 	{
@@ -6203,6 +6358,9 @@ _dprintf("test 2. turn off the USB power during %d seconds.\n", reset_seconds[re
 		start_keyguard();
 	}
 #endif
+	else if (!strcmp(script, "eco_guard")) {
+		start_ecoguard();
+	}
 	else
 	{
 		fprintf(stderr,
@@ -6511,7 +6669,8 @@ void set_acs_ifnames()
 	} else {
 		/* exclude acsd from selecting chanspec 36, 36l, 36/80, 40, 40u, 40/80, 44, 44l, 44/80, 48, 48u, 48/80, 165 */
 		nvram_set("wl1_acs_excl_chans",
-			  "0xd024,0xd826,0xe02a,0xd028,0xd926,0xe12a,0xd02c,0xd82e,0xe22a,0xd030,0xd92e,0xe32a,0xd0a5");
+			  "");
+		//	  "0xd024,0xd826,0xe02a,0xd028,0xd926,0xe12a,0xd02c,0xd82e,0xe22a,0xd030,0xd92e,0xe32a,0xd0a5");
 	}
 #else
 	if (nvram_match("wl1_country_code", "EU"))
@@ -7066,6 +7225,33 @@ void start_keyguard(void){
 	}
 }
 #endif
+
+/* for APP ECO mode changing RF to 1x1 */
+void start_ecoguard(void){	
+
+	char *next = NULL;
+	char ifname[32];
+
+	if ( !nvram_get_int("wlready") || nvram_get_int("guard_mode") != 1)	//guard_mode 0:default 1:eco mode
+		return;
+	else{
+		foreach(ifname, nvram_safe_get("wl_ifnames"), next) {
+#if defined(RTCONFIG_RALINK)
+#elif defined(RTCONFIG_QCA)
+#else /* BCM */
+
+#if defined(RTCONFIG_QTN)
+#else
+		eval("wl", "-i", ifname, "txchain", "1");
+		eval("wl", "-i", ifname, "rxchain", "1");
+		eval("wl", "-i", ifname, "down");
+		eval("wl", "-i", ifname, "up");
+#endif
+#endif     
+		}
+	}
+}
+
 int service_main(int argc, char *argv[])
 {
 	if (argc != 2) usage_exit(argv[0], "<action_service>");

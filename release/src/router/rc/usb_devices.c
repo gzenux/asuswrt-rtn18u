@@ -1629,6 +1629,11 @@ int write_3g_conf(FILE *fp, int dno, int aut, const unsigned int vid, const unsi
 			fprintf(fp, "DefaultProduct=0x%04x\n",	0x15ca);
 			fprintf(fp, "HuaweiNewMode=1\n");
 			break;
+		case SN_Huawei_E3531s:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x12d1);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0x15cd);
+			fprintf(fp, "HuaweiNewMode=1\n");
+			break;
 		case SN_Teracom_LW272:
 			fprintf(fp, "DefaultVendor=0x%04x\n",	0x230d);
 			fprintf(fp, "DefaultProduct=0x%04x\n",	0x0103);
@@ -2192,6 +2197,8 @@ usb_dbg("3G: Auto setting.\n");
 			write_3g_conf(fp, SN_Huawei_E3372, 1, vid, pid);
 		else if(vid == 0x12d1 && pid == 0x15ca)
 			write_3g_conf(fp, SN_Huawei_E303u, 1, vid, pid);
+		else if(vid == 0x12d1 && pid == 0x15cd)
+			write_3g_conf(fp, SN_Huawei_E3531s, 1, vid, pid);
 		else if(vid == 0x12d1)
 			write_3g_conf(fp, UNKNOWNDEV, 1, vid, pid);
 		else{
@@ -3830,6 +3837,7 @@ int asus_tty(const char *device_name, const char *action){
 		nvram_unset(buf1);
 		snprintf(act_dev, 8, "%s", nvram_safe_get("usb_modem_act_dev"));
 
+		usb_dbg("(%s): usb_modem_act_path=%s.\n", usb_node, current_act);
 		if(!strcmp(current_act, usb_node)){
 			if(get_path_by_node(usb_node, port_path, 8) == NULL){
 				usb_dbg("(%s): Fail to get usb path.\n", usb_node);

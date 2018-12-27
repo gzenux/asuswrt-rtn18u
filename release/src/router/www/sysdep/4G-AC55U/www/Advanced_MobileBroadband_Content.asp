@@ -81,7 +81,7 @@
 <script type="text/javascript" src="help.js"></script>
 <script type="text/javascript" src="validator.js"></script>
 <script type="text/javascript" src="wcdma_list.js"></script>
-<script type="text/javaScript" src="jquery.js"></script>
+<script type="text/javaScript" src="js/jquery.js"></script>
 <script type="text/javascript" src="switcherplugin/jquery.iphone-switch.js"></script>
 <script>
 
@@ -404,7 +404,7 @@ function show_ISP_list(){
 			if(document.form.modem_isp.options.length > 0)
 				continue;
 			else{
-				alert('We currently do not support this location, please use "Manual"!');/*untranslated*/
+				alert('<#HSDPAConfig_Country_hint#>');
 				document.form.modem_country.focus();
 				document.form.modem_country.selectedIndex = countrylist.length-1;
 				break;
@@ -1868,10 +1868,10 @@ function change_apn_mode(){
 					</thead>
 
 					<tr>
-						<th width="40%">APN Configuration</th><!--untranslated-->
+						<th width="40%"><#APN_configuration#></th>
 						<td>
 							<select name="modem_autoapn" id="modem_autoapn" class="input_option" onchange="change_apn_mode();">
-								<option value="1" <% nvram_match("modem_autoapn", "1","selected"); %>>Automatic</option><!--untranslated-->
+								<option value="1" <% nvram_match("modem_autoapn", "1","selected"); %>><#Auto#></option>
 								<option value="0" <% nvram_match("modem_autoapn", "0","selected"); %>><#Manual_Setting_btn#></option>
 							</select>
 						</td>
@@ -1922,7 +1922,7 @@ function change_apn_mode(){
 					<tr>
 						<th><#HSDPAConfig_DialNum_itemname#></th>
 						<td>
-							<input id="modem_dialnum" class="input_20_table" style="margin-left:0px;" type="text" value="" autocorrect="off" autocapitalize="off"/>
+							<input id="modem_dialnum" name="modem_dialnum" class="input_20_table" style="margin-left:0px;" type="text" value="" autocorrect="off" autocapitalize="off"/>
 						</td>
 					</tr>
 

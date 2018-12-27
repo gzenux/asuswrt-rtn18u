@@ -7,6 +7,7 @@
 <link rel="stylesheet" type="text/css" href="../form_style.css">
 <link rel="stylesheet" type="text/css" href="qis_style.css">
 <script type="text/JavaScript" src="/state.js"></script>
+<script type="text/JavaScript" src="/general.js"></script>
 <style>
 span{
 	border:0px solid #FFFFFF;
@@ -18,14 +19,29 @@ span{
 	margin:0px auto;
 	ime-mode:disabled;
 }
+.stb_msg{
+	font-size:12px;
+	font-weight:bolder;
+	color:#FFCC00;
+}
 </style>
-<script type="text/JavaScript" src="/jquery.js"></script>
+<script type="text/JavaScript" src="/js/jquery.js"></script>
 <script type="text/javascript">
-var w_Setting = "<% nvram_get("w_Setting"); %>";
+
+var ISP_List;
+var ISP_List_IPTV;
+var RAW_ISP_List = [<% get_isp_list("/www/ISP_List.txt"); %>];
+var RAW_ISP_List_IPTV = [<% get_isp_list("/www/ISP_List_IPTV.txt"); %>];
+var RAW_ISP_PTM_List = [<% get_isp_list("/www/ISP_PTM_List.txt"); %>];
+var RAW_ISP_PTM_List_IPTV = [<% get_isp_list("/www/ISP_PTM_List_IPTV.txt"); %>];
+
 var vpi_val = "<% nvram_get("dsltmp_autodet_vpi"); %>";
 var vci_val = "<% nvram_get("dsltmp_autodet_vci"); %>";
+var prctl_val = "2";
 var encap_val = "<% nvram_get("dsltmp_autodet_encap"); %>";
-
+var vlanid_val = "";	//tmp
+var wan_type = "<%nvram_get("dsltmp_autodet_wan_type");%>";
+var w_Setting = "<% nvram_get("w_Setting"); %>";
 var encap_str = ", LLC";
 if (encap_val == "1") encap_str = ", VC-Mux";
 
@@ -42,6 +58,30 @@ function QKfinish_load_body(){
 		document.getElementById("ppp_password1").style.display = "";
 		document.getElementById("ppp_password2").style.display = "";
 	}
+
+	if(wan_type == "ATM")
+	{
+		document.form.dsltmp_transmode.value = "atm";
+		document.form.prev_page.value = "/qis/QIS_manual_setting.htm";
+		ISP_List = RAW_ISP_List;
+		ISP_List_IPTV = RAW_ISP_List_IPTV;
+	}
+	else //PTM
+	{
+		document.form.dsltmp_transmode.value = "ptm";
+		document.form.prev_page.value = "/qis/QIS_PTM_manual_setting.htm";
+		ISP_List = RAW_ISP_PTM_List;
+		ISP_List_IPTV = RAW_ISP_PTM_List_IPTV;
+	}
+
+	showHideIPTVList(false);
+	if(haveIPTVService()) {
+		showhide("iptv_manual_setting", 1);
+	}
+	else {
+		showhide("iptv_manual_setting", 0);
+	}
+	showhide("STBPortMsg", 0);
 }
 
 function submitForm(){
@@ -55,7 +95,189 @@ function submitForm(){
 		document.form.ppp_password.disabled = true;
 	}
 	document.form.next_page.value = "/qis/QIS_wireless.htm";
+	if(document.form.dsltmp_cfg_iptv_enable.value == "1"){
+		if(valid_ISP())
+			setIptvNumPvc();
+		else{
+			document.form.ISP.focus();
+			return false;
+		}
+	}
 	document.form.submit();
+}
+
+
+function haveIPTVService() {
+	//compare detection result with isp list
+	for(var i = 0; i < ISP_List.length; i++){
+		if(wan_type == "ATM") {
+			if(vpi_val == ISP_List[i][6]	//vpi
+				&& vci_val == ISP_List[i][7]	//vci
+				&& prctl_val == ISP_List[i][8]	//proto
+				&& encap_val == ISP_List[i][9]	//encap
+				&& (ISP_List[i][12] != "" || ISP_List[i][13] != "")	//mr, iptv idx
+			) {
+				return true;
+			}
+		}
+		else {	//PTM
+			if(prctl_val == ISP_List[i][8]	//proto
+				&& vlanid_val == ISP_List[i][10]	//vlan id
+				&& (ISP_List[i][12] != "" || ISP_List[i][13] != "")	//mr, iptv idx
+			) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+function showHideIPTVList(iptv_enable) {
+	if(iptv_enable.checked) {
+		document.form.dsltmp_cfg_iptv_enable.value = "1";
+		document.getElementById("special_ISP_img").style.display = "";
+		document.getElementById("ISP_table").style.visibility = "visible";
+		showCountryList();
+		showISPList("");
+	}
+	else {
+		document.form.dsltmp_cfg_iptv_enable.value = "0";
+		document.getElementById("special_ISP_img").style.display = "none";
+		document.getElementById("ISP_table").style.visibility = "hidden";
+		showhide("STBPortMsg", 0);
+	}
+}
+
+function showCountryList(){
+	var code = "";
+	var showed_country = "";
+
+	code +="<select name='country' onchange='showISPList(this.value);' class='input_option'>";
+	code +="<option value='default'><#Select_menu_default#></option>";
+	for(var i = 0; i < ISP_List.length; i++){
+		if(ISP_List[i][5] == "")
+			continue;
+
+		if(prctl_val == ISP_List[i][8])  {	//proto
+			if(wan_type == "ATM") {
+				if(vpi_val == ISP_List[i][6]	//vpi
+					&& vci_val == ISP_List[i][7]	//vci
+					&& encap_val == ISP_List[i][9]	//encap
+				) {
+					if(showed_country != ISP_List[i][1]){
+						code +="<option value='"+ISP_List[i][1];
+						code +="'>"+ISP_List[i][2]+"</option>";
+						showed_country = ISP_List[i][1];
+					}
+				}
+			}
+			else {	//PTM
+				if(vlanid_val == ISP_List[i][10]) {	//vlan id
+					if(showed_country != ISP_List[i][1]){
+						code +="<option value='"+ISP_List[i][1];
+						code +="'>"+ISP_List[i][2]+"</option>";
+						showed_country = ISP_List[i][1];
+					}
+				}
+			}
+		}
+	}
+	code +="</select>";
+	document.getElementById("CountryList").innerHTML = code;
+}
+
+function showISPList(country){
+	var code = "";
+	var showed_isp = "";
+	var first_element = 0;
+	var sel_idx = 0;
+
+	code +="<select id='ISP' name='ISP' class='input_option'>";
+	code +="<option value='default'><#Select_menu_default#></option>";
+	for(var i = 0; i < ISP_List.length; i++){
+		if(country == ISP_List[i][1]){
+			if(ISP_List[i][5] == "")
+				continue;
+			if(ISP_List[i][12] == "" && ISP_List[i][13] == "")	//no iptv service
+				continue;			
+
+			if(prctl_val == ISP_List[i][8])  {	//proto
+				if(wan_type == "ATM") {
+					if(vpi_val == ISP_List[i][6]	//vpi
+						&& vci_val == ISP_List[i][7]	//vci
+						&& encap_val == ISP_List[i][9]	//encap
+					) {
+						if (first_element==0) {
+							first_element=1;
+							sel_idx = i;
+							code +="<option value='"+ISP_List[i][0]+"' selected='selected'>"+ISP_List[i][4]+", "+ISP_List[i][5]+"</option>";
+						}
+						else {
+							code +="<option value='"+ISP_List[i][0]+"'>"+ISP_List[i][4]+", "+ISP_List[i][5]+"</option>";
+						}
+					}
+				}
+				else {	//PTM
+					if(vlanid_val == ISP_List[i][10]) {	//vlan id
+						if (first_element==0) {
+							first_element=1;
+							code +="<option value='"+ISP_List[i][0]+"' selected='selected'>"+ISP_List[i][4]+", "+ISP_List[i][5]+"</option>";
+						}
+						else {
+							code +="<option value='"+ISP_List[i][0]+"'>"+ISP_List[i][4]+", "+ISP_List[i][5]+"</option>";
+						}
+					}
+				}
+			}
+			
+		}
+	}
+
+	code +="</select>";
+	document.getElementById("ISPnServiceList").innerHTML = code;
+	ChgSVC(sel_idx);
+}
+
+function ChgSVC(idx) {
+	if(ISP_List[idx][13] != "") {	//iptv idx
+		showhide("STBPortMsg", 1);
+	}
+	else {
+		showhide("STBPortMsg", 0);
+	}
+}
+
+function valid_ISP(){
+	if(document.getElementById("ISP").value == "default")
+		return false;
+	else
+		return true;
+}
+
+function setIptvNumPvc() {
+	var pvc_cnt = 0;
+	var isp_idx = document.getElementById("ISP").value
+	var iptv_idx = ISP_List[isp_idx][13];
+	var dsltmp_cfg_iptv_pvclist_value = "";
+
+	if (iptv_idx != "") {
+		for(var i = 0; i < ISP_List_IPTV.length; i++){
+			if (ISP_List_IPTV[i][0] == iptv_idx) {
+				pvc_cnt++;
+				dsltmp_cfg_iptv_pvclist_value +=
+					"<" + ISP_List_IPTV[i][1]
+					+ ">" + ISP_List_IPTV[i][2]
+					+ ">" + ISP_List_IPTV[i][3]
+					+ ">" + ISP_List_IPTV[i][4]
+					+ ">" + ISP_List_IPTV[i][5]
+			}
+		}
+	}
+	document.form.dsltmp_cfg_iptv_num_pvc.value = pvc_cnt.toString();
+	document.form.dsltmp_cfg_iptv_rmvlan.value = ISP_List[isp_idx][11];
+	document.form.dsltmp_cfg_iptv_mr.value = ISP_List[isp_idx][12];
+	document.form.dsltmp_cfg_iptv_pvclist.value = dsltmp_cfg_iptv_pvclist_value;
 }
 
 function gotoHome() {
@@ -79,6 +301,11 @@ function gotoHome() {
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="">
+<input type="hidden" name="dsltmp_cfg_iptv_rmvlan" value="">
+<input type="hidden" name="dsltmp_cfg_iptv_mr" value="">
+<input type="hidden" name="dsltmp_cfg_iptv_num_pvc" value="">
+<input type="hidden" name="dsltmp_cfg_iptv_pvclist" value="">
+<input type="hidden" name="dsltmp_cfg_iptv_enable" value="0">
 <input type="hidden" name="dsltmp_qis_vpi" value="<% nvram_get("dsltmp_autodet_vpi"); %>">
 <input type="hidden" name="dsltmp_qis_vci" value="<% nvram_get("dsltmp_autodet_vci"); %>">
 <input type="hidden" name="dsltmp_qis_proto" value="mer">
@@ -105,7 +332,7 @@ function gotoHome() {
 <input type="hidden" name="dsltmp_qis_dsl_pvc_set" value="1">
 <input type="hidden" name="dslx_dhcp_clientid" value="">
 <input type="hidden" name="dsltmp_qis_pppoe_relay" value="0">
-
+<input type="hidden" name="dsltmp_transmode" value="">
 <div class="QISmain">
 	<table width="730px">
 		<tr>
@@ -149,6 +376,53 @@ function gotoHome() {
 	</td>
   </tr>
 </table>
+
+	<div>
+	<table id="iptv_manual_setting" width="92%" border="0" align="left" cellpadding="3" cellspacing="0" style="margin-left:8%;">
+			<tr id="specialISP_tr">
+				<td>
+					<input type="checkbox" id="specialisp" name="specialisp" onclick="showHideIPTVList(this);">
+					<label for="specialisp">
+						<span class="QISGeneralFont" style="margin-left:0px;font-style:normal;color:#66CCFF;font-size:12px;font-weight:bolder;"><#PPPConnection_x_HostNameForISP_sectionname#> ( IPTV Service )</span>
+					</label>
+					<span class="stb_msg" id='STBPortMsg'> Default IPTV STB Port - LAN Port 1</span>
+				</td>
+			</tr>
+	</table>
+	</div>
+
+	<div id="special_ISP_img_div"><img id="special_ISP_img" width="505px" height="105px" style="margin-top:0px;margin-left:73px;display:none;" src="/images/qis/border.png"></div>
+
+	<div style="margin-left:-80px;margin-top:-90px;">
+	<table id="ISP_table" class="FormTable" width="475px" border="0" align="center" cellpadding="3" cellspacing="0">
+		<tbody>
+			<tr id="Country_tr">
+				<th width="40%"><#Manual_Setting_contry#></th>
+				<td>
+					<div id="CountryList"></div>
+				</td>
+			</tr>
+			<!--tr id="City_tr">
+				<th width="40%"><#Manual_Setting_city#></th>
+				<td>
+					<div id="CityList"></div>
+				</td>
+			</tr-->
+			<tr id="ISP_tr">
+				<th width="40%"><#HSDPAConfig_ISP_itemname#> & <#qis_service#></th>
+				<td>
+					<div id="ISPnServiceList"></div>
+				</td>
+			</tr>
+			<!--tr id="Service_tr">
+				<th width="40%"><#qis_service#></th>
+				<td>
+					<div id="Service"></div>
+				</td>
+			</tr-->
+		</tbody>
+	</table>
+	</div>
 
 	<div class="apply_gen" style="margin-top:30px">
 		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" onclick="gotoprev(document.form);" class="button_gen" >

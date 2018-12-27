@@ -11,7 +11,7 @@
 <link rel="stylesheet" type="text/css" href="../form_style.css">
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
 
@@ -1121,7 +1121,7 @@ left:-1px;">
 </tr>
 <tr id="goDualWANSetting">
 	<td height="50" style="padding:10px 15px 0px 15px;">
-		<p class="formfonttitle_nwm" style="float:left;width:116px;">Dual WAN setting</p>
+		<p class="formfonttitle_nwm" style="float:left;width:116px;"><#Dualwan_setting#></p>
 		<input type="button" class="button_gen_long" onclick="goToDualWAN();" value="<#btn_go#>" style="position:absolute;right:25px;margin-top:-10px;margin-left:115px;">
 		<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
 	</td>

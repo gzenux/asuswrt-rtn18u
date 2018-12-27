@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="css/qis.css"></link>
 <link rel="stylesheet" href="css/icon.css"></link>
 <link rel="stylesheet" href="css/jquery.mobile.css"></link>
-<script src="jquery.js"></script>
+<script src="js/jquery.js"></script>
 <script src="js/verge.min.js"></script>
 <script src="js/jquery.mobile.js"></script>
 <style>
@@ -125,9 +125,9 @@ var panel = '<div id="navigation" data-role="panel" data-display="overlay" data-
 	panel += '<option value="JP">日本語</option>';
 	panel += '</select></div></td></tr></table></div>';*/
 	panel += '<div style="font-family:HelveticaNeue-Medium,Arial;font-weight:bold;font-size:1.375em;color:#A8CBF4;line-height:20px;padding:20px 0 19px 0;border-bottom:1px solid #4C545E;">OPERATION MODE</div>';
-	panel += '<div id="nav_rp" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'RP\')">REPEATER</div>';
-	panel += '<div id="nav_ap" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'AP\')">ACCESS POINT(AP)</div>';
-	panel += '<div id="nav_mb" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'MB\')">MEDIA BRIDGE(CLIENT)</div>';
+	panel += '<div id="nav_rp" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'RP\')"><#OP_RE_item#></div>';
+	panel += '<div id="nav_ap" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'AP\')"><#OP_AP_item#></div>';
+	panel += '<div id="nav_mb" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'MB\')"><#OP_MB_item#></div>';
 	panel += '<div id="nav_express_5g" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'express_5g\')">Express Way<br>(Router to repeater use 5GHz only, repeater to client use 2.4GHz only)</div>';
 	panel += '<div id="nav_express_2g" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'express_2g\')">Express Way<br>(Router to repeater use 2.4GHz only, repeater to client use 5GHz only)</div>';	
 	panel += '<div style="font-family:HelveticaNeue-Medium,Arial;font-weight:bold;font-size:1.375em;color:#A8CBF4;line-height:20px;padding:20px 0 19px 0;border-bottom:1px solid #4C545E;margin-top:14px;">Other Item</div>';
@@ -742,9 +742,9 @@ function pap_connect(){
 
 	if(document.getElementById("pap_ip_advanced_option").value == "dhcp"){
 		document.form.lan_proto.value = "dhcp";
-		document.form.lan_ipaddr.value = "";
-		document.form.lan_netmask.value = "";
-		document.form.lan_gateway.value = "";
+		document.form.lan_ipaddr.disabled = true;
+		document.form.lan_netmask.disabled = true;
+		document.form.lan_gateway.disabled = true;
 		document.form.wan_dhcpenable_x.value = "1";
 		document.form.wan_dns1_x.value = "";
 		document.form.wan_dns2_x.value = "";
@@ -816,7 +816,6 @@ var startQuery = function(){
 		url: "http://repeater.asus.com/httpd_check.json",
 		dataType: 'jsonp',
 		timeout: 2000,
-
 		error: function(){
 			setTimeout(function(){
 				startQuery();
@@ -892,25 +891,6 @@ function use_pap_setting(obj){
 				}
 			}
 		}
-
-		document.getElementById('wireless_2g_ssid').style.backgroundColor = "#888";		
-		document.getElementById('wireless_2g_key').style.backgroundColor = "#888";
-		document.getElementById('wireless_2g_ssid').style.color = "#FFF";		
-		document.getElementById('wireless_2g_key').style.color = "#FFF";
-		document.getElementById('wireless_2g_ssid').disabled = true;
-		document.getElementById('wireless_2g_key').disabled = true;
-			
-		document.getElementById('wireless_5g_ssid').style.backgroundColor = "#888";		
-		document.getElementById('wireless_5g_key').style.backgroundColor = "#888";
-		document.getElementById('wireless_5g_ssid').style.color = "#FFF";		
-		document.getElementById('wireless_5g_key').style.color = "#FFF";
-		document.getElementById('wireless_5g_ssid').disabled = true;
-		document.getElementById('wireless_5g_key').disabled = true;
-		
-		$( "#wireless_2g_ssid" ).textinput( "option", "clearBtn", false );
-		$( "#wireless_2g_key" ).textinput( "option", "clearBtn", false );
-		$( "#wireless_5g_ssid" ).textinput( "option", "clearBtn", false );
-		$( "#wireless_5g_key" ).textinput( "option", "clearBtn", false );
 	}
 	else if(document.getElementById("sync_pap").checked){
 		$("#custom_pap").removeClass("ui-checkbox-on").addClass("ui-checkbox-off");
@@ -963,48 +943,6 @@ function use_pap_setting(obj){
 				}
 			}
 		}
-
-		document.getElementById('wireless_2g_ssid').style.backgroundColor = "#888";		
-		document.getElementById('wireless_2g_key').style.backgroundColor = "#888";
-		document.getElementById('wireless_2g_ssid').style.color = "#FFF";		
-		document.getElementById('wireless_2g_key').style.color = "#FFF";
-		document.getElementById('wireless_2g_ssid').disabled = true;
-		document.getElementById('wireless_2g_key').disabled = true;
-			
-		document.getElementById('wireless_5g_ssid').style.backgroundColor = "#888";		
-		document.getElementById('wireless_5g_key').style.backgroundColor = "#888";
-		document.getElementById('wireless_5g_ssid').style.color = "#FFF";		
-		document.getElementById('wireless_5g_key').style.color = "#FFF";
-		document.getElementById('wireless_5g_ssid').disabled = true;
-		document.getElementById('wireless_5g_key').disabled = true;
-		
-		$( "#wireless_2g_ssid" ).textinput( "option", "clearBtn", false );
-		$( "#wireless_2g_key" ).textinput( "option", "clearBtn", false );
-		$( "#wireless_5g_ssid" ).textinput( "option", "clearBtn", false );
-		$( "#wireless_5g_key" ).textinput( "option", "clearBtn", false );	
-	}
-	else{	
-		document.getElementById('wireless_2g_ssid').style.backgroundColor = "rgba(28,28,28,0.2)";		
-		document.getElementById('wireless_2g_key').style.backgroundColor = "rgba(28,28,28,0.2)";
-		document.getElementById('wireless_2g_ssid').style.color = "#5e666c";		
-		document.getElementById('wireless_2g_key').style.color = "#5e666c";
-		document.getElementById('wireless_2g_ssid').disabled = false;
-		document.getElementById('wireless_2g_key').disabled = false;	
-		document.getElementById('wireless_2g_ssid').value = "";
-		document.getElementById('wireless_2g_key').value = "";
-			
-		document.getElementById('wireless_5g_ssid').style.backgroundColor = "rgba(28,28,28,0.2)";		
-		document.getElementById('wireless_5g_key').style.backgroundColor = "rgba(28,28,28,0.2)";
-		document.getElementById('wireless_5g_ssid').style.color = "#5e666c";		
-		document.getElementById('wireless_5g_key').style.color = "#5e666c";
-		document.getElementById('wireless_5g_ssid').disabled = false;
-		document.getElementById('wireless_5g_key').disabled = false;
-		document.getElementById('wireless_5g_ssid').value = "";
-		document.getElementById('wireless_5g_key').value = "";
-		$( "#wireless_2g_ssid" ).textinput( "option", "clearBtn", true);
-		$( "#wireless_2g_key" ).textinput( "option", "clearBtn", true);
-		$( "#wireless_5g_ssid" ).textinput( "option", "clearBtn", true);
-		$( "#wireless_5g_key" ).textinput( "option", "clearBtn", true);
 	}
 }
 
@@ -1800,10 +1738,10 @@ function showLoading(){
 			<div style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;">Extend Wi-Fi network will follow the same settings of Wi-Fi network you just selected.</div>
 			<div id="sync_pap_container" style="margin-left:38px";>
 				<label id="copy_pap" style="background:transparent;color:#C5C5C5; border:0;font-size:1.875em;font-weight:normal;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;text-align:left;left:-0.3em">
-					<input id="sync_pap" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);">Copy AP SSID/Password
+					<input id="sync_pap" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);" >Copy AP SSID/Password
 				</label>
 				<label id="custom_pap" style="background:transparent;color:#C5C5C5; border:0;font-size:1.875em;font-weight:normal;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;text-align:left;left:-0.3em">
-					<input id="sync_pap_custom" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);" checked>Customize
+					<input id="sync_pap_custom" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);" checked><#QIS_apextended_usedefault#>
 				</label>	
 			</div>
 			<div id="wireless_2g_field" style="padding-bottom:35px;" class="wireless_field">
@@ -2033,8 +1971,8 @@ function showLoading(){
 <form method="post" name="form" action="start_apply.htm" target="hidden_frame">
 <!-- submit needed -->
 <!--input type="hidden" name="qis_form" value="1"-->
-<input type="hidden" name="current_page" value="QIS_finish.htm">
-<input type="hidden" name="next_page" value="">
+<input type="hidden" name="current_page" value="QIS_wizard.htm">
+<input type="hidden" name="next_page" value="QIS_wizard.htm">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="reboot">
 <input type="hidden" name="action_wait" value="3">

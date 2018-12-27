@@ -100,10 +100,12 @@ static int rctest_main(int argc, char *argv[])
 			if(on) start_watchdog();
 			else stop_watchdog();
 		}
+#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 		else if (strcmp(argv[1], "watchdog02") == 0) {
 			if(on) start_watchdog02();
 			else stop_watchdog02();
 		}
+#endif  /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
 		else if (strcmp(argv[1], "sw_devled") == 0) {
 			if(on) start_sw_devled();
 			else stop_sw_devled();
@@ -166,7 +168,7 @@ static int rctest_main(int argc, char *argv[])
 					f_write_string("/proc/sys/net/ipv4/conf/all/force_igmp_version", "2", 0, 0);
 #endif
 
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
 					if (!(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")))
 #endif
 					{
@@ -201,7 +203,7 @@ static int rctest_main(int argc, char *argv[])
 			if(argc>=4) set_gpio(atoi(argv[2]), atoi(argv[3]));
 		}
 		else if (strcmp(argv[1], "gpior") == 0) {
-			_dprintf("%d\n", get_gpio(atoi(argv[2])));
+			printf("%d\n", get_gpio(atoi(argv[2])));
 		}
 		else if (strcmp(argv[1], "gpiod") == 0) {
 			if(argc>=4) gpio_dir(atoi(argv[2]), atoi(argv[3]));
@@ -303,7 +305,9 @@ static const applets_t applets[] = {
 	{ "mtd-unlock",			mtd_unlock_erase_main		},
 #endif
 	{ "watchdog",			watchdog_main			},
+#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 	{ "watchdog02",			watchdog02_main			},
+#endif  /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
 	{ "sw_devled",			sw_devled_main			},
 #ifdef RTCONFIG_FANCTRL
 	{ "phy_tempsense",		phy_tempsense_main		},
@@ -731,7 +735,8 @@ int main(int argc, char **argv)
 	}
 #endif
 #endif
-#ifdef CONFIG_BCMWL5
+
+#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
 	else if(!strcmp(base, "set_factory_mode")) {
 		set_factory_mode();
 		return 0;
@@ -810,7 +815,7 @@ int main(int argc, char **argv)
 		return(led_control(atoi(argv[1]), atoi(argv[2])));
 	}
 #ifdef RTCONFIG_BCMARM
-#if defined(RTAC1200G)
+#if defined(RTAC1200G) || defined(RTAC1200GP)
 	/* mtd-erase2 [device] */
 	else if (!strcmp(base, "mtd-erase2")) {
 		if (argv[1] && ((!strcmp(argv[1], "boot")) ||

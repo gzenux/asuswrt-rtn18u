@@ -20,7 +20,7 @@
 </style>
 <script type="text/javascript" language="JavaScript" src="/state.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
-<script type="text/JavaScript" language="JavaScript" src="/jquery.js"></script>
+<script type="text/JavaScript" language="JavaScript" src="/js/jquery.js"></script>
 <script type="text/JavaScript" language="JavaScript" src="/validator.js"></script>
 <script type="text/javascript">
 var accounts = [<% get_all_accounts(); %>];
@@ -33,7 +33,7 @@ for(var i=0; i<accounts.length; i++){
 }
 
 function QKinternettype_load_body(){
-	if(parent.based_modelid == "RT-N11P" || parent.based_modelid == "PL-N12" || parent.based_modelid == "PL-AC56"){
+	if(parent.based_modelid == "RT-N11P" || parent.based_modelid == "RT-N300" || parent.based_modelid == "PL-N12" || parent.based_modelid == "PL-AC56"){
 			document.getElementById("point4").style.display = "none";
 	}
 	else{
@@ -90,8 +90,6 @@ function QKinternettype_load_body(){
 		var RetryCountDown_fail = 5;
 		update_dsl_info();
 	}
-
-	parent.restartTime = true;
 }
 
 function submitForm(){
@@ -167,6 +165,17 @@ function submitForm(){
 		changeiuiBackground(0);
 		return false;
 	}
+	
+	if(document.form.http_passwd.value.length > 0 && document.form.http_passwd.value.length < 5){
+		if(parent.ISMOBILE)
+			showtext(document.getElementById("_alert_msg2"),"* <#JS_short_password#>");
+		else
+			showtext(document.getElementById("alert_msg2"),"* <#JS_short_password#>");			
+		document.form.http_passwd.focus();
+		document.form.http_passwd.select();
+		changeiuiBackground(0);
+		return false;
+	}	
 
 	if(document.form.http_passwd.value != document.form.v_password2.value){
 		if(parent.ISMOBILE)
@@ -181,19 +190,41 @@ function submitForm(){
 
 	if(is_KR_sku){		/* MODELDEP by Territory Code */
 		if(!validator.string_KR(document.form.http_passwd)){
-				document.form.http_passwd.focus();
-				document.form.http_passwd.select();
-				changeiuiBackground(0);
-				return false;
+			document.form.http_passwd.focus();
+			document.form.http_passwd.select();
+			changeiuiBackground(0);
+			return false;
 		}
 	}
 	else{
 		if(!validator.string(document.form.http_passwd)){
+			document.form.http_passwd.focus();
+			document.form.http_passwd.select();
+			changeiuiBackground(0);
+			return false;
+		}
+	}
+	
+	if(document.form.http_passwd.value == '<% nvram_default_get("http_passwd"); %>'){	
+		if(parent.ISMOBILE)
+			showtext(document.getElementById("_alert_msg2"),"* <#QIS_adminpass_confirm0#>");
+		else
+			showtext(document.getElementById("alert_msg2"),"* <#QIS_adminpass_confirm0#>");
+		document.form.http_passwd.focus();
+		document.form.http_passwd.select();
+		changeiuiBackground(0);
+		return false;
+	}	
+	
+	//confirm common string combination	#JS_common_passwd#
+	var is_common_string = check_common_string(document.form.http_passwd.value, "httpd_password");
+	if(is_common_string){
+			if(confirm("<#JS_common_passwd#>")){
 				document.form.http_passwd.focus();
 				document.form.http_passwd.select();
 				changeiuiBackground(0);
-				return false;
-		}
+				return false;	
+			}	
 	}
 
 	if(dsl_support) {
@@ -209,19 +240,7 @@ function submitForm(){
 		document.form.v_password2.disabled = true;
 		document.form.submit();
 		return;
-	}
-
-	if(document.form.http_passwd.value == 'admin'){
-			//alert("<#QIS_adminpass_confirm0#>");
-			if(parent.ISMOBILE)
-				showtext(document.getElementById("_alert_msg2"),"* <#QIS_adminpass_confirm0#>");
-			else
-				showtext(document.getElementById("alert_msg2"),"* <#QIS_adminpass_confirm0#>");
-			document.form.http_passwd.focus();
-			document.form.http_passwd.select();
-			changeiuiBackground(0);
-			return false;
-	}
+	}	
 
 	parent.document.QKform.http_username.value = document.form.http_username.value;
 	parent.document.QKform.http_passwd.value = document.form.http_passwd.value;

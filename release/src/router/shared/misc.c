@@ -1542,6 +1542,7 @@ char *get_parsed_crt(const char *name, char *buf, size_t buf_len)
 		//save to file and then clear nvram value
 		fp = fopen(tmpBuf, "w");
 		if(fp) {
+			chmod(tmpBuf, S_IRUSR|S_IWUSR);
 			fprintf(fp, "%s", buf);
 			fclose(fp);
 			nvram_set(name, "");
@@ -1593,7 +1594,7 @@ int set_crt_parsed(const char *name, char *file_path)
 	}
 #else
 	FILE *fp=fopen(file_path, "r");
-	char buffer[3000] = {0};
+	char buffer[4000] = {0};
 	char buffer2[256] = {0};
 	char *p = buffer;
 

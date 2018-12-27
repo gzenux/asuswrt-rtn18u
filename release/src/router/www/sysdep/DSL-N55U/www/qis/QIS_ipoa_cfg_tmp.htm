@@ -10,7 +10,7 @@
 <script type="text/JavaScript" src="/general.js"></script>
 <script type="text/JavaScript" src="/help.js"></script>
 <script type="text/JavaScript" src="/validator.js"></script>
-<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <style>
 span{
 	border:0px solid #FFFFFF;
@@ -28,18 +28,78 @@ var w_Setting = "<% nvram_get("w_Setting"); %>";
 var vpi_val = "<% nvram_get("dsltmp_cfg_vpi"); %>";
 var vci_val = "<% nvram_get("dsltmp_cfg_vci"); %>";
 var encap_val = "<% nvram_get("dsltmp_cfg_encap"); %>";
-var vlanid_val = "<% nvram_get("dsltmp_cfg_vlanid"); %>";
+var vlanid_val = "<% nvram_get("dsltmp_cfg_vid"); %>";
 var ispname_str = "<% nvram_get("dsltmp_cfg_ispname"); %>";
 var country_str = "<% nvram_get("dsltmp_cfg_country"); %>";
 var transfer_mode = "<% nvram_get("dsltmp_transmode"); %>";
-
-var iptv_num_pvc_str = "";
+var iptv_atm_pvc_str = "";
+var iptv_ptm_pvc_str = "";
+var dsltmp_cfg_iptv_pvclist = decodeURIComponent('<%nvram_char_to_ascii("","dsltmp_cfg_iptv_pvclist");%>');
 
 var encap_str = ", LLC";
 if (encap_val == "1") encap_str = ", VC-Mux";
 
 var iptv_num_pvc_val = "<% nvram_get("dsltmp_cfg_iptv_num_pvc"); %>";
-if (iptv_num_pvc_val != "0" && iptv_num_pvc_val != "") iptv_num_pvc_str = iptv_num_pvc_val + " IPTV PVC(s).";
+
+//udpate iptv information
+if (iptv_num_pvc_val != "0" && iptv_num_pvc_val != "") {
+	var dsltmp_cfg_iptv_pvclist_row;
+	var dsltmp_cfg_iptv_pvclist_col;
+	var i, j;
+
+	iptv_atm_pvc_str = iptv_num_pvc_val + " IPTV PVC(s)";
+	iptv_ptm_pvc_str = iptv_num_pvc_val + " IPTV service(s)";
+
+	//<vpi>vci>proto>encap>vlanid
+	if(dsltmp_cfg_iptv_pvclist.charAt(0) == "<")	//rempve the 1st "<"
+		dsltmp_cfg_iptv_pvclist = dsltmp_cfg_iptv_pvclist.substr(1,dsltmp_cfg_iptv_pvclist.length);
+	dsltmp_cfg_iptv_pvclist_row = dsltmp_cfg_iptv_pvclist.split('<');
+
+	iptv_atm_pvc_str += ": ";
+	iptv_ptm_pvc_str += ": ";
+	for(i=0; i<dsltmp_cfg_iptv_pvclist_row.length; i++) {
+		if(i > 0) {
+			iptv_atm_pvc_str += " + ";
+			iptv_ptm_pvc_str += " + ";
+		}
+		dsltmp_cfg_iptv_pvclist_col = dsltmp_cfg_iptv_pvclist_row[i].split('>');
+		for(j=0; j<dsltmp_cfg_iptv_pvclist_col.length; j++){
+			switch(j) {
+				case 0:	//vpi
+					iptv_atm_pvc_str += "<span class='cfg_val'>" + dsltmp_cfg_iptv_pvclist_col[j] + "/";
+					break;
+				case 1:	//vci
+					iptv_atm_pvc_str += dsltmp_cfg_iptv_pvclist_col[j] + ",";
+					break;
+				case 2:	//proto
+					iptv_ptm_pvc_str += "<span class='cfg_val'>";
+					if(dsltmp_cfg_iptv_pvclist_col[j] == 3) {
+						iptv_atm_pvc_str += "Bridged, ";
+						iptv_ptm_pvc_str += "Bridged, ";
+					}
+					else {
+						iptv_atm_pvc_str += ", ";
+						iptv_ptm_pvc_str += "Bridged, ";
+					}
+					break;
+				case 3:	//encap
+					if(dsltmp_cfg_iptv_pvclist_col[j] == 1)
+						iptv_atm_pvc_str += "VC-Mux";
+					else
+						iptv_atm_pvc_str += "LLC";
+					break;
+				case 4:	//vlan id
+					if(dsltmp_cfg_iptv_pvclist_col[j] != "") {
+						iptv_atm_pvc_str += "VLAN ID " + dsltmp_cfg_iptv_pvclist_col[j];
+						iptv_ptm_pvc_str += "VLAN ID " + dsltmp_cfg_iptv_pvclist_col[j];
+					}
+					iptv_atm_pvc_str += "</span>";
+					iptv_ptm_pvc_str += "</span>";
+					break;
+			}
+		}
+	}
+}
 
 function QKfinish_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";
@@ -237,11 +297,12 @@ function gotoHome() {
   	<td class="test_css">	
 			<div id="atm_info" style="display:none;">
 			<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">ADSL WAN (ATM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">IPoA</span>, VPI/VCI: <span class="cfg_val"><% nvram_get("dsltmp_cfg_vpi"); %>/<% nvram_get("dsltmp_cfg_vci"); %><script>document.write(encap_str);</script></span><script>if(vlanid_val.length > 0){document.write(", <#WANVLANIDText#>: <span class=\"cfg_val\">" + vlanid_val + "</span>")}</script><br>
-				<b><script>document.write(iptv_num_pvc_str);</script></b>
+				<b><script>document.write(iptv_atm_pvc_str);</script></b>
 			</div>
   		
 			<div id="ptm_info" style="display:none;">
 				<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">VDSL WAN (PTM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val"><#BOP_ctype_title5#></span>, <#WANVLANIDText#>: <span class="cfg_val"><script>document.write(vlanid_val);</script></span><br>
+				<b><script>document.write(iptv_ptm_pvc_str);</script></b><br>
 			</div>
   		   <br><br>
     </td> 
