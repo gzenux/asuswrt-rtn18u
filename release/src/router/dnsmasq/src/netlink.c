@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2015 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -169,10 +169,10 @@ int iface_enumerate(int family, void *parm, int (*callback)())
   req.g.rtgen_family = family; 
 
   /* Don't block in recvfrom if send fails */
-  while((len = sendto(daemon->netlinkfd, (void *)&req, sizeof(req), 0, 
-		      (struct sockaddr *)&addr, sizeof(addr))) == -1 && retry_send());
-  
-  if (len == -1)
+  while(retry_send(sendto(daemon->netlinkfd, (void *)&req, sizeof(req), 0, 
+			  (struct sockaddr *)&addr, sizeof(addr))));
+
+  if (errno != 0)
     return 0;
     
   while (1)
@@ -208,7 +208,8 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 		    struct in_addr netmask, addr, broadcast;
 		    char *label = NULL;
 
-		    netmask.s_addr = htonl(0xffffffff << (32 - ifa->ifa_prefixlen));
+		    netmask.s_addr = htonl(~(in_addr_t)0 << (32 - ifa->ifa_prefixlen));
+
 		    addr.s_addr = 0;
 		    broadcast.s_addr = 0;
 		    

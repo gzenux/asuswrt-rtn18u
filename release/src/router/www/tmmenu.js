@@ -2054,7 +2054,3 @@ function isLocal()
 function console(s)
 {
 }
-
-
-
-

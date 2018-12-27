@@ -28,6 +28,23 @@
 	margin-top: 20px;
 	width:420px;
 	height:250px;
+	box-shadow: 3px 3px 10px #000;
+	display: none;
+}
+.contentM_usericon{
+	position:absolute;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	z-index:20000;
+	background-color:#2B373B;
+	display:block;
+	margin-left: 23%;
+	margin-top: 20px;
+	width:650px;
+	height:250px;
+	box-shadow: 3px 3px 10px #000;
+	display: none;
 }
 .contentM_qis_manual{
 	position:absolute;
@@ -90,8 +107,59 @@
 .dhcp{
 	background-image: url('/images/New_ui/networkmap/unlock.png');
 }
-.static{
+.manual{
 	background-image: url('/images/New_ui/networkmap/lock.png');
+}
+#tdUserIcon:hover{
+	cursor: pointer;
+	background-color:#2B373B !important;
+}
+#divUserIcon{
+	cursor: pointer;
+	background-image:none !important;
+	border: 2px dashed #A1A99F;
+	width: 50px !important;
+	height: 50px !important;
+	text-align: center;
+	line-height: 50px;
+	color: #A1A99F;
+}
+#divUserIcon:hover{
+	cursor: pointer;
+	background-image:none !important;
+	border: 2px dashed #37CB0F;
+	width: 50px !important;
+	height: 50px !important;
+	text-align: center;
+	line-height: 50px;
+	color: #37CB0F;
+}
+#uploadIcon{
+	cursor: pointer;
+	display: block !important;
+	opacity: 0 !important;
+	overflow: hidden !important;
+	width: 55px !important;
+	height:55px !important;
+	margin-top: -52px;
+	margin-left: -2px;
+}
+#canvasUserIcon{
+	cursor: pointer;
+	position: relative; 
+	top: 6px;
+	left: 18px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+}
+.imgClientIcon{
+	position: relative; 
+	width: 52px;
+	height: 52px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
 }
 </style>
 <script type="text/javascript" src="/md5.js"></script>
@@ -101,10 +169,15 @@
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
+<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
 var $j = jQuery.noConflict();	
+var userIconBase64 = "NoIcon";
+var userIconHideFlag = false;
+var custom_usericon_del = "";
+var editClientImageFlag = false;
 
 if(location.pathname == "/"){
 	if('<% nvram_get("x_Setting"); %>' == '0'){
@@ -126,11 +199,7 @@ var webs_state_info= '<% nvram_get("webs_state_info"); %>';
 
 
 // WAN
-<% wanlink(); %>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-var wanstate = -1;
+<% wanlink(); %>var wanstate = -1;
 var wansbstate = -1;
 var wanauxstate = -1;
 var Dev3G = '<% nvram_get("d3g"); %>';
@@ -152,7 +221,14 @@ var usbPorts = new Array();
 
 // Wireless
 var wlc_band = '<% nvram_get("wlc_band"); %>';
-window.onresize = cal_panel_block;	
+window.onresize = function() {
+	if(document.getElementById("edit_client_block").style.display == "block") {
+		cal_panel_block("edit_client_block");
+	}
+	if(document.getElementById("edit_usericon_block").style.display == "block") {
+		cal_panel_block("edit_usericon_block");
+	}
+} 
 
 function initial(){   
 	show_menu();
@@ -191,6 +267,9 @@ function initial(){
 		$("usbPathContainer_"+parseInt(i+1)).style.display = "";
 	}
 	
+	if(document.getElementById('usbPathContainer_2').style.display == "none")
+		document.getElementById('space_block').style.display = "";
+	
 	check_usb3();
 
  	require(['/require/modules/diskList.js'], function(diskList){
@@ -202,6 +281,24 @@ function initial(){
 
 			if(typeof usbPorts[usbDevicesList[i].usbPath-1].deviceType == "undefined" || usbPorts[usbDevicesList[i].usbPath-1].deviceType == "")
 				show_USBDevice(usbDevicesList[i]);
+		}
+
+		for(var usbIndex = 1; usbIndex <= usbPortMax; usbIndex += 1) {
+			var usb_mount_count = document.getElementById("deviceOption_" + usbIndex).length;
+			if( usb_mount_count >= 2) {
+				var divUsbMountCount = document.createElement("div");
+				divUsbMountCount.className = "usb_count_circle";
+				divUsbMountCount.innerHTML = usb_mount_count;
+				document.getElementById("deviceText_" + usbIndex).appendChild(divUsbMountCount);
+
+				$j(".usb_count_circle").mouseover(function(){
+					return overlib(this.innerHTML + " usb devices are plugged in <% nvram_get("productid"); %> through this port.");
+				});
+
+				$j(".usb_count_circle").mouseout(function(){
+					nd();
+				});
+			}
 		}
 	});
 
@@ -221,6 +318,9 @@ function initial(){
 				$('wlc_band_status').innerHTML = "5GHz";
 		}
 		$('NM_connect_title').innerHTML = "<#parent_AP_status#> :";
+
+		document.getElementById("ipaddr_field").disabled = true;
+		document.getElementById("ipLockIcon").style.display = "none";
 	}
 	else{
 		$("index_status").innerHTML = '<span style="word-break:break-all;">' + wanlink_ipaddr() + '</span>'
@@ -238,7 +338,26 @@ function initial(){
 	}
 	update_wan_status();
 
+	if(smart_connect_support){
+		if(localAP_support && sw_mode != 2)
+		show_smart_connect_status();
+	}
+
+
 	document.list_form.dhcp_staticlist.value = dhcp_staticlist_orig;
+}
+
+function show_smart_connect_status(){
+	document.getElementById("SmartConnectName").style.display = "";
+	document.getElementById("SmartConnectStatus").style.display = "";
+	var smart_connect_x = '<% nvram_get("smart_connect_x"); %>';
+
+        if(smart_connect_x == '0')
+                $("SmartConnectStatus").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_Wireless_Content.asp">Off</a>';
+        else if(smart_connect_x == '1')
+                $("SmartConnectStatus").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_Wireless_Content.asp">On</a>';
+
+	setTimeout("show_smart_connect_status();", 2000);
 }
 
 function show_ddns_status(){
@@ -585,12 +704,8 @@ function mouseEvent(obj, key){
 		icon = "iconInternet";
 	else if(obj.id.indexOf("Router") > 0)
 		icon = "iconRouter";
-	else if(obj.id.indexOf("Client") > 0){
-		if(wan_route_x == "IP_Bridged")
-			return;
-
+	else if(obj.id.indexOf("Client") > 0)
 		icon = "iconClient";
-	}
 	else if(obj.id.indexOf("USBdisk") > 0)
 		icon = "iconUSBdisk";
 	else if(obj.id.indexOf("Printer") > 0)
@@ -655,7 +770,7 @@ function check_status(_device){
 	/*if(navigator.appName.indexOf("Microsoft") >= 0)
 		document.getElementById('iconUSBdisk_'+diskOrder).style.marginLeft = "0px";
 	else*/
-		document.getElementById('iconUSBdisk_'+diskOrder).style.marginLeft = "35px";
+		document.getElementById('iconUSBdisk_'+diskOrder).style.marginLeft = "34px";
 
 	document.getElementById('ring_USBdisk_'+diskOrder).style.backgroundImage = "url(/images/New_ui/networkmap/white_04.gif)";	
 	document.getElementById('ring_USBdisk_'+diskOrder).style.display = "";
@@ -842,70 +957,45 @@ function change_wan_state(primary_status, secondary_status){
 }
 
 function validForm(){
-	showtext($("alert_msg1"), "");
-	if(document.getElementById('client_name').value.length == 0){
-			alert("<#File_Pop_content_alert_desc1#>");
-			document.getElementById('client_name').focus();
-			document.getElementById('client_name').select();
-			return false;
-	}
-	else{
-
-		var alert_str = validator.hostName(document.getElementById('client_name'));
-
-		if(alert_str != ""){
-			alert(alert_str);
-			document.getElementById('client_name').focus();
-			document.getElementById('client_name').select();
-			return false;
+	var validateIpRange = function(ip_obj){
+		var retFlag = 1
+		var ip_num = inet_network(ip_obj.value);
+		
+		if(ip_num <= 0){
+			alert(ip_obj.value+" <#JS_validip#>");
+			ip_obj.value = document.getElementById("ipaddr_field_orig").value;
+			ip_obj.focus();
+			retFlag = 0;
 		}
-		else
-			return true;
-	
-	}	
-}	
+		else if(ip_num <= getSubnet('<% nvram_get("lan_ipaddr"); %>', '<% nvram_get("lan_netmask"); %>', "head") ||
+			 ip_num >= getSubnet('<% nvram_get("lan_ipaddr"); %>', '<% nvram_get("lan_netmask"); %>', "end")){
+			alert(ip_obj.value+" <#JS_validip#>");
+			ip_obj.value = document.getElementById("ipaddr_field_orig").value;
+			ip_obj.focus();
+			retFlag = 0;
+		}
+		else if(!validator.validIPForm(document.getElementById("ipaddr_field"), 0)){
+			ip_obj.value = document.getElementById("ipaddr_field_orig").value;
+			ip_obj.focus();
+			retFlag = 0;
+		}
 
-var custom_name = decodeURIComponent('<% nvram_char_to_ascii("", "custom_clientlist"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<");
-function edit_confirm(){
-	var updateStaticList = function(){
-		var validateIpRange = function(ip_obj){
-			var retFlag = 1
-			var ip_num = inet_network(ip_obj.value);
-			
-			if(ip_num <= 0){
-				alert(ip_obj.value+" <#JS_validip#>");
-				ip_obj.value = document.getElementById("ipaddr_field_orig").value;
-				ip_obj.focus();
-				retFlag = 0;
-			}
-			else if(ip_num <= getSubnet('<% nvram_get("lan_ipaddr"); %>', '<% nvram_get("lan_netmask"); %>', "head") ||
-				 ip_num >= getSubnet('<% nvram_get("lan_ipaddr"); %>', '<% nvram_get("lan_netmask"); %>', "end")){
-				alert(ip_obj.value+" <#JS_validip#>");
-				ip_obj.value = document.getElementById("ipaddr_field_orig").value;
-				ip_obj.focus();
-				retFlag = 0;
-			}
-			else if(!validator.validIPForm(document.getElementById("ipaddr_field"), 0)){
-				ip_obj.value = document.getElementById("ipaddr_field_orig").value;
-				ip_obj.focus();
-				retFlag = 0;
-			}
-
-			document.list_form.dhcp_staticlist.value.split("<").forEach(function(element, index){
-				if(element.indexOf(document.getElementById("ipaddr_field").value) != -1){
-					if(element.indexOf(document.getElementById("macaddr_field").value) == -1){
-						alert("<#JS_duplicate#>");
-						ip_obj.value = document.getElementById("ipaddr_field_orig").value;
-						ip_obj.focus();
-						retFlag = 0;
-					}
+		document.list_form.dhcp_staticlist.value.split("<").forEach(function(element, index){
+			if(element.indexOf(document.getElementById("ipaddr_field").value) != -1){
+				if(element.indexOf(document.getElementById("macaddr_field").value) == -1){
+					alert("<#JS_duplicate#>");
+					ip_obj.value = document.getElementById("ipaddr_field_orig").value;
+					ip_obj.focus();
+					retFlag = 0;
 				}
-			});
-			
-			return retFlag;
-		}
+			}
+		});
+		
+		return retFlag;
+	}
 
-		if(validateIpRange(document.getElementById("ipaddr_field")) == true){									
+	if(validateIpRange(document.getElementById("ipaddr_field")) == true ){		
+		if(document.getElementById("ipLockIcon").className != "dhcp") {	// only ipLockIcon is lock then update dhcp_staticlist						
 			document.list_form.dhcp_staticlist.value.split("<").forEach(function(element, index){
 				if(element.indexOf(document.getElementById("macaddr_field").value) != -1){
 					var tmpArray = document.list_form.dhcp_staticlist.value.split("<")
@@ -915,29 +1005,35 @@ function edit_confirm(){
 					document.list_form.dhcp_staticlist.value = tmpArray.join("<");
 				}
 			});
-
-			return true;
 		}
-		else		
-			return false;
 	}
-
-	if(!updateStaticList())
+	else		
 		return false;
-	else{
-		if(document.list_form.dhcp_staticlist.value != dhcp_staticlist_orig){
-			document.list_form.action_script.value = "restart_net_and_phy";
-			document.list_form.action_wait.value = "30";
-			document.list_form.dhcp_staticlist.disabled = false;
-			dhcp_staticlist_orig = document.list_form.dhcp_staticlist.value;
 
-			setTimeout(function(){
-				document.networkmapdRefresh.submit();
-			}, 25000);
-		}
+	showtext($("alert_msg1"), "");
+
+	if(document.getElementById('client_name').value.length == 0){
+		alert("<#File_Pop_content_alert_desc1#>");
+		document.getElementById('client_name').focus();
+		document.getElementById('client_name').select();
+		return false;
 	}
+	else if(document.getElementById('client_name').value.indexOf(">") != -1 || document.getElementById('client_name').value.indexOf("<") != -1){
+		alert("<#JS_validstr2#> '<', '>'");
+		document.getElementById('client_name').focus();
+		document.getElementById('client_name').select();
+		document.getElementById('client_name').value = "";		
+		return false;
+	}	
 
+	return true;
+}	
+
+var custom_name = decodeURIComponent('<% nvram_char_to_ascii("", "custom_clientlist"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<");
+function edit_confirm(){
 	if(validForm()){
+		document.list_form.custom_clientlist.disabled = false;
+		// customize device name
 		var originalCustomListArray = new Array();
 		var onEditClient = new Array();
 
@@ -951,20 +1047,63 @@ function edit_confirm(){
 
 		for(var i=0; i<originalCustomListArray.length; i++){
 			if(originalCustomListArray[i].split('>')[1] == onEditClient[1]){
-					originalCustomListArray.splice(i, 1);
+				onEditClient[4] = originalCustomListArray[i].split('>')[4]; // set back callback for ROG device
+				onEditClient[5] = originalCustomListArray[i].split('>')[5]; // set back keeparp for ROG device
+				originalCustomListArray.splice(i, 1); // remove the selected client from original list
 			}
 		}
 
 		originalCustomListArray.push(onEditClient.join('>'));
 		custom_name = originalCustomListArray.join('<');
 		document.list_form.custom_clientlist.value = custom_name;
+
+		// static IP list
+		if(document.list_form.dhcp_staticlist.value == dhcp_staticlist_orig){
+			document.list_form.action_script.value = "saveNvram";
+			document.list_form.action_wait.value = "1";
+			document.list_form.flag.value = "background";
+			document.list_form.dhcp_staticlist.disabled = true;
+			document.list_form.dhcp_static_x.disabled = true;
+			dhcp_staticlist_orig = document.list_form.dhcp_staticlist.value;
+		}
+		else {
+			document.list_form.action_script.value = "restart_net_and_phy";
+			document.list_form.action_wait.value = "35";
+			document.list_form.flag.value = "";
+			document.list_form.dhcp_staticlist.disabled = false;
+			document.list_form.dhcp_static_x.value = 1;
+			document.list_form.dhcp_static_x.disabled = false;
+		}
+
+		// handle user image
+		document.list_form.custom_usericon.disabled = true;
+		if(usericon_support) {
+			document.list_form.custom_usericon.disabled = false;
+			var clientMac = document.getElementById("macaddr_field").value.replace(/\:/g, "");
+			if(userIconBase64 != "NoIcon") {
+				document.list_form.custom_usericon.value = clientMac + ">" + userIconBase64;
+			}
+			else {
+				document.list_form.custom_usericon.value = clientMac + ">noupload";
+			}
+		}
+
+		// submit list_form
 		document.list_form.submit();
 
-		$("loadingIcon").style.display = "";
-
-		setTimeout(function(){
-			document.getElementById("statusframe").contentWindow.refreshpage();
-		}, document.list_form.action_wait.value * 1000);
+		// display waiting effect
+		if(document.list_form.flag.value == "background"){
+			$("loadingIcon").style.display = "";
+			setTimeout(function(){
+				document.getElementById("statusframe").contentWindow.refreshpage();
+			}, document.list_form.action_wait.value * 1000);
+		}
+		else{
+			hideEditBlock(); 
+			setTimeout(function(){
+				refreshpage();
+			}, document.list_form.action_wait.value * 1000);
+		}
 	}		
 }
 
@@ -973,6 +1112,10 @@ function edit_cancel(){
 	$("hiddenMask").style.visibility = "hidden";
 	$("dr_sweet_advise").style.display = "";
 	show_custom_image("cancel");
+
+	// disable event listener
+	$j(document).mouseup(function(e){});
+	$j("#statusframe").contents().mouseup(function(e){});
 }
 
 function edit_delete(){
@@ -1015,8 +1158,9 @@ function edit_delete(){
 }
 
 function show_custom_image(flag){
+	editClientImageFlag = true;
 	if(flag == "cancel"){	
-		$('edit_client_block').style.height = "250px";
+		$('edit_client_block').style.height = "220px";
 		$j('#custom_image').fadeOut(100);	
 	}	
 	else if($('custom_image').style.display == "none"){
@@ -1024,47 +1168,220 @@ function show_custom_image(flag){
 		$j('#custom_image').fadeIn(200);		
 	}
 	else{
-		$('edit_client_block').style.height = "250px";
+		$('edit_client_block').style.height = "220px";
 		$j('#custom_image').fadeOut(100);	
 	}	
 }
 
 function hide_custom_image(){
-	$('edit_client_block').style.height = "250px";
+	$('edit_client_block').style.height = "220px";
 	$j('#custom_image').fadeOut(100);	
 }
 
 function select_image(type){
 	var sequence = type.substring(4,type.length);
+	document.getElementById("client_image").style.display = "none";
+	document.getElementById("canvasUserIcon").style.display = "none";
 	$j('#custom_image').fadeOut(100);
-	$('edit_client_block').style.height = "250px";
+	$('edit_client_block').style.height = "220px";
 	document.getElementById('client_image').className = type;
 
-	if(type == "type0")
-		document.getElementById('client_image').style.backgroundSize = "74px";
-	else
-		document.getElementById('client_image').style.backgroundSize = "130px";		
+	var userImageFlag = false;
+	if(!editClientImageFlag) {
+		if(usericon_support) {
+			var clientMac = document.getElementById('macaddr_field').value.replace(/\:/g, "");
+			userIconBase64 = getUploadIcon(clientMac);
+			if(userIconBase64 != "NoIcon") {
+				document.getElementById("client_image").style.display = "none";
+				document.getElementById("canvasUserIcon").style.display = "";
+				var img = document.createElement("img");
+				img.src = userIconBase64;
+				var canvas = document.getElementById("canvasUserIcon");
+				var ctx = canvas.getContext("2d");
+				ctx.clearRect(0,0,69,69);
+				ctx.drawImage(img, 0, 0, 69, 69);
+				userImageFlag = true;
+			}
+		}
+	}
+
+	if(!userImageFlag) {
+		userIconBase64 = "NoIcon";
+		document.getElementById("client_image").style.display = "";
+		if(type == "type0" || type == "type6")
+			document.getElementById('client_image').style.backgroundSize = "131px";
+		else
+			document.getElementById('client_image').style.backgroundSize = "130px";
+	}
 }
 
 function hideEditBlock(){
 	document.getElementById('edit_client_block').style.display = "none";
+	document.getElementById('edit_usericon_block').style.display = "none";
 	document.getElementById('loadingIcon').style.display = 'none';
+	document.getElementById('loadingUserIcon').style.display = 'none';
 	document.getElementById('deleteBtn').style.display ='none';
 }
 
-function popupEditBlock(clientObj){
-	document.getElementById('client_name').value = clientObj.name;
-	document.getElementById('ipaddr_field_orig').value = clientObj.ip;
-	document.getElementById('ipaddr_field').value = clientObj.ip;
-	document.getElementById('macaddr_field').value = clientObj.mac;
-	select_image("type" + parseInt(clientObj.type));
-	document.getElementById("ipLockIcon").className = clientObj.isStaticIP ? "static" : "dhcp";
-
-	cal_panel_block();
-	$j("#edit_client_block").fadeIn(300);
+//check user icon num is over 100 or not.
+function userIconNumLimit(mac) {
+	var flag = true;
+	var uploadIconMacList = getUploadIconList().replace(/\.log/g, "");
+	var selectMac = mac.replace(/\:/g, "");
+	var existFlag = (uploadIconMacList.search(selectMac) == -1) ? false : true;
+	//check mac exist or not
+	if(!existFlag) {
+		var userIconCount = getUploadIconCount();
+		if(userIconCount >= 100) {	//mac not exist, need check use icnon number whether over 100 or not.
+			flag = false;
+		}
+	}
+	return flag;
 }
 
-function cal_panel_block(){
+function popupEditBlock(clientObj){
+	document.getElementById("divUserIcon").style.display = "none";
+	//1.check rc_support
+	if(usericon_support) {
+		//2.check browswer support File Reader and Canvas or not.
+		if(isSupportFileReader() && isSupportCanvas()) {
+			document.getElementById("divUserIcon").style.display = "";
+			//Setting drop event
+			var holder = document.getElementById("divDropClientImage");
+			holder.ondragover = function () { return false; };
+			holder.ondragend = function () { return false; };
+			holder.ondrop = function (e) {
+				e.preventDefault();
+				var userIconLimitFlag = userIconNumLimit(document.getElementById("macaddr_field").value);
+				if(userIconLimitFlag) {	//not over 100	
+					var file = e.dataTransfer.files[0];
+					//check image
+					if(file.type.search("image") != -1) {
+						document.getElementById("client_image").style.display = "none";
+						document.getElementById("canvasUserIcon").style.display = "";
+						var reader = new FileReader();
+						reader.onload = function (event) {
+							var img = document.createElement("img");
+							img.src = event.target.result;
+							var canvas = document.getElementById("canvasUserIcon");
+							var ctx = canvas.getContext("2d");
+							ctx.clearRect(0,0,69,69);
+							setTimeout(function() {
+								ctx.drawImage(img, 0, 0, 69, 69);
+								var dataURL = canvas.toDataURL("image/jpeg");
+								userIconBase64 = dataURL;
+							}, 100); //for firefox FPS(Frames per Second) issue need delay
+						};
+						reader.readAsDataURL(file);
+						return false;
+					}
+					else {
+						alert("<#Setting_upload_hint#>");
+						return false;
+					}
+				}
+				else {	//over 100 then let usee select delete icon or nothing
+					showClientIconList();
+				}
+			};
+		} 
+	}
+
+	editClientImageFlag = false;
+
+	if(document.getElementById("edit_client_block").style.display != "none" && document.getElementById('client_name').value == clientObj.name){
+		$j("#edit_client_block").fadeOut(300);
+	}
+	else{
+		var convRSSI = function(val) {
+			if(val == "") return "wired";
+
+			val = parseInt(val);
+			if(val >= -50) return 4;
+			else if(val >= -80)	return Math.ceil((24 + ((val + 80) * 26)/10)/25);
+			else if(val >= -90)	return Math.ceil((((val + 90) * 26)/10)/25);
+			else return 1;
+		};
+
+		var rssi_t = 0;
+		var connectModeTip = "";
+		var clientIconHtml = "";
+		rssi_t = convRSSI(clientObj.rssi);
+		if(isNaN(rssi_t)) {
+			connectModeTip = "<#tm_wired#>";
+		}
+		else {
+			switch(rssi_t) {
+				case 1 :
+					connectModeTip = '<#PASS_score1#>';
+					break;
+				case 2 :
+					connectModeTip = '<#PASS_score2#>';
+					break;
+				case 3 :
+					connectModeTip = '<#PASS_score3#>';
+					break;
+				case 4 :
+					connectModeTip = '<#PASS_score4#>';
+					break;
+			}
+		}
+
+		if(sw_mode != 4){
+			clientIconHtml += '<div class="radioIcon radio_' + rssi_t +'" title="' + connectModeTip + '"></div>';
+			if(clientObj.isWL != 0) {
+				var bandClass = "band";
+				if(navigator.userAgent.toUpperCase().match(/CHROME\/([\d.]+)/)){
+					bandClass = "band_chrome";
+				}
+				var bandName = [["Wired", "2.4G", "5G"], ["Wired", "2.4G", "5G-1", "5G-2"]];
+				var bandNameIndex = wl_info.band5g_2_support ? 1 : 0;
+				clientIconHtml += '<div class="' + bandClass + '">' + bandName[bandNameIndex][clientObj.isWL] + '</div>';
+			}
+			document.getElementById('client_icon').innerHTML = clientIconHtml;
+			document.getElementById('client_icon').title = connectModeTip;
+		}
+
+		document.getElementById('client_name').value = clientObj.name;
+		document.getElementById('ipaddr_field_orig').value = clientObj.ip;
+		document.getElementById('ipaddr_field').value = clientObj.ip;
+		document.getElementById('macaddr_field').value = clientObj.mac;
+		select_image("type" + parseInt(clientObj.type));
+		if(dhcp_staticlist_orig.search(clientObj.mac + ">" + clientObj.ip) != -1) { //check mac>ip is combination the the ipLockIcon is manual
+			document.getElementById("ipLockIcon").className = "manual";
+		}
+		else {
+			document.getElementById("ipLockIcon").className = "dhcp";
+		}
+
+		// hide block btn
+		// document.getElementById("blockBtn").style.display = (clientObj.isWL && document.maclist_form.wl0_macmode.value != "allow") ? "" : "none";
+		cal_panel_block("edit_client_block");
+		$j("#edit_client_block").fadeIn(300);
+	}
+
+	// hide client panel 
+	$j(document).mouseup(function(e){
+		if(!$j("#edit_client_block").is(e.target) && $j("#edit_client_block").has(e.target).length === 0 && !userIconHideFlag) {
+			setTimeout( function() {userIconHideFlag = false;}, 1000);
+			edit_cancel();
+		}
+		else {
+			setTimeout( function() {userIconHideFlag = false;}, 1000);
+		}
+	});
+	$j("#statusframe").contents().mouseup(function(e){
+		if(!$j("#edit_client_block").is(e.target) && $j("#edit_client_block").has(e.target).length === 0 && !userIconHideFlag) {
+			setTimeout( function() {userIconHideFlag = false;}, 1000);
+			edit_cancel();
+		}
+		else {
+			setTimeout( function() {userIconHideFlag = false;}, 1000);
+		}
+	});
+}
+
+function cal_panel_block(obj){
 	var blockmarginLeft;
 	if (window.innerWidth)
 		winWidth = window.innerWidth;
@@ -1084,11 +1401,11 @@ function cal_panel_block(){
 		blockmarginLeft= (winWidth)*0.23+document.body.scrollLeft;	
 	}
 
-	$("edit_client_block").style.marginLeft = blockmarginLeft + "px";
+	document.getElementById(obj).style.marginLeft = blockmarginLeft + "px";
 }
 
 function check_usb3(){
-	if(based_modelid == "DSL-AC68U" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC69U" || based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC56S" || based_modelid == "RT-AC56U" || based_modelid == "RT-AC55U" || based_modelid == "RT-N18U" || based_modelid == "TM-AC1900"){
+	if(based_modelid == "DSL-AC68U" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC69U" || based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC56S" || based_modelid == "RT-AC56U" || based_modelid == "RT-AC55U" || based_modelid == "RT-AC55UHP" || based_modelid == "RT-N18U"){
 		document.getElementById('usb1_image').src = "images/New_ui/networkmap/USB3.png";
 	}
 	else if(based_modelid == "RT-N65U"){
@@ -1116,6 +1433,142 @@ function delFromList(macAddr){
 		}
 	})
 }
+
+function showClientIconList() {
+	var confirmFlag = true;
+	confirmFlag = confirm("The client icon over upload limting, please remove at least one client icon then try to upload again.");
+	if(confirmFlag) {
+		edit_cancel();
+		$j("#edit_usericon_block").fadeIn(10);
+		cal_panel_block("edit_usericon_block");
+		showClientIcon();
+		document.getElementById("uploadIcon").value = "";
+		return false;
+	}
+	else {
+		document.getElementById("uploadIcon").value = "";
+		return false;
+	}
+}
+
+function showClientIcon() {
+	genClientList();
+	var uploadIconMacList = getUploadIconList().replace(/\.log/g, "");
+	var custom_usericon_row = uploadIconMacList.split('>');
+	var code = "";
+	var clientIcon = "";
+	var custom_usericon_length = custom_usericon_row.length;
+	code +='<table width="95%" cellspacing="0" cellpadding="4" align="center" class="list_table" id="usericon_table">';
+	if(custom_usericon_length == 1) {
+		code +='<tr><td style="color:#FFCC00;" colspan="4"><#IPConnection_VSList_Norule#></td></tr>';
+		document.getElementById('edit_usericon_block').style.height = "145px";
+	}
+	else {
+		for(var i = 0; i < custom_usericon_length; i += 1) {
+			if(custom_usericon_row[i] != "") {
+				var formatMac = custom_usericon_row[i].slice(0,2) + ":" + custom_usericon_row[i].slice(2,4) + ":" + custom_usericon_row[i].slice(4,6) + ":" + 
+								custom_usericon_row[i].slice(6,8) + ":" + custom_usericon_row[i].slice(8,10)+ ":" + custom_usericon_row[i].slice(10,12);
+				code +='<tr id="row' + i + '">';
+				var clientObj = clientList[formatMac];
+				var clientName = "";
+				if(clientObj != undefined) {
+					clientName = clientObj.name;
+				}
+				code +='<td width="45%">'+ clientName +'</td>';
+				code +='<td width="30%">'+ formatMac +'</td>';
+				clientIcon = getUploadIcon(custom_usericon_row[i]);
+				code +='<td width="15%"><img id="imgClientIcon_'+ i +'" class="imgClientIcon" src="' + clientIcon + '"</td>';
+				code +='<td width="10%"><input class="remove_btn" onclick="delClientIcon(this);" value=""/></td></tr>';
+			}
+		}
+		document.getElementById('edit_usericon_block').style.height = (61 * custom_usericon_length + 50) + "px";
+	}
+	code +='</table>';
+	document.getElementById("usericon_block").innerHTML = code;
+};
+
+function delClientIcon(rowdata) {
+	var delIdx = rowdata.parentNode.parentNode.rowIndex;
+	var delMac = rowdata.parentNode.parentNode.childNodes[1].innerHTML;
+	document.getElementById("usericon_table").deleteRow(delIdx);
+	custom_usericon_del += delMac + ">";
+	var trCount = $j( "#usericon_table tr" ).length;
+	document.getElementById('edit_usericon_block').style.height = (61 * (trCount + 1) + 50) + "px";
+	if(trCount == 0) {
+		var code = "";
+		code +='<table width="95%" cellspacing="0" cellpadding="4" align="center" class="list_table" id="usericon_table">';
+		code +='<tr><td style="color:#FFCC00;" colspan="4"><#IPConnection_VSList_Norule#></td></tr>';
+		code +='</table>';
+		document.getElementById('edit_usericon_block').style.height = "145px";
+		document.getElementById("usericon_block").innerHTML = code;
+	}
+}
+
+function btUserIconEdit() {
+	document.list_form.custom_clientlist.disabled = true;
+	document.list_form.dhcp_staticlist.disabled = true;
+	document.list_form.custom_usericon.disabled = true;
+	document.list_form.custom_usericon_del.disabled = false;
+	document.list_form.custom_usericon_del.value = custom_usericon_del.replace(/\:/g, "");
+
+	// submit list_form
+	document.list_form.submit();
+	document.getElementById("loadingUserIcon").style.display = "";
+	setTimeout(function(){
+		document.getElementById("statusframe").contentWindow.refreshpage();
+		custom_usericon_del = "";
+		document.list_form.custom_usericon_del.disabled = true;
+	}, document.list_form.action_wait.value * 1000);
+}
+function btUserIconCancel() {
+	custom_usericon_del = "";
+	$j("#edit_usericon_block").fadeOut(100);
+}
+
+function previewImage(imageObj) {
+	var userIconLimitFlag = userIconNumLimit(document.getElementById("macaddr_field").value);
+	
+	if(userIconLimitFlag) {	//not over 100
+		var checkImageExtension = function (imageFileObject) {
+		var  picExtension= /\.(jpg|jpeg|gif|png|bmp|ico)$/i;  //analy extension
+			if (picExtension.test(imageFileObject)) 
+				return true;
+			else
+				return false;
+		};
+
+		//1.check image extension
+		if (!checkImageExtension(imageObj.value)) {
+			alert("<#Setting_upload_hint#>");
+			imageObj.focus();
+		}
+		else {
+			//2.Re-drow image
+			document.getElementById("client_image").style.display = "none";
+			document.getElementById("canvasUserIcon").style.display = "";
+			var fileReader = new FileReader(); 
+			fileReader.onload = function (fileReader) {
+				var img = document.createElement("img");
+				img.src = fileReader.target.result;
+				var canvas = document.getElementById("canvasUserIcon");
+				var ctx = canvas.getContext("2d");
+				ctx.clearRect(0,0,69,69);
+				setTimeout(function() {
+					ctx.drawImage(img, 0, 0, 69, 69);
+					var dataURL = canvas.toDataURL("image/jpeg");
+					userIconBase64 = dataURL;
+				}, 100); //for firefox FPS(Frames per Second) issue need delay
+			}
+			fileReader.readAsDataURL(imageObj.files[0]);
+			$j('#custom_image').fadeOut(100);
+			userIconHideFlag = true;
+			document.getElementById('edit_client_block').style.height = "220px";
+		}
+	}
+	else {	//over 100 then let usee select delete icon or nothing
+		showClientIconList();
+	}
+}
 </script>
 </head>
 
@@ -1134,6 +1587,7 @@ function delFromList(macAddr){
 		<td>
 			<div class="drword" id="drword"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
 				<br>
+				<div id="disconnect_hint" style="display:none;"><#Main_alert_proceeding_desc2#></div>
 				<br>
 		    </div>
 			<div id="wireless_client_detect" style="margin-left:10px;position:absolute;display:none">
@@ -1141,7 +1595,7 @@ function delFromList(macAddr){
 				<div style="margin:-45px 0 0 75px;"><#QKSet_Internet_Setup_fail_method1#></div>
 			</div> 
 			<div class="drImg"><img src="images/alertImg.png"></div>
-			<div style="height:70px; "></div>
+			<div style="height:100px; "></div>
 		</td>
 		</tr>
 	</table>
@@ -1167,7 +1621,7 @@ function delFromList(macAddr){
 <input type="hidden" name="dual_wan_flag" value="">
 </form>
 <!-- Start for Editing client list-->
-<form method="post" name="list_form" id="list_form" action="/start_apply.htm" target="hidden_frame">
+<form method="post" name="list_form" id="list_form" action="/start_apply2.htm" target="hidden_frame">
 	<input type="hidden" name="current_page" value="index.asp">
 	<input type="hidden" name="next_page" value="index.asp">
 	<input type="hidden" name="modified" value="0">
@@ -1177,6 +1631,25 @@ function delFromList(macAddr){
 	<input type="hidden" name="action_wait" value="1">
 	<input type="hidden" name="custom_clientlist" value="">
 	<input type="hidden" name="dhcp_staticlist" value="" disabled>
+	<input type="hidden" name="dhcp_static_x" value='<% nvram_get("dhcp_static_x"); %>' disabled>
+	<input type="hidden" name="custom_usericon" value="">
+	<input type="hidden" name="custom_usericon_del" value="" disabled>
+</form>
+
+<form method="post" name="maclist_form" id="maclist_form" action="/start_apply2.htm" target="hidden_frame">
+	<input type="hidden" name="current_page" value="index.asp">
+	<input type="hidden" name="next_page" value="index.asp">
+	<input type="hidden" name="modified" value="0">
+	<input type="hidden" name="flag" value="">
+	<input type="hidden" name="action_mode" value="apply_new">
+	<input type="hidden" name="action_script" value="restart_wireless">
+	<input type="hidden" name="action_wait" value="5">
+	<input type="hidden" name="wl0_maclist_x" value="<% nvram_get("wl0_maclist_x"); %>">
+	<input type="hidden" name="wl1_maclist_x" value="<% nvram_get("wl1_maclist_x"); %>">
+	<input type="hidden" name="wl2_maclist_x" value="<% nvram_get("wl2_maclist_x"); %>">
+	<input type="hidden" name="wl0_macmode" value="deny">
+	<input type="hidden" name="wl1_macmode" value="deny">
+	<input type="hidden" name="wl2_macmode" value="deny">
 </form>
 <!-- update Client List -->
 <form method="post" name="networkmapdRefresh" action="/apply.cgi" target="hidden_frame">
@@ -1188,26 +1661,51 @@ function delFromList(macAddr){
 	<input type="hidden" name="client_info_tmp" value="">	
 </form>
 
-<div id="edit_client_block" class="contentM_qis" style="box-shadow: 3px 3px 10px #000;display:none;">
-	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0" style="padding:5px 10px 0px 10px;">
+<div id="edit_usericon_block" class="contentM_usericon">
+	<table width="95%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table" style="margin-top:8px;">
+		<thead>
+			<tr>
+				<td colspan="4">Client upload icon&nbsp;(<#List_limit#>&nbsp;100)</td>
+			</tr>
+		</thead>
+		<tr>
+			<th width="45%">Client Name</th>
+			<th width="30%">MAC</th>
+			<th width="15%">Upload icon</th>
+			<th width="10%"><#CTL_del#></th>
+		</tr>
+	</table>
+	<div id="usericon_block"></div>
+	<div style="margin-top:5px;padding-bottom:10px;width:100%;text-align:center;">
+		<input class="button_gen" type="button" onclick="btUserIconCancel();" value="<#CTL_Cancel#>">
+		<input class="button_gen" type="button" onclick="btUserIconEdit();" value="<#CTL_ok#>">
+		<img id="loadingUserIcon" style="margin-left:5px;display:none;" src="/images/InternetScan.gif">
+	</div>	
+</div>
+<div id="edit_client_block" class="contentM_qis">
+	<div id="client_icon" style="width:30px;margin-top:5px;margin-bottom:-35px;margin-left:375px;"></div>
+	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0" style="margin-top: -30px;width: 99%;padding:5px 10px 0px 10px;">
 		<tr>
 			<td colspan="2">
-				<div style="margin:5px 0px -5px 5px;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:bolder">Client profile</div>
+				<div style="margin:5px 0px -5px 5px;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:bolder">
+					Client profile
+				</div>
 			</td>
 		</tr>
 		<tr>
 			<td colspan="2">
-				<img style="width:90%;height:2px" src="/images/New_ui/networkmap/linetwo2.png">
+				<img style="width:100%;height:2px" src="/images/New_ui/networkmap/linetwo2.png">
 			</td>
 		</tr>
 		<tr>
 			<td>
-				<div style="background-color:#172327;border-radius:10px;width:105px;height:87px;padding-top:7px;">
+				<div style="background-color:#172327;border-radius:10px;width:105px;height:87px;padding-top:7px;" id="divDropClientImage">
 					<div id="client_image" onclick="show_custom_image();"></div>
+					<canvas id="canvasUserIcon" width="69px" height="69px" onclick="show_custom_image();"></canvas>
 				</div>
 			</td>
 			<td>
-				<div style="width:320px">
+				<div>
 					<table width="99%;"align="center" cellpadding="4" cellspacing="0">
 						<tr>
 							<td>
@@ -1239,17 +1737,18 @@ function delFromList(macAddr){
 										$j(this).addClass("disabled");
 									}
 									document.getElementById("ipaddr_field").onkeypress = function(){
-										document.getElementById("ipLockIcon").className = "static";
+										document.getElementById("ipLockIcon").className = "manual";
 										delFromList(document.getElementById("macaddr_field").value);
 										addToList(document.getElementById("macaddr_field").value);
 									}
 								</script>
 
-								<div style="margin-top: 2px;margin-left: 215px;"><div id="ipLockIcon" class="dhcp"></div></div>
+								<div style="margin-top: 2px;margin-left: 215px;"><div id="ipLockIcon" class="dhcp" title="Binding IP and MAC Address"></div></div>
 								<script>
 									document.getElementById("ipLockIcon").onclick = function(){
 										if(this.className == "dhcp"){
-											this.className = "static";
+											this.className = "manual";
+											delFromList(document.getElementById("macaddr_field").value);
 											addToList(document.getElementById("macaddr_field").value);
 										}
 										else{
@@ -1268,7 +1767,7 @@ function delFromList(macAddr){
 
 		<tr>
 			<td colspan="2">
-				<div id="custom_image" style="width:390px;display:none;">
+				<div id="custom_image" style="display:none;">
 					<table width="99%;" border="1" align="center" cellpadding="4" cellspacing="0">
 						<tr>
 							<td>
@@ -1284,16 +1783,13 @@ function delFromList(macAddr){
 								<div class="type5" onclick="select_image(this.className);"></div>
 							</td>
 							<td>
-								<div class="type6" onclick="select_image(this.className);"></div>
-							</td>
-							<td>
 								<div class="type7" onclick="select_image(this.className);"></div>
 							</td>
-						</tr>
-						<tr>
 							<td>
 								<div class="type8" onclick="select_image(this.className);"></div>
 							</td>
+						</tr>
+						<tr>
 							<td>
 								<div class="type9" onclick="select_image(this.className);"></div>
 							</td>
@@ -1309,11 +1805,11 @@ function delFromList(macAddr){
 							<td>
 								<div class="type13" onclick="select_image(this.className);"></div>
 							</td>
-						</tr>
-						<tr>
 							<td>
 								<div class="type14" onclick="select_image(this.className);"></div>
 							</td>
+						</tr>
+						<tr>
 							<td>
 								<div class="type15" onclick="select_image(this.className);"></div>
 							</td>
@@ -1326,6 +1822,11 @@ function delFromList(macAddr){
 							<td>
 								<div class="type18" onclick="select_image(this.className);"></div>
 							</td>
+							<td id="tdUserIcon">
+								<div id="divUserIcon">Upload
+									<input type="file" name="uploadIcon" id="uploadIcon" onchange="previewImage(this);" />
+								</div>
+							</td>
 							<td>
 							</td>
 						</tr>	
@@ -1336,7 +1837,34 @@ function delFromList(macAddr){
 	</table>		
 	<div style="margin-top:5px;padding-bottom:10px;width:100%;text-align:center;">
 		<input class="button_gen" type="button" onclick="edit_delete();" id="deleteBtn" value="<#CTL_del#>" style="display:none;">
-		<input class="button_gen" type="button" onclick="edit_cancel();" id="cancelBtn" value="<#CTL_Cancel#>">
+		<input class="button_gen" type="button" id="blockBtn" value="<#Block#>" title="<#block_client#>" style="display:none;">
+		<script>
+			document.maclist_form.wl0_maclist_x.value = (function(){
+				var wl0_maclist_x_array = '<% nvram_get("wl0_maclist_x"); %>'.split("&#60");
+
+				if(wl_info.band5g_support){
+					'<% nvram_get("wl1_maclist_x"); %>'.split("&#60").forEach(function(element, index){
+						if(wl0_maclist_x_array.indexOf(element) == -1) wl0_maclist_x_array.push(element);
+					});
+				}
+
+				if(wl_info.band5g_2_support){
+					'<% nvram_get("wl2_maclist_x"); %>'.split("&#60").forEach(function(element, index){
+						if(wl0_maclist_x_array.indexOf(element) == -1) wl0_maclist_x_array.push(element);
+					});
+				}
+
+				return wl0_maclist_x_array.join("<");
+			})();
+
+			document.getElementById("blockBtn").onclick = function(){
+				document.maclist_form.wl0_maclist_x.value = document.maclist_form.wl0_maclist_x.value + "<" + document.getElementById("macaddr_field").value;
+				document.maclist_form.wl1_maclist_x.value = document.maclist_form.wl0_maclist_x.value;
+				document.maclist_form.wl2_maclist_x.value = document.maclist_form.wl0_maclist_x.value;
+				document.maclist_form.submit();
+				hideEditBlock();
+			}
+		</script>
 		<input class="button_gen" type="button" onclick="edit_confirm();" value="<#CTL_ok#>">
 		<img id="loadingIcon" style="margin-left:5px;display:none;" src="/images/InternetScan.gif">
 	</div>	
@@ -1379,7 +1907,7 @@ function delFromList(macAddr){
 					<td id="single_wan_icon" height="115" align="right" class="NM_radius_left" valign="middle" bgcolor="#444f53" onclick="showstausframe('Internet');" >
 						<a href="/device-map/internet.asp" target="statusframe"><div id="iconInternet" onclick="clickEvent(this);"></div></a>
 					</td>
-					<td id="single_wan_status" colspan="2" valign="middle" bgcolor="#444f53" class="NM_radius_right" onclick="" style="padding:5px;cursor:auto;">
+					<td id="single_wan_status" colspan="2" valign="middle" bgcolor="#444f53" class="NM_radius_right" onclick="" style="padding:5px;cursor:auto;width:180px;">
 						<div>
 							<span id="NM_connect_title" style="font-size:12px;font-family: Verdana, Arial, Helvetica, sans-serif;"><#statusTitle_Internet#>:</span>
 							<br>
@@ -1431,6 +1959,13 @@ function delFromList(macAddr){
 						<a href="device-map/router.asp" target="statusframe"><div id="iconRouter" onclick="clickEvent(this);"></div></a>
 					</td>
 					<td colspan="2" valign="middle" bgcolor="#444f53" class="NM_radius_right" onclick="showstausframe('Router');">
+						<div>
+						<span id="SmartConnectName" style="font-size:14px;font-family: Verdana, Arial, Helvetica, sans-serif; display:none">Smart Connect Status: </span>
+						</div>
+						<div>
+						<strong id="SmartConnectStatus" class="index_status" style="font-size:14px; display:none"><a style="color:#FFF;text-decoration:underline;" href="/
+						Advanced_Wireless_Content.asp">On</a></strong>
+						</div>
 						<span style="font-size:14px;font-family: Verdana, Arial, Helvetica, sans-serif;"><#Security_Level#>: </span>
 						<br/>  
 						<strong id="wl_securitylevel_span" class="index_status"></strong>
@@ -1484,6 +2019,9 @@ function delFromList(macAddr){
 							<div id="deviceDec_2"></div>
 						</div>
 					</td>
+				</tr>
+				<tr>
+					<td id="space_block" colspan="3" align="center" height="150px" style="display:none;"></td>
 				</tr>
 			</table>
 		</div>
@@ -1539,9 +2077,12 @@ function delFromList(macAddr){
 	}
 
 	var manualUpdate = false;
-	setTimeout(function(){
-		document.networkmapdRefresh.submit();
-	}, 2000);
+	if(parseInt((JS_timeObj.getTime()-cookie.get("nwmapRefreshTime"))/60000) > 1){
+		setTimeout(function(){
+			document.networkmapdRefresh.submit();
+		}, 3500);
+	}
+	cookie.set("nwmapRefreshTime", JS_timeObj.getTime(), 1);
 </script>
 </body>
 </html>

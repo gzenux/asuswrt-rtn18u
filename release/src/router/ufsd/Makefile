@@ -31,10 +31,12 @@ install:
 #	@cp $(SRCFILE)/mkntfs $(INSTALLDIR)/usr/sbin
 	@cp $(SRCFILE)/chkntfs $(INSTALLDIR)/usr/sbin
 	@cp $(SRCFILE)/ufsd.ko $(DSTDIR)
-	@cp $(SRCFILE)/jnl.ko $(DSTDIR)
 #	@chmod 775 $(INSTALLDIR)/usr/sbin/mkntfs
 	@chmod 775 $(INSTALLDIR)/usr/sbin/chkntfs
 	@chmod 664 $(DSTDIR)/ufsd.ko
+ifeq ($(RTCONFIG_BCMARM),y)
+	@cp $(SRCFILE)/jnl.ko $(DSTDIR)
 	@chmod 664 $(DSTDIR)/jnl.ko
+endif
 
 .phony: all clean install

@@ -170,6 +170,9 @@ $(STATIC): $(OBJS:.o=.so)
 install: all #$(IWLIB_INSTALL) install-bin install-hdr install-man
 	install -D iwconfig $(INSTALLDIR)/bin/iwconfig
 	install -D iwpriv $(INSTALLDIR)/bin/iwpriv
+ifneq ($(or $(RTN56U),$(DSLN55U)),y)
+	install -D iwlist $(INSTALLDIR)/bin/iwlist
+endif
 	install -D $(IWLIB) $(INSTALLDIR)/lib/$(IWLIB)
 
 # Install the dynamic library

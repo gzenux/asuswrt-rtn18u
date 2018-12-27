@@ -17,10 +17,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 <% wl_get_parameter(); %>
 
 
@@ -40,6 +36,9 @@ function initial(){
 
 	if(!band5g_support || based_modelid == "RT-AC87U")	
 		$("wl_unit_field").style.display = "none";
+
+	if(smart_connect_support && '<% nvram_get("smart_connect_x"); %>' == '1')
+		$("wl_unit_field").style.display = "none";	
 
 	if((sw_mode == 2 || sw_mode == 4) && '<% nvram_get("wl_unit"); %>' == '<% nvram_get("wlc_band"); %>'){
 		for(var i=4; i>=2; i--)

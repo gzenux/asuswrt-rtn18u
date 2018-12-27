@@ -154,6 +154,7 @@
 #include <stdio.h>
 #include "ssl_locl.h"
 #include "kssl_lcl.h"
+#include "../crypto/constant_time_locl.h"
 #include <openssl/buffer.h>
 #include <openssl/rand.h>
 #include <openssl/objects.h>
@@ -245,6 +246,7 @@ int ssl3_accept(SSL *s)
 					}
 				if (!BUF_MEM_grow(buf,SSL3_RT_MAX_PLAIN_LENGTH))
 					{
+					BUF_MEM_free(buf);
 					ret= -1;
 					goto end;
 					}
@@ -378,20 +380,11 @@ int ssl3_accept(SSL *s)
 		case SSL3_ST_SW_KEY_EXCH_B:
 			alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
 
-			/* clear this, it may get reset by
-			 * send_server_key_exchange */
-			if ((s->options & SSL_OP_EPHEMERAL_RSA)
-#ifndef OPENSSL_NO_KRB5
-				&& !(alg_k & SSL_kKRB5)
-#endif /* OPENSSL_NO_KRB5 */
-				)
-				/* option SSL_OP_EPHEMERAL_RSA sends temporary RSA key
-				 * even when forbidden by protocol specs
-				 * (handshake may fail as clients are not required to
-				 * be able to handle this) */
-				s->s3->tmp.use_rsa_tmp=1;
-			else
-				s->s3->tmp.use_rsa_tmp=0;
+			/*
+			 * clear this, it may get reset by
+			 * send_server_key_exchange
+			 */
+			s->s3->tmp.use_rsa_tmp=0;
 
 
 			/* only send if a DH key exchange, fortezza or
@@ -405,7 +398,7 @@ int ssl3_accept(SSL *s)
 			 * server certificate contains the server's
 			 * public key for key exchange.
 			 */
-			if (s->s3->tmp.use_rsa_tmp
+			if (0
 			/* PSK: send ServerKeyExchange if PSK identity
 			 * hint if provided */
 #ifndef OPENSSL_NO_PSK
@@ -2010,6 +2003,11 @@ int ssl3_get_client_key_exchange(SSL *s)
 #ifndef OPENSSL_NO_RSA
 	if (alg_k & SSL_kRSA)
 		{
+		unsigned char rand_premaster_secret[SSL_MAX_MASTER_KEY_LENGTH];
+		int decrypt_len;
+		unsigned char decrypt_good, version_good;
+		size_t j;
+
 		/* FIX THIS UP EAY EAY EAY EAY */
 		if (s->s3->tmp.use_rsa_tmp)
 			{
@@ -2047,8 +2045,9 @@ int ssl3_get_client_key_exchange(SSL *s)
 				{
 				if (!(s->options & SSL_OP_TLS_D5_BUG))
 					{
+					al = SSL_AD_DECODE_ERROR;
 					SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE,SSL_R_TLS_RSA_ENCRYPTED_VALUE_LENGTH_IS_WRONG);
-					goto err;
+					goto f_err;
 					}
 				else
 					p-=2;
@@ -2057,59 +2056,84 @@ int ssl3_get_client_key_exchange(SSL *s)
 				n=i;
 			}
 
-		i=RSA_private_decrypt((int)n,p,p,rsa,RSA_PKCS1_PADDING);
-
-		al = -1;
-		
-		if (i != SSL_MAX_MASTER_KEY_LENGTH)
+		/*
+		 * Reject overly short RSA ciphertext because we want to be sure
+		 * that the buffer size makes it safe to iterate over the entire
+		 * size of a premaster secret (SSL_MAX_MASTER_KEY_LENGTH). The
+		 * actual expected size is larger due to RSA padding, but the
+		 * bound is sufficient to be safe.
+		 */
+		if (n < SSL_MAX_MASTER_KEY_LENGTH)
 			{
-			al=SSL_AD_DECODE_ERROR;
-			/* SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE,SSL_R_BAD_RSA_DECRYPT); */
+			al = SSL_AD_DECRYPT_ERROR;
+			SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE, SSL_R_TLS_RSA_ENCRYPTED_VALUE_LENGTH_IS_WRONG);
+			goto f_err;
 			}
 
-		if ((al == -1) && !((p[0] == (s->client_version>>8)) && (p[1] == (s->client_version & 0xff))))
-			{
-			/* The premaster secret must contain the same version number as the
-			 * ClientHello to detect version rollback attacks (strangely, the
-			 * protocol does not offer such protection for DH ciphersuites).
-			 * However, buggy clients exist that send the negotiated protocol
-			 * version instead if the server does not support the requested
-			 * protocol version.
-			 * If SSL_OP_TLS_ROLLBACK_BUG is set, tolerate such clients. */
-			if (!((s->options & SSL_OP_TLS_ROLLBACK_BUG) &&
-				(p[0] == (s->version>>8)) && (p[1] == (s->version & 0xff))))
-				{
-				al=SSL_AD_DECODE_ERROR;
-				/* SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE,SSL_R_BAD_PROTOCOL_VERSION_NUMBER); */
+		/* We must not leak whether a decryption failure occurs because
+		 * of Bleichenbacher's attack on PKCS #1 v1.5 RSA padding (see
+		 * RFC 2246, section 7.4.7.1). The code follows that advice of
+		 * the TLS RFC and generates a random premaster secret for the
+		 * case that the decrypt fails. See
+		 * https://tools.ietf.org/html/rfc5246#section-7.4.7.1 */
 
-				/* The Klima-Pokorny-Rosa extension of Bleichenbacher's attack
-				 * (http://eprint.iacr.org/2003/052/) exploits the version
-				 * number check as a "bad version oracle" -- an alert would
-				 * reveal that the plaintext corresponding to some ciphertext
-				 * made up by the adversary is properly formatted except
-				 * that the version number is wrong.  To avoid such attacks,
-				 * we should treat this just like any other decryption error. */
-				}
+		/* should be RAND_bytes, but we cannot work around a failure. */
+		if (RAND_pseudo_bytes(rand_premaster_secret,
+				      sizeof(rand_premaster_secret)) <= 0)
+			goto err;
+		decrypt_len = RSA_private_decrypt((int)n,p,p,rsa,RSA_PKCS1_PADDING);
+		ERR_clear_error();
+
+		/* decrypt_len should be SSL_MAX_MASTER_KEY_LENGTH.
+		 * decrypt_good will be 0xff if so and zero otherwise. */
+		decrypt_good = constant_time_eq_int_8(decrypt_len, SSL_MAX_MASTER_KEY_LENGTH);
+
+		/* If the version in the decrypted pre-master secret is correct
+		 * then version_good will be 0xff, otherwise it'll be zero.
+		 * The Klima-Pokorny-Rosa extension of Bleichenbacher's attack
+		 * (http://eprint.iacr.org/2003/052/) exploits the version
+		 * number check as a "bad version oracle". Thus version checks
+		 * are done in constant time and are treated like any other
+		 * decryption error. */
+		version_good = constant_time_eq_8(p[0], (unsigned)(s->client_version>>8));
+		version_good &= constant_time_eq_8(p[1], (unsigned)(s->client_version&0xff));
+
+		/* The premaster secret must contain the same version number as
+		 * the ClientHello to detect version rollback attacks
+		 * (strangely, the protocol does not offer such protection for
+		 * DH ciphersuites). However, buggy clients exist that send the
+		 * negotiated protocol version instead if the server does not
+		 * support the requested protocol version. If
+		 * SSL_OP_TLS_ROLLBACK_BUG is set, tolerate such clients. */
+		if (s->options & SSL_OP_TLS_ROLLBACK_BUG)
+			{
+			unsigned char workaround_good;
+			workaround_good = constant_time_eq_8(p[0], (unsigned)(s->version>>8));
+			workaround_good &= constant_time_eq_8(p[1], (unsigned)(s->version&0xff));
+			version_good |= workaround_good;
 			}
 
-		if (al != -1)
+		/* Both decryption and version must be good for decrypt_good
+		 * to remain non-zero (0xff). */
+		decrypt_good &= version_good;
+
+		/*
+		 * Now copy rand_premaster_secret over from p using
+		 * decrypt_good_mask. If decryption failed, then p does not
+		 * contain valid plaintext, however, a check above guarantees
+		 * it is still sufficiently large to read from.
+		 */
+		for (j = 0; j < sizeof(rand_premaster_secret); j++)
 			{
-			/* Some decryption failure -- use random value instead as countermeasure
-			 * against Bleichenbacher's attack on PKCS #1 v1.5 RSA padding
-			 * (see RFC 2246, section 7.4.7.1). */
-			ERR_clear_error();
-			i = SSL_MAX_MASTER_KEY_LENGTH;
-			p[0] = s->client_version >> 8;
-			p[1] = s->client_version & 0xff;
-			if (RAND_pseudo_bytes(p+2, i-2) <= 0) /* should be RAND_bytes, but we cannot work around a failure */
-				goto err;
+			p[j] = constant_time_select_8(decrypt_good, p[j],
+						      rand_premaster_secret[j]);
 			}
-	
+
 		s->session->master_key_length=
 			s->method->ssl3_enc->generate_master_secret(s,
 				s->session->master_key,
-				p,i);
-		OPENSSL_cleanse(p,i);
+				p,sizeof(rand_premaster_secret));
+		OPENSSL_cleanse(p,sizeof(rand_premaster_secret));
 		}
 	else
 #endif
@@ -2741,7 +2765,7 @@ int ssl3_get_cert_verify(SSL *s)
 	if (s->s3->tmp.message_type != SSL3_MT_CERTIFICATE_VERIFY)
 		{
 		s->s3->tmp.reuse_message=1;
-		if ((peer != NULL) && (type & EVP_PKT_SIGN))
+		if (peer != NULL)
 			{
 			al=SSL_AD_UNEXPECTED_MESSAGE;
 			SSLerr(SSL_F_SSL3_GET_CERT_VERIFY,SSL_R_MISSING_VERIFY_MESSAGE);
@@ -3071,6 +3095,11 @@ int ssl3_send_server_certificate(SSL *s)
 			}
 
 		l=ssl3_output_cert_chain(s,x);
+		if (!l)
+			{
+			SSLerr(SSL_F_SSL3_SEND_SERVER_CERTIFICATE,ERR_R_INTERNAL_ERROR);
+			return(0);
+			}
 		s->state=SSL3_ST_SW_CERT_B;
 		s->init_num=(int)l;
 		s->init_off=0;

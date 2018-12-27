@@ -33,7 +33,7 @@
   
 .parental_th{
 	color:white;
-	background: url(/images/general_th.gif) repeat;
+	background:#2F3A3E;
 	cursor: pointer;
 	width:160px;
 	height:22px;
@@ -88,10 +88,6 @@
 <script>
 
 var $j = jQuery.noConflict();
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 var MULTIFILTER_ENABLE = '<% nvram_get("MULTIFILTER_ENABLE"); %>'.replace(/&#62/g, ">");
 var MULTIFILTER_MAC = '<% nvram_get("MULTIFILTER_MAC"); %>'.replace(/&#62/g, ">");
 var MULTIFILTER_DEVICENAME = decodeURIComponent('<% nvram_char_to_ascii("","MULTIFILTER_DEVICENAME"); %>').replace(/&#62/g, ">");
@@ -203,13 +199,13 @@ function initial(){
 	show_menu();
 	if(bwdpi_support){
 		//show_inner_tab();
-		$("option4").innerHTML = '<table><tbody><tr><td><div id="index_img4"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
-		$("option4").className = "m4_r";
+		document.getElementById("_AiProtection_HomeSecurity").innerHTML = '<table><tbody><tr><td><div class="_AiProtection_HomeSecurity"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
+		document.getElementById("_AiProtection_HomeSecurity").className = "menu_clicked";
 		document.getElementById('guest_image').style.background = "url(images/New_ui/TimeLimits.png)";
 		$('content_title').innerHTML = "AiProtection - <#Time_Scheduling#>";
-		$('desc_title').innerHTML = "Time Scheduling allows you to set the time limit for a client's network usage. To use Time Scheduling:";		
-		//$('web_title').innerHTML = "<#Web_Title#> - Time Scheduling";
-		$('PC_enable').innerHTML = "Enable Time Scheduling";
+		$('desc_title').innerHTML = "<#ParentalCtrl_Desc_TS#>";
+		$('web_title').innerHTML = "<#Web_Title#> - <#Time_Scheduling#>";
+		$('PC_enable').innerHTML = "<#ParentalCtrl_Enable_TS#>";
 		$('switch_menu').style.display = "";
 	}
 
@@ -901,11 +897,7 @@ function show_inner_tab(){
 	
 	$('switch_menu').innerHTML = code;
 }
-</script>
-
-
-
-</head>
+</script></head>
 
 <body onload="initial();" onunload="unload_body();" onselectstart="return false;">
 <div id="TopBanner"></div>
@@ -1018,10 +1010,8 @@ function show_inner_tab(){
 											return false;
 																					
 											applyRule(1);
-									},
-											{
-											switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-									});
+									}
+								);
 							</script>			
 						</div>
 					</td>			

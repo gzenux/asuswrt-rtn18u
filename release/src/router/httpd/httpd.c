@@ -219,10 +219,6 @@ static int b64_decode( const char* str, unsigned char* space, int size );
 static int match( const char* pattern, const char* string );
 static int match_one( const char* pattern, int patternlen, const char* string );
 static void handle_request(void);
-#ifdef RTCONFIG_TMOBILE_TMP
-static void handle_redirect(int fd, char *line);
-static void redirect_to_https(int fd);
-#endif
 
 /* added by Joey */
 //2008.08 magic{
@@ -233,9 +229,6 @@ int reget_passwd = 0;
 int x_Setting = 0;
 int skip_auth = 0;
 int isLogout = 0;
-#ifdef RTCONFIG_TMOBILE
-int isAjaxLogin = 0;
-#endif
 char url[128];
 int http_port=SERVER_PORT;
 
@@ -347,11 +340,7 @@ auth_check( char* dirname, char* authorization ,char* url)
 	char *temp_ip_str;
 	time_t dt;
 
-#ifdef RTCONFIG_TMOBILE
-	if(isLogout == 1 && isAjaxLogin == 0){
-#else
 	if(isLogout == 1){
-#endif
 		isLogout = 0;
 		send_authenticate( dirname );
 		return 0;
@@ -419,13 +408,9 @@ static void
 __send_authenticate( char* realm )
 {
 	char header[10000];
+
 	memset(header, 0, sizeof(header));
-
-#ifdef RTCONFIG_TMOBILE
-	if(isAjaxLogin == 0)
-#endif
 	(void) snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm);
-
 	send_error( 401, "Unauthorized", header, "Authorization required." );
 }
 
@@ -702,6 +687,10 @@ handle_request(void)
 	int mime_exception, login_state;
 	int fromapp=0;
 	int cl = 0, flags;
+#ifdef RTCONFIG_FINDASUS
+	int i, isDeviceDiscovery=0;
+	char id_local[32],prouduct_id[32];
+#endif
 
 	/* Initialize the request variables. */
 	authorization = boundary = NULL;
@@ -767,6 +756,9 @@ handle_request(void)
 					if (strcasecmp(p, pLang->Lang)==0)
 					{
 						char dictname[32];
+
+						if (!check_lang_support(pLang->Target_Lang))
+							continue;
 						snprintf(dictname,sizeof(dictname),"%s.dict", pLang->Target_Lang);
 						if(!check_if_file_exist(dictname))
 						{
@@ -812,6 +804,17 @@ handle_request(void)
 			cp += strspn( cp, " \t" );
 			sethost(cp);
 			cur = cp + strlen(cp) + 1;
+#ifdef RTCONFIG_FINDASUS
+			sprintf(prouduct_id, "%s",get_productid());
+			for(i = 0 ; i < strlen(prouduct_id) ; i++ ){
+				prouduct_id[i] = tolower(prouduct_id[i]) ;
+			}
+			sprintf(id_local, "%s.local",prouduct_id);
+			if(!strncmp(cp, "findasus", 8) || !strncmp(cp, id_local,strlen(id_local)))
+				isDeviceDiscovery = 1;
+			else
+				isDeviceDiscovery = 0;
+#endif
 		}
 		else if (strncasecmp( cur, "Content-Length:", 15 ) == 0) {
 			cp = &cur[15];
@@ -843,19 +846,16 @@ handle_request(void)
 	}
 
 //2008.08 magic{
-#ifdef RTCONFIG_TMOBILE	
-	if (file[0] == '\0' || file[len-1] == '/'){
-		file = "MobileQIS_Login.asp";
-	}	
-#else
 	if (file[0] == '\0' || file[len-1] == '/'){
 		if (is_firsttime())
 			file = "QIS_wizard.htm";
+#ifdef RTCONFIG_FINDASUS
+		else if(isDeviceDiscovery == 1)
+			file = "find_device.asp";
+#endif
 		else
 			file = "index.asp";
 	}
-#endif
-
 
 // 2007.11 James. {
 	char *query;
@@ -918,13 +918,6 @@ handle_request(void)
 				strcpy(url, file);
 			}
 		}
-
-#ifdef RTCONFIG_TMOBILE
-	        isAjaxLogin = 0;
-        	if(!strcmp(file, "AjaxLogin.asp") || !strcmp(file, "start_apply.htm")){
-                	isAjaxLogin = 1;
-        	}
-#endif
 	}
 	else { // Jerry5 fix AiCloud login issue. 20120815
 		x_Setting = nvram_get_int("x_Setting");
@@ -959,9 +952,6 @@ handle_request(void)
 							&& !strstr(url, ".gif")
 							&& !strstr(url, ".png"))
 						http_login(login_ip_tmp, url);
-#ifdef RTCONFIG_TMOBILE
-					if (strstr(url, "AjaxLogin.asp")) http_login(login_ip_tmp, url);
-#endif
 				}
 			}
 
@@ -998,6 +988,9 @@ handle_request(void)
 #ifdef RTCONFIG_USB_MODEM
 					&& !strstr(file, "modemlog.txt")
 #endif
+#ifdef RTCONFIG_DSL_TCLINUX
+					&& !strstr(file, "TCC.log")
+#endif
 					){
 				send_error( 404, "Not Found", (char*) 0, "File not found." );
 				return;
@@ -1029,47 +1022,6 @@ handle_request(void)
 		}
 	}
 }
-
-#ifdef RTCONFIG_TMOBILE_TMP
-void handle_redirect(int fd, char *line){
-	int debug;
-	debug = nvram_get_int("httpd_debug");
-	if(debug) printf("line=%s\n", line);
-
-	char buf[4096];
-	char timebuf[100];
-	time_t now;
-
-	memset(buf, 0, sizeof(buf));
-	now = uptime();
-	(void)strftime(timebuf, sizeof(timebuf), RFC1123FMT, gmtime(&now));
-
-	if(!strncmp(line, "GET /", 5)){
-		sprintf(buf, "%s%s%s%s%s%s", buf, "HTTP/1.0 302 Moved Temporarily\r\n", "Server: wanduck\r\n", "Date: ", timebuf, "\r\n");
-		sprintf(buf, "%s%s%s%s%s" ,buf , "Connection: close\r\n", "Location:https://cellspot.router/index.asp", "\r\nContent-Type: text/plain\r\n", "\r\n<html></html>\r\n");
-	}
-	write(fd, buf, strlen(buf));
-}
-
-void redirect_to_https(int fd){
-	ssize_t n;
-	char line[2048];
-
-	int debug;
-	debug = nvram_get_int("httpd_debug");
-
-	memset(line, 0, sizeof(line));
-
-	if((n = read(fd, line, 2048)) <= 0){
-		if(debug) printf("redirect to https - 1\n");
-		return;
-	}
-	else{
-		if(debug) printf("redirect to https - 2\n");
-		handle_redirect(fd, line);
-	}
-}
-#endif
 
 //2008 magic{
 void http_login_cache(usockaddr *u) {
@@ -1281,6 +1233,44 @@ char *config_model_name(char *source, char *find,  char *rep){
 }
 
 #ifdef TRANSLATE_ON_FLY
+/* Whether a language support should be enabled or not.
+ * @lang:
+ * @return:
+ * 	0:	lang should not be supported.
+ *     <0:	invalid parameter.
+ *     >0:	lang can be supported.
+ */
+int check_lang_support(char *lang)
+{
+	int r = 1, model = get_model();
+
+	if (!lang)
+		return -1;
+
+	switch (model) {
+#if defined(RTAC55U)
+	case MODEL_RTAC55U:
+		if (!find_word(nvram_safe_get("rc_support"), "tcode") || !nvram_get("territory_code"))
+			return 1;
+		if (nvram_match("territory_code", "UK/01")) {
+			if (!strcmp(lang, "DA") || !strcmp(lang, "EN") ||
+			    !strcmp(lang, "FI") || !strcmp(lang, "NO") ||
+			    !strcmp(lang, "SV")) {
+				r = 1;
+			} else {
+				r = 0;
+			}
+		} else {
+			return 1;
+		}
+
+		break;
+#endif
+	}
+
+	return r;
+}
+
 #ifdef RTCONFIG_AUTODICT
 int
 load_dictionary (char *lang, pkw_t pkw)
@@ -1782,10 +1772,6 @@ int main(int argc, char **argv)
 			FD_SET(item->fd, &active_rfds);
 			TAILQ_INSERT_TAIL(&pool.head, item, entry);
 			pool.count++;
-
-#ifdef RTCONFIG_TMOBILE_TMP
-			if(!do_ssl) redirect_to_https(item->fd);
-#endif
 
 			/* Continue waiting over again */
 			continue;

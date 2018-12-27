@@ -12,7 +12,7 @@ CFLAGS	+= $(if $(WLAN_ComponentIncPath),$(WLAN_ComponentIncPath),$(addprefix -I,
 CFLAGS	+= -s -O2
 LDFLAGS += -L$(TOP)/nvram$(BCMEX) -lnvram
 LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
-LDFLAGS += -lgcc_s
+LDFLAGS += $(EXTRALDFLAGS)
 
 #ifdef BCMINTERNAL
 ifneq ($(NO_BCMINTERNAL), 1)

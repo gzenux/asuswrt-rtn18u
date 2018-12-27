@@ -1,0 +1,268 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+AUTH_MODE_WAPI	wai_eap.c	38;"	d	file:
+AUTH_MODE_WAPI_PSK	wai_eap.c	39;"	d	file:
+EAPDBANNER	eapd.h	32;"	d
+EAPD_APP_BSD	eapd.h	/^	EAPD_APP_BSD$/;"	e	enum:__anon3
+EAPD_APP_DCS	eapd.h	/^	EAPD_APP_DCS,$/;"	e	enum:__anon3
+EAPD_APP_MEVENT	eapd.h	/^	EAPD_APP_MEVENT,$/;"	e	enum:__anon3
+EAPD_APP_NAS	eapd.h	/^	EAPD_APP_NAS,$/;"	e	enum:__anon3
+EAPD_APP_SES	eapd.h	/^	EAPD_APP_SES,$/;"	e	enum:__anon3
+EAPD_APP_UNKNOW	eapd.h	/^	EAPD_APP_UNKNOW = 0,$/;"	e	enum:__anon3
+EAPD_APP_WAI	eapd.h	/^	EAPD_APP_WAI,$/;"	e	enum:__anon3
+EAPD_APP_WPS	eapd.h	/^	EAPD_APP_WPS,$/;"	e	enum:__anon3
+EAPD_CAP_BSD	eapd.h	151;"	d
+EAPD_CAP_DCS	eapd.h	149;"	d
+EAPD_CAP_MEVENT	eapd.h	150;"	d
+EAPD_CAP_NAS	eapd.h	146;"	d
+EAPD_CAP_SES	eapd.h	145;"	d
+EAPD_CAP_WAI	eapd.h	148;"	d
+EAPD_CAP_WPS	eapd.h	147;"	d
+EAPD_ERROR	eapd.h	35;"	d
+EAPD_ERROR_VAL	eapd.h	27;"	d
+EAPD_IDENTITY	eapd.h	/^	EAPD_IDENTITY$/;"	e	enum:__anon4
+EAPD_INFO	eapd.h	36;"	d
+EAPD_INFO_VAL	eapd.h	28;"	d
+EAPD_INITIALIZE	eapd.h	/^	EAPD_INITIALIZE = 0,$/;"	e	enum:__anon4
+EAPD_PAE_HASH	eapd.h	53;"	d
+EAPD_PRINT	eapd.h	37;"	d
+EAPD_SEARCH_ENTER	eapd.h	/^	EAPD_SEARCH_ENTER$/;"	e	enum:__anon1
+EAPD_SEARCH_ONLY	eapd.h	/^	EAPD_SEARCH_ONLY = 0,$/;"	e	enum:__anon1
+EAPD_STA_MODE_NAS	eapd.h	/^	EAPD_STA_MODE_NAS,$/;"	e	enum:__anon2
+EAPD_STA_MODE_NAS_PSK	eapd.h	/^	EAPD_STA_MODE_NAS_PSK,$/;"	e	enum:__anon2
+EAPD_STA_MODE_SES	eapd.h	/^	EAPD_STA_MODE_SES,$/;"	e	enum:__anon2
+EAPD_STA_MODE_UNKNOW	eapd.h	/^	EAPD_STA_MODE_UNKNOW = 0,$/;"	e	enum:__anon2
+EAPD_STA_MODE_WAI	eapd.h	/^	EAPD_STA_MODE_WAI$/;"	e	enum:__anon2
+EAPD_STA_MODE_WPS	eapd.h	/^	EAPD_STA_MODE_WPS,$/;"	e	enum:__anon2
+EAPD_STA_MODE_WPS_ENR	eapd.h	/^	EAPD_STA_MODE_WPS_ENR,$/;"	e	enum:__anon2
+EAPD_WKSP_AUTO_CONFIG	eapd.h	23;"	d
+EAPD_WKSP_EAP_USER_NUM	eapd.c	46;"	d	file:
+EAPD_WKSP_FLAG_DUMP	eapd.h	40;"	d
+EAPD_WKSP_FLAG_SHUTDOWN	eapd.h	39;"	d
+EAPD_WKSP_MAX_CMD_LINE_ARGS	eapd.h	46;"	d
+EAPD_WKSP_MAX_EAP_USER_IDENT	eapd.c	45;"	d	file:
+EAPD_WKSP_MAX_NO_BRCM	eapd.h	48;"	d
+EAPD_WKSP_MAX_NO_BRIDGE	eapd.h	47;"	d
+EAPD_WKSP_MAX_NO_IFNAMES	eapd.h	49;"	d
+EAPD_WKSP_MAX_SUPPLICANTS	eapd.h	51;"	d
+EAPD_WKSP_MIN_CMD_LINE_ARGS	eapd.h	45;"	d
+EAPD_WKSP_RECV_DATA_MAX_LEN	eapd.h	42;"	d
+EAP_TYPE_WSC	eapd.c	47;"	d	file:
+HEXDUMP_ASCII	eapd.c	107;"	d	file:
+HEXDUMP_ASCII	eapd.c	109;"	d	file:
+NAS_APP_WPA_CIPHER2WSEC	nas_eap.c	40;"	d	file:
+OBJS	linux/Makefile	/^OBJS = eapd.o eapd_linux.o$/;"	m
+SES_NV_INTERFACE	ses_eap.c	36;"	d	file:
+_EAPD_H_	eapd.h	16;"	d
+_eapd_pid	eapd_ecos.c	/^static int _eapd_pid = 0;$/;"	v	file:
+appSocket	eapd.h	/^	int	appSocket; \/* loopback socket to communicate with application *\/$/;"	m	struct:eapd_app
+bitvec	eapd.h	/^	uchar	bitvec[WL_EVENTING_MASK_LEN]; \/* for each application which need brcmevent *\/$/;"	m	struct:eapd_app
+brcmSocket	eapd.h	/^	eapd_brcm_socket_t	*brcmSocket;$/;"	m	struct:eapd_cb
+brcmSocket	eapd.h	/^	eapd_brcm_socket_t	brcmSocket[EAPD_WKSP_MAX_NO_BRCM];$/;"	m	struct:eapd_wksp
+brcmSocketCount	eapd.h	/^	int			brcmSocketCount;$/;"	m	struct:eapd_wksp
+bsd	eapd.h	/^	eapd_bsd_t		bsd;$/;"	m	struct:eapd_wksp
+bsd_app_deinit	bsd_eap.c	/^bsd_app_deinit(eapd_wksp_t *nwksp)$/;"	f
+bsd_app_enabled	bsd_eap.c	/^bsd_app_enabled(char *name)$/;"	f
+bsd_app_handle_event	bsd_eap.c	/^bsd_app_handle_event(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+bsd_app_init	bsd_eap.c	/^bsd_app_init(eapd_wksp_t *nwksp)$/;"	f
+bsd_app_recv_handler	bsd_eap.c	/^bsd_app_recv_handler(eapd_wksp_t *nwksp, eapd_cb_t *from, uint8 *pData,$/;"	f
+bsd_app_sendup	bsd_eap.c	/^bsd_app_sendup(eapd_wksp_t *nwksp, uint8 *pData, int pLen, char *from)$/;"	f
+bsd_app_set_eventmask	bsd_eap.c	/^bsd_app_set_eventmask(eapd_app_t *app)$/;"	f
+bssid	eapd.h	/^	struct ether_addr	bssid;	\/* wl if hwaddr which sta comes in *\/$/;"	m	struct:eapd_sta	typeref:struct:eapd_sta::ether_addr
+cb	eapd.h	/^	eapd_cb_t	*cb; \/* for each interface which running application *\/$/;"	m	struct:eapd_app
+dcs	eapd.h	/^	eapd_dcs_t		dcs;$/;"	m	struct:eapd_wksp
+dcs_app_deinit	dcs_eap.c	/^dcs_app_deinit(eapd_wksp_t *nwksp)$/;"	f
+dcs_app_enabled	dcs_eap.c	/^dcs_app_enabled(char *name)$/;"	f
+dcs_app_handle_event	dcs_eap.c	/^dcs_app_handle_event(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+dcs_app_init	dcs_eap.c	/^dcs_app_init(eapd_wksp_t *nwksp)$/;"	f
+dcs_app_recv_handler	dcs_eap.c	/^dcs_app_recv_handler(eapd_wksp_t *nwksp, eapd_cb_t *from, uint8 *pData,$/;"	f
+dcs_app_sendup	dcs_eap.c	/^dcs_app_sendup(eapd_wksp_t *nwksp, uint8 *pData, int pLen, char *from)$/;"	f
+dcs_app_set_eventmask	dcs_eap.c	/^dcs_app_set_eventmask(eapd_app_t *app)$/;"	f
+difSocket	eapd.h	/^	int			difSocket; \/* socket to receive dynamic interface events *\/$/;"	m	struct:eapd_wksp
+drvSocket	eapd.h	/^	int		drvSocket;		\/* raw socket to communicate with driver *\/$/;"	m	struct:eapd_socket
+ea	eapd.h	/^	struct ether_addr	ea;	\/* STA's ethernet address *\/$/;"	m	struct:eapd_sta	typeref:struct:eapd_sta::ether_addr
+eapd_add_brcm	eapd.c	/^eapd_add_brcm(eapd_wksp_t *nwksp, char *ifname)$/;"	f
+eapd_add_dif	eapd.c	/^eapd_add_dif(eapd_wksp_t *nwksp, char *ifname)$/;"	f
+eapd_add_interface	eapd.c	/^eapd_add_interface(eapd_wksp_t *nwksp, char *ifname, eapd_app_mode_t mode, eapd_cb_t **cbp)$/;"	f	file:
+eapd_app	eapd.h	/^typedef struct eapd_app {$/;"	s
+eapd_app_mode_t	eapd.h	/^} eapd_app_mode_t;$/;"	t	typeref:enum:__anon3
+eapd_app_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapd_brcm_close	eapd_bsd.c	/^eapd_brcm_close(int drvSocket)$/;"	f
+eapd_brcm_close	eapd_ecos.c	/^eapd_brcm_close(int drvSocket)$/;"	f
+eapd_brcm_close	eapd_linux.c	/^eapd_brcm_close(int drvSocket)$/;"	f
+eapd_brcm_dispatch	eapd.c	/^eapd_brcm_dispatch(eapd_wksp_t *nwksp, eapd_brcm_socket_t *from, uint8 *pData, int Len)$/;"	f	file:
+eapd_brcm_open	eapd_bsd.c	/^eapd_brcm_open(eapd_wksp_t *nwksp, eapd_brcm_socket_t *sock)$/;"	f
+eapd_brcm_open	eapd_ecos.c	/^eapd_brcm_open(eapd_wksp_t *nwksp, eapd_brcm_socket_t *sock)$/;"	f
+eapd_brcm_open	eapd_linux.c	/^eapd_brcm_open(eapd_wksp_t *nwksp, eapd_brcm_socket_t *sock)$/;"	f
+eapd_brcm_recv_handler	eapd.c	/^eapd_brcm_recv_handler(eapd_wksp_t *nwksp, eapd_brcm_socket_t *from, uint8 *pData, int *pLen)$/;"	f
+eapd_brcm_socket_t	eapd.h	/^} eapd_brcm_socket_t, eapd_preauth_socket_t;$/;"	t	typeref:struct:eapd_socket
+eapd_bsd_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapd_cb	eapd.h	/^typedef struct eapd_cb {$/;"	s
+eapd_cb_t	eapd.h	/^} eapd_cb_t;$/;"	t	typeref:struct:eapd_cb
+eapd_chld_hdlr	eapd_linux.c	/^eapd_chld_hdlr(int sig)$/;"	f	file:
+eapd_dcs_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapd_del_brcm	eapd.c	/^eapd_del_brcm(eapd_wksp_t *nwksp, eapd_brcm_socket_t *sock)$/;"	f
+eapd_delete_dif	eapd.c	/^eapd_delete_dif(eapd_wksp_t *nwksp, char *ifname)$/;"	f
+eapd_dump	eapd.c	/^eapd_dump(eapd_wksp_t *nwksp)$/;"	f	file:
+eapd_dump_hdlr	eapd_bsd.c	/^eapd_dump_hdlr(int sig)$/;"	f	file:
+eapd_dump_hdlr	eapd_ecos.c	/^eapd_dump_hdlr(int sig)$/;"	f
+eapd_dump_hdlr	eapd_linux.c	/^eapd_dump_hdlr(int sig)$/;"	f	file:
+eapd_eapol_canned_send	eapd_bsd.c	/^eapd_eapol_canned_send(eapd_wksp_t *nwksp, struct eapd_socket *Socket, eapd_sta_t *sta,$/;"	f
+eapd_eapol_canned_send	eapd_ecos.c	/^eapd_eapol_canned_send(eapd_wksp_t *nwksp, struct eapd_socket *Socket, eapd_sta_t *sta,$/;"	f
+eapd_eapol_canned_send	eapd_linux.c	/^eapd_eapol_canned_send(eapd_wksp_t *nwksp, struct eapd_socket *Socket, eapd_sta_t *sta,$/;"	f
+eapd_eapol_dispatch	eapd.c	/^eapd_eapol_dispatch(eapd_wksp_t *nwksp, eapd_brcm_socket_t *from, uint8 *pData, int *pLen)$/;"	f	file:
+eapd_find_brcm	eapd.c	/^eapd_find_brcm(eapd_wksp_t *nwksp, char *ifname)$/;"	f
+eapd_get_method	eapd.c	/^eapd_get_method(unsigned char *user)$/;"	f	file:
+eapd_hexdump_ascii	eapd.c	/^static void eapd_hexdump_ascii(const char *title, const unsigned char *buf,$/;"	f	file:
+eapd_hup_hdlr	eapd_bsd.c	/^eapd_hup_hdlr(int sig)$/;"	f	file:
+eapd_hup_hdlr	eapd_ecos.c	/^eapd_hup_hdlr(int sig)$/;"	f	file:
+eapd_hup_hdlr	eapd_linux.c	/^eapd_hup_hdlr(int sig)$/;"	f	file:
+eapd_lookup_mode_t	eapd.h	/^} eapd_lookup_mode_t;$/;"	t	typeref:enum:__anon1
+eapd_main	eapd_ecos.c	/^int eapd_main(void)$/;"	f
+eapd_main_hdl	eapd_ecos.c	/^static cyg_handle_t	eapd_main_hdl;$/;"	v	file:
+eapd_main_stack	eapd_ecos.c	/^static char		eapd_main_stack[8*1024];$/;"	v	file:
+eapd_message_read	eapd_bsd.c	/^eapd_message_read(int fd, void *buf, size_t nbytes)$/;"	f
+eapd_message_read	eapd_ecos.c	/^eapd_message_read(int fd, void *buf, size_t nbytes)$/;"	f
+eapd_message_read	eapd_linux.c	/^eapd_message_read(int fd, void *buf, size_t nbytes)$/;"	f
+eapd_message_send	eapd_bsd.c	/^eapd_message_send(eapd_wksp_t *nwksp, struct eapd_socket *Socket, uint8 *pData, int pLen)$/;"	f
+eapd_message_send	eapd_ecos.c	/^eapd_message_send(eapd_wksp_t *nwksp, struct eapd_socket *Socket, uint8 *pData, int pLen)$/;"	f
+eapd_message_send	eapd_linux.c	/^eapd_message_send(eapd_wksp_t *nwksp, struct eapd_socket *Socket, uint8 *pData, int pLen)$/;"	f
+eapd_mevent_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapd_msg_level	eapd.c	/^uint eapd_msg_level =$/;"	v
+eapd_nas_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapd_nwksp	eapd_bsd.c	/^static eapd_wksp_t *eapd_nwksp = NULL;$/;"	v	file:
+eapd_nwksp	eapd_ecos.c	/^static eapd_wksp_t *eapd_nwksp = NULL;$/;"	v	file:
+eapd_nwksp	eapd_linux.c	/^static eapd_wksp_t *eapd_nwksp = NULL;$/;"	v	file:
+eapd_open_socket	eapd_bsd.c	/^eapd_open_socket(eapd_wksp_t *nwksp, eapd_brcm_socket_t *sock,$/;"	f	file:
+eapd_pae_state_t	eapd.h	/^} eapd_pae_state_t;$/;"	t	typeref:enum:__anon4
+eapd_preauth_close	eapd_bsd.c	/^eapd_preauth_close(int drvSocket)$/;"	f
+eapd_preauth_close	eapd_ecos.c	/^eapd_preauth_close(int drvSocket)$/;"	f
+eapd_preauth_close	eapd_linux.c	/^eapd_preauth_close(int drvSocket)$/;"	f
+eapd_preauth_open	eapd_bsd.c	/^eapd_preauth_open(eapd_wksp_t *nwksp, eapd_preauth_socket_t *sock)$/;"	f
+eapd_preauth_open	eapd_ecos.c	/^eapd_preauth_open(eapd_wksp_t *nwksp, eapd_preauth_socket_t *sock)$/;"	f
+eapd_preauth_open	eapd_linux.c	/^eapd_preauth_open(eapd_wksp_t *nwksp, eapd_preauth_socket_t *sock)$/;"	f
+eapd_preauth_recv_handler	eapd.c	/^eapd_preauth_recv_handler(eapd_wksp_t *nwksp, char *from, uint8 *pData, int *pLen)$/;"	f
+eapd_preauth_socket_t	eapd.h	/^} eapd_brcm_socket_t, eapd_preauth_socket_t;$/;"	t	typeref:struct:eapd_socket
+eapd_safe_get_conf	eapd_bsd.c	/^eapd_safe_get_conf(char *outval, int outval_size, char *name)$/;"	f
+eapd_safe_get_conf	eapd_ecos.c	/^int eapd_safe_get_conf(char *outval, int outval_size, char *name)$/;"	f
+eapd_safe_get_conf	eapd_linux.c	/^eapd_safe_get_conf(char *outval, int outval_size, char *name)$/;"	f
+eapd_send	eapd_bsd.c	/^eapd_send(eapd_wksp_t *nwksp, int drvSocket, struct iovec *frags, int nfrags)$/;"	f	file:
+eapd_send	eapd_linux.c	/^eapd_send(eapd_wksp_t *nwksp, int drvSocket, struct iovec *frags, int nfrags)$/;"	f	file:
+eapd_ses_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapd_socket	eapd.h	/^typedef struct eapd_socket {$/;"	s
+eapd_sta	eapd.h	/^typedef struct eapd_sta {$/;"	s
+eapd_sta_mode_t	eapd.h	/^} eapd_sta_mode_t;$/;"	t	typeref:enum:__anon2
+eapd_sta_t	eapd.h	/^} eapd_sta_t;$/;"	t	typeref:struct:eapd_sta
+eapd_start	eapd_ecos.c	/^eapd_start(void)$/;"	f
+eapd_stop	eapd_ecos.c	/^eapd_stop(void)$/;"	f
+eapd_thread	eapd_ecos.c	/^static cyg_thread	eapd_thread;$/;"	v	file:
+eapd_user_list	eapd.c	/^struct eapd_user_list {$/;"	s	file:
+eapd_valid_eapol_start	eapd.c	/^eapd_valid_eapol_start(eapd_wksp_t *nwksp, eapd_brcm_socket_t *from, char *ifname)$/;"	f	file:
+eapd_wai_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapd_wksp	eapd.h	/^typedef struct eapd_wksp {$/;"	s
+eapd_wksp_alloc_workspace	eapd.c	/^eapd_wksp_alloc_workspace(void)$/;"	f
+eapd_wksp_auto_config	eapd.c	/^eapd_wksp_auto_config(eapd_wksp_t *nwksp)$/;"	f
+eapd_wksp_cleanup	eapd.c	/^eapd_wksp_cleanup(eapd_wksp_t *nwksp)$/;"	f
+eapd_wksp_clear_inited	eapd.c	/^eapd_wksp_clear_inited()$/;"	f
+eapd_wksp_deinit	eapd.c	/^eapd_wksp_deinit(eapd_wksp_t *nwksp)$/;"	f
+eapd_wksp_dispatch	eapd.c	/^eapd_wksp_dispatch(eapd_wksp_t *nwksp)$/;"	f
+eapd_wksp_display_usage	eapd.c	/^eapd_wksp_display_usage(void)$/;"	f
+eapd_wksp_find_cb	eapd.c	/^eapd_wksp_find_cb(eapd_app_t *app, char *wlifname, uint8 *mac)$/;"	f	file:
+eapd_wksp_free_workspace	eapd.c	/^eapd_wksp_free_workspace(eapd_wksp_t * nwksp)$/;"	f
+eapd_wksp_init	eapd.c	/^eapd_wksp_init(eapd_wksp_t *nwksp)$/;"	f
+eapd_wksp_inited	eapd.c	/^static int eapd_wksp_inited = 0;$/;"	v	file:
+eapd_wksp_is_inited	eapd.c	/^int eapd_wksp_is_inited()$/;"	f
+eapd_wksp_main_loop	eapd.c	/^eapd_wksp_main_loop(eapd_wksp_t *nwksp)$/;"	f
+eapd_wksp_parse_cmd	eapd.c	/^eapd_wksp_parse_cmd(int argc, char *argv[], eapd_wksp_t *nwksp)$/;"	f
+eapd_wksp_t	eapd.h	/^} eapd_wksp_t;$/;"	t	typeref:struct:eapd_wksp
+eapd_wps_t	eapd.h	/^} eapd_app_t, eapd_wps_t, eapd_nas_t, eapd_ses_t, eapd_wai_t, eapd_dcs_t, eapd_mevent_t, eapd_bsd_t;$/;"	t	typeref:struct:eapd_app
+eapdispuserlist	eapd.c	/^static struct eapd_user_list  eapdispuserlist[EAPD_WKSP_EAP_USER_NUM] = {$/;"	v	typeref:struct:eapd_user_list	file:
+eapol_version	eapd.h	/^	uint8		eapol_version;	\/* eapol version *\/$/;"	m	struct:eapd_sta
+event_deinit	eapd.c	/^event_deinit(eapd_wksp_t *nwksp)$/;"	f	file:
+event_init	eapd.c	/^event_init(eapd_wksp_t *nwksp)$/;"	f	file:
+fdmax	eapd.h	/^	int			fdmax;$/;"	m	struct:eapd_wksp
+fdset	eapd.h	/^	fd_set			fdset;$/;"	m	struct:eapd_wksp
+flag	eapd.h	/^	int		flag;$/;"	m	struct:eapd_socket
+flags	eapd.h	/^	int			flags;$/;"	m	struct:eapd_cb
+flags	eapd.h	/^	int			flags;$/;"	m	struct:eapd_wksp
+identity	eapd.c	/^	unsigned char identity[EAPD_WKSP_MAX_EAP_USER_IDENT];$/;"	m	struct:eapd_user_list	file:
+identity_len	eapd.c	/^	unsigned int	identity_len;$/;"	m	struct:eapd_user_list	file:
+ifindex	eapd.h	/^	int		ifindex;$/;"	m	struct:eapd_socket
+ifname	eapd.h	/^	char			ifname[IFNAMSIZ];$/;"	m	struct:eapd_cb
+ifname	eapd.h	/^	char		ifname[IFNAMSIZ];$/;"	m	struct:eapd_socket
+ifname	eapd.h	/^	char		ifname[IFNAMSIZ];$/;"	m	struct:eapd_sta
+ifnames	eapd.h	/^	char	ifnames[IFNAMSIZ * EAPD_WKSP_MAX_NO_IFNAMES]; \/* interface names *\/$/;"	m	struct:eapd_app
+inuseCount	eapd.h	/^	int		inuseCount;$/;"	m	struct:eapd_socket
+last_use	eapd.h	/^	time_t		last_use;	\/* use timestamp *\/$/;"	m	struct:eapd_sta
+main	eapd_bsd.c	/^main(int argc, char* argv[])$/;"	f
+main	eapd_linux.c	/^int main(int argc, char* argv[])$/;"	f
+method	eapd.c	/^	unsigned char method;$/;"	m	struct:eapd_user_list	file:
+mevent	eapd.h	/^	eapd_mevent_t		mevent;$/;"	m	struct:eapd_wksp
+mevent_app_deinit	mevent_eap.c	/^mevent_app_deinit(eapd_wksp_t *nwksp)$/;"	f
+mevent_app_enabled	mevent_eap.c	/^mevent_app_enabled(char *name)$/;"	f
+mevent_app_handle_event	mevent_eap.c	/^mevent_app_handle_event(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+mevent_app_init	mevent_eap.c	/^mevent_app_init(eapd_wksp_t *nwksp)$/;"	f
+mevent_app_recv_handler	mevent_eap.c	/^mevent_app_recv_handler(eapd_wksp_t *nwksp, eapd_cb_t *from, uint8 *pData,$/;"	f
+mevent_app_sendup	mevent_eap.c	/^mevent_app_sendup(eapd_wksp_t *nwksp, uint8 *pData, int pLen, char *from)$/;"	f
+mevent_app_set_eventmask	mevent_eap.c	/^mevent_app_set_eventmask(eapd_app_t *app)$/;"	f
+mode	eapd.h	/^	uint32		mode;		\/* Authentication mode *\/$/;"	m	struct:eapd_sta
+nas	eapd.h	/^	eapd_nas_t		nas;$/;"	m	struct:eapd_wksp
+nas_app_deinit	nas_eap.c	/^nas_app_deinit(eapd_wksp_t *nwksp)$/;"	f
+nas_app_enabled	nas_eap.c	/^nas_app_enabled(char *name)$/;"	f
+nas_app_find_wpaie	nas_eap.c	/^nas_app_find_wpaie(uint8 *parse, uint len)$/;"	f	file:
+nas_app_find_wpsie	nas_eap.c	/^nas_app_find_wpsie(uint8 *data, uint data_len)$/;"	f	file:
+nas_app_handle_event	nas_eap.c	/^nas_app_handle_event(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+nas_app_init	nas_eap.c	/^nas_app_init(eapd_wksp_t *nwksp)$/;"	f
+nas_app_is_wpa_ie	nas_eap.c	/^nas_app_is_wpa_ie(uint8 *ie, uint8 **tlvs, uint *tlvs_len)$/;"	f	file:
+nas_app_is_wps_ie	nas_eap.c	/^nas_app_is_wps_ie(uint8 *ie, uint8 **tlvs, uint *tlvs_len)$/;"	f	file:
+nas_app_parse_ie	nas_eap.c	/^nas_app_parse_ie(uint8 *ie, int ie_len, uint32 *wsec, uint32 *mode)$/;"	f	file:
+nas_app_parse_tlvs	nas_eap.c	/^nas_app_parse_tlvs(void *buf, int buflen, uint key)$/;"	f	file:
+nas_app_recv_handler	nas_eap.c	/^nas_app_recv_handler(eapd_wksp_t *nwksp, char *wlifname, eapd_cb_t *from, uint8 *pData,$/;"	f
+nas_app_sendup	nas_eap.c	/^nas_app_sendup(eapd_wksp_t *nwksp, uint8 *pData, int pLen, char *from)$/;"	f
+nas_app_set_eventmask	nas_eap.c	/^nas_app_set_eventmask(eapd_app_t *app)$/;"	f
+nas_app_wpa2_akm2auth	nas_eap.c	/^nas_app_wpa2_akm2auth(uint32 akm)$/;"	f	file:
+nas_app_wpa_akm2auth	nas_eap.c	/^nas_app_wpa_akm2auth(uint32 akm)$/;"	f	file:
+nas_app_wpa_auth2mode	nas_eap.c	/^nas_app_wpa_auth2mode(int auth)$/;"	f	file:
+nas_close_dif_sockets	nas_eap.c	/^nas_close_dif_sockets(eapd_wksp_t *nwksp, eapd_cb_t *cb)$/;"	f
+nas_open_dif_sockets	nas_eap.c	/^nas_open_dif_sockets(eapd_wksp_t *nwksp, eapd_cb_t *cb)$/;"	f
+next	eapd.h	/^	struct eapd_cb		*next;$/;"	m	struct:eapd_cb	typeref:struct:eapd_cb::eapd_cb
+next	eapd.h	/^	struct eapd_sta	*next;$/;"	m	struct:eapd_sta	typeref:struct:eapd_sta::eapd_sta
+packet	eapd.h	/^	uchar			packet[EAPD_WKSP_RECV_DATA_MAX_LEN];$/;"	m	struct:eapd_wksp
+pae_id	eapd.h	/^	ushort		pae_id;$/;"	m	struct:eapd_sta
+pae_state	eapd.h	/^	ushort		pae_state;$/;"	m	struct:eapd_sta
+preauthSocket	eapd.h	/^	eapd_preauth_socket_t	preauthSocket;	\/* only need by NAS *\/$/;"	m	struct:eapd_cb
+ses	eapd.h	/^	eapd_ses_t		ses;$/;"	m	struct:eapd_wksp
+ses_app_deinit	ses_eap.c	/^ses_app_deinit(eapd_wksp_t *nwksp)$/;"	f
+ses_app_enabled	ses_eap.c	/^ses_app_enabled(char *name)$/;"	f
+ses_app_handle_event	ses_eap.c	/^ses_app_handle_event(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+ses_app_init	ses_eap.c	/^ses_app_init(eapd_wksp_t *nwksp)$/;"	f
+ses_app_recv_handler	ses_eap.c	/^ses_app_recv_handler(eapd_wksp_t *nwksp, char *wlifname, eapd_cb_t *from,$/;"	f
+ses_app_sendup	ses_eap.c	/^ses_app_sendup(eapd_wksp_t *nwksp, uint8 *pData, int pLen, char *from)$/;"	f
+ses_app_set_eventmask	ses_eap.c	/^ses_app_set_eventmask(eapd_app_t *app)$/;"	f
+sta	eapd.h	/^	eapd_sta_t		sta[EAPD_WKSP_MAX_SUPPLICANTS];$/;"	m	struct:eapd_wksp
+sta_deinit	eapd.c	/^sta_deinit(eapd_wksp_t *nwksp)$/;"	f	file:
+sta_hashed	eapd.h	/^	eapd_sta_t		*sta_hashed[EAPD_WKSP_MAX_SUPPLICANTS];$/;"	m	struct:eapd_wksp
+sta_init	eapd.c	/^sta_init(eapd_wksp_t *nwksp)$/;"	f	file:
+sta_lookup	eapd.c	/^sta_lookup(eapd_wksp_t *nwksp, struct ether_addr *sta_ea, struct ether_addr *bssid_ea,$/;"	f
+sta_remove	eapd.c	/^sta_remove(eapd_wksp_t *nwksp, eapd_sta_t *sta)$/;"	f
+used	eapd.h	/^	bool		used;		\/* flags use of item *\/$/;"	m	struct:eapd_sta
+wai	eapd.h	/^	eapd_wai_t		wai;$/;"	m	struct:eapd_wksp
+wai_app_deinit	wai_eap.c	/^wai_app_deinit(eapd_wksp_t *nwksp)$/;"	f
+wai_app_enabled	wai_eap.c	/^wai_app_enabled(char *name)$/;"	f
+wai_app_handle_event	wai_eap.c	/^wai_app_handle_event(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+wai_app_init	wai_eap.c	/^wai_app_init(eapd_wksp_t *nwksp)$/;"	f
+wai_app_recv_handler	wai_eap.c	/^wai_app_recv_handler(eapd_wksp_t *nwksp, eapd_cb_t *from, uint8 *pData, int *pLen)$/;"	f
+wai_app_sendup	wai_eap.c	/^wai_app_sendup(eapd_wksp_t *nwksp, uint8 *pData, int pLen, char *from)$/;"	f
+wai_app_set_eventmask	wai_eap.c	/^wai_app_set_eventmask(eapd_app_t *app)$/;"	f
+wps	eapd.h	/^	eapd_wps_t		wps;$/;"	m	struct:eapd_wksp
+wps_app_deinit	wps_eap.c	/^wps_app_deinit(eapd_wksp_t *nwksp)$/;"	f
+wps_app_enabled	wps_eap.c	/^wps_app_enabled(char *name)$/;"	f
+wps_app_handle_event	wps_eap.c	/^wps_app_handle_event(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+wps_app_init	wps_eap.c	/^wps_app_init(eapd_wksp_t *nwksp)$/;"	f
+wps_app_monitor_sendup	wps_eap.c	/^wps_app_monitor_sendup(eapd_wksp_t *nwksp, uint8 *pData, int Len, char *from)$/;"	f
+wps_app_recv_handler	wps_eap.c	/^wps_app_recv_handler(eapd_wksp_t *nwksp, char *wlifname, eapd_cb_t *from,$/;"	f
+wps_app_set_eventmask	wps_eap.c	/^wps_app_set_eventmask(eapd_app_t *app)$/;"	f

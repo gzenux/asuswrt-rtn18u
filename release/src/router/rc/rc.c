@@ -8,11 +8,17 @@
 #include "rc.h"
 #include "interface.h"
 #include <sys/time.h>
+
 #ifdef RTCONFIG_RALINK
 #include <ralink.h>
 #endif
 
+#ifdef RTCONFIG_QCA
+#include <qca.h>
+#endif
+
 #ifdef DEBUG_RCTEST
+int test_mknode(int id);
 // used for various testing
 static int rctest_main(int argc, char *argv[])
 {
@@ -152,7 +158,7 @@ static int rctest_main(int argc, char *argv[])
 					system("echo 2 > /proc/sys/net/ipv4/conf/all/force_igmp_version");
 #endif
 
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
 					if (!(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")))
 #endif
 					{
@@ -187,7 +193,7 @@ static int rctest_main(int argc, char *argv[])
 			if(argc>=4) gpio_dir(atoi(argv[2]), atoi(argv[3]));
 		}
 		else if (strcmp(argv[1], "init_switch") == 0) {
-			init_switch(on);
+			init_switch();
 		}
 		else if (strcmp(argv[1], "set_action") == 0) {
 			set_action(on);
@@ -311,12 +317,18 @@ static const applets_t applets[] = {
 #endif
 #ifdef RTCONFIG_WPS
 	{ "wpsaide",			wpsaide_main			},
+#ifdef RTCONFIG_QCA
+	{ "get_wps_er",			get_wps_er_main			},
+#endif
 #endif
 	{ "halt",			reboothalt_main			},
 	{ "reboot",			reboothalt_main			},
 	{ "ntp", 			ntp_main			},
-#ifdef RTCONFIG_RALINK
+#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_EXT_RTL8365MB)
 	{ "rtkswitch",			config_rtkswitch		},
+#elif defined(RTCONFIG_QCA)
+	{ "rtkswitch",			config_rtkswitch		},
+	{ "delay_exec",			delay_main			},
 #endif
 	{ "wanduck",			wanduck_main			},
 	{ "tcpcheck",			tcpcheck_main			},
@@ -332,17 +344,25 @@ static const applets_t applets[] = {
 	{ "disk_remove",		diskremove_main			},
 #endif
 	{ "firmware_check",		firmware_check_main		},
+#ifdef BUILD_READMEM
+	{ "readmem",			readmem_main			},
+#endif
 #ifdef RTCONFIG_HTTPS
 	{ "rsasign_check",		rsasign_check_main		},
 #endif
 	{ "service",			service_main			},
+#ifdef RTCONFIG_SPEEDTEST
 	{ "speedtest",			speedtest_main			},
+#endif
 #ifdef RTCONFIG_BWDPI
 	{ "bwdpi",			bwdpi_main			},
 	{ "bwdpi_monitor",		bwdpi_monitor_main		},
 	{ "bwdpi_check",		bwdpi_check_main		},
 	{ "bwdpi_wred_alive",		bwdpi_wred_alive_main		},
 	{ "rsasign_sig_check",		rsasign_sig_check_main		},
+#endif
+#ifdef RT4GAC55U
+	{ "lteled",			lteled_main			},
 #endif
 #ifdef RTCONFIG_TR069
 	{ "dhcpc_lease",		dhcpc_lease_main		},
@@ -385,7 +405,7 @@ int main(int argc, char **argv)
 	}
 #endif
 
-#ifdef RTCONFIG_RALINK
+#if !defined(CONFIG_BCMWL5)
     if(getpid() != 1)
     {
 #endif
@@ -422,7 +442,7 @@ int main(int argc, char **argv)
 		}
 	}
 #endif
-#ifdef RTCONFIG_RALINK
+#if !defined(CONFIG_BCMWL5)
     }
 #endif
 	const applets_t *a;
@@ -440,6 +460,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	else if(!strcmp(base, "nvram_erase")){
+		nvram_set(ASUS_STOP_COMMIT, "1");
 		erase_nvram();
 		return 0;
 	}
@@ -460,6 +481,16 @@ int main(int argc, char **argv)
 
 		return asus_sd(argv[1], argv[2]);
 	}
+#ifdef RTCONFIG_BCMARM
+	else if(!strcmp(base, "asus_mmc")){
+		if(argc != 3){
+			printf("Usage: asus_mmc [device_name] [action]\n");
+			return 0;
+		}
+
+		return asus_mmc(argv[1], argv[2]);
+	}
+#endif	
 	else if(!strcmp(base, "asus_lp")){
 		if(argc != 3){
 			printf("Usage: asus_lp [device_name] [action]\n");
@@ -607,7 +638,7 @@ int main(int argc, char **argv)
 			printf("ATE_ERROR\n");
 		return 0;
 	}
-#if defined(RTCONFIG_RALINK)
+#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
 	else if (!strcmp(base, "FWRITE")) {
 		if (argc == 3)
 			return FWRITE(argv[1], argv[2]);
@@ -631,6 +662,8 @@ int main(int argc, char **argv)
 		printf("ATE_ERROR\n");
 		return 0;
 	}
+#endif	/* RTCONFIG_RALINK || RTCONFIG_QCA */
+#if defined(RTCONFIG_RALINK)
 #if defined(RTCONFIG_HAS_5G)
 	else if (!strcmp(base, "asuscfe_5g")) {
 		if (argc == 2)
@@ -684,8 +717,12 @@ int main(int argc, char **argv)
 		pc_main(argc, argv);
 		return 0;
 	}
+	else if(!strcmp(base, "pc_block")) {
+		pc_block_main(argc, argv);
+		return 0;
+	}
 #endif
-#if defined(CONFIG_BCMWL5) || (defined(RTCONFIG_RALINK) && defined(RTCONFIG_WIRELESSREPEATER))
+#if defined(CONFIG_BCMWL5) || (defined(RTCONFIG_RALINK) && defined(RTCONFIG_WIRELESSREPEATER)) || defined(RTCONFIG_QCA)
 	else if (!strcmp(base, "wlcscan")) {
 		return wlcscan_main();
 	}
@@ -703,7 +740,7 @@ int main(int argc, char **argv)
 		return gen_stateless_conf();
 	}
 	else if (!strcmp(base, "restart_qtn")){
-		return reset_qtn(1);
+		return reset_qtn(0);
 	}
 #endif
 #endif
@@ -829,46 +866,32 @@ int main(int argc, char **argv)
 
 		return 0;
 	}
-#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
-	else if(!strcmp(base, "modem_bytes_plus")){
-		char buf[32];
-		unsigned long long rx_old, tx_old;
-		unsigned long long rx, tx;
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+	else if(!strcmp(base, "lplus")){
+		if(argc != 3){
+			printf("Usage: %s <integer1> <integer2>.\n", argv[0]);
+			return 0;
+		}
 
-		if(f_exists("/jffs/modem_bytes_rx_old")){
-			f_read_excl("/jffs/modem_bytes_rx_old", buf, 32);
-			rx_old = strtoull(buf, NULL, 10);
-		}
-		else
-			rx_old = 0;
-		if(f_exists("/jffs/modem_bytes_tx_old")){
-			f_read_excl("/jffs/modem_bytes_tx_old", buf, 32);
-			tx_old = strtoull(buf, NULL, 10);
-		}
-		else
-			tx_old = 0;
-		if(f_exists("/jffs/modem_bytes_rx")){
-			f_read_excl("/jffs/modem_bytes_rx", buf, 32);
-			rx = strtoull(buf, NULL, 10);
-		}
-		else
-			rx = 0;
-		if(f_exists("/jffs/modem_bytes_tx")){
-			f_read_excl("/jffs/modem_bytes_tx", buf, 32);
-			tx = strtoull(buf, NULL, 10);
-		}
-		else
-			tx = 0;
+		unsigned long long int1 = strtoull(argv[1], NULL, 10);
+		unsigned long long int2 = strtoull(argv[2], NULL, 10);
+		unsigned long long total = int1+int2;
 
-		rx += rx_old;
-		tx += tx_old;
+		printf("%llu", total);
 
-		snprintf(buf, 32, "%llu", rx);
-		f_write_excl("/jffs/modem_bytes_rx_old", buf, strlen(buf), 0, 0);
-		nvram_set("modem_bytes_rx_old", buf);
-		snprintf(buf, 32, "%llu", tx);
-		f_write_excl("/jffs/modem_bytes_tx_old", buf, strlen(buf), 0, 0);
-		nvram_set("modem_bytes_tx_old", buf);
+		return 0;
+	}
+	else if(!strcmp(base, "lminus")){
+		if(argc != 3){
+			printf("Usage: %s <integer1> <integer2>.\n", argv[0]);
+			return 0;
+		}
+
+		unsigned long long int1 = strtoull(argv[1], NULL, 10);
+		unsigned long long int2 = strtoull(argv[2], NULL, 10);
+		unsigned long long total = int1-int2;
+
+		printf("%llu", total);
 
 		return 0;
 	}
@@ -883,6 +906,12 @@ int main(int argc, char **argv)
 		start_dhcp6c();
 		return 0;
 	}
+#endif /* RTCONFIG_WIDEDHCP6 */
+#ifdef RTCONFIG_TOR
+	else if (!strcmp(base, "start_tor")) {
+                start_Tor_proxy();
+		return 0;
+        }
 #endif
 	printf("Unknown applet: %s\n", base);
 	return 0;

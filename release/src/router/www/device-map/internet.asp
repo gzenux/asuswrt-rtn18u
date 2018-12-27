@@ -153,12 +153,12 @@ function initial(){
 			}
 			else{
 				$("goDualWANSetting").style.display = "";
-				$("dualwan_enable_button").style.display = "none";		
+				$("dualwan_enable_button").style.display = "none";	
 			}
 		}
 		else{
 			$("goDualWANSetting").style.display = "none";
-			$("dualwan_enable_button").style.display = "none";		
+			$("dualwan_enable_button").style.display = "none";	
 		}
 		
 	}
@@ -459,16 +459,29 @@ function goQIS(){
 
 function goToWAN(){
 	if(parent.wans_flag){
-		if(wans_dualwan.split(" ")[wan_unit].toUpperCase == "USB")
-			parent.location.href = '/Advanced_Modem_Content.asp';
-		else if(dsl_support){
-			if(wans_dualwan.split(" ")[wan_unit].toUpperCase == "WAN" || wans_dualwan.split(" ")[wan_unit].toUpperCase == "LAN")
-				parent.location.href = '/Advanced_WAN_Content.asp';
-			else
-				parent.location.href = '/Advanced_DSL_Content.asp';
+		var wan_selected = parent.document.form.dual_wan_flag.value;
+
+		if(wan_selected == 0){
+			document.act_form.wan_unit.value = 0;
 		}
-		else
-			parent.location.href = '/Advanced_WAN_Content.asp';
+		else if(wan_selected == 1){
+			document.act_form.wan_unit.value = 1;
+		}
+		document.act_form.action_mode.value = "change_wan_unit";
+		document.act_form.target = "";		
+		document.act_form.submit();
+
+		if(wans_dualwan.split(" ")[wan_selected].toUpperCase() == "USB"){
+			if(gobi_support)
+				parent.location.href = "/Advanced_MobileBroadband_Content.asp";
+			else
+				parent.location.href = "/Advanced_Modem_Content.asp";
+		}
+		else if(wans_dualwan.split(" ")[wan_selected].toUpperCase() == "WAN" || wans_dualwan.split(" ")[wan_selected].toUpperCase() == "LAN"){
+			parent.location.href = "/Advanced_WAN_Content.asp";
+		}
+		else if(wans_dualwan.split(" ")[wan_selected].toUpperCase() == "DSL")
+			parent.location.href = "/Advanced_DSL_Content.asp";
 	}
 	else{
 		if(dsl_support)			
@@ -553,9 +566,6 @@ function manualSetup(){
 								parent.showLoading();
 								document.internetForm.submit();	
 								return true;
-							 },
-							 {
-								switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
 							 }
 						);
 				</script>
@@ -589,9 +599,6 @@ function manualSetup(){
 								parent.showLoading();
 								document.internetForm.submit();	
 								return true;
-							 },
-							 {
-								switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
 							 }
 						);
 				</script>
@@ -769,14 +776,14 @@ function manualSetup(){
 <tr id="goDualWANSetting">
 	<td height="50" style="padding:10px 15px 0px 15px;">
 		<p class="formfonttitle_nwm" style="float:left;width:116px;">Dual WAN setting</p>
-		<input type="button" class="button_gen_long" onclick="goToDualWAN();" value="<#btn_go#>" style="margin-top:-35px;margin-left:115px;">
+		<input type="button" class="button_gen_long" onclick="goToDualWAN();" value="<#btn_go#>" style="position:absolute;right:25px;margin-top:-10px;margin-left:115px;">
 		<img style="margin-top:5px;" src="/images/New_ui/networkmap/linetwo2.png">
 	</td>
 </tr>
 <tr id="goSetting" style="display:none">
 	<td height="30" style="padding:10px 15px 0px 15px;">
 		<p class="formfonttitle_nwm" style="float:left;width:116px;"><#btn_to_WAN#></p>
-		<input type="button" class="button_gen_long" onclick="goToWAN();" value="<#btn_go#>" style="margin-top:-33px;margin-left:115px;">
+		<input type="button" class="button_gen_long" onclick="goToWAN();" value="<#btn_go#>" style="position:absolute;right:25px;margin-top:-10px;margin-left:115px;">
 	</td>
 </tr>
 
@@ -846,6 +853,12 @@ function manualSetup(){
 
 </table>
 
+</form>
+<form method="post" name="act_form" action="/apply.cgi" target="hidden_frame">
+<input type="hidden" name="action_mode" value="">
+<input type="hidden" name="action_script" value="">
+<input type="hidden" name="wan_unit" value="">
+<input type="hidden" name="current_page" value="">
 </form>
 </body>
 </html>

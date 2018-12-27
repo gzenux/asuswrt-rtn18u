@@ -73,6 +73,18 @@ struct globals {
 /* We use additional 64+ bytes in make_device() */
 #define SCRATCH_SIZE 80
 
+static void mkdir_recursive(char *name)
+{
+	/* if name has many levels ("dir1/dir2"),
+	 * bb_make_directory() will create dir1 according to umask,
+	 * not according to its "mode" parameter.
+	 * Since we run with umask=0, need to temporarily switch it.
+	 */
+	umask(022); /* "dir1" (if any) will be 0755 too */
+	bb_make_directory(name, 0755, FILEUTILS_RECUR);
+	umask(0);
+}
+
 /* Builds an alias path.
  * This function potentionally reallocates the alias parameter.
  * Only used for ENABLE_FEATURE_MDEV_RENAME
@@ -86,7 +98,7 @@ static char *build_alias(char *alias, const char *device_name)
 	dest = strrchr(alias, '/');
 	if (dest) { /* ">bar/[baz]" ? */
 		*dest = '\0'; /* mkdir bar */
-		bb_make_directory(alias, 0755, FILEUTILS_RECUR);
+		mkdir_recursive(alias);
 		*dest = '/';
 		if (dest[1] == '\0') { /* ">bar/" => ">bar/device_name" */
 			dest = alias;

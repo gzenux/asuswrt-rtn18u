@@ -70,7 +70,7 @@ ALLOBJS = $(BASEOBJS) $(LNXOBJS)
 #STATIC_LINKING: LIBS = -lvorbis -logg -lm -lsqlite3 -lpthread -lexif -ljpeg -lFLAC -lm -lid3tag -lz -lavformat -lavutil -lavcodec -lm
 
 ifeq ($(STATIC),1)
-LIBS = -lpthread -lm \
+LIBS = -lpthread -ldl -lm \
 	$(TOP)/libvorbis/lib/.libs/libvorbis.a \
 	$(TOP)/libogg/src/.libs/libogg.a \
 	$(TOP)/sqlite/.libs/libsqlite3.a \
@@ -83,7 +83,7 @@ LIBS = -lpthread -lm \
 	$(TOP)/ffmpeg/libavcodec/libavcodec.a \
 	$(TOP)/ffmpeg/libavutil/libavutil.a
 else
-LIBS += -lpthread -lm -lvorbis -logg -lsqlite3 -lexif -ljpeg -lFLAC -lid3tag -lz -lavformat -lavcodec -lavutil
+LIBS += -lpthread -ldl -lm -lvorbis -logg -lsqlite3 -lexif -ljpeg -lFLAC -lid3tag -lz -lavformat -lavcodec -lavutil
 endif
 
 TESTUPNPDESCGENOBJS = testupnpdescgen.o upnpdescgen.o

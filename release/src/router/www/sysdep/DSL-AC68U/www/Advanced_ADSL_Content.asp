@@ -22,6 +22,7 @@
 function initial(){
 	show_menu();
 	change_dla("<% nvram_get("dslx_dla_enable"); %>");
+	hide_nonstd_vectoring(<% nvram_get("dslx_vdsl_vectoring"); %>);
 }
 
 function applyRule(){
@@ -36,13 +37,96 @@ function valid_form(){
 }
 
 function change_dla(enable){
-	if(enable == "1") {
-		document.form.dslx_snrm_offset.disabled = true;
+	if(enable == "1") {	//Enable
+		document.form.dslx_snrm_offset.style.display = "none";
+		document.form.dslx_snrm_offset.disabled = true;		
+		document.getElementById("dslx_snrm_offset_read").style.display = "";
+		document.getElementById("dslx_snrm_offset_read").innerHTML = get_snrm_offset();
 	}
 	else {
+		document.form.dslx_snrm_offset.style.display = "";
 		document.form.dslx_snrm_offset.disabled = false;
+		document.getElementById("dslx_snrm_offset_read").style.display = "none";
 	}
 }
+
+function get_snrm_offset(){
+	var offset_ori = "<% nvram_get("dslx_snrm_offset"); %>";
+	switch(offset_ori){
+		case "0":
+					return "<#btn_Disabled#>";
+					break;
+		case "5120":
+					return "10 dB";
+					break;
+		case "4608":
+					return "9 dB";
+					break;
+		case "4096":
+					return "8 dB";
+					break;
+		case "3584":
+					return "7 dB";
+					break;
+		case "3072":
+					return "6 dB";
+					break;
+		case "2560":
+					return "5 dB";
+					break;
+		case "2048":
+					return "4 dB";
+					break;
+		case "1536":
+					return "3 dB";
+					break;
+		case "1024":
+					return "2 dB";
+					break;
+		case "512":
+					return "1 dB";
+					break;
+		case "-512":
+					return "-1 dB";
+					break;
+		case "-1024":
+					return "-2 dB";
+					break;
+		case "-1536":
+					return "-3 dB";
+					break;
+		case "-2048":
+					return "-4 dB";
+					break;
+		case "-2560":
+					return "-5 dB";
+					break;
+		case "-3072":
+					return "-6 dB";
+					break;
+		case "-3584":
+					return "-7 dB";
+					break;
+		case "-4096":
+					return "-8 dB";
+					break;
+		case "-4608":
+					return "-9 dB";
+					break;
+		case "-5120":
+					return "-10 dB";
+					break;
+		default:
+					return "<#btn_Disabled#>";
+					break;
+	}
+
+}
+
+function hide_nonstd_vectoring(_value){
+$("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
+}
+
 </script>
 </head>
 
@@ -118,7 +202,7 @@ function change_dla(enable){
 						<option value="3" <% nvram_match("dslx_modulation", "3", "selected"); %>>ADSL2</option>
 						<option value="4" <% nvram_match("dslx_modulation", "4", "selected"); %>>ADSL2+</option>
 						<option value="6" <% nvram_match("dslx_modulation", "6", "selected"); %>>VDSL2</option>
-						<option value="5" <% nvram_match("dslx_modulation", "5", "selected"); %>>Multiple Mode</option>
+						<option value="5" <% nvram_match("dslx_modulation", "5", "selected"); %>>Auto Sync-Up</option>
 					</select>
 				</td>
 			</tr>
@@ -128,13 +212,13 @@ function change_dla(enable){
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_annex">
-						<option value="0" <% nvram_match("dslx_annex", "0", "selected"); %>>Annex A</option>
-						<option value="1" <% nvram_match("dslx_annex", "1", "selected"); %>>Annex I</option>
-						<option value="2" <% nvram_match("dslx_annex", "2", "selected"); %>>Annex A/L</option>
-						<option value="3" <% nvram_match("dslx_annex", "3", "selected"); %>>Annex M</option>
-						<option value="4" <% nvram_match("dslx_annex", "4", "selected"); %>>Annex A/I/J/L/M</option>
-						<option value="5" <% nvram_match("dslx_annex", "5", "selected"); %>>Annex B</option>
-						<option value="6" <% nvram_match("dslx_annex", "6", "selected"); %>>Annex B/J/M</option>
+						<option value="0" <% nvram_match("dslx_annex", "0", "selected"); %>>ANNEX A</option>
+						<option value="1" <% nvram_match("dslx_annex", "1", "selected"); %>>ANNEX I</option>
+						<option value="2" <% nvram_match("dslx_annex", "2", "selected"); %>>ANNEX A/L</option>
+						<option value="3" <% nvram_match("dslx_annex", "3", "selected"); %>>ANNEX M</option>
+						<option value="4" <% nvram_match("dslx_annex", "4", "selected"); %>>ANNEX A/I/J/L/M</option>
+						<option value="5" <% nvram_match("dslx_annex", "5", "selected"); %>>ANNEX B</option>
+						<option value="6" <% nvram_match("dslx_annex", "6", "selected"); %>>ANNEX B/J</option>
 					</select>
 				</td>
 			</tr>
@@ -151,10 +235,11 @@ function change_dla(enable){
 			</tr>
 			<tr>
 				<th>
-					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,1);">Stability Adjustment (ADSL)</a>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,1);"><#dslsetting_Stability_Adj#> (ADSL)</a>
 				</th>
 				<td>
-					<select id="" class="input_option" name="dslx_snrm_offset">
+					<span id="dslx_snrm_offset_read" name="dslx_snrm_offset_read" style="display:none;color:#FFFFFF;"></span>
+					<select id="dslx_snrm_offset" class="input_option" name="dslx_snrm_offset" style="display:none;">
 						<option value="0" <% nvram_match("dslx_snrm_offset", "0", "selected"); %>><#btn_Disabled#></option>
 						<option value="5120" <% nvram_match("dslx_snrm_offset", "5120", "selected"); %>>10 dB</option>
 						<option value="4608" <% nvram_match("dslx_snrm_offset", "4608", "selected"); %>>9 dB</option>
@@ -179,9 +264,23 @@ function change_dla(enable){
 					</select>
 				</td>
 			</tr>
+
 			<tr>
 				<th>
-					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,4);">Stability Adjustment (VDSL)</a>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,13);">Rx AGC GAIN Adjustment (ADSL)</a>
+				</th>
+				<td>
+					<select id="" class="input_option" name="dslx_adsl_rx_agc">
+						<option value="Default" <% nvram_match("dslx_adsl_rx_agc", "Default", "selected"); %>>Default</option>
+						<option value="Stable" <% nvram_match("dslx_adsl_rx_agc", "Stable", "selected"); %>>Stable</option>
+						<option value="High Performance" <% nvram_match("dslx_adsl_rx_agc", "High Performance", "selected"); %>>High Performance</option>
+					</select>
+				</td>
+			</tr>
+
+			<tr>
+				<th>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,4);"><#dslsetting_Stability_Adj#> (VDSL)</a>
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_vdsl_target_snrm">
@@ -246,7 +345,7 @@ function change_dla(enable){
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_vdsl_rx_agc">
-						<option value="65535" <% nvram_match("dslx_vdsl_rx_agc", "65535", "selected"); %>><#btn_Disabled#></option>
+						<option value="65535" <% nvram_match("dslx_vdsl_rx_agc", "65535", "selected"); %>>Default</option>
 						<option value="394" <% nvram_match("dslx_vdsl_rx_agc", "394", "selected"); %>>Stable</option>
 						<option value="476" <% nvram_match("dslx_vdsl_rx_agc", "476", "selected"); %>>Balance</option>
 						<option value="550" <% nvram_match("dslx_vdsl_rx_agc", "550", "selected"); %>>High Performance</option>
@@ -257,7 +356,7 @@ function change_dla(enable){
 			<!--upbo stands for upstream power back off-->
 			<tr>
 				<th>
-					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,7);">UPBO - upstream power back off (VDSL)</a>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,7);">UPBO - Upstream Power Back Off (VDSL)</a>
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_vdsl_upbo">
@@ -269,7 +368,7 @@ function change_dla(enable){
 			</tr>
 			<tr>
 				<th>
-					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,2);">SRA (Seamless Rate Adaptation)</a>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,2);"><#dslsetting_SRA#></a>
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_sra">
@@ -313,7 +412,7 @@ function change_dla(enable){
 			</tr>
 			<tr>
 				<th>
-					G.INP (G.998.4)
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,12);">G.INP (G.998.4)</a>
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_ginp">
@@ -324,12 +423,23 @@ function change_dla(enable){
 			</tr>
 			<tr>
 				<th>
-					G.vector (G.993.5)
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,14);">G.vector (G.993.5)</a>
 				</th>
 				<td>
-					<select id="" class="input_option" name="dslx_vdsl_vectoring">
+					<select id="" class="input_option" name="dslx_vdsl_vectoring" onchange="hide_nonstd_vectoring(this.value);">
 						<option value="1" <% nvram_match("dslx_vdsl_vectoring", "1", "selected"); %>><#btn_Enabled#></option>
 						<option value="0" <% nvram_match("dslx_vdsl_vectoring", "0", "selected"); %>><#btn_Disabled#></option>
+					</select>
+				</td>
+			</tr>
+			<tr id="nonstd_vectoring">
+				<th>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,15);">Non-standard G.vector (G.993.5)</a>
+				</th>
+				<td>
+					<select id="" class="input_option" name="dslx_vdsl_nonstd_vectoring">
+						<option value="1" <% nvram_match("dslx_vdsl_nonstd_vectoring", "1", "selected"); %>><#btn_Enabled#></option>
+						<option value="0" <% nvram_match("dslx_vdsl_nonstd_vectoring", "0", "selected"); %>><#btn_Disabled#></option>
 					</select>
 				</td>
 			</tr>

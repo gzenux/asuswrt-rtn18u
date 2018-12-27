@@ -180,7 +180,8 @@ int add_iQosRules(char *pcWANIF)
 	inuse = sticky_enable = 0;
 
 	if(get_model()==MODEL_RTAC56U || get_model()==MODEL_RTAC56S || get_model()==MODEL_RTAC68U ||
-		get_model()==MODEL_DSLAC68U || get_model()==MODEL_RTAC87U || get_model()==MODEL_RTAC3200)
+		get_model()==MODEL_DSLAC68U || get_model()==MODEL_RTAC87U || get_model()==MODEL_RTAC3200 || 
+		get_model()==MODEL_RTAC88U || get_model()==MODEL_RTAC5300)
 		manual_return = 1;
 
 	if(nvram_match("qos_sticky", "0"))
@@ -702,7 +703,7 @@ int add_iQosRules(char *pcWANIF)
 		fprintf(fn_ipv6, "COMMIT\n");
 		fclose(fn_ipv6);
 		chmod(mangle_fn_ipv6, 0700);
-		eval("ip6tables-restore", (char*)mangle_fn_ipv6);
+//		eval("ip6tables-restore", (char*)mangle_fn_ipv6);
 	}
 #endif
 	fprintf(stderr, "[qos] iptables DONE!\n");

@@ -429,6 +429,13 @@ struct ieee80211req_chaninfo {
 };
 
 /*
+ * Set the active channel list for 20Mhz, 40Mhz and 80Mhz
+ */
+struct ieee80211_active_chanlist {
+	u_int8_t bw;
+	u_int8_t channels[IEEE80211_CHAN_BYTES];
+};
+/*
  * Retrieve the WPA/RSN information element for an associated station.
  */
 struct ieee80211req_wpaie {
@@ -1220,7 +1227,7 @@ enum {
 	IEEE80211_PARAM_SCAN_CANCEL = 268,		/* Cancel any ongoing scanning */
 	IEEE80211_PARAM_VHT_NSS_CAP = 269,	/* Set max spatial streams for VHT mode */
 	IEEE80211_PARAM_FIXED_BW = 270,		/* Configure fixed tx bandwidth without changing BSS bandwidth */
-	IEEE80211_PARAM_DYN_RTSCTS = 271,	/* Dynamic RTS/CTS paramters */
+	IEEE80211_PARAM_SFS = 271,		/* Smart Feature Select commands */
 	IEEE80211_PARAM_TUNEPD = 272,       /* Specify number of tunning packets to send for power detector tuning */
 	IEEE80211_PARAM_TUNEPD_DONE = 273,              /* Specify number of tunning packets to send for power detector tuning */
 	IEEE80211_PARAM_CONFIG_PMF = 274,       /* Enable/Disable 802.11w / PMF */
@@ -1252,6 +1259,19 @@ enum {
 	IEEE80211_PARAM_PEER_RTS_MODE = 299,		/* Mode setting for peer RTS */
 	IEEE80211_PARAM_DYN_WMM = 300,			/* Dynamic WMM enable */
 	IEEE80211_PARAM_BB_PARAM = 301,	/* Baseband param */
+	IEEE80211_PARAM_VAP_TX_AMSDU = 302,     /* Enable/disable A-MSDU for VAP */
+        IEEE80211_PARAM_PC_OVERRIDE = 303,              /* RSSI based Power-contraint override */
+	IEEE80211_PARAM_NDPA_DUR = 304,         /* set vht NDPA duration field */
+	IEEE80211_PARAM_TXBF_PKT_CNT = 305,     /* set the pkt cnt per txbf interval to fire sounding to a node */
+	IEEE80211_PARAM_WMAC_RX_POOL_CHK_TIMER = 306,	/* enable the timer for the wmac rx pool checking */
+	IEEE80211_PARAM_SCAN_TBL_LEN_MAX = 307,
+	IEEE80211_PARAM_MAX_SYSTEM_BW = 308,
+	IEEE80211_PARAM_11N_AMSDU_CTRL = 330,   /* ctrl TX AMSDU of IP ctrl packets for 11N STAs */
+	IEEE80211_PARAM_SCAN_RESULTS_CHECK_INV = 331,	/* interval to check scan results */
+	IEEE80211_PARAM_GLOBAL_FIXED_TX_SCALE_INDEX = 342,	/* Set global fixed tx scale index, regardless pppc probe index and tx scale bases */
+	IEEE80211_PARAM_NDPA_LEGACY_FORMAT = 344,       /* Configure PHY format for NDPA frame */
+	IEEE80211_PARAM_INST_1SS_DEF_MAT_ENABLE = 345,		/* Enable install 1ss default matrix feature */
+	IEEE80211_PARAM_INST_1SS_DEF_MAT_THRESHOLD = 346,	/* Configure the threshold for install 1ss default matrix */
 };
 
 #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
@@ -1289,9 +1309,11 @@ enum {
 #define SIOCDEV_SUBIO_SET_DSCP2AC_MAP	(SIOCDEV_SUBIO_BASE + 13)
 #define SIOCDEV_SUBIO_SET_MARK_DFS_CHAN	(SIOCDEV_SUBIO_BASE + 14)
 #define SIOCDEV_SUBIO_WOWLAN		(SIOCDEV_SUBIO_BASE + 15)
-#define SIOCDEV_SUBIO_GET_STA_AUTH	(SIOCDEV_SUBIO_BASE + 16) /* Command to get auth algo,cipher and key management */
-#define SIOCDEV_SUBIO_GET_STA_VENDOR	(SIOCDEV_SUBIO_BASE + 17) /* Command to get peer vendor */
-
+#define SIOCDEV_SUBIO_GET_STA_AUTH	(SIOCDEV_SUBIO_BASE + 16)
+#define SIOCDEV_SUBIO_GET_STA_VENDOR	(SIOCDEV_SUBIO_BASE + 17)
+#define SIOCDEV_SUBIO_GET_STA_TPUT_CAPS	(SIOCDEV_SUBIO_BASE + 18)
+#define SIOCDEV_SUBIO_DI_DFS_CHANNELS	(SIOCDEV_SUBIO_BASE + 19) /* Command to deactive DFS channels */
+#define SIOCDEV_SUBIO_SET_ACTIVE_CHANNEL_LIST (SIOCDEV_SUBIO_BASE + 20)
 
 struct ieee80211_clone_params {
 	char icp_name[IFNAMSIZ];		/* device name */
@@ -1299,6 +1321,14 @@ struct ieee80211_clone_params {
 	u_int16_t icp_flags;			/* see below */
 #define	IEEE80211_CLONE_BSSID	0x0001		/* allocate unique mac/bssid */
 #define	IEEE80211_NO_STABEACONS	0x0002		/* Do not setup the station beacon timers */
+};
+
+enum power_table_sel {
+	PWR_TABLE_SEL_BOOTCFG_ONLY = 0,	/* Search for power table in bootcfg only */
+	PWR_TABLE_SEL_BOOTCFG_PRIOR,	/* Search for power table in bootcfg at first, if not find, then search /etc/ */
+	PWR_TABLE_SEL_IMAGE_PRIOR,	/* Search for power table in /etc/ at first, if not find, then search bootcfg */
+	PWR_TABLE_SEL_IMAGE_ONLY,	/* Search for power table in /etc/ only */
+	PWR_TABLE_SEL_MAX = PWR_TABLE_SEL_IMAGE_ONLY,
 };
 
 /* APPIEBUF related definitions */
@@ -1356,6 +1386,7 @@ struct ieee80211req_set_filter {
 #define VENDOR_FIX_BRCM_REPLACE_IGMP_SRCMAC	0x02
 #define VENDOR_FIX_BRCM_REPLACE_IP_SRCMAC	0x04
 #define VENDOR_FIX_BRCM_DROP_STA_IGMPQUERY	0x08
+#define VENDOR_FIX_BRCM_AP_GEN_IGMPQUERY	0x10
 
 enum vendor_fix_idx {
 	VENDOR_FIX_IDX_BRCM_DHCP = 1,
@@ -1365,7 +1396,7 @@ enum vendor_fix_idx {
 
 struct ieee80211req_wowlan {
 	uint32_t is_op;
-	const uint8_t *is_data;
+	uint8_t *is_data;
 	int32_t is_data_len;
 };
 

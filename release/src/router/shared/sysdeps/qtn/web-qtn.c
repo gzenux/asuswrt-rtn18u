@@ -48,7 +48,9 @@
 #define	WIFINAME	"wifi0"
 
 static int s_c_rpc_use_udp = 0;
+#if 0	/* remove */
 static int qtn_qcsapi_init = 0;
+#endif
 static int qtn_init = 0;
 
 extern uint8 wf_chspec_ctlchan(chanspec_t chspec);
@@ -90,7 +92,9 @@ int rpc_qcsapi_init(int verbose)
 			continue;
 		} else {
 			client_qcsapi_set_rpcclient(clnt);
+#if 0	/* remove */
 			qtn_qcsapi_init = 1;
+#endif
 			return 0;
 		}
 	} while ((retry++ < MAX_RETRY_TIMES) && ((uptime() - start_time) < MAX_TOTAL_TIME));
@@ -910,6 +914,7 @@ int rpc_qcsapi_wps_registrar_report_pin(const char *ifname, const char *wps_pin)
 	return 0;
 }
 
+#if 0	/* remove */
 int rpc_qcsapi_restore_default_config(int flag)
 {
 	int ret;
@@ -933,6 +938,7 @@ int rpc_qcsapi_restore_default_config(int flag)
 
 	return 0;
 }
+#endif
 
 int rpc_qcsapi_bootcfg_commit(void)
 {
@@ -1601,21 +1607,21 @@ void rpc_update_mbss(const char* name, const char *value)
 		rpc_reload_mbss(unit, subunit, name_mbss);
 }
 
-int
-ej_wl_channel_list_5g(int eid, webs_t wp, int argc, char_t **argv)
+int get_wl_channel_list_5g_by_bw(string_1024 list_of_channels, int bw)
 {
 	int ret;
 	int retval = 0;
 	char tmp[256];
-	string_1024 list_of_channels;
 	char *p;
 	int i = 0;;
 	char cur_ccode[20] = {0};
 
 	sprintf(tmp, "[\"%d\"]", 0);
 
-	if (!rpc_qtn_ready())
+	if (!rpc_qtn_ready()){
+		snprintf(tmp, sizeof(tmp), "");
 		goto ERROR;
+	}
 
 	// ret = qcsapi_wifi_get_list_channels(WIFINAME, (char *) &list_of_channels);
 	ret = qcsapi_wifi_get_regulatory_region(WIFINAME, cur_ccode);
@@ -1624,10 +1630,10 @@ ej_wl_channel_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 		goto ERROR;
 	}
 
-	if(strcmp(cur_ccode, "eu")==0){
+	if(strcmp(cur_ccode, "eu")==0 || strcmp(cur_ccode, "jp")==0){
 		ret = qcsapi_regulatory_get_list_regulatory_channels(cur_ccode, 40 /* bw */, list_of_channels);
 	}else{
-		ret = qcsapi_regulatory_get_list_regulatory_channels(cur_ccode, 20 /* bw */, list_of_channels);
+		ret = qcsapi_regulatory_get_list_regulatory_channels(cur_ccode, bw, list_of_channels);
 	}
 	if (ret < 0) {
 		dbG("Qcsapi qcsapi_regulatory_get_list_regulatory_channels %s error, return: %d\n", WIFINAME, ret);
@@ -1650,7 +1656,49 @@ ej_wl_channel_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 		sprintf(tmp,  "%s]", tmp);
 
 ERROR:
-	retval += websWrite(wp, "%s", tmp);
+	/* list_of_channels = 1024, tmp = 256 */
+	sprintf(list_of_channels, "%s", tmp);
+	return 0;
+}
+
+int ej_wl_channel_list_5g_20m(int eid, webs_t wp, int argc, char_t **argv)
+{
+	static char list_20m[1024] = {0};
+	int retval;
+
+	if(strlen(list_20m) == 0) retval = get_wl_channel_list_5g_by_bw(list_20m, 20);
+	retval = websWrite(wp, "%s", list_20m);
+	return retval;
+}
+
+int ej_wl_channel_list_5g_40m(int eid, webs_t wp, int argc, char_t **argv)
+{
+	static char list_40m[1024] = {0};
+	int retval;
+
+	if(strlen(list_40m) == 0) get_wl_channel_list_5g_by_bw(list_40m, 40);
+	retval = websWrite(wp, "%s", list_40m);
+	return retval;
+}
+
+int ej_wl_channel_list_5g_80m(int eid, webs_t wp, int argc, char_t **argv)
+{
+	static char list_80m[1024] = {0};
+	int retval;
+
+	if(strlen(list_80m) == 0) get_wl_channel_list_5g_by_bw(list_80m, 80);
+	retval = websWrite(wp, "%s", list_80m);
+	return retval;
+}
+
+int
+ej_wl_channel_list_5g(int eid, webs_t wp, int argc, char_t **argv)
+{
+	static char list_80m[1024] = {0};
+	int retval;
+
+	if(strlen(list_80m) == 0) get_wl_channel_list_5g_by_bw(list_80m, 80);
+	retval = websWrite(wp, "%s", list_80m);
 	return retval;
 }
 
@@ -1670,7 +1718,7 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 		return retval;
 	}
 
-	ret = qcsapi_wifi_start_scan(WIFINAME);
+	ret = qcsapi_wifi_start_scan_ext(WIFINAME, IEEE80211_PICK_ALL | IEEE80211_PICK_NOPICK_BG);
 	if (ret < 0) {
 		dbG("Qcsapi qcsapi_wifi_start_scan %s error, return: %d\n", WIFINAME, ret);
 		retval += websWrite(wp, "[]");
@@ -1791,6 +1839,79 @@ ej_wl_sta_list_qtn(int eid, webs_t wp, int argc, char_t **argv, const char *ifna
 	return retval;
 }
 
+#ifdef RTCONFIG_STAINFO
+static int
+ej_wl_stainfo_list_qtn(int eid, webs_t wp, int argc, char_t **argv, const char *ifname)
+{
+	int ret, retval = 0, firstRow = 1;;
+	qcsapi_unsigned_int association_count = 0;
+	qcsapi_mac_addr sta_address;
+	int i, rssi, index = -1, unit = 1;
+	char prefix[] = "wlXXXXXXXXXX_", tmp[128];
+	qcsapi_unsigned_int tx_phy_rate, rx_phy_rate, time_associated;
+	int hr, min, sec;
+
+	if (!rpc_qtn_ready())
+		return retval;
+
+	sscanf(ifname, "wifi%d", &index);
+	if (index == -1) return retval;
+	else if (index == 0)
+		sprintf(prefix, "wl%d_", unit);
+	else
+		sprintf(prefix, "wl%d.%d_", unit, index);
+
+	ret = qcsapi_wifi_get_count_associations(ifname, &association_count);
+	if (ret < 0) {
+		dbG("Qcsapi qcsapi_wifi_get_count_associations %s error, return: %d\n", ifname, ret);
+		return retval;
+	} else {
+		for (i = 0; i < association_count; ++i) {
+			rssi = 0;
+			ret = qcsapi_wifi_get_associated_device_mac_addr(ifname, i, (uint8_t *) &sta_address);
+			if (ret < 0) {
+				dbG("Qcsapi qcsapi_wifi_get_associated_device_mac_addr %s error, return: %d\n", ifname, ret);
+				return retval;
+			} else {
+				if (firstRow == 1)
+					firstRow = 0;
+				else
+				retval += websWrite(wp, ", ");
+				retval += websWrite(wp, "[");
+
+				retval += websWrite(wp, "\"%s\"", wl_ether_etoa((struct ether_addr *) &sta_address));
+
+				tx_phy_rate = rx_phy_rate = time_associated = 0;
+
+				ret = qcsapi_wifi_get_tx_phy_rate_per_association(ifname, i, &tx_phy_rate);
+				if (ret < 0)
+					dbG("Qcsapi qcsapi_wifi_get_tx_phy_rate_per_association %s error, return: %d\n", ifname, ret);
+
+				ret = qcsapi_wifi_get_rx_phy_rate_per_association(ifname, i, &rx_phy_rate);
+				if (ret < 0)
+					dbG("Qcsapi qcsapi_wifi_get_rx_phy_rate_per_association %s error, return: %d\n", ifname, ret);
+
+				ret = qcsapi_wifi_get_time_associated_per_association(ifname, i, &time_associated);
+				if (ret < 0)
+					dbG("Qcsapi qcsapi_wifi_get_time_associated_per_association %s error, return: %d\n", ifname, ret);
+
+				hr = time_associated / 3600;
+				min = (time_associated % 3600) / 60;
+				sec = time_associated - hr * 3600 - min * 60;
+
+				retval += websWrite(wp, ", \"%d\"", tx_phy_rate);
+				retval += websWrite(wp, ", \"%d\"", rx_phy_rate);
+				retval += websWrite(wp, ", \"%02d:%02d:%02d\"", hr, min, sec);
+
+				retval += websWrite(wp, "]");
+			}
+		}
+	}
+
+	return retval;
+}
+#endif
+
 int
 ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -1818,6 +1939,36 @@ ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	return retval;
 }
+
+#ifdef RTCONFIG_STAINFO
+int
+ej_wl_stainfo_list_5g(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int ret = 0, retval = 0, ret_t = 0;
+	int i, unit = 1;
+	char prefix[] = "wlXXXXXXXXXX_", tmp[128];
+
+	if (!rpc_qtn_ready())
+		return retval;
+
+	ret += ej_wl_stainfo_list_qtn(eid, wp, argc, argv, WIFINAME);
+
+        if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
+                return ret;
+
+	for (i = 1; i < 4; i++) {
+		sprintf(prefix, "wl%d.%d_", unit, i);
+		if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1")){
+			if (ret_t != ret)
+				retval += websWrite(wp, ", ");
+			ret += ej_wl_stainfo_list_qtn(eid, wp, argc, argv, wl_vifname_qtn(unit, i));
+			ret_t = ret;
+		}
+	}
+
+	return retval;
+}
+#endif
 
 int
 wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)

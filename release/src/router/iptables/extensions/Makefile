@@ -25,7 +25,7 @@ endif
 
 ifeq ($(DO_IPV6), 1)
 PF6_EXT_SLIB:=connmark icmp6 length limit mac multiport standard state rt hl #mark
-PF6_EXT_SLIB+=tcp udp u32 CONNMARK LOG MARK REJECT IMQ TCPMSS
+PF6_EXT_SLIB+=tcp udp u32 CONNMARK LOG MARK REJECT IMQ TCPMSS webstr
 ifeq ($(CONFIG_BCMWL5),y)
 PF6_EXT_SLIB+=SKIPLOG
 endif

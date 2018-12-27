@@ -23,10 +23,6 @@
 
 <script type='text/javascript'>
 
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 <% backup_nvram("wan_ifname,lan_ifname,wl_ifname,wan_proto,web_svg,rstats_enable,rstats_colors"); %>
 
 var cprefix = 'bw_24';
@@ -37,6 +33,50 @@ var updateReTotal = 1;
 var hours = 24;
 var lastHours = 0;
 var debugTime = 0;
+var href_lang = get_supportsite_lang();
+switch("<% nvram_get("preferred_lang"); %>"){
+	case "KR":
+						href_lang = "/us/";
+						break;
+	case "RO":
+						href_lang = "/us/";
+						break;
+	case "HU":
+						href_lang = "/us/";
+						break;
+	case "IT":
+						href_lang = "/us/";
+						break;
+	case "DA":
+						href_lang = "/us/";
+						break;	
+	case "BR":
+						href_lang = "/us/";
+						break;
+	case "SV":
+						href_lang = "/us/";
+						break;
+	case "FI":
+						href_lang = "/us/";
+						break;
+	case "NO":
+						href_lang = "/us/";
+						break;
+	case "TH":
+						href_lang = "/us/";
+						break;
+	case "DE":
+						href_lang = "/us/";
+						break;
+	case "PL":
+						href_lang = "/us/";
+						break;
+	case "CZ":
+						href_lang = "/us/";
+						break;
+	default:
+						break;
+}
 
 // disable auto log out
 AUTOLOGOUT_MAX_MINUTE = 0;
@@ -132,7 +172,7 @@ function init()
 	showHours();
 	initCommon(1, 0, 0, 1);	   //Viz 2010.09
 	ref.initX();
-	addOnlineHelp($("faq0"), ["ASUSWRT", "Traffic", "Monitor"]);
+	document.getElementById("faq0").href = "http://www.asus.com"+ href_lang +"support/Search-Result-Detail/69B50762-C9C0-15F1-A5B8-C7B652F50ACF/?keyword=ASUSWRT%20Traffic%20Monitor" ;
 }
 
 function switchPage(page){
@@ -238,11 +278,13 @@ function Zoom(func){
         			</tr>
         			<tr>
           				<td align="left" valign="middle">
-							<table width="95%" border="1" align="left" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="DescTable">
-								<tr><th width="16%"></th><th width="26%"><#Internet#></th><th width="29%"><#tm_wired#></th><th width="29%"><#tm_wireless#></th></tr>
-								<tr><th><#tm_reception#></th><td style="color:#FF9000;"><#tm_recp_int#></td><td style="color:#3CF;"><#tm_recp_wired#></td><td style="color:#3CF;"><#tm_recp_wireless#></td></tr>
-								<tr><th><#tm_transmission#></th><td style="color:#3CF;"><#tm_trans_int#></td><td style="color:#FF9000;"><#tm_trans_wired#></td><td style="color:#FF9000;"><#tm_trans_wireless#></td></tr>
-							</table>	
+							<!-- add some hard code of style attributes to wordkaround for IE 11-->
+							<table width="95%" border="1" align="left" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="DescTable" style="font-size:12px; font-family:Arial, Helvetica, sans-serif;	border: 1px solid #000000; border-collapse: collapse;">
+								<tr><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="16%"></th><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="26%"><#Internet#></th><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="29%"><#tm_wired#></th><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;" width="29%"><#tm_wireless#></th></tr>
+								<tr><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;"><#tm_reception#></th><td style="color:#FF9000;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_recp_int#></td><td style="color:#3CF;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_recp_wired#></td><td style="color:#3CF;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_recp_wireless#></td></tr>
+								<tr><th style="	font-family:Arial, Helvetica, sans-serif; background-color:#1F2D35; color:#FFFFFF; font-weight:normal; line-height:15px; height: 30px; text-align:left; font-size:12px;	padding-left: 10px;	border: 1px solid #222;	border-collapse: collapse; background:#2F3A3E;"><#tm_transmission#></th><td style="color:#3CF;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_trans_int#></td><td style="color:#FF9000;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_trans_wired#></td><td style="color:#FF9000;padding-left: 10px;	background-color:#475a5f; border: 1px solid #222;border-collapse: collapse;"><#tm_trans_wireless#></td></tr>
+							</table>
+							<!--End-->
           				</td>
         			</tr>
         			<tr>

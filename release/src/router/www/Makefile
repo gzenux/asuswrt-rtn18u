@@ -3,7 +3,7 @@ include ../common.mak
 ASUSWRTTOOLSDIR = $(SRCBASE)/router/tools/Lnx_AsusWrtDictPrep
 ASUSWRTTOOLSDIR2 = $(SRCBASE)/router/tools/Lnx_ToolHelp
 
-MODELS_HAVE_USB3 = "DSL-AC68U RT-AC3200 RT-AC87U RT-AC69U RT-AC68U RT-AC56S RT-AC56U RT-AC55U RT-N18U TM-AC1900 RT-N65U"
+MODELS_HAVE_USB3 = "DSL-AC68U RT-AC3200 RT-AC87U RT-AC69U RT-AC68U RT-AC56S RT-AC56U RT-AC55U RT-AC55UHP RT-N18U RT-N65U"
 
 all:
 
@@ -152,7 +152,6 @@ ifneq ($(RTCONFIG_SNMPD),y)
 	rm -rf $(INSTALLDIR)/www/Advanced_SNMP_Content.asp
 endif
 ifeq ($(RTCONFIG_DSL),y)
-	rm -rf $(INSTALLDIR)/www/images/Model_product.png
 	rm -rf $(INSTALLDIR)/www/qis/QIS_welcome.htm
 	rm -rf $(INSTALLDIR)/www/images/New_ui/rt.jpg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/ap.jpg
@@ -162,6 +161,12 @@ else
 	rm -rf $(INSTALLDIR)/www/SNR.svg
 	rm -rf $(INSTALLDIR)/www/BPC.svg
 	rm -rf $(INSTALLDIR)/www/ajax_signals.asp
+endif
+
+ifeq ($(BUILD_NAME),DSL-N55U)
+ifeq ($(BUILD_NAME),DSL-N55U-B)
+	rm -rf $(INSTALLDIR)/www/images/Model_product.png
+endif
 endif
 
 ifneq ($(BUILD_NAME),DSL-N55U)
@@ -247,13 +252,13 @@ ifneq ($(RTCONFIG_USB),y)
 	rm -rf $(INSTALLDIR)/www/device-map/disk.asp
 	# disk utility
 	rm -rf $(INSTALLDIR)/www/device-map/disk_utility.asp
-	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/backgroud_move_3_02.gif
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/backgroud_move_8P_2.0.gif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/white_04.gif
-	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/yellow_04.gif
-	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/red_04.gif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/normal.png
-	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/orange.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/blue.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/red.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/normal.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/USB2.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/USB_2.png
 	rm -rf $(INSTALLDIR)/www/disk_msg.js
 	rm -rf $(INSTALLDIR)/www/disk_fsck.xml
@@ -313,7 +318,9 @@ ifneq ($(RTCONFIG_BWDPI),y)
 	rm -rf $(INSTALLDIR)/www/AiProtection_Group.asp
 	rm -rf $(INSTALLDIR)/www/AiProtection_HomeProtection.asp
 	rm -rf $(INSTALLDIR)/www/AiProtection_WebProtector.asp
+ifneq ($(RTCONFIG_PARENTALCTRL),y)
 	rm -rf $(INSTALLDIR)/www/blocking.asp
+endif
 	rm -rf $(INSTALLDIR)/www/getTraffic.asp
 	rm -rf $(INSTALLDIR)/www/getWebHistory.asp
 	rm -rf $(INSTALLDIR)/www/getAppTraffic.asp
@@ -327,13 +334,22 @@ ifneq ($(RTCONFIG_BWDPI),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/Home_Protection_Scenario.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo.png	
 	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo_power.png	
-	rm -rf $(INSTALLDIR)/www/images/New_ui/TM_product.png	
+	rm -rf $(INSTALLDIR)/www/images/New_ui/tm_logo_1.png	
 	rm -rf $(INSTALLDIR)/www/images/New_ui/sample_35.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/app_icons
 ifneq ($(RTCONFIG_ROG),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/indicator.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/speedmeter.png
 endif
+ifneq ($(BUILD_NAME),RT-AC3200)
+	rm -rf $(INSTALLDIR)/www/TrafficAnalyzer_Statistic.asp.asp
+	rm -rf $(INSTALLDIR)/www/statistic_default.js
+	rm -rf $(INSTALLDIR)/www/chart.js
+	rm -rf $(INSTALLDIR)/www/datepicker.css
+endif
+endif
+ifneq ($(RTCONFIG_ADBLOCK),y)
+	rm -rf $(INSTALLDIR)/www/AiProtection_AdBlock.asp
 endif
 
 ifneq ($(RTCONFIG_ROG),y)
@@ -365,6 +381,26 @@ endif
 ifneq ($(RTCONFIG_OLD_PARENTALCTRL), y)	
 	rm -rf $(INSTALLDIR)/www/Advanced_MACFilter_Content.asp
 endif
+
+ifneq ($(BUILD_NAME),RT-AC3200)
+	rm -rf $(INSTALLDIR)/www/Advanced_Smart_Connect.asp
+	rm -rf $(INSTALLDIR)/www/images/New_ui/smart_connect.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/smart_connect_concept.gif
+endif
+
+ifneq ($(RTCONFIG_FINDASUS), y)
+	rm -rf $(INSTALLDIR)/www/find_device.asp
+	rm -rf $(INSTALLDIR)/www/images/New_ui/wifi-logo.png
+endif
+
+ifneq ($(RTCONFIG_JFFS2USERICON), y)
+	rm -rf $(INSTALLDIR)/www/ajax_uploadicon.asp
+endif
+
 ifneq ($(RTCONFIG_TR069), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_TR069_Content.asp
+endif
+
+ifneq ($(RTCONFIG_TOR), y)
+	rm -rf $(INSTALLDIR)/www/Advanced_TOR_Content.asp
 endif

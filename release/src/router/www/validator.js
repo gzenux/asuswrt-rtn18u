@@ -385,6 +385,19 @@ var validator = {
 			return false;
 	},
 
+	isNegativeNumber: function(o,event){
+		var keyPressed = event.keyCode ? event.keyCode : event.which;
+
+		if (this.isFunctionButton(event)){
+			return true;
+		}
+
+		if ((keyPressed == 45) || (keyPressed>47 && keyPressed<58))
+			return true;
+		else
+			return false;
+	},
+
 	isNumber: function(o,event){	
 		var keyPressed = event.keyCode ? event.keyCode : event.which;
 		
@@ -573,6 +586,53 @@ var validator = {
 		}
 	},
 
+	isLegalMask: function(obj_name) {
+		var wrong_netmask = 0;
+		var netmask_obj = obj_name;
+		var netmask_num = inet_network(netmask_obj.value);
+
+		var netmask_reverse_num = 0;
+		var test_num = 0;
+		if(netmask_num != -1) { 
+			if(netmask_num == 0) {
+				netmask_reverse_num = 0; //Viz 2011.07 : Let netmask 0.0.0.0 pass
+			}
+			else {
+				netmask_reverse_num = ~netmask_num;
+			}
+			
+			if(netmask_num < 0) {
+				wrong_netmask = 1;
+			}
+
+			test_num = netmask_reverse_num;
+			while(test_num != 0){
+				if((test_num + 1) % 2 == 0) {
+					test_num = (test_num + 1) / 2 - 1;
+				}
+				else{
+					wrong_netmask = 1;
+					break;
+				}
+			}
+			if(wrong_netmask == 1){
+				alert(netmask_obj.value + " is not a valid Mask address!");
+				netmask_obj.focus();
+				netmask_obj.select();
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+		else { //null
+			alert("This is not a valid Mask address!");
+			netmask_obj.focus();
+			netmask_obj.select();
+			return false;
+		}
+	},
+
 	isPortRange: function(o,event){
 		var keyPressed = event.keyCode ? event.keyCode : event.which;
 
@@ -656,7 +716,7 @@ var validator = {
 	// 2010.07 James. {
 	inet_network: function(ip_str){
 		if(!ip_str)
-			return -1;
+			return -1; //null
 		
 		var re = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
 		if(re.test(ip_str)){
@@ -666,10 +726,10 @@ var validator = {
 			var v4 = parseInt(RegExp.$4);
 			
 			if(v1 < 256 && v2 < 256 && v3 < 256 && v4 < 256)
-				return v1*256*256*256+v2*256*256+v3*256+v4;
+				return v1*256*256*256+v2*256*256+v3*256+v4; //valid
 		}
 		
-		return -2;
+		return -2; //not valid
 	},
 
 	ipAddr4: function(obj){
@@ -820,7 +880,7 @@ var validator = {
 				return false;
 			}
 			
-			if((wan_route_x == "IP_Bridged" && wan_nat_x == "0") || sw_mode=="2" || sw_mode=="3")	// variables are defined in state.js
+			if(sw_mode == "2" || sw_mode == "3")	// variables are defined in state.js
 				;	// there is no WAN in AP mode, so it wouldn't be compared with the wan ip..., etc.
 			else if(this.requireWANIP(v) && (
 					(v=='wan_ipaddr_x' &&  this.matchSubnet2(o.value, document.form.wan_netmask_x, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
@@ -856,7 +916,7 @@ var validator = {
 			}
 		}
 		
-		if((wan_route_x == "IP_Bridged" && wan_nat_x == "0") || sw_mode=="2" || sw_mode=="3")	// variables are defined in state.js
+		if(sw_mode=="2" || sw_mode=="3")	// variables are defined in state.js
 				;	// there is no WAN in AP mode, so it wouldn't be compared with the wan ip..., etc.
 		else if(this.requireWANIP(v) && (
 				(v=='wan_netmask_x' &&  this.matchSubnet2(document.form.wan_ipaddr_x.value, o, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||

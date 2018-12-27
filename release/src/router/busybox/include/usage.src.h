@@ -4690,6 +4690,21 @@ INSERT
      "\n" \
      "\nUse 500ms to specify period in milliseconds" \
 
+#define md_trivial_usage \
+       "md address [count]"
+#define md_full_usage "\n\n" \
+       "md address [count]\n"
+
+#define mm_trivial_usage \
+       "mm address value"
+#define mm_full_usage "\n\n" \
+       "mm address value\n"
+
+#define ethreg_trivial_usage \
+       "ethreg ......"
+#define ethreg_full_usage "\n\n" \
+       "ethreg ......\n"
+
 #define which_trivial_usage \
        "[COMMAND]..."
 #define which_full_usage "\n\n" \
@@ -4714,20 +4729,5 @@ INSERT
        "FILE"
 #define zcat_full_usage "\n\n" \
        "Decompress to stdout"
-
-#define zcip_trivial_usage \
-       "[OPTIONS] IFACE SCRIPT"
-#define zcip_full_usage "\n\n" \
-       "Manage a ZeroConf IPv4 link-local address\n" \
-     "\nOptions:" \
-     "\n	-f		Run in foreground" \
-     "\n	-q		Quit after obtaining address" \
-     "\n	-r 169.254.x.x	Request this address first" \
-     "\n	-v		Verbose" \
-     "\n	-S		Log to syslog too" \
-     "\n" \
-     "\nWith no -q, runs continuously monitoring for ARP conflicts," \
-     "\nexits only on I/O errors (link down etc)" \
-
 
 #endif

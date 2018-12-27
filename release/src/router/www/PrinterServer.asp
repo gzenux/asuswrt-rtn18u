@@ -66,14 +66,10 @@
 }
 </style>
 <script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 function initial(){
 	show_menu();
-	$("option5").innerHTML = '<table><tbody><tr><td><div id="index_img5"></div></td><td><div style="width:120px;"><#Menu_usb_application#></div></td></tr></tbody></table>';
-	$("option5").className = "m5_r";
+	document.getElementById("_APP_Installation").innerHTML = '<table><tbody><tr><td><div class="_APP_Installation"></div></td><td><div style="width:120px;"><#Menu_usb_application#></div></td></tr></tbody></table>';
+	document.getElementById("_APP_Installation").className = "menu_clicked";
 
 	addOnlineHelp($("faq1"), ["ASUSWRT", "ez","printer"]);
 	addOnlineHelp($("faq2"), ["ASUSWRT", "lpr"]);

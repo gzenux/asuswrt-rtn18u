@@ -186,19 +186,19 @@ function hideXDSLSetting(_value){
 		</tr>
 		</thead>
 		<tr>
-		<td><input name="dslx_annex" type="radio" value="0"> Annex A </td>
+		<td><input name="dslx_annex" type="radio" value="0"> ANNEX A </td>
 		</tr>
 		<tr>
-		<td><input name="dslx_annex" type="radio" value="1"> Annex I </td>
+		<td><input name="dslx_annex" type="radio" value="1"> ANNEX I </td>
 		</tr>
 		<tr>
-		<td><input name="dslx_annex" type="radio" value="2"> Annex A/L </td>
+		<td><input name="dslx_annex" type="radio" value="2"> ANNEX A/L </td>
 		</tr>
 		<tr>
-		<td><input name="dslx_annex" type="radio" value="3"> Annex M </td>
+		<td><input name="dslx_annex" type="radio" value="3"> ANNEX M </td>
 		</tr>
 		<tr>
-		<td><input name="dslx_annex" type="radio" value="4"> Annex A/I/J/L/M </td>
+		<td><input name="dslx_annex" type="radio" value="4"> ANNEX A/I/J/L/M </td>
 		</tr>
 </table>
 		<br>
@@ -222,7 +222,7 @@ function hideXDSLSetting(_value){
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 		<thead>
 		<tr>
-		<td colspan="7"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,1);">Stability Adjustment</a></td>
+		<td colspan="7"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,1);"><#dslsetting_Stability_Adj#></a></td>
 		</tr>
 		</thead>
 		<tr>
@@ -257,7 +257,7 @@ function hideXDSLSetting(_value){
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 		<thead>
 		<tr>
-		<td colspan="7"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,2);">SRA (Seamless Rate Adaptation)</a></td>
+		<td colspan="7"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,2);"><#dslsetting_SRA#></a></td>
 		</tr>
 		</thead>
 		<tr>

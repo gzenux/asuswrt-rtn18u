@@ -26,10 +26,6 @@
 
 var $j = jQuery.noConflict();
 var jData;
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 var yadns_rule_list = '<% nvram_get("yadns_rulelist"); %>'.replace(/&#60/g, "<");
 var yadns_rule_list_row = yadns_rule_list.split('<');
 
@@ -205,7 +201,7 @@ function check_macaddr(obj,flag){ //control hint of input mac address
 }
 
 function addRow_main(upper){
-	var rule_num = $('mainTable_table').rows.length;
+	var rule_num = $('mainTable_table').rows.length - 3; //ingore tbody occupied row
 	var item_num = $('mainTable_table').rows[0].cells.length;
 
 	if(rule_num >= upper){
@@ -412,10 +408,8 @@ function selectRows_main(r){
 									function(){
 										document.form.yadns_enable_x.value = 0;
 										showhide("mainTable",0);
-									},
-										{
-											switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-									});
+									}
+								);
 							</script>
 						</div>
 					</td>

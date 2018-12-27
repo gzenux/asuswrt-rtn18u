@@ -388,6 +388,9 @@ int wlcscan_core_qtn(char *ofile, char *ifname)
 		dbG("5 GHz radio is not ready\n");
 		return -1;
 	}
+
+	logmessage("wlcscan", "start wlcscan scan\n");
+
 	/* clean APSCAN_INFO */
 	lock_qtn_apscan = file_lock("sitesurvey");
 	if((fp_apscan = fopen(ofile, "a")) != NULL){
@@ -396,7 +399,8 @@ int wlcscan_core_qtn(char *ofile, char *ifname)
 	file_unlock(lock_qtn_apscan);
 	
 	// start scan AP
-	if(qcsapi_wifi_start_scan(ifname)){
+	// if(qcsapi_wifi_start_scan(ifname)){
+	if(qcsapi_wifi_start_scan_ext(ifname, IEEE80211_PICK_ALL | IEEE80211_PICK_NOPICK_BG)){
 		dbg("fail to start AP scan\n");
 		return 0;
 	}
@@ -714,7 +718,10 @@ int enable_qtn_telnetsrv(int enable_flag)
 
 int getstatus_qtn_telnetsrv(void)
 {
-	puts(nvram_safe_get("QTNTELNETSRV"));
+	if(nvram_get_int("QTNTELNETSRV") == 1)
+		puts("1");
+	else
+		puts("0");
 
 	return 0;
 }
@@ -761,6 +768,24 @@ typedef uint16 chanspec_t;
 extern uint8 wf_chspec_ctlchan(chanspec_t chspec);
 extern chanspec_t wf_chspec_aton(const char *a);
 
+void fix_script_err(char *orig_str, char *new_str)
+{
+	unsigned i = 0, j = 0;
+	unsigned int str_len = 0;
+	str_len = strlen(orig_str);
+
+	for ( i = 0; i < str_len; i++ ){
+		if(orig_str[i] == '$'){
+			new_str[j] = '\\';
+			new_str[j+1] = '$';
+			j = j + 2;
+		}else{
+			new_str[j] = orig_str[i];
+			j++;
+		}
+	}
+}
+
 int gen_stateless_conf(void)
 {
 	int ret;
@@ -772,7 +797,8 @@ int gen_stateless_conf(void)
 	char crypto[16];
 	char beacon[] = "WPAand11i";
 	char encryption[] = "TKIPandAESEncryption";
-	char key[65];
+	char key[130];
+	char real_key_str[130];
 	char ssid[65];
 	char region[5];
 	int channel = wf_chspec_ctlchan(wf_chspec_aton(nvram_safe_get("wl1_chanspec")));
@@ -795,6 +821,10 @@ int gen_stateless_conf(void)
 		strncpy(auth, nvram_safe_get("wlc_auth_mode"), sizeof(auth));
 		strncpy(crypto, nvram_safe_get("wlc_crypto"), sizeof(crypto));
 		strncpy(key, nvram_safe_get("wlc_wpa_psk"), sizeof(key));
+		if(strchr(key, '$') != NULL){
+			fix_script_err(key, real_key_str);
+			strncpy(key, real_key_str, sizeof(key));
+		}
 
 		strncpy(ssid, nvram_safe_get("wlc_ssid"), sizeof(ssid));
 		fprintf(fp, "wifi0_SSID=\"%s\"\n", ssid);
@@ -806,19 +836,19 @@ int gen_stateless_conf(void)
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
-			fprintf(fp, "wifi0_passphrase=%s\n", key);
+			fprintf(fp, "wifi0_passphrase=\"%s\"\n", key);
 		}
 		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "aes") ){
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
-			fprintf(fp, "wifi0_passphrase=%s\n", key);
+			fprintf(fp, "wifi0_passphrase=\"%s\"\n", key);
 		}
 		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "tkip+aes") ){
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=TKIPandAESEncryption\n");
-			fprintf(fp, "wifi0_passphrase=%s\n", key);
+			fprintf(fp, "wifi0_passphrase=\"%s\"\n", key);
 		}
 		else{
 			logmessage("start_psta", "No security in use\n");
@@ -835,6 +865,11 @@ int gen_stateless_conf(void)
 		strncpy(auth, nvram_safe_get("wl1_auth_mode_x"), sizeof(auth));
 		strncpy(crypto, nvram_safe_get("wl1_crypto"), sizeof(crypto));
 		strncpy(key, nvram_safe_get("wl1_wpa_psk"), sizeof(key));
+		if(strchr(key, '$') != NULL){
+			fix_script_err(key, real_key_str);
+			strncpy(key, real_key_str, sizeof(key));
+		}
+
 
 		strncpy(ssid, nvram_safe_get("wl1_ssid"), sizeof(ssid));
 		fprintf(fp, "wifi0_SSID=\"%s\"\n", ssid);
@@ -843,19 +878,19 @@ int gen_stateless_conf(void)
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
-			fprintf(fp, "wifi0_passphrase=%s\n", key);
+			fprintf(fp, "wifi0_passphrase=\"%s\"\n", key);
 		}
 		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "aes") ){
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
-			fprintf(fp, "wifi0_passphrase=%s\n", key);
+			fprintf(fp, "wifi0_passphrase=\"%s\"\n", key);
 		}
 		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "tkip+aes") ){
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=TKIPandAESEncryption\n");
-			fprintf(fp, "wifi0_passphrase=%s\n", key);
+			fprintf(fp, "wifi0_passphrase=\"%s\"\n", key);
 		}
 		else{
 			logmessage("start_ap", "No security in use\n");
@@ -886,6 +921,21 @@ int gen_stateless_conf(void)
 	fprintf(fp, "slave_ipaddr=\"192.168.1.111/16\"\n");
 	fprintf(fp, "server_ipaddr=\"%s\"\n", nvram_safe_get("QTN_RPC_SERVER"));
 	fprintf(fp, "client_ipaddr=\"%s\"\n", nvram_safe_get("QTN_RPC_CLIENT"));
+
+	if(nvram_match("wl1.1_lanaccess", "off") && !nvram_match("wl1.1_lanaccess", ""))
+		fprintf(fp, "wifi1_lanaccess=off\n");
+	else
+		fprintf(fp, "wifi1_lanaccess=on\n");
+
+	if(nvram_match("wl1.2_lanaccess", "off") && !nvram_match("wl1.2_lanaccess", ""))
+		fprintf(fp, "wifi2_lanaccess=off\n");
+	else
+		fprintf(fp, "wifi2_lanaccess=on\n");
+
+	if(nvram_match("wl1.3_lanaccess", "off") && !nvram_match("wl1.3_lanaccess", ""))
+		fprintf(fp, "wifi3_lanaccess=off\n");
+	else
+		fprintf(fp, "wifi3_lanaccess=on\n");
 
 	fclose(fp);
 
@@ -987,6 +1037,7 @@ void check_2nd_jffs(void)
 
 	if(access("/asus_jffs/bootcfg.tgz", R_OK ) != -1 ) {
 		logmessage("qtn", "bootcfg.tgz exists");
+		system("rm -f /tmp/bootcfg.tgz");
 	} else {
 		logmessage("qtn", "bootcfg.tgz does not exist");
 		sprintf(s, MTD_BLKDEV(%d), part);
@@ -995,6 +1046,7 @@ void check_2nd_jffs(void)
 			logmessage("qtn", "cannot store bootcfg.tgz");
 		}else{
 			system("cp /tmp/bootcfg.tgz /asus_jffs");
+			system("rm -f /tmp/bootcfg.tgz");
 			logmessage("qtn", "backup bootcfg.tgz ok");
 		}
 	}

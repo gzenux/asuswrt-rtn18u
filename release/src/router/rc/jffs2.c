@@ -77,8 +77,12 @@ void mount_2nd_jffs2(void)
                         case MODEL_RTAC56U:
 			case MODEL_RTAC3200:
                         case MODEL_DSLAC68U:
+                        case MODEL_RPAC68U:
                         case MODEL_RTAC68U:
                         case MODEL_RTAC87U:
+			case MODEL_RTAC88U:
+			case MODEL_RTAC5300:
+			case MODEL_RTN18U:
                         case MODEL_RTN65U:
                         case MODEL_RTN14U: // it should be better to use LINUX_KERNEL_VERSION >= KERNEL_VERSION(2,6,36)
                         {
@@ -141,8 +145,12 @@ void format_mount_2nd_jffs2(void)
                         case MODEL_RTAC56U:
 			case MODEL_RTAC3200:
                         case MODEL_DSLAC68U:
+                        case MODEL_RPAC68U:
                         case MODEL_RTAC68U:
                         case MODEL_RTAC87U:
+			case MODEL_RTAC88U:
+			case MODEL_RTAC5300:
+			case MODEL_RTN18U:
                         case MODEL_RTN65U:
                         case MODEL_RTN14U: // it should be better to use LINUX_KERNEL_VERSION >= KERNEL_VERSION(2,6,36)
                         {
@@ -173,7 +181,7 @@ void format_mount_2nd_jffs2(void)
         modprobe(JFFS_NAME);
         sprintf(s, MTD_BLKDEV(%d), part);
         if (mount(s, SECOND_JFFS2_PATH, JFFS_NAME, MS_NOATIME, "") != 0) {
-                if( (get_model()==MODEL_RTAC56U || get_model()==MODEL_RTAC56S || get_model()==MODEL_RTAC3200 || get_model()==MODEL_RTAC68U || get_model()==MODEL_DSLAC68U || get_model()==MODEL_RTAC87U) ^ (!mtd_erase(JFFS_NAME)) ){
+                if( (get_model()==MODEL_RTAC56U || get_model()==MODEL_RTAC56S || get_model()==MODEL_RTAC3200 || get_model()==MODEL_RTAC68U || get_model()==MODEL_RPAC68U || get_model()==MODEL_DSLAC68U || get_model()==MODEL_RTAC87U || get_model()==MODEL_RTAC88U || get_model()==MODEL_RTAC5300 || get_model()==MODEL_RTN18U) ^ (!mtd_erase(JFFS_NAME))){
                         error("formatting");
                         return;
                 }
@@ -225,7 +233,7 @@ void start_jffs2(void)
 	_dprintf("start jffs2: %d, %d\n", part, size);
 	if (nvram_match("jffs2_format", "1")) {
 		nvram_set("jffs2_format", "0");
-		if( (model==MODEL_RTAC56U || model==MODEL_RTAC56S || get_model()==MODEL_RTAC3200 || model==MODEL_RTAC68U || model==MODEL_DSLAC68U || model==MODEL_RTAC87U) ^ (!mtd_erase(JFFS_NAME)) ){
+		if( (model==MODEL_RTAC56U || model==MODEL_RTAC56S || model==MODEL_RTAC3200 || model==MODEL_RTAC68U || model==MODEL_RPAC68U || model==MODEL_DSLAC68U || model==MODEL_RTAC87U || model==MODEL_RTAC88U || model==MODEL_RTAC5300 || model==MODEL_RTN18U) ^ (!mtd_erase(JFFS_NAME)) ){
                         error("formatting");
                         return;
 		}
@@ -252,8 +260,12 @@ void start_jffs2(void)
 			case MODEL_RTAC56U: 
 			case MODEL_RTAC3200:
 			case MODEL_DSLAC68U:
+			case MODEL_RPAC68U: 
 			case MODEL_RTAC68U: 
-			case MODEL_RTAC87U: 
+			case MODEL_RTAC88U: 
+			case MODEL_RTAC5300: 
+			case MODEL_RTAC87U:
+			case MODEL_RTN18U: 
 			case MODEL_RTN65U:
 			case MODEL_RTN14U: // it should be better to use LINUX_KERNEL_VERSION >= KERNEL_VERSION(2,6,36)
 			{
@@ -286,7 +298,7 @@ void start_jffs2(void)
 	sprintf(s, MTD_BLKDEV(%d), part);
 
 	if (mount(s, "/jffs", JFFS_NAME, MS_NOATIME, "") != 0) {
-                if( (get_model()==MODEL_RTAC56U || get_model()==MODEL_RTAC56S || get_model()==MODEL_RTAC3200 || get_model()==MODEL_RTAC68U || get_model()==MODEL_DSLAC68U || get_model()==MODEL_RTAC87U) ^ (!mtd_erase(JFFS_NAME)) ){
+                if( (get_model()==MODEL_RTAC56U || get_model()==MODEL_RTAC56S || get_model()==MODEL_RTAC3200 || get_model()==MODEL_RTAC68U || get_model()==MODEL_RPAC68U || get_model()==MODEL_DSLAC68U || get_model()==MODEL_RTAC87U || get_model()==MODEL_RTAC88U || get_model()==MODEL_RTAC5300 || get_model()==MODEL_RTN18U) ^ (!mtd_erase(JFFS_NAME)) ){
                         error("formatting");
                         return;
                 }

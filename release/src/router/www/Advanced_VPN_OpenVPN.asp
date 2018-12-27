@@ -136,6 +136,13 @@ function initial(){
 	setRadioValue(document.form.vpn_server_x_eas, ((document.form.vpn_serverx_eas.value.indexOf(''+(openvpn_unit)) >= 0) ? "1" : "0"));
 	setRadioValue(document.form.vpn_server_x_dns, ((document.form.vpn_serverx_dns.value.indexOf(''+(openvpn_unit)) >= 0) ? "1" : "0"));
 	update_visibility();
+
+	document.openvpnTLSKeyForm.edit_vpn_crt_server1_ca.value = '<% nvram_get("vpn_crt_server1_ca"); %>'.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+	document.openvpnTLSKeyForm.edit_vpn_crt_server1_crt.value = '<% nvram_get("vpn_crt_server1_crt"); %>'.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+	document.openvpnTLSKeyForm.edit_vpn_crt_server1_key.value = '<% nvram_get("vpn_crt_server1_key"); %>'.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+	document.openvpnTLSKeyForm.edit_vpn_crt_server1_dh.value = '<% nvram_get("vpn_crt_server1_dh"); %>'.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+	document.openvpnTLSKeyForm.edit_vpn_crt_server1_crl.value = '<% nvram_get("vpn_crt_server1_crl"); %>'.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+	document.openvpnStaticKeyForm.edit_vpn_crt_server1_static.value = '<% nvram_get("vpn_crt_server1_static"); %>'.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
 	/*Advanced Setting end */
 }
 
@@ -200,7 +207,7 @@ function openvpnd_connected_status(){
 function applyRule(){
 	var confirmFlag = true;
 	if(document.form.VPNServer_mode.value != "openvpn" && vpn_server_enable == '1') {
-		 confirmFlag = confirm("ASUSWRT only support one VPN server mode connection at one time. If you enable \"OpenVPN server\", \"PPTP server\" will be disable automatically. Are you should you want to enable?");
+		 confirmFlag = confirm("<#vpn_switch_confirm#>");
 	}
 
 	/* Advanced setting start */
@@ -732,6 +739,7 @@ function update_visibility(){
 	else
 		ccd = getRadioValue(document.form.vpn_server_ccd);
 		
+	showhide("server_authhmac", (auth != "secret"));
 	showhide("server_snnm", ((auth == "tls") && (iface == "tun")));
 	showhide("server_plan", ((auth == "tls") && (iface == "tun")));
 	showhide("server_local", ((auth == "secret") && (iface == "tun")));
@@ -770,14 +778,14 @@ function updateCRTValue(auth){
 		},
 		success: function(){
 			if(auth == "tls") {
-				document.openvpnTLSKeyForm.edit_vpn_crt_server1_ca.value = vpn_crt_server1_ca;
-				document.openvpnTLSKeyForm.edit_vpn_crt_server1_crt.value = vpn_crt_server1_crt;
-				document.openvpnTLSKeyForm.edit_vpn_crt_server1_key.value = vpn_crt_server1_key;
-				document.openvpnTLSKeyForm.edit_vpn_crt_server1_dh.value = vpn_crt_server1_dh;
-				document.openvpnTLSKeyForm.edit_vpn_crt_server1_crl.value = vpn_crt_server1_crl;
+				document.openvpnTLSKeyForm.edit_vpn_crt_server1_ca.value = vpn_crt_server1_ca.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+				document.openvpnTLSKeyForm.edit_vpn_crt_server1_crt.value = vpn_crt_server1_crt.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+				document.openvpnTLSKeyForm.edit_vpn_crt_server1_key.value = vpn_crt_server1_key.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+				document.openvpnTLSKeyForm.edit_vpn_crt_server1_dh.value = vpn_crt_server1_dh.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
+				document.openvpnTLSKeyForm.edit_vpn_crt_server1_crl.value = vpn_crt_server1_crl.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
 			}
 			else if(auth == "secret") {
-				document.openvpnStaticKeyForm.edit_vpn_crt_server1_static.value = vpn_crt_server1_static;
+				document.openvpnStaticKeyForm.edit_vpn_crt_server1_static.value = vpn_crt_server1_static.replace(/&#10/g, "\n").replace(/&#13/g, "\r");
 			}
 		}
 	})
@@ -961,7 +969,7 @@ function cal_panel_block(){
 </script>
 </head>
 <body onload="initial();">
-<div id="tlsKey_panel"  class="contentM_qis" style="box-shadow: 3px 3px 10px #000;" disabled>
+<div id="tlsKey_panel"  class="contentM_qis" style="box-shadow: 3px 3px 10px #000;">
 	<!--===================================Beginning of tls Content===========================================-->
 	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0">
 	<form method="post" name="openvpnTLSKeyForm" action="/start_apply.htm" target="hidden_frame">
@@ -974,11 +982,11 @@ function cal_panel_block(){
 		<input type="hidden" name="action_wait" value="1">
 		<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 		<input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
-		<input type="hidden" name="vpn_crt_server1_ca" value="<% nvram_clean_get("vpn_crt_server1_ca"); %>" disabled>
-		<input type="hidden" name="vpn_crt_server1_crt" value="<% nvram_clean_get("vpn_crt_server1_crt"); %>" disabled>
-		<input type="hidden" name="vpn_crt_server1_key" value="<% nvram_clean_get("vpn_crt_server1_key"); %>" disabled>
-		<input type="hidden" name="vpn_crt_server1_dh" value="<% nvram_clean_get("vpn_crt_server1_dh"); %>" disabled>
-		<input type="hidden" name="vpn_crt_server1_crl" value="<% nvram_clean_get("vpn_crt_server1_crl"); %>" disabled>	
+		<input type="hidden" name="vpn_crt_server1_ca" value="<% nvram_get("vpn_crt_server1_ca"); %>" disabled>
+		<input type="hidden" name="vpn_crt_server1_crt" value="<% nvram_get("vpn_crt_server1_crt"); %>" disabled>
+		<input type="hidden" name="vpn_crt_server1_key" value="<% nvram_get("vpn_crt_server1_key"); %>" disabled>
+		<input type="hidden" name="vpn_crt_server1_dh" value="<% nvram_get("vpn_crt_server1_dh"); %>" disabled>
+		<input type="hidden" name="vpn_crt_server1_crl" value="<% nvram_get("vpn_crt_server1_crl"); %>" disabled>	
 		<tr>
 			<div class="description_down"><#vpn_openvpn_Keys_Cert#></div>
 		</tr>
@@ -999,31 +1007,31 @@ function cal_panel_block(){
 								<tr>
 									<th><#vpn_openvpn_KC_CA#></th>
 									<td>
-										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_ca" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_ca"); %></textarea>
+										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_ca" cols="65" maxlength="2999"></textarea>
 									</td>
 								</tr>
 								<tr>
 									<th><#vpn_openvpn_KC_SA#></th>
 									<td>
-										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_crt" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_crt"); %></textarea>
+										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_crt" cols="65" maxlength="2999"></textarea>
 									</td>
 								</tr>
 								<tr>
 									<th><#vpn_openvpn_KC_SK#></th>
 									<td>
-										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_key" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_key"); %></textarea>
+										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_key" cols="65" maxlength="2999"></textarea>
 									</td>
 								</tr>
 								<tr>
 									<th><#vpn_openvpn_KC_DH#></th>
 									<td>
-										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_dh" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_dh"); %></textarea>
+										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_dh" cols="65" maxlength="2999"></textarea>
 									</td>
 								</tr>
 								<tr>
 									<th>Certificate Revocation List (Optional)</th>
 									<td>
-										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_crl" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_crl"); %></textarea>
+										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_crl" cols="65" maxlength="2999"></textarea>
 									</td>
 								</tr>
 							</table>
@@ -1041,7 +1049,7 @@ function cal_panel_block(){
 	</table>
 	<!--===================================Ending of tls Content===========================================-->			
 </div>
-<div id="staticKey_panel"   class="contentM_qis" style="box-shadow: 3px 3px 10px #000;" disabled>
+<div id="staticKey_panel"   class="contentM_qis" style="box-shadow: 3px 3px 10px #000;">
 	<!--===================================Beginning of tls Content===========================================-->
 	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0">
 		<form method="post" name="openvpnStaticKeyForm" action="/start_apply.htm" target="hidden_frame">
@@ -1054,7 +1062,7 @@ function cal_panel_block(){
 		<input type="hidden" name="action_wait" value="1">
 		<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 		<input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
-		<input type="hidden" name="vpn_crt_server1_static" value="<% nvram_clean_get("vpn_crt_server1_static"); %>" disabled>
+		<input type="hidden" name="vpn_crt_server1_static" value="<% nvram_get("vpn_crt_server1_static"); %>" disabled>
 		<tr>
 			<div class="description_down"><#vpn_openvpn_Keys_Cert#></div>
 		</tr>
@@ -1075,7 +1083,7 @@ function cal_panel_block(){
 								<tr>
 									<th><#vpn_openvpn_KC_StaticK#></th>
 									<td>
-										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_static" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_static"); %></textarea>
+										<textarea rows="8" class="textarea_ssh_table" name="edit_vpn_crt_server1_static" cols="65" maxlength="2999"></textarea>
 									</td>
 								</tr>
 							</table>
@@ -1163,10 +1171,8 @@ function cal_panel_block(){
 													function(){
 														document.form.VPNServer_enable.value = "0";
 														formShowAndHide(0, "openvpn");
-													},
-													{
-														switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-													});
+													}
+													);
 												</script>			
 											</td>			
 										</tr>
@@ -1208,7 +1214,6 @@ function cal_panel_block(){
 										<div class="formfontdesc">
 											<#vpn_openvpn_desc1#>&nbsp;<#vpn_openvpn_desc3#>&nbsp;<#vpn_openvpn_desc2#> <#menu5#>
 											<br />
-											<#vpn_openvpn_FAQ#>
 											<ol>
 												<li><a href="http://www.asus.com/support/Knowledge-Detail/11/2/RTAC68U/1A935B95-C237-4281-AE86-C824737D11F9/" target="_blank" style="text-decoration:underline;">Windows</a>
 												<li><a href="http://www.asus.com/support/Knowledge-Detail/11/2/RTAC68U/C77ADCBF-F5C4-46B4-8A0D-B64F09AB881F/" target="_blank" style="text-decoration:underline;">Mac OS</a>
@@ -1250,7 +1255,8 @@ function cal_panel_block(){
 										<div class="formfontdesc">
 											<p><#vpn_openvpn_desc3#><br />
 											<p><#vpn_openvpn_hint1#><br />
-											<p><#vpn_openvpn_hint2#>
+											<p><#vpn_openvpn_hint2#><br />
+											<p>Before changing any value in advanced settings, please check the openVPN client software ability.
 										</div>
 										<!-- Advanced setting table start-->
 										<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable" style="margin-top:8px;">
@@ -1290,9 +1296,6 @@ function cal_panel_block(){
 																document.form.action_script.value = "stop_vpnserver"+openvpn_unit;
 																parent.showLoading();
 																document.form.submit();
-															},
-															{
-																switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
 															}
 														);
 													</script>
@@ -1361,7 +1364,7 @@ function cal_panel_block(){
 													<input type="radio" name="vpn_server_igncrt" class="input" value="0" <% nvram_match_x("", "vpn_server_igncrt", "0", "checked"); %>><#checkbox_No#>
 												</td>
 											</tr>
-											<tr>
+											<tr id="server_authhmac">
 												<th><#vpn_openvpn_AuthHMAC#></th>
 												<td>
 													<select name="vpn_server_hmac" class="input_option">

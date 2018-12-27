@@ -18,6 +18,7 @@ WLU_OBJS := wlu.o wlu_cmd.o wlu_iov.o wlu_linux.o bcmutils.o bcmwifi_channels.o 
 ifneq ($(wildcard $(SRCBASE)/wl/exe/wlu_common.c),)
 WLU_OBJS += wlu_common.o
 endif
+WLU_OBJS += wlc_clm_data.o
 
 ifeq ($(RWL),1)
 WL_OBJS := $(WLU_OBJS)
@@ -68,7 +69,7 @@ endif
 ifneq ($(wildcard $(SRCBASE)/wl/exe),)
 CFLAGS += -I$(SRCBASE)/wl/exe
 UTILS += wl
-vpath %.c $(SRCBASE)/wl/exe $(SRCBASE)/shared
+vpath %.c $(SRCBASE)/wl/exe $(SRCBASE)/wl/clm/src $(SRCBASE)/shared
 endif
 
 ifeq ($(RWL),1)

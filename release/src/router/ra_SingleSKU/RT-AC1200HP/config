@@ -1,0 +1,13 @@
+
+SKU_2G_FCC  = "Temp_FCC_2.4GHz_SingleSKU.DAT"
+SKU_5G_FCC  = "Temp_FCC_5.0GHz_SingleSKU.DAT"
+SKU_2G_CE   = 
+SKU_5G_CE   = 
+SKU_2G_SG   = 
+SKU_5G_SG   = 
+SKU_2G_AU   = 
+SKU_5G_AU   = 
+SKU_2G_NCC  = 
+SKU_5G_NCC  = 
+SKU_2G_JP   = "20150106_JAPAN_2.4GHz_SingleSKU.DAT"
+SKU_5G_JP   = "20150106_JAPAN_5GHz_SingleSKU.DAT"

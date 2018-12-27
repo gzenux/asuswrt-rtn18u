@@ -102,6 +102,19 @@ var current_extendno = "";
 var liveUpdateFinish = false;
 var new_FW = false;
 var retry = 0;
+var isManual = false;
+
+function add_options_x2(o, arr, varr, orig){
+	free_options(o);
+	
+	for(var i = 0; i < arr.length; ++i){
+		if(orig == varr[i])
+			add_option(o, arr[i], varr[i], 1);
+		else
+			add_option(o, arr[i], varr[i], 0);
+	}
+}
+
 function detect_firmware(){
 	$j.ajax({
 		url: '/detect_firmware.asp',
@@ -182,7 +195,7 @@ function QIS_load_body(){
 	winW_H();
 
 	if(psta_support){
-		if(document.QKform.sw_mode.value == 3 && '<% nvram_get("wlc_psta"); %>' == 1)
+		if((document.QKform.sw_mode.value == 2 || document.QKform.sw_mode.value == 3) && '<% nvram_get("wlc_psta"); %>' == 1)
 			document.QKform.sw_mode.value = 4;
 	}
 
@@ -243,6 +256,16 @@ function QIS_load_body(){
 				localAP_support = false;
 				isRepeater = false;
 				action = "/qis/QIS_sitesurvey.htm";
+				submit();
+				break;
+			case "sitesurvey_rep":
+				document.QKform.sw_mode.value = "2";
+				action = "/qis/QIS_sitesurvey.htm";
+				submit();
+				break;
+			case "lanip":
+				document.QKform.sw_mode.value = "3";
+				action = "/qis/QIS_lanip.htm";
 				submit();
 				break;
 			default:
@@ -369,6 +392,33 @@ function check_DUT(){
 		}
 	});
 }
+
+function detect_httpd(){
+	$j.ajax({
+    	url: '/httpd_check.xml',
+    	dataType: 'xml',
+		timeout: 1500,
+    	error: function(xhr){
+    		dead++;
+    		if(dead < 6){
+    			setTimeout("detect_httpd();", 1000);
+    		}else{
+    			$('loading_block1').style.display = "none";
+    			$('loading_block2').style.display = "none";
+    			$('loading_block3').style.display = "";
+				if(findasus_support){
+    				$('loading_block3').innerHTML = "<div>You can also go to <a href=\"http://findasus.local\" style=\"font-family:Lucida Console;text-decoration:underline;color:#FC0;\">http://findasus.local</a> to search and enter device config page.</div>";
+				}else{
+					$('loading_block3').innerHTML = "<div><#Main_alert_proceeding_desc3#>.<#LANConfig_ChangedLANIP#></div>";
+				}						
+    		}
+    	},
+    	success: function(){
+    		setTimeout("hideLoadingBar();",1000);
+      		location.href = "index.asp";
+  		}
+  	});
+}
 </script>
 </head>
 
@@ -410,7 +460,7 @@ function check_DUT(){
 		<td>
 			<div class="drword" id="drword"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
 				<br/>
-				<div id="disconnect_hint" style="display:none;">This may interrupt your internet connection.</div>
+				<div id="disconnect_hint" style="display:none;"><#Main_alert_proceeding_desc2#></div>
 				<br/>
 			</div>
 			<div id="wireless_client_detect" style="margin-left:10px;position:absolute;display:none">
@@ -418,7 +468,7 @@ function check_DUT(){
 				<div style="margin:-45px 0 0 75px;"><#QKSet_Internet_Setup_fail_method1#></div>
 			</div>   
 			<div class="drImg"><img src="images/alertImg.png"></div>
-			<div style="height:70px; "></div>
+			<div style="height:100px; "></div>
 		</td>
 		</tr>
 	</table>
@@ -447,7 +497,7 @@ function check_DUT(){
 <table width="998px"  border="0" align="center" cellpadding="0" cellspacing="0" background="/images/New_ui/middown_bg.png">
   <tr>
 		<td style="width:218px;*width:263px;" valign="top">
-			<div class="m_qis_r" style="margin-left: 15px;margin-top: -160px;cursor:pointer;" onclick="gotoIndex();"><table><tbody><tr><td><div id="index_img1"></div></td><td><div><#CTL_Setting#></div></td></tr></tbody></table></div>
+			<div class="m_qis_r" style="margin-left: 15px;margin-top: -160px;cursor:pointer;" onclick="gotoIndex();"><table><tbody><tr><td><div class="_index"></div></td><td><div><#CTL_Setting#></div></td></tr></tbody></table></div>
 			<div class="lefttabhead" style="margin-left:15px;" id="option0"><table width="192px" height="37px"><tbody><tr><td><#QIS_title#></td></tr></tbody></table></div>
 			<div class="lefttabmid" id="t1" style="margin-left:15px;"><table height="52px"><tbody><tr><td><img style="margin-left:3px;" border="0" src="/images/qis/qisStep1.png"></td><td><div class="qismenu"><#QIS_step2#></div></td></tr></tbody></table></div>
 			<div class="lefttabmid" id="t2" style="margin-left:15px;"><table height="52px"><tbody><tr><td><img style="margin-left:3px;" border="0" src="/images/qis/qisStep2.png"></td><td><div class="qismenu"><#QIS_step3#></div></td></tr></tbody></table></div>
@@ -479,8 +529,8 @@ function check_DUT(){
 	<!-- system -->                  
 	<input type="hidden" name="machine_name" value="<% nvram_get("machine_name"); %>">
 	<input type="hidden" name="time_zone" value="<% nvram_get("time_zone"); %>">
-	<input type="hidden" name="wan_nat_x" value="<% nvram_get("wan_nat_x"); %>">
-	<input type="hidden" name="wan_route_x" value="<% nvram_get("wan_route_x"); %>">
+	
+	
 	<input type="hidden" name="http_username" value="<% nvram_get("http_username"); %>">
 	<input type="hidden" name="http_passwd" value=""> 
 	<input type="hidden" name="x_Setting" id="x_Setting" value="<% nvram_get("x_Setting"); %>" disabled>

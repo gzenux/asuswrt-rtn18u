@@ -13,6 +13,7 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript">
 <% start_autodet(); %> // initial QIS detecting process.
+<% check_modem_sim(); %>
 var based_modelid = '<% nvram_get("productid"); %>';
 var hw_ver = '<% nvram_get("hardware_version"); %>';
 var usb_flag = '<% nvram_get("ehci_ports"); %>';
@@ -21,7 +22,10 @@ var odmpid = '<% nvram_get("odmpid"); %>';
 var color = '<% nvram_get("color"); %>';
 color = color.toUpperCase();
 var MP_png_path = "/images/Model_product_"+ color +".png";
-
+var wanstate = -1;
+var wansbstate = -1;
+var wanauxstate = -1;
+<% wanstate(); %>
 <% wanlink(); %>
 
 function LinkCheck(url)
@@ -31,8 +35,31 @@ function LinkCheck(url)
     http.send();
     return http.status!="404";
 }
- 
+
+function gotoPage(dst_url, flag, isParent){
+	if(isParent && isParent == 1)
+		document.redirectForm.target = "_parent";
+	else
+		document.redirectForm.target = "";
+	document.redirectForm.action = dst_url;
+	document.redirectForm.flag.value = flag;
+	document.redirectForm.submit();
+}
+
 function QKinternettype_load_body(){
+	if(wanstate == 4 && wansbstate == 4){
+		gotoPage("/error_page.htm", "6", 1);
+		return;
+	}
+	
+	if(parent.repeater_support){
+		document.getElementById("repeater_title").style.display = "";
+	}
+	
+	if(parent.psta_support){
+		document.getElementById("mediaBridge_title").style.display = "";
+	}
+	
 	parent.document.title = "<#Web_Title#> - Welcome!";
 	parent.set_step("t0");		
 
@@ -54,7 +81,9 @@ function QKinternettype_load_body(){
 
 	if(parent.ISMOBILE){
 		document.getElementById("QISmain").style.display = "none";
-		document.getElementById("QISmain_m").style.display = "";		
+		document.getElementById("QISmain_m").style.display = "";
+		if(based_modelid == "4G-AC55U")
+			document.getElementById("Productdesc_0_m").style.display = "";
 		return true;
 	}
 
@@ -101,12 +130,18 @@ function QKinternettype_load_body(){
 		document.getElementById("Productdesc_4").innerHTML = check_desc4;
 	}	
 	
-	if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "TM-AC1900"){	//MODELDEP
-		document.getElementById("AreaHint").style.display = "";	
-		document.getElementById("desc_Hint_RT-AC68U").style.display = "";
+	if(based_modelid == "4G-AC55U"){
+		var check_desc0 = "<#QIS_welcome_feature0#>";	
+		document.getElementById("Productdesc_0").style.display = "";	
+		document.getElementById("Productdesc_0").innerHTML = check_desc0;
 	}
 	
 	document.getElementById("btn_next_step").focus();
+}
+
+function redirect_page(redirect_flag){
+	document.redirectForm.action = "/qis/QIS_"+redirect_flag+".htm";
+	document.redirectForm.submit();
 }
 
 function submitForm(mode){
@@ -135,7 +170,13 @@ function detect_if_wan_plug(flag){
 		},
 		success: function(response){
 			if(autodet_state == 4){ // ethernet did not plug
-				if(parent.hadPlugged("modem")){
+				if(based_modelid == "4G-AC55U"){
+					if( sim_state == -1)
+						redirect_page("unplug_ethsim");
+					else
+						submitForm(1);
+				}	
+				else if(parent.hadPlugged("modem")){
 					submitForm("modem");
 				}	
 				else if(flag == null){
@@ -161,7 +202,6 @@ function detect_if_wan_plug(flag){
 
 					document.getElementById("loadingIcon").style.display = "none";
 					changeiuiBackground(0);
-					document.getElementById("ManualBtn").style.display = "";
 				}
 				setTimeout("update_wan_info(1);", 1000);
 			}
@@ -185,7 +225,6 @@ function update_wan_info(flag){
 		},
 		success: function(response){
 			if(flag == null){
-				document.getElementById("ManualBtn").style.display = "none";
 				document.getElementById("loadingIcon").style.display = "";
 				changeiuiBackground(1);
 				setTimeout("detect_if_wan_plug();", 1000);
@@ -233,8 +272,7 @@ function startPoll(){
 	setTimeout("startPoll();", 2500);
 }
 
-function submitenter(myfield,e)
-{	
+function submitenter(myfield,e){	
 	var keycode;
 	if (window.event) keycode = window.event.keyCode;
 	else if (e) keycode = e.which;
@@ -247,9 +285,36 @@ function submitenter(myfield,e)
 	else
    	return true;
 }
+
+function uploadSetting(){
+  var file_obj = document.form.file;
+	
+	if(file_obj.value == ""){
+		alert("<#JS_fieldblank#>");
+		file_obj.focus();
+	}
+	else if(file_obj.value.length < 6 ||
+					file_obj.value.lastIndexOf(".CFG")  < 0 || 
+					file_obj.value.lastIndexOf(".CFG") != (file_obj.value.length)-4){		
+		alert("<#Setting_upload_hint#>");
+		file_obj.focus();
+	}
+	else{
+		stopFlag = 1;
+		parent.document.getElementById('proceeding_img_text').style.display = "";
+		parent.document.getElementById('connHint').innerHTML = "<#SET_ok_desc#>";
+		document.form.action = "/upload.cgi";
+		document.form.enctype = "multipart/form-data";
+		document.form.submit();
+	}	
+}
+
 </script>
 </head>  
 <body onLoad="QKinternettype_load_body();" onunload="" onKeyPress="submitenter(this,event)">
+<form method="post" name="redirectForm" action="" target="">
+<input type="hidden" name="flag" value="">
+</form>
 <form method="post" name="form" action="/start_apply.htm">
 <input type="hidden" name="current_page" value="QIS_welcome.htm">
 <input type="hidden" name="next_page" value="">   
@@ -274,6 +339,7 @@ function submitenter(myfield,e)
 							<div id="productDesc" style="font-style:italic;">				
 								<p style="font-size:20px;font-weight:bolder;margin-bottom:15px;"><#statusTitle_System#></p>
 								<ul>		
+									<li style="line-height:25px; display:none" id="Productdesc_0"></li>								
 									<li style="line-height:25px;" id="Productdesc_1"></li>
 									<li style="line-height:25px;" id="Productdesc_2"></li>
 									<li style="line-height:25px;" id="Productdesc_3"></li>
@@ -282,9 +348,9 @@ function submitenter(myfield,e)
 							</div>
 						</td>
 
-						<td width="45%" height="370">
+						<td width="45%" style="height:300px">
 							<div id="producticon"><img id="ModelPid_img" src=""></div>
-							<div id="wan_unplug" style="display:none;text-align:center;margin-top:-90px;*margin-top:25px;">
+							<div id="wan_unplug" style="display:none;text-align:center;margin-top:-30px;*margin-top:25px;">
 								<img src="/images/qis/border.png">
 								<div style="margin-top:-330px">
 									<div id="noti_wan_uplus" class="QISGeneralFont" style="color:#FC0;font-weight:bolder;text-align:left;margin-left:25px;">
@@ -298,23 +364,33 @@ function submitenter(myfield,e)
 							</div>	
 						</td>
 					</tr>
-
 					<tr>
 						<td colspan="3" align="center">
-							<input id="ManualBtn" class="button_gen_long" type="button" value="<#Manual_Setting_btn#>" style="display:none;white-space:normal;" onclick="submitForm(0)">
-							<input class="button_gen" id="btn_next_step" type="button" value="<#btn_go#>" onclick="update_wan_info();">
+							<input class="button_gen" id="btn_next_step" type="button" value="<#btn_go#>" onclick="update_wan_info();" style="margin-left:-80px;">
 							<img id="loadingIcon" style="display:none;" src="/images/InternetScan.gif">
 						</td>
-					</tr>	
+					</tr>
 				</table>
 			</td>	
 		</tr>	
 		<tr>
 			<td>
-					<div id="AreaHint" style="display:none;">
-						<div style="margin:5px;"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
-						<div id="desc_Hint_RT-AC68U" style="display:none;margin-left:50px;font-size:12px;">* <#QIS_welcome_remark1#></div>
+				<div id="AreaHint" style="margin-top:25px;">
+					<div><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
+					<div style="padding-left:20px;margin-top:10px">
+						<span>You are a network expert and want to skip internet setup wizard? Click</span>
+						<a><span style="text-decoration:underline;cursor:pointer;font-weight:bold" onclick="submitForm(0)">Manual Setting</span></a>
+						<span>to setup Internet, wireless in advanced mode or configure <#Web_Title2#> as <#OP_AP_item#></span>
+						<span id="repeater_title" style="display:none">/ <#OP_RE_item#></span>
+						<span id="mediaBridge_title" style="display:none">/ Media Bridge</span>
+						<span>.&nbsp Click</span>
+						<a><label for="upload_setting_profile" style="text-decoration:underline;cursor:pointer;font-weight:bold" onclick="">Restore Setting</label></a>
+						<span>to load saved configuration settings.</span>
 					</div>
+					<div style="height:30px;display:none">
+						<input id="upload_setting_profile" type="file" name="file" class="input" style="color:#FFCC00;" onchange="uploadSetting();">
+					</div>
+				</div>
 			</td>
 		</tr>	
 	</table>
@@ -323,6 +399,7 @@ function submitenter(myfield,e)
 <div style="display:none;" id="QISmain_m">
 	<div id="QISFeature" style="margin-left:-20px;">
 		<ul>		
+			<li style="line-height:25px; display:none" id="Productdesc_0_m"><#QIS_welcome_feature0#></li>				
 			<li style="line-height:25px;"><#QIS_welcome_feature1#></li>
 			<li style="line-height:25px;"><#QIS_welcome_feature2#></li>
 			<li style="line-height:25px;"><#QIS_welcome_feature3#></li>

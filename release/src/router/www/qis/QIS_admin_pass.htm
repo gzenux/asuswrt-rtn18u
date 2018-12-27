@@ -36,13 +36,7 @@ for(var i=0; i<accounts.length; i++){
 
 function QKinternettype_load_body(){
 
-	if(tmo_support){	//MODELDEP : T-Mobile (TM-AC1900)
-			document.getElementById("skip_btn").style.display = "";
-			document.getElementById("prev_btn").style.display = "none";
-			document.getElementById("pass_Desc1").innerHTML = "For security purposes, you MUST change your login username/password before continuing.";
-			document.getElementById("tmo_desc4").style.display = "";
-	}
-	else if(parent.based_modelid == "RT-N11P"){	//MODELDEP : RT-N11P (RT-N12+, RT-N12E_B)
+	if(parent.based_modelid == "RT-N11P"){	//MODELDEP : RT-N11P (RT-N12+, RT-N12E_B)
 			document.getElementById("point4").style.display = "none";
 	}
 	else{
@@ -85,7 +79,10 @@ function QKinternettype_load_body(){
 				document.form.next_page.value = "/qis/QIS_manual_setting.htm";				
 			}
 			else {
-				document.form.next_page.value = "/qis/QIS_manual_setting.htm";				
+				if(parent.based_modelid == "DSL-AC68U")
+					document.form.next_page.value = "/qis/QIS_detect.htm";
+				else
+					document.form.next_page.value = "/qis/QIS_manual_setting.htm";				
 			}
 		}
 	}
@@ -109,6 +106,7 @@ function submitForm(){
 
 	if(document.form.http_username.value.length == 0){
 		showtext($("alert_msg1"), "<#File_Pop_content_alert_desc1#>");
+		$("alert_msg1").style.display = "";
 		document.form.http_username.focus();
 		document.form.http_username.select();
 		changeiuiBackground(0);
@@ -204,9 +202,9 @@ function submitForm(){
 		return;
 	}
 
-	if(document.form.http_passwd.value == 'admin' && parent.based_modelid == "RT-AC87U"){	//MODELDEP : RT-AC87U
+	if(document.form.http_passwd.value == 'admin' && (parent.based_modelid == "RT-AC87U" || parent.based_modelid == "RT-AC3200")){	//MODELDEP : RT-AC87U
 		if(http_passwd_flag == 0){
-			alert('The new password is the same as system default password. We strongly recommend that you set a more complex password.');
+			alert("<#QIS_adminpass_confirm0#>");
 			document.form.http_passwd.focus();
 			document.form.http_passwd.select();
 			http_passwd_flag = 1;
@@ -214,7 +212,7 @@ function submitForm(){
 			return false;
 		}
 		else{
-			if(!confirm('If you do not change the default password (admin), your router is vulnerable to security threats and others can easily guess the login password. Are you sure to keep this unsafe password?')){
+			if(!confirm("<#QIS_adminpass_confirm1#>")){
 				document.form.http_passwd.focus();
 				document.form.http_passwd.select();
 				changeiuiBackground(0);
@@ -341,8 +339,8 @@ function clean_scorebar(obj){
 		  <th width="240"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(11,5)"><#Router_Login_Name#></a></th>
 		  <td class="QISformtd">
 				<div>
-					<input type="text" id="http_username" name="http_username" tabindex="1" style="height:25px;" class="input_15_table" maxlength="20" value="<% nvram_get("http_username"); %>">
-					<br/><span id="alert_msg1" style="color:#FC0;margin-left:8px;"></span>
+					<input type="text" id="http_username" name="http_username" tabindex="1" style="height:25px;" class="input_15_table" maxlength="20" value="<% nvram_get("http_username"); %>" autocapitalization="off" autocomplete="off">
+					<br /><span id="alert_msg1" style="color:#FC0;margin-left:8px;display:none;"></span>
 				</div>
 		  </td>
 		</tr>	
@@ -375,12 +373,12 @@ function clean_scorebar(obj){
 	<fieldset id="theFieldset1" style="display:none;">
 		<div class="row">
 			<label>Username</label>
-			<input type="text" id="_http_username" name="_http_username" placeholder="Your login" onblur="document.form.http_username.value=this.value" value='<% nvram_get("http_username"); %>'>
+			<input type="text" id="_http_username" name="_http_username" placeholder="Your login" onblur="document.form.http_username.value=this.value" value="<% nvram_get("http_username"); %>" autocapitalization="off" autocomplete="off">
 			<br/><span id="alert_msg1" style="color:red"></span>
 		</div>
 		<div class="row_end">
 			<label>Password</label>
-			<input type="password" name="_http_passwd" placeholder="Your password" onblur="document.form.http_passwd.value=this.value;document.form.v_password2.value=this.value">
+			<input type="password" name="_http_passwd" placeholder="Your password" onblur="document.form.http_passwd.value=this.value;document.form.v_password2.value=this.value" autocapitalization="off" autocomplete="off">
 		</div>
 	</fieldset>
 	<div class="mobileHint" id="_alert_msg2"></div>

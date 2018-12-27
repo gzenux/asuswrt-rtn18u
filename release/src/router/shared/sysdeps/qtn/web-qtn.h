@@ -10,13 +10,16 @@
 #include <qcsapi_rpc_common/common/rpc_raw.h>
 #include "qcsapi_driver.h"
 #include "call_qcsapi.h"
+#include "net80211/ieee80211_dfs_reentry.h"
 
 #define WIFINAME "wifi0"
 
 extern int rpc_qcsapi_init(int verbose);
 extern int rpc_qtn_ready();
 extern int qcsapi_init(void);
+#if 0	/* remove */
 extern int rpc_qcsapi_restore_default_config(int flag);
+#endif
 extern int rpc_qcsapi_bootcfg_commit(void);
 extern void rpc_set_radio(int unit, int subunit, int on);
 extern void rpc_show_config(void);

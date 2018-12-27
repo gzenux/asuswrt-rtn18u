@@ -23,10 +23,6 @@
 <script type="text/javascript">
 var $j = jQuery.noConflict();
 
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 <% get_AiDisk_status(); %>
 <% get_permissions_of_account(); %>
 
@@ -51,8 +47,8 @@ var ddns_enable = '<% nvram_get("ddns_enable_x"); %>';
 
 function initial(){
 	show_menu();
-	$("option5").innerHTML = '<table><tbody><tr><td><div id="index_img5"></div></td><td><div style="width:120px;"><#Menu_usb_application#></div></td></tr></tbody></table>';
-	$("option5").className = "m5_r";
+	document.getElementById("_APP_Installation").innerHTML = '<table><tbody><tr><td><div class="_APP_Installation"></div></td><td><div style="width:120px;"><#Menu_usb_application#></div></td></tr></tbody></table>';
+	document.getElementById("_APP_Installation").className = "menu_clicked";
 	
 	document.aidiskForm.protocol.value = PROTOCOL;
 	
@@ -711,9 +707,6 @@ function validForm(){
 									},
 									function() {
 										switchAppStatus(PROTOCOL);
-									},
-									{
-										switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
 									}
 								);
 							</script>			
@@ -733,9 +726,6 @@ function validForm(){
 									},
 									function() {
 										switchAccount(PROTOCOL);
-									},
-									{
-										switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
 									}
 								);
 							</script>
@@ -857,11 +847,7 @@ function validForm(){
     <td width="10" align="center" valign="top">&nbsp;</td>
 	</tr>
 </table>
-</form>
-
-
-
-<div id="footer"></div>
+</form><div id="footer"></div>
 
 <!-- mask for disabling AiDisk -->
 <div id="OverlayMask" class="popup_bg">

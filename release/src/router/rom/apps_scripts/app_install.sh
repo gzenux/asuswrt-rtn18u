@@ -4,9 +4,6 @@
 
 
 apps_ipkg_old=`nvram get apps_ipkg_old`
-is_arm_machine=`uname -m |grep arm`
-productid=`nvram get productid`
-
 APPS_PATH=/opt
 CONF_FILE=$APPS_PATH/etc/ipkg.conf
 ASUS_SERVER=`nvram get apps_ipkg_server`
@@ -16,14 +13,30 @@ wget_options="-q -t 2 -T $wget_timeout"
 download_file=
 apps_from_internet=`nvram get rc_support |grep appnet`
 apps_local_space=`nvram get apps_local_space`
+f=`nvram get apps_install_folder`
+case $f in
+	"asusware.arm")
+		pkg_type=`echo $f|sed -e "s,asusware\.,,"`
+		third_lib="mbwe-bluering"
+		;;
+	"asusware.big")
+		pkg_type="mipsbig"
+		third_lib=
+		;;
+	"asusware.mipsbig")
+		pkg_type=`echo $f|sed -e "s,asusware\.,,"`
+		third_lib=
+		;;
+	"asusware")
+		pkg_type="mipsel"
+		third_lib="oleg"
+		;;
+	*)
+		echo "Unknown apps_install_folder: $f"
+		exit 1
+		;;
+esac
 
-if [ -n "$is_arm_machine" ]; then
-	third_lib="mbwe-bluering"
-elif [ -n "$productid" ] && [ "$productid" == "DSL-N66U" ]; then
-	third_lib=
-else
-	third_lib="oleg"
-fi
 
 # $1: package name.
 # return value. 1: have package. 0: no package.
@@ -102,7 +115,7 @@ _check_log_message(){
 _loop_delay(){
 	i=0
 	while [ $i -lt $1 ]; do
-		i=$(($i+1))
+		i=$((i+1))
 		echo "."
 	done
 }
@@ -172,8 +185,16 @@ echo "file_ver4=$file_ver4, list_ver4=$list_ver4."
 	if [ "$need_download" == "1" ]; then
 		# Geting the app's file name...
 		server_names=`grep -n '^src.*' $CONF_FILE |sort -r |awk '{print $3}'`
+
+		if [ "$pkg_type" != "arm" ] && [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
+			IS_SUPPORT_SSL=`nvram get rc_support|grep -i HTTPS`
+			if [ -n "$IS_SUPPORT_SSL" ]; then
+				wget_options="$wget_options --no-check-certificate"
+			fi
+		fi
+
 		for s in $server_names; do
-			if [ -z "$is_arm_machine" ] && [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
+			if [ "$pkg_type" != "arm" ] && [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
 				pkg_file=`_get_pkg_file_name_old $1 $s 0`
 			else
 				pkg_file=`_get_pkg_file_name $1`
@@ -190,7 +211,7 @@ echo "file_ver4=$file_ver4, list_ver4=$list_ver4."
 		fi
 
 		# Downloading the app's file name...
-		if [ -z "$is_arm_machine" ] && [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ] && [ "$pkg_server" == "$ASUS_SERVER" ]; then
+		if [ "$pkg_type" != "arm" ] && [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ] && [ "$pkg_server" == "$ASUS_SERVER" ]; then
 			ipk_file_name=`_get_pkg_file_name_old $1 $pkg_server 1`
 		else
 			ipk_file_name=$pkg_file
@@ -199,6 +220,7 @@ echo "file_ver4=$file_ver4, list_ver4=$list_ver4."
 		target=$2/$ipk_file_name
 		nvram set apps_download_file=$ipk_file_name
 		nvram set apps_download_percent=0
+		echo "wget -c $wget_options $pkg_server/$pkg_file -O $target"
 		wget -c $wget_options $pkg_server/$pkg_file -O $target &
 		wget_pid=`pidof wget`
 		if [ -z "$wget_pid" ] || [ $wget_pid -lt 1 ]; then
@@ -210,26 +232,26 @@ echo "file_ver4=$file_ver4, list_ver4=$list_ver4."
 		fi
 		i=0
 		while [ $i -lt $wget_timeout ] && [ ! -f "$target" ]; do
-			i=$(($i+1))
+			i=$((i+1))
 			sleep 1
 		done
 
 		wget_pid=`pidof wget`
 		size=`app_get_field.sh $1 Size 2`
 		target_size=`ls -l $target |awk '{printf $5}'`
-		percent=$(($target_size*100/$size))
+		percent=$((target_size*100/size))
 		nvram set apps_download_percent=$percent
 		while [ -n "$wget_pid" ] && [ -n "$target_size" ] && [ $target_size -lt $size ]; do
 			sleep 1
 
 			wget_pid=`pidof wget`
 			target_size=`ls -l $target |awk '{printf $5}'`
-			percent=$(($target_size*100/$size))
+			percent=$((target_size*100/size))
 			nvram set apps_download_percent=$percent
 		done
 
 		target_size=`ls -l $target |awk '{printf $5}'`
-		percent=$(($target_size*100/$size))
+		percent=$((target_size*100/size))
 		nvram set apps_download_percent=$percent
 		if [ -z "$percent" ] || [ $percent -ne 100 ]; then
 			rm -rf $target

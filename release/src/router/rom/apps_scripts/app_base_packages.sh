@@ -3,9 +3,6 @@
 
 
 apps_ipkg_old=`nvram get apps_ipkg_old`
-is_arm_machine=`uname -m |grep arm`
-productid=`nvram get productid`
-
 autorun_file=.asusrouter
 nonautorun_file=$autorun_file.disabled
 APPS_INSTALL_FOLDER=`nvram get apps_install_folder`
@@ -17,19 +14,39 @@ wget_options="-q -t 2 -T $wget_timeout"
 apps_from_internet=`nvram get rc_support |grep appnet`
 apps_local_space=`nvram get apps_local_space`
 apps_local_test=`nvram get apps_local_test`
-
 link_internet=`nvram get link_internet`
+f=`nvram get apps_install_folder`
+case $f in
+	"asusware.arm")
+		pkg_type=`echo $f|sed -e "s,asusware\.,,"`
+		third_lib="mbwe-bluering"
+		base_size=503297
+		;;
+	"asusware.big")
+		pkg_type="mipsbig"
+		third_lib=
+		base_size=2004975
+		;;
+	"asusware.mipsbig")
+		pkg_type=`echo $f|sed -e "s,asusware\.,,"`
+		third_lib=
+		base_size=2004975
+		;;
+	"asusware")
+		pkg_type="mipsel"
+		third_lib="oleg"
+		if [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
+			base_size=1042891
+		else
+			base_size=936886
+		fi
+		;;
+	*)
+		echo "Unknown apps_install_folder: $f"
+		exit 1
+		;;
+esac
 
-if [ -n "$is_arm_machine" ]; then
-	pkg_type="arm"
-	third_lib="mbwe-bluering"
-elif [ -n "$productid" ] && [ "$productid" == "DSL-N66U" ]; then
-	pkg_type="mipsbig"
-	third_lib=
-else
-	pkg_type="mipsel"
-	third_lib="oleg"
-fi
 
 if [ -z "$APPS_DEV" ]; then
 	echo "Wrong"
@@ -81,8 +98,14 @@ if [ ! -f "$APPS_INSTALL_PATH/bin/ipkg" ] || [ -z "$had_uclibc" ]; then
 	if [ -n "$apps_local_test" ] && [ "$apps_local_test" -eq "1" ]; then
 		local=`nvram get lan_ipaddr`
 		dl_path="http://$local"
-	elif [ -z "$is_arm_machine" ] && [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
-		dl_path=http://dlcdnet.asus.com/pub/ASUS/LiveUpdate/Release/Wireless
+	elif [ "$pkg_type" != "arm" ] && [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
+		IS_SUPPORT_SSL=`nvram get rc_support|grep -i HTTPS`
+		if [ -n "$IS_SUPPORT_SSL" ]; then
+			dl_path=https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless
+			wget_options="$wget_options --no-check-certificate"
+		else
+			dl_path=http://dlcdnet.asus.com/pub/ASUS/LiveUpdate/Release/Wireless
+		fi
 	else
 		dl_path=$ASUS_SERVER
 	fi
@@ -103,14 +126,6 @@ if [ ! -f "$APPS_INSTALL_PATH/bin/ipkg" ] || [ -z "$had_uclibc" ]; then
 		cd $CURRENT_PWD
 		rm -rf $target
 	else
-		if [ -n "$is_arm_machine" ]; then
-			base_size=503297
-		elif [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
-			base_size=1042891
-		else
-			base_size=936886
-		fi
-
 		if [ "$link_internet" != "1" ]; then
 			echo "Couldn't connect Internet to install the base apps!"
 			nvram set apps_state_error=5
@@ -136,25 +151,25 @@ if [ ! -f "$APPS_INSTALL_PATH/bin/ipkg" ] || [ -z "$had_uclibc" ]; then
 		fi
 		i=0
 		while [ $i -lt $wget_timeout ] && [ ! -f "$target" ]; do
-			i=$(($i+1))
+			i=$((i+1))
 			sleep 1
 		done
 
 		wget_pid=`pidof wget`
 		target_size=`ls -l $target |awk '{printf $5}'`
-		percent=$(($target_size*100/$base_size))
+		percent=$((target_size*100/base_size))
 		nvram set apps_download_percent=$percent
 		while [ -n "$wget_pid" ] && [ -n "$target_size" ] && [ $target_size -lt $base_size ]; do
 			sleep 1
 
 			wget_pid=`pidof wget`
 			target_size=`ls -l $target |awk '{printf $5}'`
-			percent=$(($target_size*100/$base_size))
+			percent=$((target_size*100/base_size))
 			nvram set apps_download_percent=$percent
 		done
 
 		target_size=`ls -l $target |awk '{printf $5}'`
-		percent=$(($target_size*100/$base_size))
+		percent=$((target_size*100/base_size))
 		nvram set apps_download_percent=$percent
 		if [ -z "$percent" ] || [ $percent -ne 100 ]; then
 			echo "Couldn't complete to download $base_file from Internet!"
@@ -176,10 +191,11 @@ if [ ! -f "$APPS_INSTALL_PATH/bin/ipkg" ] || [ -z "$had_uclibc" ]; then
 
 	if [ -n "$apps_local_test" ] && [ "$apps_local_test" -eq "1" ]; then
 		sed -i '3c src/gz optware.asus '"$dl_path" $APPS_INSTALL_PATH/etc/ipkg.conf
-	elif [ -z "$is_arm_machine" ] && [ -z "$apps_from_internet" ]; then
-		if [ -z "$apps_ipkg_old" ] || [ "$apps_ipkg_old" != "1" ]; then
+#	elif [ "$pkg_type" != "arm" ] && [ -z "$apps_from_internet" ]; then
+	elif [ "$pkg_type" != "arm" ]; then
+#		if [ -z "$apps_ipkg_old" ] || [ "$apps_ipkg_old" != "1" ]; then
 			sed -i '3c src/gz optware.asus '"$ASUS_SERVER" $APPS_INSTALL_PATH/etc/ipkg.conf
-		fi
+#		fi
 	fi
 fi
 

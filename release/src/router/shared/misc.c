@@ -32,6 +32,9 @@
 #include "shutils.h"
 #include "shared.h"
 
+#ifndef ETHER_ADDR_LEN
+#define	ETHER_ADDR_LEN		6
+#endif
 
 extern char *read_whole_file(const char *target){
 	FILE *fp;
@@ -515,39 +518,81 @@ void notice_set(const char *path, const char *format, ...)
 #define _x_dprintf(args...)	do { } while (0);
 
 // -----------------------------------------------------------------------------
+#define ACT_COMM_LEN	20
+struct action_s {
+	char comm[ACT_COMM_LEN];
+	pid_t pid;
+	int action;
+};
 
 void set_action(int a)
 {
-	_dprintf("set_action %d\n", a);
-
 	int r = 3;
-	while (f_write("/var/lock/action", &a, sizeof(a), 0, 0) != sizeof(a)) {
+	struct action_s act;
+	char *s, *p, stat[sizeof("/proc/XXXXXX/statXXXXXX")];
+
+	act.action = a;
+	act.pid = getpid();
+	snprintf(stat, sizeof(stat), "/proc/%d/stat", act.pid);
+	s = file2str(stat);
+	if (s) {
+		if ((p = strrchr(s, ')')) != NULL)
+			*p = '\0';
+		if ((p = strchr(s, '(')) != NULL)
+			snprintf(act.comm, sizeof(act.comm), "%s", ++p);
+		free(s);
+		s = (p && *act.comm) ? act.comm : NULL;
+	}
+	if (!s)
+		snprintf(act.comm, sizeof(act.comm), "%d <UNKNOWN>", act.pid);
+	_dprintf("%d: set_action %d\n", getpid(), act.action);
+	while (f_write_excl(ACTION_LOCK, &act, sizeof(act), 0, 0600) != sizeof(act)) {
 		sleep(1);
 		if (--r == 0) return;
 	}
 	if (a != ACT_IDLE) sleep(2);
 }
 
-int check_action(void)
+static int __check_action(struct action_s *pa)
 {
-	int a;
 	int r = 3;
+	struct action_s act;
 
-	while (f_read("/var/lock/action", &a, sizeof(a)) != sizeof(a)) {
+	while (f_read_excl(ACTION_LOCK, &act, sizeof(act)) != sizeof(act)) {
 		sleep(1);
 		if (--r == 0) return ACT_UNKNOWN;
 	}
-	_dprintf("check_action %d\n", a);
+	if (pa)
+		*pa = act;
+	_dprintf("%d: check_action %d\n", getpid(), act.action);
 
-	return a;
+	return act.action;
+}
+
+int check_action(void)
+{
+	return __check_action(NULL);
 }
 
 int wait_action_idle(int n)
 {
+	int r;
+	struct action_s act;
+
 	while (n-- > 0) {
-		if (check_action() == ACT_IDLE) return 1;
+		act.pid = 0;
+		if (__check_action(&act) == ACT_IDLE) return 1;
+		if (act.pid > 0 && !process_exists(act.pid)) {
+			if (!(r = unlink(ACTION_LOCK)) || errno == ENOENT) {
+				_dprintf("Terminated process, pid %d %s, hold action lock %d !!!\n",
+					act.pid, act.comm, act.action);
+				return 1;
+			}
+			_dprintf("Remove " ACTION_LOCK " failed. errno %d (%s)\n", errno, strerror(errno));
+		}
 		sleep(1);
 	}
+	_dprintf("pid %d %s hold action lock %d !!!\n", act.pid, act.comm, act.action);
 	return 0;
 }
 
@@ -978,6 +1023,7 @@ void bcmvlan_models(int model, char *vlan)
 {
 	switch (model) {
 	case MODEL_DSLAC68U:
+	case MODEL_RPAC68U:
 	case MODEL_RTAC68U:
 	case MODEL_RTAC87U:
 	case MODEL_RTAC56S:
@@ -989,6 +1035,8 @@ void bcmvlan_models(int model, char *vlan)
 	case MODEL_RTN15U:
 	case MODEL_RTAC53U:
 	case MODEL_RTAC3200:
+	case MODEL_RTAC88U:
+	case MODEL_RTAC5300:
 		strcpy(vlan, "vlan1");
 		break;
 	case MODEL_RTN53:
@@ -1110,19 +1158,21 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 				backup_tx -= *tx;
 
 				*rx2 = backup_rx;
-				*tx2 = backup_tx;			
+				*tx2 = backup_tx;				
 				/* Cherry Cho modified for RT-AC3200 Bug#202 in 2014/11/4. */	
 				unit = get_wan_unit("eth0");
-#ifdef RTCONFIG_DUALWAN
-				if (((nvram_match("wans_mode", "fo") || nvram_match("wans_mode", "fb")) && (unit == wan_primary_ifunit())) || 
-					nvram_match("wans_mode", "lb"))
-#endif	/* RTCONFIG_DUALWAN */
+#ifdef RTCONFIG_DUALWAN			
+				if ( (unit == wan_primary_ifunit()) || ( !strstr(nvram_safe_get("wans_dualwan"), "none") && nvram_match("wans_mode", "lb")) )
 				{
 					if (unit == WAN_UNIT_FIRST)
 						strcpy(ifname_desc2, "INTERNET");
 					else
 						sprintf(ifname_desc2,"INTERNET%d", unit);
-				}	
+				}									
+#else
+				if(unit == wan_primary_ifunit())
+					strcpy(ifname_desc2, "INTERNET");					
+#endif	/* RTCONFIG_DUALWAN */
 			}
 		}//End of switch_wantag
 
@@ -1138,7 +1188,11 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 	else if (ifname && (unit = get_wan_unit(ifname)) >= 0)	{
 		if (dualwan_unit__nonusbif(unit)) {
 #if defined(RA_ESW)
+#if defined(RTCONFIG_RALINK_MT7620)
 			get_mt7620_wan_unit_bytecount(unit, tx, rx);
+#elif defined(RTCONFIG_RALINK_MT7621)
+			get_mt7621_wan_unit_bytecount(unit, tx, rx);
+#endif			
 #endif
 			if(strlen(modelvlan) && strcmp(ifname, "eth0")==0) {
 				backup_rx = *rx;
@@ -1147,26 +1201,28 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 			}
 			else{
 #ifdef RTCONFIG_DUALWAN
-				if (((nvram_match("wans_mode", "fo") || nvram_match("wans_mode", "fb")) && (unit == wan_primary_ifunit())) || 
-					nvram_match("wans_mode", "lb"))
-#endif	/* RTCONFIG_DUALWAN */
+				if ( (unit == wan_primary_ifunit()) || ( !strstr(nvram_safe_get("wans_dualwan"), "none") && nvram_match("wans_mode", "lb")) )
 				{
 					if (unit == WAN_UNIT_FIRST) {	
 						strcpy(ifname_desc, "INTERNET");
 						return 1;
 					}
-					else { 
+					else {
 						sprintf(ifname_desc,"INTERNET%d", unit);
 						return 1;
 					}
 				}
+#else
+				if(unit == wan_primary_ifunit()){
+					strcpy(ifname_desc, "INTERNET");
+					return 1;
+				}			
+#endif	/* RTCONFIG_DUALWAN */
 			}
 		}
 		else if (dualwan_unit__usbif(unit)) {
 #ifdef RTCONFIG_DUALWAN
-			if (((nvram_match("wans_mode", "fo") || nvram_match("wans_mode", "fb")) && (unit == wan_primary_ifunit())) || 
-					nvram_match("wans_mode", "lb"))
-#endif	/* RTCONFIG_DUALWAN */
+			if ( (unit == wan_primary_ifunit()) || ( !strstr(nvram_safe_get("wans_dualwan"), "none") && nvram_match("wans_mode", "lb")) )
 			{
 				if(unit == WAN_UNIT_FIRST){//Cherry Cho modified in 2014/11/4.
 					strcpy(ifname_desc, "INTERNET");
@@ -1176,7 +1232,13 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 					sprintf(ifname_desc,"INTERNET%d", unit);
 					return 1;
 				}
-			}
+			}					
+#else
+			if(unit == wan_primary_ifunit()){
+				strcpy(ifname_desc, "INTERNET");
+				return 1;
+			}	
+#endif	/* RTCONFIG_DUALWAN */
 		}
 		else {
 			_dprintf("%s: unknown ifname %s\n", __func__, ifname);
@@ -1347,9 +1409,11 @@ int is_psta(int unit)
 	if (unit < 0) return 0;
 	if ((nvram_get_int("sw_mode") == SW_MODE_AP) &&
 		(nvram_get_int("wlc_psta") == 1) &&
-		((nvram_get_int("wlc_band") == unit) ||
-		 (nvram_match("exband", "1") && nvram_get_int("wlc_band_ex") == unit))
-		)
+		((nvram_get_int("wlc_band") == unit)
+#ifdef PXYSTA_DUALBAND
+		|| (nvram_match("exband", "1") && nvram_get_int("wlc_band_ex") == unit)
+#endif
+		))
 		return 1;
 
 	return 0;
@@ -1363,9 +1427,11 @@ int is_psr(int unit)
 #endif
 	if ((nvram_get_int("sw_mode") == SW_MODE_AP) &&
 		(nvram_get_int("wlc_psta") == 2) &&
-		((nvram_get_int("wlc_band") == unit) ||
-		 (nvram_match("exband", "1") && nvram_get_int("wlc_band_ex") == unit))
-		)
+		((nvram_get_int("wlc_band") == unit)
+#ifdef PXYSTA_DUALBAND
+		||  (nvram_match("exband", "1") && nvram_get_int("wlc_band_ex") == unit)
+#endif
+		))
 		return 1;
 
 	return 0;
@@ -1526,6 +1592,34 @@ int get_primaryif_dualwan_unit(void)
 }
 #endif
 
+/* Return WiFi unit number in accordance with interface name.
+ * @wif:	pointer to WiFi interface name.
+ * @return:
+ * 	< 0:	invalid
+ *  otherwise:	unit
+ */
+int get_wifi_unit(char *wif)
+{
+	int i;
+	char word[256], *next, *ifn, nv[20];
+
+	if (!wif || *wif == '\0')
+		return -1;
+	foreach (word, nvram_safe_get("wl_ifnames"), next) {
+		if (strncmp(word, wif, strlen(word)))
+			continue;
+
+		for (i = 0; i <= 1; ++i) {
+			sprintf(nv, "wl%d_ifname", i);
+			ifn = nvram_safe_get(nv);
+			if (!strncmp(word, ifn, strlen(word)))
+				return i;
+		}
+	}
+	return -1;
+}
+
+
 #ifdef RTCONFIG_YANDEXDNS
 int get_yandex_dns(int family, int mode, char **server, int max_count)
 {
@@ -1563,3 +1657,59 @@ int get_yandex_dns(int family, int mode, char **server, int max_count)
 	return count;
 }
 #endif
+
+#ifdef RTCONFIG_BWDPI
+/*
+	usage in rc or bwdpi for checking service
+*/
+int check_bwdpi_nvram_setting()
+{
+	int enabled = 1;
+	int debug = nvram_get_int("bwdpi_debug");
+
+	// check no qos service
+	if(nvram_get_int("wrs_enable") == 0 && nvram_get_int("wrs_app_enable") == 0 && 
+		nvram_get_int("wrs_vp_enable") == 0 && nvram_get_int("wrs_cc_enable") == 0 &&
+		nvram_get_int("wrs_mals_enable") == 0 &&
+		nvram_get_int("wrs_adblock_popup") == 0 && nvram_get_int("wrs_adblock_stream") == 0 &&
+		nvram_get_int("bwdpi_db_enable") == 0 &&
+		nvram_get_int("qos_enable") == 0)
+		enabled = 0;
+
+	// check traditional qos service
+	if(nvram_get_int("wrs_enable") == 0 && nvram_get_int("wrs_app_enable") == 0 && 
+		nvram_get_int("wrs_vp_enable") == 0 && nvram_get_int("wrs_cc_enable") == 0 &&
+		nvram_get_int("wrs_mals_enable") == 0 &&
+		nvram_get_int("wrs_adblock_popup") == 0 && nvram_get_int("wrs_adblock_stream") == 0 &&
+		nvram_get_int("bwdpi_db_enable") == 0 &&
+		nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") == 0)
+		enabled = 0;
+
+	if(debug) dbg("[check_bwdpi_nvram_setting] enabled= %d\n", enabled);
+
+	return enabled;
+}
+#endif
+
+int get_iface_hwaddr(char *name, unsigned char *hwaddr)
+{
+	struct ifreq ifr;
+	int ret = 0;
+	int s;
+
+	/* open socket to kernel */
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return errno;
+	}
+
+	/* do it */
+	strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name)-1);
+	ifr.ifr_name[sizeof(ifr.ifr_name)-1] = '\0';
+	if ((ret = ioctl(s, SIOCGIFHWADDR, &ifr)) == 0)
+		memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+
+	/* cleanup */
+	close(s);
+	return ret;
+}

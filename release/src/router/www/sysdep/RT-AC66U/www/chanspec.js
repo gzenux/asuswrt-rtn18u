@@ -24,9 +24,19 @@ function wl_chanspec_list_change(){
 	else if (phytype == "n") { // n mode
 		if (band == "1") { // ---- 5 GHz
 				if(wl_channel_list_5g instanceof Array && wl_channel_list_5g != ["0"]){	//With wireless channel 5g hook or return not ["0"]
-						if(based_modelid == "RT-AC3200")
+						if(based_modelid == "RT-AC3200" && country != "EU")
 							wl_channel_list_5g = [36,40,44,48];
-						else
+						else if(based_modelid == "RT-AC87U"){
+							if(document.form.wl_bw.value==1){
+								wl_channel_list_5g = eval('<% channel_list_5g_20m(); %>');
+							}else if(document.form.wl_bw.value==2){
+								wl_channel_list_5g = eval('<% channel_list_5g_40m(); %>');
+							}else  if(document.form.wl_bw.value==3){
+								wl_channel_list_5g = eval('<% channel_list_5g_80m(); %>');
+							}else{
+								wl_channel_list_5g = eval('<% channel_list_5g(); %>');
+							}
+						}else
 							wl_channel_list_5g = eval('<% channel_list_5g(); %>');
 					
 					extend_channel = ["<#Auto#>"];		 // for 5GHz, extension channel always displays Auto
@@ -38,7 +48,9 @@ function wl_chanspec_list_change(){
 							$('wl_nctrlsb_field').style.display = "";
 								for(var i=0;i<wl_channel_list_5g.length;i++){
 										if(wl_channel_list_5g[i] == "165")		//165 belong to 20MHz
-												wl_channel_list_5g[i] = wl_channel_list_5g[i];
+											wl_channel_list_5g[i] = wl_channel_list_5g[i];
+										else if((wl_channel_list_5g[i] == "56") && country == "TW")		//56 belong 20MHz only for TW
+											wl_channel_list_5g[i] = wl_channel_list_5g[i];
 										else if(document.form.preferred_lang.value == "UK")		// auto for UK
 												wl_channel_list_5g[i] = wlextchannel_fourty(wl_channel_list_5g[i]);
 										else if(band5g_11ac_support){
@@ -80,27 +92,24 @@ function wl_chanspec_list_change(){
 						}
 						else if(bw_cap == "2"){		// 40MHz
 							$('wl_nctrlsb_field').style.display = "";
-								for(var i=0;i<wl_channel_list_5g.length;i++){			
-									if((based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "TM-AC1900" || based_modelid == "DSL-AC68U" || based_modelid == "RT-AC87U") && (country == "EU" && (parseInt(wl_channel_list_5g[i]) == 116 || parseInt(wl_channel_list_5g[i]) == 140)))
-										wl_channel_list_5g[i] = wl_channel_list_5g[i];
-									else
-										wl_channel_list_5g[i] = wlextchannel_fourty(wl_channel_list_5g[i]);	
-								}		
-
-								if(country == "TW" && wl_channel_list_5g.indexOf("56u") != -1){			//remove channel 56, only for country code TW
-									var index = wl_channel_list_5g.indexOf("56u");
+								if(country == "TW" && wl_channel_list_5g.indexOf("56") != -1){			//remove channel 56, only for country code TW
+									var index = wl_channel_list_5g.indexOf("56");
 									wl_channel_list_5g.splice(index, 1);
 								}
-	
-								if(wl_channel_list_5g.indexOf("116l") != -1){			// remove channel 116, 
-									var index = wl_channel_list_5g.indexOf("116l");
+
+								if(country == "EU" && wl_channel_list_5g.indexOf("116") != -1){			// remove channel 116, 
+									var index = wl_channel_list_5g.indexOf("116");
 									wl_channel_list_5g.splice(index, 1);
 								}
 		
-								if(wl_channel_list_5g.indexOf("140l") != -1){			// remove channel 140
-									index = wl_channel_list_5g.indexOf("140l");
+								if(country == "EU" && wl_channel_list_5g.indexOf("140") != -1){			// remove channel 140
+									index = wl_channel_list_5g.indexOf("140");
 									wl_channel_list_5g.splice(index, 1);
 								}
+
+								for(var i=0;i<wl_channel_list_5g.length;i++){			
+									wl_channel_list_5g[i] = wlextchannel_fourty(wl_channel_list_5g[i]);	
+								}		
 						}
 						else{		//20MHz
 							$('wl_nctrlsb_field').style.display = "none";
@@ -293,7 +302,7 @@ function wl_chanspec_list_change(){
 				}		
 		}
 		else if(band == "2"){	// 5GHz - high band
-						if(based_modelid == "RT-AC3200")
+						if(based_modelid == "RT-AC3200" && country != "EU")
 							wl_channel_list_5g_2 = [149,153,157,161,165];
 						else
 							wl_channel_list_5g_2 = eval('<% channel_list_5g_2(); %>');
@@ -345,21 +354,23 @@ function wl_chanspec_list_change(){
 						}
 						else if(bw_cap == "2"){		// 40MHz
 							$('wl_nctrlsb_field').style.display = "";
-								for(var i=0;i<wl_channel_list_5g_2.length;i++){			
-									if((based_modelid == "RT-AC3200" || based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U" || based_modelid == "RT-AC87U") && (country == "EU" && (parseInt(wl_channel_list_5g_2[i]) == 116 || parseInt(wl_channel_list_5g_2[i]) == 140)))
-										wl_channel_list_5g_2[i] = wl_channel_list_5g_2[i];
-									else
-										wl_channel_list_5g_2[i] = wlextchannel_fourty(wl_channel_list_5g_2[i]);	
-								}								
-	
-								if(wl_channel_list_5g_2.indexOf("116l") != -1){			// remove channel 116, 
-									var index = wl_channel_list_5g_2.indexOf("116l");
+								if(country == "TW" && wl_channel_list_5g_2.indexOf("56") != -1){			//remove channel 56, only for country code TW
+									var index = wl_channel_list_5g_2.indexOf("56");
+									wl_channel_list_5g_2.splice(index, 1);
+								}
+
+								if(wl_channel_list_5g_2.indexOf("116") != -1){			// remove channel 116, 
+									var index = wl_channel_list_5g_2.indexOf("116");
 									wl_channel_list_5g_2.splice(index, 1);
 								}
 		
-								if(wl_channel_list_5g_2.indexOf("140l") != -1){			// remove channel 140
-									index = wl_channel_list_5g_2.indexOf("140l");
+								if(wl_channel_list_5g_2.indexOf("140") != -1){			// remove channel 140
+									index = wl_channel_list_5g_2.indexOf("140");
 									wl_channel_list_5g_2.splice(index, 1);
+								}
+
+								for(var i=0;i<wl_channel_list_5g_2.length;i++){			
+									wl_channel_list_5g_2[i] = wlextchannel_fourty(wl_channel_list_5g_2[i]);	
 								}
 						}
 						else{		//20MHz
@@ -511,7 +522,7 @@ function change_channel(obj){
 			}
 		}
 		else if(country == "US" || country == "SG"){			//for acs band1 channel
-			if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "TM-AC1900" ||based_modelid == "DSL-AC68U"
+			if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U"
 			|| based_modelid == "RT-AC56U" || based_modelid == "RT-AC56S"
 			|| based_modelid == "RT-AC66U"
 			|| based_modelid == "RT-N66U"

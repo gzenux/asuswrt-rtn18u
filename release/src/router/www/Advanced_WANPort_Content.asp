@@ -61,8 +61,8 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
+
+
 var wans_caps = '<% nvram_get("wans_cap"); %>';
 var wans_dualwan_orig = '<% nvram_get("wans_dualwan"); %>';
 var wans_routing_rulelist_array = '<% nvram_get("wans_routing_rulelist"); %>';
@@ -70,6 +70,16 @@ var wans_flag;
 var switch_stb_x = '<% nvram_get("switch_stb_x"); %>';
 var wans_caps_primary;
 var wans_caps_secondary;
+var wandog_fb_count_orig = '<% nvram_get("wandog_fb_count"); %>';
+var wandog_maxfail_orig = '<% nvram_get("wandog_maxfail"); %>';
+var mobile_enable_orig = '';
+if(gobi_support){
+	if(usb_index == 0)
+		mobile_enable_orig = '<% nvram_get("wan0_enable"); %>';
+	else if(usb_index == 1)
+		mobile_enable_orig = '<% nvram_get("wan1_enable"); %>';
+}	
+var wans_mode_orig = '<% nvram_get("wans_mode"); %>';
 
 var $j = jQuery.noConflict();
 
@@ -86,19 +96,23 @@ function initial(){
 	
 	addWANOption(document.form.wans_primary, wans_caps_primary.split(" "));
 	addWANOption(document.form.wans_second, wans_caps_secondary.split(" "));
-	document.form.wans_primary.value = wans_dualwan_orig.split(" ")[0];	
+
+    if(based_modelid == "4G-AC55U"){
+    	document.getElementById("wans_mode_option").style.display = "none";
+    	document.getElementById("wans_mode_fo").style.display = "";
+    }
+
 	form_show(wans_flag);		
 	setTimeout("showLANIPList();", 1000);
 
 	if(based_modelid == "RT-AC87U"){ //MODELDEP: RT-AC87 : Quantenna port
                 document.form.wans_lanport1.remove(0);   //Primary LAN1
                 document.form.wans_lanport2.remove(0);   //Secondary LAN1
-        }
-
+	}
 }
 
 function form_show(v){
-	if(v == 0){
+	if(v == 0){ //DualWAN disabled
 		inputCtrl(document.form.wans_second, 0);
 		inputCtrl(document.form.wans_lb_ratio_0, 0);
 		inputCtrl(document.form.wans_lb_ratio_1, 0);
@@ -122,27 +136,33 @@ function form_show(v){
 		document.form.wandog_enable_radio[1].disabled = true;
 		document.getElementById("wans_mode_tr").style.display = "none";
 		document.getElementById("watchdog_table").style.display = "none";		
-		document.getElementById("routing_table").style.display = "none";		
-	}else{
+		document.getElementById("routing_table").style.display = "none";
+		document.getElementById("wans_standby_tr").style.display = "none";
+		inputCtrl(document.form.wans_standby, 0);
+	}else{ //DualWAN enabled
 		document.form.wans_primary.value = wans_dualwan_orig.split(" ")[0];
 		if(wans_dualwan_orig.split(" ")[1] == "none"){
-			if(wans_dualwan_orig.split(" ")[0] == "wan" || wans_dualwan_orig.split(" ")[0] == "dsl"){
-				document.form.wans_second.value = "usb";
-				document.form.wans_second.index = 1;
+
+			if(wans_dualwan_orig.split(" ")[0] == "dsl"){
+				
+				if(wans_caps.search("wan") >= 0)
+					document.form.wans_second.value = "wan";
+				else if(wans_caps.search("usb") >= 0)
+					document.form.wans_second.value = "usb";
+				else
+					document.form.wans_second.value = "lan";
 			}
-			else if(wans_dualwan_orig.split(" ")[0] == "usb"){
-				document.form.wans_second.value = "lan";
-				document.form.wans_second.index = 2;	
+			else if(wans_dualwan_orig.split(" ")[0] == "wan"){
+
+				if(wans_caps.search("usb") >= 0)
+					document.form.wans_second.value = "usb";
+				else
+					document.form.wans_second.value = "lan";
+
 			}
 			else{
-				if(dsl_support){
-					document.form.wans_second.value = "usb";
-					document.form.wans_second.index = 1;
-				}	
-				else{	
+				if(wans_caps.search("wan") >= 0)
 					document.form.wans_second.value = "wan";
-					document.form.wans_second.index = 0;
-				}			
 			}
 		}	
 		else
@@ -155,6 +175,17 @@ function form_show(v){
 			document.getElementById("wans_mode_option").value = "lb";
 		else{
 			document.getElementById("wans_mode_option").value = "fo";
+		}
+
+		if(gobi_support){
+			if(document.form.wans_mode.value != "lb" && (document.form.wans_primary.value == "usb" || document.form.wans_second.value == "usb")){
+				document.getElementById("wans_standby_tr").style.display = "";
+				inputCtrl(document.form.wans_standby, 1);
+			}
+			else{
+				document.getElementById("wans_standby_tr").style.display = "none";
+				inputCtrl(document.form.wans_standby, 0);		
+			}
 		}
 
 		appendModeOption(document.form.wans_mode.value);
@@ -174,17 +205,14 @@ function applyRule(){
 		}
 		document.form.wan_unit.value = "<% nvram_get("wan_unit"); %>";
 		if(document.form.wans_mode.value == "lb"){
-			if(document.form.wans_lb_ratio_0.value !=0 && document.form.wans_lb_ratio_1.value!=0)	// To check LoadBalance ratio value is zero or not, Jieming add 2012/08/01
-				document.form.wans_lb_ratio.value = document.form.wans_lb_ratio_0.value + ":" + document.form.wans_lb_ratio_1.value;
-				else{
-				if(document.form.wans_lb_ratio_0.value == 0)
-					document.form.wans_lb_ratio_0.focus();
-				else
-					document.form.wans_lb_ratio_1.focus();
-				
-				alert("<#dualwan_mode_lb_note#>");
-				return false;
-			}
+
+			if(!validator.range(document.form.wans_lb_ratio_0, 1, 9))
+					return false;
+			if(!validator.range(document.form.wans_lb_ratio_1, 1, 9))
+					return false;
+
+			document.form.wans_lb_ratio.value = document.form.wans_lb_ratio_0.value + ":" + document.form.wans_lb_ratio_1.value;
+			
 			
 			if(document.form.wan0_isp_country.options[0].selected == true){
 					document.form.wan0_routing_isp.value = country[document.form.wan0_isp_country.value];
@@ -200,7 +228,7 @@ function applyRule(){
 			
 			save_table();
 		}
-		else{
+		else{ //fo or fb
 			document.form.wans_lb_ratio.disabled = true;
 			document.form.wan0_routing_isp_enable.disabled = true;
 			document.form.wan0_routing_isp.disabled = true;	
@@ -211,6 +239,11 @@ function applyRule(){
 				document.form.wandog_enable.value = "1";
 			else
 				document.form.wandog_enable.value = "0";
+
+			if(!validator.range(document.form.wandog_interval, 1, 9))
+				return false;
+			if(!validator.range(document.form.wandog_delay, 0, 99))
+				return false;
 		}		
 	}
 	else{
@@ -253,7 +286,12 @@ function applyRule(){
 	
 	if (document.form.wans_primary.value == "dsl") document.form.next_page.value = "Advanced_DSL_Content.asp";
 	if (document.form.wans_primary.value == "lan") document.form.next_page.value = "Advanced_WAN_Content.asp";
-	if (document.form.wans_primary.value == "usb") document.form.next_page.value = "Advanced_Modem_Content.asp";
+	if (document.form.wans_primary.value == "usb"){
+		if(based_modelid == "4G-AC55U")
+			document.form.next_page.value = "Advanced_MobileBroadband_Content.asp";
+		else			
+			document.form.next_page.value = "Advanced_Modem_Content.asp";
+	} 
 
 	if(wans_dualwan_orig.split(" ")[1] == "none")
 		document.form.wan_unit.value = 0;
@@ -281,11 +319,13 @@ function addWANOption(obj, wanscapItem){
 		if(wanscapItem[i].length > 0){
 			var wanscapName = wanscapItem[i].toUpperCase();
 	               //MODELDEP: DSL-N55U, DSL-N55U-B, DSL-AC68U, DSL-AC68R
-        	        if(wanscapName == "LAN" && 
-                	        (productid == "DSL-N55U" || productid == "DSL-N55U-B" || productid == "DSL-AC68U" || productid == "DSL-AC68R")) 
+			if(wanscapName == "LAN" && 
+            	(productid == "DSL-N55U" || productid == "DSL-N55U-B" || productid == "DSL-AC68U" || productid == "DSL-AC68R")) 
 				wanscapName = "Ethernet WAN";
-                	else if(wanscapName == "LAN")
+			else if(wanscapName == "LAN")
 				wanscapName = "Ethernet LAN";
+			else if(wanscapName == "USB" && based_modelid == "4G-AC55U")
+				wanscapName = "Mobile Broadband";			
 			obj.options[i] = new Option(wanscapName, wanscapItem[i]);
 		}	
 	}
@@ -295,49 +335,55 @@ function changeWANProto(obj){
 	if(wans_flag == 1){	//dual WAN on
 		if(document.form.wans_primary.value == document.form.wans_second.value){
 			if(obj.name == "wans_primary"){
-				if(obj.value == "wan"){			
-					document.form.wans_second.value = "usb";
-					document.form.wans_second.index = 1;
-				}else if (obj.value == "usb"){
-					if(!dsl_support){
+				if (obj.value == "dsl"){				
+					if(wans_caps.search("wan") >= 0)
 						document.form.wans_second.value = "wan";
-						document.form.wans_second.index = 0;
-					}
-					else{
-						document.form.wans_second.value = "lan";
-						document.form.wans_second.index = 2;
-					}
-				}else if (obj.value == "lan"){
-					if(!dsl_support){		//for DSL model, because DSL type can't set to secondary wan
-						document.form.wans_second.value = "wan";
-						document.form.wans_second.index = 0;
-					}
-					else{
+					else if(wans_caps.search("usb") >= 0)
 						document.form.wans_second.value = "usb";
-						document.form.wans_second.index = 1;				
-					}
+					else
+						document.form.wans_second.value = "lan";
 				}
-				else if (obj.value == "dsl"){
-					document.form.wans_second.value = "usb";
-					document.form.wans_second.index = 1;
+				else if(obj.value == "wan"){				
+					if(wans_caps.search("usb") >= 0)
+						document.form.wans_second.value = "usb";
+					else
+						document.form.wans_second.value = "lan";
+				}
+				else{
+					if(wans_caps.search("wan") >= 0)
+						document.form.wans_second.value = "wan";					
 				}
 			}
 			else if(obj.name == "wans_second"){
 				if(obj.value == "wan"){
-					document.form.wans_primary.value = "usb";
-					document.form.wans_primary.index = 1;
-				}else if (obj.value == "usb" || obj.value == "lan"){
-					if(!dsl_support){
-							document.form.wans_primary.value = "wan";
-							document.form.wans_primary.index = 0;
-					}
-					else{
-							document.form.wans_primary.value = "dsl";
-							document.form.wans_primary.index = 0;
-					}					
+					if(wans_caps.search("dsl") >= 0)
+						document.form.wans_primary.value = "dsl";
+					else if(wans_caps.search("usb") >= 0)
+						document.form.wans_primary.value = "usb";
+					else
+						document.form.wans_primary.value = "lan";
+				}
+				else{
+
+					if(wans_caps.search("dsl") >= 0)
+						document.form.wans_primary.value = "dsl";
+					else if(wans_caps.search("wan") >= 0)
+						document.form.wans_primary.value = "wan";
 				}
 			}			
 		}
+
+		if(gobi_support){
+			if(document.form.wans_primary.value == "usb" || document.form.wans_second.value == "usb"){
+				document.getElementById("wans_standby_tr").style.display = "";
+				inputCtrl(document.form.wans_standby, 1);
+			}
+			else{
+				document.getElementById("wans_standby_tr").style.display = "none";
+				inputCtrl(document.form.wans_standby, 0);		
+			}
+		}		
+
 		appendLANoption1(document.form.wans_primary);
 		appendLANoption2(document.form.wans_second);
 	}else
@@ -363,7 +409,7 @@ function appendLANoption2(obj){
 	}
 	else if(document.form.wans_lanport2){
 		document.form.wans_lanport2.style.display = "none";
-	}	
+	}
 }
 
 function appendModeOption(v){
@@ -371,7 +417,7 @@ function appendModeOption(v){
 		if(v == "lb"){
 			document.getElementById("lb_note").style.display = "";
 			inputCtrl(document.form.wans_lb_ratio_0, 1);
-			inputCtrl(document.form.wans_lb_ratio_1, 1);
+			inputCtrl(document.form.wans_lb_ratio_1, 1);		
 			document.form.wans_lb_ratio_0.value = '<% nvram_get("wans_lb_ratio"); %>'.split(':')[0];
 			document.form.wans_lb_ratio_1.value = '<% nvram_get("wans_lb_ratio"); %>'.split(':')[1];			
 			inputCtrl(document.form.wans_isp_unit[0], 1);
@@ -393,13 +439,16 @@ function appendModeOption(v){
 			appendcountry(document.form.wan1_isp_country);				
 			inputCtrl(document.form.wans_routing_enable[0], 1);
 			inputCtrl(document.form.wans_routing_enable[1], 1);				
-			if('<% nvram_get("wans_routing_enable"); %>' == 1)
+			if('<% nvram_get("wans_routing_enable"); %>' == 1){
 				document.form.wans_routing_enable[0].checked = true;
-			else
-				document.form.wans_routing_enable[1].checked = true;	
-				
-			$('Routing_rules_table').style.display = "";
-			$('wans_RoutingRules_Block').style.display = "";
+				$('Routing_rules_table').style.display = "";
+				$('wans_RoutingRules_Block').style.display = "";
+			}
+			else{
+				document.form.wans_routing_enable[1].checked = true;
+				$('Routing_rules_table').style.display = "none";
+				$('wans_RoutingRules_Block').style.display = "none";
+			}				
 			
 			appendModeOption2("0");
 			document.form.wandog_enable_radio[1].checked = true;				
@@ -409,7 +458,8 @@ function appendModeOption(v){
 			document.getElementById("routing_table").style.display = "";
 			document.getElementById("fb_span").style.display = "none";
 			document.form.wans_mode.value = "lb";
-		}else{
+		}
+		else{ //Failover / Failback
 			document.getElementById('lb_note').style.display = "none";
 			inputCtrl(document.form.wans_lb_ratio_0, 0);
 			inputCtrl(document.form.wans_lb_ratio_1, 0);
@@ -438,10 +488,14 @@ function appendModeOption(v){
 			document.getElementById("routing_table").style.display = "none";
 
 			document.getElementById("fb_span").style.display = "";
+
+			add_option_count(document.form.wandog_interval, document.form.wandog_maxfail, wandog_maxfail_orig);
+
 			if("<% nvram_get("wans_mode"); %>" == "fb" ? true : false)
 			{
 				document.getElementById("fb_checkbox").checked = true;
 				document.getElementById("wandog_fb_count_tr").style.display = "";
+				add_option_count(document.form.wandog_interval, document.form.wandog_fb_count, wandog_fb_count_orig);
 				document.form.wans_mode.value = "fb";
 			}
 			else
@@ -454,11 +508,11 @@ function appendModeOption(v){
 }
 
 function appendModeOption2(v){
-	if(v == "1"){			
-			inputCtrl(document.form.wandog_target, 1);
+	if(v == "1"){
+		inputCtrl(document.form.wandog_target, 1);		
 	}else{
-			inputCtrl(document.form.wandog_target, 0);
-	}	
+		inputCtrl(document.form.wandog_target, 0);
+	}
 }
 
 function addRow_Group(upper){
@@ -721,6 +775,52 @@ function pullLANIPList(obj){
 	else
 		hideClients_Block();
 }
+
+function enable_lb_rules(flag){
+	if(flag == "1"){
+			$('Routing_rules_table').style.display = "";
+			$('wans_RoutingRules_Block').style.display = "";	
+	}
+	else{
+			$('Routing_rules_table').style.display = "none";
+			$('wans_RoutingRules_Block').style.display = "none";
+	}
+}
+
+var str0="";
+function add_option_count(obj, obj_t, selected_flag){
+		
+		if(obj_t.name == "wandog_maxfail" || (obj_t.name == "wandog_fb_count" && document.getElementById("wandog_fb_count_tr").style.display == "")){
+				
+				free_options(obj_t);
+				for(var i=1; i<100; i++){
+						//add_option(selectObj, str, value, selected)
+						str0 = i*parseInt(obj.value);
+						if(selected_flag == i)
+								add_option(obj_t, str0, i, 1);
+						else
+								add_option(obj_t, str0, i, 0);
+				}
+		}
+		else{
+			return;
+		}		
+}
+
+function hotstandby_act(enable){
+	var confirm_str_on = "Enabling Hot-Standby will make Mobile Broadband be enabled if Mobile Braodband is disabled. Are you sure you want to enable it?";
+	if(enable){
+		if(mobile_enable_orig == "0"){
+			if(confirm(confirm_str_on)){
+				if(usb_index == 0)
+					document.form.wan0_enable.value = "1";
+				else if(usb_index == 1)					
+					document.form.wan1_enable.value = "1"
+			}
+		}
+	}
+}
+
 </script>
 </head>
 <body onload="initial();">
@@ -747,6 +847,8 @@ function pullLANIPList(obj){
 <input type="hidden" name="wan1_routing_isp_enable" value="<% nvram_get("wan0_routing_isp_enable"); %>">
 <input type="hidden" name="wan1_routing_isp" value="<% nvram_get("wan1_routing_isp"); %>">
 <input type="hidden" name="wans_routing_rulelist" value=''>
+<input type="hidden" name="wan0_enable" value="<% nvram_get("wan0_enable"); %>">
+<input type="hidden" name="wan1_enable" value="<% nvram_get("wan1_enable"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
@@ -775,11 +877,11 @@ function pullLANIPList(obj){
 										
 			  						<thead>
 			  						<tr>
-												<td colspan="2"><#t2BC#></td>
+										<td colspan="2"><#t2BC#></td>
 			  						</tr>
 			  						</thead>
 			  						
-										<tr>
+										<tr id="wans_mode_enable_tr">
 										<th><#dualwan_enable#></th>
 											<td>
 												<div class="left" style="width:94px; float:left; cursor:pointer;" id="radio_dualwan_enable"></div>
@@ -795,9 +897,6 @@ function pullLANIPList(obj){
 															wans_flag = 0;
 															document.form.wans_dualwan.value = document.form.wans_primary.value + ' none';
 															form_show(wans_flag);													
-														 },
-														 {
-															switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
 														 }
 													);
 												</script>			
@@ -816,7 +915,7 @@ function pullLANIPList(obj){
 													<option value="4" <% nvram_match("wans_lanport", "4", "selected"); %>>LAN Port 4</option>												
 												</select>
 											</td>
-									  </tr>
+									  	</tr>
 										<tr>
 											<th><#dualwan_secondary#></th>
 											<td>
@@ -828,7 +927,7 @@ function pullLANIPList(obj){
 													<option value="4" <% nvram_match("wans_lanport", "4", "selected"); %>>LAN Port 4</option>												
 												</select>											
 											</td>
-									  </tr>
+									  	</tr>
 
 										<tr id="wans_mode_tr">
 											<th><#dualwan_mode#></th>
@@ -838,32 +937,45 @@ function pullLANIPList(obj){
 													<option value="fo"><#dualwan_mode_fo#></option>
 													<option value="lb" <% nvram_match("wans_mode", "lb", "selected"); %>><#dualwan_mode_lb#></option>
 												</select>
-										  		<span id="fb_span" style="display:none"><input type="checkbox" id="fb_checkbox"><#dualwan_failback_allow#></span>
+												<span id="wans_mode_fo" style="margin-left:5px; color:#FFF; display:none;"><#dualwan_mode_fo#></span>
+												<span id="fb_span" style="display:none"><input type="checkbox" id="fb_checkbox"><#dualwan_failback_allow#></span>
 										  		<script>
 										  			document.getElementById("fb_checkbox").onclick = function(){
 										  				document.form.wans_mode.value = (this.checked == true ? "fb" : "fo");
 										  				document.getElementById("wandog_fb_count_tr").style.display = (this.checked == true ? "" : "none");
+										  				if(document.getElementById("wandog_fb_count_tr").style.display == "")
+															add_option_count(document.form.wandog_interval, document.form.wandog_fb_count, wandog_fb_count_orig);	
 										  			}
 										  		</script>
 												<div id="lb_note" style="color:#FFCC00; display:none;"><#dualwan_lb_note#></div>
 											</td>
-									  </tr>
+									  	</tr>
+
+							<tr id="wans_standby_tr" style="display:none;">
+								<th>Enable Hot-Standby</th>
+						        <td>
+									<select name="wans_standby" id="wans_standby" class="input_option" onchange="hotstandby_act(this.value);">
+										<option value="1" <% nvram_match("wans_standby", "1", "selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+										<option value="0" <% nvram_match("wans_standby", "0", "selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+									</select>        
+								</td>
+							</tr>	
 
 			          		<tr>
 			            		<th><#dualwan_mode_lb_setting#></th>
 			            		<td>
-												<input type="text" maxlength="1" class="input_3_table" name="wans_lb_ratio_0" value="" onkeypress="return validator.isNumber(this,event);" />
-												&nbsp; : &nbsp;
-												<input type="text" maxlength="1" class="input_3_table" name="wans_lb_ratio_1" value="" onkeypress="return validator.isNumber(this,event);" />												
-											</td>
+									<input type="text" maxlength="1" class="input_3_table" name="wans_lb_ratio_0" value="" onkeypress="return validator.isNumber(this,event);" />
+									&nbsp; : &nbsp;
+									<input type="text" maxlength="1" class="input_3_table" name="wans_lb_ratio_1" value="" onkeypress="return validator.isNumber(this,event);" />												
+								</td>
 			          		</tr>
 
 			          		<tr class="ISPProfile">
 			          			<th><#dualwan_isp_rules#></th>
 			          			<td>
 			          				<input type="radio" value="0" name="wans_isp_unit" class="content_input_fd" onClick="change_isp_unit(this.value);">None
-				  							<input type="radio" value="1" name="wans_isp_unit" class="content_input_fd" onClick="change_isp_unit(this.value);"><#dualwan_primary#>
-				  							<input type="radio" value="2" name="wans_isp_unit" class="content_input_fd" onClick="change_isp_unit(this.value);"><#dualwan_secondary#>
+				  									<input type="radio" value="1" name="wans_isp_unit" class="content_input_fd" onClick="change_isp_unit(this.value);"><#dualwan_primary#>
+				  									<input type="radio" value="2" name="wans_isp_unit" class="content_input_fd" onClick="change_isp_unit(this.value);"><#dualwan_secondary#>
 			          			</td>	
 			          		</tr>	
 			          		
@@ -871,7 +983,7 @@ function pullLANIPList(obj){
 			          			<th><#dualwan_isp_primary#></th>
 			          			<td>
 			          					<select name="wan0_isp_country" class="input_option" onchange="appendcountry(this);" value=""></select>
-													<select name="wan0_isp_list" class="input_option" style="display:none;"value=""></select>
+															<select name="wan0_isp_list" class="input_option" style="display:none;"value=""></select>
 			          			</td>	
 			          		</tr>
 			          		
@@ -879,7 +991,7 @@ function pullLANIPList(obj){
 			          			<th><#dualwan_isp_secondary#></th>
 			          			<td>
 			          					<select name="wan1_isp_country" class="input_option" onchange="appendcountry(this);" value=""></select>
-													<select name="wan1_isp_list" class="input_option" style="display:none;"value=""></select>
+															<select name="wan1_isp_list" class="input_option" style="display:none;"value=""></select>
 			          			</td>	
 			          		</tr>			          		
 			          		
@@ -892,37 +1004,42 @@ function pullLANIPList(obj){
 						<td colspan="2"><#dualwan_pingtime_wd#></td>
 					</tr>
 					</thead>
-					<tr>
-						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,3);"><#Interval#></a></th>
-						<td>
-		        		<input type="text" name="wandog_interval" class="input_3_table" maxlength="1" value="<% nvram_get("wandog_interval"); %>" onKeyPress="return validator.isNumber(this, event);" placeholder="5">&nbsp;&nbsp;<#Second#>
-						</td>
-					</tr>	
+
 					<tr>
 						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,4);"><#Delay#></a></th>
 						<td>
 		        		<input type="text" name="wandog_delay" class="input_3_table" maxlength="2" value="<% nvram_get("wandog_delay"); %>" onKeyPress="return validator.isNumber(this, event);" placeholder="0">&nbsp;&nbsp;<#Second#>
 						</td>
-					</tr>
+					</tr>					
+
 					<tr>
-						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,5);"><#dualwan_pingtime_fc#></a></th>
+						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,3);"><#Interval#></a></th>
 						<td>
-		        		<input type="text" name="wandog_maxfail" class="input_3_table" maxlength="2" value="<% nvram_get("wandog_maxfail"); %>" onKeyPress="return validator.isNumber(this, event);" placeholder="12">
+		        		<input type="text" name="wandog_interval" class="input_3_table" maxlength="1" value="<% nvram_get("wandog_interval"); %>" onBlur="add_option_count(this, document.form.wandog_maxfail, document.form.wandog_maxfail.value);add_option_count(this, document.form.wandog_fb_count, document.form.wandog_fb_count.value);" onKeyPress="return validator.isNumber(this, event);" placeholder="5">&nbsp;&nbsp;<#Second#>
 						</td>
-					</tr>
+					</tr>	
+
+					<tr>
+						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,5);"><#dualwan_pingtime_detect#></a></th>
+						<td>
+									<select name="wandog_maxfail" class="input_option">
+									</select>&nbsp;&nbsp;<#Second#>
+						</td>
+					</tr>	
 
 					<tr id="wandog_fb_count_tr">
-						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,6);"><#dualwan_failback_count#></a></th>
-						<td>
-		        		<input type="text" name="wandog_fb_count" class="input_3_table" maxlength="2" value="<% nvram_get("wandog_fb_count"); %>" onKeyPress="return validator.isNumber(this, event);" placeholder="12">
+						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,6);"><#dualwan_pingtime_fb_detect#></a></th>	
+						<td>		        		
+									<select name="wandog_fb_count" class="input_option">
+									</select>&nbsp;&nbsp;<#Second#>
 						</td>
 					</tr>
-
+					
 					<tr>
 						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,1);"><#wandog_enable#></a></th>
 				        <td>
-					 		<input type="radio" value="1" name="wandog_enable_radio" class="content_input_fd" <% nvram_match("wandog_enable", "1", "checked"); %> onClick="appendModeOption2(this.value);"><#checkbox_Yes#>
-	 						<input type="radio" value="0" name="wandog_enable_radio" class="content_input_fd" <% nvram_match("wandog_enable", "0", "checked"); %> onClick="appendModeOption2(this.value);"><#checkbox_No#>
+					 		<input type="radio" value="1" id="wandog_enable_radio1" name="wandog_enable_radio" class="content_input_fd" <% nvram_match("wandog_enable", "1", "checked"); %> onClick="appendModeOption2(this.value);"><label for="wandog_enable_radio1"><#checkbox_Yes#></label>
+	 						<input type="radio" value="0" id="wandog_enable_radio2" name="wandog_enable_radio" class="content_input_fd" <% nvram_match("wandog_enable", "0", "checked"); %> onClick="appendModeOption2(this.value);"><label for="wandog_enable_radio2"><#checkbox_No#></label>
 						</td>
 					</tr>	
 					<tr>
@@ -948,8 +1065,8 @@ function pullLANIPList(obj){
           				<tr>
             				<th><#dualwan_routing_rule_enable#></th>
             				<td>
-						  		<input type="radio" value="1" name="wans_routing_enable" class="content_input_fd" <% nvram_match("wans_routing_enable", "1", "checked"); %>><#checkbox_Yes#>
-		 							<input type="radio" value="0" name="wans_routing_enable" class="content_input_fd" <% nvram_match("wans_routing_enable", "0", "checked"); %>><#checkbox_No#>
+						  		<input type="radio" value="1" name="wans_routing_enable" onClick="enable_lb_rules(this.value)" class="content_input_fd" <% nvram_match("wans_routing_enable", "1", "checked"); %>><#checkbox_Yes#>
+		 						<input type="radio" value="0" name="wans_routing_enable" onClick="enable_lb_rules(this.value)" class="content_input_fd" <% nvram_match("wans_routing_enable", "0", "checked"); %>><#checkbox_No#>
 							</td>
 		  			</tr>		  			  				
           		</table>									

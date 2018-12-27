@@ -39,7 +39,7 @@
 static int
 expires(char *wan_ifname, unsigned int in)
 {
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
+	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
 	int unit;
 	time_t now;
 	FILE *fp;
@@ -72,7 +72,7 @@ static int
 deconfig(int zcip)
 {
 	char *wan_ifname = safe_getenv("interface");
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
+	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
 	int unit = wan_ifunit(wan_ifname);
 
 	/* Figure out nvram variable name prefix for this i/f */
@@ -107,21 +107,22 @@ bound(void)
 {
 	char *wan_ifname = safe_getenv("interface");
 	char *value, *gateway;
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char wanprefix[] = "wanXXXXXXXXXX_";
+	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
+	char wanprefix[sizeof("wanXXXXXXXXXX_")];
 	char route[sizeof("255.255.255.255/255")];
 	int unit, ifunit;
 	int changed = 0;
 
-#ifdef DHCP_ZEROCONF
-	killall("zcip", SIGTERM);
-#endif
 	/* Figure out nvram variable name prefix for this i/f */
 	if ((ifunit = wan_prefix(wan_ifname, wanprefix)) < 0)
 		return -1;
 	if ((unit = wan_ifunit(wan_ifname)) < 0)
 		snprintf(prefix, sizeof(prefix), "wan%d_x", ifunit);
 	else	snprintf(prefix, sizeof(prefix), "wan%d_", ifunit);
+
+#ifdef DHCP_ZEROCONF
+	stop_zcip(ifunit);
+#endif
 
 	if ((value = getenv("ip"))) {
 		changed = !nvram_match(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
@@ -147,10 +148,10 @@ bound(void)
 		expires(wan_ifname, lease);
 	}
 
-#if (defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181))
-	nvram_unset("vivso");
+#if defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181)
 	if ((value = getenv("vivso")))
 		nvram_set("vivso", trim_r(value));
+	else	nvram_unset("vivso");
 #endif
 
 	/* classful static routes */
@@ -235,14 +236,11 @@ renew(void)
 {
 	char *wan_ifname = safe_getenv("interface");
 	char *value, *gateway;
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char wanprefix[] = "wanXXXXXXXXXX_";
+	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
+	char wanprefix[sizeof("wanXXXXXXXXXX_")];
 	int unit, ifunit;
 	int changed = 0;
 
-#ifdef DHCP_ZEROCONF
-	killall("zcip", SIGTERM);
-#endif
 	/* Figure out nvram variable name prefix for this i/f */
 	if ((ifunit = wan_prefix(wan_ifname, wanprefix)) < 0)
 		return -1;
@@ -293,31 +291,26 @@ static int
 leasefail(void)
 {
 	char *wan_ifname = safe_getenv("interface");
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char wanprefix[] = "wanXXXXXXXXXX_";
-	int unit, ifunit;
+	char prefix[sizeof("wanXXXXXXXXXX_")];
+	char pid[sizeof("/var/run/udhcpcXXXXXXXXXX.pid")];
+	int unit;
 
 	/* Figure out nvram variable name prefix for this i/f */
-	if ((ifunit = wan_prefix(wan_ifname, wanprefix)) < 0)
+	if ((unit = wan_prefix(wan_ifname, prefix)) < 0)
 		return -1;
-	if ((unit = wan_ifunit(wan_ifname)) < 0)
-		snprintf(prefix, sizeof(prefix), "wan%d_x", ifunit);
-	else	snprintf(prefix, sizeof(prefix), "wan%d_", ifunit);
 
-	if ((inet_network(nvram_safe_get(strcat_r(prefix, "ipaddr", tmp))) &
-	     inet_network(nvram_safe_get(strcat_r(prefix, "netmask", tmp)))) ==
-	     inet_network("169.254.0.0"))
+	snprintf(pid, sizeof(pid), "/var/run/zcip%d.pid", unit);
+	if (kill_pidfile_s(pid, 0) == 0)
 		return 0;
 
-	return start_zcip(wan_ifname);
+	return start_zcip(wan_ifname, unit);
 }
 #endif
 
 int
 udhcpc_wan(int argc, char **argv)
 {
-	if(strcmp(argv[1], "leasefail"))
-		_dprintf("%s:: %s\n", __FUNCTION__, argv[1]);
+	_dprintf("%s:: %s\n", __FUNCTION__, argv[1] ? : "");
 	if (!argv[1])
 		return EINVAL;
 	else if (strstr(argv[1], "deconfig"))
@@ -338,7 +331,7 @@ udhcpc_wan(int argc, char **argv)
 int
 start_udhcpc(char *wan_ifname, int unit, pid_t *ppid)
 {
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
+	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
 	char pid[sizeof("/var/run/udhcpcXXXXXXXXXX.pid")];
 #ifdef RTCONFIG_DSL
 	char clientid[sizeof("61:") + (32+32+1)*2];
@@ -477,8 +470,24 @@ start_udhcpc(char *wan_ifname, int unit, pid_t *ppid)
 	dhcp_argv[index++] = vivso;
 #endif
 
-
+#ifdef DHCP_ZEROCONF
+	stop_zcip(unit);
+#endif
 	return _eval(dhcp_argv, NULL, 0, ppid);
+}
+
+void
+stop_udhcpc(int unit)
+{
+	char pid[sizeof("/var/run/udhcpcXXXXXXXXXX.pid")];
+
+#ifdef DHCP_ZEROCONF
+	/* stop zcip before udhcpc to avoid races */
+	stop_zcip(unit);
+#endif
+	snprintf(pid, sizeof(pid), "/var/run/udhcpc%d.pid", unit);
+	kill_pidfile_s(pid, SIGUSR2);
+	kill_pidfile_s(pid, SIGTERM);
 }
 
 /*
@@ -491,8 +500,8 @@ config(void)
 {
 	char *wan_ifname = safe_getenv("interface");
 	char *value;
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char wanprefix[] = "wanXXXXXXXXXX_";
+	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
+	char wanprefix[sizeof("wanXXXXXXXXXX_")];
 	int unit, ifunit;
 	int changed = 0;
 
@@ -511,12 +520,19 @@ config(void)
 	nvram_set(strcat_r(prefix, "gateway", tmp), "");
 	if (nvram_get_int(strcat_r(wanprefix, "dnsenable_x", tmp)))
 		nvram_set(strcat_r(prefix, "dns", tmp), "");
-	//nvram_set(strcat_r(prefix, "wins", tmp), "");
-	//nvram_set(strcat_r(prefix, "domain", tmp), "");
-#ifdef DHCP_ZEROCONF
+	nvram_unset(strcat_r(prefix, "wins", tmp));
+	nvram_unset(strcat_r(prefix, "domain", tmp));
 	nvram_unset(strcat_r(prefix, "lease", tmp));
 	nvram_unset(strcat_r(prefix, "expires", tmp));
+
+#if defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181)
+	nvram_unset("vivso");
 #endif
+
+	nvram_unset(strcat_r(prefix, "routes", tmp));
+	nvram_unset(strcat_r(prefix, "routes_ms", tmp));
+	nvram_unset(strcat_r(prefix, "routes_rfc", tmp));
+
 	/* Clean nat conntrack for this interface,
 	 * but skip physical VPN subinterface for PPTP/L2TP */
 	if (changed && !(unit < 0 &&
@@ -539,7 +555,7 @@ config(void)
 int
 zcip_wan(int argc, char **argv)
 {
-	_dprintf("%s:: %s\n", __FUNCTION__, argv[1]);
+	_dprintf("%s:: %s\n", __FUNCTION__, argv[1] ? : "");
 	if (!argv[1])
 		return EINVAL;
 	else if (strstr(argv[1], "deconfig"))
@@ -552,14 +568,25 @@ zcip_wan(int argc, char **argv)
 }
 
 int
-start_zcip(char *wan_ifname)
+start_zcip(char *wan_ifname, int unit)
 {
+	char pid[sizeof("/var/run/zcipXXXXXXXXXX.pid")];
 	char *zcip_argv[] = { "zcip",
-		"-q", wan_ifname,
+		"-p", (snprintf(pid, sizeof(pid), "/var/run/zcip%d.pid", unit), pid),
+		wan_ifname,
 		"/tmp/zcip",
 		NULL };
 
 	return _eval(zcip_argv, NULL, 0, NULL);
+}
+
+void
+stop_zcip(int unit)
+{
+	char pid[sizeof("/var/run/udhcpcXXXXXXXXXX.pid")];
+
+	snprintf(pid, sizeof(pid), "/var/run/zcip%d.pid", unit);
+	kill_pidfile_s(pid, SIGTERM);
 }
 
 static int
@@ -617,8 +644,14 @@ bound_lan(void)
 	char *lan_ifname = safe_getenv("interface");
 	char *value;
 
-	if ((value = getenv("ip")))
+	if ((value = getenv("ip"))) {
+		/* restart httpd after lan_ipaddr udpating through lan dhcp client */
+		if (!nvram_match("lan_ipaddr", trim_r(value))) {
+			stop_httpd();
+			start_httpd();
+		}
 		nvram_set("lan_ipaddr", trim_r(value));
+	}
 	if ((value = getenv("subnet")))
 		nvram_set("lan_netmask", trim_r(value));
 	if ((value = getenv("router")))
@@ -674,6 +707,7 @@ renew_lan(void)
 int
 udhcpc_lan(int argc, char **argv)
 {
+	_dprintf("%s:: %s\n", __FUNCTION__, argv[1] ? : "");
 	if (!argv[1])
 		return EINVAL;
 	else if (strstr(argv[1], "deconfig"))
@@ -682,8 +716,10 @@ udhcpc_lan(int argc, char **argv)
 		return bound_lan();
 	else if (strstr(argv[1], "renew"))
 		return renew_lan();
-	else
-		return EINVAL;
+/*	else if (strstr(argv[1], "leasefail")) */
+/*	else if (strstr(argv[1], "nak")) */
+
+	return EINVAL;
 }
 
 // -----------------------------------------------------------------------------
@@ -764,14 +800,12 @@ skip:
 	if (dns_changed && nvram_get_int("ipv6_dnsenable"))
 		update_resolvconf();
 
-#ifdef RTCONFIG_WIDEDHCP6
 	if (lanaddr_changed ||
 	    (prefix_changed && nvram_get_int("ipv6_autoconf_type")) ||
 	    !pids("dhcp6s"))
 		start_dhcp6s();
 	if (prefix_changed || lanaddr_changed || !pids("radvd"))
 		start_radvd();
-#endif /* RTCONFIG_WIDEDHCP6 */
 
 	return 0;
 }
@@ -811,12 +845,10 @@ start_dhcp6c(void)
 		(nvram_match("ipv6_ra_conf", "mset") ||
 	         nvram_match("ipv6_ra_conf", "oset"));
 
-#ifdef RTCONFIG_WIDEDHCP6
 	if (!nvram_get_int("ipv6_dhcp_pd")) {
 		start_dhcp6s();
 		start_radvd();
 	}
-#endif
 
 	if (!need_wanaddr && !need_prefix && !need_dns)
 		return 0;
@@ -907,7 +939,7 @@ void stop_dhcp6c(void)
 		eval("ip", "-6", "addr", "flush", "scope", "global", "dev", lan_ifname);
 	eval("ip", "-6", "neigh", "flush", "dev", lan_ifname);
 }
-#else  /* !RTCONFIG_WIDEDHCP6 */
+#else /* !RTCONFIG_WIDEDHCP6 */
 
 static int
 deconfig6(char *wan_ifname)
@@ -948,7 +980,7 @@ bound6(char *wan_ifname, int bound)
 	char addr[INET6_ADDRSTRLEN + 1], *value;
 	char tmp[100], *next;
 	int wanaddr_changed, prefix_changed, dns_changed;
-	int size, start, end;
+	int size, start, end, mtu;
 
 	value = safe_getenv("ADDRESSES");
 	if (*value) {
@@ -1012,6 +1044,11 @@ bound6(char *wan_ifname, int bound)
 	}
 skip:
 
+	/* propagate ipv6 mtu */
+	mtu = ipv6_getconf(wan_ifname, "mtu");
+	if (mtu)
+		ipv6_sysconf(lan_ifname, "mtu", mtu);
+
 	dns_changed = env2nv("RDNSS", "ipv6_get_dns");
 	dns_changed += env2nv("DOMAINS", "ipv6_get_domain");
 	if (dns_changed && nvram_get_int("ipv6_dnsenable"))
@@ -1059,18 +1096,22 @@ start_dhcp6c(void)
 {
 	char *wan_ifname = (char *)get_wan6face();
 	char *dhcp6c_argv[] = { "odhcp6c",
-		"-df", "-R",
-		"-p", "/var/run/odhcp6c.pid",
+#ifdef RTCONFIG_BCMARM
+		"-df",
+#else
+		"-f",
+#endif
+		"-R",
 		"-s", "/tmp/dhcp6c",
 		"-N", "try",
 		NULL, NULL,	/* -c duid */
 		NULL, NULL,	/* -FP len:iaidhex */
 		NULL, NULL,	/* -rdns -rdomain */
 		NULL, NULL, 	/* -rsolmaxrt -r infmaxrt */
-		NULL,		/* -lloglevel */
+		NULL,		/* -v */
 		NULL,		/* interface */
 		NULL };
-	int index = 9;
+	int index = 7;
 	unsigned long iaid = 0;
 	struct {
 		uint16_t type;
@@ -1079,6 +1120,7 @@ start_dhcp6c(void)
 	} __attribute__ ((__packed__)) duid;
 	char duid_arg[sizeof(duid)*2+1];
 	char prefix_arg[sizeof("128:xxxxxxxx")];
+	pid_t pid;
 	int i;
 
 	/* Check if enabled */
@@ -1126,17 +1168,17 @@ start_dhcp6c(void)
 	dhcp6c_argv[index++] = "-r82";	/* sol_max_rt */
 	dhcp6c_argv[index++] = "-r83";	/* inf_max_rt */
 
-	if (!nvram_get_int("ipv6_debug"))
-		dhcp6c_argv[index++] = "-l7";	/* LOG_DEBUG */
+	if (nvram_get_int("ipv6_debug"))
+		dhcp6c_argv[index++] = "-v";
 
 	dhcp6c_argv[index++] = wan_ifname;
 
-	return _eval(dhcp6c_argv, NULL, 0, NULL);
+	return _eval(dhcp6c_argv, NULL, 0, &pid);
 }
 
 void stop_dhcp6c(void)
 {
 	killall_tk("odhcp6c");
 }
-#endif  /* !RTCONFIG_WIDEDHCP6 */
-#endif	// RTCONFIG_IPV6
+#endif /* !RTCONFIG_WIDEDHCP6 */
+#endif // RTCONFIG_IPV6

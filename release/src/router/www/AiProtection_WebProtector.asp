@@ -71,8 +71,8 @@ var curState = '<% nvram_get("wrs_enable"); %>';
 function initial(){
 	show_menu();
 	//show_inner_tab();
-	$("option4").innerHTML = '<table><tbody><tr><td><div id="index_img4"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
-	$("option4").className = "m4_r";
+	document.getElementById("_AiProtection_HomeSecurity").innerHTML = '<table><tbody><tr><td><div class="_AiProtection_HomeSecurity"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
+	document.getElementById("_AiProtection_HomeSecurity").className = "menu_clicked";
 	translate_category_id();
 	genMain_table();
 	if('<% nvram_get("wrs_enable"); %>' == 1)
@@ -247,6 +247,8 @@ function addRow_main(obj, length){
 		apps_filter_col = apps_filter_row[i].split(">");
 		if(apps_filter_col[1] == document.form.PC_mac.value){
 			alert("<#JS_duplicate#>");
+			document.form.PC_mac.value = "";
+			document.form.PC_devicename.value = "";
 			return false;
 		}
 	}
@@ -300,27 +302,28 @@ function addRow_main(obj, length){
 function genMain_table(){
 	var category_name = ["<#AiProtection_filter_Adult#>", "<#AiProtection_filter_message#>", "<#AiProtection_filter_p2p#>", "<#AiProtection_filter_stream#>"];
 	var sub_category_name = [["<#AiProtection_filter_Adult1#>", "<#AiProtection_filter_Adult2#>", "<#AiProtection_filter_Adult3#>"],
-							 ["<#AiProtection_filter_Adult3#>", "<#AiProtection_filter_Adult5#>", "<#AiProtection_filter_Adult6#>", "<#AiProtection_filter_Adult7#>", "<#AiProtection_filter_Adult8#>"],
+							 ["<#AiProtection_filter_Adult4#>", "<#AiProtection_filter_Adult5#>", "<#AiProtection_filter_Adult6#>", "<#AiProtection_filter_Adult7#>", "<#AiProtection_filter_Adult8#>"],
 							 ["<#AiProtection_filter_p2p1#>", "<#AiProtection_filter_p2p2#>"],
 							 ["<#AiProtection_filter_stream1#>", "<#AiProtection_filter_stream2#>", "<#AiProtection_filter_stream3#>"]];
-	var category_desc = ["Block adult content can prevent child from visiting sexy, violence and illegal related content.", 
-						 "Block IM and communication content can prevent child from addicted to social networking usage.", 
+	var category_desc = ["<#AiProtection_filter_Adult_desc#>", 
+						 "<#AiProtection_filter_message_desc#>", 
 						 "<#AiProtection_filter_p2p_desc#>", 
 						 "<#AiProtection_filter_stream_desc#>"];
 		
 	var match_flag = 0;
+
 	var apps_filter_row = apps_filter.split("<");
 	var code = "";	
 	code += '<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="FormTable_table" id="mainTable_table">';
 	code += '<thead><tr>';
-	code += '<td colspan="5"><#ConnectedClient#>&nbsp;(<#List_limit#>：&nbsp;16)</td>';
+	code += '<td colspan="5"><#ConnectedClient#>&nbsp;(<#List_limit#>&nbsp;16)</td>';
 	code += '</tr></thead>';	
 	code += '<tbody>';
 	code += '<tr>';
 	code += '<th width="5%" height="30px" title="<#select_all#>">';
 	code += '<input id="selAll" type="checkbox" onclick="selectAll(this, 0);" value="">';
 	code += '</th>';
-	code += '<th width="40%">Client name</th>';
+	code += '<th width="40%">Client\'s MAC address</th>';
 	code += '<th width="40%"><#AiProtection_filter_category#></th>';
 	code += '<th width="10%"><#list_add_delete#></th>';
 	code += '</tr>';
@@ -329,7 +332,7 @@ function genMain_table(){
 	code += '<input type="checkbox" checked="">';
 	code += '</td>';
 	code += '<td style="border-bottom:2px solid #000;">';
-	code += '<input type="text" maxlength="32" style="margin-left:10px;float:left;width:255px;" class="input_20_table" name="PC_devicename" onkeypress="" onclick="hideClients_Block();" onblur="if(!over_var){hideClients_Block();}" placeholder="<#AiProtection_client_select#>">';
+	code += '<input type="text" maxlength="17" style="margin-left:10px;float:left;width:255px;" class="input_20_table" name="PC_devicename" onkeypress="return validator.isHWAddr(this,event)" onclick="hideClients_Block();" onblur="if(!over_var){hideClients_Block();}" placeholder="<#AiProtection_client_select#>">';
 	code += '<img id="pull_arrow" height="14px;" src="/images/arrow-down.gif" onclick="pullLANIPList(this);" title="<#select_client#>" onmouseover="over_var=1;" onmouseout="over_var=0;">';
 	code += '<div id="ClientList_Block_PC" class="ClientList_Block_PC"></div>';	
 	code += '</td>';
@@ -359,7 +362,7 @@ function genMain_table(){
 			var apps_filter_col = apps_filter_row[k].split('>');
 			var cat_flag = new Array(apps_filter_col[2]);
 			var apps_client_name = "";
-			
+
 			for(i=0;i<custom_name_row.length;i++){
 				var custom_name_col = custom_name_row[i].split(">");
 				if(custom_name_col[1] == apps_filter_col[1]){
@@ -398,7 +401,7 @@ function genMain_table(){
 				}	
 			}
 			
-			code += '<td style="text-align:left;">';		
+			code += '<td style="text-align:left;">';	
 			for(i=0;i<category_name.length;i++){
 				var cate_flag_array = new Array(apps_filter_col[i+2]);
 				var cate_flag_array_col = cate_flag_array[0].split(",");
@@ -557,10 +560,11 @@ function edit_table(){
 	apps_filter = apps_filter_temp;
 	return true;
 }
-						
+
+var ctf_disable = '<% nvram_get("ctf_disable"); %>';
+var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';					
 function applyRule(){
 	var apps_filter_row = "";
-	
 	if(document.form.PC_devicename.value != ""){
 		alert("You must press add icon to add a new rule first.");
 		return false;
@@ -635,12 +639,20 @@ function applyRule(){
 	document.form.action_script.value = "restart_wrs;restart_firewall";
 	document.form.wrs_rulelist.value = wrs_rulelist;
 	document.form.wrs_app_rulelist.value = apps_rulelist;
+	if(ctf_disable == 0 && ctf_fa_mode == 2){
+		if(!confirm(Untranslated.ctf_fa_hint)){
+			return false;
+		}	
+		else{
+			document.form.action_script.value = "reboot";
+			document.form.action_wait.value = "<% nvram_get("reboot_time"); %>";
+		}	
+	}
 	showLoading();	
 	document.form.submit();
 }
 
 function translate_category_id(){
-	//var mapping_array_init = [[0],[0,0,0], [0,0,0,0,0], [0,0], [0,0,0]];
 	var mapping_array_init = [[0,0,0], [0,0,0,0,0], [0,0], [0,0,0]];
 	var apps_filter_row = "";
 	var wrs_filter_row = "";
@@ -650,8 +662,7 @@ function translate_category_id(){
 	
 	if(wrs_filter != "" || wrs_app_filter != ""){
 		wrs_filter_row =  wrs_filter.split("<");
-		wrs_app_filter_row =  wrs_app_filter.split("<");
-	
+		wrs_app_filter_row =  wrs_app_filter.split("<");	
 	}
 	
 	var apps_filter_temp = "";
@@ -673,48 +684,45 @@ function translate_category_id(){
 				apps_filter_temp += wrs_filter_col[j] + ">";	
 			}
 			else{
-					for(k=0;k<mapping_array_init[j-2].length;k++){	
-						if(wrs_filter_col[j] != "" && wrs_app_filter_col[j] != ""){
-	
-							if(wrs_id_array[j-2][k] != ""){
-								if(wrs_filter_col[j].indexOf(wrs_id_array[j-2][k]) != -1){
-									mapping_array_init[j-2][k] = 1;
-								}
+				for(k=0;k<mapping_array_init[j-2].length;k++){		
+					if(wrs_filter_col[j] != "" && wrs_app_filter_col[j] != ""){
+						if(wrs_id_array[j-2][k] != ""){
+							if(wrs_id_array[j-2][k] != "" && (wrs_filter_col[j].indexOf(wrs_id_array[j-2][k]) != -1)){
+								mapping_array_init[j-2][k] = 1;
 							}
+						}
 							
-							if(apps_id_array[j-2][k] != ""){
-								if(wrs_app_filter_col[j].indexOf(apps_id_array[j-2][k]) != -1){
-									mapping_array_init[j-2][k] = 1;	
-								}	
-							}						
+						if(apps_id_array[j-2][k] != ""){
+							if(apps_id_array[j-2][k] != "" && (wrs_app_filter_col[j].indexOf(apps_id_array[j-2][k]) != -1)){
+								mapping_array_init[j-2][k] = 1;	
+							}	
+						}						
+					}
+					else if(wrs_filter_col[j] != ""){
+						if(wrs_id_array[j-2][k] != ""  && (wrs_filter_col[j].indexOf(wrs_id_array[j-2][k]) != -1)){
+							mapping_array_init[j-2][k] = 1;
 						}
-						else if(wrs_filter_col[j] != ""){
-							if(wrs_filter_col[j].indexOf(wrs_id_array[j-2][k]) != -1){
-								mapping_array_init[j-2][k] = 1;
-							}
+					}
+					else if(wrs_app_filter_col[j] != ""){
+						if(apps_id_array[j-2][k]!= "" && (wrs_app_filter_col[j].indexOf(apps_id_array[j-2][k]) != -1)){
+							mapping_array_init[j-2][k] = 1;
 						}
-						else if(wrs_app_filter_col[j] != ""){
-							if(wrs_app_filter_col[j].indexOf(apps_id_array[j-2][k]) != -1){
-								mapping_array_init[j-2][k] = 1;
-							}
-						}
-						else{
-							mapping_array_init[j-2][k] = 0;
-						}
+					}
+					else{
+						mapping_array_init[j-2][k] = 0;
+					}
 						
-						if(k == 0)
-							apps_filter_temp += mapping_array_init[j-2][k];	
-						else
-							apps_filter_temp += "," + mapping_array_init[j-2][k];
-						
-					}	
+					if(k == 0)
+						apps_filter_temp += mapping_array_init[j-2][k];	
+					else
+						apps_filter_temp += "," + mapping_array_init[j-2][k];						
+				}	
 	
 				if(j != apps_filter_col.length-1 )
 					apps_filter_temp += ">";
 			}
 		}
 
-		//mapping_array_init = [[0], [0,0,0], [0,0,0,0,0], [0,0], [0,0,0]];
 		mapping_array_init = [[0,0,0], [0,0,0,0,0], [0,0], [0,0,0]];
 	}
 
@@ -909,6 +917,7 @@ function eula_confirm(){
 															document.form.wrs_app_enable.value = 0;
 															showhide("list_table",0);
 															document.form.wrs_rulelist.disabled = true;
+															document.form.wrs_app_rulelist.disabled = true;
 															if(document.form.wrs_enable_ori.value == 1){
 																applyRule();
 															}
@@ -916,10 +925,8 @@ function eula_confirm(){
 																curState = 0;
 															}
 																														
-														},
-															{
-																switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-														});
+														}
+													);
 												</script>			
 											</div>
 										</td>
@@ -936,10 +943,8 @@ function eula_confirm(){
 														},
 														function(){
 																					
-														},
-															{
-																switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-														});
+														}
+													);
 												</script>			
 											</div>
 										</td>			

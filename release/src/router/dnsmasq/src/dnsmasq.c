@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2015 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -80,22 +80,21 @@ int main (int argc, char **argv)
   sigaction(SIGPIPE, &sigact, NULL);
 
   umask(022); /* known umask, create leases and pid files as 0644 */
-
+ 
+  rand_init(); /* Must precede read_opts() */
+  
   read_opts(argc, argv, compile_opts);
  
   if (daemon->edns_pktsz < PACKETSZ)
     daemon->edns_pktsz = PACKETSZ;
-#ifdef HAVE_DNSSEC
-  /* Enforce min packet big enough for DNSSEC */
-  if (option_bool(OPT_DNSSEC_VALID) && daemon->edns_pktsz < EDNS_PKTSZ)
-    daemon->edns_pktsz = EDNS_PKTSZ;
-#endif
 
   daemon->packet_buff_sz = daemon->edns_pktsz > DNSMASQ_PACKETSZ ? 
     daemon->edns_pktsz : DNSMASQ_PACKETSZ;
   daemon->packet = safe_malloc(daemon->packet_buff_sz);
   
   daemon->addrbuff = safe_malloc(ADDRSTRLEN);
+  if (option_bool(OPT_EXTRALOG))
+    daemon->addrbuff2 = safe_malloc(ADDRSTRLEN);
   
 #ifdef HAVE_DNSSEC
   if (option_bool(OPT_DNSSEC_VALID))
@@ -144,15 +143,20 @@ int main (int argc, char **argv)
       reset_option_bool(OPT_CLEVERBIND);
     }
 #endif
+
+#ifndef HAVE_INOTIFY
+  if (daemon->dynamic_dirs)
+    die(_("dhcp-hostsdir, dhcp-optsdir and hostsdir are not supported on this platform"), NULL, EC_BADCONF);
+#endif
   
   if (option_bool(OPT_DNSSEC_VALID))
     {
 #ifdef HAVE_DNSSEC
       if (!daemon->ds)
-	die(_("No trust anchors provided for DNSSEC"), NULL, EC_BADCONF);
+	die(_("no trust anchors provided for DNSSEC"), NULL, EC_BADCONF);
       
       if (daemon->cachesize < CACHESIZ)
-	die(_("Cannot reduce cache size from default when DNSSEC enabled"), NULL, EC_BADCONF);
+	die(_("cannot reduce cache size from default when DNSSEC enabled"), NULL, EC_BADCONF);
 #else 
       die(_("DNSSEC not available: set HAVE_DNSSEC in src/config.h"), NULL, EC_BADCONF);
 #endif
@@ -165,10 +169,10 @@ int main (int argc, char **argv)
 
 #ifdef HAVE_CONNTRACK
   if (option_bool(OPT_CONNTRACK) && (daemon->query_port != 0 || daemon->osport))
-    die (_("Cannot use --conntrack AND --query-port"), NULL, EC_BADCONF); 
+    die (_("cannot use --conntrack AND --query-port"), NULL, EC_BADCONF); 
 #else
   if (option_bool(OPT_CONNTRACK))
-    die(_("Conntrack support not available: set HAVE_CONNTRACK in src/config.h"), NULL, EC_BADCONF);
+    die(_("conntrack support not available: set HAVE_CONNTRACK in src/config.h"), NULL, EC_BADCONF);
 #endif
 
 #ifdef HAVE_SOLARIS_NETWORK
@@ -186,7 +190,10 @@ int main (int argc, char **argv)
     die(_("authoritative DNS not available: set HAVE_AUTH in src/config.h"), NULL, EC_BADCONF);
 #endif
 
-  rand_init();
+#ifndef HAVE_LOOP
+  if (option_bool(OPT_LOOP_DETECT))
+    die(_("loop detection not available: set HAVE_LOOP in src/config.h"), NULL, EC_BADCONF);
+#endif
   
   now = dnsmasq_time();
 
@@ -310,11 +317,19 @@ int main (int argc, char **argv)
   if (daemon->port != 0)
     {
       cache_init();
+
 #ifdef HAVE_DNSSEC
       blockdata_init();
 #endif
     }
-    
+
+#ifdef HAVE_INOTIFY
+  if (daemon->port != 0 || daemon->dhcp || daemon->doing_dhcp6)
+    inotify_dnsmasq_init();
+  else
+    daemon->inotifyfd = -1;
+#endif
+       
   if (option_bool(OPT_DBUS))
 #ifdef HAVE_DBUS
     {
@@ -354,7 +369,7 @@ int main (int argc, char **argv)
 
   if (baduser)
     die(_("unknown user or group: %s"), baduser, EC_BADCONF);
-   
+
   /* implement group defaults, "dip" if available, or group associated with uid */
   if (!daemon->group_set && !gp)
     {
@@ -429,7 +444,7 @@ int main (int argc, char **argv)
 	      char *msg;
 
 	      /* close our copy of write-end */
-	      close(err_pipe[1]);
+	      while (retry_send(close(err_pipe[1])));
 	      
 	      /* check for errors after the fork */
 	      if (read_event(err_pipe[0], &ev, &msg))
@@ -438,7 +453,7 @@ int main (int argc, char **argv)
 	      _exit(EC_GOOD);
 	    } 
 	  
-	  close(err_pipe[0]);
+	  while (retry_send(close(err_pipe[0])));
 
 	  /* NO calls to die() from here on. */
 	  
@@ -490,10 +505,12 @@ int main (int argc, char **argv)
 	    {
 	      if (!read_write(fd, (unsigned char *)daemon->namebuff, strlen(daemon->namebuff), 0))
 		err = 1;
-	      
-	      while (!err && close(fd) == -1)
-		if (!retry_send())
-		  err = 1;
+	      else 
+		{
+		  while (retry_send(close(fd)));
+		  if (errno != 0)
+		    err = 1;
+		}
 	    }
 
 	  if (err)
@@ -612,6 +629,8 @@ int main (int argc, char **argv)
     }
   
 #ifdef HAVE_LINUX_NETWORK
+  free(hdr);
+  free(data);
   if (option_bool(OPT_DEBUG)) 
     prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
 #endif
@@ -669,9 +688,24 @@ int main (int argc, char **argv)
 #ifdef HAVE_DNSSEC
   if (option_bool(OPT_DNSSEC_VALID))
     {
+      int rc;
+
+      /* Delay creating the timestamp file until here, after we've changed user, so that
+	 it has the correct owner to allow updating the mtime later. 
+	 This means we have to report fatal errors via the pipe. */
+      if ((rc = setup_timestamp()) == -1)
+	{
+	  send_event(err_pipe[1], EVENT_TIME_ERR, errno, daemon->timestamp_file);
+	  _exit(0);
+	}
+      
       my_syslog(LOG_INFO, _("DNSSEC validation enabled"));
+      
       if (option_bool(OPT_DNSSEC_TIME))
 	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until first cache reload"));
+      
+      if (rc == 1)
+	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until system time valid"));
     }
 #endif
 
@@ -737,7 +771,7 @@ int main (int argc, char **argv)
 #endif
 
 #ifdef HAVE_TFTP
-	if (option_bool(OPT_TFTP))
+  if (option_bool(OPT_TFTP))
     {
 #ifdef FD_SETSIZE
       if (FD_SETSIZE < (unsigned)max_fd)
@@ -781,12 +815,17 @@ int main (int argc, char **argv)
 
   /* finished start-up - release original process */
   if (err_pipe[1] != -1)
-    close(err_pipe[1]);
+    while (retry_send(close(err_pipe[1])));
   
   if (daemon->port != 0)
     check_servers();
   
   pid = getpid();
+  
+#ifdef HAVE_INOTIFY
+  /* Using inotify, have to select a resolv file at startup */
+  poll_resolv(1, 0, now);
+#endif
   
   while (1)
     {
@@ -853,6 +892,14 @@ int main (int argc, char **argv)
 	  bump_maxfd(daemon->icmp6fd, &maxfd); 
 	}
 #endif
+    
+#ifdef HAVE_INOTIFY
+      if (daemon->inotifyfd != -1)
+	{
+	  FD_SET(daemon->inotifyfd, &rset);
+	  bump_maxfd(daemon->inotifyfd, &maxfd);
+	}
+#endif
 
 #if defined(HAVE_LINUX_NETWORK)
       FD_SET(daemon->netlinkfd, &rset);
@@ -861,7 +908,7 @@ int main (int argc, char **argv)
       FD_SET(daemon->routefd, &rset);
       bump_maxfd(daemon->routefd, &maxfd);
 #endif
-
+      
       FD_SET(piperead, &rset);
       bump_maxfd(piperead, &maxfd);
 
@@ -924,6 +971,13 @@ int main (int argc, char **argv)
 	route_sock();
 #endif
 
+#ifdef HAVE_INOTIFY
+      if  (daemon->inotifyfd != -1 && FD_ISSET(daemon->inotifyfd, &rset) && inotify_check(now))
+	{
+	  if (daemon->port != 0 && !option_bool(OPT_NO_POLL))
+	    poll_resolv(1, 1, now);
+	} 	  
+#else
       /* Check for changes to resolv files once per second max. */
       /* Don't go silent for long periods if the clock goes backwards. */
       if (daemon->last_resolv == 0 || 
@@ -936,7 +990,8 @@ int main (int argc, char **argv)
 	  poll_resolv(0, daemon->last_resolv != 0, now); 	  
 	  daemon->last_resolv = now;
 	}
-      
+#endif
+
       if (FD_ISSET(piperead, &rset))
 	async_event(piperead, now);
       
@@ -1123,6 +1178,9 @@ static void fatal_event(struct event_desc *ev, char *msg)
 
     case EVENT_TFTP_ERR:
       die(_("TFTP directory %s inaccessible: %s"), msg, EC_FILE);
+    
+    case EVENT_TIME_ERR:
+      die(_("cannot create timestamp file %s: %s" ), msg, EC_BADCONF);
     }
 }	
       
@@ -1267,7 +1325,7 @@ static void async_event(int pipe, time_t now)
 	    do {
 	      helper_write();
 	    } while (!helper_buf_empty() || do_script_run(now));
-	    close(daemon->helperfd);
+	    while (retry_send(close(daemon->helperfd)));
 	  }
 #endif
 	
@@ -1370,6 +1428,9 @@ void clear_cache_and_reload(time_t now)
       if (option_bool(OPT_ETHERS))
 	dhcp_read_ethers();
       reread_dhcp();
+#ifdef HAVE_INOTIFY
+      set_dynamic_inotify(AH_DHCP_HST | AH_DHCP_OPT, 0, NULL, 0);
+#endif
       dhcp_update_configs(daemon->dhcp_conf);
       lease_update_from_configs(); 
       lease_update_file(now); 
@@ -1493,7 +1554,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
 	  
 	  if (getsockname(confd, (struct sockaddr *)&tcp_addr, &tcp_len) == -1)
 	    {
-	      close(confd);
+	      while (retry_send(close(confd)));
 	      continue;
 	    }
 	  
@@ -1558,7 +1619,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
 	  if (!client_ok)
 	    {
 	      shutdown(confd, SHUT_RDWR);
-	      close(confd);
+	      while (retry_send(close(confd)));
 	    }
 #ifndef NO_FORK
 	  else if (!option_bool(OPT_DEBUG) && (p = fork()) != 0)
@@ -1573,7 +1634,10 @@ static void check_dns_listeners(fd_set *set, time_t now)
 			break;
 		      }
 		}
-	      close(confd);
+	      while (retry_send(close(confd)));
+
+	      /* The child can use up to TCP_MAX_QUERIES ids, so skip that many. */
+	      daemon->log_id += TCP_MAX_QUERIES;
 	    }
 #endif
 	  else
@@ -1615,7 +1679,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
 	      buff = tcp_request(confd, now, &tcp_addr, netmask, auth_dns);
 	       
 	      shutdown(confd, SHUT_RDWR);
-	      close(confd);
+	      while (retry_send(close(confd)));
 	      
 	      if (buff)
 		free(buff);
@@ -1624,7 +1688,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
 		if (s->tcpfd != -1)
 		  {
 		    shutdown(s->tcpfd, SHUT_RDWR);
-		    close(s->tcpfd);
+		    while (retry_send(close(s->tcpfd)));
 		  }
 #ifndef NO_FORK		   
 	      if (!option_bool(OPT_DEBUG))
@@ -1702,9 +1766,8 @@ int icmp_ping(struct in_addr addr)
     j = (j & 0xffff) + (j >> 16);  
   packet.icmp.icmp_cksum = (j == 0xffff) ? j : ~j;
   
-  while (sendto(fd, (char *)&packet.icmp, sizeof(struct icmp), 0, 
-		(struct sockaddr *)&saddr, sizeof(saddr)) == -1 &&
-	 retry_send());
+  while (retry_send(sendto(fd, (char *)&packet.icmp, sizeof(struct icmp), 0, 
+			   (struct sockaddr *)&saddr, sizeof(saddr))));
   
   for (now = start = dnsmasq_time(); 
        difftime(now, start) < (float)PING_WAIT;)
@@ -1766,7 +1829,7 @@ int icmp_ping(struct in_addr addr)
     }
   
 #if defined(HAVE_LINUX_NETWORK) || defined(HAVE_SOLARIS_NETWORK)
-  close(fd);
+  while (retry_send(close(fd)));
 #else
   opt = 1;
   setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt));

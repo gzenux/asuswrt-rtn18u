@@ -1,6 +1,7 @@
 #!/bin/sh
 # $1: filesystem type, $2: device path.
 
+
 if [ -z "$1" ] || [ -z "$2" ]; then
 	echo "Usage: app_fsck.sh [filesystem type] [device's path]"
 	exit 0
@@ -24,7 +25,7 @@ while [ $p -le $port_num ]; do
 		got_usb_path=1
 		break
 	fi
-	p=$(($p+1))
+	p=$((p+1))
 done
 if [ $got_usb_path -eq 0 ]; then
 	echo "Couldn't get the nvram of disk."
@@ -41,7 +42,7 @@ while [ $i -le 15 ]; do
 		got_fs_path=1
 		break
 	fi
-	i=$(($i+1))
+	i=$((i+1))
 done
 if [ $got_fs_path -eq 0 ]; then
 	echo "Couldn't get the nvram of pool."
@@ -59,22 +60,22 @@ if [ "$1" == "ntfs" ]; then
 	c=0
 	RET=1
 	while [ ${c} -lt 4 -a ${RET} -ne 0 ] ; do
-		c=$((${c} + 1))
+		c=$((c+1))
 		eval chkntfs -a -f --verbose $2 $log_option
 		RET=$?
 		if [ ${RET} -ge 251 -a ${RET} -le 254 ] ; then
-			break;
+			break
 		fi
 	done
 elif [ "$1" == "hfs" ] || [ "$1" == "hfs+j" ] || [ "$1" == "hfs+jx" ]; then
 	c=0
 	RET=1
 	while [ ${c} -lt 4 -a ${RET} -ne 0 ] ; do
-		c=$((${c} + 1))
+		c=$((c+1))
 		eval chkhfs -a -f --verbose $2 $log_option
 		RET=$?
 		if [ ${RET} -ge 251 -a ${RET} -le 254 ] ; then
-			break;
+			break
 		fi
 	done
 else

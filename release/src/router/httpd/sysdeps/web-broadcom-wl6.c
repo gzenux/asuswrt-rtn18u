@@ -129,6 +129,7 @@ ej_wl_sta_status(int eid, webs_t wp, char *name)
 #include <bcmparams.h>		/* for DEV_NUMIFS */
 
 #define SSID_FMT_BUF_LEN 4*32+1	/* Length for SSID format string */
+#define	MAX_STA_COUNT	128
 
 /* The below macros handle endian mis-matches between wl utility and wl driver. */
 static bool g_swap = FALSE;
@@ -1125,23 +1126,6 @@ dump_bss_info(int eid, webs_t wp, int argc, char_t **argv, wl_bss_info_t *bi)
 	return retval;
 }
 
-#ifdef RTCONFIG_TMOBILE
-static int
-dump_bss_info_hspot(int eid, webs_t wp, int argc, char_t **argv, wl_bss_info_t *bi)
-{
-	char ssidbuf[SSID_FMT_BUF_LEN];
-	int retval = 0;
-
-	wl_format_ssid(ssidbuf, bi->SSID, bi->SSID_len);
-
-	retval += websWrite(wp, "SSID: \"%s\"\n", ssidbuf);
-
-	retval += websWrite(wp, "BSSID: %s\n", wl_ether_etoa(&bi->BSSID));
-
-	return retval;
-}
-#endif
-
 static int
 wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 {
@@ -1187,53 +1171,6 @@ wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 	return retval;
 }
 
-#ifdef RTCONFIG_TMOBILE
-static int
-wl_status_hspot(int eid, webs_t wp, int argc, char_t **argv, int unit)
-{
-	int ret;
-	struct ether_addr bssid;
-	wlc_ssid_t ssid;
-	char ssidbuf[SSID_FMT_BUF_LEN];
-	wl_bss_info_t *bi;
-	int retval = 0;
-	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
-	char *name;
-
-	snprintf(prefix, sizeof(prefix), "wl%d.3_", unit);
-	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
-
-	if ((ret = wl_ioctl(name, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0) {
-		/* The adapter is associated. */
-		*(uint32*)buf = htod32(WLC_IOCTL_MAXLEN);
-		if ((ret = wl_ioctl(name, WLC_GET_BSS_INFO, buf, WLC_IOCTL_MAXLEN)) < 0)
-			return 0;
-
-		bi = (wl_bss_info_t*)(buf + 4);
-		if (dtoh32(bi->version) == WL_BSS_INFO_VERSION ||
-		    dtoh32(bi->version) == LEGACY2_WL_BSS_INFO_VERSION ||
-		    dtoh32(bi->version) == LEGACY_WL_BSS_INFO_VERSION)
-			retval += dump_bss_info_hspot(eid, wp, argc, argv, bi);
-		else
-			retval += websWrite(wp, "Sorry, your driver has bss_info_version %d "
-				"but this program supports only version %d.\n",
-				bi->version, WL_BSS_INFO_VERSION);
-	} else {
-		retval += websWrite(wp, "Not associated. Last associated with ");
-
-		if ((ret = wl_ioctl(name, WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t))) < 0) {
-			retval += websWrite(wp, "\n");
-			return 0;
-		}
-
-		wl_format_ssid(ssidbuf, ssid.SSID, dtoh32(ssid.SSID_len));
-		retval += websWrite(wp, "SSID: \"%s\"\n", ssidbuf);
-	}
-
-	return retval;
-}
-#endif
-
 sta_info_t *
 wl_sta_info(char *ifname, struct ether_addr *ea)
 {
@@ -1277,13 +1214,28 @@ print_rate_buf(int raw_rate, char *buf)
 {
 	if (!buf) return NULL;
 
-	if ((raw_rate % 1000) == 0)
+	if (raw_rate == -1) sprintf(buf, "        ");
+	else if ((raw_rate % 1000) == 0)
 		sprintf(buf, "%6dM ", raw_rate / 1000);
 	else
 		sprintf(buf, "%6.1fM ", (double) raw_rate / 1000);
 
 	return buf;
 }
+char *
+print_rate_buf_compact(int raw_rate, char *buf)
+{
+	if (!buf) return NULL;
+
+	if (raw_rate == -1) sprintf(buf, "        ");
+	else if ((raw_rate % 1000) == 0)
+		sprintf(buf, "%d", raw_rate / 1000);
+	else
+		sprintf(buf, "%.1f", (double) raw_rate / 1000);
+
+	return buf;
+}
+
 
 int wl_control_channel(int unit);
 
@@ -1298,16 +1250,14 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
 	char *name;
 	char name_vif[] = "wlX.Y_XXXXXXXXXX";
-	struct maclist *auth, *assoc, *authorized;
-	int max_sta_count, maclist_size;
-	int i, j, val = 0, ret = 0;
-	int ii, jj;
+	struct maclist *auth;
+	int mac_list_size;
+	int i, ii, val = 0, ret = 0;
 	char ea[ETHER_ADDR_STR_LEN];
 	scb_val_t scb_val;
-	int is_associated = 0;
-	int is_authorized = 0;
 	char rate_buf[8];
 	int hr, min, sec;
+	sta_info_t *sta;
 
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 #ifdef RTCONFIG_PROXYSTA
@@ -1319,15 +1269,6 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 			(nvram_match(strcat_r(prefix, "nband", tmp), "1") ? "5 GHz" : "2.4 GHz"));
 		return ret;
 	}
-#endif
-#ifdef RTCONFIG_WIRELESSREPEATER
-	if ((nvram_get_int("sw_mode") == SW_MODE_REPEATER)
-		&& (nvram_get_int("wlc_band") == unit))
-	{
-		sprintf(name_vif, "wl%d.%d", unit, 1);
-		name = name_vif;
-	}
-	else
 #endif
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
 #ifdef RTCONFIG_QTN
@@ -1425,29 +1366,27 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 	}
 #endif
 
-	/* buffers and length */
-	max_sta_count = 128;
-	maclist_size = sizeof(auth->count) + max_sta_count * sizeof(struct ether_addr);
-	auth = malloc(maclist_size);
-	assoc = malloc(maclist_size);
-	authorized = malloc(maclist_size);
+#ifdef RTCONFIG_WIRELESSREPEATER
+	if ((nvram_get_int("sw_mode") == SW_MODE_REPEATER)
+		&& (nvram_get_int("wlc_band") == unit))
+	{
+		sprintf(name_vif, "wl%d.%d", unit, 1);
+		name = name_vif;
+	}
+#endif
 
-	if (!auth || !assoc || !authorized)
+	/* buffers and length */
+	mac_list_size = sizeof(auth->count) + MAX_STA_COUNT * sizeof(struct ether_addr);
+	auth = malloc(mac_list_size);
+
+	if (!auth)
 		goto exit;
+
+	memset(auth, 0, mac_list_size);
 
 	/* query wl for authenticated sta list */
 	strcpy((char*)auth, "authe_sta_list");
-	if (wl_ioctl(name, WLC_GET_VAR, auth, maclist_size))
-		goto exit;
-
-	/* query wl for associated sta list */
-	assoc->count = max_sta_count;
-	if (wl_ioctl(name, WLC_GET_ASSOCLIST, assoc, maclist_size))
-		goto exit;
-
-	/* query wl for authorized sta list */
-	strcpy((char*)authorized, "autho_sta_list");
-	if (wl_ioctl(name, WLC_GET_VAR, authorized, maclist_size))
+	if (wl_ioctl(name, WLC_GET_VAR, auth, mac_list_size))
 		goto exit;
 
 	ret += websWrite(wp, "\n");
@@ -1466,25 +1405,14 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 				"MAC", "Associated", "Authorized", "   RSSI", "PSM", "Tx rate", "Rx rate", "Connect Time");
 #endif
 
-	/* build authenticated/associated/authorized sta list */
+	/* build authenticated sta list */
 	for (i = 0; i < auth->count; i ++) {
+		sta = wl_sta_info(name, &auth->ea[i]);
+		if (!sta) continue;
+
 		ret += websWrite(wp, "%s ", ether_etoa((void *)&auth->ea[i], ea));
 
-		for (j = 0; j < assoc->count; j ++) {
-			if (!bcmp((void *)&auth->ea[i], (void *)&assoc->ea[j], ETHER_ADDR_LEN)) {
-				is_associated = 1;
-				break;
-			}
-		}
-
-		for (j = 0; j < authorized->count; j ++) {
-			if (!bcmp((void *)&auth->ea[i], (void *)&authorized->ea[j], ETHER_ADDR_LEN)) {
-				is_authorized = 1;
-				break;
-			}
-		}
-
-		ret += websWrite(wp, "%-11s%-11s", is_associated ? "Yes" : " ", is_authorized ? "Yes" : "");
+		ret += websWrite(wp, "%-11s%-11s", (sta->flags & WL_STA_ASSOC) ? "Yes" : " ", (sta->flags & WL_STA_AUTHO) ? "Yes" : "");
 
 		memcpy(&scb_val.ea, &auth->ea[i], ETHER_ADDR_LEN);
 		if (wl_ioctl(name, WLC_GET_RSSI, &scb_val, sizeof(scb_val_t)))
@@ -1492,8 +1420,7 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 		else
 			ret += websWrite(wp, "%4ddBm ", scb_val.val);
 
-		sta_info_t *sta = wl_sta_info(name, &auth->ea[i]);
-		if (sta && (sta->flags & WL_STA_SCBSTATS))
+		if (sta->flags & WL_STA_SCBSTATS)
 		{
 #ifdef RTCONFIG_BCMARM
 #ifndef RTCONFIG_QTN
@@ -1518,11 +1445,7 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 		ret += websWrite(wp, "\n");
 	}
 
-#ifdef RTCONFIG_TMOBILE
-	for (i = 1; i < 3; i++) {
-#else
 	for (i = 1; i < 4; i++) {
-#endif
 #ifdef RTCONFIG_WIRELESSREPEATER
 		if ((nvram_get_int("sw_mode") == SW_MODE_REPEATER)
 			&& (unit == nvram_get_int("wlc_band")) && (i == 1))
@@ -1533,39 +1456,20 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 		{
 			sprintf(name_vif, "wl%d.%d", unit, i);
 
+			memset(auth, 0, mac_list_size);
+
 			/* query wl for authenticated sta list */
 			strcpy((char*)auth, "authe_sta_list");
-			if (wl_ioctl(name_vif, WLC_GET_VAR, auth, maclist_size))
-				goto exit;
-
-			/* query wl for associated sta list */
-			assoc->count = max_sta_count;
-			if (wl_ioctl(name_vif, WLC_GET_ASSOCLIST, assoc, maclist_size))
-				goto exit;
-
-			/* query wl for authorized sta list */
-			strcpy((char*)authorized, "autho_sta_list");
-			if (wl_ioctl(name_vif, WLC_GET_VAR, authorized, maclist_size))
+			if (wl_ioctl(name_vif, WLC_GET_VAR, auth, mac_list_size))
 				goto exit;
 
 			for (ii = 0; ii < auth->count; ii++) {
+				sta = wl_sta_info(name_vif, &auth->ea[ii]);
+				if (!sta) continue;
+
 				ret += websWrite(wp, "%s ", ether_etoa((void *)&auth->ea[ii], ea));
 
-				for (jj = 0; jj < assoc->count; jj++) {
-					if (!bcmp((void *)&auth->ea[ii], (void *)&assoc->ea[jj], ETHER_ADDR_LEN)) {
-						is_associated = 1;
-						break;
-					}
-				}
-
-				for (jj = 0; jj < authorized->count; jj++) {
-					if (!bcmp((void *)&auth->ea[ii], (void *)&authorized->ea[jj], ETHER_ADDR_LEN)) {
-						is_authorized = 1;
-						break;
-					}
-				}
-
-				ret += websWrite(wp, "%-11s%-11s", is_associated ? "Yes" : " ", is_authorized ? "Yes" : "");
+				ret += websWrite(wp, "%-11s%-11s", (sta->flags & WL_STA_ASSOC) ? "Yes" : " ", (sta->flags & WL_STA_AUTHO) ? "Yes" : "");
 
 				memcpy(&scb_val.ea, &auth->ea[ii], ETHER_ADDR_LEN);
 				if (wl_ioctl(name, WLC_GET_RSSI, &scb_val, sizeof(scb_val_t)))
@@ -1573,8 +1477,7 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 				else
 					ret += websWrite(wp, "%4ddBm ", scb_val.val);
 
-				sta_info_t *sta = wl_sta_info(name, &auth->ea[ii]);
-				if (sta && (sta->flags & WL_STA_SCBSTATS))
+				if (sta->flags & WL_STA_SCBSTATS)
 				{
 #ifdef RTCONFIG_BCMARM
 					ret += websWrite(wp, "%-4s%-4s%-5s",
@@ -1598,100 +1501,9 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 			}
 		}
 	}
-
-#ifdef RTCONFIG_TMOBILE
-	snprintf(prefix, sizeof(prefix), "wl%d.3_", unit);
-	if (nvram_match(strcat_r(prefix, "hs2en", tmp), "1")) {
-		snprintf(prefix, sizeof(prefix), "wl%d.3_", unit);
-			ret += websWrite(wp, "\n");
-
-			ret += wl_status_hspot(eid, wp, argc, argv, unit);
-
-			sprintf(name_vif, "wl%d.3", unit);
-
-			/* query wl for authenticated sta list */
-			strcpy((char*)auth, "authe_sta_list");
-			if (wl_ioctl(name_vif, WLC_GET_VAR, auth, maclist_size))
-				goto exit;
-
-			/* query wl for associated sta list */
-			assoc->count = max_sta_count;
-			if (wl_ioctl(name_vif, WLC_GET_ASSOCLIST, assoc, maclist_size))
-				goto exit;
-
-			/* query wl for authorized sta list */
-			strcpy((char*)authorized, "autho_sta_list");
-			if (wl_ioctl(name_vif, WLC_GET_VAR, authorized, maclist_size))
-				goto exit;
-
-			ret += websWrite(wp, "\n");
-			ret += websWrite(wp, "Stations List                           \n");
-			ret += websWrite(wp, "----------------------------------------\n");
-#ifdef RTCONFIG_BCMARM
-			ret += websWrite(wp, "%-18s%-11s%-11s%-8s%-4s%-4s%-5s%-8s%-8s%-12s\n",
-						"MAC", "Associated", "Authorized", "   RSSI", "PSM", "SGI", "STBC", "Tx rate", "Rx rate", "Connect Time");
-#else
-			ret += websWrite(wp, "%-18s%-11s%-11s%-8s%-4s%-8s%-8s%-12s\n",
-						"MAC", "Associated", "Authorized", "   RSSI", "PSM", "Tx rate", "Rx rate", "Connect Time");
-#endif
-
-			for (ii = 0; ii < auth->count; ii++) {
-				ret += websWrite(wp, "%s ", ether_etoa((void *)&auth->ea[ii], ea));
-
-				for (jj = 0; jj < assoc->count; jj++) {
-					if (!bcmp((void *)&auth->ea[ii], (void *)&assoc->ea[jj], ETHER_ADDR_LEN)) {
-						is_associated = 1;
-						break;
-					}
-				}
-
-				for (jj = 0; jj < authorized->count; jj++) {
-					if (!bcmp((void *)&auth->ea[ii], (void *)&authorized->ea[jj], ETHER_ADDR_LEN)) {
-						is_authorized = 1;
-						break;
-					}
-				}
-
-				ret += websWrite(wp, "%-11s%-11s", is_associated ? "Yes" : " ", is_authorized ? "Yes" : "");
-
-				memcpy(&scb_val.ea, &auth->ea[ii], ETHER_ADDR_LEN);
-				if (wl_ioctl(name, WLC_GET_RSSI, &scb_val, sizeof(scb_val_t)))
-					ret += websWrite(wp, "%-8s", "");
-				else
-					ret += websWrite(wp, "%4ddBm ", scb_val.val);
-
-				sta_info_t *sta = wl_sta_info(name, &auth->ea[ii]);
-				if (sta && (sta->flags & WL_STA_SCBSTATS))
-				{
-#ifdef RTCONFIG_BCMARM
-					ret += websWrite(wp, "%-4s%-4s%-5s",
-						(sta->flags & WL_STA_PS) ? "Yes" : "No",
-						((sta->ht_capabilities & WL_STA_CAP_SHORT_GI_20) || (sta->ht_capabilities & WL_STA_CAP_SHORT_GI_40)) ? "Yes" : "No",
-						((sta->ht_capabilities & WL_STA_CAP_TX_STBC) || (sta->ht_capabilities & WL_STA_CAP_RX_STBC_MASK)) ? "Yes" : "No");
-#else
-					ret += websWrite(wp, "%-4s",
-						(sta->flags & WL_STA_PS) ? "Yes" : "No");
-#endif
-					ret += websWrite(wp, "%s", print_rate_buf(sta->tx_rate, rate_buf));
-					ret += websWrite(wp, "%s", print_rate_buf(sta->rx_rate, rate_buf));
-
-					hr = sta->in / 3600;
-					min = (sta->in % 3600) / 60;
-					sec = sta->in - hr * 3600 - min * 60;
-					ret += websWrite(wp, "%02d:%02d:%02d", hr, min, sec);
-				}
-
-				ret += websWrite(wp, "\n");
-			}
-		}
-	}
-#endif
-
 	/* error/exit */
 exit:
 	if (auth) free(auth);
-	if (assoc) free(assoc);
-	if (authorized) free(authorized);
 
 	return ret;
 }
@@ -1767,12 +1579,7 @@ ej_wl_control_channel(int eid, webs_t wp, int argc, char_t **argv)
 #ifdef RTAC3200
 	int channel_50_2 = 0;
 #endif
-
-	if (!(channel_24 = wl_control_channel(0)))
-	{
-		ret = websWrite(wp, "[\"0\"]");
-		return ret;
-	}
+	channel_24 = wl_control_channel(0);
 
 	if (!(channel_50 = wl_control_channel(1)))
 		ret = websWrite(wp, "[\"%d\", \"%d\"]", channel_24, 0);
@@ -1978,6 +1785,32 @@ static int ej_wl_rate(int eid, webs_t wp, int argc, char_t **argv, int unit)
 		else
 			sprintf(rate_buf, "%d%s Mbps", (rate / 2), (rate & 1) ? ".5" : "");
 	}
+
+#ifdef RTCONFIG_BCM7
+	/* workaround for SDK 7.x */
+	if ((wl_control_channel(unit) > 0) ?
+		(wl_control_channel(unit) <= CH_MAX_2G_CHANNEL) :
+		nvram_match(strcat_r(prefix, "nband", tmp), "2")) {
+
+		if (!nvram_match(strcat_r(prefix, "mode", tmp), "psta"))
+			goto ERROR;
+
+		struct ether_addr bssid;
+		unsigned char bssid_null[6] = {0x0,0x0,0x0,0x0,0x0,0x0};
+		if (wl_ioctl(name, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN) != 0)
+			goto ERROR;
+		else if (!memcmp(&bssid, bssid_null, 6))
+			goto ERROR;
+
+		sta_info_t *sta = wl_sta_info(name, &bssid);
+		if (sta && (sta->flags & WL_STA_SCBSTATS)) {
+			if ((sta->rx_rate % 1000) == 0)
+				sprintf(rate_buf, "%6d Mbps ", sta->rx_rate / 1000);
+			else
+				sprintf(rate_buf, "%6.1fM Mbps", (double) sta->rx_rate / 1000);
+		}
+	}
+#endif
 
 ERROR:
 	retval += websWrite(wp, "%s", rate_buf);
@@ -2419,81 +2252,6 @@ ej_wps_info_2g(int eid, webs_t wp, int argc, char_t **argv)
 	return wl_wps_info(eid, wp, argc, argv, 0);
 }
 
-/* Dump NAT table <tr><td>destination</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
-int
-ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
-{
-	int ret = 0;
-#ifdef REMOVE
-	int needlen = 0, listlen, i
-	netconf_nat_t *nat_list = 0;
-	netconf_nat_t **plist, *cur;
-	char line[256], tstr[32];
-#endif
-	ret += websWrite(wp, "Destination     Proto.  Port Range  Redirect to\n");
-
-	// find another way to show iptable
-#ifdef REMOVE
-	netconf_get_nat(NULL, &needlen);
-
-	if (needlen > 0)
-	{
-		nat_list = (netconf_nat_t *) malloc(needlen);
-		if (nat_list) {
-			memset(nat_list, 0, needlen);
-			listlen = needlen;
-			if (netconf_get_nat(nat_list, &listlen) == 0 && needlen == listlen) {
-				listlen = needlen/sizeof(netconf_nat_t);
-
-				for(i=0;i<listlen;i++)
-				{
-				//printf("%d %d %d\n", nat_list[i].target,
-				//		nat_list[i].match.ipproto,
-				//		nat_list[i].match.dst.ipaddr.s_addr);
-				if (nat_list[i].target==NETCONF_DNAT)
-				{
-					if (nat_list[i].match.dst.ipaddr.s_addr==0)
-					{
-						sprintf(line, "%-15s", "all");
-					}
-					else
-					{
-						sprintf(line, "%-15s", inet_ntoa(nat_list[i].match.dst.ipaddr));
-					}
-
-
-					if (ntohs(nat_list[i].match.dst.ports[0])==0)
-						sprintf(line, "%s %-7s", line, "ALL");
-					else if (nat_list[i].match.ipproto==IPPROTO_TCP)
-						sprintf(line, "%s %-7s", line, "TCP");
-					else sprintf(line, "%s %-7s", line, "UDP");
-
-					if (nat_list[i].match.dst.ports[0] == nat_list[i].match.dst.ports[1])
-					{
-						if (ntohs(nat_list[i].match.dst.ports[0])==0)
-						sprintf(line, "%s %-11s", line, "ALL");
-						else
-						sprintf(line, "%s %-11d", line, ntohs(nat_list[i].match.dst.ports[0]));
-					}
-					else 
-					{
-						sprintf(tstr, "%d:%d", ntohs(nat_list[i].match.dst.ports[0]),
-						ntohs(nat_list[i].match.dst.ports[1]));
-						sprintf(line, "%s %-11s", line, tstr);
-					}
-					sprintf(line, "%s %s\n", line, inet_ntoa(nat_list[i].ipaddr));
-					ret += websWrite(wp, line);
-				}
-				}
-			}
-			free(nat_list);
-		}
-	}
-#endif
-	return ret;
-}
-
-
 static int wpa_key_mgmt_to_bitfield(const unsigned char *s)
 {
 	if (memcmp(s, WPA_AUTH_KEY_MGMT_UNSPEC_802_1X, WPA_SELECTOR_LEN) == 0)
@@ -2839,8 +2597,7 @@ ej_SiteSurvey(int eid, webs_t wp, int argc, char_t **argv)
 	struct bss_ie_hdr *ie;
 	NDIS_802_11_NETWORK_TYPE NetWorkType;
 	struct maclist *authorized;
-	int maclist_size;
-	int max_sta_count = 128;
+	int mac_list_size;
 	int wl_authorized = 0;
 	wl_scan_params_t *params;
 	int params_size = WL_SCAN_PARAMS_FIXED_SIZE + NUMCHANS * sizeof(uint16);
@@ -3135,19 +2892,23 @@ next_info:
 
 	if (strstr(nvram_safe_get("wl0_akm"), "psk"))
 	{
-		maclist_size = sizeof(authorized->count) + max_sta_count * sizeof(struct ether_addr);
-		authorized = malloc(maclist_size);
+		mac_list_size = sizeof(authorized->count) + MAX_STA_COUNT * sizeof(struct ether_addr);
+		authorized = malloc(mac_list_size);
+
+		if (!authorized) goto ap_list;
+
+		memset(authorized, 0, mac_list_size);
 
 		// query wl for authorized sta list
 		strcpy((char*)authorized, "autho_sta_list");
-		if (!wl_ioctl(WIF, WLC_GET_VAR, authorized, maclist_size))
+		if (!wl_ioctl(WIF, WLC_GET_VAR, authorized, mac_list_size))
 		{
 			if (authorized->count > 0) wl_authorized = 1;
 		}
 
 		if (authorized) free(authorized);
 	}
-
+ap_list:
 	retval += websWrite(wp, "[");
 	if (ap_count > 0)
 	for (i = 0; i < ap_count; i++)
@@ -3309,7 +3070,7 @@ ej_urelease(int eid, webs_t wp, int argc, char_t **argv)
 	return retval;
 }
 
-
+#if 0
 static bool find_ethaddr_in_list(void *ethaddr, struct maclist *list){
 	int i;
 
@@ -3319,12 +3080,13 @@ static bool find_ethaddr_in_list(void *ethaddr, struct maclist *list){
 
 	return FALSE;
 }
+#endif
 
 static int wl_sta_list(int eid, webs_t wp, int argc, char_t **argv, int unit) {
 	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
 	char *name;
-	struct maclist *auth, *assoc, *authorized;
-	int max_sta_count, maclist_size;
+	struct maclist *auth;
+	int mac_list_size;
 	int i, firstRow = 1;
 	char ea[ETHER_ADDR_STR_LEN];
 	scb_val_t scb_val;
@@ -3332,42 +3094,30 @@ static int wl_sta_list(int eid, webs_t wp, int argc, char_t **argv, int unit) {
 	char name_vif[] = "wlX.Y_XXXXXXXXXX";
 	int ii;
 	int ret = 0;
+	sta_info_t *sta;
 
 	/* buffers and length */
-	max_sta_count = 256;
-	maclist_size = sizeof(auth->count)+max_sta_count*sizeof(struct ether_addr);
+	mac_list_size = sizeof(auth->count) + MAX_STA_COUNT * sizeof(struct ether_addr);
+	auth = malloc(mac_list_size);
 
-	auth = malloc(maclist_size);
-	assoc = malloc(maclist_size);
-	authorized = malloc(maclist_size);
-
-	if(!auth || !assoc || !authorized)
+	if(!auth)
 		goto exit;
 
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
 
-	memset(auth, 0, maclist_size);
-	memset(assoc, 0, maclist_size);
-	memset(authorized, 0, maclist_size);
+	memset(auth, 0, mac_list_size);
 
 	/* query wl for authenticated sta list */
 	strcpy((char*)auth, "authe_sta_list");
-	if (wl_ioctl(name, WLC_GET_VAR, auth, maclist_size))
+	if (wl_ioctl(name, WLC_GET_VAR, auth, mac_list_size))
 		goto exit;
 
-	/* query wl for associated sta list */
-	assoc->count = max_sta_count;
-	if (wl_ioctl(name, WLC_GET_ASSOCLIST, assoc, maclist_size))
-		goto exit;
-
-	/* query wl for authorized sta list */
-	strcpy((char*)authorized, "autho_sta_list");
-	if (wl_ioctl(name, WLC_GET_VAR, authorized, maclist_size))
-		goto exit;
-
-	/* build authenticated/associated/authorized sta list */
+	/* build authenticated sta list */
 	for(i = 0; i < auth->count; ++i) {
+		sta = wl_sta_info(name, &auth->ea[i]);
+		if (!sta) continue;
+
 		if (firstRow == 1)
 			firstRow = 0;
 		else
@@ -3377,10 +3127,10 @@ static int wl_sta_list(int eid, webs_t wp, int argc, char_t **argv, int unit) {
 
 		ret += websWrite(wp, "\"%s\"", ether_etoa((void *)&auth->ea[i], ea));
 
-		value = (find_ethaddr_in_list((void *)&auth->ea[i], assoc))?"Yes":"No";
+		value = (sta->flags & WL_STA_ASSOC) ? "Yes" : "No";
 		ret += websWrite(wp, ", \"%s\"", value);
 
-		value = (find_ethaddr_in_list((void *)&auth->ea[i], authorized))?"Yes":"No";
+		value = (sta->flags & WL_STA_AUTHO) ? "Yes" : "No";
 		ret += websWrite(wp, ", \"%s\"", value);
 
 		memcpy(&scb_val.ea, &auth->ea[i], ETHER_ADDR_LEN);
@@ -3403,22 +3153,17 @@ static int wl_sta_list(int eid, webs_t wp, int argc, char_t **argv, int unit) {
 		{
 			sprintf(name_vif, "wl%d.%d", unit, i);
 
+			memset(auth, 0, mac_list_size);
+
 			/* query wl for authenticated sta list */
 			strcpy((char*)auth, "authe_sta_list");
-			if (wl_ioctl(name_vif, WLC_GET_VAR, auth, maclist_size))
-				goto exit;
-
-			/* query wl for associated sta list */
-			assoc->count = max_sta_count;
-			if (wl_ioctl(name_vif, WLC_GET_ASSOCLIST, assoc, maclist_size))
-				goto exit;
-
-			/* query wl for authorized sta list */
-			strcpy((char*)authorized, "autho_sta_list");
-			if (wl_ioctl(name_vif, WLC_GET_VAR, authorized, maclist_size))
+			if (wl_ioctl(name_vif, WLC_GET_VAR, auth, mac_list_size))
 				goto exit;
 
 			for(ii = 0; ii < auth->count; ii++) {
+				sta = wl_sta_info(name_vif, &auth->ea[ii]);
+				if (!sta) continue;
+
 				if (firstRow == 1)
 					firstRow = 0;
 				else
@@ -3428,10 +3173,10 @@ static int wl_sta_list(int eid, webs_t wp, int argc, char_t **argv, int unit) {
 
 				ret += websWrite(wp, "\"%s\"", ether_etoa((void *)&auth->ea[ii], ea));
 
-				value = (find_ethaddr_in_list((void *)&auth->ea[ii], assoc))?"Yes":"No";
+				value = (sta->flags & WL_STA_ASSOC) ? "Yes" : "No";
 				ret += websWrite(wp, ", \"%s\"", value);
 
-				value = (find_ethaddr_in_list((void *)&auth->ea[ii], authorized))?"Yes":"No";
+				value = (sta->flags & WL_STA_AUTHO) ? "Yes" : "No";
 				ret += websWrite(wp, ", \"%s\"", value);
 
 				memcpy(&scb_val.ea, &auth->ea[ii], ETHER_ADDR_LEN);
@@ -3448,11 +3193,120 @@ static int wl_sta_list(int eid, webs_t wp, int argc, char_t **argv, int unit) {
 	/* error/exit */
 exit:
 	if(auth) free(auth);
-	if(assoc) free(assoc);
-	if(authorized) free(authorized);
 
 	return ret;
 }
+
+#ifdef RTCONFIG_STAINFO
+static int wl_stainfo_list(int eid, webs_t wp, int argc, char_t **argv, int unit) {
+	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
+	char *name;
+	struct maclist *auth;
+	int mac_list_size;
+	int i, firstRow = 1;
+	char ea[ETHER_ADDR_STR_LEN];
+	scb_val_t scb_val;
+	char *value;
+	char name_vif[] = "wlX.Y_XXXXXXXXXX";
+	int ii;
+	int ret = 0;
+	sta_info_t *sta;
+	char rate_buf[8];
+	int hr, min, sec;
+
+	/* buffers and length */
+	mac_list_size = sizeof(auth->count) + MAX_STA_COUNT * sizeof(struct ether_addr);
+	auth = malloc(mac_list_size);
+
+	if(!auth)
+		goto exit;
+
+	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+
+	memset(auth, 0, mac_list_size);
+
+	/* query wl for authenticated sta list */
+	strcpy((char*)auth, "authe_sta_list");
+	if (wl_ioctl(name, WLC_GET_VAR, auth, mac_list_size))
+		goto exit;
+
+	/* build authenticated sta list */
+	for(i = 0; i < auth->count; ++i) {
+		sta = wl_sta_info(name, &auth->ea[i]);
+		if (!sta) continue;
+
+		if (firstRow == 1)
+			firstRow = 0;
+		else
+			ret += websWrite(wp, ", ");
+
+		ret += websWrite(wp, "[");
+
+		ret += websWrite(wp, "\"%s\"", ether_etoa((void *)&auth->ea[i], ea));
+
+		ret += websWrite(wp, ", \"%s\"", print_rate_buf_compact(sta->tx_rate, rate_buf));
+		ret += websWrite(wp, ", \"%s\"", print_rate_buf_compact(sta->rx_rate, rate_buf));
+
+		hr = sta->in / 3600;
+		min = (sta->in % 3600) / 60;
+		sec = sta->in - hr * 3600 - min * 60;
+		ret += websWrite(wp, ", \"%02d:%02d:%02d\"", hr, min, sec);
+
+		ret += websWrite(wp, "]");
+	}
+
+	for (i = 1; i < 4; i++) {
+#ifdef RTCONFIG_WIRELESSREPEATER
+		if ((nvram_get_int("sw_mode") == SW_MODE_REPEATER)
+			&& (unit == nvram_get_int("wlc_band")) && (i == 1))
+			break;
+#endif
+		sprintf(prefix, "wl%d.%d_", unit, i);
+		if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1"))
+		{
+			sprintf(name_vif, "wl%d.%d", unit, i);
+
+			memset(auth, 0, mac_list_size);
+
+			/* query wl for authenticated sta list */
+			strcpy((char*)auth, "authe_sta_list");
+			if (wl_ioctl(name_vif, WLC_GET_VAR, auth, mac_list_size))
+				goto exit;
+
+			for(ii = 0; ii < auth->count; ii++) {
+				sta = wl_sta_info(name_vif, &auth->ea[ii]);
+				if (!sta) continue;
+
+				if (firstRow == 1)
+					firstRow = 0;
+				else
+					ret += websWrite(wp, ", ");
+
+				ret += websWrite(wp, "[");
+
+				ret += websWrite(wp, "\"%s\"", ether_etoa((void *)&auth->ea[ii], ea));
+
+				ret += websWrite(wp, ", \"%s\"", print_rate_buf_compact(sta->tx_rate, rate_buf));
+				ret += websWrite(wp, ", \"%s\"", print_rate_buf_compact(sta->rx_rate, rate_buf));
+
+				hr = sta->in / 3600;
+				min = (sta->in % 3600) / 60;
+				sec = sta->in - hr * 3600 - min * 60;
+				ret += websWrite(wp, ", \"%02d:%02d:%02d\"", hr, min, sec);
+
+				ret += websWrite(wp, "]");
+			}
+		}
+	}
+
+	/* error/exit */
+exit:
+	if(auth) free(auth);
+
+	return ret;
+}
+#endif
 
 int
 ej_wl_sta_list_2g(int eid, webs_t wp, int argc, char_t **argv)
@@ -3487,14 +3341,49 @@ ej_wl_sta_list_5g_2(int eid, webs_t wp, int argc, char_t **argv)
 extern int ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv);
 #endif
 
+#ifdef RTCONFIG_STAINFO
+int
+ej_wl_stainfo_list_2g(int eid, webs_t wp, int argc, char_t **argv)
+{
+#ifndef RTAC3200_INTF_ORDER
+	return wl_stainfo_list(eid, wp, argc, argv, 0);
+#else
+	return wl_stainfo_list(eid, wp, argc, argv, 1);
+#endif
+}
+
+#ifndef RTCONFIG_QTN
+int
+ej_wl_stainfo_list_5g(int eid, webs_t wp, int argc, char_t **argv)
+{
+#ifndef RTAC3200_INTF_ORDER
+	return wl_stainfo_list(eid, wp, argc, argv, 1);
+#else
+	return wl_stainfo_list(eid, wp, argc, argv, 0);
+#endif
+}
+
+#ifdef RTAC3200
+int
+ej_wl_stainfo_list_5g_2(int eid, webs_t wp, int argc, char_t **argv)
+{
+	return wl_stainfo_list(eid, wp, argc, argv, 2);
+}
+#endif
+
+#else
+extern int ej_wl_stainfo_list_5g(int eid, webs_t wp, int argc, char_t **argv);
+#endif
+#endif
+
 // no WME in WL500gP V2
 // MAC/associated/authorized
 int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv) {
 	int unit = 0;
 	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
 	char *name;
-	struct maclist *auth, *assoc, *authorized;
-	int max_sta_count, maclist_size;
+	struct maclist *auth;
+	int mac_list_size;
 	int i, firstRow = 1;
 	char ea[ETHER_ADDR_STR_LEN];
 	char *value;
@@ -3502,18 +3391,15 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv) {
 	char name_vif[] = "wlX.Y_XXXXXXXXXX";
 	int ii;
 	int ret = 0;
+	sta_info_t *sta;
 
 	/* buffers and length */
-	max_sta_count = 256;
-	maclist_size = sizeof(auth->count)+max_sta_count*sizeof(struct ether_addr);
+	mac_list_size = sizeof(auth->count) + MAX_STA_COUNT * sizeof(struct ether_addr);
+	auth = malloc(mac_list_size);
+	//wme = malloc(mac_list_size);
 
-	auth = malloc(maclist_size);
-	assoc = malloc(maclist_size);
-	authorized = malloc(maclist_size);
-	//wme = malloc(maclist_size);
-
-	//if(!auth || !assoc || !authorized || !wme)
-	if(!auth || !assoc || !authorized)
+	//if(!auth || !wme)
+	if(!auth)
 		goto exit;
 
 	foreach (word, nvram_safe_get("wl_ifnames"), next) {
@@ -3532,33 +3418,24 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv) {
 		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 		name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
 
-		memset(auth, 0, maclist_size);
-		memset(assoc, 0, maclist_size);
-		memset(authorized, 0, maclist_size);
-		//memset(wme, 0, maclist_size);
+		memset(auth, 0, mac_list_size);
+		//memset(wme, 0, mac_list_size);
 
 		/* query wl for authenticated sta list */
 		strcpy((char*)auth, "authe_sta_list");
-		if (wl_ioctl(name, WLC_GET_VAR, auth, maclist_size))
-			goto exit;
-
-		/* query wl for associated sta list */
-		assoc->count = max_sta_count;
-		if (wl_ioctl(name, WLC_GET_ASSOCLIST, assoc, maclist_size))
-			goto exit;
-
-		/* query wl for authorized sta list */
-		strcpy((char*)authorized, "autho_sta_list");
-		if (wl_ioctl(name, WLC_GET_VAR, authorized, maclist_size))
+		if (wl_ioctl(name, WLC_GET_VAR, auth, mac_list_size))
 			goto exit;
 
 		/* query wl for WME sta list */
 		/*strcpy((char*)wme, "wme_sta_list");
-		if (wl_ioctl(name, WLC_GET_VAR, wme, maclist_size))
+		if (wl_ioctl(name, WLC_GET_VAR, wme, mac_list_size))
 			goto exit;*/
 
-		/* build authenticated/associated/authorized sta list */
+		/* build authenticated/associated sta list */
 		for(i = 0; i < auth->count; ++i) {
+			sta = wl_sta_info(name, &auth->ea[i]);
+			if (!sta) continue;
+
 			if (firstRow == 1)
 				firstRow = 0;
 			else
@@ -3568,10 +3445,10 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv) {
 
 			ret += websWrite(wp, "\"%s\"", ether_etoa((void *)&auth->ea[i], ea));
 
-			value = (find_ethaddr_in_list((void *)&auth->ea[i], assoc))?"Yes":"No";
+			value = (sta->flags & WL_STA_ASSOC) ? "Yes" : "No";
 			ret += websWrite(wp, ", \"%s\"", value);
 
-			value = (find_ethaddr_in_list((void *)&auth->ea[i], authorized))?"Yes":"No";
+			value = (sta->flags & WL_STA_AUTHO) ? "Yes" : "No";
 			ret += websWrite(wp, ", \"%s\"", value);
 
 			/*value = (find_ethaddr_in_list((void *)&auth->ea[i], wme))?"Yes":"No";
@@ -3591,22 +3468,17 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv) {
 			{
 				sprintf(name_vif, "wl%d.%d", unit, i);
 
+				memset(auth, 0, mac_list_size);
+
 				/* query wl for authenticated sta list */
 				strcpy((char*)auth, "authe_sta_list");
-				if (wl_ioctl(name_vif, WLC_GET_VAR, auth, maclist_size))
-					goto exit;
-
-				/* query wl for associated sta list */
-				assoc->count = max_sta_count;
-				if (wl_ioctl(name_vif, WLC_GET_ASSOCLIST, assoc, maclist_size))
-					goto exit;
-
-				/* query wl for authorized sta list */
-				strcpy((char*)authorized, "autho_sta_list");
-				if (wl_ioctl(name_vif, WLC_GET_VAR, authorized, maclist_size))
+				if (wl_ioctl(name_vif, WLC_GET_VAR, auth, mac_list_size))
 					goto exit;
 
 				for(ii = 0; ii < auth->count; ii++) {
+					sta = wl_sta_info(name_vif, &auth->ea[ii]);
+					if (!sta) continue;
+
 					if (firstRow == 1)
 						firstRow = 0;
 					else
@@ -3616,10 +3488,10 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv) {
 
 					ret += websWrite(wp, "\"%s\"", ether_etoa((void *)&auth->ea[ii], ea));
 
-					value = (find_ethaddr_in_list((void *)&auth->ea[ii], assoc))?"Yes":"No";
+					value = (sta->flags & WL_STA_ASSOC) ? "Yes" : "No";
 					ret += websWrite(wp, ", \"%s\"", value);
 
-					value = (find_ethaddr_in_list((void *)&auth->ea[ii], authorized))?"Yes":"No";
+					value = (sta->flags & WL_STA_AUTHO) ? "Yes" : "No";
 					ret += websWrite(wp, ", \"%s\"", value);
 
 					ret += websWrite(wp, "]");
@@ -3633,8 +3505,6 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv) {
 	/* error/exit */
 exit:
 	if(auth) free(auth);
-	if(assoc) free(assoc);
-	if(authorized) free(authorized);
 	//if(wme) free(wme);
 
 	return ret;
@@ -3862,7 +3732,6 @@ ej_wl_scan_5g_2(int eid, webs_t wp, int argc, char_t **argv)
 #endif
 
 #ifdef RTCONFIG_PROXYSTA
-#define	MAX_STA_COUNT	128
 #define	NVRAM_BUFSIZE	100
 
 static int
@@ -3926,6 +3795,8 @@ ej_wl_auth_psta(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (!mac_list)
 		goto PSTA_ERR;
+
+	memset(mac_list, 0, mac_list_size);
 
 	/* query wl for authenticated sta list */
 	strcpy((char*)mac_list, "authe_sta_list");

@@ -4,6 +4,7 @@
 
 ret_dir=/tmp/fsck_ret
 
+
 # $1: device path, $2: error code.
 _set_fsck_code(){
 	pool_name=`echo "$1" |awk '{FS="/"; print $NF}'`
@@ -28,6 +29,7 @@ _get_fsck_logfile(){
 
 	echo "$ret_dir/$pool_name.log"
 }
+
 
 if [ -z "$1" ] || [ -z "$2" ]; then
 	echo "Usage: app_fsck.sh [filesystem type] [device's path]"
@@ -126,11 +128,11 @@ elif [ "$1" == "ntfs" ] || [ "$1" == "tntfs" ]; then
 		c=0
 		RET=0
 		while [ ${c} -lt 4 -a ${RET} -ne 1 ] ; do
-			c=$((${c} + 1))
+			c=$((c+1))
 			eval chkntfs $autocheck_option $autofix_option --verbose $2 $log_option
 			RET=$?
 			if [ ${RET} -ge 251 -a ${RET} -le 254 ] ; then
-				break;
+				break
 			fi
 		done
 
@@ -139,6 +141,11 @@ elif [ "$1" == "ntfs" ] || [ "$1" == "tntfs" ]; then
 		else
 			_set_fsck_code $2 1
 		fi
+
+		# remove "x%", "\r\r", "\r".
+		sed -i 's/[0-9]*%//g' $log_file
+		tr -d '\r' < $log_file > $log_file.tmp
+		mv $log_file.tmp $log_file
 	elif [ "$ntfs_mod" == "tuxera" ]; then
 		# return value = 0: FS be ok.
 		eval ntfsck $autocheck_option $autofix_option $2 $log_option
@@ -151,12 +158,14 @@ elif [ "$1" == "ntfs" ] || [ "$1" == "tntfs" ]; then
 
 		# remove the logs. e.q. "Record 676 has wrong SeqNo (378 <> 405)"
 		# The characters: '<', '>' would cause the ajax error.
-		sed -i 's/.*has wrong SeqNo.*$//g' $log_file
-		sed -i 's/ntfs_attr_pread partial read.*$//g' $log_file
-		sed -i 's/ntfs_attr_pwrite partial write.*$//g' $log_file
-		sed -i 's/Unexpected attrlist size.*$//g' $log_file
-		sed -i 's/.*has corrupt allocation size.*$//g' $log_file
-		sed -i '/^$/d' $log_file
+		mv -f $log_file $log_file.orig ; cat $log_file.orig | \
+			grep -v "has wrong SeqNo" | \
+			grep -v "ntfs_attr_pread partial read" | \
+			grep -v "ntfs_attr_pwrite partial write" | \
+			grep -v "Unexpected attrlist size" | \
+			grep -v "has corrupt allocation size" | \
+			grep -v "^$" > $log_file
+		rm -f $log_file.orig
 	fi
 elif [ "$1" == "hfs" ] || [ "$1" == "hfsplus" ] || [ "$1" == "thfsplus" ] || [ "$1" == "hfs+j" ] || [ "$1" == "hfs+jx" ]; then
 	if [ "$hfs_mod" == "open" ]; then
@@ -176,6 +185,11 @@ elif [ "$1" == "hfs" ] || [ "$1" == "hfsplus" ] || [ "$1" == "thfsplus" ] || [ "
 		else
 			_set_fsck_code $2 1
 		fi
+
+		# remove "x%", "\r\r", "\r".
+		sed -i 's/[0-9]*%//g' $log_file
+		tr -d '\r' < $log_file > $log_file.tmp
+		mv $log_file.tmp $log_file
 	elif [ "$hfs_mod" == "tuxera" ]; then
 		# return value = 0: FS be ok.
 		eval fsck_hfs $autocheck_option $autofix_option $2 $log_option

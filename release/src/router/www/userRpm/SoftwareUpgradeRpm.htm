@@ -42,10 +42,6 @@
 <script>
 
 var $j = jQuery.noConflict();
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 var webs_state_update = '<% nvram_get("webs_state_update"); %>';
 var webs_state_upgrade = '<% nvram_get("webs_state_upgrade"); %>';
 var webs_state_error = '<% nvram_get("webs_state_error"); %>';
@@ -105,7 +101,7 @@ function detect_firmware(){
       								{
       										$('update_scan').style.display="none";
       										$('update_states').style.display="none";
-      										if(confirm("<#exist_new#>")){
+      										if(confirm("<#exist_new#>\n\nDo not power off <#Web_Title2#> while upgrade in progress.")){
       												document.start_update.action_mode.value="apply";
       												document.start_update.action_script.value="start_webs_upgrade";
 															document.start_update.submit();
@@ -296,7 +292,7 @@ function submitForm(){
 			<span id="proceeding_img_text"></span>
 			<div id="proceeding_img"></div>
 		</div>
-		<div id="loading_block2" style="margin:5px auto; width:85%;"><#FIRM_ok_desc#></div>
+		<div id="loading_block2" style="margin:5px auto; width:85%;"><#FIRM_ok_desc#><br>Do not power off <#Web_Title2#> while upgrade in progress.</div>
 		<div id="loading_block3" style="margin:5px auto;width:85%; font-size:12pt;"></div>
 		</td>
 	</tr>

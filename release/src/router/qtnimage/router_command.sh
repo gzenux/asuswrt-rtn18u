@@ -19,6 +19,21 @@ if [ "$1" == "update_stateless_slave_config" ] ; then
 	killall monitor_wifi
 	tftp -g 1.1.1.1 -r stateless_slave_config -l /scripts/stateless_slave_config
 fi
+if [ "$1" == "get_file_from_qtn" ] ; then
+	tftp -p $2 -r $4 -l $3
+fi
+if [ "$1" == "get_syslog_from_qtn" ] ; then
+	logmsg -t time `uptime`
+	logmsg -t time `date`
+	tftp -p $2 -r syslog.qtn -l /tmp/syslog.log
+fi
+if [ "$1" == "put_file_to_qtn" ] ; then
+	tftp -g $2 -r $3 -l $4
+fi
+if [ "$1" == "run_cmd" ] ; then
+	chmod a+x $2
+	$2
+fi
 if [ "$1" == "run_start_stateless_slave" ] ; then
 	killall monitor_wifi
 	start-stateless-slave &
@@ -39,6 +54,33 @@ fi
 if [ "$1" == "80211h_off" ] ; then
 	echo "off" > /tmp/80211h
 	iwpriv wifi0 pc_override 0 &
+fi
+if [ "$1" == "wifi1_lanaccess_off" ] ; then
+	echo_with_logging "=== blocking guest network1 lanaccess"
+	call_qcsapi vlan_config wifi0 enable 0 &
+	call_qcsapi vlan_config wifi1 bind 4000 &
+fi
+if [ "$1" == "wifi1_lanaccess_on" ] ; then
+	echo_with_logging "=== unblocking guest network1 lanaccess"
+	call_qcsapi vlan_config wifi1 unbind 4000 &
+fi
+if [ "$1" == "wifi2_lanaccess_off" ] ; then
+	echo_with_logging "=== blocking guest network2 lanaccess"
+	call_qcsapi vlan_config wifi0 enable 0 &
+	call_qcsapi vlan_config wifi2 bind 4001 &
+fi
+if [ "$1" == "wifi2_lanaccess_on" ] ; then
+	echo_with_logging "=== unblocking guest network2 lanaccess"
+	call_qcsapi vlan_config wifi2 unbind 4001 &
+fi
+if [ "$1" == "wifi3_lanaccess_off" ] ; then
+	echo_with_logging "=== blocking guest network3 lanaccess"
+	call_qcsapi vlan_config wifi0 enable 0 &
+	call_qcsapi vlan_config wifi3 bind 4002 &
+fi
+if [ "$1" == "wifi3_lanaccess_on" ] ; then
+	echo_with_logging "=== unblocking guest network3 lanaccess"
+	call_qcsapi vlan_config wifi3 unbind 4002 &
 fi
 
 eth1_1_speed=`cat /sys/class/net/eth1_1/speed`

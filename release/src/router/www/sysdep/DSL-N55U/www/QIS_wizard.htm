@@ -67,13 +67,13 @@ function QIS_load_body(){
 		return;	
 	}
 	
-	//if (x_Setting == "0") {	//tmp, always go to username/password setting, Sam 2014/5/8
+	if (x_Setting == "0" || based_modelid == "DSL-AC68U") {	//DSL-AC68U always go to username/password setting, Viz 2015/2/5
 		with(document.redirectForm){	
 			action = "/qis/QIS_admin_pass.htm";
 			submit();
 		}
 		return;
-	//}
+	}
 	
 	with(document.redirectForm){
 		if ( (detect_status == "Detecting") || (detect_status == "wait_for_init") ||
@@ -195,7 +195,7 @@ function gotoIndex(){
 <table width="998px"  border="0" align="center" cellpadding="0" cellspacing="0" background="/images/New_ui/middown_bg.png">
   <tr>
 		<td style="width:218px;*width:263px;" valign="top">
-			<div class="m_qis_r" style="margin-left: 15px;margin-top: -160px;cursor:pointer;" onclick="gotoIndex();"><table><tbody><tr><td><div id="index_img1"></div></td><td><div><#CTL_Setting#></div></td></tr></tbody></table></div>
+			<div class="m_qis_r" style="margin-left: 15px;margin-top: -160px;cursor:pointer;" onclick="gotoIndex();"><table><tbody><tr><td><div class="_index"></div></td><td><div><#CTL_Setting#></div></td></tr></tbody></table></div>
 			<div class="lefttabhead" style="margin-left:15px;" id="option0"><table width="192px" height="37px"><tbody><tr><td><#QIS_title#></td></tr></tbody></table></div>
 			<div class="lefttabmid" id="t1" style="margin-left:15px;"><table height="52px"><tbody><tr><td><img style="margin-left:3px;" border="0" src="/images/qis/qisStep1.png"></td><td><div style="width:120px;"><#QIS_step2#></div></td></tr></tbody></table></div>
 			<div class="lefttabmid" id="t2" style="margin-left:15px;"><table height="52px"><tbody><tr><td><img style="margin-left:3px;" border="0" src="/images/qis/qisStep2.png"></td><td><div style="width:120px;"><#QIS_step3#></div></td></tr></tbody></table></div>

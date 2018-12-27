@@ -31,10 +31,91 @@ static int wdbg = 0;
 
 #define _wdbg(fmt, args...) do { if (wdbg) { dbg(fmt, ## args); }; } while (0)
 
+int update_wan_leds(int wan_unit)
+{
+#if defined(RTCONFIG_LANWAN_LED)
+#if defined(RTCONFIG_WANRED_LED)
+	int mode = sw_mode, l = link_wan[wan_unit], state;
+	char s[] = "wanX_state_tXXX";
+
+	if (wan_unit < 0 || wan_unit >= WAN_UNIT_MAX)
+		return -1;
+
+	if (mode < SW_MODE_ROUTER || mode > SW_MODE_HOTSPOT)
+		mode = nvram_get_int("sw_mode");
+	/* Turn on/off WAN BLUE/RED LED in accordance with wan status. */
+	switch (mode) {
+	case SW_MODE_ROUTER:
+#if defined(RTCONFIG_DUALWAN)
+		if (!strcmp(dualwan_mode, "lb")) {
+			int u, onoff = 0;
+
+			if (wan_unit)
+				return 0;
+
+			/* Turn on WAN BLUE LED if any WAN unit is connected in load-balanced mode. */
+			for (u = WAN_UNIT_FIRST; !onoff && u < WAN_UNIT_MAX; ++u) {
+				sprintf(s, "wan%d_state_t", u);
+				state = nvram_get_int(s);
+				l = link_wan[u];
+				if (dualwan_unit__nonusbif(u))
+					l = get_wanports_status(u);
+
+				if (l == CONNED && state == WAN_STATE_CONNECTED)
+					onoff++;
+			}
+
+			if (onoff) {
+				wan_red_led_control(LED_OFF);
+				led_control(LED_WAN, LED_ON);
+			} else {
+				wan_red_led_control(LED_ON);
+				led_control(LED_WAN, LED_OFF);
+			}
+		} else {
+#endif
+			if (wan_primary_ifunit() != wan_unit)
+				return 0;
+
+			sprintf(s, "wan%d_state_t", wan_unit);
+			state = nvram_get_int(s);
+			if (dualwan_unit__nonusbif(wan_unit))
+				l = get_wanports_status(wan_unit);
+
+			if (l == CONNED && state == WAN_STATE_CONNECTED) {
+				wan_red_led_control(LED_OFF);
+				led_control(LED_WAN, LED_ON);
+			} else {
+				wan_red_led_control(LED_ON);
+				led_control(LED_WAN, LED_OFF);
+			}
+#if defined(RTCONFIG_DUALWAN)
+		}
+#endif
+		break;
+	case SW_MODE_REPEATER:	/* fallthrough */
+	case SW_MODE_AP:
+		wan_red_led_control(LED_OFF);
+		break;
+	}
+#else	/* !RTCONFIG_WANRED_LED */
+	/* Turn on/off WAN LED in accordance with link status of WAN port */
+	if (link_wan[wan_unit]) {
+		led_control(LED_WAN, LED_ON);
+	} else {
+		led_control(LED_WAN, LED_OFF);
+	}
+#endif	/* RTCONFIG_WANRED_LED */
+#endif	/* RTCONFIG_LANWAN_LED */
+
+	return 0;
+}
+
 static void safe_leave(int signo){
 	csprintf("\n## wanduck.safeexit ##\n");
 	signal(SIGTERM, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
+	signal(SIGUSR2, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 
 	FD_ZERO(&allset);
@@ -121,7 +202,6 @@ static void safe_leave(int signo){
 }
 
 void get_related_nvram(){
-
 	sw_mode = nvram_get_int("sw_mode");
 
 	boot_end = nvram_get_int("success_start_service");
@@ -250,6 +330,29 @@ static void get_network_nvram(int signo){
 #endif
 }
 
+static void wan_led_control(int sig) {
+
+	if(nvram_match("AllLED", "1")){
+#if defined(RTAC87U) || defined(RTAC3200)
+		if (rule_setup) {
+			led_control(LED_WAN, LED_ON);
+			eval("et", "robowr", "0", "0x18", "0x01fe");
+			eval("et", "robowr", "0", "0x1a", "0x01fe");
+		} else {
+			led_control(LED_WAN, LED_OFF);
+			eval("et", "robowr", "0", "0x18", "0x01ff");
+			eval("et", "robowr", "0", "0x1a", "0x01ff");
+		}
+#elif defined(DSL_AC68U)
+		if (rule_setup) {
+			led_control(LED_WAN, LED_OFF);
+		} else {
+			led_control(LED_WAN, LED_ON);
+		}
+#endif
+	}
+}
+
 int do_ping_detect(int wan_unit){
 #ifdef RTCONFIG_DUALWAN
 	char cmd[256];
@@ -371,9 +474,8 @@ char *organize_tcpcheck_cmd(char *dns_list, char *cmd, int size){
 int do_dns_detect(){
 	const char *test_url = "www.asus.com";
 
-	if(gethostbyname(test_url) != NULL){
+	if(gethostbyname(test_url) != NULL)
 		return 1;
-	}
 
 	return 0;
 }
@@ -599,13 +701,32 @@ int chk_proto(int wan_unit, int wan_state){
 	// Start chk_proto() in SW_MODE_ROUTER.
 #ifdef RTCONFIG_USB_MODEM
 	if (dualwan_unit__usbif(wan_unit)) {
-		ppp_fail_state = pppstatus();
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+		unsigned long long rx, tx;
+		unsigned long long total, limit;
 
+		eval("modem_status.sh", "bytes");
+
+		rx = strtoull(nvram_safe_get("modem_bytes_rx"), NULL, 10);
+		tx = strtoull(nvram_safe_get("modem_bytes_tx"), NULL, 10);
+		limit = strtoull(nvram_safe_get("modem_bytes_data_limit"), NULL, 10);
+
+		total = rx+tx;
+
+		if(limit > 0 && total >= limit){
+			csprintf("wanduck(%d): chk_proto() detect the data limit.\n", wan_unit);
+			update_wan_state(prefix_wan, WAN_STATE_STOPPED, WAN_STOPPED_REASON_DATALIMIT);
+			return DISCONN;
+		}
+		else
+#endif
 		if(wan_state == WAN_STATE_INITIALIZING){
 			disconn_case[wan_unit] = CASE_PPPFAIL;
 			return DISCONN;
 		}
 		else if(wan_state == WAN_STATE_CONNECTING){
+			ppp_fail_state = pppstatus();
+
 			if(ppp_fail_state == WAN_STOPPED_REASON_PPP_AUTH_FAIL)
 				record_wan_state_nvram(wan_unit, -1, -1, WAN_AUXSTATE_PPP_AUTH_FAIL);
 
@@ -620,6 +741,12 @@ int chk_proto(int wan_unit, int wan_state){
 			disconn_case[wan_unit] = CASE_PPPFAIL;
 			return DISCONN;
 		}
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+		else if(wan_sbstate == WAN_STOPPED_REASON_DATALIMIT){
+			disconn_case[wan_unit] = CASE_DATALIMIT;
+			return DISCONN;
+		}
+#endif
 	}
 	else
 #endif
@@ -636,8 +763,20 @@ int chk_proto(int wan_unit, int wan_state){
 			return DISCONN;
 		}
 		else if(wan_state == WAN_STATE_CONNECTING){
+#if defined(RTCONFIG_WANRED_LED)
+			int r = CASE_DHCPFAIL, v = DISCONN;
+
+			if (!strcmp(wan_proto, "static") && link_wan[wan_unit]) {
+				r = CASE_NONE;
+				v = CONNED;
+			}
+
+			disconn_case[wan_unit] = r;
+			return v;
+#else
 			disconn_case[wan_unit] = CASE_DHCPFAIL;
 			return DISCONN;
+#endif
 		}
 		else if(wan_state == WAN_STATE_DISCONNECTED){
 			disconn_case[wan_unit] = CASE_DHCPFAIL;
@@ -764,6 +903,10 @@ int if_wan_phyconnected(int wan_unit){
 if(test_log)
 _dprintf("# wanduck: if_wan_phyconnected: x_Setting=%d, link_modem=%d, sim_state=%d.\n", !isFirstUse, link_wan[wan_unit], sim_state);
 
+#if defined(RTCONFIG_WANRED_LED)
+		update_wan_leds(wan_unit);
+#endif
+
 		if(link_wan[wan_unit] != nvram_get_int(wired_link_nvram)){
 			nvram_set_int(wired_link_nvram, link_wan[wan_unit]);
 
@@ -796,15 +939,16 @@ _dprintf("# wanduck: if_wan_phyconnected: x_Setting=%d, link_modem=%d, sim_state
 
 		// check wan port.
 		link_wan[wan_unit] = get_wanports_status(wan_unit);
-#ifdef RTCONFIG_LANWAN_LED
-#ifdef RTCONFIG_DUALWAN
-		if(get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_WAN)
+
+		if (get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_WAN
+#if defined(RTCONFIG_WANRED_LED)
+		    || get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_LAN
 #endif
+		   )
 		{
-			if(link_wan[wan_unit]) led_control(LED_WAN, LED_ON);
-			else led_control(LED_WAN, LED_OFF);
+			update_wan_leds(wan_unit);
 		}
-#endif
+
 		if(link_wan[wan_unit] != nvram_get_int(wired_link_nvram)){
 			if(link_wan[wan_unit])
 				nvram_set_int(wired_link_nvram, CONNED);
@@ -930,11 +1074,10 @@ _dprintf("# wanduck: if_wan_phyconnected: x_Setting=%d, link_modem=%d, sim_state
 }
 
 int if_wan_connected(int wan_unit, int wan_state){
-	if(chk_proto(wan_unit, wan_state) != CONNED){
+	if(chk_proto(wan_unit, wan_state) != CONNED)
 		return DISCONN;
-	} else if(sw_mode == SW_MODE_ROUTER){ // TODO: temparily let detect_internet() service in SW_MODE_ROUTER.
+	else if(sw_mode == SW_MODE_ROUTER) // TODO: temparily let detect_internet() service in SW_MODE_ROUTER.
 		return detect_internet(wan_unit);
-	}
 
 	return CONNED;
 }
@@ -961,6 +1104,18 @@ void handle_wan_line(int wan_unit, int action){
 		strcpy(wan_proto, nvram_safe_get(strcat_r(prefix_wan, "proto", nvram_name)));
 
 		if(!strcmp(wan_proto, "static")){
+#if defined(RTCONFIG_WANRED_LED)
+			char tmp[100];
+			char *gateway, *wan_ifname;
+
+			wan_ifname = nvram_safe_get(strcat_r(prefix_wan, "ifname", tmp));
+			gateway = nvram_safe_get(strcat_r(prefix_wan, "gateway", tmp));
+			if (!test_gateway(gateway, wan_ifname)) {
+				update_wan_state(prefix_wan, WAN_STATE_CONNECTED, 0);
+			} else {
+				update_wan_state(prefix_wan, WAN_STATE_CONNECTING, 0);
+			}
+#endif
 			/* Sync time */
 			refresh_ntpc();
 		}
@@ -1038,6 +1193,10 @@ void send_page(int wan_unit, int sfd, char *file_dest, char *url){
 	if (dualwan_unit__usbif(wan_unit)) {
 		if(conn_changed_state[wan_unit] == SET_ETH_MODEM)
 			sprintf(buf, "%s%s%s%s%s%d%s%s" ,buf , "Connection: close\r\n", "Location:http://", dut_addr, "/error_page.htm?flag=", CASE_THESAMESUBNET, "\r\nContent-Type: text/plain\r\n", "\r\n<html></html>\r\n");
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+		else if((conn_changed_state[wan_unit] == C2D || conn_changed_state[wan_unit] == DISCONN) && disconn_case[wan_unit] == CASE_DATALIMIT)
+			sprintf(buf, "%s%s%s%s%s%d%s%s" ,buf , "Connection: close\r\n", "Location:http://", dut_addr, "/error_page.htm?flag=", disconn_case[wan_unit], "\r\nContent-Type: text/plain\r\n", "\r\n<html></html>\r\n");
+#endif
 		else{
 			close_socket(sfd, T_HTTP);
 			return;
@@ -1218,7 +1377,7 @@ void handle_dns_req(int sfd, char *line, int maxlen, struct sockaddr *pcliaddr, 
 #endif
 			d_reply.answers.addr = inet_addr_(nvram_safe_get("lan_ipaddr"));	// router's ip
 	}
-#ifdef RTCONFIG_MDNS
+#ifdef RTCONFIG_FINDASUS
 	else if (!upper_strcmp(query_name, "findasus.local")) {
 		d_reply.answers.addr = inet_addr_(nvram_safe_get("lan_ipaddr"));	// router's ip
 	}
@@ -1355,12 +1514,21 @@ void record_conn_status(int wan_unit){
 			logmessage(log_title, "The router's ip was the same as gateway's ip. It led to your packages couldn't dispatch to internet correctly.");
 		}
 		else if(disconn_case[wan_unit] == CASE_THESAMESUBNET){
-			if(disconn_case_old[wan_unit] == CASE_MISROUTE)
+			if(disconn_case_old[wan_unit] == CASE_THESAMESUBNET)
 				return;
-			disconn_case_old[wan_unit] = CASE_MISROUTE;
+			disconn_case_old[wan_unit] = CASE_THESAMESUBNET;
 
 			logmessage(log_title, "The LAN's subnet may be the same with the WAN's subnet.");
 		}
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+		else if(disconn_case[wan_unit] == CASE_DATALIMIT){
+			if(disconn_case_old[wan_unit] == CASE_DATALIMIT)
+				return;
+			disconn_case_old[wan_unit] = CASE_DATALIMIT;
+
+			logmessage(log_title, "The Data is at limit.");
+		}
+#endif
 		else{	// disconn_case[wan_unit] == CASE_OTHERS
 			if(disconn_case_old[wan_unit] == CASE_OTHERS)
 				return;
@@ -1444,9 +1612,8 @@ int switch_wan_line(const int wan_unit, const int restart_other){
 			if(unit == wan_unit)
 				continue;
 
-			memset(cmd, 0, 32);
-			sprintf(cmd, "restart_wan_if %d", unit);
-TRACE_PT("%s.\n", cmd);
+			csprintf("wanduck1: restart_wan_if %d.\n", unit);
+			snprintf(cmd, 32, "restart_wan_if %d", unit);
 			notify_rc_and_wait(cmd);
 			sleep(1);
 		}
@@ -1460,9 +1627,8 @@ TRACE_PT("%s.\n", cmd);
 			if(dualwan_unit__nonusbif(unit))
 				continue;
 
-			memset(cmd, 0, 32);
-			sprintf(cmd, "stop_wan_if %d", unit);
-TRACE_PT("%s.\n", cmd);
+			csprintf("wanduck1: stop_wan_if %d.\n", unit);
+			snprintf(cmd, 32, "stop_wan_if %d", unit);
 			notify_rc_and_wait(cmd);
 			sleep(1);
 		}
@@ -1470,12 +1636,11 @@ TRACE_PT("%s.\n", cmd);
 #endif
 
 	// restart the primary line.
-	memset(cmd, 0, 32);
 	if(get_wan_state(wan_unit) == WAN_STATE_CONNECTED)
-		sprintf(cmd, "restart_wan_line %d", wan_unit);
+		snprintf(cmd, 32, "restart_wan_line %d", wan_unit);
 	else
-		sprintf(cmd, "restart_wan_if %d", wan_unit);
-TRACE_PT("%s.\n", cmd);
+		snprintf(cmd, 32, "restart_wan_if %d", wan_unit);
+	csprintf("wanduck2: %s.\n", cmd);
 	notify_rc_and_wait(cmd);
 
 #ifdef RTCONFIG_DUALWAN
@@ -1512,6 +1677,7 @@ int wanduck_main(int argc, char *argv[]){
 	signal(SIGTERM, safe_leave);
 	signal(SIGCHLD, chld_reap);
 	signal(SIGUSR1, get_network_nvram);
+	signal(SIGUSR2, wan_led_control);
 
 	if(argc < 3){
 		http_servport = DFL_HTTP_SERV_PORT;
@@ -1535,7 +1701,7 @@ int wanduck_main(int argc, char *argv[]){
 		csprintf("\n*** Fail to build socket! ***\n");
 		exit(0);
 	}
-	if(fcntl(dns_sock, F_SETFL, fcntl(dns_sock, F_GETFL, 0)|O_NONBLOCK) < 0){
+	if(fcntl(dns_sock, F_SETFL, fcntl(dns_sock, F_GETFL, 0) | O_NONBLOCK) < 0){
 		_dprintf("wanduck set dnssock [%d] nonblock fail !\n", dns_sock);
 		exit(0);
 	}
@@ -1610,6 +1776,8 @@ int wanduck_main(int argc, char *argv[]){
 	WAN_FB_UNIT = WAN_UNIT_SECOND;
 #endif
 
+	if(nvram_get_int("freeze_duck"))
+		_dprintf("\n<*>freeze the duck, %ds left!\n", nvram_get_int("freeze_duck"));	// don't check conn state during inner events period
 	if(sw_mode == SW_MODE_ROUTER && !strcmp(dualwan_mode, "lb")){
 		cross_state = DISCONN;
 		for(wan_unit = WAN_UNIT_FIRST; wan_unit < WAN_UNIT_MAX; ++wan_unit){
@@ -1727,7 +1895,9 @@ _dprintf("wanduck(%d) 1: conn_state %d, conn_state_old %d, conn_changed_state %d
 	 * and the redirect rules is already set before running wanduck,
 	 * handle_wan_line() must not be run at the first detect.
 	 */
-	if(cross_state == DISCONN){
+	if(nvram_get_int("freeze_duck"))
+		_dprintf("\n<**>freeze the duck, %ds left!\n", nvram_get_int("freeze_duck"));	// don't check conn state during inner events period
+	else if(cross_state == DISCONN){
 		csprintf("\n# Enable direct rule\n");
 		rule_setup = 1;
 	}
@@ -1774,10 +1944,14 @@ _dprintf("wanduck(%d) 2: conn_state %d, conn_state_old %d, conn_changed_state %d
 			else if(nat_redirect_enable_old == 1 && nat_redirect_enable == 0)	//don't redirect
 				start_nat_rules();
 		}
+
 		if(nat_redirect_enable_old != nat_redirect_enable)
 			nat_redirect_enable_old = nat_redirect_enable;
 		//_dprintf("rule_setup: %d, nat_state: %s\n", rule_setup, nvram_safe_get("nat_state"));
 
+		if(nvram_get_int("freeze_duck"))
+			_dprintf("\n<****>freeze the duck, %ds left!\n", nvram_get_int("freeze_duck"));	// don't check conn state during inner events period
+		else
 #ifdef RTCONFIG_DUALWAN
 		if(sw_mode == SW_MODE_ROUTER && !strcmp(dualwan_mode, "lb")){
 			cross_state = DISCONN;
@@ -1831,7 +2005,7 @@ _dprintf("wanduck(%d): detect the modem to be reset...\n", wan_unit);
 						continue;
 					}
 					else if(!link_wan[wan_unit] && current_state[wan_unit] != WAN_STATE_INITIALIZING){
-						csprintf("wanduck: stop_wan_if %d.\n", wan_unit);
+						csprintf("wanduck2: stop_wan_if %d.\n", wan_unit);
 						snprintf(cmd, 32, "stop_wan_if %d", wan_unit);
 						notify_rc(cmd);
 						continue;
@@ -1847,6 +2021,14 @@ _dprintf("wanduck(%d): detect the modem to be reset...\n", wan_unit);
 					set_disconn_count(wan_unit, S_IDLE);
 				}
 				else
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+				if(dualwan_unit__usbif(wan_unit) && nvram_get_int(nvram_sbstate[wan_unit]) == WAN_STOPPED_REASON_DATALIMIT){
+					csprintf("wanduck(%d)(lb): detect the data limit.\n", wan_unit);
+					conn_changed_state[wan_unit] = C2D;
+					set_disconn_count(wan_unit, max_disconn_count);
+				}
+				else
+#endif
 #endif
 				if(conn_state[wan_unit] != conn_state_old[wan_unit]){
 					if(conn_state[wan_unit] == PHY_RECONN){
@@ -1988,6 +2170,18 @@ _dprintf("wanduck(%d) 4: conn_state %d, conn_state_old %d, conn_changed_state %d
 				// The USB modem needs the PIN code to unlock.
 				set_disconn_count(current_wan_unit, S_IDLE);
 			}
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+			else if(dualwan_unit__usbif(current_wan_unit) && nvram_get_int(nvram_sbstate[current_wan_unit]) == WAN_STOPPED_REASON_DATALIMIT){
+				csprintf("wanduck(%d)(fo): detect the data limit.\n", current_wan_unit);
+				if(conn_state_old[current_wan_unit] == CONNED)
+					conn_changed_state[current_wan_unit] = C2D;
+				else
+					conn_changed_state[current_wan_unit] = DISCONN;
+
+				conn_state_old[current_wan_unit] = DISCONN;
+				set_disconn_count(current_wan_unit, max_disconn_count);
+			}
+#endif
 #endif
 			else if(conn_state[current_wan_unit] == CONNED){
 				if(conn_state_old[current_wan_unit] == DISCONN)
@@ -2119,6 +2313,18 @@ _dprintf("wanduck(%d) fail-back: conn_state %d, conn_state_old %d, conn_changed_
 				// The USB modem needs the PIN code to unlock.
 				set_disconn_count(current_wan_unit, S_IDLE);
 			}
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+			else if(dualwan_unit__usbif(current_wan_unit) && nvram_get_int(nvram_sbstate[current_wan_unit]) == WAN_STOPPED_REASON_DATALIMIT){
+				csprintf("wanduck(%d)(fb): detect the data limit.\n", current_wan_unit);
+				if(conn_state_old[current_wan_unit] == CONNED)
+					conn_changed_state[current_wan_unit] = C2D;
+				else
+					conn_changed_state[current_wan_unit] = DISCONN;
+
+				conn_state_old[current_wan_unit] = DISCONN;
+				set_disconn_count(current_wan_unit, max_disconn_count);
+			}
+#endif
 #endif
 			else if(conn_state[current_wan_unit] == CONNED){
 				if(conn_state_old[current_wan_unit] == DISCONN)
@@ -2205,13 +2411,10 @@ _dprintf("wanduck(%d) fail-back: conn_state %d, conn_state_old %d, conn_changed_
 
 			if(current_state[current_wan_unit] == WAN_STATE_DISABLED){
 				//record_wan_state_nvram(current_wan_unit, WAN_STATE_STOPPED, WAN_STOPPED_REASON_MANUAL, -1);
-#ifdef RTCONFIG_LANWAN_LED
-				led_control(LED_WAN, LED_OFF);
-#endif
+				update_wan_leds(current_wan_unit);
 
 				disconn_case[current_wan_unit] = CASE_OTHERS;
 				conn_state[current_wan_unit] = DISCONN;
-
 				set_disconn_count(current_wan_unit, S_IDLE);
 			}
 #ifdef RTCONFIG_USB_MODEM
@@ -2225,7 +2428,9 @@ _dprintf("wanduck(%d): detect the modem to be reset...\n", current_wan_unit);
 			}
 #endif
 			else{
+#if !defined(RTN14U)			  
 				conn_state[current_wan_unit] = if_wan_phyconnected(current_wan_unit);
+#endif				
 				if(conn_state[current_wan_unit] == CONNED){
 #ifdef RTCONFIG_USB_MODEM
 					if(!(dualwan_unit__usbif(current_wan_unit) && current_state[current_wan_unit] == WAN_STATE_INITIALIZING))
@@ -2260,6 +2465,18 @@ _dprintf("wanduck(%d): detect the modem to be reset...\n", current_wan_unit);
 				// The USB modem needs the PIN code to unlock.
 				set_disconn_count(current_wan_unit, S_IDLE);
 			}
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+			else if(dualwan_unit__usbif(current_wan_unit) && nvram_get_int(nvram_sbstate[current_wan_unit]) == WAN_STOPPED_REASON_DATALIMIT){
+				csprintf("wanduck(usb): detect the data limit.\n");
+				if(conn_state_old[current_wan_unit] == CONNED)
+					conn_changed_state[current_wan_unit] = C2D;
+				else
+					conn_changed_state[current_wan_unit] = DISCONN;
+
+				conn_state_old[current_wan_unit] = DISCONN;
+				set_disconn_count(current_wan_unit, max_disconn_count);
+			}
+#endif
 #endif
 			else if(conn_state[current_wan_unit] == CONNED){
 				if(conn_state_old[current_wan_unit] == DISCONN)
@@ -2354,10 +2571,19 @@ _dprintf("wanduck(%d) 6: conn_state %d, conn_state_old %d, conn_changed_state %d
 					&& nvram_match(nvram_auxstate[wan_unit], "0") )	//since not update current_state[wan_unit] in USB modem case
 					internet_led = 1;
 			}
-			if(internet_led)
+			if(internet_led) {
+#if defined(RTCONFIG_WPS_ALLLED_BTN)
+				if(nvram_match("AllLED", "1"))
+					led_control(LED_WAN, LED_ON);
+				else
+					led_control(LED_WAN, LED_OFF);
+#else
 				led_control(LED_WAN, LED_ON);
-			else
+#endif
+			}
+			else {
 				led_control(LED_WAN, LED_OFF);
+			}
 #endif
 			if(rule_setup && cross_state == CONNED && !isFirstUse){
 				csprintf("\n# DualWAN: Disable direct rule(isFirstUse)\n");
@@ -2417,14 +2643,16 @@ _dprintf("wanduck(%d) 6: conn_state %d, conn_state_old %d, conn_changed_state %d
 		else if(conn_changed_state[current_wan_unit] == C2D || (conn_changed_state[current_wan_unit] == CONNED && isFirstUse)){
 			if(rule_setup == 0){
 				if(conn_changed_state[current_wan_unit] == C2D){
-#ifdef RTCONFIG_DSL /* Paul add 2012/10/18 */
+#if defined(RTCONFIG_WPS_ALLLED_BTN)
 					led_control(LED_WAN, LED_OFF);
-#elif RTAC3200
-					led_control(LED_WAN, LED_ON);
-#elif RTAC87U
-					led_control(LED_WAN, LED_ON);
-					eval("et", "robowr", "0", "0x18", "0x01fe");
-					eval("et", "robowr", "0", "0x1a", "0x01fe");
+#elif defined(RTCONFIG_DSL)
+					led_control(LED_WAN, LED_OFF);
+#elif defined(RTAC87U) || defined(RTAC3200)
+					if(nvram_match("AllLED", "1")){
+						led_control(LED_WAN, LED_ON);
+						eval("et", "robowr", "0", "0x18", "0x01fe");
+						eval("et", "robowr", "0", "0x1a", "0x01fe");
+					}
 #endif
 					csprintf("\n# Enable direct rule(C2D)\n");
 				}
@@ -2434,7 +2662,7 @@ _dprintf("wanduck(%d) 6: conn_state %d, conn_state_old %d, conn_changed_state %d
 
 				handle_wan_line(current_wan_unit, rule_setup);
 
-				if(conn_changed_state[current_wan_unit] == C2D
+				if((conn_changed_state[current_wan_unit] == C2D)
 #ifdef RTCONFIG_DUALWAN
 						&& strcmp(dualwan_mode, "off")
 #endif
@@ -2447,7 +2675,8 @@ _dprintf("wanduck(%d) 6: conn_state %d, conn_state_old %d, conn_changed_state %d
 							switch_wan_line(other_wan_unit, 0);
 						}
 						else if(current_state[current_wan_unit] != WAN_STATE_INITIALIZING){
-							csprintf("wanduck: stop_wan_if %d.\n", current_wan_unit);
+							csprintf("wanduck3: stop_wan_if %d.\n", current_wan_unit);
+							clean_modem_state(2);
 							snprintf(cmd, 32, "stop_wan_if %d", current_wan_unit);
 							notify_rc(cmd);
 						}
@@ -2477,14 +2706,19 @@ _dprintf("wanduck(%d) 6: conn_state %d, conn_state_old %d, conn_changed_state %d
 		}
 		else if(conn_changed_state[current_wan_unit] == D2C || conn_changed_state[current_wan_unit] == CONNED){
 			if(rule_setup == 1 && !isFirstUse){
-#ifdef RTCONFIG_DSL /* Paul add 2013/7/30 */
+#if defined(RTCONFIG_WPS_ALLLED_BTN)
+				if(nvram_match("AllLED", "1"))
+					led_control(LED_WAN, LED_ON);
+				else
+					led_control(LED_WAN, LED_OFF);
+#elif defined(DSL_N55U) || defined(DSL_N55U_B)
 				led_control(LED_WAN, LED_ON);
-#elif RTAC3200
-				led_control(LED_WAN, LED_OFF);
-#elif RTAC87U
-				led_control(LED_WAN, LED_OFF);
-				eval("et", "robowr", "0", "0x18", "0x01ff");
-				eval("et", "robowr", "0", "0x1a", "0x01ff");
+#elif defined(RTAC87U) || defined(RTAC3200)
+				if(nvram_match("AllLED", "1")){
+					led_control(LED_WAN, LED_OFF);
+					eval("et", "robowr", "0", "0x18", "0x01ff");
+					eval("et", "robowr", "0", "0x1a", "0x01ff");
+				}
 #endif
 				csprintf("\n# Disable direct rule(D2C)\n");
 				rule_setup = 0;

@@ -5,7 +5,6 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<meta HTTP-EQUIV="refresh" CONTENT="10">
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
 <title><#Web_Title#> - <#menu_dsl_log#></title>
@@ -16,21 +15,112 @@
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
+<script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
 <script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-var sync_status = "<% nvram_get("dsltmp_adslsyncsts"); %>";
-var adsl_timestamp = "<% nvram_get("adsl_timestamp"); %>";
-var adsl_boottime = boottime - parseInt(adsl_timestamp);
+var $j = jQuery.noConflict();
+var adsl_timestamp = parseInt("<% nvram_get("adsl_timestamp"); %>");
+var adsl_boottime = boottime - adsl_timestamp;
+
+var log_lineState = "<% nvram_get("dsltmp_adslsyncsts"); %>";
+var log_Opmode;
+var log_AdslType;
+var log_SNRMarginDown;
+var log_SNRMarginUp;
+var log_AttenDown;
+var log_AttenUp;
+var log_WanListMode;
+var log_DataRateDown;
+var log_DataRateUp;
+var log_AttainDown;
+var log_AttainUp;
+var log_PowerDown;
+var log_PowerUp;
+var log_CRCDown;
+var log_CRCUp;
+
+function update_log(){
+	$j.ajax({
+		url: 'ajax_AdslStatus.asp',
+		dataType: 'script',
+		error: function(xhr){
+				setTimeout("update_log();", 1000);
+			},
+ 	
+		success: function(){
+				document.getElementById("div_lineState").innerHTML = log_lineState;
+				document.getElementById("up_modul").innerHTML = log_Opmode;
+				document.getElementById("up_annex").innerHTML = log_AdslType;
+				document.getElementById("up_SNR_down").innerHTML = log_SNRMarginDown;
+				document.getElementById("up_SNR_up").innerHTML = log_SNRMarginUp;
+				document.getElementById("up_Line_down").innerHTML = log_AttenDown;
+				document.getElementById("up_Line_up").innerHTML = log_AttenUp;
+				document.getElementById("up_wan_mode").innerHTML = log_WanListMode;
+				document.getElementById("up_rate_down").innerHTML = log_DataRateDown;
+				document.getElementById("up_rate_up").innerHTML = log_DataRateUp;
+				document.getElementById("up_maxrate_down").innerHTML = log_AttainDown;
+				document.getElementById("up_maxrate_up").innerHTML = log_AttainUp;
+				document.getElementById("up_power_down").innerHTML = log_PowerDown;
+				document.getElementById("up_power_up").innerHTML = log_PowerUp;
+				document.getElementById("up_CRC_down").innerHTML = log_CRCDown;
+				document.getElementById("up_CRC_up").innerHTML = log_CRCUp;				
+				check_adsl_state_up();				
+					
+				setTimeout("update_log();", 5000);
+			}	
+	});		
+}
 
 function initial(){
 	show_menu();
-	showadslbootTime();	
+	showadslbootTime();
+	check_adsl_state_up();	
+	setTimeout("update_log();", 5000);
+}
+
+function check_adsl_state_up(){
+		if(log_lineState == "up"){
+				
+				document.getElementById("up_modul").style.display = "";				
+				document.getElementById("up_annex").style.display = "";
+				document.getElementById("up_SNR_down").style.display = "";
+				document.getElementById("up_SNR_up").style.display = "";
+				document.getElementById("up_Line_down").style.display = "";
+				document.getElementById("up_Line_up").style.display = "";
+				document.getElementById("up_wan_mode").style.display = "";
+				document.getElementById("up_rate_down").style.display = "";
+				document.getElementById("up_rate_up").style.display = "";
+				document.getElementById("up_maxrate_down").style.display = "";
+				document.getElementById("up_maxrate_up").style.display = "";
+				document.getElementById("up_power_down").style.display = "";
+				document.getElementById("up_power_up").style.display = "";
+				document.getElementById("up_CRC_down").style.display = "";
+				document.getElementById("up_CRC_up").style.display = "";
+		
+		}
+		else{
+				
+				document.getElementById("up_modul").style.display = "none";
+				document.getElementById("up_annex").style.display = "none";
+				document.getElementById("up_SNR_down").style.display = "none";
+				document.getElementById("up_SNR_up").style.display = "none";
+				document.getElementById("up_Line_down").style.display = "none";
+				document.getElementById("up_Line_up").style.display = "none";
+				document.getElementById("up_wan_mode").style.display = "none";
+				document.getElementById("up_rate_down").style.display = "none";
+				document.getElementById("up_rate_up").style.display = "none";
+				document.getElementById("up_maxrate_down").style.display = "none";
+				document.getElementById("up_maxrate_up").style.display = "none";
+				document.getElementById("up_power_down").style.display = "none";
+				document.getElementById("up_power_up").style.display = "none";
+				document.getElementById("up_CRC_down").style.display = "none";
+				document.getElementById("up_CRC_up").style.display = "none";
+				
+		}
 }
 
 function showadslbootTime(){
-	if((adsl_timestamp != "") && (sync_status == "up"))
+	
+	if(adsl_timestamp != "" && (log_lineState == "up"))
 	{
 		Days = Math.floor(adsl_boottime / (60*60*24));
 		Hours = Math.floor((adsl_boottime / 3600) % 24);
@@ -50,6 +140,7 @@ function showadslbootTime(){
 		$("boot_hours").innerHTML = "0";
 		$("boot_minutes").innerHTML = "0";
 		$("boot_seconds").innerHTML = "0";
+		
 	}
 }
 
@@ -78,7 +169,7 @@ function showadslbootTime(){
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
 		<td width="17">&nbsp;</td>
-    	<td valign="top" width="202">
+		<td valign="top" width="202">
 			<div id="mainMenu"></div>
 			<div id="subMenu"></div>
 		</td>
@@ -113,104 +204,104 @@ function showadslbootTime(){
 							<tr>
 								<th width="20%"><#adsl_link_sts_itemname#></th>
 								<td>
-									<% nvram_get("dsltmp_adslsyncsts"); %>
+									<div id="div_lineState"><% nvram_get("dsltmp_adslsyncsts"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">DSL <#General_x_SystemUpTime_itemname#></th>
 								<td>
-									<span id="boot_days"></span> <#Day#> <span id="boot_hours"></span> <#Hour#> <span id="boot_minutes"></span> <#Minute#> <span id="boot_seconds"></span> <#Second#>
+									<div id="up_uptime"><span id="boot_days"></span> <#Day#> <span id="boot_hours"></span> <#Hour#> <span id="boot_minutes"></span> <#Minute#> <span id="boot_seconds"></span> <#Second#></div>
 								</td>
 							</tr>
 							
 							<tr>
 								<th width="20%"><#dslsetting_disc1#></th>
 								<td>
-									<% nvram_get("dsllog_opmode"); %>
+									<div id="up_modul"><% nvram_get("dsllog_opmode"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%"><#dslsetting_disc2#></th>
 								<td>
-									<% nvram_get("dsllog_adsltype"); %>
+									<div id="up_annex"><% nvram_get("dsllog_adsltype"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">SNR Down</th>
 								<td>
-									<% nvram_get("dsllog_snrmargindown"); %>
+									<div id="up_SNR_down"><% nvram_get("dsllog_snrmargindown"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">SNR Up</th>
 								<td>
-									<% nvram_get("dsllog_snrmarginup"); %>
+									<div id="up_SNR_up"><% nvram_get("dsllog_snrmarginup"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">Line Attenuation Down</th>
 								<td>
-									<% nvram_get("dsllog_attendown"); %>
+									<div id="up_Line_down"><% nvram_get("dsllog_attendown"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">Line Attenuation Up</th>
 								<td>
-									<% nvram_get("dsllog_attenup"); %>
+									<div id="up_Line_up"><% nvram_get("dsllog_attenup"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">Path Mode</th>
 								<td>
-									<% nvram_get("dsllog_wanlistmode"); %>
+									<div id="up_wan_mode"><% nvram_get("dsllog_wanlistmode"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">Data Rate Down</th>
 								<td>
-									<% nvram_get("dsllog_dataratedown"); %>
+									<div id="up_rate_down"><% nvram_get("dsllog_dataratedown"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">Data Rate Up</th>
 								<td>
-									<% nvram_get("dsllog_datarateup"); %>
+									<div id="up_rate_up"><% nvram_get("dsllog_datarateup"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">MAX Rate Down</th>
 								<td>
-									<% nvram_get("dsllog_attaindown"); %>
+									<div id="up_maxrate_down"><% nvram_get("dsllog_attaindown"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">MAX Rate Up</th>
 								<td>
-									<% nvram_get("dsllog_attainup"); %>
+									<div id="up_maxrate_up"><% nvram_get("dsllog_attainup"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">POWER Down</th>
 								<td>
-									<% nvram_get("dsllog_powerdown"); %>
+									<div id="up_power_down"><% nvram_get("dsllog_powerdown"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">POWER Up</th>
 								<td>
-									<% nvram_get("dsllog_powerup"); %>
+									<div id="up_power_up"><% nvram_get("dsllog_powerup"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">CRC Down</th>
 								<td>
-									<% nvram_get("dsllog_crcdown"); %>
+									<div id="up_CRC_down"><% nvram_get("dsllog_crcdown"); %></div>
 								</td>
 							</tr>
 							<tr>
 								<th width="20%">CRC Up</th>
 								<td>
-									<% nvram_get("dsllog_crcup"); %>
+									<div id="up_CRC_up"><% nvram_get("dsllog_crcup"); %></div>
 								</td>
 							</tr>
 
@@ -222,11 +313,11 @@ function showadslbootTime(){
 				<!--td width="20%" align="center">
 						<input type="submit" onClick="onSubmitCtrl(this, ' Save ')" value="<#CTL_onlysave#>" class="button_gen">
 				</td-->
-				<td width="40%" align="center" >
+				<td width="40%" align="center">
 					<form method="post" name="form3" action="apply.cgi">
 						<input type="hidden" name="current_page" value="Main_AdslStatus_Content.asp">
 						<input type="hidden" name="action_mode" value=" Refresh ">
-						<input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="button_gen">						
+						<input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="button_gen">
 					</form>
 				</td>
 			</tr>

@@ -26,4 +26,22 @@ static inline int Get_USB3_Port_Folder(const char *port_x)	{ return 0; }
 static inline int Get_USB3_Port_DataRate(const char *port_x)	{ return 0; }
 #endif
 
+#ifdef RTCONFIG_QCA
+extern int setAllLedOn2(void);
+#else
+static inline int setAllLedOn2(void)
+{
+	puts("0");
+	return 0;
+}
+#endif
+
+#if defined(RTCONFIG_TCODE)
+extern int getTerritoryCode(void);
+extern int setTerritoryCode(const char *tcode);
+#else
+static inline int getTerritoryCode(void) { return -1; }
+static inline int setTerritoryCode(const char *tcode) { return -1; }
+#endif
+
 #endif

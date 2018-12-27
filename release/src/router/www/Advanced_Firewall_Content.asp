@@ -17,10 +17,6 @@
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
 <script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 var filter_lwlist_array = '<% nvram_get("filter_lwlist"); %>';
 
 function initial(){
@@ -118,7 +114,7 @@ function validForm(){
 		 !document.form.filter_lw_date_x_Tue.checked && !document.form.filter_lw_date_x_Wed.checked &&
 		 !document.form.filter_lw_date_x_Thu.checked && !document.form.filter_lw_date_x_Fri.checked &&
 		 !document.form.filter_lw_date_x_Sat.checked && !document.form.fw_lw_enable_x[1].checked){
-		alert("Please select at least one day or disable this feature.");
+		alert(Untranslated.filter_lw_date_valid);
 		document.form.filter_lw_date_x_Sun.focus();
 		return false;
 	}

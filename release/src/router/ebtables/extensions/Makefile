@@ -5,6 +5,9 @@
 #EXT_TABLES+=filter nat broute
 
 EXT_FUNC+=ip standard redirect mark
+ifeq ($(USE_ARPNAT), 1)
+EXT_FUNC+=nat
+endif
 ifeq ($(DO_IPV6), 1)
 #EXT_FUNC+=ip6
 endif

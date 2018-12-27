@@ -71,10 +71,6 @@
 <script>
 
 var $j = jQuery.noConflict();
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 var webs_state_update = '<% nvram_get("webs_state_update"); %>';
 var webs_state_upgrade = '<% nvram_get("webs_state_upgrade"); %>';
 var webs_state_error = '<% nvram_get("webs_state_error"); %>';
@@ -96,13 +92,16 @@ function initial(){
 	}
 
 	if(!live_update_support || !HTTPS_support){
-			document.getElementById("update").style.display = "none";
-			helplink = get_helplink();
-			document.getElementById("linkpage").href = helplink;
+		document.getElementById("update").style.display = "none";
+		document.getElementById("linkpage").style.display = "";
+		helplink = get_helplink();
+		document.getElementById("linkpage").href = helplink;
 	} 
-	else if('<% nvram_get("webs_state_update"); %>' != ''){
-			document.getElementById("linkpage_div").style.display = "none";
-			detect_firmware("initial");	
+	else{
+		document.getElementById("update").style.display = "";
+		document.getElementById("linkpage_div").style.display = "none";
+		if('<% nvram_get("webs_state_update"); %>' != '')
+			detect_firmware("initial");
 	}
 }
 
@@ -149,13 +148,13 @@ function detect_firmware(flag){
 		dataType: 'script',
 
 		error: function(xhr){
-					dead++;
-					if(dead < 30)
+			dead++;
+			if(dead < 30)
 				setTimeout("detect_firmware();", 1000);
-					else{
-  					document.getElementById('update_scan').style.display="none";
-  					document.getElementById('update_states').innerHTML="<#connect_failed#>";
-					}
+			else{
+  				document.getElementById('update_scan').style.display="none";
+  				document.getElementById('update_states').innerHTML="<#connect_failed#>";
+			}
 		},
 
 		success: function(){
@@ -165,14 +164,16 @@ function detect_firmware(flag){
   			else{	// got wlan_update.zip
 				if(webs_state_error==1){
 					document.getElementById('update_scan').style.display="none";
-					document.getElementById('update_states').innerHTML="<#connect_failed#>";
-					return;
+					if(flag == "initial")
+						document.getElementById('update_states').style.display="none";
+					else
+						document.getElementById('update_states').innerHTML="<#connect_failed#>";
 				}
 				else{
 					if(isNewFW(webs_state_info)){
 						document.getElementById('update_scan').style.display="none";
 						document.getElementById('update_states').style.display="none";
-						if(confirm("<#exist_new#>")){
+						if(confirm("<#exist_new#>\n\nDo not power off <#Web_Title2#> while upgrade in progress.")){
 							document.start_update.action_mode.value="apply";
 							document.start_update.action_script.value="start_webs_upgrade";
 							document.start_update.submit();
@@ -180,13 +181,13 @@ function detect_firmware(flag){
 						}      								
 					}
 					else{
+						document.getElementById('update_scan').style.display="none";
 						if(flag == "initial")
 							document.getElementById('update_states').style.display="none";
 						else{
 							document.getElementById('update_states').style.display="";
 							document.getElementById('update_states').innerHTML="<#is_latest#>";
 						}
-						document.getElementById('update_scan').style.display="none";
 					}
 				}
 			}
@@ -323,7 +324,7 @@ function submitForm(){
 			<span id="proceeding_img_text"></span>
 			<div id="proceeding_img"></div>
 		</div>
-		<div id="loading_block2" style="margin:5px auto; width:85%;"><#FIRM_ok_desc#></div>
+		<div id="loading_block2" style="margin:5px auto; width:85%;"><#FIRM_ok_desc#><br>Do not power off <#Web_Title2#> while upgrade in progress.</div>
 		<div id="loading_block3" style="margin:5px auto;width:85%; font-size:12pt;"></div>
 		</td>
 	</tr>
@@ -424,8 +425,8 @@ function submitForm(){
 			<tr>
 				<th><#FW_item2#></th>
 				<td><input type="text" name="firmver_table" class="input_20_table" value="<% nvram_get("firmver"); %>.<% nvram_get("buildno"); %>_<% nvram_get("extendno"); %>" readonly="1">&nbsp&nbsp&nbsp<!--/td-->
-						<input type="button" id="update" name="update" class="button_gen" onclick="detect_update();" value="<#liveupdate#>" />
-						<div id="linkpage_div" class="button_helplink" style="margin-left:200px;margin-top:-25px;"><a id="linkpage" target="_blank"><div style="padding-top:5px;"><#liveupdate#></div></a></div>
+						<input type="button" id="update" name="update" class="button_gen" style="display:none;" onclick="detect_update();" value="<#liveupdate#>" />
+						<div id="linkpage_div" class="button_helplink" style="margin-left:200px;margin-top:-25px;display:none;"><a id="linkpage" target="_blank"><div style="padding-top:5px;"><#liveupdate#></div></a></div>
 						<div id="check_states">
 								<span id="update_states"></span>
 								<img id="update_scan" style="display:none;" src="images/InternetScan.gif" />

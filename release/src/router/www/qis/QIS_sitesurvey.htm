@@ -19,17 +19,19 @@ var nvramVars = new Array();
 var wlc_state = '<% nvram_get("wlc_state"); %>';
 var wlc_sbstate = '<% nvram_get("wlc_sbstate"); %>';
 var wlc_scan_state = '<% nvram_get("wlc_scan_state"); %>';
-var wlc_state_auth = 0;
+var based_modelid = '<% nvram_get("productid"); %>';
+var wlc_state_ajax = 0;
+var wlc_sbstate_ajax = 0;
 var profile = function(_profile){
 	if(_profile == null)
 		_profile = ["", "", "", "", "", "", "", "", ""];
-
-	this.band = _profile[0] == "2G" ? "2.4GHz": "5GHz",
+	var band_s = parseInt(_profile[2]);
+	this.band = based_modelid == "RT-AC3200" ? ((band_s >= 1 && band_s <= 14) ? "2.4GHz": ((band_s >= 36 && band_s <= 48) ? "5GHz-1":((band_s >= 149 && band_s <= 165) ? "5GHz-2":"undefine"))):_profile[0] == "2G" ? "2.4GHz": "5GHz",
 	this.ssid = decodeURIComponent(_profile[1]),
 	this.channel = _profile[2],
 	this.auth = _profile[3],
 	this.alg = _profile[4],
-	this.signal = Math.ceil(_profile[5]/20),
+	this.signal = (Math.ceil(_profile[5]/25) == 0) ? 1 : Math.ceil(_profile[5]/25),
 	this.macaddr = _profile[6],
 	this.wlmode = _profile[7],
 	this.state = _profile[8],
@@ -56,7 +58,19 @@ var localAP = function(ssid, key){
 }
 
 var wlcKey = function(obj){
-	this.band = (obj.band.search("2") != -1) ? 0 : 1;
+
+	if(based_modelid == "RT-AC3200"){
+		if(obj.band == "2.4GHz" || obj.band == "0")
+			this.band = "0";
+		else if (obj.band == "5GHz-1" || obj.band == "1")
+			this.band = "1";
+		else if(obj.band == "5GHz-2" || obj.band == "2")
+			this.band = "2";
+		else
+			this.band = "";
+	}else
+		this.band = (obj.band.search("2") != -1) ? 0 : 1;
+
 	this.ssid = obj.ssid;
 	this.crypt = "";
 	this.wpa_psk = "";
@@ -94,29 +108,20 @@ var wlcKey = function(obj){
 
 var saveToForm = {
 	"wlClient" : function(obj){
+		parent.document.QKform.wlc_band.value = obj.band;
+		parent.document.QKform.wlc_ssid.value = obj.ssid;
+		parent.document.QKform.wlc_wep.value = obj.wep;
+		parent.document.QKform.wlc_key.value = obj.key;
+		parent.document.QKform.wlc_wep_key.value = obj.wep_key;
+		parent.document.QKform.wlc_auth_mode.value = obj.auth_mode;
+		parent.document.QKform.wlc_crypto.value = obj.crypt;
+		parent.document.QKform.wlc_wpa_psk.value = obj.wpa_psk;
+		parent.document.QKform.wlc_nbw_cap.value = 2;
 		if(parent.isRepeater){
 			parent.document.QKform.sw_mode.value = 2;
-			parent.document.QKform.wlc_band.value = obj.band;
-			parent.document.QKform.wlc_ssid.value = obj.ssid;
-			parent.document.QKform.wlc_wep.value = obj.wep;
-			parent.document.QKform.wlc_key.value = obj.key;
-			parent.document.QKform.wlc_wep_key.value = obj.wep_key;
-			parent.document.QKform.wlc_auth_mode.value = obj.auth_mode;
-			parent.document.QKform.wlc_crypto.value = obj.crypt;
-			parent.document.QKform.wlc_wpa_psk.value = obj.wpa_psk;
-			parent.document.QKform.wlc_nbw_cap.value = 2;
 		}
-		else{
-			with(document.form){
-				wlc_band.value = obj.band;
-				wlc_ssid.value = obj.ssid;
-				wlc_wep.value = obj.wep;
-				wlc_key.value = obj.key;
-				wlc_wep_key.value = obj.wep_key;
-				wlc_auth_mode.value = obj.auth_mode;
-				wlc_crypto.value = obj.crypt;
-				wlc_wpa_psk.value = obj.wpa_psk;
-			}
+		else{		
+			parent.document.QKform.sw_mode.value = 4;
 		}
 	},
 
@@ -298,12 +303,12 @@ var btnAction = {
 			}else{
 				parent.document.QKform.sw_mode.value = 4;
 				sw_mode_submit = 4;
-				btnAction.submitForm();
+				location.href = '/qis/QIS_lanip.htm';
 			}
 		}
 		else{
 			parent.document.QKform.sw_mode.value = 2;
-			location.href = '/qis/QIS_wireless.htm';
+			location.href = '/qis/QIS_lanip.htm';
 		}
 	},
 
@@ -338,6 +343,9 @@ var btnAction = {
 		if(parent.document.QKform.http_passwd.value != ""){
 			document.form.http_passwd.value = parent.document.QKform.http_passwd.value;
 			document.form.http_passwd.disabled = false;
+		}else
+		{
+			document.form.http_passwd.disabled = true;
 		}
 		document.form.flag.value = "wlcconnect";
 		document.form.action_mode.value = "apply";
@@ -585,7 +593,7 @@ var bindEvent = {
 			var connectedHint = '<td style="border:0px;"><span style="color:#FFCC00;"><#APSurvey_msg_connected#></span></td>';
 			var unEncrypt = '<td style="border:0px;"><span style="color:#FFCC00;"><#APSurvey_msg_connect_open_wlan#></span></td>';
 			var unSupport = '<td style="border:0px;"><span style="color:#FFCC00;">Non supported Authentication Method.</span></td>';
-			var networkKey = '<td style="border:0px;"><span style="color:#FFFFFF;"><#Network_key#>:</span><input type="password" autocapitalization="off" id="thekey_tmp" class="input_25_table" style="padding-left:3px;margin-left:5px;width:200px;"><input type="checkbox" onclick="pass_checked(this, document.getElementById(\'thekey_tmp\'));"><span style="color:#FFF"><#QIS_show_pass#></span></td>';
+			var networkKey = '<td style="border:0px;"><span style="color:#FFFFFF;"><#Network_key#>:</span><input type="password" id="thekey_tmp" class="input_25_table" style="padding-left:3px;margin-left:5px;width:200px;" autocapitalization="off" autocomplete="off"><input type="checkbox" onclick="pass_checked(this, document.getElementById(\'thekey_tmp\'));"><span style="color:#FFF"><#QIS_show_pass#></span></td>';
 			var connectBtn = '<td style="border:0px;text-align:right"><input style="margin-left:10px;" id="connect_btn" type="button" value="<#CTL_Add_enrollee#>" onclick="btnAction.saveWlcVar('+ bindEvent.idx +', false)" class="button_gen"></td></tr>';
 			var wep_auth = "<tr><td style=\"border:0px;\"><span style=\"margin-left:5px;color:#FFFFFF;\"><#WLANConfig11b_AuthenticationMethod_itemname#></span><select id=\"thekey_wep_method_tmp\" class=\"input_option\" style=\"margin-left:5px;\"><option value=\"open\" selected>open</option><option value=\"shared\">shared</option></select>";
 			var wepkeyIndex = '<span style="margin-left:5px;color:#FFFFFF;"><#WLANConfig11b_WEPDefaultKey_itemname#></span><select id="thekey_index_tmp" class="input_option" style="margin-left:5px;"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td></tr>';
@@ -740,6 +748,76 @@ function update_site_info(){
 	});	
 }
 
+function updateRepeaterState() {
+	$.ajax({
+		url: '/apscan.asp',
+		dataType: 'script',
+		error: function(){
+			updateRepeaterState();
+		},
+		success: function(){
+			wlc_state_ajax = wlc_state;
+			wlc_sbstate_ajax = wlc_sbstate;
+			/*	wlc_state = 2, wlc_state_auth = 1, connected
+				wlc_state = 3, wlc_state_auth = 2, auth failure
+				wlc_state = 3, wlc_state_auth = 1, p-ap does not exist
+			*/
+			var htmlCode = "";
+			htmlCode +='<table width="670px" border="0" cellspacing="0" cellpadding="4" align="center" class="QIS_survey" id="aplist_table">';
+			htmlCode += '<tbody><tr>';
+			htmlCode += '<td style="text-align:center;font-size:12px; border-collapse: collapse;border:1;height:45px;" colspan="5">';
+			htmlCode += '<span style="color:#FFCC00;line-height:25px;">';
+			if(wlc_state_ajax == 2 && wlc_sbstate_ajax == 1){ //connected
+				htmlCode += '<#APSurvey_action_ConnectingStatus24#>';
+				setTimeout('parent.location.href = "/index.asp";', 2000);
+			}
+			else if(wlc_state_ajax == 3 && wlc_sbstate_ajax == 2){  //auth failure
+				htmlCode += '<span style="font-weight:bolder;">' + parent.document.getElementById("stassid").innerHTML + '</span> <#APSurvey_action_ConnectingStatus1#>';
+			}
+			else if(wlc_state_ajax == 3 && wlc_sbstate_ajax == 1){ // p-ap does not exist
+				htmlCode += "<#APSurvey_action_ConnectingStatus0#>";
+			}
+			htmlCode += '</span></td></tr></tbody></table>';
+			document.getElementById("wlscan_table").innerHTML = htmlCode;
+		}
+	});	
+}
+
+function updateMediaBridgeState() {
+	$.ajax({
+		url: '/ajax_wlc_state.asp',
+		dataType: 'script',
+		error: function(){
+			updateMediaBridgeState();
+		},
+		success: function(){
+			wlc_state_ajax = wlc_state;
+			wlc_sbstate_ajax = wlc_state_auth;
+			/*	wlc_state = 1, wlc_state_auth = 0, connected
+				wlc_state = 2, wlc_state_auth = 1, auth failure
+				wlc_state = 0, wlc_state_auth = 0, p-ap does not exist
+			*/
+			var htmlCode = "";
+			htmlCode +='<table width="670px" border="0" cellspacing="0" cellpadding="4" align="center" class="QIS_survey" id="aplist_table">';
+			htmlCode += '<tbody><tr>';
+			htmlCode += '<td style="text-align:center;font-size:12px; border-collapse: collapse;border:1;height:45px;" colspan="5">';
+			htmlCode += '<span style="color:#FFCC00;line-height:25px;">';
+			if(wlc_state_ajax == 1 && wlc_sbstate_ajax == 0){ //connected
+				htmlCode += '<#APSurvey_action_ConnectingStatus24#>';
+				setTimeout('parent.location.href = "/index.asp";', 2000);
+			}
+			else if(wlc_state_ajax == 2 && wlc_sbstate_ajax == 1){  //auth failure
+				htmlCode += '<span style="font-weight:bolder;">' + parent.document.getElementById("stassid").innerHTML + '</span> <#APSurvey_action_ConnectingStatus1#>';
+			}
+			else if(wlc_state_ajax == 0 && wlc_sbstate_ajax == 0){ // p-ap does not exist
+				htmlCode += "<#APSurvey_action_ConnectingStatus0#>";
+			}
+			htmlCode += '</span></td></tr></tbody></table>';
+			document.getElementById("wlscan_table").innerHTML = htmlCode;
+		}
+	});	
+}
+
 function showSiteTable(){
 	var htmlCode = "";
 	var overlib_str = "";
@@ -752,29 +830,13 @@ function showSiteTable(){
 
 	htmlCode +='<table width="670px" border="0" cellspacing="0" cellpadding="4" align="center" class="QIS_survey" id="aplist_table">';
 	if(btnAction.curState == "showResult"){ // handle connecting result
-		htmlCode += '<tr><td style="text-align:center;font-size:12px; border-collapse: collapse;border:1;height:45px;" colspan="4"><span style="color:#FFCC00;line-height:25px;">';
-		
 		if(parent.isRepeater){
-			if(wlc_state == 3 && wlc_sbstate == 2){  //auth failure
-				htmlCode += '<span style="font-weight:bolder;">' + parent.document.getElementById("stassid").innerHTML + '</span> <#APSurvey_action_ConnectingStatus1#>';
-			}
-			else{ // p-ap does not exist
-				htmlCode += "<#APSurvey_action_ConnectingStatus0#>";
-			}
+			updateRepeaterState();
 		}
 		else{
-			if(wlc_state == 1 && wlc_state_auth == 0){ //connected
-				htmlCode += '<#APSurvey_action_ConnectingStatus24#>';
-				setTimeout('parent.location.href = "/index.asp";', 2000);
-			}
-			else if(wlc_state == 2 && wlc_state_auth == 1){  //auth failure
-				htmlCode += '<span style="font-weight:bolder;">' + parent.document.getElementById("stassid").innerHTML + '</span> <#APSurvey_action_ConnectingStatus1#>';
-			}
-			else{ // p-ap does not exist
-				htmlCode += "<#APSurvey_action_ConnectingStatus0#>";
-			}
-		}
-		htmlCode += '</span></td></tr>';
+			updateMediaBridgeState();
+		}	
+		
 	}
 	else if(wlc_scan_state != 3){ // scanning
 		htmlCode +='<tbody><tr><td style="text-align:center;font-size:12px; border-collapse: collapse;border:1;" colspan="4"><span style="color:#FFCC00;line-height:25px;"><#APSurvey_action_searching_AP#></span>&nbsp;<img style="margin-top:10px;" src="/images/InternetScan.gif"></td></tr></tbody>';
@@ -830,7 +892,7 @@ function showSiteTable(){
 	}
 	htmlCode +='</table>';
 
-	if(htmlCode != document.getElementById("wlscan_table").innerHTML){
+	if(htmlCode != document.getElementById("wlscan_table").innerHTML && btnAction.curState != "showResult"){
 		document.getElementById("wlscan_table").innerHTML = htmlCode;
 	}
 
@@ -852,7 +914,7 @@ function QKInternet_load_body(){
 	parent.set_step("t2");
 	viewHandler.displayObj(["PAPSurvey", "btnManual", "btnRecan"]);
 
-	if(viewHandler.curState == "showResult"){
+	if(btnAction.curState == "showResult"){
 		showSiteTable();
 	}
 	else{
@@ -862,6 +924,10 @@ function QKInternet_load_body(){
 
 	if(!parent.band5g_support)
 		document.getElementById('wl_unit_field').style.display = "none";
+
+	if(based_modelid == "RT-AC3200"){
+		parent.regen_band(document.form.wlc_band_manual);
+	}
 }
 
 </script>
@@ -1028,7 +1094,7 @@ function QKInternet_load_body(){
 	  	<tr>
 				<th><#Network_key#></th>
 				<td>
-					<input type="password" id="thekey_manual" name="thekey_manual" class="input_32_table" style="height:25px;">
+					<input type="password" id="thekey_manual" name="thekey_manual" class="input_32_table" style="height:25px;" autocapitalization="off" autocomplete="off">
 				</td>
 	  	</tr>
 
@@ -1057,7 +1123,7 @@ function QKInternet_load_body(){
 			<tr>
 				<th width="25%"><#Network_key#></th>
 				<td>
-					<input id="wl_wpa_psk" type="password" autocapitalization="off" value="" style="height:25px;" class="input_32_table" maxlength="65">
+					<input id="wl_wpa_psk" type="password" value="" style="height:25px;" class="input_32_table" maxlength="65" autocapitalization="off" autocomplete="off">
 				</td>
 	  	</tr>
 		<tr>

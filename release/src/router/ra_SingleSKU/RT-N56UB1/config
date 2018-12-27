@@ -1,0 +1,11 @@
+
+SKU_2G_FCC  = 
+SKU_5G_FCC  = 
+SKU_2G_CE   = "RT_N56UB1_CE_Draft_2G_SKU_20150213.dat"
+SKU_5G_CE   = "RT_N56UB1_CE_Draft_5G_SKU_20150213.dat"
+SKU_2G_SG   = 
+SKU_5G_SG   = 
+SKU_2G_AU   = 
+SKU_5G_AU   = 
+SKU_2G_NCC  = 
+SKU_5G_NCC  = 

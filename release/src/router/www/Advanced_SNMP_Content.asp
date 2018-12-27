@@ -15,11 +15,7 @@
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
-<script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-snmpd_enable = '<% nvram_get("snmpd_enable"); %>';
+<script>snmpd_enable = '<% nvram_get("snmpd_enable"); %>';
 //v3_auth_type = '<% nvram_get("v3_auth_type"); %>';
 //v3_priv_type = '<% nvram_get("v3_priv_type"); %>';
 
@@ -201,7 +197,7 @@ function change_v3_priv_type(type){
 
         <tr>
           <th>SNMPv3 Authentication Password</th>
-          <td><input type="text" maxlength="64" class="input_32_table" name="v3_auth_passwd" value="<% nvram_get("v3_auth_passwd"); %>" ></td>
+          <td><input type="text" maxlength="64" class="input_32_table" name="v3_auth_passwd" value="<% nvram_get("v3_auth_passwd"); %>" autocapitalization="off" autocomplete="off"></td>
         </tr>
 
         <tr>
@@ -217,7 +213,7 @@ function change_v3_priv_type(type){
 
         <tr>
           <th>SNMPv3 Privacy Password</th>
-          <td><input type="text" maxlength="64" class="input_32_table" name="v3_priv_passwd" value="<% nvram_get("v3_priv_passwd"); %>" ></td>
+          <td><input type="text" maxlength="64" class="input_32_table" name="v3_priv_passwd" value="<% nvram_get("v3_priv_passwd"); %>" autocapitalization="off" autocomplete="off"></td>
         </tr>
 
         </table>

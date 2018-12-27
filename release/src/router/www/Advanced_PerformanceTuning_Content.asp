@@ -33,11 +33,7 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
 <script type="text/javascript" src="/jquery.js"></script>
-<script type='text/javascript'>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-var fanctrl_info = [<% get_fanctrl_info(); %>];
+<script type='text/javascript'>var fanctrl_info = [<% get_fanctrl_info(); %>];
 var cpuTemp = [<% get_cpu_temperature(); %>];
 if(typeof cpuTemp[0] != "undefined")
 	fanctrl_info = ["0", cpuTemp[0], cpuTemp[0], "0"];
@@ -88,7 +84,7 @@ function initial(){
 		inputHideCtrl(document.form.wl1_TxPower, 0);
 	}
 
-	if(based_modelid == "RT-AC68U" || based_modelid == "TM-AC1900" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U"){
+	if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U"){
 		document.form.selLED.onchange = function(){
 			document.form.btn_led_mode.value = 0;
 			document.form.selCLK.checked = false;

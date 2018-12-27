@@ -168,6 +168,7 @@ function add_pvc() {
 		document.form.dslx_gateway.value="0.0.0.0";
 		document.form.dslx_pppoe_username.value="";
 		document.form.dslx_pppoe_passwd.value="";
+		document.form.dslx_pppoe_auth.value="";
 		document.form.dslx_pppoe_idletime.value="0";
 		document.form.dslx_pppoe_mtu.value="1492";
 		document.form.dslx_pppoe_service.value="";
@@ -674,6 +675,7 @@ function disable_all_ctrl() {
 	$("t2BC").style.display = "none";
 	$("vpn_server").style.display = "none";
 	$("btn_apply").style.display = "none";
+	$("dot1q_setting").style.display = "none";
 }
 
 function enable_all_ctrl() {
@@ -687,6 +689,9 @@ function enable_all_ctrl() {
 	$("t2BC").style.display = "";
 	$("vpn_server").style.display = "";
 	$("btn_apply").style.display = "";
+	if(productid == "DSL-AC68U" || productid == "DSL-AC68R") {
+		$("dot1q_setting").style.display = "";
+	}
 }
 
 function change_dsl_type(dsl_type){
@@ -699,6 +704,7 @@ function change_dsl_type(dsl_type){
 
 		inputCtrl(document.form.dslx_pppoe_username, 1);
 		inputCtrl(document.form.dslx_pppoe_passwd, 1);
+		inputCtrl(document.form.dslx_pppoe_auth, 1);
 		inputCtrl(document.form.dslx_pppoe_idletime, 1);
 		inputCtrl(document.form.dslx_pppoe_mtu, 1);
 //		inputCtrl(document.form.dslx_pppoe_mru, 1);
@@ -716,6 +722,7 @@ function change_dsl_type(dsl_type){
 
 		inputCtrl(document.form.dslx_pppoe_username, 0);
 		inputCtrl(document.form.dslx_pppoe_passwd, 0);
+		inputCtrl(document.form.dslx_pppoe_auth, 0);
 		inputCtrl(document.form.dslx_pppoe_idletime, 0);
 		inputCtrl(document.form.dslx_pppoe_mtu, 0);
 //		inputCtrl(document.form.dslx_pppoe_mru, 0);
@@ -732,6 +739,7 @@ function change_dsl_type(dsl_type){
 
 		inputCtrl(document.form.dslx_pppoe_username, 0);
 		inputCtrl(document.form.dslx_pppoe_passwd, 0);
+		inputCtrl(document.form.dslx_pppoe_auth, 0);
 		inputCtrl(document.form.dslx_pppoe_idletime, 0);
 		inputCtrl(document.form.dslx_pppoe_mtu, 0);
 //		inputCtrl(document.form.dslx_pppoe_mru, 0);
@@ -748,6 +756,7 @@ function change_dsl_type(dsl_type){
 		inputCtrl(document.form.dslx_dnsenable[1], 0);
 		inputCtrl(document.form.dslx_pppoe_username, 0);
 		inputCtrl(document.form.dslx_pppoe_passwd, 0);
+		inputCtrl(document.form.dslx_pppoe_auth, 0);
 		inputCtrl(document.form.dslx_pppoe_idletime, 0);
 		inputCtrl(document.form.dslx_pppoe_mtu, 0);
 //		inputCtrl(document.form.dslx_pppoe_mru, 0);
@@ -792,6 +801,12 @@ function fixed_change_dsl_type(dsl_type){
 		showhide("IPsetting",1);
 		showhide("DNSsetting",1);
 		showhide("vpn_server",1);
+		if(productid == "DSL-AC68U" || productid == "DSL-AC68R") {
+			if(dsl_type == "pppoe")
+				showhide("dot1q_setting",1);
+			else
+				showhide("dot1q_setting",0);
+		}
 	}
 	else if(dsl_type == "ipoa"){
 		document.form.dslx_dnsenable[0].checked = 0;
@@ -808,6 +823,9 @@ function fixed_change_dsl_type(dsl_type){
 		showhide("IPsetting",1);
 		showhide("DNSsetting",1);
 		showhide("vpn_server",1);
+		if(productid == "DSL-AC68U" || productid == "DSL-AC68R") {
+			showhide("dot1q_setting",0);
+		}
 	}
 	else if(dsl_type == "mer"){
 		inputCtrl(document.form.dslx_DHCPClient[0], 1);
@@ -823,6 +841,9 @@ function fixed_change_dsl_type(dsl_type){
 		showhide("IPsetting",1);
 		showhide("DNSsetting",1);
 		showhide("vpn_server",1);
+		if(productid == "DSL-AC68U" || productid == "DSL-AC68R") {
+			showhide("dot1q_setting",1);
+		}
 	}
 	else if(dsl_type == "bridge"){
 		document.form.dslx_dnsenable[0].checked = 1;
@@ -842,6 +863,9 @@ function fixed_change_dsl_type(dsl_type){
 		showhide("IPsetting",0);
 		showhide("DNSsetting",0);
 		showhide("vpn_server",0);
+		if(productid == "DSL-AC68U" || productid == "DSL-AC68R") {
+			showhide("dot1q_setting",1);
+		}
 	}
 	else {
 		alert("error");
@@ -1238,6 +1262,33 @@ function pass_checked(obj){
 										</tr>
 									</table>
 
+									<table id="dot1q_setting" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
+										<thead>
+										<tr>
+											<td colspan="2">802.1Q</td>
+										</tr>
+										</thead>
+										<tr>
+											<th><#WLANConfig11b_WirelessCtrl_button1name#></th>
+											<td>
+												<input type="radio" name="dsl_dot1q" class="input" value="1" onclick="change_dsl_dhcp_enable();" <% nvram_match("dsl_dot1q", "1", "checked"); %>><#checkbox_Yes#>
+												<input type="radio" name="dsl_dot1q" class="input" value="0" onclick="change_dsl_dhcp_enable();" <% nvram_match("dsl_dot1q", "0", "checked"); %>><#checkbox_No#>
+											</td>
+										</tr>
+										<tr>
+											<th>VLAN ID</th>
+											<td>
+												<input type="text" name="dsl_vid" maxlength="4" class="input_6_table" value="<% nvram_get("dsl_vid"); %>" onKeyPress="return validator.isNumber(this,event);"> 0 - 4095
+											</td>
+										</tr>
+										<tr>
+											<th>802.1P</th>
+											<td>
+												<input type="text" name="dsl_dot1p" maxlength="4" class="input_6_table" value="<% nvram_get("dsl_dot1p"); %>" onKeyPress="return validator.isNumber(this,event);"> 0 - 7
+											</td>
+										</tr>
+									<table>
+
 									<table id="IPsetting" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 										<thead>
 										<tr>
@@ -1324,7 +1375,7 @@ function pass_checked(obj){
 											<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a>
 										</th>
 										<td>
-											<input type="text" maxlength="64" class="input_32_table" name="dslx_pppoe_username" value="<% nvram_get("dslx_pppoe_username"); %>" onkeypress="return validator.isString(this, event)" onblur="">
+											<input type="text" maxlength="64" class="input_32_table" name="dslx_pppoe_username" value="<% nvram_get("dslx_pppoe_username"); %>" onkeypress="return validator.isString(this, event)" onblur="" autocapitalization="off" autocomplete="off">
 										</td>
 							
 										<tr>
@@ -1332,8 +1383,18 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,5);"><#PPPConnection_Password_itemname#></a>
 											</th>
 											<td>
-												<div style="margin-top:2px;"><input type="password" maxlength="64" class="input_32_table" id="dslx_pppoe_passwd" name="dslx_pppoe_passwd" value="<% nvram_get("dslx_pppoe_passwd"); %>"></div>
+												<div style="margin-top:2px;"><input type="password" maxlength="64" class="input_32_table" id="dslx_pppoe_passwd" name="dslx_pppoe_passwd" value="<% nvram_get("dslx_pppoe_passwd"); %>" autocapitalization="off" autocomplete="off"></div>
 												<div style="margin-top:1px;"><input type="checkbox" name="show_pass_1" onclick="pass_checked(document.form.dslx_pppoe_passwd);"><#QIS_show_pass#></div>
+											</td>
+										</tr>
+										<tr>
+											<th><#WAN_PPP_AuthText#></th>
+											<td align="left">
+												<select id="" class="input_option" name="dslx_pppoe_auth">
+													<option value="" <% nvram_match("dslx_pppoe_auth", "", "selected"); %>>AUTO</option>
+													<option value="pap" <% nvram_match("dslx_pppoe_auth", "pap", "selected"); %>>PAP</option>
+													<option value="chap" <% nvram_match("dslx_pppoe_auth", "chap", "selected"); %>>CHAP</option>
+												</select>
 											</td>
 										</tr>
 										<tr>

@@ -5,8 +5,14 @@
 }
 .statusTitle{	
 	font-family: "Times New Roman", Times, serif;
-	background: url(/images/statusTitle_gray.gif) repeat-x;
-	/*background-color: #2A3539; */
+	background: #A5A5A5; /* Old browsers */
+	background: -moz-linear-gradient(top, #A5A5A5  0%, #434343 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#A5A5A5 ), color-stop(100%,#434343)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top, #A5A5A5  0%, #434343 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #A5A5A5 0%, #434343 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #A5A5A5  0%, #434343 100%); /* IE10+ */
+	background: linear-gradient(to bottom, #A5A5A5  0%, #434343 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#A5A5A5', endColorstr='#434343',GradientType=0 ); /* IE6-9 */
 	letter-spacing:1px;
 	font-weight: bold;
 	font-size:14px;
@@ -57,14 +63,14 @@
 
 #iconRemote{ background:url(images/map-iconRemote.gif) no-repeat;	width:87px;	height:77px; cursor:pointer; display:none}
 
-#iconInternet{ background:url(images/New_ui/networkmap/map-iconInternet.png) no-repeat 0% 0%;	width:107px;	height:95px; cursor:pointer;}
+#iconInternet{ background:url(images/New_ui/networkmap/map-iconInternet.png) no-repeat 0% 0%;	width:107px;	height:95px; cursor:pointer; margin:0px 17px 0px 0px;}
 #iconInternet a:link{ background:url(images/New_ui/networkmap/map-iconInternet.png) no-repeat 0% 100%;	width:107px;	height:95px; cursor:pointer;}
 #iconInternet_primary{ background:url(images/New_ui/networkmap/map-iconInternet.png) no-repeat 0% 0%;	width:107px;	height:95px; cursor:pointer; margin-left:12px;}
 #iconInternet_primary a:link{ background:url(images/New_ui/networkmap/map-iconInternet.png) no-repeat 0% 100%;	width:107px;	height:95px; cursor:pointer;}
 #iconInternet_secondary{ background:url(images/New_ui/networkmap/map-iconInternet.png) no-repeat 0% 0%;	width:107px;	height:95px; cursor:pointer;margin-left:12px;}
 #iconInternet_secondary a:link{ background:url(images/New_ui/networkmap/map-iconInternet.png) no-repeat 0% 100%;	width:107px;	height:95px; cursor:pointer;}
 
-#iconRouter{ background:url(images/New_ui/networkmap/map-iconRouter.png) no-repeat 0% 100%;	width:107px;	height:95px; cursor:pointer; margin:0px 0px 0px 0px;}
+#iconRouter{ background:url(images/New_ui/networkmap/map-iconRouter.png) no-repeat 0% 100%;	width:107px;	height:95px; cursor:pointer; margin:0px 17px 0px 0px;}
 
 #iflock{ 
 }
@@ -123,18 +129,6 @@
 	background:url(images/disconnect.gif) no-repeat;
 	margin:0px 0 0 135px;
 	display:none;
-}
-
-.DMhint{
-	font-family: Arial, Helvetica, sans-serif;
-	font-size:12px;	
-	line-height:150%;
-	display:none;
-	color:#FFCC00;
-	border:1px dashed #333;
-	background-color:#FFFFFF;
-	margin:5px;
-	padding:5px;
 }
 
 .navtext {

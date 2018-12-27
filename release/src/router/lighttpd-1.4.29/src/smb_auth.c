@@ -27,7 +27,7 @@ typedef li_MD5_CTX MD5_CTX;
 #define MD5_Final li_MD5_Final
 #endif
 
-#define DBE 0
+#define DBE 1
 #define LIGHTTPD_ARPPING_PID_FILE_PATH	"/tmp/lighttpd/lighttpd-arpping.pid"
 
 int file_exist(const char *filepath)

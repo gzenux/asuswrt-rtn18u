@@ -671,6 +671,7 @@ function change_dsl_type(dsl_type){
 
 		inputCtrl(document.form.dslx_pppoe_username, 1);
 		inputCtrl(document.form.dslx_pppoe_passwd, 1);
+		inputCtrl(document.form.dslx_pppoe_auth, 1);
 		inputCtrl(document.form.dslx_pppoe_idletime, 1);
 		inputCtrl(document.form.dslx_pppoe_mtu, 1);
 		inputCtrl(document.form.dslx_pppoe_service, 1);
@@ -687,6 +688,7 @@ function change_dsl_type(dsl_type){
 
 		inputCtrl(document.form.dslx_pppoe_username, 0);
 		inputCtrl(document.form.dslx_pppoe_passwd, 0);
+		inputCtrl(document.form.dslx_pppoe_auth, 0);
 		inputCtrl(document.form.dslx_pppoe_idletime, 0);
 		inputCtrl(document.form.dslx_pppoe_mtu, 0);
 		inputCtrl(document.form.dslx_pppoe_service, 0);
@@ -702,6 +704,7 @@ function change_dsl_type(dsl_type){
 
 		inputCtrl(document.form.dslx_pppoe_username, 0);
 		inputCtrl(document.form.dslx_pppoe_passwd, 0);
+		inputCtrl(document.form.dslx_pppoe_auth, 0);
 		inputCtrl(document.form.dslx_pppoe_idletime, 0);
 		inputCtrl(document.form.dslx_pppoe_mtu, 0);
 		inputCtrl(document.form.dslx_pppoe_service, 0);
@@ -717,6 +720,7 @@ function change_dsl_type(dsl_type){
 		inputCtrl(document.form.dslx_dnsenable[1], 0);
 		inputCtrl(document.form.dslx_pppoe_username, 0);
 		inputCtrl(document.form.dslx_pppoe_passwd, 0);
+		inputCtrl(document.form.dslx_pppoe_auth, 0);
 		inputCtrl(document.form.dslx_pppoe_idletime, 0);
 		inputCtrl(document.form.dslx_pppoe_mtu, 0);
 		inputCtrl(document.form.dslx_pppoe_service, 0);
@@ -1135,7 +1139,7 @@ function pass_checked(obj){
 									<table id="dot1q_setting" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 										<thead>
 										<tr>
-											<td colspan="2">802.1q</td>
+											<td colspan="2">802.1Q</td>
 										</tr>
 										</thead>
 										<tr>
@@ -1149,6 +1153,12 @@ function pass_checked(obj){
 											<th>VLAN ID</th>
 											<td>
 												<input type="text" name="dsl_vid" maxlength="4" class="input_6_table" value="<% nvram_get("dsl_vid"); %>" onKeyPress="return validator.isNumber(this,event);"> 0 - 4095
+											</td>
+										</tr>
+										<tr>
+											<th>802.1P</th>
+											<td>
+												<input type="text" name="dsl_dot1p" maxlength="4" class="input_6_table" value="<% nvram_get("dsl_dot1p"); %>" onKeyPress="return validator.isNumber(this,event);"> 0 - 7
 											</td>
 										</tr>
 									<table>
@@ -1239,7 +1249,7 @@ function pass_checked(obj){
 											<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a>
 										</th>
 										<td>
-											<input type="text" maxlength="64" class="input_32_table" name="dslx_pppoe_username" value="<% nvram_get("dslx_pppoe_username"); %>" onkeypress="return validator.isString(this, event)" onblur="">
+											<input type="text" maxlength="64" class="input_32_table" name="dslx_pppoe_username" value="<% nvram_get("dslx_pppoe_username"); %>" onkeypress="return validator.isString(this, event)" onblur="" autocapitalization="off" autocomplete="off">
 										</td>
 
 										<tr>
@@ -1247,8 +1257,18 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,5);"><#PPPConnection_Password_itemname#></a>
 											</th>
 											<td>
-												<div style="margin-top:2px;"><input type="password" maxlength="64" class="input_32_table" id="dslx_pppoe_passwd" name="dslx_pppoe_passwd" value="<% nvram_get("dslx_pppoe_passwd"); %>"></div>
+												<div style="margin-top:2px;"><input type="password" maxlength="64" class="input_32_table" id="dslx_pppoe_passwd" name="dslx_pppoe_passwd" value="<% nvram_get("dslx_pppoe_passwd"); %>" autocapitalization="off" autocomplete="off"></div>
 												<div style="margin-top:1px;"><input type="checkbox" name="show_pass_1" onclick="pass_checked(document.form.dslx_pppoe_passwd);"><#QIS_show_pass#></div>
+											</td>
+										</tr>
+										<tr>
+											<th><#WAN_PPP_AuthText#></th>
+											<td align="left">
+												<select id="" class="input_option" name="dslx_pppoe_auth">
+													<option value="" <% nvram_match("dslx_pppoe_auth", "", "selected"); %>>AUTO</option>
+													<option value="pap" <% nvram_match("dslx_pppoe_auth", "pap", "selected"); %>>PAP</option>
+													<option value="chap" <% nvram_match("dslx_pppoe_auth", "chap", "selected"); %>>CHAP</option>
+												</select>
 											</td>
 										</tr>
 										<tr>

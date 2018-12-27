@@ -19,7 +19,7 @@
 <style>
 .weakness{
 	width:650px;
-	height:570px;
+	height:590px;
 	position:absolute;
 	background: rgba(0,0,0,0.8);
 	z-index:10;
@@ -67,11 +67,7 @@
 	background-color:#FF7575;
 }
 .status_no a{
-	text-decoration:underline;
-
-
-
-}
+	text-decoration:underline;}
 .status_yes{
 	background-color:#1CFE16;
 }
@@ -84,14 +80,26 @@ var AM_to_cifs = get_share_management_status("cifs");  // Account Management for
 var AM_to_ftp = get_share_management_status("ftp");  // Account Management for FTP
 var $j = jQuery.noConflict();
 var button_flag = 0;
+var ctf_disable = '<% nvram_get("ctf_disable"); %>';
+var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';
 
 function initial(){
 	show_menu();
-	$("option4").innerHTML = '<table><tbody><tr><td><div id="index_img4"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
-	$("option4").className = "m4_r";
+	document.getElementById("_AiProtection_HomeSecurity").innerHTML = '<table><tbody><tr><td><div class="_AiProtection_HomeSecurity"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
+	document.getElementById("_AiProtection_HomeSecurity").className = "menu_clicked";
 }
 
 function applyRule(){
+	if(ctf_disable == 0 && ctf_fa_mode == 2){
+		if(!confirm(Untranslated.ctf_fa_hint)){
+			return false;
+		}	
+		else{
+			document.form.action_script.value = "reboot";
+			document.form.action_wait.value = "<% nvram_get("reboot_time"); %>";
+		}	
+	}
+
 	showLoading();	
 	document.form.submit();
 }
@@ -568,6 +576,7 @@ function eula_confirm(){
 
 function show_alert_preference(){
 	cal_panel_block();
+	parse_wrs_mail_bit();
 	$j('#alert_preference').fadeIn(300);
 	$('mail_address').value = document.form.PM_MY_EMAIL.value;
 	$('mail_password').value = document.form.PM_SMTP_AUTH_PASS.value;
@@ -581,6 +590,7 @@ function apply_alert_preference(){
 	var address_temp = $('mail_address').value;
 	var account_temp = $('mail_address').value.split("@");
 	var smtpList = new Array();
+	var mail_bit = 0;
 	smtpList = [
 		{smtpServer: "smtp.gmail.com", smtpPort: "587", smtpDomain: "gmail.com"},
 		{end: 0}
@@ -599,12 +609,34 @@ function apply_alert_preference(){
 		document.form.PM_MY_EMAIL.value = account_temp[0] + "@" +smtpList[0].smtpDomain;
 	}
 	
+	if(document.getElementById("mal_website_item").checked)
+		mail_bit += 1;
+	
+	if(document.getElementById("vp_item").checked)
+		mail_bit += 2;
+	
+	if(document.getElementById("cc_item").checked)
+		mail_bit += 4;
+	
+	document.form.wrs_mail_bit.value = mail_bit;
 	document.form.PM_SMTP_AUTH_USER.value = account_temp[0];
 	document.form.PM_SMTP_AUTH_PASS.value = $('mail_password').value;	
 	document.form.PM_SMTP_SERVER.value = smtpList[0].smtpServer;	
 	document.form.PM_SMTP_PORT.value = smtpList[0].smtpPort;	
 	$j('#alert_preference').fadeOut(100);
 	document.form.submit();
+}
+
+function parse_wrs_mail_bit(){
+	var quot = document.form.wrs_mail_bit.value;
+	var mail_bit_array =  new Array();
+	for(i=0;i<3;i++){
+		mail_bit_array[i] = quot%2; 
+		quot = parseInt(quot/2);	
+	}
+	document.getElementById("mal_website_item").checked =  mail_bit_array[0] == 1 ? true : false;
+	document.getElementById("vp_item").checked =  mail_bit_array[1] == 1 ? true : false;
+	document.getElementById("cc_item").checked =  mail_bit_array[2] == 1 ? true : false;
 }
 </script>
 </head>
@@ -734,7 +766,7 @@ function apply_alert_preference(){
 
 </div>
 
-<div id="alert_preference" style="width:650px;height:270px;position:absolute;background:rgba(0,0,0,0.8);z-index:10;border-radius:10px;margin-left:260px;padding:15px 10px 20px 10px;display:none">
+<div id="alert_preference" style="width:650px;height:290px;position:absolute;background:rgba(0,0,0,0.8);z-index:10;border-radius:10px;margin-left:260px;padding:15px 10px 20px 10px;display:none">
 	<table style="width:99%">
 		<tr>
 			<th>
@@ -748,7 +780,7 @@ function apply_alert_preference(){
 			<td>
 				<table class="FormTable" width="99%" border="1" align="center" cellpadding="4" cellspacing="0">
 					<tr>
-						<th>Provider</th>
+						<th><#Provider#></th>
 						<td>
 							<div>
 								<select class="input_option" id="mail_provider">
@@ -774,10 +806,23 @@ function apply_alert_preference(){
 						</td>
 					</tr>
 					<tr>
-						<th>Password</th>
+						<th><#PPPConnection_Password_itemname#></th>
 						<td>
 							<div>
 								<input type="password" class="input_30_table" id="mail_password" maxlength="100" value="">
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th>Notification Item</th>
+						<td>
+							<div>							
+								<input type="checkbox" class="" id="mal_website_item" value="">
+								<label><#AiProtection_sites_blocking#></label>
+								<input type="checkbox" class="" id="vp_item" value="">
+								<label><#AiProtection_Vulnerability#></label>
+								<input type="checkbox" class="" id="cc_item" value="">
+								<label><#AiProtection_detection_blocking#></label>
 							</div>
 						</td>
 					</tr>
@@ -788,7 +833,7 @@ function apply_alert_preference(){
 			<td>
 				<div style="text-align:center;margin-top:20px;">
 					<input class="button_gen" type="button" onclick="close_alert_preference();" value="<#CTL_close#>">
-					<input class="button_gen_long" type="button" onclick="apply_alert_preference();" value="Apply">
+					<input class="button_gen_long" type="button" onclick="apply_alert_preference();" value="<#CTL_apply#>">
 				</div>
 			</td>		
 		</tr>
@@ -837,6 +882,7 @@ function apply_alert_preference(){
 <input type="hidden" name="PM_MY_EMAIL" value="<% nvram_get("PM_MY_EMAIL"); %>">
 <input type="hidden" name="PM_SMTP_AUTH_USER" value="<% nvram_get("PM_SMTP_AUTH_USER"); %>">
 <input type="hidden" name="PM_SMTP_AUTH_PASS" value="">
+<input type="hidden" name="wrs_mail_bit" value="<% nvram_get("wrs_mail_bit"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0" >
 	<tr>
@@ -971,10 +1017,8 @@ function apply_alert_preference(){
 																				function(){
 																					document.form.wrs_mals_enable.value = 0;
 																					applyRule();
-																				},
-																						{
-																						switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-																				});
+																				}
+																			);
 																		</script>			
 																	</div>
 																</td>													
@@ -998,10 +1042,8 @@ function apply_alert_preference(){
 																				function(){
 																					document.form.wrs_vp_enable.value = 0;	
 																					applyRule();	
-																				},
-																						{
-																						switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-																				});
+																				}
+																			);
 																		</script>			
 																	</div>
 																</td>													
@@ -1043,10 +1085,8 @@ function apply_alert_preference(){
 																function(){
 																	document.form.wrs_cc_enable.value = 0;
 																	applyRule();
-																},
-																		{
-																switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-															});
+																}
+															);
 														</script>			
 													</div>
 													<div style="margin-top:-15px;">

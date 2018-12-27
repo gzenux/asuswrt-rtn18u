@@ -8,6 +8,9 @@
  */
 #include "libbb.h"
 #include <linux/fs.h>
+#if LINUX_KERNEL_VERSION >= KERNEL_VERSION(3,3,0)
+typedef unsigned short umode_t;
+#endif
 #include <linux/ext2_fs.h>
 
 // storage helpers

@@ -36,10 +36,6 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-
 function initial(){
 	show_menu();
 	setScenerion(sw_mode);
@@ -67,9 +63,9 @@ function saveMode(){
 	}
 	else if(document.form.sw_mode.value == 2){
 		if(sw_mode == 3)
-			parent.location.href = '/QIS_wizard.htm?flag=sitesurvey';
+			parent.location.href = '/QIS_wizard.htm?flag=sitesurvey_rep';
 		else
-			parent.location.href = 'http://router.asus.com/QIS_wizard.htm?flag=sitesurvey';
+			parent.location.href = 'http://router.asus.com/QIS_wizard.htm?flag=sitesurvey_rep';
 		return false;
 	}
 	else{ // default router
