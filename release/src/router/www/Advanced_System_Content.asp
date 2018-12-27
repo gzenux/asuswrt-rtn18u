@@ -57,7 +57,8 @@
 	cursor:default;
 }	
 </style>
-<script>time_day = uptimeStr.substring(5,7);//Mon, 01 Aug 2011 16:25:44 +0800(1467 secs since boot....
+<script>
+time_day = uptimeStr.substring(5,7);//Mon, 01 Aug 2011 16:25:44 +0800(1467 secs since boot....
 time_mon = uptimeStr.substring(9,12);
 time_time = uptimeStr.substring(18,20);
 dstoffset = '<% nvram_get("time_zone_dstoff"); %>';
@@ -83,7 +84,7 @@ else
 if(sw_mode == 3 || (sw_mode == 4))
 	theUrl = location.hostName;
 
-function initial(){
+function initial(){	
 	show_menu();
 	show_http_clientlist();
 	display_spec_IP(document.form.http_client.value);
@@ -99,7 +100,7 @@ function initial(){
 		document.form.reboot_time_x_hour.value = getrebootTimeRange(document.form.reboot_schedule.value, 0);
 		document.form.reboot_time_x_min.value = getrebootTimeRange(document.form.reboot_schedule.value, 1);
 		document.getElementById('reboot_schedule_enable_tr').style.display = "";
-		hide_reboot_option('<% nvram_get("reboot_schedule_enable"); %>');
+		hide_reboot_option('<% nvram_get("reboot_schedule_enable"); %>');		
 	}
 	else{
 		document.getElementById('reboot_schedule_enable_tr').style.display = "none";
@@ -310,7 +311,7 @@ function applyRule(){
 				document.form.btn_ez_mode.value=0;				
 		}
 		
-		if(reboot_schedule_support == 1){               
+		if(reboot_schedule_support){
 			updateDateTime();
 		}
 
@@ -479,11 +480,15 @@ function validForm(){
 	else if(!validator.rangeAllowZero(document.form.http_autologout, 10, 999, '<% nvram_get("http_autologout"); %>'))
 		return false;
 
-	if(reboot_schedule_support == 1){
-		if(document.form.reboot_schedule_enable[0].checked == 1){
-			if(!validate_timerange(document.form.reboot_time_x_hour, 0)
-				|| !validate_timerange(document.form.reboot_time_x_min, 1))
-				return false;
+	if(reboot_schedule_support){		
+		if(!document.form.reboot_date_x_Sun.checked && !document.form.reboot_date_x_Mon.checked &&
+		!document.form.reboot_date_x_Tue.checked && !document.form.reboot_date_x_Wed.checked &&
+		!document.form.reboot_date_x_Thu.checked && !document.form.reboot_date_x_Fri.checked &&
+		!document.form.reboot_date_x_Sat.checked && document.form.reboot_schedule_enable_x[0].checked)
+		{
+			alert(Untranslated.filter_lw_date_valid);
+			document.form.reboot_date_x_Sun.focus();
+			return false;
 		}
 	}
 
@@ -815,6 +820,26 @@ function show_http_clientlist(){
 	document.getElementById("http_clientlist_Block").innerHTML = code;
 }
 
+function check_Timefield_checkbox(){	// To check Date checkbox checked or not and control Time field disabled or not
+	if( document.form.reboot_date_x_Sun.checked == true 
+		|| document.form.reboot_date_x_Mon.checked == true 
+		|| document.form.reboot_date_x_Tue.checked == true
+		|| document.form.reboot_date_x_Wed.checked == true
+		|| document.form.reboot_date_x_Thu.checked == true
+		|| document.form.reboot_date_x_Fri.checked == true	
+		|| document.form.reboot_date_x_Sat.checked == true	){
+			inputCtrl(document.form.reboot_time_x_hour,1);
+			inputCtrl(document.form.reboot_time_x_min,1);
+			document.form.reboot_schedule.disabled = false;
+	}
+	else{
+			inputCtrl(document.form.reboot_time_x_hour,0);
+			inputCtrl(document.form.reboot_time_x_min,0);
+			document.form.reboot_schedule.disabled = true;
+			document.getElementById('reboot_schedule_time_tr').style.display ="";
+	}		
+}
+
 function deleteRow(r){
 	var i=r.parentNode.parentNode.rowIndex;
 	document.getElementById('http_clientlist_table').deleteRow(i);
@@ -1028,6 +1053,8 @@ function display_spec_IP(flag){
 function hide_reboot_option(flag){
 	document.getElementById("reboot_schedule_date_tr").style.display = (flag == 1) ? "" : "none";
 	document.getElementById("reboot_schedule_time_tr").style.display = (flag == 1) ? "" : "none";
+	if(flag==1)
+		check_Timefield_checkbox();
 }
 
 
@@ -1046,19 +1073,26 @@ function setrebootTimeRange(rd, rh, rm)
 
 function updateDateTime()
 {
-	document.form.reboot_schedule.value = setDateCheck(
-	document.form.reboot_date_x_Sun,
-	document.form.reboot_date_x_Mon,
-	document.form.reboot_date_x_Tue,
-	document.form.reboot_date_x_Wed,
-	document.form.reboot_date_x_Thu,
-	document.form.reboot_date_x_Fri,
-	document.form.reboot_date_x_Sat);
-	document.form.reboot_schedule.value = setrebootTimeRange(
-	document.form.reboot_schedule,
-	document.form.reboot_time_x_hour,
-	document.form.reboot_time_x_min)
+	if(document.form.reboot_schedule_enable_x[0].checked){
+		document.form.reboot_schedule_enable.value = "1";
+		document.form.reboot_schedule.disabled = false;
+		document.form.reboot_schedule.value = setDateCheck(
+		document.form.reboot_date_x_Sun,
+		document.form.reboot_date_x_Mon,
+		document.form.reboot_date_x_Tue,
+		document.form.reboot_date_x_Wed,
+		document.form.reboot_date_x_Thu,
+		document.form.reboot_date_x_Fri,
+		document.form.reboot_date_x_Sat);
+		document.form.reboot_schedule.value = setrebootTimeRange(
+		document.form.reboot_schedule,
+		document.form.reboot_time_x_hour,
+		document.form.reboot_time_x_min);
+	}
+	else
+		document.form.reboot_schedule_enable.value = "0";	
 }
+
 function paste_password(){
 	document.form.show_pass_1.checked = true;
 	pass_checked(document.form.http_passwd2);
@@ -1091,7 +1125,7 @@ function paste_password(){
 <input type="hidden" name="http_passwd" value="" disabled>
 <input type="hidden" name="http_clientlist" value="<% nvram_get("http_clientlist"); %>">
 <input type="hidden" name="btn_ez_mode" value="<% nvram_get("btn_ez_mode"); %>">
-<input type="hidden" name="reboot_schedule" value="<% nvram_get_x("","reboot_schedule"); %>">
+<input type="hidden" name="reboot_schedule" value="<% nvram_get_x("","reboot_schedule"); %>" disabled>
 <input type="hidden" name="reboot_schedule_enable" value="<% nvram_get_x("","reboot_schedule_enable"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
@@ -1229,32 +1263,32 @@ function paste_password(){
 						<input type="radio" name="btn_ez_radiotoggle" id="turn_LED" class="input" style="display:none;" value="0" <% nvram_match_x("", "btn_ez_mode", "1", "checked"); %>><label for="turn_LED" id="turn_LED_str">Turn LED On/Off</label>
 					</td>
 				</tr>				
+				<tr id="reboot_schedule_enable_tr">
+					<th>Enable Reboot Scheduler</th>	<!-- untranslated -->
+					<td>
+						<input type="radio" value="1" name="reboot_schedule_enable_x" onClick="hide_reboot_option(1);" <% nvram_match_x("LANHostConfig","reboot_schedule_enable", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="reboot_schedule_enable_x" onClick="hide_reboot_option(0);" <% nvram_match_x("LANHostConfig","reboot_schedule_enable", "0", "checked"); %>><#checkbox_No#>
+					</td>
 				</tr>
-                                <tr id="reboot_schedule_enable_tr">
-                                        <th width="40%" align="right">Enable Reboot Schedule</th>
-                                        <td width="300"><input type="radio" value="1" name="reboot_schedule_enable"  onClick="hide_reboot_option(1);return change_common_radio(this, 'LANHostConfig', 'reboot_schedule_enable', '1')" <% nvram_match_x("LANHostConfig","reboot_schedule_enable", "1", "checked"); %>><#checkbox_Yes#>
-                                        <input type="radio" value="0" name="reboot_schedule_enable"  onClick="hide_reboot_option(0);return change_common_radio(this, 'LANHostConfig', 'reboot_schedule_enable', '0')" <% nvram_match_x("LANHostConfig","reboot_schedule_enable", "0", "checked"); %>><#checkbox_No#>
-                                        </td>
-                                </tr>
-                                <tr id="reboot_schedule_date_tr">
-                                        <th>Date to Reboot</th>
-                                        <td>
-                                        <input type="checkbox" name="reboot_date_x_Sun" class="input" onChange="return changeDate();"><#date_Sun_itemdesc#>
-                                        <input type="checkbox" name="reboot_date_x_Mon" class="input" onChange="return changeDate();"><#date_Mon_itemdesc#>
-                                        <input type="checkbox" name="reboot_date_x_Tue" class="input" onChange="return changeDate();"><#date_Tue_itemdesc#>
-                                        <input type="checkbox" name="reboot_date_x_Wed" class="input" onChange="return changeDate();"><#date_Wed_itemdesc#>
-                                        <input type="checkbox" name="reboot_date_x_Thu" class="input" onChange="return changeDate();"><#date_Thu_itemdesc#>
-                                        <input type="checkbox" name="reboot_date_x_Fri" class="input" onChange="return changeDate();"><#date_Fri_itemdesc#>
-                                        <input type="checkbox" name="reboot_date_x_Sat" class="input" onChange="return changeDate();"><#date_Sat_itemdesc#>
-                                        </td>
-                                </tr>
-                                <tr id="reboot_schedule_time_tr">
-                                        <th>Time of Day to Reboot</th>
-                                        <td>
-                                        <input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_hour" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 0);" autocorrect="off" autocapitalize="off"> :
-                                        <input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_min" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 1);" autocorrect="off" autocapitalize="off">
-                                        </td>
-                                </tr>
+				<tr id="reboot_schedule_date_tr">
+					<th>Date to Reboot</th>	<!-- untranslated -->
+					<td>
+						<input type="checkbox" name="reboot_date_x_Sun" class="input" onclick="check_Timefield_checkbox();"><#date_Sun_itemdesc#>
+						<input type="checkbox" name="reboot_date_x_Mon" class="input" onclick="check_Timefield_checkbox();"><#date_Mon_itemdesc#>
+						<input type="checkbox" name="reboot_date_x_Tue" class="input" onclick="check_Timefield_checkbox();"><#date_Tue_itemdesc#>
+						<input type="checkbox" name="reboot_date_x_Wed" class="input" onclick="check_Timefield_checkbox();"><#date_Wed_itemdesc#>
+						<input type="checkbox" name="reboot_date_x_Thu" class="input" onclick="check_Timefield_checkbox();"><#date_Thu_itemdesc#>
+						<input type="checkbox" name="reboot_date_x_Fri" class="input" onclick="check_Timefield_checkbox();"><#date_Fri_itemdesc#>
+            <input type="checkbox" name="reboot_date_x_Sat" class="input" onclick="check_Timefield_checkbox();"><#date_Sat_itemdesc#>
+					</td>
+				</tr>
+				<tr id="reboot_schedule_time_tr">
+					<th>Time of Day to Reboot</th>	<!-- untranslated -->
+					<td>
+						<input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_hour" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 0);" autocorrect="off" autocapitalize="off"> :
+						<input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_min" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 1);" autocorrect="off" autocapitalize="off">
+					</td>
+				</tr>
 
 				<tr>
 					<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>

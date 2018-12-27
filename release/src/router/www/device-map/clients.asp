@@ -90,7 +90,6 @@ p{
 <script type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
-<script type="text/javascript" src="/jquery.xdomainajax.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script>
 if(parent.location.pathname.search("index") === -1) top.location.href = "../index.asp";
@@ -284,7 +283,7 @@ function drawClientList(tab){
 		}
 
 		clientHtmlTd += '</td></tr>';
-		clientHtmlTd += '<tr><td colspan="2"><div style="margin-top:-15px;width:140px;" class="link" onclick="oui_query(\'';
+		clientHtmlTd += '<tr><td colspan="2"><div style="margin-top:-15px;width:140px;" class="link" onclick="oui_query_full_vendor(\'';
 		clientHtmlTd += clientObj.mac;
 		clientHtmlTd += '\');event.cancelBubble=true;return overlib(\'';
 		clientHtmlTd += retOverLibStr(clientObj);
@@ -400,25 +399,37 @@ function retOverLibStr(client){
 	return overlibStr;
 }
 
-function oui_query(mac){
-	var tab = new Array();
-	tab = mac.split(mac.substr(2,1));
-	$.ajax({
-	    url: 'http://standards.ieee.org/cgi-bin/ouisearch?'+ tab[0] + '-' + tab[1] + '-' + tab[2],
-		type: 'GET',
-	    success: function(response) {
-			if(overlib.isOut) return nd();
-
+function oui_query_full_vendor(mac){
+	if(clientList[mac].dpiVender != "") {
+		setTimeout(function(){
 			var overlibStrTmp = retOverLibStr(clientList[mac]);
-			if(response.responseText.search("Sorry!") == -1) {
-				var retData = response.responseText.split("pre")[1].split("(base 16)")[1].replace("PROVINCE OF CHINA", "R.O.C").split("&lt;/");
-				overlibStrTmp += "<p><span>.....................................</span></p><p style='margin-top:5px'><#Manufacturer#> :</p>";
-				overlibStrTmp += retData[0];
-			}
-
+			overlibStrTmp += "<p><span>.....................................</span></p><p style='margin-top:5px'><#Manufacturer#> :</p>";
+			overlibStrTmp += clientList[mac].dpiVender;
 			return overlib(overlibStrTmp);
-		}    
-	});
+		}, 1);
+	}
+	else {
+		if('<% nvram_get("x_Setting"); %>' == '1' && wanConnectStatus && clientList[mac].internetState) {
+			var queryStr = mac.replace(/\:/g, "").splice(6,6,"");
+			$.ajax({
+			 	url: 'https://services11.ieee.org/RST/standards-ra-web/rest/assignments/download/?registry=MA-L&format=html&text='+ queryStr,
+				type: 'GET',
+			 	success: function(response) {
+					if(overlib.isOut) return nd();
+
+					var overlibStrTmp = retOverLibStr(clientList[mac]);
+					if(response.search("Sorry!") == -1) {
+						if(response.search(queryStr) != -1) {
+							var retData = response.split("pre")[1].split("(base 16)")[1].replace("PROVINCE OF CHINA", "R.O.C").split("</");
+							overlibStrTmp += "<p><span>.....................................</span></p><p style='margin-top:5px'><#Manufacturer#> :</p>";
+							overlibStrTmp += retData[0];
+						}
+					}
+					return overlib(overlibStrTmp);
+				}
+			});
+		}
+	}
 }
 
 function popupCustomTable(mac){

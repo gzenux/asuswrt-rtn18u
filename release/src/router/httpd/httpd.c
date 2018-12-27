@@ -1043,6 +1043,8 @@ handle_request(void)
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, url))
 		{
+			nvram_set("httpd_handle_request", url);
+			nvram_set_int("httpd_handle_request_fromapp", fromapp);
 
 			if(login_state==3 && !fromapp) { // few pages can be shown even someone else login
 				if(!(mime_exception&MIME_EXCEPTION_MAINPAGE || strncmp(file, "Main_Login.asp?error_status=9", 29)==0)) {
@@ -1187,6 +1189,8 @@ handle_request(void)
 		else
 			send_error( 404, "Not Found", (char*) 0, "File not found." );
 	}
+	nvram_unset("httpd_handle_request");
+	nvram_unset("httpd_handle_request_fromapp");
 }
 
 asus_token_t* search_token_in_list(char* token, asus_token_t **prev)

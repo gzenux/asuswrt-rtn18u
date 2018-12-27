@@ -198,8 +198,11 @@ int copy_routes(int table){
 		return -1;
 
 	follow_info = route_buf;
-	while(get_line_from_buffer(follow_info, line, 1024) != NULL && strncmp(line, "default", 7) != 0){
+	while(get_line_from_buffer(follow_info, line, 1024) != NULL) {
 		follow_info += strlen(line);
+
+		if(strncmp(line, "default", 7) == 0 || isspace(line[0]))
+			continue;
 
 		len = strlen(line);
 		line[len-2] = 0;
@@ -224,17 +227,19 @@ int add_multi_routes(void)
 {
 	int unit;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char wan_proto[32], wan_if[32], wan_ip[32], wan_gate[32];
+	char wan_proto[32];
+	char wan_ip[32], wan_gate[32];
 	char cmd[2048];
+	char wan_multi_if[WAN_UNIT_MAX][32], wan_multi_gate[WAN_UNIT_MAX][32];
 #ifdef RTCONFIG_DUALWAN
 	int gate_num = 0, wan_weight, table;
 	char cmd2[2048], *ptr;
 	char wan_dns[1024];
-	char wan_multi_if[WAN_UNIT_MAX][32], wan_multi_gate[WAN_UNIT_MAX][32];
+	char wan_multi_ip[WAN_UNIT_MAX][32];
 	char word[64], *next;
-	char wan_isp[32];
 	char *nv, *nvp, *b;
 #endif
+	int debug = nvram_get_int("routes_debug");
 
 	// clean the rules of routing table and re-build them then.
 	system("ip rule flush");
@@ -244,31 +249,35 @@ int add_multi_routes(void)
 	// clean multi route tables and re-build them then.
 	copy_routes(0);
 
-#ifdef RTCONFIG_DUALWAN
-	if(nvram_match("wans_mode", "lb")){
-		gate_num = 0;
-		for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){ // Multipath
-			snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-			strncpy(wan_ip, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)), 32);
-			strncpy(wan_gate, nvram_safe_get(strcat_r(prefix, "gateway", tmp)), 32);
-
-			// when wan_down().
-			if(!is_wan_connect(unit))
-				continue;
-
-			if(strlen(wan_gate) <= 0 || !strcmp(wan_gate, "0.0.0.0"))
-				continue;
-
-			if(strlen(wan_ip) <= 0 || !strcmp(wan_ip, "0.0.0.0"))
-				continue;
-
-			++gate_num;
-		}
-	}
-
 	memset(wan_multi_if, 0, sizeof(char)*WAN_UNIT_MAX*32);
 	memset(wan_multi_gate, 0, sizeof(char)*WAN_UNIT_MAX*32);
+#ifdef RTCONFIG_DUALWAN
+	memset(wan_multi_ip, 0, sizeof(char)*WAN_UNIT_MAX*32);
 #endif
+
+	for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){ // Multipath
+		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+		strncpy(wan_multi_if[unit], get_wan_ifname(unit), 32);
+		strncpy(wan_ip, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)), 32);
+		strncpy(wan_gate, nvram_safe_get(strcat_r(prefix, "gateway", tmp)), 32);
+
+		// when wan_down().
+		if(!is_wan_connect(unit))
+			continue;
+
+		if(strlen(wan_gate) <= 0 || !strcmp(wan_gate, "0.0.0.0"))
+			continue;
+
+		if(strlen(wan_ip) <= 0 || !strcmp(wan_ip, "0.0.0.0"))
+			continue;
+
+#ifdef RTCONFIG_DUALWAN
+		++gate_num;
+
+		strcpy(wan_multi_ip[unit], wan_ip);
+#endif
+		strcpy(wan_multi_gate[unit], wan_gate);
+	}
 
 	for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){ // Multipath
 		if(unit != wan_primary_ifunit()
@@ -280,20 +289,17 @@ int add_multi_routes(void)
 
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 		strncpy(wan_proto, nvram_safe_get(strcat_r(prefix, "proto", tmp)), 32);
-		strncpy(wan_if, get_wan_ifname(unit), 32);
-		strncpy(wan_ip, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)), 32);
-		strncpy(wan_gate, nvram_safe_get(strcat_r(prefix, "gateway", tmp)), 32);
 
 		// when wan_down().
 		if(!is_wan_connect(unit))
 			continue;
 
-		if(strlen(wan_gate) <= 0 || !strcmp(wan_gate, "0.0.0.0"))
+#ifdef RTCONFIG_DUALWAN
+		if(strlen(wan_multi_gate[unit]) <= 0 || !strcmp(wan_multi_gate[unit], "0.0.0.0"))
 			continue;
 
-#ifdef RTCONFIG_DUALWAN
 		if(nvram_match("wans_mode", "lb") && gate_num > 1){
-			if(strlen(wan_ip) <= 0 || !strcmp(wan_ip, "0.0.0.0"))
+			if(strlen(wan_multi_ip[unit]) <= 0 || !strcmp(wan_multi_ip[unit], "0.0.0.0"))
 				continue;
 
 			if(unit == WAN_UNIT_SECOND)
@@ -302,36 +308,38 @@ int add_multi_routes(void)
 				table = WAN0_ROUTE_TABLE;
 
 			// set the rules of wan[X]'s ip and gateway for multi routing tables.
-			snprintf(cmd2, 2048, "ip rule del pref 200 from %s table %d", wan_ip, table);
+			snprintf(cmd2, 2048, "ip rule del pref 200 from %s table %d 2>/dev/null", wan_multi_ip[unit], table);
+if(debug) printf("test 1. cmd2=%s.\n", cmd2);
 			system(cmd2);
 
-			snprintf(cmd2, 2048, "ip rule add pref 200 from %s table %d", wan_ip, table);
+			snprintf(cmd2, 2048, "ip rule add pref 200 from %s table %d", wan_multi_ip[unit], table);
+if(debug) printf("test 2. cmd2=%s.\n", cmd2);
 			system(cmd2);
 
-			snprintf(cmd2, 2048, "ip rule del pref 400 to %s table %d", wan_gate, table);
+			snprintf(cmd2, 2048, "ip rule del pref 400 to %s table %d 2>/dev/null", wan_multi_gate[unit], table);
+if(debug) printf("test 3. cmd2=%s.\n", cmd2);
 			system(cmd2);
 
-			snprintf(cmd2, 2048, "ip rule add pref 400 to %s table %d", wan_gate, table);
+			snprintf(cmd2, 2048, "ip rule add pref 400 to %s table %d", wan_multi_gate[unit], table);
+if(debug) printf("test 4. cmd2=%s.\n", cmd2);
 			system(cmd2);
 
 			// set the routes for multi routing tables.
 			copy_routes(table);
 
-			if(!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp")){
-				snprintf(cmd2, 2048, "ip route add %s dev %s table %d", wan_gate, wan_if, table);
-				system(cmd2);
-			}
+			snprintf(cmd2, 2048, "ip route replace %s dev %s proto kernel table %d", wan_multi_gate[unit], wan_multi_if[unit], table);
+if(debug) printf("test 5. cmd2=%s.\n", cmd2);
+			system(cmd2);
 
-			snprintf(cmd2, 2048, "ip route replace default via %s dev %s table %d", wan_gate, wan_if, table);
+			snprintf(cmd2, 2048, "ip route replace default via %s dev %s table %d", wan_multi_gate[unit], wan_multi_if[unit], table);
+if(debug) printf("test 6. cmd2=%s.\n", cmd2);
 			system(cmd2);
 
 			if(!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp")){
-				snprintf(cmd2, 2048, "ip route del %s dev %s table %d", wan_gate, wan_if, table);
+				snprintf(cmd2, 2048, "ip route del %s dev %s table %d 2>/dev/null", wan_multi_gate[unit], wan_multi_if[unit], table);
+if(debug) printf("test 7. cmd2=%s.\n", cmd2);
 				system(cmd2);
 			}
-
-			strcpy(wan_multi_if[unit], wan_if);
-			strcpy(wan_multi_gate[unit], wan_gate);
 
 			// set the static routing rules.
 			if(nvram_match("wans_routing_enable", "1")){
@@ -356,61 +364,54 @@ int add_multi_routes(void)
 						continue;
 
 					if(rtable == table){
-						snprintf(cmd2, 2048, "ip rule del pref 100 from %s to %s table %d", rfrom, rto, rtable);
+						snprintf(cmd2, 2048, "ip rule del pref 100 from %s to %s table %d 2>/dev/null", rfrom, rto, rtable);
+if(debug) printf("test 8. cmd2=%s.\n", cmd2);
 						system(cmd2);
 
 						snprintf(cmd2, 2048, "ip rule add pref 100 from %s to %s table %d", rfrom, rto, rtable);
+if(debug) printf("test 9. cmd2=%s.\n", cmd2);
 						system(cmd2);
 					}
 	 			}
 				free(nv);
 			}
-
-			// ISP's routing rules.
-			if(nvram_match(strcat_r(prefix, "routing_isp_enable", tmp), "1")){
-				strncpy(wan_isp, nvram_safe_get(strcat_r(prefix, "routing_isp", tmp)), 32);
-
-				FILE *fp;
-				char conf_name[64], line[1024];
-
-				snprintf(conf_name, 64, "/rom/etc/static_routes/%s.conf", wan_isp);
-
-				if((fp = fopen(conf_name, "r")) != NULL){
-					while(fgets(line, sizeof(line), fp)){
-						char *token = strtok(line, "\n");
-
-						snprintf(cmd2, 2048, "ip rule del pref 300 %s table %d", token, table);
-						system(cmd2);
-
-						snprintf(cmd2, 2048, "ip rule add pref 300 %s table %d", token, table);
-						system(cmd2);
-					}
-					fclose(fp);
-				}
-			}
 		}
 		else
-#endif
 		{
-			if(!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp")){
-				snprintf(cmd, 2048, "ip route add %s dev %s", wan_gate, wan_if);
-				system(cmd);
-			}
+			snprintf(cmd, 2048, "ip route replace %s dev %s proto kernel", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 10. cmd=%s.\n", cmd);
+			system(cmd);
 
 			// set the default gateway.
-			snprintf(cmd, 2048, "ip route replace default via %s dev %s", wan_gate, wan_if);
+			snprintf(cmd, 2048, "ip route replace default via %s dev %s", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 11. cmd=%s.\n", cmd);
 			system(cmd);
 
 			if(!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp")){
-				snprintf(cmd, 2048, "ip route del %s dev %s", wan_gate, wan_if);
+				snprintf(cmd, 2048, "ip route del %s dev %s 2>/dev/null", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 12. cmd=%s.\n", cmd);
 				system(cmd);
 			}
 		}
 
-#ifdef RTCONFIG_DUALWAN
 		if(!nvram_match("wans_mode", "lb") || gate_num <= 1)
 			break;
-#endif
+#else
+		snprintf(cmd, 2048, "ip route replace %s dev %s proto kernel", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 10. cmd=%s.\n", cmd);
+		system(cmd);
+
+		// set the default gateway.
+		snprintf(cmd, 2048, "ip route replace default via %s dev %s", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 11. cmd=%s.\n", cmd);
+		system(cmd);
+
+		if(!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp")){
+			snprintf(cmd, 2048, "ip route del %s dev %s 2>/dev/null", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 12. cmd=%s.\n", cmd);
+			system(cmd);
+		}
+#endif // RTCONFIG_DUALWAN
 	}
 
 #ifdef RTCONFIG_DUALWAN
@@ -428,10 +429,12 @@ int add_multi_routes(void)
 			// move the gateway via VPN+DHCP from the main routing table to the correct one.
 			strcpy(wan_gate, nvram_safe_get(strcat_r(prefix, "xgateway", tmp)));
 			if(strlen(wan_gate) > 0 && strcmp(wan_gate, "0.0.0.0") && strcmp(wan_gate, wan_multi_gate[unit])){
-				snprintf(cmd2, 2048, "ip route del default via %s dev %s", wan_gate, get_wanx_ifname(unit));
+				snprintf(cmd2, 2048, "ip route del default via %s dev %s 2>/dev/null", wan_gate, get_wanx_ifname(unit));
+if(debug) printf("test 13. cmd2=%s.\n", cmd2);
 				system(cmd2);
 
-				snprintf(cmd2, 2048, "ip route add default via %s dev %s table %d metric 1", wan_gate, get_wanx_ifname(unit), table);
+				snprintf(cmd2, 2048, "ip route replace default via %s dev %s table %d metric 1", wan_gate, get_wanx_ifname(unit), table);
+if(debug) printf("test 14. cmd2=%s.\n", cmd2);
 				system(cmd2);
 			}
 
@@ -440,14 +443,18 @@ int add_multi_routes(void)
 			if(strlen(wan_dns) > 0){
 				// set the rules for the DNS servers.
 				foreach(word, wan_dns, next) {
-					snprintf(cmd2, 2048, "ip rule del pref 200 from %s table %d", word, table);
+					snprintf(cmd2, 2048, "ip rule del pref 200 from %s table %d 2>/dev/null", word, table);
+if(debug) printf("test 15. cmd2=%s.\n", cmd2);
 					system(cmd2);
 					snprintf(cmd2, 2048, "ip rule add pref 200 from %s table %d", word, table);
+if(debug) printf("test 16. cmd2=%s.\n", cmd2);
 					system(cmd2);
 
-					snprintf(cmd2, 2048, "ip rule del pref 400 to %s table %d", word, table);
+					snprintf(cmd2, 2048, "ip rule del pref 400 to %s table %d 2>/dev/null", word, table);
+if(debug) printf("test 17. cmd2=%s.\n", cmd2);
 					system(cmd2);
 					snprintf(cmd2, 2048, "ip rule add pref 400 to %s table %d", word, table);
+if(debug) printf("test 18. cmd2=%s.\n", cmd2);
 					system(cmd2);
 				}
 			}
@@ -457,14 +464,18 @@ int add_multi_routes(void)
 			if(strlen(wan_dns) > 0){
 				// set the rules for the DNS servers.
 				foreach(word, wan_dns, next) {
-					snprintf(cmd2, 2048, "ip rule del pref 200 from %s table %d", word, table);
+					snprintf(cmd2, 2048, "ip rule del pref 200 from %s table %d 2>/dev/null", word, table);
+if(debug) printf("test 19. cmd2=%s.\n", cmd2);
 					system(cmd2);
 					snprintf(cmd2, 2048, "ip rule add pref 200 from %s table %d", word, table);
+if(debug) printf("test 20. cmd2=%s.\n", cmd2);
 					system(cmd2);
 
-					snprintf(cmd2, 2048, "ip rule del pref 400 to %s table %d", word, table);
+					snprintf(cmd2, 2048, "ip rule del pref 400 to %s table %d 2>/dev/null", word, table);
+if(debug) printf("test 21. cmd2=%s.\n", cmd2);
 					system(cmd2);
 					snprintf(cmd2, 2048, "ip rule add pref 400 to %s table %d", word, table);
+if(debug) printf("test 22. cmd2=%s.\n", cmd2);
 					system(cmd2);
 				}
 			}
@@ -498,33 +509,28 @@ int add_multi_routes(void)
 
 		if(strlen(cmd) > 0){
 			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-				strncpy(wan_proto, nvram_safe_get(strcat_r(prefix, "proto", tmp)), 32);
-				strncpy(wan_if, get_wan_ifname(unit), 32);
-				strncpy(wan_gate, nvram_safe_get(strcat_r(prefix, "gateway", tmp)), 32);
-
-				if(!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp")){
-					snprintf(cmd2, 2048, "ip route add %s dev %s", wan_gate, wan_if);
-					system(cmd2);
-				}
+				snprintf(cmd2, 2048, "ip route replace %s dev %s", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 23. cmd2=%s.\n", cmd2);
+				system(cmd2);
 			}
 
+if(debug) printf("test 24. cmd=%s.\n", cmd);
 			system(cmd);
 
 			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
 				snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 				strncpy(wan_proto, nvram_safe_get(strcat_r(prefix, "proto", tmp)), 32);
-				strncpy(wan_if, get_wan_ifname(unit), 32);
-				strncpy(wan_gate, nvram_safe_get(strcat_r(prefix, "gateway", tmp)), 32);
-
 				if(!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp")){
-					snprintf(cmd2, 2048, "ip route del %s dev %s", wan_gate, wan_if);
+					snprintf(cmd2, 2048, "ip route del %s dev %s 2>/dev/null", wan_multi_gate[unit], wan_multi_if[unit]);
+if(debug) printf("test 25. cmd2=%s.\n", cmd2);
 					system(cmd2);
 				}
 			}
 		}
 	}
 #endif
+
+if(debug) printf("test 26. route flush cache.\n");
 	system("ip route flush cache");
 
 	logmessage("wan", "finish adding multi routes");
@@ -687,7 +693,6 @@ start_ecmh(const char *wan_ifname)
 void
 stop_igmpproxy()
 {
-_dprintf("!!!!!! stop_igmpproxy !!!!\n");
 	if (pids("udpxy"))
 		killall_tk("udpxy");
 	if (pids("igmpproxy"))
@@ -713,6 +718,7 @@ start_igmpproxy(char *wan_ifname)
 		wan_ifname = "br1";
 #endif
 #endif
+
 #ifdef RTCONFIG_MULTICAST_IPTV
 	if (nvram_get_int("switch_stb_x") > 6 &&
 	    nvram_match("switch_wantag", "movistar") &&
@@ -740,9 +746,15 @@ start_igmpproxy(char *wan_ifname)
 		return;
 	}
 
-	fprintf(fp, "# automagically generated from web settings\n"
-		"quickleave\n\n"
-		"phyint %s upstream  ratelimit 0  threshold 1\n"
+       fprintf(fp, "# automagically generated from web settings\n");
+#ifdef RTCONFIG_MULTICAST_IPTV
+       if ( !(nvram_get_int("switch_stb_x") > 6 &&
+               nvram_match("switch_wantag", "movistar")) )
+               fprintf(fp, "quickleave\n\n");
+#else
+               fprintf(fp, "quickleave\n\n");
+#endif
+       fprintf(fp, "phyint %s upstream  ratelimit 0  threshold 1\n"
 		"\taltnet %s\n\n"
 		"phyint %s downstream  ratelimit 0  threshold 1\n\n",
 		wan_ifname,
@@ -2899,6 +2911,7 @@ found_default_route(int wan_unit)
 	}
 
 	_dprintf("\nNO default route!!!\n");
+	set_no_internet_ready();
 	return 0;
 }
 

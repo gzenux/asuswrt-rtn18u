@@ -2882,7 +2882,7 @@ start_httpd(void)
 	char *httpd_argv[] = {"httpd", NULL};
 	pid_t pid;
 #ifdef RTCONFIG_HTTPS
-	char *https_argv[] = {"httpd", "-s", "-p", nvram_safe_get("https_lanport"), NULL};
+	char *https_argv[] = {"httpds", "-s", "-p", nvram_safe_get("https_lanport"), NULL};
 	pid_t pid_https;
 #endif
 	int enable;
@@ -3189,7 +3189,12 @@ int start_lltd(void)
 			eval("lld2d.rtn66r", "br0");
 			break;
 		case MODEL_RTAC66U:
-			eval("lld2d.rtac66r", "br0");
+			if (!strcmp(odmpid, "RT-AC66R"))
+				eval("lld2d.rtac66r", "br0");
+			else if (!strcmp(odmpid, "RT-AC66W"))
+				eval("lld2d.rtac66w", "br0");
+			else if (!strcmp(odmpid, "RT-AC1750"))
+				eval("lld2d.rtac1750", "br0");
 			break;
 		case MODEL_RTAC68U:
 			if (!strcmp(odmpid, "RT-AC68P"))

@@ -1055,10 +1055,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wans_lb_ratio", "3:1" }, 	// only support two wan simultaneously
 	{ "wans_routing_enable", "0" },
 	{ "wans_routing_rulelist", "" },
-	{ "wan0_routing_isp_enable", "0" },
-	{ "wan0_routing_isp", "china_mobile" },
-	{ "wan1_routing_isp_enable", "0" },
-	{ "wan1_routing_isp", "china_mobile" },
 
 	{ "wandog_enable", "0" },
 	{ "wandog_target", "" },

@@ -413,7 +413,7 @@ endif
 endif
 
 obj-$(RTCONFIG_USB_BECEEM) += madwimax-0.1.1 # for Samsung WiMAX
-obj-$(RTCONFIG_USB_BECEEM) += openssl # for Beceem, GCT WiMAX
+obj-$(RTCONFIG_USB_BECEEM) += openssl-1.0.0q # for Beceem, GCT WiMAX
 obj-$(RTCONFIG_USB_BECEEM) += Beceem_BCMS250 # for Beceem WiMAX
 obj-$(RTCONFIG_USB_BECEEM) += wpa_supplicant-0.7.3 # for GCT WiMAX
 obj-$(RTCONFIG_USB_BECEEM) += zlib # for GCT WiMAX
@@ -1149,6 +1149,7 @@ ifeq ($(RTCONFIG_CFEZ),y)
 	install -D envram_bin/envram $(TARGETDIR)/usr/sbin/envram
 endif
 endif
+
 	@echo ---
 
 	@rm -f $(TARGETDIR)/lib/modules/*/build
@@ -1365,6 +1366,43 @@ OPENSSL_CIPHERS:=
 endif
 
 #OPENSSL_CIPHERS:=enable-aes enable-tls1 enable-tlsext
+
+openssl-1.0.0q/Makefile:
+	cd openssl-1.0.0q && \
+	./Configure $(HOSTCONFIG) --openssldir=/etc --cross-compile-prefix=' ' \
+	-ffunction-sections -fdata-sections -Wl,--gc-sections \
+	shared $(OPENSSL_CIPHERS)
+#	no-sha0 no-smime no-camellia no-krb5 no-rmd160 no-ripemd \
+#	no-seed no-capieng no-cms no-gms no-gmp no-rfc3779 \
+#	no-ec no-ecdh no-ecdsa no-err no-hw no-jpake no-threads \
+#	no-zlib no-engine no-engines no-sse2 no-perlasm \
+#	no-dtls1 no-store no-psk no-md2 no-mdc2 no-ts
+
+	-@$(MAKE) -C openssl-1.0.0q clean
+	@touch $@
+
+openssl-1.0.0q: openssl-1.0.0q/Makefile
+	$(MAKE) -C openssl-1.0.0q && $(MAKE) $@-stage
+
+openssl-1.0.0q-clean:
+	[ ! -f openssl-1.0.0q/Makefile ] || $(MAKE) -C openssl-1.0.0q clean
+	@rm -f openssl-1.0.0q/Makefile
+
+openssl-1.0.0q-install: openssl-1.0.0q
+	install -D openssl-1.0.0q/libcrypto-1.0.0q.so.1.0.0 $(INSTALLDIR)/openssl-1.0.0q/usr/lib/libcrypto-1.0.0q.so.1.0.0
+	$(STRIP) $(INSTALLDIR)/openssl-1.0.0q/usr/lib/libcrypto-1.0.0q.so.1.0.0
+	cd $(INSTALLDIR)/openssl-1.0.0q/usr/lib && ln -sf libcrypto-1.0.0q.so.1.0.0 libcrypto-1.0.0q.so
+
+#	install -D openssl-1.0.0q/apps/openssl-1.0.0q $(INSTALLDIR)/openssl-1.0.0q/usr/sbin/openssl-1.0.0q
+#	$(STRIP) $(INSTALLDIR)/openssl-1.0.0q/usr/sbin/openssl-1.0.0q
+#	chmod 0500 $(INSTALLDIR)/openssl-1.0.0q/usr/sbin/openssl-1.0.0q
+
+	install -D openssl-1.0.0q/libssl-1.0.0q.so.1.0.0 $(INSTALLDIR)/openssl-1.0.0q/usr/lib/libssl-1.0.0q.so.1.0.0
+	$(STRIP) $(INSTALLDIR)/openssl-1.0.0q/usr/lib/libssl-1.0.0q.so.1.0.0
+	cd $(INSTALLDIR)/openssl-1.0.0q/usr/lib && ln -sf libssl-1.0.0q.so.1.0.0 libssl-1.0.0q.so
+
+openssl-1.0.0q-stage:
+	@$(MAKE) -C openssl-1.0.0q install_sw INSTALL_PREFIX=$(STAGEDIR)
 
 openssl/Makefile:
 	cd openssl && \
@@ -2233,7 +2271,7 @@ quagga/stamp-h1:
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" \
 	$(CONFIGURE) --disable-ripngd --disable-ospfd --disable-doc --disable-ospfclient \
 	--disable-ospf6d --disable-bgpd --disable-bgp-announce --disable-babeld \
-	--disable-isisd --enable-user=admin --enable-group=admin
+	--disable-isisd
 	@touch $@
 
 quagga: quagga/stamp-h1

@@ -94,20 +94,22 @@ function initial(){
 	){	// MODELDEP: RT-AC3200, RT-AC87U, RT-AC68U, RT-AC66U, RT-AC51U, RT-N66U, RT-N18U
 		document.getElementById('meoOption').outerHTML = "";
 	}
-        if( based_modelid != "RT-AC5300" &&
+	
+	if( based_modelid != "RT-AC5300" &&
 		based_modelid != "RT-AC3200" &&
 		based_modelid != "RT-AC3100" &&
 		based_modelid != "RT-AC88U" &&
-                based_modelid != "RT-AC87U" && 
-                based_modelid != "RT-AC68U" &&
-                based_modelid != "RT-AC66U" &&
+		based_modelid != "RT-AC87U" &&
+		based_modelid != "RT-AC68U" &&
+		based_modelid != "RT-AC66U" &&
 		based_modelid != "RT-AC56U" &&
-                //based_modelid != "RT-AC51U" &&
-                based_modelid != "RT-N66U" &&
-                based_modelid != "RT-N18U"
-        ){      
-                document.getElementById('movistarOption').outerHTML = "";
-        }
+		//based_modelid != "RT-AC51U" &&
+		based_modelid != "RT-N66U" &&
+		based_modelid == "RT-AC1200G+" &&
+		based_modelid != "RT-N18U"
+        ){
+		document.getElementById('movistarOption').outerHTML = "";
+	}
 
 }
 
@@ -171,11 +173,11 @@ function load_ISP_profile(){
 		document.form.quagga_enable.value = "0";
 	}
 	else if(document.form.switch_wantag.value == "movistar") {
-                document.form.quagga_enable.value = "1";
-                document.form.mr_enable_x.value = "1";
-                document.form.wan_vpndhcp.value = "0";
+		document.form.quagga_enable.value = "1";
+		document.form.mr_enable_x.value = "1";
+		document.form.wan_vpndhcp.value = "0";
 		document.form.mr_altnet_x.value = "172.0.0.0/8";
-        }
+	}
 	else {
 		document.form.quagga_enable.value = "0";
 		document.form.mr_altnet_x.value = "";
@@ -191,7 +193,7 @@ function ISP_Profile_Selection(isp){
 			wan_voip_x.style.display,
 			wan_internet_x.style.display,
 			wan_iptv_port4_x.style.display,
-			wan_iptv_port3_x.style.display,
+			wan_voip_port3_x.style.display,
 			switch_stb_x.value,
 			mr_enable_field.style.display,
 			iptv_settings_btn.style.display,
@@ -219,8 +221,11 @@ function ISP_Profile_Selection(isp){
 	else if(isp == "movistar"){
 		ISP_setting = ["none", "", "", "none", "none", "none", "7", "none", "none", "", ""];
 	}
+	else if(isp == "vodafone"){
+		ISP_setting = ["none", "", "", "none", "none", "none", "3", "", "", "none", "none"];
+	}
 	else if(isp == "manual"){
-		ISP_setting = ["none", "none", "none", "none", "", "", "6", "", "", "none", "none"];
+		ISP_setting = ["none", "none", "none", "", "", "", "6", "", "", "none", "none"];
 	}
 	
 	document.form.switch_wantag.value = isp;
@@ -245,7 +250,10 @@ function ISP_Profile_Selection(isp){
 		document.getElementById("iptv_port").style.display = "none";
 	}
 	else{
-		document.getElementById("iptv_title").innerHTML = "IPTV STB Port";
+		if(isp == "vodafone" || isp == "meo")
+			document.getElementById("iptv_title").innerHTML = "Bridge Port";
+		else
+			document.getElementById("iptv_title").innerHTML = "IPTV STB Port";
 		document.getElementById("iptv_port").style.display = "";
 	}
 
@@ -254,7 +262,10 @@ function ISP_Profile_Selection(isp){
 		document.getElementById("voip_port").style.display = "none";
 	}
 	else{
-		document.getElementById("voip_title").innerHTML = "VoIP Port";
+		if(isp == "vodafone")
+			document.getElementById("voip_title").innerHTML = "IPTV STB Port";
+		else
+			document.getElementById("voip_title").innerHTML = "VoIP Port";
 		document.getElementById("voip_port").style.display = "";
 	}
 

@@ -51,8 +51,8 @@
 22005,Vip GPRS,*99#,vipmobile,vipmobile,vipmobile,Vip GPRS
 22201,TIM,*99#,,,ibox.tim.it,TIM Web
 22201,TIM,*99#,WAPTIM,WAPTIM,wap.tim.it,WAP TIM
-22210,Vodafone,*99#,,,mobile.vodafone.it,Acc. Internet da cell
-22210,Vodafone,*99#,,,web.omnitel.it,Tethering Internet
+22210,Vodafone,*99#,,,mobile.vodafone.it,Vodafone
+22210,Vodafone,*99#,,,web.omnitel.it,Vodafone
 22233,PosteMobile,*99#,,,wap.postemobile.it,PosteMobile
 22234,BT internet,*99#,,,internet.btitalia.it,BT internet
 22288,Wind,*99#,,,internet.wind,WIND DUN

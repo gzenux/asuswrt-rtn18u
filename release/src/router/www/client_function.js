@@ -704,26 +704,27 @@ function setClientListOUI() {
 }
 
 function oui_query_set_cookie(mac) {
-	var tab = new Array();
-	tab = mac.split(mac.substr(2,1));
+	var queryStr = mac.replace(/\:/g, "").splice(6,6,"");
 	$.ajax({
-	    url: 'http://standards.ieee.org/cgi-bin/ouisearch?'+ tab[0] + '-' + tab[1] + '-' + tab[2],
+		url: 'https://services11.ieee.org/RST/standards-ra-web/rest/assignments/download/?registry=MA-L&format=html&text='+ queryStr,
 		type: 'GET',
-	    success: function(response) {
-	    	if(response.responseText.search("Sorry!") == -1) {
-				var retData = response.responseText.split("pre")[1].split("(hex)")[1].split(tab[0] + tab[1] + tab[2])[0].split("&lt;/");
-				if(ouiClientList == null) {
-					ouiClientList = "";
-				}
+		success: function(response) {
+			if(response.search("Sorry!") == -1) {
+				if(response.search(queryStr) != -1) {
+					var retData = response.split("pre")[1].split("(hex)")[1].split(queryStr)[0].split("<b>");
+					if(ouiClientList == null) {
+						ouiClientList = "";
+					}
 
-				var venderMatch = retData[0].trim().toLowerCase().match(venderArrayRE);
-				if(Boolean(venderMatch)) {
-					ouiClientList += "<" +  mac + ">" + venderMatch[0];
+					var venderMatch = retData[0].trim().toLowerCase().match(venderArrayRE);
+					if(Boolean(venderMatch)) {
+						ouiClientList += "<" +  mac + ">" + venderMatch[0];
+					}
+					else {
+						ouiClientList += "<" +  mac + ">" + retData[0].trim();
+					}
+					cookie.set("ouiClientList", ouiClientList, 30);
 				}
-				else {
-					ouiClientList += "<" +  mac + ">" + retData[0].trim();
-				}
-				cookie.set("ouiClientList", ouiClientList, 30);
 			}
 		}    
 	});
@@ -1615,10 +1616,9 @@ function select_image(type,  vender) {
 }
 
 function oui_query_card(mac) {
-	var tab = new Array();
-	tab = mac.split(mac.substr(2,1));
+	var queryStr = mac.replace(/\:/g, "").splice(6,6,"");
 	$.ajax({
-		url: 'http://standards.ieee.org/cgi-bin/ouisearch?'+ tab[0] + '-' + tab[1] + '-' + tab[2],
+		url: 'https://services11.ieee.org/RST/standards-ra-web/rest/assignments/download/?registry=MA-L&format=html&text='+ queryStr,
 		type: 'GET',
 		success: function(response) {
 			if(document.getElementById("edit_client_block") == null) return true;
@@ -1626,13 +1626,15 @@ function oui_query_card(mac) {
 				oui_query_card(document.getElementById("client_macaddr_field").value);
 			}
 			else {
-				if(response.responseText.search("Sorry!") == -1) {
-					var retData = response.responseText.split("pre")[1].split("(hex)")[1].split(tab[0] + tab[1] + tab[2])[0].split("&lt;/");
-					document.getElementById("client_manufacturer_field").value = retData[0].trim();
-					document.getElementById("client_manufacturer_field").title = "";
-					if(retData[0].trim().length > 28) {
-						document.getElementById("client_manufacturer_field").value = retData[0].trim().substring(0, 26) + "..";
-						document.getElementById("client_manufacturer_field").title = retData[0].trim();
+				if(response.search("Sorry!") == -1) {
+					if(response.search(queryStr) != -1) {
+						var retData = response.split("pre")[1].split("(hex)")[1].split(queryStr)[0].split("<b>");
+						document.getElementById("client_manufacturer_field").value = retData[0].trim();
+						document.getElementById("client_manufacturer_field").title = "";
+						if(retData[0].trim().length > 38) {
+							document.getElementById("client_manufacturer_field").value = retData[0].trim().substring(0, 36) + "..";
+							document.getElementById("client_manufacturer_field").title = retData[0].trim();
+						}
 					}
 				}
 			}

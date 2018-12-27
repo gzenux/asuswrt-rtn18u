@@ -335,7 +335,6 @@ ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        A
 			if (l2 != NULL)
 				l2_offset = (int)(l2 - line_buf);
 			else {
-				dbg("%s: ACAPS not found. [%s]\n", __func__, line_buf);
 				l2_offset = 79;
 				l2 = line_buf + l2_offset;
 			}

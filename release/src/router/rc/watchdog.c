@@ -1006,11 +1006,7 @@ void btn_check(void)
 
 				alarmtimer(NORMAL_PERIOD, 0);
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
 				stop_wps_method();
-#else
-				restart_wps_monitor();
-#endif
 #endif
 #ifdef RTCONFIG_WIFI_CLONE
 				if (nvram_match("wps_e_success", "1")) {
@@ -2174,10 +2170,12 @@ void ddns_check(void)
 			if( !strcmp(nvram_safe_get("ddns_return_code_chk"),"auth_fail") )
 				return;
 		}
-		nvram_set("ddns_update_by_wdog", "1");
-		//unlink("/tmp/ddns.cache");
-		logmessage("watchdog", "start ddns.");
-		notify_rc("start_ddns");
+		if (internet_ready() == 1){
+			nvram_set("ddns_update_by_wdog", "1");
+			//unlink("/tmp/ddns.cache");
+			logmessage("watchdog", "start ddns.");
+			notify_rc("start_ddns");
+		}
 	}
 
 	return;
@@ -2192,6 +2190,9 @@ void networkmap_check()
 void httpd_check()
 {
 	if (!pids("httpd")){
+		nvram_set("last_httpd_handle_request", nvram_safe_get("httpd_handle_request"));
+		nvram_set("last_httpd_handle_request_fromapp", nvram_safe_get("httpd_handle_request_fromapp"));
+		nvram_commit();
 		logmessage("watchdog", "restart httpd");
 		start_httpd();
 	}
@@ -2218,8 +2219,10 @@ void watchdog_check()
 void qtn_module_check(void)
 {
 	int ret;
-	uint32_t p_bw;
 	static int waiting = 0;
+	static int failed = 0;
+	const char *src_ip = nvram_safe_get("QTN_RPC_CLIENT");
+	const char *dst_ip = nvram_safe_get("QTN_RPC_SERVER");
 
 	if (nvram_get_int("ATEMODE") == 1)
 		return;
@@ -2235,9 +2238,12 @@ void qtn_module_check(void)
 	if (nvram_get_int("qtn_diagnostics") == 1)
 		return;
 
-	if (rpc_qcsapi_get_bw(&p_bw) != 0 ){
-		logmessage("QTN", "QTN connection lost");
-		system("reboot &");
+	if(icmp_check(src_ip, dst_ip) == 0 ){
+		failed++;
+		if(failed > 2){
+			logmessage("QTN", "QTN connection lost[%s][%s]", src_ip, dst_ip);
+			system("reboot &");
+		}
 	}
 	waiting = 0;
 

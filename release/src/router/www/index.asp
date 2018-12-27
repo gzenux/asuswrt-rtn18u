@@ -99,7 +99,6 @@
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script language="JavaScript" type="text/javascript" src="/form.js"></script>
-<script type="text/javascript" src="/jquery.xdomainajax.js"></script>
 <script>
 	
 var userIconBase64 = "NoIcon";
@@ -1293,20 +1292,21 @@ function hideEditBlock(){
 }
 
 function oui_query(mac){
-	var tab = new Array();
-	tab = mac.split(mac.substr(2,1));
+	var queryStr = mac.replace(/\:/g, "").splice(6,6,"");
 	$.ajax({
-		url: 'http://standards.ieee.org/cgi-bin/ouisearch?'+ tab[0] + '-' + tab[1] + '-' + tab[2],
+		url: 'https://services11.ieee.org/RST/standards-ra-web/rest/assignments/download/?registry=MA-L&format=html&text='+ queryStr,
 		type: 'GET',
 		success: function(response) {
 			if(document.getElementById("edit_client_block").style.display == "none") return true;
-			if(response.responseText.search("Sorry!") == -1) {
-				var retData = response.responseText.split("pre")[1].split("(hex)")[1].split(tab[0] + tab[1] + tab[2])[0].split("&lt;/");
-				document.getElementById('manufacturer_field').value = retData[0].trim();
-				document.getElementById('manufacturer_field').title = "";
-				if(retData[0].trim().length > 28) {
-					document.getElementById('manufacturer_field').value = retData[0].trim().substring(0, 26) + "..";
-					document.getElementById('manufacturer_field').title = retData[0].trim();
+			if(response.search("Sorry!") == -1) {
+				if(response.search(queryStr) != -1) {
+					var retData = response.split("pre")[1].split("(hex)")[1].split(queryStr)[0].split("<b>");
+					document.getElementById('manufacturer_field').value = retData[0].trim();
+					document.getElementById('manufacturer_field').title = "";
+					if(retData[0].trim().length > 38) {
+						document.getElementById('manufacturer_field').value = retData[0].trim().substring(0, 36) + "..";
+						document.getElementById('manufacturer_field').title = retData[0].trim();
+					}
 				}
 			}
 		}

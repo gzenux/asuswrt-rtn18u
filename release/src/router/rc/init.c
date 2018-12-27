@@ -2210,6 +2210,7 @@ int init_nvram(void)
 		add_rc_support("switchctrl");
 		add_rc_support("manual_stb");
 		add_rc_support("11AC");
+		add_rc_support("pwrctrl");
 		// the following values is model dep. so move it from default.c to here
 		nvram_set("wl0_HT_TxStream", "2");
 		nvram_set("wl0_HT_RxStream", "2");
@@ -5951,7 +5952,7 @@ static void sysinit(void)
 	// disable IPv6 by default on all interfaces
 	f_write_string("/proc/sys/net/ipv6/conf/default/disable_ipv6", "1", 0, 0);
 	// disable IPv6 DAD by default on all interfaces
-	f_write_string("/proc/sys/net/ipv6/conf/default/accept_dad", "0", 0, 0);
+	f_write_string("/proc/sys/net/ipv6/conf/default/accept_dad", "2", 0, 0);
 	// increase ARP cache
 	f_write_string("/proc/sys/net/ipv6/neigh/default/gc_thresh1", "512", 0, 0);
 	f_write_string("/proc/sys/net/ipv6/neigh/default/gc_thresh2", "1024", 0, 0);

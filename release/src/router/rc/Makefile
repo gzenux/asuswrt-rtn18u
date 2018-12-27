@@ -272,6 +272,7 @@ CFLAGS += $(if $(RTCONFIG_BLINK_LED),-I$(TOP)/bled)
 export CFLAGS
 
 ifeq ($(RTCONFIG_QTN),y)
+OBJS += icmp.o
 OBJS += qtn.o
 OBJS += find_host_addr.o
 OBJS += qtn_monitor.o

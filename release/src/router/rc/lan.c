@@ -410,6 +410,12 @@ wl_vif_hwaddr_set(const char *name)
 		return;
 	}
 
+#ifdef RTCONFIG_QTN
+	if(strcmp(name, "wl1.1") == 0 ||
+		strcmp(name, "wl1.2") == 0 ||
+		strcmp(name, "wl1.3") == 0)
+		return;
+#endif
 	fprintf(stderr, "NET: Setting %s hw addr to %s\n", name, ea);
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	ether_atoe(ea, (unsigned char *)ifr.ifr_hwaddr.sa_data);
@@ -2506,6 +2512,25 @@ NEITHER_WDS_OR_PSTA:
 		// so it need to deny additionally.
 		if(!strncmp(interface, "eth2", 4))
 			return;
+
+#if defined(RTN67U) || defined(RTN36U3) || defined(RTN56U) || defined(RTN56UB1) || defined(RTN56UB2)
+		/* eth3 may be used as WAN on some Ralink/MTK platform. */
+		if(!strncmp(interface, "eth3", 4))
+			return;
+#endif
+
+#elif defined(RTCONFIG_QCA)
+		/* All models use eth0/eth1 as LAN or WAN. */
+		if (!strncmp(interface, "eth0", 4) || !strncmp(interface, "eth1", 4))
+			return;
+#if defined(RTCONFIG_SWITCH_RTL8370M_PHY_QCA8033_X2) || defined(RTCONFIG_SWITCH_RTL8370MB_PHY_QCA8033_X2)
+		/* BRT-AC828M2 SR1~SR3: eth2/eth3 are WAN1/WAN2.
+		 * BRT-AC828M2 SR4+   : eth2/eth3 are LAN2/WAN2.
+		 */
+		if (!strncmp(interface, "eth2", 4) || !strncmp(interface, "eth3", 4))
+			return;
+#endif
+
 #else
 		// for all models, ethernet's physical interface.
 		if(!strcmp(interface, "eth0"))

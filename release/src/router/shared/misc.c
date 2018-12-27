@@ -1786,3 +1786,16 @@ int get_iface_hwaddr(char *name, unsigned char *hwaddr)
 	close(s);
 	return ret;
 }
+
+int internet_ready(void)
+{
+	if(nvram_get_int("ntp_ready") == 1)
+		return 1;
+	return 0;
+}
+
+void set_no_internet_ready(void)
+{
+	nvram_set("ntp_ready", "0");
+}
+
