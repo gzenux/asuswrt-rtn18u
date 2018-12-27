@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -85,7 +85,7 @@ var wans_dualwan = '<% nvram_get("wans_dualwan"); %>';
 <% wan_get_parameter(); %>
 
 var $j = jQuery.noConflict();
-if(dualWAN_support){
+if(dualWAN_support && wans_dualwan.search("usb") >= 0 ){
 	var wan_type_name = wans_dualwan.split(" ")[<% nvram_get("wan_unit"); %>];
 	wan_type_name = wan_type_name.toUpperCase();
 	switch(wan_type_name){
@@ -93,6 +93,7 @@ if(dualWAN_support){
 			location.href = "Advanced_DSL_Content.asp";
 			break;
 		case "WAN":
+			location.href = "Advanced_WAN_Content.asp";
 			break;
 		case "LAN":
 			location.href = "Advanced_WAN_Content.asp";
@@ -103,19 +104,30 @@ if(dualWAN_support){
 }
 
 function genWANSoption(){
-	for(i=0; i<wans_dualwan.split(" ").length; i++)
-		document.form.wan_unit.options[i] = new Option(wans_dualwan.split(" ")[i].toUpperCase(), i);
+	for(i=0; i<wans_dualwan.split(" ").length; i++){
+	var wans_dualwan_NAME = wans_dualwan.split(" ")[i].toUpperCase();
+		//MODELDEP: DSL-N55U, DSL-N55U-B, DSL-AC68U, DSL-AC68R
+		if(wans_dualwan_NAME == "LAN" && 
+			(productid == "DSL-N55U" || productid == "DSL-N55U-B" || productid == "DSL-AC68U" || productid == "DSL-AC68R"))	
+			wans_dualwan_NAME = "Ethernet WAN";
+		else if(wans_dualwan_NAME == "LAN")
+			wans_dualwan_NAME = "Ethernet LAN";
+		document.form.wan_unit.options[i] = new Option(wans_dualwan_NAME, i);
+	}
 	document.form.wan_unit.selectedIndex = '<% nvram_get("wan_unit"); %>';
-
-	if(wans_dualwan.search(" ") < 0 || wans_dualwan.split(" ")[1] == 'none' || !dualWAN_support)
-		$("WANscap").style.display = "none";
 }
 /* end of DualWAN */ 
 	
 function initial(){
-	$('pull_arrow').title = "<#select_APN_service#>";
 	show_menu();
-	genWANSoption();
+	if(dualWAN_support && '<% nvram_get("wans_dualwan"); %>'.search("none") < 0){
+				genWANSoption();
+	}
+	else{
+		document.form.wan_unit.disabled = true;
+		$("WANscap").style.display = "none";	
+	}
+
 	switch_modem_mode('<% nvram_get("modem_enable"); %>');
 	gen_country_list();
 	reloadProfile();
@@ -133,6 +145,7 @@ function initial(){
 			}
 		}
   }
+	//change_wan_unit(document.form.wan_unit);
 	check_dongle_status();	
 }
 
@@ -447,7 +460,6 @@ function setClientIP(apnAddr){
 function showLANIPList(isp_order){
 	var code = "";
 	var show_name = "";
-	var client_list_array = apnlist[isp_order];
 
 	for(var i = 0; i < apnlist[isp_order].length; i++){
 		var apnlist_col = apnlist[isp_order][i].split('&&');
@@ -481,19 +493,30 @@ function hideClients_Block(){
 }
 /*----------} Mouse event of fake LAN IP select menu-----------------*/
 
-function change_wan_unit(){
-	if(document.form.wan_unit.options[document.form.wan_unit.selectedIndex].text == "DSL")
-		document.form.current_page.value = "Advanced_DSL_Content.asp";
-	else if(document.form.wan_unit.options[document.form.wan_unit.selectedIndex].text == "WAN"||
-					document.form.wan_unit.options[document.form.wan_unit.selectedIndex].text == "LAN")
+var dsltmp_transmode = "<% nvram_get("dsltmp_transmode"); %>";
+function change_wan_unit(obj){
+	if(!dualWAN_support) return;
+	
+	if(obj.options[obj.selectedIndex].text == "DSL"){
+		if(dsltmp_transmode == "atm")
+			document.form.current_page.value = "Advanced_DSL_Content.asp";
+		else //ptm
+			document.form.current_page.value = "Advanced_VDSL_Content.asp";	
+	}else if(document.form.dsltmp_transmode){
+		document.form.dsltmp_transmode.style.display = "none";
+	}
+
+	if(obj.options[obj.selectedIndex].text == "WAN" ||	obj.options[obj.selectedIndex].text == "Ethernet LAN"){
 		document.form.current_page.value = "Advanced_WAN_Content.asp";
-	else
-		return false;	
+	}else	if(obj.options[obj.selectedIndex].text == "USB") {
+		return false;
+	}
 
 	FormActions("apply.cgi", "change_wan_unit", "", "");
 	document.form.target = "";
 	document.form.submit();
 }
+
 
 function done_validating(action){
 	refreshpage();
@@ -599,8 +622,12 @@ function check_dongle_status(){
 							<tr>
 								<th><#wan_type#></th>
 								<td align="left">
-									<select id="" class="input_option" name="wan_unit" onchange="change_wan_unit();">
+									<select class="input_option" name="wan_unit" onchange="change_wan_unit(this);">
 									</select>
+									<!--select id="dsltmp_transmode" name="dsltmp_transmode" class="input_option" style="margin-left:7px;" onChange="change_dsl_transmode(this);">
+											<option value="atm" <% nvram_match("dsltmp_transmode", "atm", "selected"); %>>ADSL WAN (ATM)</option>
+											<option value="ptm" <% nvram_match("dsltmp_transmode", "ptm", "selected"); %>>VDSL WAN (PTM)</option>
+									</select-->
 								</td>
 							</tr>
 						</table>
@@ -649,12 +676,26 @@ function check_dongle_status(){
 							<br/><span id="hsdpa_hint" style="display:none;"><#HSDPAConfig_hsdpa_enable_hint2#></span>
 						</td>
 					</tr>
+					<tr>
+						<th width="40%">
+							<a class="hintstyle" href="javascript:void(0);"><#Network_type#></a>
+						</th>
+						<td>
+							<select name="modem_mode" id=modem_mode" class="input_option">
+								<option value="0" <% nvram_match("modem_mode", "0", "selected"); %>>Auto</option>
+								<option value="43" <% nvram_match("modem_mode", "43", "selected"); %>>4G/3G</option>
+								<option value="4" <% nvram_match("modem_mode", "4", "selected"); %>>4G only</option>
+								<option value="3" <% nvram_match("modem_mode", "3", "selected"); %>>3G only</option>
+								<option value="2" <% nvram_match("modem_mode", "2", "selected"); %>>2G only</option>
+							</select>
+						</td>
+					</tr>
 
           <tr>
 						<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
             <td>
             	<input id="modem_apn" name="modem_apn" class="input_20_table" type="text" value=""/>
-           		<img id="pull_arrow" height="14px;" src="/images/arrow-down.gif" style="position:absolute;*margin-left:-3px;*margin-top:1px;" onclick="pullLANIPList(this);" title="" onmouseover="over_var=1;" onmouseout="over_var=0;">
+           		<img id="pull_arrow" height="14px;" src="/images/arrow-down.gif" style="position:absolute;*margin-left:-3px;*margin-top:1px;" onclick="pullLANIPList(this);" title="<#select_APN_service#>" onmouseover="over_var=1;" onmouseout="over_var=0;">
 							<div id="ClientList_Block_PC" class="ClientList_Block_PC"></div>
 						</td>
 					</tr>

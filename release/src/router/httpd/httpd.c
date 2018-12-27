@@ -91,10 +91,6 @@ typedef unsigned int __u32;   // 1225 ham
 #endif
 #include "bcmnvram_f.h"
 
-#ifdef RTCONFIG_QTN
-#include "web-qtn.h"
-#endif
-
 /* A multi-family sockaddr. */
 typedef union {
     struct sockaddr sa;
@@ -148,7 +144,7 @@ struct language_table language_tables[] = {
 	{"es-py", "ES"},
 	{"es-pa", "ES"},
 	{"es-ni", "ES"},
-    {"es-gt", "ES"},
+	{"es-gt", "ES"},
 	{"es-do", "ES"},
 	{"es-es", "ES"},
 	{"es-hn", "ES"},
@@ -175,6 +171,8 @@ struct language_table language_tables[] = {
 	{"it-ch", "IT"},
 	{"ja", "JP"},
 	{"ja-JP", "JP"},
+	{"ko", "KR"},
+	{"ko-kr", "KR"},
 	{"ms", "MS"},
 	{"ms-MY", "MS"},
 	{"ms-BN", "MS"},
@@ -221,6 +219,10 @@ static int b64_decode( const char* str, unsigned char* space, int size );
 static int match( const char* pattern, const char* string );
 static int match_one( const char* pattern, int patternlen, const char* string );
 static void handle_request(void);
+#ifdef RTCONFIG_TMOBILE_TMP
+static void handle_redirect(int fd, char *line);
+static void redirect_to_https(int fd);
+#endif
 
 /* added by Joey */
 //2008.08 magic{
@@ -231,6 +233,9 @@ int reget_passwd = 0;
 int x_Setting = 0;
 int skip_auth = 0;
 int isLogout = 0;
+#ifdef RTCONFIG_TMOBILE
+int isAjaxLogin = 0;
+#endif
 char url[128];
 int http_port=SERVER_PORT;
 
@@ -342,7 +347,11 @@ auth_check( char* dirname, char* authorization ,char* url)
 	char *temp_ip_str;
 	time_t dt;
 
+#ifdef RTCONFIG_TMOBILE
+	if(isLogout == 1 && isAjaxLogin == 0){
+#else
 	if(isLogout == 1){
+#endif
 		isLogout = 0;
 		send_authenticate( dirname );
 		return 0;
@@ -370,7 +379,6 @@ auth_check( char* dirname, char* authorization ,char* url)
 #endif
 	}
 
-	//printf("[httpd] auth chk:%s, %s\n", dirname, url);	// tmp test
 	/* Is this directory unprotected? */
 	if ( !strlen(auth_passwd) )
 		/* Yes, let the request go through. */
@@ -398,14 +406,6 @@ auth_check( char* dirname, char* authorization ,char* url)
 	/* Is this the right user and password? */
 	if ( strcmp( auth_userid, authinfo ) == 0 && strcmp( auth_passwd, authpass ) == 0)
 	{
-		//fprintf(stderr, "login check : %x %x\n", login_ip, last_login_ip);
-		/* Is this is the first login after logout */
-		//if (login_ip==0 && last_login_ip==login_ip_tmp)
-		//{
-		//	send_authenticate(dirname);
-		//	last_login_ip=0;
-		//	return 0;
-		//}
 		login_try = 0;
 		last_login_timestamp = 0;
 		return 1;
@@ -419,8 +419,13 @@ static void
 __send_authenticate( char* realm )
 {
 	char header[10000];
+	memset(header, 0, sizeof(header));
 
+#ifdef RTCONFIG_TMOBILE
+	if(isAjaxLogin == 0)
+#endif
 	(void) snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm);
+
 	send_error( 401, "Unauthorized", header, "Authorization required." );
 }
 
@@ -679,6 +684,10 @@ char detect_timestampstr[32];
 #define APPLYAPPSTR 	"applyapp.cgi"
 #define GETAPPSTR 	"getapp"
 
+#ifdef RTCONFIG_ROG
+#define APPLYROGSTR     "api.asp"
+#endif
+
 
 static void
 handle_request(void)
@@ -757,8 +766,15 @@ handle_request(void)
 				{
 					if (strcasecmp(p, pLang->Lang)==0)
 					{
+						char dictname[32];
+						snprintf(dictname,sizeof(dictname),"%s.dict", pLang->Target_Lang);
+						if(!check_if_file_exist(dictname))
+						{
+							//_dprintf("language(%s) is not supported!!\n", pLang->Target_Lang);
+							continue;
+						}
 						snprintf(Accept_Language,sizeof(Accept_Language),"%s",pLang->Target_Lang);
-						if (is_firsttime ())    {
+						if (is_firsttime ()) {
 							nvram_set("preferred_lang", Accept_Language);
 						}
 						break;
@@ -771,7 +787,7 @@ handle_request(void)
 				p+=strlen(p)+1;
 			}
 
-			if (Accept_Language[0] == 0)    {
+			if (Accept_Language[0] == 0) {
 				// If all language setting of user's browser are not supported, use English.
 				//printf ("Auto detect language failed. Use English.\n");
 				strcpy (Accept_Language, "EN");
@@ -827,8 +843,19 @@ handle_request(void)
 	}
 
 //2008.08 magic{
+#ifdef RTCONFIG_TMOBILE	
+	if (file[0] == '\0' || file[len-1] == '/'){
+		x_Setting = nvram_get_int("x_Setting");
+		if(x_Setting)
+			file = "index.asp";
+		else
+			file = "MobileQIS_Login.asp";
+	}	
+#else
 	if (file[0] == '\0' || file[len-1] == '/')
 		file = "index.asp";
+#endif
+
 
 // 2007.11 James. {
 	char *query;
@@ -846,7 +873,12 @@ handle_request(void)
 	}
 // 2007.11 James. }
 
-	if(strncmp(url, APPLYAPPSTR, strlen(APPLYAPPSTR))==0)  fromapp=1;
+	if(strncmp(url, APPLYAPPSTR, strlen(APPLYAPPSTR))==0 
+#ifdef RTCONFIG_ROG
+		|| strncmp(url, APPLYROGSTR, strlen(APPLYROGSTR))==0
+#endif
+	)
+		fromapp=1;
 	else if(strncmp(url, GETAPPSTR, strlen(GETAPPSTR))==0)  {
 		fromapp=1;
 		strcpy(url, url+strlen(GETAPPSTR));
@@ -886,6 +918,13 @@ handle_request(void)
 				strcpy(url, file);
 			}
 		}
+
+#ifdef RTCONFIG_TMOBILE
+	        isAjaxLogin = 0;
+        	if(!strcmp(file, "AjaxLogin.asp")){
+                	isAjaxLogin = 1;
+        	}
+#endif
 	}
 	else { // Jerry5 fix AiCloud login issue. 20120815
 		x_Setting = nvram_get_int("x_Setting");
@@ -967,25 +1006,67 @@ handle_request(void)
 	}
 
 	if (!handler->pattern){
-//#ifdef RTCONFIG_CLOUDSYNC
-		// Todo: verify invite code
 		if(strlen(file) > 50){
-			char inviteCode[100];
-			sprintf(inviteCode, "<script>location.href='/cloud_sync.asp?flag=%s';</script>", file);
+			char inviteCode[256];
+			snprintf(inviteCode, sizeof(inviteCode), "<script>location.href='/cloud_sync.asp?flag=%s';</script>", file);
 			send_page( 200, "OK", (char*) 0, inviteCode);
 		}
 		else
-//#endif
-		send_error( 404, "Not Found", (char*) 0, "File not found." );
+			send_error( 404, "Not Found", (char*) 0, "File not found." );
 	}
 
 	if(!fromapp) {
+#ifdef RTCONFIG_TMOBILE
+		if(!strcmp(file, "Logout.asp") || !strcmp(file, "AjaxLogin.asp")){
+#else
 		if(!strcmp(file, "Logout.asp")){
+#endif
 			isLogout = 1;
 			http_logout(login_ip_tmp);
 		}
 	}
 }
+
+#ifdef RTCONFIG_TMOBILE_TMP
+void handle_redirect(int fd, char *line){
+	int debug;
+	debug = nvram_get_int("httpd_debug");
+	if(debug) printf("line=%s\n", line);
+
+	char buf[4096];
+	char timebuf[100];
+	time_t now;
+
+	memset(buf, 0, sizeof(buf));
+	now = uptime();
+	(void)strftime(timebuf, sizeof(timebuf), RFC1123FMT, gmtime(&now));
+
+	if(!strncmp(line, "GET /", 5)){
+		sprintf(buf, "%s%s%s%s%s%s", buf, "HTTP/1.0 302 Moved Temporarily\r\n", "Server: wanduck\r\n", "Date: ", timebuf, "\r\n");
+		sprintf(buf, "%s%s%s%s%s" ,buf , "Connection: close\r\n", "Location:https://cellspot.router/index.asp", "\r\nContent-Type: text/plain\r\n", "\r\n<html></html>\r\n");
+	}
+	write(fd, buf, strlen(buf));
+}
+
+void redirect_to_https(int fd){
+	ssize_t n;
+	char line[2048];
+
+	int debug;
+	debug = nvram_get_int("httpd_debug");
+
+	memset(line, 0, sizeof(line));
+
+	if((n = read(fd, line, 2048)) <= 0){
+		if(debug) printf("redirect to https - 1\n");
+		return;
+	}
+	else{
+		if(debug) printf("redirect to https - 2\n");
+		handle_redirect(fd, line);
+	}
+}
+#endif
 
 //2008 magic{
 void http_login_cache(usockaddr *u) {
@@ -1223,7 +1304,7 @@ load_dictionary (char *lang, pkw_t pkw)
 //printf ("lang=%s\n", lang);
 
 //	gettimeofday (&tv1, NULL);
-	if (lang == NULL || (lang != NULL && strlen (lang) == 0))       {
+	if (lang == NULL || (lang != NULL && strlen (lang) == 0)) {
 		// if "lang" is invalid, use English as default
 		snprintf (dfn, sizeof (dfn), eng_dict);
 	} else {
@@ -1232,13 +1313,13 @@ load_dictionary (char *lang, pkw_t pkw)
 
 #ifndef RELOAD_DICT
 //	printf ("loaded_dict (%s) v.s. dfn (%s)\n", loaded_dict, dfn);
-	if (strcmp (dfn, loaded_dict) == 0)     {
+	if (strcmp (dfn, loaded_dict) == 0) {
 		return 1;
 	}
 	release_dictionary (pkw);
 #endif  // RELOAD_DICT
 
-	do      {
+	do {
 //		 printf("Open (%s) dictionary file.\n", dfn);
 //
 // Now DICT files all use UTF-8, it is no longer a text file
@@ -1379,7 +1460,7 @@ search_desc (pkw_t pkw, char *name)
 	printf("\n");
 */
 
-	if (pkw == NULL || (pkw != NULL && pkw->len <= 0))      {
+	if (pkw == NULL || (pkw != NULL && pkw->len <= 0)) {
 		return NULL;
 	}
 
@@ -1397,7 +1478,7 @@ search_desc (pkw_t pkw, char *name)
 	for (i = 0; i < pkw->len; ++i)  {
 		char *p;
 		p = pkw->idx[i];
-		if (strncmp (name, p, strlen (name)) == 0)      {
+		if (strncmp (name, p, strlen (name)) == 0) {
 			ret = p + strlen (name);
 			break;
 		}
@@ -1442,7 +1523,7 @@ load_dictionary (char *lang, pkw_t pkw)
 #endif  // RELOAD_DICT
 
 //	gettimeofday (&tv1, NULL);
-	if (lang == NULL || (lang != NULL && strlen (lang) == 0))       {
+	if (lang == NULL || (lang != NULL && strlen (lang) == 0)) {
 		// if "lang" is invalid, use English as default
 		snprintf (dfn, sizeof (dfn), eng_dict);
 	} else {
@@ -1451,13 +1532,13 @@ load_dictionary (char *lang, pkw_t pkw)
 
 #ifndef RELOAD_DICT
 //	printf ("loaded_dict (%s) v.s. dfn (%s)\n", loaded_dict, dfn);
-	if (strcmp (dfn, loaded_dict) == 0)     {
+	if (strcmp (dfn, loaded_dict) == 0) {
 		return 1;
 	}
 	release_dictionary (pkw);
 #endif  // RELOAD_DICT
 
-	do      {
+	do {
 //		 printf("Open (%s) dictionary file.\n", dfn);
 		dfp = fopen (dfn, "r");
 		if (dfp != NULL)	{
@@ -1485,12 +1566,12 @@ load_dictionary (char *lang, pkw_t pkw)
 
 	fseek (dfp, 0L, SEEK_SET);
 #if 0
-	while (!feof (dfp))     {
+	while (!feof (dfp)) {
 		// if pkw->idx is not enough, add 32 item to pkw->idx
 		REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
 
 		fscanf (dfp, "%[^\n]%*c", q);
-		if ((p = strchr (q, '=')) != NULL)      {
+		if ((p = strchr (q, '=')) != NULL) {
 			pkw->idx[pkw->len] = q;
 			pkw->len++;
 			q = p + strlen (p);
@@ -1550,12 +1631,12 @@ search_desc (pkw_t pkw, char *name)
 	int i;
 	char *p, *ret = NULL;
 
-	if (pkw == NULL || (pkw != NULL && pkw->len <= 0))      {
+	if (pkw == NULL || (pkw != NULL && pkw->len <= 0)) {
 		return NULL;
 	}
 	for (i = 0; i < pkw->len; ++i)  {
 		p = pkw->idx[i];
-		if (strncmp (name, p, strlen (name)) == 0)      {
+		if (strncmp (name, p, strlen (name)) == 0) {
 			ret = p + strlen (name);
 			break;
 		}
@@ -1571,10 +1652,6 @@ void reapchild()	// 0527 add
 	signal(SIGCHLD, reapchild);
 	wait(NULL);
 }
-
-#ifdef RTCONFIG_QTN
-extern char *wl_ether_etoa(const struct ether_addr *n);
-#endif
 
 int do_ssl = 0; 	// use Global for HTTPS upgrade judgment in web.c
 int ssl_stream_fd; 	// use Global for HTTPS stream fd in web.c
@@ -1606,37 +1683,6 @@ int main(int argc, char **argv)
 			}
 		}
 	}
-
-#ifdef RTCONFIG_QTN
-	time_t start_time = uptime();
-	int ret;
-QTN_RESET:
-	ret = rpc_qcsapi_init();
-	if (ret < 0) {
-		dbG("Qcsapi qcsapi init error, return: %d\n", ret);
-	}
-	else if (nvram_get_int("qtn_restore_defaults"))
-	{
-		nvram_unset("qtn_restore_defaults");
-//		eval("qcsapi_sockrpc", "update_bootcfg_param", "ipaddr", "1.1.1.2");
-		rpc_qcsapi_restore_default_config(0);
-		dbG("Restaring Qcsapi init...\n");
-		sleep(15);
-		goto QTN_RESET;
-	}
-
-	qcsapi_init();
-
-	dbG("Qcsapi qcsapi init takes %ld seconds\n", uptime() - start_time);
-
-	qcsapi_mac_addr wl_mac_addr;
-	ret = rpc_qcsapi_interface_get_mac_addr(WIFINAME, &wl_mac_addr);
-	if (!ret)
-	{
-		nvram_set("1:macaddr", wl_ether_etoa((struct ether_addr *) &wl_mac_addr));
-		nvram_set("wl1_hwaddr", wl_ether_etoa((struct ether_addr *) &wl_mac_addr));
-	}
-#endif
 
 	//websSetVer();
 	//2008.08 magic
@@ -1733,6 +1779,10 @@ QTN_RESET:
 			FD_SET(item->fd, &active_rfds);
 			TAILQ_INSERT_TAIL(&pool.head, item, entry);
 			pool.count++;
+
+#ifdef RTCONFIG_TMOBILE_TMP
+			if(!do_ssl) redirect_to_https(item->fd);
+#endif
 
 			/* Continue waiting over again */
 			continue;

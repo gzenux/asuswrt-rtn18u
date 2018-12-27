@@ -262,6 +262,22 @@ enum ieee80211_ba_type {
 	IEEE80211_BA_IMMEDIATE = 1,
 };
 
+enum ieee80211_power_index_bf_ss {
+	PWR_IDX_BFOFF = 0,
+	PWR_IDX_BFON_1SS = 0,	/* Use the same power as bfoff case */
+	PWR_IDX_BFON_2SS = 1,
+	PWR_IDX_BFON_3SS = 2,
+	PWR_IDX_BFON_4SS = 3,
+	PWR_IDX_BF_SS_MAX = 4
+};
+
+enum ieee80211_power_index_bw {
+	PWR_IDX_20M = 0,
+	PWR_IDX_40M = 1,
+	PWR_IDX_80M = 2,
+	PWR_IDX_BW_MAX = 3
+};
+
 /*
  * Channels are specified by frequency and attributes.
  */
@@ -270,13 +286,11 @@ struct ieee80211_channel {
 	u_int32_t ic_flags;	/* see below */
 	u_int8_t ic_ieee;	/* IEEE channel number */
 	int8_t ic_maxregpower;	/* maximum regulatory tx power in dBm */
-	int8_t ic_maxpower;	/* maximum tx power in dBm for the current bandwidth*/
+	int8_t ic_maxpower;	/* maximum tx power in dBm for the current bandwidth with beam-forming off */
 	int8_t ic_minpower;	/* minimum tx power in dBm */
 	int8_t ic_maxpower_normal;	/* backup max tx power for short-range workaround */
 	int8_t ic_minpower_normal;	/* backup min tx power for short-range workaround */
-	int8_t ic_maxpower_20M;	/* maximum tx power in dBm for 20MHz bandwidth */
-	int8_t ic_maxpower_40M;	/* maximum tx power in dBm for 40MHz bandwidth */
-	int8_t ic_maxpower_80M;	/* maximum tx power in dBm for 80MHz bandwidth */
+	int8_t ic_maxpower_table[PWR_IDX_BF_SS_MAX][PWR_IDX_BW_MAX];	/* the maximum powers for different cases */
 	u_int32_t ic_radardetected; /* number that radar signal has been detected on this channel */
 	u_int8_t ic_center_f_80MHz;
 	u_int8_t ic_center_f_160MHz;
@@ -315,8 +329,8 @@ struct ieee80211_channel {
 #define IEEE80211_CHAN_VHT80	0x00400000	/* VHT 80 */
 #define IEEE80211_CHAN_DFS_OCAC_DONE	0x00800000	/* Status: Off-channel CAC completed */
 
-#define IEEE80211_MAX_2_4_GHZ_CHANNELS 	13
-#define IEEE80211_MAX_5_GHZ_CHANNELS	29
+#define IEEE80211_MAX_2_4_GHZ_CHANNELS	13
+#define IEEE80211_MAX_5_GHZ_CHANNELS	30
 #define IEEE80211_MAX_DUAL_CHANNELS     (IEEE80211_MAX_2_4_GHZ_CHANNELS + IEEE80211_MAX_5_GHZ_CHANNELS)
 #define CHIPID_2_4_GHZ					0
 #define CHIPID_5_GHZ					1
@@ -506,15 +520,24 @@ struct ieee80211_channel {
 #define IEEE80211_AMPDU_LIMIT_MAX   (64 * 1024 - 1)
 #define IEEE80211_AMSDU_LIMIT_MAX   4096
 
+
+/*
+ * 11ac MPDU size limit
+ */
+#define IEEE80211_MPDU_VHT_4K		3895
+#define IEEE80211_MPDU_VHT_8K		7991
+#define IEEE80211_MPDU_VHT_11K		11454
+#define IEEE80211_MPDU_ENCAP_OVERHEAD_MAX	64 /* enough for mpdu header 36 + crypto 20 + fcs 4 */
+
 /*
  * 11n and 11ac AMSDU sizes
  */
 #define IEEE80211_AMSDU_NONE		0
 #define IEEE80211_AMSDU_HT_4K		3839
 #define IEEE80211_AMSDU_HT_8K		7935
-#define IEEE80211_AMSDU_VHT_4K		3895
-#define IEEE80211_AMSDU_VHT_8K		7991
-#define IEEE80211_AMSDU_VHT_11K		11454
+#define IEEE80211_AMSDU_VHT_4K		(IEEE80211_MPDU_VHT_4K - IEEE80211_MPDU_ENCAP_OVERHEAD_MAX)
+#define IEEE80211_AMSDU_VHT_8K		(IEEE80211_MPDU_VHT_8K - IEEE80211_MPDU_ENCAP_OVERHEAD_MAX)
+#define IEEE80211_AMSDU_VHT_11K		(IEEE80211_MPDU_VHT_11K - IEEE80211_MPDU_ENCAP_OVERHEAD_MAX)
 
 /*
  * 11n MCS set limits

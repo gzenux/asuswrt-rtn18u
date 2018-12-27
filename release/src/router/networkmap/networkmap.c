@@ -24,6 +24,7 @@ unsigned char broadcast_hwaddr[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 unsigned char refresh_ip_list[255][4];
 int networkmap_fullscan;
 int refresh_exist_table = 0, scan_count=0;
+char *nmp_client_list;
 
 /******** Build ARP Socket Function *********/
 struct sockaddr_ll src_sockll, dst_sockll;
@@ -132,20 +133,22 @@ int  sent_arppacket(int raw_sockfd, unsigned char * dst_ipaddr)
                  perror("sendto");
                  return 1;
         }
-	NMP_DEBUG_M("Send ARP Request success to: .%d.%d\n", (int *)dst_ipaddr[2],(int *)dst_ipaddr[3]);
+	//NMP_DEBUG_M("Send ARP Request success to: .%d.%d\n", (int *)dst_ipaddr[2],(int *)dst_ipaddr[3]);
         return 0;
 }
 /******* End of Build ARP Socket Function ********/
 
 /*********** Signal function **************/
-static void refresh_sig(int sig)
+static void refresh_sig(void)
 {
         NMP_DEBUG("Refresh network map!\n");
         networkmap_fullscan = 1;
         refresh_exist_table = 0;
 	scan_count = 0;	
 	nvram_set("networkmap_status", "1");
-	eval("rm", "/var/client*");
+	nvram_set("networkmap_fullscan", "1");
+	eval("rm", "-rf", "/var/client*");
+
 #if 0
 	//reset exixt ip table
         memset(&client_detail_info_tab, 0x00, sizeof(client_detail_info_tabLE));
@@ -154,6 +157,194 @@ static void refresh_sig(int sig)
 	ret = eval("rm", "/var/networkmap.dat");
 #endif
 }
+
+
+#ifdef NMP_DB
+int commit_no = 0;
+int client_updated = 0;
+
+void
+convert_mac_to_string(unsigned char *mac, char *mac_str)
+{
+	sprintf(mac_str, "%02x%02x%02x%02x%02x%02x",
+		*mac,*(mac+1),*(mac+2),*(mac+3),*(mac+4),*(mac+5));
+}
+
+void
+check_nmp_db(CLIENT_DETAIL_INFO_TABLE *p_client_tab, int client_no)
+{
+        char new_mac[13];
+        char *search_list, *nv, *nvp, *b;
+	char *db_mac, *db_user_def, *db_device_name, *db_type, *db_http, *db_printer, *db_itune;
+
+NMP_DEBUG("check_nmp_db:\n");
+	search_list = strdup(nmp_client_list);
+        convert_mac_to_string(p_client_tab->mac_addr[client_no], new_mac);
+
+NMP_DEBUG("search_list= %s\n", search_list);
+        if(strstr(search_list, new_mac)==NULL)
+		return;
+
+        nvp = nv = search_list;
+
+	while (nv && (b = strsep(&nvp, "<")) != NULL) {
+                if (vstrsep(b, ">", &db_mac, &db_user_def, &db_device_name, &db_type, &db_http, &db_printer, &db_itune) != 7)
+                                continue;
+
+		NMP_DEBUG_M("DB: %s,%s,%s,%s,%s,%s,%s\n", db_mac, db_user_def, db_device_name, db_type, db_http, db_printer, db_itune);
+        	if (!strcmp(db_mac, new_mac)) {
+			NMP_DEBUG("*** %s at DB!!! Update to memory\n",new_mac);
+			strcpy(p_client_tab->user_define[client_no], db_user_def);
+		        strcpy(p_client_tab->device_name[client_no], db_device_name);
+		        p_client_tab->type[client_no] = atoi(db_type);
+			p_client_tab->http[client_no] = atoi(db_http);
+			p_client_tab->printer[client_no] = atoi(db_printer);
+			p_client_tab->itune[client_no] = atoi(db_itune);
+			break;
+		}
+	}
+
+	free(search_list);
+}
+
+void
+write_to_nvram(CLIENT_DETAIL_INFO_TABLE *p_client_tab)
+{
+	char new_mac[13], *dst_list;
+	char *nv, *nvp, *b, *search_list;
+	char *db_mac, *db_user_def, *db_device_name, *db_type, *db_http, *db_printer, *db_itune;
+
+	convert_mac_to_string(p_client_tab->mac_addr[p_client_tab->detail_info_num], new_mac);
+
+NMP_DEBUG("*** write_to_nvram: %s ***\n",new_mac);
+	search_list = strdup(nmp_client_list);
+
+	b = strstr(search_list, new_mac);
+	if(b!=NULL) { //find the client in the DB
+		dst_list = malloc(sizeof(char)*10000);
+NMP_DEBUG_M("client data in DB: %s\n", new_mac);
+
+	        nvp = nv = b;
+		*(b-1) = '\0';
+		strcpy(dst_list, search_list);
+NMP_DEBUG_M("dst_list= %s\n", dst_list);
+		//b++;
+		while (nv && (b = strsep(&nvp, "<")) != NULL) {
+			if (b == NULL) continue;
+			if (vstrsep(b, ">", &db_mac, &db_user_def, &db_device_name, &db_type, &db_http, &db_printer, &db_itune) != 7) continue;
+NMP_DEBUG_M("%s,%s,%d,%d,%d,%d\n", db_mac, db_user_def, db_device_name, atoi(db_type), atoi(db_http), atoi(db_printer), atoi(db_itune));
+
+			if (!strcmp(p_client_tab->device_name[p_client_tab->detail_info_num], db_device_name) &&
+			    p_client_tab->type[p_client_tab->detail_info_num] == atoi(db_type) &&
+			    p_client_tab->http[p_client_tab->detail_info_num] == atoi(db_http) &&
+			    p_client_tab->printer[p_client_tab->detail_info_num] == atoi(db_printer) &&
+			    p_client_tab->itune[p_client_tab->detail_info_num] == atoi(db_itune) )
+			{
+NMP_DEBUG("DATA the same!\n");
+				return;
+			}
+			sprintf(dst_list, "%s<%s<%s", dst_list, db_mac, db_user_def);
+
+		        if (strcmp(p_client_tab->device_name[p_client_tab->detail_info_num], "")) {
+      	        	        NMP_DEBUG("Update device name: %s.\n", p_client_tab->device_name[p_client_tab->detail_info_num]);
+				sprintf(dst_list, "%s>%s", dst_list, p_client_tab->device_name[p_client_tab->detail_info_num]);
+		        }
+			else
+				sprintf(dst_list, "%s>%s", dst_list, db_device_name);
+                        if (p_client_tab->type[p_client_tab->detail_info_num] != 6) {
+				client_updated = 1;
+                                NMP_DEBUG("Update type: %d\n", p_client_tab->type[p_client_tab->detail_info_num]);
+                                sprintf(dst_list, "%s>%d", dst_list, p_client_tab->type[p_client_tab->detail_info_num]);
+                        }
+                        else
+                                sprintf(dst_list, "%s>%s", dst_list, db_type);
+                        if (!strcmp(db_http, "0") ) {
+                                client_updated = 1;
+                                NMP_DEBUG("Update http: %d\n", p_client_tab->http[p_client_tab->detail_info_num]);
+                                sprintf(dst_list, "%s>%d", dst_list, p_client_tab->http[p_client_tab->detail_info_num]);
+                        }
+                        else
+                                sprintf(dst_list, "%s>%s", dst_list, db_http);
+                        if (!strcmp(db_printer, "0") ) {
+                                client_updated = 1;
+                                NMP_DEBUG("Update type: %d\n", p_client_tab->printer[p_client_tab->detail_info_num]);
+                                sprintf(dst_list, "%s>%d", dst_list, p_client_tab->printer[p_client_tab->detail_info_num]);
+                        }
+                        else
+                                sprintf(dst_list, "%s>%s", dst_list, db_printer);
+                        if (!strcmp(db_itune, "0")) {
+                                client_updated = 1;
+                                NMP_DEBUG("Update type: %d\n", p_client_tab->itune[p_client_tab->detail_info_num]);
+                                sprintf(dst_list, "%s>%d", dst_list, p_client_tab->itune[p_client_tab->detail_info_num]);
+                        }
+                        else
+                                sprintf(dst_list, "%s>%s", dst_list, db_itune);
+
+			if(nvp != NULL) {
+				strcat(dst_list, "<");
+				strcat(dst_list, nvp);
+			}
+			nmp_client_list = strdup(dst_list);
+			free(dst_list);
+
+NMP_DEBUG_M("*** Update nmp_client_list:\n%s\n", nmp_client_list);
+		        nvram_set("nmp_client_list", nmp_client_list);
+			break;
+		}
+	}
+	else { //new client
+NMP_DEBUG_M("new client: %d-%s,%s,%d\n",p_client_tab->detail_info_num,
+	        new_mac,
+        	p_client_tab->device_name[p_client_tab->detail_info_num],
+	        p_client_tab->type[p_client_tab->detail_info_num]);
+
+		sprintf(nmp_client_list,"%s<%s>>%s>%d>%d>%d>%d", nmp_client_list, 
+		new_mac,
+	        p_client_tab->device_name[p_client_tab->detail_info_num],
+       	 	p_client_tab->type[p_client_tab->detail_info_num],
+		p_client_tab->http[p_client_tab->detail_info_num],
+		p_client_tab->printer[p_client_tab->detail_info_num],
+		p_client_tab->itune[p_client_tab->detail_info_num]
+		);
+		nvram_set("nmp_client_list", nmp_client_list);	
+	}
+
+}
+
+void
+reset_db() {
+NMP_DEBUG("RESET DB!!!\n");
+	commit_no = 0;
+	nvram_set("nmp_client_list", "");
+	nvram_commit();
+	*nmp_client_list = NULL;
+	nmp_client_list = strdup(nvram_get("nmp_client_list"));
+	refresh_sig();
+}
+#endif
+
+#if 0 //Bonjour
+#define TypeBufferSize 80
+static int num_printed;
+static void DNSSD_API browse_reply(DNSServiceRef sdref, const DNSServiceFlags flags, uint32_t ifIndex, DNSServiceErrorType errorCode,
+        const char *replyName, const char *replyType, const char *replyDomain, void *context)
+        {
+        char *op = (flags & kDNSServiceFlagsAdd) ? "Add" : "Rmv";
+        (void)sdref;        // Unused
+        (void)context;      // Unused
+NMP_DEBUG("Browse Reply: %d\n", num_printed);
+printf("Browse Reply: %d\n", num_printed);
+        if (num_printed++ == 0) NMP_DEBUG("Timestamp     A/R Flags if %-25s %-25s %s\n", "Domain", "Service Type", "Instance Name");
+        //printtimestamp();
+        if (errorCode) NMP_DEBUG("Error code %d\n", errorCode);
+        else NMP_DEBUG("%s%6X%3d %-25s %-25s %s\n", op, flags, ifIndex, replyDomain, replyType, replyName);
+        if (!(flags & kDNSServiceFlagsMoreComing)) fflush(stdout);
+
+        // To test selective cancellation of operations of shared sockets,
+        // cancel the current operation when we've got a multiple of five results
+        //if (operation == 'S' && num_printed % 5 == 0) DNSServiceRefDeallocate(sdref);
+        }
+#endif
 
 /******************************************/
 int main(int argc, char *argv[])
@@ -196,6 +387,12 @@ int main(int argc, char *argv[])
 	p_client_detail_info_tab->detail_info_num = 0;
 	file_unlock(lock);
 
+	#ifdef NMP_DB
+		nmp_client_list = strdup(nvram_safe_get("nmp_client_list"));
+		NMP_DEBUG_M("NMP Client:\n%s\n", nmp_client_list);
+		signal(SIGUSR2, reset_db);
+	#endif
+
 	//Get Router's IP/Mac
 	strcpy(router_ipaddr, nvram_safe_get("lan_ipaddr"));
 #ifdef RTCONFIG_RGMII_BRCM5301X
@@ -218,7 +415,7 @@ int main(int argc, char *argv[])
 	if (strlen(router_mac)!=0) ether_atoe(router_mac, my_hwaddr);
 
 	signal(SIGUSR1, refresh_sig); //catch UI refresh signal
-
+	
         // create UDP socket and bind to "br0" to get ARP packet//
 	arp_sockfd = create_socket(INTERFACE);
 
@@ -238,6 +435,7 @@ int main(int argc, char *argv[])
 		fullscan:
                 if(networkmap_fullscan == 1) { //Scan all IP address in the subnetwork
 		    if(scan_count == 0) { 
+			asusdiscovery();	//find asus device
 			// (re)-start from the begining
 			memset(scan_ipaddr, 0x00, 4);
 			memcpy(scan_ipaddr, &router_addr.sin_addr, 3);
@@ -246,11 +444,19 @@ int main(int argc, char *argv[])
                 	setsockopt(arp_sockfd, SOL_SOCKET, SO_RCVTIMEO, &arp_timeout, sizeof(arp_timeout));//set receive timeout
 			NMP_DEBUG("Starting full scan!\n");
 			
-                        //reset client tables
-			lock = file_lock("networkmap");
-        		memset(p_client_detail_info_tab, 0x00, sizeof(CLIENT_DETAIL_INFO_TABLE));
-        		p_client_detail_info_tab->detail_info_num = 0;
-			file_unlock(lock);
+                        if(nvram_match("refresh_networkmap", "1")) {//reset client tables
+				lock = file_lock("networkmap");
+        			memset(p_client_detail_info_tab, 0x00, sizeof(CLIENT_DETAIL_INFO_TABLE));
+        			//p_client_detail_info_tab->detail_info_num = 0;
+				//p_client_detail_info_tab->ip_mac_num = 0;
+				file_unlock(lock);
+				nvram_unset("refresh_networkmap");
+			}
+			else {
+				int x = 0;
+				for(; x<255; x++)
+					p_client_detail_info_tab->exist[x]=0;
+			}
 		    }
 		    scan_count++;
 		    scan_ipaddr[3]++;
@@ -280,9 +486,13 @@ int main(int argc, char *argv[])
 		}
 		else {
 		    arp_ptr = (ARP_HEADER*)(buffer);
-                    NMP_DEBUG("*Receive an ARP Packet from: %d.%d.%d.%d, len:%d\n",
+                    NMP_DEBUG("*Receive an ARP Packet from: %d.%d.%d.%d to %d.%d.%d.%d:%02X:%02X:%02X:%02X - len:%d\n",
 				(int *)arp_ptr->source_ipaddr[0],(int *)arp_ptr->source_ipaddr[1],
 				(int *)arp_ptr->source_ipaddr[2],(int *)arp_ptr->source_ipaddr[3],
+				(int *)arp_ptr->dest_ipaddr[0],(int *)arp_ptr->dest_ipaddr[1],
+				(int *)arp_ptr->dest_ipaddr[2],(int *)arp_ptr->dest_ipaddr[3],
+                                arp_ptr->dest_hwaddr[0],arp_ptr->dest_hwaddr[1],
+                                arp_ptr->dest_hwaddr[2],arp_ptr->dest_hwaddr[3],
 				arp_getlen);
 
 		    //Check ARP packet if source ip and router ip at the same network
@@ -290,11 +500,14 @@ int main(int argc, char *argv[])
 
 			swapbytes16(arp_ptr->message_type);
 
-			//ARP Response packet to router
-			if( arp_ptr->message_type == 0x02 &&   		       	// ARP response
+			if( //ARP packet to router
+			   (arp_ptr->message_type == 0x02 &&   		       	// ARP response
                        	    memcmp(arp_ptr->dest_ipaddr, my_ipaddr, 4) == 0 && 	// dest IP
                        	    memcmp(arp_ptr->dest_hwaddr, my_hwaddr, 6) == 0) 	// dest MAC
-			{
+			    ||
+			   (arp_ptr->message_type == 0x01 &&                    // ARP request
+                            memcmp(arp_ptr->dest_ipaddr, my_ipaddr, 4) == 0)    // dest IP
+			){
 			    //NMP_DEBUG("   It's an ARP Response to Router!\n");
                             NMP_DEBUG("*RCV %d.%d.%d.%d-%02X:%02X:%02X:%02X:%02X:%02X\n",
                             (int *)arp_ptr->source_ipaddr[0],(int *)arp_ptr->source_ipaddr[1],
@@ -307,10 +520,15 @@ int main(int argc, char *argv[])
 				ip_dup = memcmp(p_client_detail_info_tab->ip_addr[i], arp_ptr->source_ipaddr, 4);
                                 mac_dup = memcmp(p_client_detail_info_tab->mac_addr[i], arp_ptr->source_hwaddr, 6);
 
-				if((ip_dup == 0) && (mac_dup == 0))
+				if((ip_dup == 0) && (mac_dup == 0)) {
+					lock = file_lock("networkmap");
+					p_client_detail_info_tab->exist[i] = 1;
+					file_unlock(lock);
 					break;
-				else if((ip_dup != 0) && (mac_dup != 0))
+				}
+				else if((ip_dup != 0) && (mac_dup != 0)) {
 					continue;
+				}
 
 				else if( (scan_count>=255) && ((ip_dup != 0) && (mac_dup == 0)) ) { 
 					NMP_DEBUG("IP changed, update immediately\n");
@@ -326,12 +544,18 @@ int main(int argc, char *argv[])
         	                                arp_ptr->source_ipaddr, 4);
                 	                memcpy(p_client_detail_info_tab->mac_addr[i],
                         	                arp_ptr->source_hwaddr, 6);
+					p_client_detail_info_tab->exist[i] = 1;
 					file_unlock(lock);
+					/*
 					real_num = p_client_detail_info_tab->detail_info_num;
 					p_client_detail_info_tab->detail_info_num = i;
+                                        #ifdef NMP_DB
+                                                check_nmp_db(p_client_detail_info_tab, i);
+                                        #endif
 					FindAllApp(my_ipaddr, p_client_detail_info_tab);
 					FindHostname(p_client_detail_info_tab);
 					p_client_detail_info_tab->detail_info_num = real_num;
+					*/
 					break;
 				}
 
@@ -345,16 +569,20 @@ int main(int argc, char *argv[])
 					arp_ptr->source_ipaddr, 4);
                                 memcpy(p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->ip_mac_num], 
 					arp_ptr->source_hwaddr, 6);
+				p_client_detail_info_tab->exist[p_client_detail_info_tab->ip_mac_num] = 1;
+                                #ifdef NMP_DB
+                                        check_nmp_db(p_client_detail_info_tab, i);
+                                #endif
                                 p_client_detail_info_tab->ip_mac_num++;
 				file_unlock(lock);
 
 			    #ifdef DEBUG  //Write client info to file
                 		fp_ip=fopen("/var/client_ip_mac.txt", "a");
                 		if (fp_ip==NULL) {
-                    		printf("File Open Error!\n");
+                    		NMP_DEBUG("File Open Error!\n");
                 		}
                 		else {
-                        	printf("Fill: %d-> %d.%d", i,p_client_detail_info_tab->ip_addr[i][2],p_client_detail_info_tab->ip_addr[i][3]);
+                        	NMP_DEBUG_M("Fill: %d-> %d.%d\n", i,p_client_detail_info_tab->ip_addr[i][2],p_client_detail_info_tab->ip_addr[i][3]);
 
                         	fprintf(fp_ip, "%d.%d.%d.%d,%02X:%02X:%02X:%02X:%02X:%02X\n",
                       	 	    p_client_detail_info_tab->ip_addr[i][0],p_client_detail_info_tab->ip_addr[i][1],
@@ -389,6 +617,24 @@ int main(int argc, char *argv[])
 		}//End of arp_getlen != -1
 	    } // End of while for flush buffer
 
+/*
+	int y = 0;
+	while(p_client_detail_info_tab->type[y]!=0){
+            NMP_DEBUG("%d: %d.%d.%d.%d,%02X:%02X:%02X:%02X:%02X:%02X,%s,%d,%d,%d,%d,%d\n", y ,
+                                p_client_detail_info_tab->ip_addr[y][0],p_client_detail_info_tab->ip_addr[y][1],
+                                p_client_detail_info_tab->ip_addr[y][2],p_client_detail_info_tab->ip_addr[y][3],
+                                p_client_detail_info_tab->mac_addr[y][0],p_client_detail_info_tab->mac_addr[y][1],
+                                p_client_detail_info_tab->mac_addr[y][2],p_client_detail_info_tab->mac_addr[y][3],
+                                p_client_detail_info_tab->mac_addr[y][4],p_client_detail_info_tab->mac_addr[y][5],
+                                p_client_detail_info_tab->device_name[y],
+                                p_client_detail_info_tab->type[y],
+                                p_client_detail_info_tab->http[y],
+                                p_client_detail_info_tab->printer[y],
+                                p_client_detail_info_tab->itune[y],
+				p_client_detail_info_tab->exist[y]);
+		y++;
+        }
+*/
 	    //Find All Application of clients
 	    //NMP_DEBUG("\ndetail ? ip : %d ? %d\n\n", p_client_detail_info_tab->detail_info_num, p_client_detail_info_tab->ip_mac_num);
 	    if(p_client_detail_info_tab->detail_info_num < p_client_detail_info_tab->ip_mac_num) {
@@ -399,7 +645,7 @@ int main(int argc, char *argv[])
 		#ifdef DEBUG //Fill client detail info table
                 fp_ip=fopen("/var/client_detail_info.txt", "a");
                 if (fp_ip==NULL) {
-                        printf("File Open Error!\n");
+                        NMP_DEBUG("File Open Error!\n");
                 }
                 else {
                         fprintf(fp_ip, "%s,%d,%d,%d,%d\n",
@@ -411,8 +657,24 @@ int main(int argc, char *argv[])
                         fclose(fp_ip);
                 }
 		#endif
+		#ifdef NMP_DB
+			write_to_nvram(p_client_detail_info_tab);
+		#endif
 		p_client_detail_info_tab->detail_info_num++;
 	    }
+	    #ifdef NMP_DB
+	    else {
+		NMP_DEBUG_M("commit_no, cli_no, updated: %d, %d, %d\n", 
+		commit_no, p_client_detail_info_tab->detail_info_num, client_updated);
+		if( (commit_no != p_client_detail_info_tab->detail_info_num) || client_updated ) {
+			NMP_DEBUG("Commit nmp client list\n");
+			nvram_commit();
+		    	commit_no = p_client_detail_info_tab->detail_info_num;
+			client_updated = 0;
+		}
+	    }
+	    #endif
+
 	    if(p_client_detail_info_tab->detail_info_num == p_client_detail_info_tab->ip_mac_num)
 		nvram_set("networkmap_status", "0");    // Done scanning and resolving
 	} //End of main while loop

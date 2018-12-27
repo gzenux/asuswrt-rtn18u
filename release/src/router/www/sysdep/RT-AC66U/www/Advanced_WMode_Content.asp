@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -90,10 +90,21 @@ function initial(){
 	else
 		show_wl_wdslist();
 
-	if(!band5g_support){
+	if(!band5g_support)
 		$("wl_5g_mac").style.display = "none";
 		$("wl_unit_field").style.display = "none";
-	}	
+	if(wl_info.band5g_2_support){
+		$("wl_opt1").innerHTML = "5GHz-1";
+		$("wl_opt2").style.display = "";
+		$("wl_5g_mac_2").style.display = "";
+		$("wl_5g_mac_th1").innerHTML = "5GHz-1 MAC";
+	}
+	
+	if(based_modelid == "RT-AC87U" && document.form.wl_unit[1].selected == true){
+		$("wds_mode_field").style.display = "none";
+		document.form.wl_mode_x.value="2";
+	}
+
 	wl_bwch_hint();
 	setTimeout("wds_scan();", 500);
 }
@@ -397,9 +408,15 @@ function wl_bwch_hint(){
 
 				
 				<tr id="wl_5g_mac">
-					<th>5GHz MAC</th>
+					<th id="wl_5g_mac_th1">5GHz MAC</th>
 					<td>
 							<input type="text" maxlength="17" class="input_20_table" id="wl1_hwaddr" name="wl1_hwaddr" value="<% nvram_get("wl1_hwaddr"); %>" readonly>
+					</td>		
+			  </tr>	
+				<tr id="wl_5g_mac_2" style="display:none">
+					<th>5GHz-2 MAC</th>
+					<td>
+							<input type="text" maxlength="17" class="input_20_table" id="wl2_hwaddr" name="wl2_hwaddr" value="<% nvram_get("wl2_hwaddr"); %>" readonly>
 					</td>		
 			  </tr>			  
 
@@ -407,8 +424,9 @@ function wl_bwch_hint(){
 					<th><#Interface#></th>
 					<td>
 						<select name="wl_unit" class="input_option" onChange="change_wl_unit();">
-							<option class="content_input_fd" value="0" <% nvram_match("wl_unit", "0","selected"); %>>2.4GHz</option>
-							<option class="content_input_fd" value="1"<% nvram_match("wl_unit", "1","selected"); %>>5GHz</option>
+							<option id="wl_opt0" class="content_input_fd" value="0" <% nvram_match("wl_unit", "0","selected"); %>>2.4GHz</option>
+							<option id="wl_opt1" class="content_input_fd" value="1"<% nvram_match("wl_unit", "1","selected"); %>>5GHz</option>
+							<option id="wl_opt2" style="display:none" class="content_input_fd" value="2" <% nvram_match("wl_unit", "2","selected"); %>>5GHz-2</option>
 						</select>			
 					</td>
 			  </tr>
@@ -417,7 +435,7 @@ function wl_bwch_hint(){
 					<td colspan="2" style="color:#FFCC00;height:30px;" align="center"><#page_not_support_mode_hint#></td>
 			  </tr>
 			
-				<tr>
+				<tr id="wds_mode_field">
 					<th align="right">
 						<a class="hintstyle" href="javascript:void(0);"  onClick="openHint(1,1);">
 						<#WLANConfig11b_x_APMode_itemname#></a>

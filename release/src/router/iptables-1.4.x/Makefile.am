@@ -10,9 +10,9 @@ endif
 if ENABLE_LIBIPQ
 SUBDIRS         += libipq
 endif
-if HAVE_LIBNFNETLINK
-SUBDIRS         += utils
-endif
+#if HAVE_LIBNFNETLINK
+#SUBDIRS         += utils
+#endif
 
 .PHONY: tarball
 tarball:

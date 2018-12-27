@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 # Written by Zoltan Glozik <zglozik@stones.com>.
 # Copyright (c) 2002 The OpenTSA Project.  All rights reserved.
-$::version = '$Id: //BBN_Linux/Branch/Branch_for_SDK_Release_MultiChip_20111013/tclinux_phoenix/apps/public/openssl-1.0.0d/apps/tsget#1 $';
+$::version = '$Id: tsget,v 1.1.2.2 2009/09/07 17:57:02 steve Exp $';
 
 use strict;
 use IO::Handle;

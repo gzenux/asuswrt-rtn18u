@@ -4,7 +4,7 @@
 ## Makefile for OpenSSL
 ##
 
-VERSION=1.0.0d
+VERSION=1.0.0m
 MAJOR=1
 MINOR=0.0
 SHLIB_VERSION_NUMBER=1.0.0
@@ -12,9 +12,9 @@ SHLIB_VERSION_HISTORY=
 SHLIB_MAJOR=1
 SHLIB_MINOR=0.0
 SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
-PLATFORM=linux-mipsel
+PLATFORM=linux-armv4
 OPTIONS=--openssldir=/etc --cross-compile-prefix=  -ffunction-sections -fdata-sections -Wl,--gc-sections enable-shared enable-rc5 no-gmp no-jpake no-krb5 no-md2 no-rfc3779 no-store no-zlib no-zlib-dynamic no-static-engine
-CONFIGURE_ARGS=linux-mipsel --openssldir=/etc --cross-compile-prefix=  -ffunction-sections -fdata-sections -Wl,--gc-sections shared enable-rc5
+CONFIGURE_ARGS=linux-armv4 --openssldir=/etc --cross-compile-prefix=  -ffunction-sections -fdata-sections -Wl,--gc-sections shared enable-rc5
 SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
@@ -60,8 +60,8 @@ OPENSSLDIR=/etc
 # PKCS1_CHECK - pkcs1 tests.
 
 CROSS_COMPILE=  
-CC= $(CROSS_COMPILE)mipsel-uclibc-gcc
-CFLAG= -fPIC -DOPENSSL_PIC -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -ffunction-sections -fdata-sections -DL_ENDIAN -DTERMIO -Os $(EXTRACFLAGS) -DOPENSSL_SMALL_FOOTPRINT -fomit-frame-pointer -Wall
+CC= $(CROSS_COMPILE)arm-brcm-linux-uclibcgnueabi-gcc
+CFLAG= -fPIC -DOPENSSL_PIC -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -ffunction-sections -fdata-sections -DTERMIO -O3 -Wall -DOPENSSL_BN_ASM_MONT -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DAES_ASM
 DEPFLAG= -DOPENSSL_NO_GMP -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_STORE
 PEX_LIBS= 
 EX_LIBS= -Wl,--gc-sections -ldl
@@ -90,15 +90,15 @@ PROCESSOR=
 
 # CPUID module collects small commonly used assembler snippets
 CPUID_OBJ= mem_clr.o
-BN_ASM= bn_asm.o
+BN_ASM= bn_asm.o armv4-mont.o
 DES_ENC= des_enc.o fcrypt_b.o
-AES_ENC= aes_core.o aes_cbc.o
+AES_ENC= aes_cbc.o aes-armv4.o
 BF_ENC= bf_enc.o
 CAST_ENC= c_enc.o
 RC4_ENC= rc4_enc.o rc4_skey.o
 RC5_ENC= rc5_enc.o
 MD5_ASM_OBJ= 
-SHA1_ASM_OBJ= 
+SHA1_ASM_OBJ= sha1-armv4-large.o sha256-armv4.o sha512-armv4.o
 RMD160_ASM_OBJ= 
 WP_ASM_OBJ= wp_block.o
 CMLL_ENC= camellia.o cmll_misc.o cmll_cbc.o
@@ -175,7 +175,7 @@ CLEARENV=	TOP= && unset TOP $${LIB+LIB} $${LIBS+LIBS}	\
 		$${EXHEADER+EXHEADER} $${HEADER+HEADER}		\
 		$${GENERAL+GENERAL} $${CFLAGS+CFLAGS}		\
 		$${ASFLAGS+ASFLAGS} $${AFLAGS+AFLAGS}		\
-		$${LDCMD+LDCMD} $${LDFLAGS+LDFLAGS}		\
+		$${LDCMD+LDCMD} $${LDFLAGS+LDFLAGS} $${SCRIPTS+SCRIPTS}	\
 		$${SHAREDCMD+SHAREDCMD} $${SHAREDFLAGS+SHAREDFLAGS}	\
 		$${SHARED_LIB+SHARED_LIB} $${LIBEXTRAS+LIBEXTRAS}
 
@@ -325,7 +325,8 @@ libcrypto.pc: Makefile
 	    echo 'Description: OpenSSL cryptography library'; \
 	    echo 'Version: '$(VERSION); \
 	    echo 'Requires: '; \
-	    echo 'Libs: -L$${libdir} -lcrypto $(EX_LIBS)'; \
+	    echo 'Libs: -L$${libdir} -lcrypto'; \
+	    echo 'Libs.private: $(EX_LIBS)'; \
 	    echo 'Cflags: -I$${includedir} $(KRB5_INCLUDES)' ) > libcrypto.pc
 
 libssl.pc: Makefile
@@ -338,7 +339,8 @@ libssl.pc: Makefile
 	    echo 'Description: Secure Sockets Layer and cryptography libraries'; \
 	    echo 'Version: '$(VERSION); \
 	    echo 'Requires: '; \
-	    echo 'Libs: -L$${libdir} -lssl -lcrypto $(EX_LIBS)'; \
+	    echo 'Libs: -L$${libdir} -lssl -lcrypto'; \
+	    echo 'Libs.private: $(EX_LIBS)'; \
 	    echo 'Cflags: -I$${includedir} $(KRB5_INCLUDES)' ) > libssl.pc
 
 openssl.pc: Makefile
@@ -351,7 +353,8 @@ openssl.pc: Makefile
 	    echo 'Description: Secure Sockets Layer and cryptography libraries and tools'; \
 	    echo 'Version: '$(VERSION); \
 	    echo 'Requires: '; \
-	    echo 'Libs: -L$${libdir} -lssl -lcrypto $(EX_LIBS)'; \
+	    echo 'Libs: -L$${libdir} -lssl -lcrypto'; \
+	    echo 'Libs.private: $(EX_LIBS)'; \
 	    echo 'Cflags: -I$${includedir} $(KRB5_INCLUDES)' ) > openssl.pc
 
 Makefile: Makefile.org Configure config

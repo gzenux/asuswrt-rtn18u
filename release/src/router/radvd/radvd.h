@@ -50,7 +50,7 @@ struct Interface {
 
 	int cease_adv;
 
-	struct timeval last_ra_time;
+	struct timespec last_ra_time;
 
 	int IgnoreIfMissing;
 	int AdvSendAdvert;
@@ -78,13 +78,17 @@ struct Interface {
 	/* NEMO extensions */
 	int AdvMobRtrSupportFlag;
 
+	/* 6lowpan extension */
+	struct AdvLowpanCo *AdvLowpanCoList;
+	struct AdvAbro *AdvAbroList;
+
 	struct AdvPrefix *AdvPrefixList;
 	struct AdvRoute *AdvRouteList;
 	struct AdvRDNSS *AdvRDNSSList;
 	struct AdvDNSSL *AdvDNSSLList;
 	struct Clients *ClientList;
-	struct timeval last_multicast;
-	struct timeval next_multicast;
+	struct timespec last_multicast;
+	struct timespec next_multicast;
 
 	/* Info whether this interface has failed in the past (and may need to be reinitialized) */
 	int HasFailed;
@@ -161,6 +165,24 @@ struct AdvDNSSL {
 	struct AdvDNSSL *next;
 };
 
+struct AdvLowpanCo {
+	uint8_t ContextLength;
+	uint8_t ContextCompressionFlag;
+	uint8_t AdvContextID;
+	uint16_t AdvLifeTime;
+	struct in6_addr AdvContextPrefix;
+
+	struct AdvLowpanCo *next;
+};
+
+struct AdvAbro {
+	uint16_t Version[2];
+	uint16_t ValidLifeTime;
+	struct in6_addr LBRaddress;
+
+	struct AdvAbro *next;
+};
+
 /* Mobile IPv6 extensions */
 
 struct AdvInterval {
@@ -190,9 +212,9 @@ void reload_config(void);
 void reset_prefix_lifetimes(void);
 
 /* timer.c */
-struct timeval next_timeval(double next);
-int timevaldiff(struct timeval const *a, struct timeval const *b);
-int next_time_msec(struct Interface const *iface);
+struct timespec next_timespec(double next);
+int64_t timespecdiff(struct timespec const *a, struct timespec const *b);
+uint64_t next_time_msec(struct Interface const *iface);
 int expired(struct Interface const *iface);
 
 /* device.c */

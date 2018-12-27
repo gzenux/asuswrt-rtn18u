@@ -22,6 +22,10 @@
 #define IPV6_ADDR_LINKLOCAL   0x0020U
 #endif
 
+#ifndef ARPHRD_IEEE802154
+#define ARPHRD_IEEE802154 804	/* IEEE 802.15.4 header.  */
+#endif
+
 /*
  * this function gets the hardware type and address of an interface,
  * determines the link layer token length and checks it against
@@ -38,7 +42,7 @@ int update_device_info(struct Interface *iface)
 
 	if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
 		flog(LOG_ERR, "ioctl(SIOCGIFMTU) failed for %s: %s", iface->Name, strerror(errno));
-		return (-1);
+		return -1;
 	}
 
 	dlog(LOG_DEBUG, 3, "mtu for %s is %d", iface->Name, ifr.ifr_mtu);
@@ -46,7 +50,7 @@ int update_device_info(struct Interface *iface)
 
 	if (ioctl(sock, SIOCGIFHWADDR, &ifr) < 0) {
 		flog(LOG_ERR, "ioctl(SIOCGIFHWADDR) failed for %s: %s", iface->Name, strerror(errno));
-		return (-1);
+		return -1;
 	}
 	switch (ifr.ifr_hwaddr.sa_family) {
 	case ARPHRD_ETHER:
@@ -69,6 +73,11 @@ int update_device_info(struct Interface *iface)
 		dlog(LOG_DEBUG, 3, "hardware type for %s is ARPHRD_ARCNET", iface->Name);
 		break;
 #endif				/* ARPHDR_ARCNET */
+	case ARPHRD_IEEE802154:
+		iface->if_hwaddr_len = 64;
+		iface->if_prefix_len = 64;
+		dlog(LOG_DEBUG, 3, "hardware type for %s is ARPHRD_IEEE802154", iface->Name);
+		break;
 	default:
 		iface->if_hwaddr_len = -1;
 		iface->if_prefix_len = -1;
@@ -86,7 +95,7 @@ int update_device_info(struct Interface *iface)
 
 		if (if_hwaddr_len_bytes > sizeof(iface->if_hwaddr)) {
 			flog(LOG_ERR, "address length %d too big for %s", if_hwaddr_len_bytes, iface->Name);
-			return (-2);
+			return -2;
 		}
 		memcpy(iface->if_hwaddr, ifr.ifr_hwaddr.sa_data, if_hwaddr_len_bytes);
 
@@ -104,7 +113,7 @@ int update_device_info(struct Interface *iface)
 		prefix = prefix->next;
 	}
 
-	return (0);
+	return 0;
 }
 
 /*
@@ -120,7 +129,7 @@ int setup_linklocal_addr(struct Interface *iface)
 
 	if ((fp = fopen(PATH_PROC_NET_IF_INET6, "r")) == NULL) {
 		flog(LOG_ERR, "can't open %s: %s", PATH_PROC_NET_IF_INET6, strerror(errno));
-		return (-1);
+		return -1;
 	}
 
 	while (fscanf(fp, "%32s %x %02x %02x %02x %15s\n", str_addr, &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
@@ -143,7 +152,7 @@ int setup_linklocal_addr(struct Interface *iface)
 
 	flog(LOG_ERR, "no linklocal address configured for %s", iface->Name);
 	fclose(fp);
-	return (-1);
+	return -1;
 }
 
 int setup_allrouters_membership(struct Interface *iface)
@@ -161,11 +170,11 @@ int setup_allrouters_membership(struct Interface *iface)
 		/* linux-2.6.12-bk4 returns error with HUP signal but keep listening */
 		if (errno != EADDRINUSE) {
 			flog(LOG_ERR, "can't join ipv6-allrouters on %s", iface->Name);
-			return (-1);
+			return -1;
 		}
 	}
 
-	return (0);
+	return 0;
 }
 
 int check_allrouters_membership(struct Interface *iface)
@@ -180,7 +189,7 @@ int check_allrouters_membership(struct Interface *iface)
 
 	if ((fp = fopen(PATH_PROC_NET_IGMP6, "r")) == NULL) {
 		flog(LOG_ERR, "can't open %s: %s", PATH_PROC_NET_IGMP6, strerror(errno));
-		return (-1);
+		return -1;
 	}
 
 	str = fgets(buffer, 300, fp);
@@ -204,7 +213,7 @@ int check_allrouters_membership(struct Interface *iface)
 		return setup_allrouters_membership(iface);
 	}
 
-	return (0);
+	return 0;
 }
 
 /* note: also called from the root context */

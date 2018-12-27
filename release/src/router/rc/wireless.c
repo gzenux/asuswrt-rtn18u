@@ -41,6 +41,7 @@ int wds_enable(void)
 	return foreach_wif(1, NULL, is_wds);
 }
 #endif
+
 #ifdef CONFIG_BCMWL5
 void
 start_nas(void)
@@ -48,12 +49,22 @@ start_nas(void)
 	stop_nas();
 
 	system("nas&");
+#ifdef RTCONFIG_TMOBILE
+#ifndef RTCONFIG_NOPP
+	system("radpd");
+#endif
+#endif
 }
 
 void
 stop_nas(void)
 {
 	killall_tk("nas");
+#ifdef RTCONFIG_TMOBILE
+#ifndef RTCONFIG_NOPP
+	killall_tk("radpd");
+#endif
+#endif
 }
 #ifdef REMOVE
 void notify_nas(const char *ifname)
@@ -147,6 +158,9 @@ int wlcscan_main(void)
 		nvram_set_int("wlc_scan_state", WLCSCAN_STATE_2G+i);
 		i++;
 	}
+#ifdef RTCONFIG_QTN
+	wlcscan_core_qtn(APSCAN_INFO, "wifi0");
+#endif
 	nvram_set_int("wlc_scan_state", WLCSCAN_STATE_FINISHED);
 	return 1;
 }

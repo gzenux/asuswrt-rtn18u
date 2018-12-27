@@ -153,12 +153,11 @@
 #endif
 
 static unsigned char bitmask_start_values[] = {0xff, 0xfe, 0xfc, 0xf8, 0xf0, 0xe0, 0xc0, 0x80};
-static unsigned char bitmask_end_values[]   = {0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f};
+static unsigned char bitmask_end_values[]   = {0xff, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f};
 
 /* XDTLS:  figure out the right values */
 static unsigned int g_probable_mtu[] = {1500 - 28, 512 - 28, 256 - 28};
 
-static unsigned int dtls1_min_mtu(void);
 static unsigned int dtls1_guess_mtu(unsigned int curr_mtu);
 static void dtls1_fix_message_header(SSL *s, unsigned long frag_off, 
 	unsigned long frag_len);
@@ -215,6 +214,12 @@ dtls1_hm_fragment_new(unsigned long frag_len, int reassembly)
 static void
 dtls1_hm_fragment_free(hm_fragment *frag)
 	{
+
+	if (frag->msg_header.is_ccs)
+		{
+		EVP_CIPHER_CTX_free(frag->msg_header.saved_retransmit_state.enc_write_ctx);
+		EVP_MD_CTX_destroy(frag->msg_header.saved_retransmit_state.write_hash);
+		}
 	if (frag->fragment) OPENSSL_free(frag->fragment);
 	if (frag->reassembly) OPENSSL_free(frag->reassembly);
 	OPENSSL_free(frag);
@@ -228,14 +233,14 @@ int dtls1_do_write(SSL *s, int type)
 	unsigned int len, frag_off, mac_size, blocksize;
 
 	/* AHA!  Figure out the MTU, and stick to the right size */
-	if ( ! (SSL_get_options(s) & SSL_OP_NO_QUERY_MTU))
+	if (s->d1->mtu < dtls1_min_mtu() && !(SSL_get_options(s) & SSL_OP_NO_QUERY_MTU))
 		{
 		s->d1->mtu = 
 			BIO_ctrl(SSL_get_wbio(s), BIO_CTRL_DGRAM_QUERY_MTU, 0, NULL);
 
 		/* I've seen the kernel return bogus numbers when it doesn't know
 		 * (initial write), so just make sure we have a reasonable number */
-		if ( s->d1->mtu < dtls1_min_mtu())
+		if (s->d1->mtu < dtls1_min_mtu())
 			{
 			s->d1->mtu = 0;
 			s->d1->mtu = dtls1_guess_mtu(s->d1->mtu);
@@ -264,10 +269,9 @@ int dtls1_do_write(SSL *s, int type)
 			return ret;
 		mtu = s->d1->mtu - (DTLS1_HM_HEADER_LENGTH + DTLS1_RT_HEADER_LENGTH);
 		}
-
-	OPENSSL_assert(mtu > 0);  /* should have something reasonable now */
-
 #endif
+
+	OPENSSL_assert(s->d1->mtu >= dtls1_min_mtu());  /* should have something reasonable now */
 
 	if ( s->init_off == 0  && type == SSL3_RT_HANDSHAKE)
 		OPENSSL_assert(s->init_num == 
@@ -315,9 +319,10 @@ int dtls1_do_write(SSL *s, int type)
 				s->init_off -= DTLS1_HM_HEADER_LENGTH;
 				s->init_num += DTLS1_HM_HEADER_LENGTH;
 
-				/* write atleast DTLS1_HM_HEADER_LENGTH bytes */
-				if ( len <= DTLS1_HM_HEADER_LENGTH)  
-					len += DTLS1_HM_HEADER_LENGTH;
+				if ( s->init_num > curr_mtu)
+					len = curr_mtu;
+				else
+					len = s->init_num;
 				}
 
 			dtls1_fix_message_header(s, frag_off, 
@@ -464,20 +469,9 @@ again:
 
 	memset(msg_hdr, 0x00, sizeof(struct hm_header_st));
 
-	s->d1->handshake_read_seq++;
-	/* we just read a handshake message from the other side:
-	 * this means that we don't need to retransmit of the
-	 * buffered messages.  
-	 * XDTLS: may be able clear out this
-	 * buffer a little sooner (i.e if an out-of-order
-	 * handshake message/record is received at the record
-	 * layer.  
-	 * XDTLS: exception is that the server needs to
-	 * know that change cipher spec and finished messages
-	 * have been received by the client before clearing this
-	 * buffer.  this can simply be done by waiting for the
-	 * first data  segment, but is there a better way?  */
-	dtls1_clear_record_buffer(s);
+	/* Don't change sequence numbers while listening */
+	if (!s->d1->listen)
+		s->d1->handshake_read_seq++;
 
 	s->init_msg = s->init_buf->data + DTLS1_HM_HEADER_LENGTH;
 	return s->init_num;
@@ -633,7 +627,16 @@ dtls1_reassemble_fragment(SSL *s, struct hm_header_st* msg_hdr, int *ok)
 		frag->msg_header.frag_off = 0;
 		}
 	else
+		{
 		frag = (hm_fragment*) item->data;
+		if (frag->msg_header.msg_len != msg_hdr->msg_len)
+			{
+			item = NULL;
+			frag = NULL;
+			goto err;
+			}
+		}
+
 
 	/* If message is already reassembled, this must be a
 	 * retransmit and can be dropped.
@@ -680,8 +683,8 @@ dtls1_reassemble_fragment(SSL *s, struct hm_header_st* msg_hdr, int *ok)
 		item = pitem_new(seq64be, frag);
 		if (item == NULL)
 			{
-			goto err;
 			i = -1;
+			goto err;
 			}
 
 		pqueue_insert(s->d1->buffered_messages, item);
@@ -790,6 +793,7 @@ dtls1_get_message_fragment(SSL *s, int st1, int stn, long max, int *ok)
 	int i,al;
 	struct hm_header_st msg_hdr;
 
+	redo:
 	/* see if we have the required fragment already */
 	if ((frag_len = dtls1_retrieve_buffered_fragment(s,max,ok)) || *ok)
 		{
@@ -806,16 +810,24 @@ dtls1_get_message_fragment(SSL *s, int st1, int stn, long max, int *ok)
 		*ok = 0;
 		return i;
 		}
-	OPENSSL_assert(i == DTLS1_HM_HEADER_LENGTH);
+	/* Handshake fails if message header is incomplete */
+	if (i != DTLS1_HM_HEADER_LENGTH)
+		{
+		al=SSL_AD_UNEXPECTED_MESSAGE;
+		SSLerr(SSL_F_DTLS1_GET_MESSAGE_FRAGMENT,SSL_R_UNEXPECTED_MESSAGE);
+		goto f_err;
+		}
 
 	/* parse the message fragment header */
 	dtls1_get_message_header(wire, &msg_hdr);
 
 	/* 
 	 * if this is a future (or stale) message it gets buffered
-	 * (or dropped)--no further processing at this time 
+	 * (or dropped)--no further processing at this time
+	 * While listening, we accept seq 1 (ClientHello with cookie)
+	 * although we're still expecting seq 0 (ClientHello)
 	 */
-	if ( msg_hdr.seq != s->d1->handshake_read_seq)
+	if (msg_hdr.seq != s->d1->handshake_read_seq && !(s->d1->listen && msg_hdr.seq == 1))
 		return dtls1_process_out_of_seq_message(s, &msg_hdr, ok);
 
 	len = msg_hdr.msg_len;
@@ -840,8 +852,7 @@ dtls1_get_message_fragment(SSL *s, int st1, int stn, long max, int *ok)
 					s->msg_callback_arg);
 			
 			s->init_num = 0;
-			return dtls1_get_message_fragment(s, st1, stn,
-				max, ok);
+			goto redo;
 			}
 		else /* Incorrectly formated Hello request */
 			{
@@ -876,7 +887,12 @@ dtls1_get_message_fragment(SSL *s, int st1, int stn, long max, int *ok)
 
 	/* XDTLS:  an incorrectly formatted fragment should cause the 
 	 * handshake to fail */
-	OPENSSL_assert(i == (int)frag_len);
+	if (i != (int)frag_len)
+		{
+		al=SSL3_AD_ILLEGAL_PARAMETER;
+		SSLerr(SSL_F_DTLS1_GET_MESSAGE_FRAGMENT,SSL3_AD_ILLEGAL_PARAMETER);
+		goto f_err;
+		}
 
 	*ok = 1;
 
@@ -1322,7 +1338,8 @@ unsigned char *
 dtls1_set_message_header(SSL *s, unsigned char *p, unsigned char mt,
 			unsigned long len, unsigned long frag_off, unsigned long frag_len)
 	{
-	if ( frag_off == 0)
+	/* Don't change sequence numbers while listening */
+	if (frag_off == 0 && !s->d1->listen)
 		{
 		s->d1->handshake_write_seq = s->d1->next_handshake_write_seq;
 		s->d1->next_handshake_write_seq++;
@@ -1375,7 +1392,7 @@ dtls1_write_message_header(SSL *s, unsigned char *p)
 	return p;
 	}
 
-static unsigned int 
+unsigned int 
 dtls1_min_mtu(void)
 	{
 	return (g_probable_mtu[(sizeof(g_probable_mtu) / 

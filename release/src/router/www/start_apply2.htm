@@ -85,7 +85,10 @@ function qis_delay_redirect(next_url){
 
 function afterLiveUpdate(){
 	if(parent.parent.liveUpdateFinish == true){
-		parent.location.href='/qis/QIS_finish.htm';
+		if(!parent.parent.new_FW)
+			parent.parent.location.href = "/index.asp";
+		else
+			parent.location.href='/qis/QIS_finish.htm';
 	}
 	else{
 		setTimeout("afterLiveUpdate();", 1000);
@@ -117,6 +120,7 @@ function initial(){
 			}
 			else{
 				parent.parent.dr_advise();
+				parent.parent.document.getElementById('disconnect_hint').style.display = "";
 				setTimeout("showdr_advise();", 10000);
 				return false;
 			}
@@ -163,6 +167,7 @@ function initial(){
 				}
 				else{
 					parent.parent.dr_advise();
+					parent.parent.document.getElementById('disconnect_hint').style.display = "";
 					setTimeout("showdr_advise();", 10000);
 					return false;
 				}

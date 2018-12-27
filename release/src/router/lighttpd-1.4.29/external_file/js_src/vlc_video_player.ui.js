@@ -27,7 +27,7 @@ UTF8 = {
         return s.join("");
     }
 };
-*/
+
 function getUrlVars(){
 	var vars = [], hash;
     var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
@@ -39,7 +39,7 @@ function getUrlVars(){
     }
     return vars;
 }
-
+*/
 function detectVLCInstalled(){
 	var val = navigator.userAgent.toLowerCase();
 		
@@ -208,16 +208,7 @@ function init(){
 }
 
 function getVLC(name){
-	if (window.document[name]){
-  		return window.document[name];
-  	}
-  	if (navigator.appName.indexOf("Microsoft Internet")==-1){
-  		if (document.embeds && document.embeds[name])
-    		return document.embeds[name];
-  	}
-  	else {
-  		return document.getElementById(name);
-  	}
+	return document.getElementById(name);
 }
 
 function monitor(){
@@ -560,14 +551,14 @@ function play_subtitle(){
 }
 
 function createVLC() {
-	
+	var vars = getUrlVars();
 	var loc_lan = String(window.navigator.userLanguage || window.navigator.language).toLowerCase();		
 	var lan = ( g_storage.get('lan') == undefined ) ? loc_lan : g_storage.get('lan');
 	m.setLanguage(lan);
 	
-	var this_showbutton = getUrlVars()["showbutton"];
-	var this_video = getUrlVars()["v"];
-	var this_url = getUrlVars()["u"];
+	var this_showbutton = vars["showbutton"];
+	var this_video = vars["v"];
+	var this_url = vars["u"];
 	
 	g_this_video = this_video;
 	g_this_video_name = this_video.substring(this_video.lastIndexOf("/")+1, this_video.lastIndexOf("."));
@@ -625,44 +616,31 @@ function createVLC() {
 	
 	var vlc_html = "";
 	vlc_html += "<div>";
-	vlc_html += "<OBJECT classid='clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921'";
-	vlc_html += " codebase='http://download.videolan.org/pub/videolan/vlc/last/win32/axvlc.cab'";
-	vlc_html += " id='vlc' name='vlcPlayer' width='" + vlc_width + "' height='" + vlc_height + "' events='True'>";
-	vlc_html += "<param name='MRL' value='' />";
-	vlc_html += "<param name='ShowDisplay' value='False'/>";
-	vlc_html += "<param name='AutoLoop' value='False'/>";
-	vlc_html += "<param name='AutoPlay' value='False'/>";
-	vlc_html += "<param name='ToolBar' value='False'/>";
-	vlc_html += "<param name='Volume' value='50' />";
-	vlc_html += "<param name='StartTime' value='0' />";
-	vlc_html += "<embed type='application/x-vlc-plugin'";
-	vlc_html += " pluginspage='http://www.videolan.org'";
-	vlc_html += " width='" + vlc_width + "' height='" + vlc_height + "' name='vlc' version='VideoLAN.VLCPlugin.2' text='Waiting for video' Volume='50' toolbar='False' AutoPlay='False'/>";
-	vlc_html += "</OBJECT>";
+	
+	if(g_isIE){
+		vlc_html += "<OBJECT classid='clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921'";
+		vlc_html += " codebase='http://download.videolan.org/pub/videolan/vlc/last/win32/axvlc.cab'";
+		vlc_html += " id='vlc' name='vlc' width='" + vlc_width + "' height='" + vlc_height + "' events='True'>";
+		vlc_html += "<param name='MRL' value='' />";
+		vlc_html += "<param name='ShowDisplay' value='False'/>";
+		vlc_html += "<param name='AutoLoop' value='False'/>";
+		vlc_html += "<param name='AutoPlay' value='False'/>";
+		vlc_html += "<param name='ToolBar' value='False'/>";
+		vlc_html += "<param name='Volume' value='50' />";
+		vlc_html += "<param name='StartTime' value='0' />";
+		vlc_html += "</OBJECT>";
+	}
+	else{
+		vlc_html += "<embed type='application/x-vlc-plugin'";
+		vlc_html += " pluginspage='http://www.videolan.org'";
+		vlc_html += " width='" + vlc_width + "' height='" + vlc_height + "' id='vlc' name='vlc' version='VideoLAN.VLCPlugin.2' text='Waiting for video' Volume='50' toolbar='False' AutoPlay='False'/>";
+	}
+	
 	vlc_html += "</div>";
 	
 	$(vlc_html).appendTo($(".videoplayer"));
-	//document.write("<body width='100%' height='100%' style='margin:0px;padding:0px'>");
-	/*
-	document.write("<div>");
 	
-	document.write("<div>");
-	document.write("<OBJECT classid='clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921'");
-	document.write(" codebase='http://download.videolan.org/pub/videolan/vlc/last/win32/axvlc.cab'");
-	document.write(" id='vlc' name='vlcPlayer' width='" + vlc_width + "' height='" + vlc_height + "' events='True'>");
-	document.write("<param name='MRL' value='' />");
-	document.write("<param name='ShowDisplay' value='True'/>");
-	document.write("<param name='AutoLoop' value='False'/>");
-	document.write("<param name='AutoPlay' value='True'/>");
-	document.write("<param name='ToolBar' value='True'/>");
-	document.write("<param name='Volume' value='50' />");
-	document.write("<param name='StartTime' value='0' />");				
-	document.write("<embed type='application/x-vlc-plugin'");
-	document.write(" pluginspage='http://www.videolan.org'");
-	document.write(" width='" + vlc_width + "' height='" + vlc_height + "' name='vlc' version='VideoLAN.VLCPlugin.2' text='Waiting for video' Volume='50'/>");
-	document.write("</OBJECT>");
-	document.write("</div>");
-	
+	/*	
 	//document.write("<div class='toolbar' style='padding: 6px 20px 0 20px;height: 50px;background: url(images/button_panel_bg.png) repeat-x;border: 0;color: #C8CDD2;'>");
 	document.write("<div class='toolbar'>");
 	document.write("<table cellspacing='0' class='toolbar-ct'>");
@@ -731,9 +709,9 @@ function createVLC() {
 	
 	var vlc = getVLC("vlc");
 		
-	if(vlc){
+	if(vlc){		
 		//- Build subtitle select ui
-		var this_subtitle = (getUrlVars()["s"]==undefined) ? "" : getUrlVars()["s"];	
+		var this_subtitle = (vars["s"]==undefined) ? "" : vars["s"];	
 		if(this_subtitle!=""){
 			var array_subtitle = this_subtitle.split(";");
 			var b_show_subtitle_ctrl = false;
@@ -809,28 +787,15 @@ function createVLC() {
 				vlc.style.height = vlc_height;
 			}
 			
-			//setInterval( function(){vlc.input.time=3600*10;}, 1000 );
-			//vlc.input.time=30;
-			//alert(vlc.input.time);
-			
-			//- Full Screen
-			//vlc.video.toggleFullscreen();
-			
-			//vlc.playlist.options.set("sub-file", "http://192.168.1.10:8082/AICLOUD632254386/The.Raven.2012.BRRiP.XViD.AC3-MAJESTiC.srt");
-			//vlc.playlist.options = options;
-			//alert("complete");
-			
-			//alert("subtitle.count: " + vlc.subtitle.count);
-			
-			$(".toolbar").css("display", "block");
-			
-			var min_pos = parseInt($(".volumebar .slider-progress").css("left"));
-			var pos = (vlc.audio.volume/200)*74;
-			$(".volumebar .slider-thumb").css("left", pos);
-			$(".volumebar .slider-progress").css("width", pos-min_pos);
-			
 			setInterval( "monitor()", 1000 );
 			doPlay();
+			
+			$(".toolbar").css("display", "block");
+			var min_pos = parseInt($(".volumebar .slider-progress").css("left"));
+			//var pos = (vlc.audio.volume/200)*74;
+			var pos = 37;
+			$(".volumebar .slider-thumb").css("left", pos);
+			$(".volumebar .slider-progress").css("width", pos-min_pos);
 			
 			var last_time = g_storage.getl(g_this_video_hash);
 			if(last_time!=undefined){

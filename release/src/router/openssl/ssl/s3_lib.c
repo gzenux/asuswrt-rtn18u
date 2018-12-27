@@ -2177,6 +2177,7 @@ void ssl3_clear(SSL *s)
 	{
 	unsigned char *rp,*wp;
 	size_t rlen, wlen;
+	int init_extra;
 
 #ifdef TLSEXT_TYPE_opaque_prf_input
 	if (s->s3->client_opaque_prf_input != NULL)
@@ -2198,17 +2199,29 @@ void ssl3_clear(SSL *s)
 		}
 #ifndef OPENSSL_NO_DH
 	if (s->s3->tmp.dh != NULL)
+		{
 		DH_free(s->s3->tmp.dh);
+		s->s3->tmp.dh = NULL;
+		}
 #endif
 #ifndef OPENSSL_NO_ECDH
 	if (s->s3->tmp.ecdh != NULL)
+		{
 		EC_KEY_free(s->s3->tmp.ecdh);
+		s->s3->tmp.ecdh = NULL;
+		}
 #endif
+#ifndef OPENSSL_NO_TLSEXT
+#ifndef OPENSSL_NO_EC
+	s->s3->is_probably_safari = 0;
+#endif /* !OPENSSL_NO_EC */
+#endif /* !OPENSSL_NO_TLSEXT */
 
 	rp = s->s3->rbuf.buf;
 	wp = s->s3->wbuf.buf;
 	rlen = s->s3->rbuf.len;
  	wlen = s->s3->wbuf.len;
+	init_extra = s->s3->init_extra;
 	if (s->s3->handshake_buffer) {
 		BIO_free(s->s3->handshake_buffer);
 		s->s3->handshake_buffer = NULL;
@@ -2221,6 +2234,7 @@ void ssl3_clear(SSL *s)
 	s->s3->wbuf.buf = wp;
 	s->s3->rbuf.len = rlen;
  	s->s3->wbuf.len = wlen;
+	s->s3->init_extra = init_extra;
 
 	ssl_free_wbio_buffer(s);
 
@@ -3074,6 +3088,13 @@ SSL_CIPHER *ssl3_choose_cipher(SSL *s, STACK_OF(SSL_CIPHER) *clnt,
 		ii=sk_SSL_CIPHER_find(allow,c);
 		if (ii >= 0)
 			{
+#if !defined(OPENSSL_NO_EC) && !defined(OPENSSL_NO_TLSEXT)
+			if ((alg_k & SSL_kEECDH) && (alg_a & SSL_aECDSA) && s->s3->is_probably_safari)
+				{
+				if (!ret) ret=sk_SSL_CIPHER_value(allow,ii);
+				continue;
+				}
+#endif
 			ret=sk_SSL_CIPHER_value(allow,ii);
 			break;
 			}

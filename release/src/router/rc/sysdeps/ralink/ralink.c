@@ -25,7 +25,6 @@
 #include <linux/sockios.h>
 #include <net/if_arp.h>
 #include <shutils.h>
-#include <sys/signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -49,11 +48,11 @@
 
 #define LED_CONTROL(led, flag) ralink_gpio_write_bit(led, flag)
 
-#ifdef RTCONFIG_WIRELESSREPEATER
+//#ifdef RTCONFIG_WIRELESSREPEATER
 char *wlc_nvname(char *keyword);
-#endif
+//#endif
 
-#if defined(RTAC52U) || defined(RTAC51U)
+#if defined(RTAC52U) || defined(RTAC51U) 
 #define VHT_SUPPORT /* 11AC */
 #endif
 
@@ -456,24 +455,37 @@ int getRegDomain_5G(void)
 int setRegSpec(const char *regSpec)
 {
 	char REGSPEC[MAX_REGSPEC_LEN+1];
+	char file[64];
 	int i;
 
 	if (regSpec == NULL || regSpec[0] == '\0' || strlen(regSpec) > 3)
-		return -1;
-	if (!strcasecmp(regSpec, "CE")) ;
-	else if (!strcasecmp(regSpec, "FCC")) ;
-#if defined(RTAC52U) || defined(RTAC51U)
-	else if (!strcasecmp(regSpec, "SG")) ;
-#endif
-#if defined(RTAC52U)
-	else if (!strcasecmp(regSpec, "AU")) ;
-#endif
-	else
 		return -1;
 
 	memset(REGSPEC, 0, sizeof(REGSPEC));
 	for (i=0; regSpec[i]!='\0' ;i++)
 		REGSPEC[i]=(char)toupper(regSpec[i]);
+
+	// may be CE, FCC, AU, SG, NCC. It is based on files in /ra_SKU/
+	snprintf(file, sizeof(file), "/ra_SKU/SingleSKU_%s.dat", REGSPEC);
+	if (!f_exists(file))
+		return -1;
+#ifdef RTAC52U
+	snprintf(file, sizeof(file), "/ra_SKU/SingleSKU_%s_0002.dat", REGSPEC);
+	if (!f_exists(file))
+		return -1;
+#endif
+
+#ifdef RTCONFIG_HAS_5G
+	snprintf(file, sizeof(file), "/ra_SKU/SingleSKU_5G_%s.dat", REGSPEC);
+	if (!f_exists(file))
+		return -1;
+#ifdef RTAC52U
+	snprintf(file, sizeof(file), "/ra_SKU/SingleSKU_5G_%s_0002.dat", REGSPEC);
+	if (!f_exists(file))
+		return -1;
+#endif	/* RTAC52U */
+#endif	/* RTCONFIG_HAS_5G */
+
 	FWrite(REGSPEC, REGSPEC_ADDR, MAX_REGSPEC_LEN);
 	return 0;
 }
@@ -582,7 +594,7 @@ setCountryCode_2G(const char *cc)
 	else if (!strcasecmp(cc, "FR")) ;
 	else if (!strcasecmp(cc, "GB")) ;
 	else if (!strcasecmp(cc, "GE")) ;
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U) 
 	else if (!strcasecmp(cc, "EU")) ;
 #endif
 	else if (!strcasecmp(cc, "GR")) ;
@@ -743,16 +755,19 @@ int
 FREAD(unsigned int addr_sa, int len)
 {
 	unsigned char buffer[MAX_FRW];
-	char buffer_h[128];
+	char buffer_h[ MAX_FRW * 3 ];
 	memset(buffer, 0, sizeof(buffer));
 	memset(buffer_h, 0, sizeof(buffer_h));
 
+	if (len > MAX_FRW)
+	{
+		dbg("FREAD: cut to %d bytes\n", MAX_FRW);
+		len = MAX_FRW;
+	}
 	if (FRead(buffer, addr_sa, len)<0)
 		dbg("FREAD: Out of scope\n");
 	else
 	{
-		if (len > MAX_FRW)
-			len = MAX_FRW;
 		htoa(buffer, buffer_h, len);
 		puts(buffer_h);
 	}
@@ -878,7 +893,7 @@ getPIN()
 int
 GetPhyStatus(void)
 {
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U) 
 	ATE_mt7620_esw_port_status();
 	return 1;
 #else
@@ -1627,15 +1642,17 @@ int gen_ralink_config(int band, int is_iNIC)
 				fprintf(fp, "WirelessMode=%d\n", 8);	// A + AN mixed
 #endif
 			}
-			else if (atoi(str) == 1)  // N Only or N + AC
+			else if (atoi(str) == 1)  // N Only
 			{
+				fprintf(fp, "WirelessMode=%d\n", 11);	// N in 5G
+			}
 #if defined(VHT_SUPPORT)
+			else if (atoi(str) == 8)  // AN/AC Mixed
+			{
 				fprintf(fp, "WirelessMode=%d\n", 15);	// AN + AC mixed
 				VHTBW_MAX = 1;
-#else
-				fprintf(fp, "WirelessMode=%d\n", 11);	// N in 5G
-#endif
 			}
+#endif
 			else if (atoi(str) == 2)  // A
 				fprintf(fp, "WirelessMode=%d\n", 2);
 			else			// A,N
@@ -1774,7 +1791,7 @@ int gen_ralink_config(int band, int is_iNIC)
 	}
 
 	//TxPower
-	str = nvram_safe_get(strcat_r(prefix, "TxPower", tmp));
+	str = nvram_safe_get(strcat_r(prefix, "txpower", tmp));
 	if (nvram_match(strcat_r(prefix, "radio", tmp), "0"))
 		fprintf(fp, "TxPower=%d\n", 0);
 	else if (str && strlen(str))
@@ -2100,7 +2117,7 @@ int gen_ralink_config(int band, int is_iNIC)
 	{
 		fprintf(fp, "GreenAP=%d\n", 1);
 	}
-#elif defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P)
+#elif defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U)
 	/// MT7620 GreenAP will impact TSSI, force to disable GreenAP here..
 	//  MT7620 GreenAP cause bad site survey result on RTAC52 2G.
 	{
@@ -2807,11 +2824,23 @@ int gen_ralink_config(int band, int is_iNIC)
 	//HT_GI
 	str = nvram_safe_get(strcat_r(prefix, "HT_GI", tmp));
 	if (str && strlen(str))
+	{   
 		fprintf(fp, "HT_GI=%d\n", atoi(str));
+#if defined(RTN54U)
+#if defined(VHT_SUPPORT)
+		fprintf(fp, "VHT_SGI=%d\n", atoi(str));
+#endif		
+#endif		
+	}
 	else
 	{
 		warning = 39;
 		fprintf(fp, "HT_GI=%d\n", 1);
+#if defined(RTN54U)
+#if defined(VHT_SUPPORT)
+		fprintf(fp, "VHT_SGI=%d\n", 1);
+#endif		
+#endif		
 	}
 
 	//HT_STBC
@@ -3153,17 +3182,9 @@ int gen_ralink_config(int band, int is_iNIC)
 				if (!nvram_match(strcat_r(prefix_mssid, "bss_enabled", temp), "1"))
 					continue;
 			}
-			else
-				sprintf(prefix_mssid, "wl%d_", band);
 
-			str = nvram_safe_get(strcat_r(prefix_mssid, "auth_mode_x", temp));
-			if(!strcmp(str,"wpa") || !strcmp(str,"wpa2") || !strcmp(str,"wpawpa2") || !strcmp(str,"radius"))
 			{
 				fprintf(fp, "RADIUS_Key%d=%s\n", j, radius_key);
-			}
-			else
-			{
-				fprintf(fp, "RADIUS_Key%d=\n", j);
 			}
 
 			sprintf(RADIUS_Server, "%s%s;", RADIUS_Server, radius_server);	//cannot be empty ";"
@@ -4080,6 +4101,8 @@ getSiteSurvey(int band,char* ofile)
 						fprintf(fp, "\"%s\",", "bg");
 					else if(strcmp(ssap->SiteSurvey[i].wmode,"11b/g/n")==0)   
 						fprintf(fp, "\"%s\",", "bgn");
+					else if(strcmp(ssap->SiteSurvey[i].wmode,"11ac   ")==0)   
+						fprintf(fp, "\"%s\",", "ac");
 					else	
 						fprintf(fp, "\"%s\",", "");
 
@@ -5579,7 +5602,7 @@ ate_run_in(void)
 }
 #endif // RTN65U
 
-#if !defined(RTN14U) && !defined(RTAC52U) && !defined(RTAC51U) && !defined(RTN11P)
+#if !defined(RTN14U) && !defined(RTAC52U) && !defined(RTAC51U) && !defined(RTN11P) && !defined(RTN54U)
 int Set_SwitchPort_LEDs(const char *group, const char *action)
 {
 	int groupNo;
@@ -5803,14 +5826,10 @@ int get_apcli_status(void)
 
 	wlc_band = nvram_get_int("wlc_band");
 
-#if defined(RTCONFIG_RALINK_MT7620)
-	if (wlc_band == 0)
-#else
 	if (wlc_band == 1)
-#endif
-		ifname = "apcli0";
+		ifname = APCLI_5G;
 	else
-		ifname = "apclii0";
+		ifname = APCLI_2G;
 
 	memset(data, 0x00, sizeof(data));
 	wrq.u.data.length = sizeof(data);

@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
 <meta name="svg.render.forceflash" content="false" />	
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
@@ -88,7 +88,7 @@ function initial(){
 		inputHideCtrl(document.form.wl1_TxPower, 0);
 	}
 
-	if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U"){
+	if(based_modelid == "RT-AC68U" || based_modelid == "TM-AC1900" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U"){
 		document.form.selLED.onchange = function(){
 			document.form.btn_led_mode.value = 0;
 			document.form.selCLK.checked = false;

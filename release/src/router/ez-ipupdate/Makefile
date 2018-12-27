@@ -104,6 +104,10 @@ ifeq ($(RTCONFIG_BCMARM),y)
 LDFLAGS += -lgcc_s
 endif
 
+ifeq ($(RTCONFIG_QTN),y)
+LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@

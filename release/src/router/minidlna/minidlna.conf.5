@@ -12,7 +12,7 @@ configuration file.
 
 .SH OPTIONS
 .PP
-The following are user configurable options in /etc/minidlna.conf
+The following are user configurable options in /etc/minidlna.conf.
 minidlna runs by default as user nobody, so make sure system permissions are 
 set correctly for read access to media and write access to cache and log dirs.
 
@@ -27,10 +27,6 @@ There should be no need to change this.
 
 .IP "\fBnetwork_interface\fP"
 Network interfaces to serve, comma delimited. Defaults to all.
-
-.IP "\fBlistening_ip\fP"
-Force to use specific IP address, not usually needed, minidlna will use the range 
-associated with network_interface.
 
 .IP "\fBstrict_dlna\fP"
 .nf
@@ -132,7 +128,7 @@ to automatically discover new files. Set to 'no' to disable inotify.
 
 .IP "\fBalbum_art_names\fP"
 This should be a list of file names to check for when searching for album art
-and names should be delimited with a forward slash ("/")
+and names should be delimited with a forward slash ("/").
 .nf
 
 Example
@@ -156,6 +152,15 @@ The possible values are:
              'P' to use the "Pictures" container.
   If you specify 'B' and the client device is audio only, then
   "Music/Folders" will be used as root container and you wont see Videos.
+.fi
+
+.IP "\fBforce_sort_criteria\fP"
+Always force SortCriteria to this value, regardless of the SortCriteria passed by the client.
+.nf
+
+Example
+force_sort_criteria=+upnp:class,+upnp:originalTrackNumber,+dc:title
+
 .fi
 
 

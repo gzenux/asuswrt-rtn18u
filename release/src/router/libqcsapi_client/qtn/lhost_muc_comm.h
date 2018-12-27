@@ -199,6 +199,7 @@ struct host_rxdesc {
 	struct host_rxdesc	*rd_pa;
 	struct host_rxdesc	*rd_va;
 	uint32_t		vlan_cfg; /* VLAN requirement on this frame */
+	void			*node;		/* Where the frame was from */
 	uint8_t			gain_db;
 };
 
@@ -352,12 +353,6 @@ struct qtn_baparams_args {
 
 #define QTN_BAND_FREQ			(0xFF << 0)
 #define QTN_BAND_FREQ_S			(0)
-#define QTN_BAND_PWR20M			(0xFF << 8)
-#define QTN_BAND_PWR20M_S		(8)
-#define QTN_BAND_PWR40M			(0xFF << 16)
-#define QTN_BAND_PWR40M_S		(16)
-#define QTN_BAND_PWR80M			(0xFF << 24)
-#define QTN_BAND_PWR80M_S		(24)
 
 #define	IOCTL_HLINK_DEVATTACH		1	/* Attach device */
 #define	IOCTL_HLINK_DEVDETACH		2	/* Detach device */
@@ -383,6 +378,11 @@ enum {
 	BW_HT160 = 160
 };
 
+/* Fixed bw command offset */
+#define QTN_BW_FIXED_BW		0x3
+#define QTN_BW_FIXED_BW_S	0
+#define QTN_BW_FIXED_EN		0x10
+#define QTN_BW_FIXED_EN_S	4
 
 struct qtn_csa_info {
 	uint64_t	req_tsf;		/* aim to change channels at this tsf */

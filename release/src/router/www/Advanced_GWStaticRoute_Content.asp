@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -16,6 +16,7 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
+<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <style>
 #ClientList_Block_PC{
 	border:1px outset #999;
@@ -24,7 +25,7 @@
 	*margin-top:27px;
 	margin-left:2px;
 	*margin-left:-223px;
-	width:215px;
+	width:185px;
 	text-align:left;	
 	height:auto;
 	overflow-y:auto;
@@ -67,7 +68,7 @@ var sr_rulelist_array = '<% nvram_get("sr_rulelist"); %>';
 function initial(){
 	show_menu();
 	showsr_rulelist();
-	showLANIPList();
+	setTimeout("showLANIPList();", 1000);
 }
 
 function applyRule(){
@@ -274,31 +275,25 @@ function showsr_rulelist(){
 //Viz add 2012.02 LAN client ip { start
 
 function showLANIPList(){
-	var code = "";
-	var show_name = "";
-	var client_list_array = '<% get_client_detail_info(); %>';	
-	var client_list_row = client_list_array.split('<');	
+	var htmlCode = "";
+	for(var i=0; i<clientList.length;i++){
+		var clientObj = clientList[clientList[i]];
 
-	for(var i = 1; i < client_list_row.length; i++){
-		var client_list_col = client_list_row[i].split('>');
-		if(client_list_col[1] && client_list_col[1].length > 20)
-			show_name = client_list_col[1].substring(0, 16) + "..";
-		else
-			show_name = client_list_col[1];	
+		if(clientObj.ip == "offline") clientObj.ip = "";
+		if(clientObj.name.length > 30) clientObj.name = clientObj.name.substring(0, 28) + "..";
 
-		//client_list_col[]  0:type 1:device 2:ip 3:mac 4: 5: 6:
-		code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\''+client_list_col[2]+'\');"><strong>'+client_list_col[2]+'</strong> ';
-		
-		if(show_name && show_name.length > 0)
-				code += '( '+show_name+')';
-		code += ' </div></a>';
-		}
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
-	$("ClientList_Block_PC").innerHTML = code;
+		htmlCode += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\'';
+		htmlCode += clientObj.ip;
+		htmlCode += '\');"><strong>';
+		htmlCode += clientObj.name;
+		htmlCode += '</strong></div></a><!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	}
+
+	$("ClientList_Block_PC").innerHTML = htmlCode;
 }
 
 function setClientIP(ipaddr){
-	document.form.sr_ipaddr_x_0.value = ipaddr;
+	document.form.sr_gateway_x_0.value = ipaddr;
 	hideClients_Block();
 	over_var = 0;
 }
@@ -412,13 +407,13 @@ function Ctrl_LANIPList(obj){
 			  
 			  <tr>
 			  	<!-- client info -->		
-					<td width="34%">
-						<input type="text" class="input_20_table" maxlength="15" name="sr_ipaddr_x_0" style="margin-left:-22px;width:215px;" onKeyPress="return is_ipaddr(this, event)" onClick="hideClients_Block();" onblur="if(!over_var){hideClients_Block();}">
-						<img id="pull_arrow" height="14px;" src="/images/arrow-down.gif" style="position:absolute;" onclick="pullLANIPList(this);" title="<#select_IP#>" onmouseover="over_var=1;" onmouseout="over_var=0;">						
-						<div id="ClientList_Block_PC" class="ClientList_Block_PC"></div>
-					</td>
+					<td width="18%">
+						<input type="text" class="input_20_table" maxlength="15" name="sr_ipaddr_x_0" onKeyPress="return is_ipaddr(this, event)">
 					<td width="18%"><input type="text" maxlength="15" class="input_15_table" name="sr_netmask_x_0" onKeyPress="return is_ipaddr(this, event)" ></td>
-					<td width="18%"><input type="text" maxlength="15" class="input_15_table" name="sr_gateway_x_0" onKeyPress="return is_ipaddr(this, event)" ></td>
+					<td width="34%"><input type="text" class="input_20_table" maxlength="15" name="sr_gateway_x_0" style="margin-left:-22px;width:180px;" onKeyPress="return is_ipaddr(this, event)"  onClick="hideClients_Block();" onblur="if(!over_var){hideClients_Block();}">
+					<img id="pull_arrow" height="14px;" src="/images/arrow-down.gif" style="position:absolute;" onclick="pullLANIPList(this);" title="<#1335#>" onmouseover="over_var=1;" onmouseout="over_var=0;">
+					<div id="ClientList_Block_PC" class="ClientList_Block_PC"></div>
+					</td>
 					<td width="8%"><input type="text" maxlength="3" class="input_3_table" name="sr_matric_x_0"  onKeyPress="return is_number(this, event);"></td>
 					<td width="10%">
 						<select name="sr_if_x_0" class="input_option" style="width:62px;" onchange="Ctrl_LANIPList(this);">

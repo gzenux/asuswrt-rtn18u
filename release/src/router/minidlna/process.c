@@ -38,18 +38,20 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+#include "upnpglobalvars.h"
 #include "process.h"
 #include "config.h"
 #include "log.h"
 
-static const int max_number_of_children = 5;
 static int number_of_children = 0;
 
 pid_t
 process_fork(void)
 {
-	if (number_of_children >= max_number_of_children)
+	if (number_of_children >= runtime_vars.max_connections)
 	{
+		DPRINTF(E_WARN, L_GENERAL, "Exceeded max connections [%d], not forking\n",
+			runtime_vars.max_connections);
 		errno = EAGAIN;
 		return -1;
 	}
@@ -63,8 +65,19 @@ process_fork(void)
 void
 process_handle_child_termination(int signal)
 {
-	waitpid(-1, NULL, WNOHANG);
-	--number_of_children;
+	pid_t pid;
+
+	while ((pid = waitpid(-1, NULL, WNOHANG)))
+	{
+		if (pid == -1)
+		{
+			if (errno == EINTR)
+				continue;
+			else
+				break;
+		}
+		--number_of_children;
+	}
 }
 
 int
@@ -128,7 +141,7 @@ process_check_if_running(const char *fname)
 
 	memset(buffer, 0, 64);
 
-	if(read(pidfile, buffer, 63))
+	if(read(pidfile, buffer, 63) > 0)
 	{
 		if( (pid = atol(buffer)) > 0)
 		{

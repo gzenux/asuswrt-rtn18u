@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -53,14 +53,8 @@ var client_mac = login_mac_str();
 var overlib_str0 = new Array();	//Viz add 2011.07 for record longer virtual srvr rule desc
 var overlib_str = new Array();	//Viz add 2011.07 for record longer virtual srvr portrange value
 
-var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var arps = [<% get_arp_table(); %>];		// [[ip, x, x, MAC, x, type], ...]
-var arls = [<% get_arl_table(); %>];		// [[MAC, port, x, x], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var networkmap_fullscan = '<% nvram_match("networkmap_fullscan", "0", "done"); %>'; //2008.07.24 Add.  1 stands for complete, 0 stands for scanning.;
 
-var clients_info = getclients();
 var vts_rulelist_array = "<% nvram_char_to_ascii("","vts_rulelist"); %>";
 var ctf_disable = '<% nvram_get("ctf_disable"); %>';
 
@@ -68,7 +62,7 @@ function initial(){
 	show_menu();
 	loadAppOptions();
 	loadGameOptions();
-	showLANIPList();	
+	setTimeout("showLANIPList();", 1000);	
 	showvts_rulelist();
 	addOnlineHelp($("faq"), ["ASUSWRT", "port", "forwarding"]);
 
@@ -124,11 +118,12 @@ function applyRule(){
 		tmp_value = "";	
 
 	document.form.vts_rulelist.value = tmp_value;
-
+	
+	/* 2014.04 Viz: No need to reboot for ctf enable models.
 	if(ctf_disable == '0' && isChange()){
 		document.form.action_script.value = "reboot";
 		document.form.action_wait.value = "<% get_default_reboot_time(); %>";
-	}	
+	}*/	
 
 	showLoading();
 	document.form.submit();
@@ -213,27 +208,21 @@ function setClientIP(num){
 }
 
 function showLANIPList(){
-	var code = "";
-	var show_name = "";
-	var client_list_array = '<% get_client_detail_info(); %>';	
-	var client_list_row = client_list_array.split('<');
+	var htmlCode = "";
+	for(var i=0; i<clientList.length;i++){
+		var clientObj = clientList[clientList[i]];
 
-	for(var i = 1; i < client_list_row.length; i++){
-		var client_list_col = client_list_row[i].split('>');
-		if(client_list_col[1] && client_list_col[1].length > 12)
-			show_name = client_list_col[1].substring(0, 10) + "..";
-		else
-			show_name = client_list_col[1];
+		if(clientObj.ip == "offline") clientObj.ip = "";
+		if(clientObj.name.length > 30) clientObj.name = clientObj.name.substring(0, 28) + "..";
 
-		if(client_list_col[2]){
-			code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\''+client_list_col[2]+'\');"><strong>'+client_list_col[2]+'</strong> ';
-			if(show_name && show_name.length > 0)
-				code += '( '+show_name+')';
-			code += ' </div></a>';
-		}
+		htmlCode += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\'';
+		htmlCode += clientObj.ip;
+		htmlCode += '\');"><strong>';
+		htmlCode += clientObj.name;
+		htmlCode += '</strong></div></a><!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
 	}
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
-	$("ClientList_Block").innerHTML = code;
+
+	$("ClientList_Block").innerHTML = htmlCode;
 }
 
 function pullLANIPList(obj){

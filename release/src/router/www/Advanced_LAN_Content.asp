@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -91,16 +91,20 @@ function valid_IP(obj_name, obj_flag){
 			return true;
 		}
 
-		if(ip_num > A_class_start && ip_num < A_class_end)
+		if(ip_num > A_class_start && ip_num < A_class_end){
+		   obj_name.value = ipFilterZero(ip_obj.value);
 			return true;
+		}
 		else if(ip_num > B_class_start && ip_num < B_class_end){
 			alert(ip_obj.value+" <#JS_validip#>");
 			ip_obj.focus();
 			ip_obj.select();
 			return false;
 		}
-		else if(ip_num > C_class_start && ip_num < C_class_end)
+		else if(ip_num > C_class_start && ip_num < C_class_end){
+			obj_name.value = ipFilterZero(ip_obj.value);
 			return true;
+		}
 		else{
 			alert(ip_obj.value+" <#JS_validip#>");
 			ip_obj.focus();

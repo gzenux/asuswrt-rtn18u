@@ -127,11 +127,12 @@ am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(dbusservicedir)" \
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
 am__avahi_daemon_SOURCES_DIST = main.c main.h simple-protocol.c \
 	simple-protocol.h static-services.c static-services.h \
-	static-hosts.c static-hosts.h ini-file-parser.c \
-	ini-file-parser.h setproctitle.c setproctitle.h sd-daemon.h \
-	sd-daemon.c ../avahi-client/check-nss.c chroot.c chroot.h \
-	caps.c caps.h dbus-protocol.c dbus-protocol.h dbus-util.c \
-	dbus-util.h dbus-internal.h dbus-async-address-resolver.c \
+	static-hosts.c static-hosts.h cnames.c cnames.h \
+	ini-file-parser.c ini-file-parser.h setproctitle.c \
+	setproctitle.h sd-daemon.h sd-daemon.c \
+	../avahi-client/check-nss.c chroot.c chroot.h caps.c caps.h \
+	dbus-protocol.c dbus-protocol.h dbus-util.c dbus-util.h \
+	dbus-internal.h dbus-async-address-resolver.c \
 	dbus-async-host-name-resolver.c dbus-async-service-resolver.c \
 	dbus-domain-browser.c dbus-entry-group.c \
 	dbus-service-browser.c dbus-service-type-browser.c \
@@ -161,6 +162,7 @@ am__avahi_daemon_SOURCES_DIST = main.c main.h simple-protocol.c \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi_daemon-simple-protocol.$(OBJEXT) \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi_daemon-static-services.$(OBJEXT) \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi_daemon-static-hosts.$(OBJEXT) \
+@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi_daemon-cnames.$(OBJEXT) \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi_daemon-ini-file-parser.$(OBJEXT) \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi_daemon-setproctitle.$(OBJEXT) \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi_daemon-sd-daemon.$(OBJEXT) \
@@ -278,8 +280,6 @@ AVAHI_GROUP = @AVAHI_GROUP@
 AVAHI_PRIV_ACCESS_GROUP = @AVAHI_PRIV_ACCESS_GROUP@
 AVAHI_USER = @AVAHI_USER@
 AWK = @AWK@
-CATALOGS = @CATALOGS@
-CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -334,7 +334,6 @@ GACUTIL = @GACUTIL@
 GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
 GLIB20_CFLAGS = @GLIB20_CFLAGS@
 GLIB20_LIBS = @GLIB20_LIBS@
-GMOFILES = @GMOFILES@
 GMSGFMT = @GMSGFMT@
 GOBJECT_CFLAGS = @GOBJECT_CFLAGS@
 GOBJECT_LIBS = @GOBJECT_LIBS@
@@ -349,8 +348,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-INSTOBJEXT = @INSTOBJEXT@
-INTLLIBS = @INTLLIBS@
 INTLTOOL_EXTRACT = @INTLTOOL_EXTRACT@
 INTLTOOL_MERGE = @INTLTOOL_MERGE@
 INTLTOOL_PERL = @INTLTOOL_PERL@
@@ -383,12 +380,12 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MCS = @MCS@
 MDASSEMBLER = @MDASSEMBLER@
 MKDIR_P = @MKDIR_P@
-MKINSTALLDIRS = @MKINSTALLDIRS@
 MOC_QT3 = @MOC_QT3@
 MOC_QT4 = @MOC_QT4@
 MONODOCER = @MONODOCER@
@@ -396,7 +393,6 @@ MONODOC_CFLAGS = @MONODOC_CFLAGS@
 MONODOC_DIR = @MONODOC_DIR@
 MONODOC_LIBS = @MONODOC_LIBS@
 MSGFMT = @MSGFMT@
-MSGFMT_OPTS = @MSGFMT_OPTS@
 MSGMERGE = @MSGMERGE@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -413,10 +409,6 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POFILES = @POFILES@
-POSUB = @POSUB@
-PO_IN_DATADIR_FALSE = @PO_IN_DATADIR_FALSE@
-PO_IN_DATADIR_TRUE = @PO_IN_DATADIR_TRUE@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
@@ -520,8 +512,8 @@ AM_CFLAGS = -I$(top_srcdir) '-DDEBUG_TRAP=__asm__("int $$3")' \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	static-services.c \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	static-services.h \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	static-hosts.c \
-@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	static-hosts.h \
-@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	ini-file-parser.c \
+@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	static-hosts.h cnames.c \
+@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	cnames.h ini-file-parser.c \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	ini-file-parser.h \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	setproctitle.c \
 @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	setproctitle.h sd-daemon.h \
@@ -594,7 +586,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -619,9 +611,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 avahi-dbus.conf: $(top_builddir)/config.status $(srcdir)/avahi-dbus.conf.in
@@ -694,6 +686,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avahi_daemon-caps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avahi_daemon-check-nss.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avahi_daemon-chroot.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avahi_daemon-cnames.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avahi_daemon-dbus-async-address-resolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avahi_daemon-dbus-async-host-name-resolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avahi_daemon-dbus-async-service-resolver.Po@am__quote@
@@ -806,6 +799,22 @@ avahi_daemon-static-hosts.obj: static-hosts.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='static-hosts.c' object='avahi_daemon-static-hosts.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(avahi_daemon_CFLAGS) $(CFLAGS) -c -o avahi_daemon-static-hosts.obj `if test -f 'static-hosts.c'; then $(CYGPATH_W) 'static-hosts.c'; else $(CYGPATH_W) '$(srcdir)/static-hosts.c'; fi`
+
+avahi_daemon-cnames.o: cnames.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(avahi_daemon_CFLAGS) $(CFLAGS) -MT avahi_daemon-cnames.o -MD -MP -MF $(DEPDIR)/avahi_daemon-cnames.Tpo -c -o avahi_daemon-cnames.o `test -f 'cnames.c' || echo '$(srcdir)/'`cnames.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/avahi_daemon-cnames.Tpo $(DEPDIR)/avahi_daemon-cnames.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnames.c' object='avahi_daemon-cnames.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(avahi_daemon_CFLAGS) $(CFLAGS) -c -o avahi_daemon-cnames.o `test -f 'cnames.c' || echo '$(srcdir)/'`cnames.c
+
+avahi_daemon-cnames.obj: cnames.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(avahi_daemon_CFLAGS) $(CFLAGS) -MT avahi_daemon-cnames.obj -MD -MP -MF $(DEPDIR)/avahi_daemon-cnames.Tpo -c -o avahi_daemon-cnames.obj `if test -f 'cnames.c'; then $(CYGPATH_W) 'cnames.c'; else $(CYGPATH_W) '$(srcdir)/cnames.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/avahi_daemon-cnames.Tpo $(DEPDIR)/avahi_daemon-cnames.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnames.c' object='avahi_daemon-cnames.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(avahi_daemon_CFLAGS) $(CFLAGS) -c -o avahi_daemon-cnames.obj `if test -f 'cnames.c'; then $(CYGPATH_W) 'cnames.c'; else $(CYGPATH_W) '$(srcdir)/cnames.c'; fi`
 
 avahi_daemon-ini-file-parser.o: ini-file-parser.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(avahi_daemon_CFLAGS) $(CFLAGS) -MT avahi_daemon-ini-file-parser.o -MD -MP -MF $(DEPDIR)/avahi_daemon-ini-file-parser.Tpo -c -o avahi_daemon-ini-file-parser.o `test -f 'ini-file-parser.c' || echo '$(srcdir)/'`ini-file-parser.c

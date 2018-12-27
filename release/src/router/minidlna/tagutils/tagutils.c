@@ -36,15 +36,12 @@
 #include <vorbis/codec.h>
 #include <FLAC/metadata.h>
 
-#include "../config.h"
+#include "config.h"
 #ifdef HAVE_ICONV
 #include <iconv.h>
 #endif
-
 #include <sqlite3.h>
 #include "tagutils.h"
-#include "misc.h"
-#include "textutils.h"
 #include "../metadata.h"
 #include "../utils.h"
 #include "../log.h"

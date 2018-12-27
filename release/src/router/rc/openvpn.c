@@ -73,7 +73,7 @@ void start_vpnclient(int clientNum)
 
 	vpnlog(VPN_LOG_INFO,"VPN GUI client backend starting...");
 
-	if ( (pid = pidof(&buffer[0])) >= 0 )
+	if ( (pid = pidof(&buffer[6])) >= 0 )
 	{
 		vpnlog(VPN_LOG_NOTE, "VPN Client %d already running...", clientNum);
 		vpnlog(VPN_LOG_INFO,"PID: %d", pid);
@@ -443,7 +443,7 @@ void start_vpnclient(int clientNum)
 		argv[1] = "a";	
 		sprintf(&buffer[0], "CheckVPNClient%d", clientNum);
 		argv[2] = &buffer[0];
-		sprintf(&buffer[strlen(&buffer[0])+1], "*/%d * * * * service vpnclient%d start", nvi, clientNum);
+		sprintf(&buffer[strlen(&buffer[0])+1], "*/%d * * * * service start_vpnclient%d", nvi, clientNum);
 		argv[3] = &buffer[strlen(&buffer[0])+1];
 		argv[4] = NULL;
 		_eval(argv, NULL, 0, NULL);
@@ -571,7 +571,7 @@ void start_vpnserver(int serverNum)
 
 	vpnlog(VPN_LOG_INFO,"VPN GUI server backend starting...");
 
-	if ( (pid = pidof(&buffer[0])) >= 0 )
+	if ( (pid = pidof(&buffer[6])) >= 0 )
 	{
 		vpnlog(VPN_LOG_NOTE, "VPN Server %d already running...", serverNum);
 		vpnlog(VPN_LOG_INFO,"PID: %d", pid);
@@ -808,6 +808,8 @@ void start_vpnserver(int serverNum)
 			sprintf(&buffer[0], "vpn_server%d_ccd_excl", serverNum);
 			if ( nvram_get_int(&buffer[0]) )
 				fprintf(fp, "ccd-exclusive\n");
+			else
+				fprintf(fp, "duplicate-cn\n");
 
 			sprintf(&buffer[0], "/etc/openvpn/server%d/ccd", serverNum);
 			mkdir(&buffer[0], 0700);
@@ -884,6 +886,8 @@ void start_vpnserver(int serverNum)
 
 			vpnlog(VPN_LOG_EXTRA,"CCD processing complete");
 		}
+		else
+			fprintf(fp, "duplicate-cn\n");
 
 		sprintf(&buffer[0], "vpn_server%d_pdns", serverNum);
 		if ( nvram_get_int(&buffer[0]) )
@@ -927,7 +931,8 @@ void start_vpnserver(int serverNum)
 			fprintf(fp, "client-cert-not-required\n");
 			fprintf(fp, "username-as-common-name\n");
 		}
-		fprintf(fp, "duplicate-cn\n");
+
+		fprintf(fp_client, "ns-cert-type server\n");
 
 		//sprintf(&buffer[0], "vpn_crt_server%d_ca", serverNum);
 		//if ( !nvram_is_empty(&buffer[0]) )
@@ -1205,13 +1210,10 @@ void start_vpnserver(int serverNum)
 	vpnlog(VPN_LOG_EXTRA,"Done writing certs/keys");
 	nvram_commit();
 
-	fprintf(fp_client, "ns-cert-type server\n");
 	fprintf(fp_client, "resolv-retry infinite\n");
 	fprintf(fp_client, "nobind\n");
 	fclose(fp_client);
 	vpnlog(VPN_LOG_EXTRA,"Done writing client config file");
-
-//eval("taskset", "-c", "1", "smbd", "-D", "-s", "/etc/smb.conf");
 
 #if 0
         if (cpu_num > 1)
@@ -1279,11 +1281,19 @@ void start_vpnserver(int serverNum)
 		argv[1] = "a";	
 		sprintf(&buffer[0], "CheckVPNServer%d", serverNum);
 		argv[2] = &buffer[0];
-		sprintf(&buffer[strlen(&buffer[0])+1], "*/%d * * * * service vpnserver%d start", nvi, serverNum);
+		sprintf(&buffer[strlen(&buffer[0])+1], "*/%d * * * * service start_vpnserver%d", nvi, serverNum);
 		argv[3] = &buffer[strlen(&buffer[0])+1];
 		argv[4] = NULL;
 		_eval(argv, NULL, 0, NULL);
 		vpnlog(VPN_LOG_EXTRA,"Done adding cron job");
+	}
+
+	if ( cryptMode == SECRET || cryptMode == CUSTOM)
+	{
+		sprintf(&buffer[0], "vpn_server%d_state", serverNum);
+		nvram_set(&buffer[0], "2");	//running
+		sprintf(&buffer[0], "vpn_server%d_errno", serverNum);
+		nvram_set(&buffer[0], "0");
 	}
 
 #ifdef LINUX26

@@ -28,6 +28,9 @@ var vci_val = "<% nvram_get("dsltmp_cfg_vci"); %>";
 var encap_val = "<% nvram_get("dsltmp_cfg_encap"); %>";
 var ispname_str = "<% nvram_get("dsltmp_cfg_ispname"); %>";
 var country_str = "<% nvram_get("dsltmp_cfg_country"); %>";
+var transfer_mode = "<% nvram_get("dsltmp_transmode"); %>";
+var vlanid = "<% nvram_get("dsltmp_cfg_vlanid"); %>";
+
 var iptv_num_pvc_str = "";
 
 var encap_str = ", LLC";
@@ -45,6 +48,14 @@ function QKfinish_load_body(){
 	IPinputCtrl(document.form.dsl_gateway, 1);
 	IPinputCtrl(document.form.dsl_dns1_x, 1);
 	IPinputCtrl(document.form.dsl_dns2_x, 1);
+	if(transfer_mode == "atm"){
+		$("atm_info").style.display = "";		
+		document.form.prev_page.value = "/qis/QIS_manual_setting.htm";
+	}
+	else{ //transmode "ptm"
+		$("ptm_info").style.display = "";
+		document.form.prev_page.value = "/qis/QIS_PTM_manual_setting.htm";
+	}	
 }
 
 function validate_ip(){
@@ -152,8 +163,12 @@ function gotoHome() {
 <input type="hidden" name="dsltmp_qis_pppoe_relay" value="0">
 
 <div class="QISmain">
-	<div class="formfonttitle" style="padding:0 0 0 10;" id="FailReason"><#Manual_Setting_Title#></div>
 	<table width="730px">
+		<tr>
+			<td align="left">
+					<span class="description_down"><#Manual_Setting_Title#></span>
+			</td>
+		</tr>
 		<tr id="home_button">
 			<td align="right">
 				<img onclick="gotoHome();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
@@ -165,9 +180,17 @@ function gotoHome() {
 
 <table id="tblsetting_1" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
   <tr>
-			&nbsp;&nbsp;&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: IPoA, VPI/VCI: <% nvram_get("dsltmp_cfg_vpi"); %>/<% nvram_get("dsltmp_cfg_vci"); %><script>document.write(encap_str);</script><br>
-			&nbsp;&nbsp;&nbsp;<b><script>document.write(iptv_num_pvc_str);</script></b>
-     <br><br>
+  	<td class="test_css">	
+			<div id="atm_info" style="display:none;">
+				ADSL WAN (ATM),&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: IPoA, VPI/VCI: <% nvram_get("dsltmp_cfg_vpi"); %>/<% nvram_get("dsltmp_cfg_vci"); %><script>document.write(encap_str);</script><br>
+				<b><script>document.write(iptv_num_pvc_str);</script></b>
+			</div>
+  		
+			<div id="ptm_info" style="display:none;">
+				VDSL WAN (PTM),&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <#BOP_ctype_title5#>, <#WANVLANIDText#>: <script>document.write(vlanid);</script><br>
+			</div>
+  		   <br><br>
+    </td> 
   </tr>
 </table>
 
@@ -184,7 +207,7 @@ function gotoHome() {
 			<td class="QISformtd">
 				<input type="hidden" id="dsl_ipaddr" name="dsl_ipaddr" value="" maxlength="15" onkeypress="return is_ipaddr(this);" title="WAN IP">
 				<div class="IPaddr" id="dsl_ipaddr_div">
-					<input maxlength="3"
+					<input maxlength="3" tabindex="1"
 								 name="dsl_ipaddr1";
 								 onkeypress="return checkIP(this,event);"
                  onkeyup="return checkWord(this,event);"
@@ -222,7 +245,7 @@ function gotoHome() {
 			<td class="QISformtd">
 				<input type="hidden" id="dsl_netmask" name="dsl_netmask" value="" maxlength="15"  title="WAN Subnet Mask">
 				<div class="IPaddr" id="dsl_netmask_div">
-					<input maxlength="3"
+					<input maxlength="3" tabindex="2"
 								 name="dsl_netmask1"
 								 onkeypress="return checkIP(this,event);"
                  onkeyup="return checkWord(this,event);"
@@ -262,7 +285,7 @@ function gotoHome() {
 			<td class="QISformtd">
 				<input type="hidden" id="dsl_gateway" name="dsl_gateway" value="" maxlength="15" onkeypress="return is_ipaddr(this);" class="input">
 				<div class="IPaddr" id="dsl_gateway_div">
-					<input maxlength="3"
+					<input maxlength="3" tabindex="3"
 								 onkeypress="return checkIP(this,event);"
                  onkeyup="return checkWord(this,event);"
                  onblur="validateIP(this);"
@@ -310,7 +333,7 @@ function gotoHome() {
 	  <td class="QISformtd">
 			<input type="hidden" id="dsl_dns1_x" name="dsl_dns1_x" value="" onkeypress="return is_ipaddr(this);" maxlength="15">
 			<div class="IPaddr" id="dsl_dns1_x_div">
-				<input maxlength="3"
+				<input maxlength="3" tabindex="4"
 							 name="dsl_dns1_x1"
 							 onkeypress="return checkIP(this,event);"
                 onkeyup="return checkWord(this,event);"
@@ -350,7 +373,7 @@ function gotoHome() {
 	  <td class="QISformtd">
 			<input type="hidden" id="dsl_dns2_x" name="dsl_dns2_x" value="" maxlength="15" onkeypress="return is_ipaddr(this);">
 			<div class="IPaddr" id="dsl_dns2_x_div">
-				<input maxlength="3"
+				<input maxlength="3" tabindex="5"
 							 onkeypress="return checkIP(this,event);"
                 onkeyup="return checkWord(this,event);"
                 onblur="validateIP(this);"
@@ -386,11 +409,11 @@ function gotoHome() {
 </div>
 
 	<div class="apply_gen" style="margin-top:30px">
-		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" onclick="gotoprev(document.form);" class="button_gen" >
+		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" tabindex="7" onclick="gotoprev(document.form);" class="button_gen" >
 <!--
 		<input type="button" id="nextButton" value="Ethernet WAN" onclick="redirect_page('internet_type');" class="button_gen" >
 -->
-		<input type="button" id="nextButton" value="<#btn_next#>" onclick="submitForm();" class="button_gen">
+		<input type="button" id="nextButton" value="<#btn_next#>" tabindex="6" onclick="submitForm();" class="button_gen">
 	</div>
 
 </div>

@@ -188,21 +188,25 @@ extern char *upper_strstr(const char *const str, const char *const target){
 #ifdef RTCONFIG_IPV6
 int get_ipv6_service(void)
 {
-	const char *names[] = {	// order must be synced with def at shared.h
-		"static6",	// IPV6_NATIVE
-		"dhcp6",	// IPV6_NATIVE_DHCP
-		"6to4",		// IPV6_6TO4
-		"6in4",		// IPV6_6IN4
-		"6rd",		// IPV6_6RD
-		"other",	// IPV6_MANUAL
-		NULL
+	static const struct {
+		char *name;
+		int service;
+	} services[] = {
+		{ "dhcp6",	IPV6_NATIVE_DHCP },
+		{ "6to4",	IPV6_6TO4 },
+		{ "6in4",	IPV6_6IN4 },
+		{ "6rd",	IPV6_6RD },
+		{ "other",	IPV6_MANUAL },
+		{ "static6",	IPV6_MANUAL }, /* legacy */
+		{ NULL }
 	};
+	char *value;
 	int i;
-	const char *p;
 
-	p = nvram_safe_get("ipv6_service");
-	for (i = 0; names[i] != NULL; ++i) {
-		if (strcmp(p, names[i]) == 0) return i + 1;
+	value = nvram_safe_get("ipv6_service");
+	for (i = 0; services[i].name; i++) {
+		if (strcmp(value, services[i].name) == 0)
+			return services[i].service;
 	}
 	return IPV6_DISABLED;
 }
@@ -275,7 +279,7 @@ void reset_ipv6_linklocal_addr(const char *ifname, int flush)
 	static char buf[INET6_ADDRSTRLEN];
 	struct in6_addr addr;
 	struct ifreq ifr;
-	unsigned char *mac;
+	char *mac;
 	int fd;
 
 	if (!ifname ||
@@ -510,6 +514,7 @@ void notice_set(const char *path, const char *format, ...)
 //	#define _x_dprintf(args...)	syslog(LOG_DEBUG, args);
 #define _x_dprintf(args...)	do { } while (0);
 
+#ifdef REMOVE
 const dns_list_t *get_dns(void)
 {
 	static dns_list_t dns;
@@ -553,6 +558,7 @@ const dns_list_t *get_dns(void)
 
 	return &dns;
 }
+#endif
 
 // -----------------------------------------------------------------------------
 
@@ -619,7 +625,6 @@ const char *get_wanface(void)
 const char *get_wan6face(void)
 {
 	switch (get_ipv6_service()) {
-	case IPV6_NATIVE:
 	case IPV6_NATIVE_DHCP:
 	case IPV6_MANUAL:
 		return get_wan6_ifname(0);
@@ -630,32 +635,34 @@ const char *get_wan6face(void)
 	case IPV6_6RD:
 		return "6rd";
 	}
-//	return nvram_safe_get("ipv6_ifname");
 	return "";
 }
 
 int update_6rd_info(void)
 {
-	if (get_ipv6_service() == IPV6_6RD && nvram_match("ipv6_6rd_dhcp", "1")) {
-		char addr6[INET6_ADDRSTRLEN + 1];
-		const char *prefix;
-		struct in6_addr addr;
+	char tmp[100], prefix[]="wanXXXXX_";
+	char addr6[INET6_ADDRSTRLEN + 1], *value;
+	struct in6_addr addr;
+	int unit = 0;
 
-		if (!nvram_invmatch("wan0_6rd_router", ""))
-			return 0;
+	if (get_ipv6_service() != IPV6_6RD || !nvram_get_int("ipv6_6rd_dhcp"))
+		return -1;
 
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+
+	value = nvram_safe_get(strcat_r(prefix, "6rd_prefix", tmp));
+	if (*value ) {
 		/* try to compact IPv6 prefix */
-		prefix = nvram_safe_get("wan0_6rd_prefix");
-		if (inet_pton(AF_INET6, prefix, &addr) == 1)
-			prefix = inet_ntop(AF_INET6, &addr, addr6, sizeof(addr6));
-
-		nvram_set("ipv6_6rd_prefix", prefix);
-		nvram_set("ipv6_6rd_router", nvram_safe_get("wan0_6rd_router"));
-		nvram_set("ipv6_6rd_prefixlen", nvram_safe_get("wan0_6rd_prefixlen"));
-		nvram_set("ipv6_6rd_ip4size", nvram_safe_get("wan0_6rd_ip4size"));
+		if (inet_pton(AF_INET6, value, &addr) > 0)
+			value = (char *) inet_ntop(AF_INET6, &addr, addr6, sizeof(addr6));
+		nvram_set("ipv6_6rd_prefix", value);
+		nvram_set("ipv6_6rd_router", nvram_safe_get(strcat_r(prefix, "6rd_router", tmp)));
+		nvram_set("ipv6_6rd_prefixlen", nvram_safe_get(strcat_r(prefix, "6rd_prefixlen", tmp)));
+		nvram_set("ipv6_6rd_ip4size", nvram_safe_get(strcat_r(prefix, "6rd_ip4size", tmp)));
 		return 1;
 	}
-	else return -1;
+
+	return 0;
 }
 #endif
 
@@ -664,7 +671,7 @@ const char *getifaddr(char *ifname, int family, int flags)
 	static char buf[INET6_ADDRSTRLEN];
 	struct ifaddrs *ifap, *ifa;
 	unsigned char *addr, *netmask;
-	int i, maxlen = 0;
+	unsigned char i, maxlen = 0;
 
 	if (getifaddrs(&ifap) != 0) {
 		_dprintf("getifaddrs failed: %s\n", strerror(errno));
@@ -866,7 +873,7 @@ int nvram_get_file(const char *key, const char *fname, int max)
 	n = strlen(p);
 	if (n <= max) {
 		if ((b = malloc(base64_decoded_len(n) + 128)) != NULL) {
-			n = base64_decode(p, b, n);
+			n = base64_decode(p, (unsigned char *) b, n);
 			if (n > 0) r = (f_write(fname, b, n, 0, 0644) == n);
 			free(b);
 		}
@@ -900,7 +907,7 @@ int nvram_set_file(const char *key, const char *fname, int max)
 	r = 0;
 	if (f_read_alloc(fname, &in, max) == max) {
 		if ((out = malloc(base64_encoded_len(max) + 128)) != NULL) {
-			n = base64_encode(in, out, max);
+			n = base64_encode((unsigned char *) in, out, max);
 			out[n] = 0;
 			nvram_set(key, out);
 			free(out);
@@ -999,6 +1006,7 @@ uint32_t crc_calc(uint32_t crc, const char *buf, int len)
 void bcmvlan_models(int model, char *vlan)
 {
 	switch (model) {
+	case MODEL_DSLAC68U:
 	case MODEL_RTAC68U:
 	case MODEL_RTAC87U:
 	case MODEL_RTAC56S:
@@ -1009,6 +1017,7 @@ void bcmvlan_models(int model, char *vlan)
 	case MODEL_RTN18U:
 	case MODEL_RTN15U:
 	case MODEL_RTAC53U:
+	case MODEL_RTAC3200:
 		strcpy(vlan, "vlan1");
 		break;
 	case MODEL_RTN53:
@@ -1046,14 +1055,14 @@ char *get_productid(void)
 int backup_rx;
 int backup_tx;
 
-unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2)
+unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2)		
 {
 	char word[100], word1[100], *next, *next1;
 	char tmp[100];
 	char modelvlan[32];
 	int i, j, model, unit;
-
 	strcpy(ifname_desc2, "");
+
 	model = get_model();
 	bcmvlan_models(model, modelvlan);
 
@@ -1106,7 +1115,7 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 						}
 						j++;
 					}
-					sprintf(ifname_desc, "WIRELESS%d.%d", 0, j);
+				sprintf(ifname_desc, "WIRELESS%d.%d", 0, j);
 					return 1;
 				}
 				i++;
@@ -1117,18 +1126,9 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 		// find wired interface
 		strcpy(ifname_desc, "WIRED");
 
-		// special handle for non-tag wan of broadcom solution
-		// pretend vlanX is must called after ethX
-		if(nvram_match("switch_wantag", "none")) { //Don't calc if select IPTV
-			if(strlen(modelvlan) && strcmp(ifname, modelvlan)==0) {
-				backup_rx -= *rx;
-				backup_tx -= *tx;
+		if(model == MODEL_DSLAC68U)
+			return 1;
 
-				*rx2 = backup_rx;
-				*tx2 = backup_tx;				
-				strcpy(ifname_desc2, "INTERNET");
-			}
-		}//End of switch_wantag
 		return 1;
 	}
 	// find bridge interface
@@ -1138,25 +1138,33 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 		return 1;
 	}
 	// find in WAN interface
-	else if (ifname && (unit = get_wan_unit(ifname)) >= 0)
-	{
+	else if (ifname && (unit = get_wan_unit(ifname)) >= 0)	{
 		if (dualwan_unit__nonusbif(unit)) {
 #if defined(RA_ESW)
 			get_mt7620_wan_unit_bytecount(unit, tx, rx);
 #endif
 
-			if(strlen(modelvlan) && strcmp(ifname, "eth0")==0) {
-				backup_rx = *rx;
-				backup_tx = *tx;
-			}
-			else if (unit == wan_primary_ifunit()) {
+
+				if (unit == WAN_UNIT_FIRST) {	
+					strcpy(ifname_desc, "INTERNET");
+					return 1;
+				}
+				else { 
+					sprintf(ifname_desc,"INTERNET%d", unit);
+					return 1;
+				}
+		
+						
+		
+		}
+		else if (dualwan_unit__usbif(unit)) {
+
+			if (unit == wan_primary_ifunit()) {
 				strcpy(ifname_desc, "INTERNET");
 				return 1;
 			}
-		}
-		else if (dualwan_unit__usbif(unit)) {
-			if (unit == wan_primary_ifunit()) {
-				strcpy(ifname_desc, "INTERNET");
+			else{
+				sprintf(ifname_desc,"INTERNET%d", unit);
 				return 1;
 			}
 		}
@@ -1315,7 +1323,6 @@ char *get_syslog_fname(unsigned int idx)
 int is_psta(int unit)
 {
 	if (unit < 0) return 0;
-
 	if ((nvram_get_int("sw_mode") == SW_MODE_AP) &&
 		(nvram_get_int("wlc_psta") == 1) &&
 		(nvram_get_int("wlc_band") == unit))
@@ -1327,11 +1334,54 @@ int is_psta(int unit)
 int is_psr(int unit)
 {
 	if (unit < 0) return 0;
-
+#ifdef RTCONFIG_QTN
+	if (unit == 1) return 0;
+#endif
 	if ((nvram_get_int("sw_mode") == SW_MODE_AP) &&
 		(nvram_get_int("wlc_psta") == 2) &&
 		(nvram_get_int("wlc_band") == unit))
 		return 1;
+
+	return 0;
+}
+
+int psta_exist()
+{
+	char word[256], *next;
+	int idx = 0;
+
+	foreach (word, nvram_safe_get("wl_ifnames"), next) {
+		if (is_psta(idx)) return 1;
+		idx++;
+	}
+
+	return 0;
+}
+
+int psta_exist_except(int unit)
+{
+	char word[256], *next;
+	int idx = 0;
+
+	foreach (word, nvram_safe_get("wl_ifnames"), next) {
+		if (idx == unit) continue;
+		if (is_psta(idx)) return 1;
+		idx++;
+	}
+
+	return 0;
+}
+
+int psr_exist_except(int unit)
+{
+	char word[256], *next;
+	int idx = 0;
+
+	foreach (word, nvram_safe_get("wl_ifnames"), next) {
+		if (idx == unit) continue;
+		if (is_psr(idx)) return 1;
+		idx++;
+	}
 
 	return 0;
 }

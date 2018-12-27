@@ -61,6 +61,7 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <limits.h>
 
 #include "config.h"
 #include "upnpglobalvars.h"
@@ -89,9 +90,9 @@
 #include "icons.c"
 
 enum event_type {
-        E_INVALID,
-        E_SUBSCRIBE,
-        E_RENEW
+	E_INVALID,
+	E_SUBSCRIBE,
+	E_RENEW
 };
 
 struct upnphttp * 
@@ -150,7 +151,7 @@ ParseHttpHeaders(struct upnphttp * h)
 			if(strncasecmp(line, "Content-Length", 14)==0)
 			{
 				p = colon;
-				while(*p < '0' || *p > '9')
+				while(*p && (*p < '0' || *p > '9'))
 					p++;
 				h->req_contentlen = atoi(p);
 			}
@@ -160,14 +161,14 @@ ParseHttpHeaders(struct upnphttp * h)
 				n = 0;
 				while(*p == ':' || *p == ' ' || *p == '\t')
 					p++;
-				while(p[n]>=' ')
-				{
+				while(p[n] >= ' ')
 					n++;
-				}
-				if((p[0] == '"' && p[n-1] == '"')
-				  || (p[0] == '\'' && p[n-1] == '\''))
+				if(n >= 2 &&
+				   ((p[0] == '"' && p[n-1] == '"') ||
+				    (p[0] == '\'' && p[n-1] == '\'')))
 				{
-					p++; n -= 2;
+					p++;
+					n -= 2;
 				}
 				h->req_soapAction = p;
 				h->req_soapActionLen = n;
@@ -175,10 +176,10 @@ ParseHttpHeaders(struct upnphttp * h)
 			else if(strncasecmp(line, "Callback", 8)==0)
 			{
 				p = colon;
-				while(*p != '<' && *p != '\r' )
+				while(*p && *p != '<' && *p != '\r' )
 					p++;
 				n = 0;
-				while(p[n] != '>' && p[n] != '\r' )
+				while(p[n] && p[n] != '>' && p[n] != '\r' )
 					n++;
 				h->req_Callback = p + 1;
 				h->req_CallbackLen = MAX(0, n - 1);
@@ -200,7 +201,7 @@ ParseHttpHeaders(struct upnphttp * h)
 					while(isspace(*p))
 						p++;
 					n = 0;
-					while(!isspace(p[n]))
+					while(p[n] && !isspace(p[n]))
 						n++;
 					h->req_SID = p;
 					h->req_SIDLen = n;
@@ -212,7 +213,7 @@ ParseHttpHeaders(struct upnphttp * h)
 				while(isspace(*p))
 					p++;
 				n = 0;
-				while(!isspace(p[n]))
+				while(p[n] && !isspace(p[n]))
 					n++;
 				h->req_NT = p;
 				h->req_NTLen = n;
@@ -244,7 +245,8 @@ ParseHttpHeaders(struct upnphttp * h)
 					h->req_RangeStart = strtoll(p+6, &colon, 10);
 					h->req_RangeEnd = colon ? atoll(colon+1) : 0;
 					DPRINTF(E_DEBUG, L_HTTP, "Range Start-End: %lld - %lld\n",
-					       h->req_RangeStart, h->req_RangeEnd?h->req_RangeEnd:-1);
+						(long long)h->req_RangeStart,
+						h->req_RangeEnd ? (long long)h->req_RangeEnd : -1);
 				}
 			}
 			else if(strncasecmp(line, "Host", 4)==0)
@@ -396,8 +398,11 @@ ParseHttpHeaders(struct upnphttp * h)
 			}
 		}
 next_header:
-		while(!(line[0] == '\r' && line[1] == '\n'))
-			line++;
+		line = strstr(line, "\r\n");
+		if (!line)
+		{
+			return;
+		}
 		line += 2;
 	}
 	if( h->reqflags & FLAG_CHUNKED )
@@ -410,9 +415,10 @@ next_header:
 		       (h->req_chunklen = strtol(line, &endptr, 16)) &&
 		       (endptr != line) )
 		{
-			while(!(endptr[0] == '\r' && endptr[1] == '\n'))
+			endptr = strstr(endptr, "\r\n");
+			if (!endptr)
 			{
-				endptr++;
+				return;
 			}
 			line = endptr+h->req_chunklen+2;
 		}
@@ -427,33 +433,28 @@ next_header:
 	 * This is done because a lot of clients like to send a
 	 * different User-Agent with different types of requests. */
 	n = SearchClientCache(h->clientaddr, 0);
-	if( h->req_client )
+	/* Add this client to the cache if it's not there already. */
+	if( n < 0 )
 	{
-		/* Add this client to the cache if it's not there already. */
-		if( n < 0 )
-		{
-			AddClientCache(h->clientaddr, h->req_client);
-		}
-		else
-		{
-			enum client_types type = client_types[h->req_client].type;
-			enum client_types ctype = client_types[clients[n].type].type;
-			/* If we know the client and our new detection is generic, use our cached info */
-			/* If we detected a Samsung Series B earlier, don't overwrite it with Series A info */
-			if ((ctype < EStandardDLNA150 && type == EStandardDLNA150) ||
-			    (ctype == ESamsungSeriesB && type == ESamsungSeriesA))
-			{
-				h->req_client = clients[n].type;
-				return;
-			}
-			clients[n].type = h->req_client;
-			clients[n].age = time(NULL);
-		}
+		AddClientCache(h->clientaddr, h->req_client);
 	}
-	else if( n >= 0 )
+	else if (h->req_client)
 	{
+		enum client_types type = client_types[h->req_client].type;
+		enum client_types ctype = client_types[clients[n].type].type;
+		/* If we know the client and our new detection is generic, use our cached info */
+		/* If we detected a Samsung Series B earlier, don't overwrite it with Series A info */
+		if ((ctype && ctype < EStandardDLNA150 && type >= EStandardDLNA150) ||
+		    (ctype == ESamsungSeriesB && type == ESamsungSeriesA))
+		{
+			h->req_client = clients[n].type;
+			return;
+		}
+		clients[n].type = h->req_client;
+		clients[n].age = time(NULL);
+	}
+	else
 		h->req_client = clients[n].type;
-	}
 }
 
 /* very minimalistic 400 error message */
@@ -546,18 +547,6 @@ Send501(struct upnphttp * h)
 	CloseSocket_upnphttp(h);
 }
 
-static const char *
-findendheaders(const char * s, int len)
-{
-	while(len-- > 0)
-	{
-		if(s[0]=='\r' && s[1]=='\n' && s[2]=='\r' && s[3]=='\n')
-			return s;
-		s++;
-	}
-	return NULL;
-}
-
 /* Sends the description generated by the parameter */
 static void
 sendXMLdesc(struct upnphttp * h, char * (f)(int *))
@@ -577,31 +566,72 @@ sendXMLdesc(struct upnphttp * h, char * (f)(int *))
 	free(desc);
 }
 
+#ifdef READYNAS
+static void
+SendResp_readynas_admin(struct upnphttp * h)
+{
+	char body[128];
+	int l;
+
+	h->respflags = FLAG_HTML;
+	l = snprintf(body, sizeof(body), "<meta http-equiv=\"refresh\" content=\"0; url=https://%s/admin/\">",
+	              lan_addr[h->iface].str);
+
+	BuildResp_upnphttp(h, body, l);
+	SendResp_upnphttp(h);
+	CloseSocket_upnphttp(h);
+}
+#endif
+
 static void
 SendResp_presentation(struct upnphttp * h)
 {
-	char body[1024];
-	int l;
+	struct string_s str;
+	char body[4096];
+	int a, v, p, i;
+
+	str.data = body;
+	str.size = sizeof(body);
+	str.off = 0;
+
 	h->respflags = FLAG_HTML;
 
-#ifdef READYNAS
-	l = snprintf(body, sizeof(body), "<meta http-equiv=\"refresh\" content=\"0; url=https://%s/admin/\">",
-	             lan_addr[h->iface].str);
-#else
-	int a, v, p;
 	a = sql_get_int_field(db, "SELECT count(*) from DETAILS where MIME glob 'a*'");
 	v = sql_get_int_field(db, "SELECT count(*) from DETAILS where MIME glob 'v*'");
 	p = sql_get_int_field(db, "SELECT count(*) from DETAILS where MIME glob 'i*'");
-	l = snprintf(body, sizeof(body),
+	strcatf(&str,
 		"<HTML><HEAD><TITLE>" SERVER_NAME " " MINIDLNA_VERSION "</TITLE></HEAD>"
 		"<BODY><div style=\"text-align: center\">"
-                "<h3>" SERVER_NAME " status</h3>"
-                "Audio files: %d<br>"
-                "Video files: %d<br>"
-                "Image files: %d</div>"
-		"</BODY></HTML>\r\n", a, v, p);
-#endif
-	BuildResp_upnphttp(h, body, l);
+		"<h2>" SERVER_NAME " status</h2></div>");
+
+	strcatf(&str,
+		"<h3>Media library</h3>"
+		"<table border=1 cellpadding=10>"
+		"<tr><td>Audio files</td><td>%d</td></tr>"
+		"<tr><td>Video files</td><td>%d</td></tr>"
+		"<tr><td>Image files</td><td>%d</td></tr>"
+		"</table>", a, v, p);
+
+	if (scanning)
+		strcatf(&str,
+			"<br><i>* Media scan in progress</i><br>");
+
+	strcatf(&str,
+		"<h3>Connected clients</h3>"
+		"<table border=1 cellpadding=10>"
+		"<tr><td>ID</td><td>Type</td><td>IP Address</td><td>HW Address</td></tr>");
+	for (i = 0; i < CLIENT_CACHE_SLOTS; i++)
+	{
+		if (!clients[i].addr.s_addr)
+			continue;
+		strcatf(&str, "<tr><td>%d</td><td>%s</td><td>%s</td><td>%02X:%02X:%02X:%02X:%02X:%02X</td></tr>",
+				i, client_types[clients[i].type].name, inet_ntoa(clients[i].addr),
+				clients[i].mac[0], clients[i].mac[1], clients[i].mac[2],
+				clients[i].mac[3], clients[i].mac[4], clients[i].mac[5]);
+	}
+	strcatf(&str, "</table></BODY></HTML>\r\n");
+
+	BuildResp_upnphttp(h, str.data, str.off);
 	SendResp_upnphttp(h);
 	CloseSocket_upnphttp(h);
 }
@@ -693,7 +723,7 @@ ProcessHTTPSubscribe_upnphttp(struct upnphttp * h, const char * path)
 	enum event_type type;
 	DPRINTF(E_DEBUG, L_HTTP, "ProcessHTTPSubscribe %s\n", path);
 	DPRINTF(E_DEBUG, L_HTTP, "Callback '%.*s' Timeout=%d\n",
-	       h->req_CallbackLen, h->req_Callback, h->req_Timeout);
+		h->req_CallbackLen, h->req_Callback, h->req_Timeout);
 	DPRINTF(E_DEBUG, L_HTTP, "SID '%.*s'\n", h->req_SIDLen, h->req_SID);
 
 	type = check_event(h);
@@ -771,7 +801,7 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 	p = h->req_buf;
 	if(!p)
 		return;
-	for(i = 0; i<15 && *p != ' ' && *p != '\r'; i++)
+	for(i = 0; i<15 && *p && *p != ' ' && *p != '\r'; i++)
 		HttpCommand[i] = *(p++);
 	HttpCommand[i] = '\0';
 	while(*p==' ')
@@ -782,13 +812,13 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 		while(*p!='/')
 			p++;
 	}
-	for(i = 0; i<511 && *p != ' ' && *p != '\r'; i++)
+	for(i = 0; i<511 && *p && *p != ' ' && *p != '\r'; i++)
 		HttpUrl[i] = *(p++);
 	HttpUrl[i] = '\0';
 	while(*p==' ')
 		p++;
 	HttpVer = h->HttpVer;
-	for(i = 0; i<15 && *p != '\r'; i++)
+	for(i = 0; i<15 && *p && *p != '\r'; i++)
 		HttpVer[i] = *(p++);
 	HttpVer[i] = '\0';
 	/*DPRINTF(E_INFO, L_HTTP, "HTTP REQUEST : %s %s (%s)\n",
@@ -810,19 +840,26 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 	/* see if we need to wait for remaining data */
 	if( (h->reqflags & FLAG_CHUNKED) )
 	{
+		if( h->req_chunklen == -1)
+		{
+			Send400(h);
+			return;
+		}
 		if( h->req_chunklen )
 		{
 			h->state = 2;
-	                return;
+			return;
 		}
 		char *chunkstart, *chunk, *endptr, *endbuf;
 		chunk = endbuf = chunkstart = h->req_buf + h->req_contentoff;
 
 		while( (h->req_chunklen = strtol(chunk, &endptr, 16)) && (endptr != chunk) )
 		{
-			while(!(endptr[0] == '\r' && endptr[1] == '\n'))
+			endptr = strstr(endptr, "\r\n");
+			if (!endptr)
 			{
-				endptr++;
+				Send400(h);
+				return;
 			}
 			endptr += 2;
 
@@ -855,7 +892,7 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 		         !(h->reqflags & FLAG_RANGE) )
 		{
 			DPRINTF(E_WARN, L_HTTP, "DLNA %s requested, responding ERROR 406\n",
-			                        h->reqflags&FLAG_TIMESEEK ? "TimeSeek" : "PlaySpeed");
+				h->reqflags&FLAG_TIMESEEK ? "TimeSeek" : "PlaySpeed");
 			Send406(h);
 			return;
 		}
@@ -886,7 +923,7 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 					friendly_name[i] = '\0';
 				memcpy(modelnumber, model_sav, 2);
 			}
-			else if( client_types[h->req_client].flags & FLAG_SAMSUNG_TV )
+			else if( client_types[h->req_client].flags & FLAG_SAMSUNG_DCM10 )
 			{
 				sendXMLdesc(h, genRootDescSamsung);
 			}
@@ -954,9 +991,17 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 		{
 			SendResp_caption(h, HttpUrl+10);
 		}
-		else if(strcmp(HttpUrl, "/") == 0)
+		else if(strncmp(HttpUrl, "/status", 7) == 0)
 		{
 			SendResp_presentation(h);
+		}
+		else if(strcmp(HttpUrl, "/") == 0)
+		{
+			#ifdef READYNAS
+			SendResp_readynas_admin(h);
+			#else
+			SendResp_presentation(h);
+			#endif
 		}
 		else
 		{
@@ -1005,15 +1050,29 @@ Process_upnphttp(struct upnphttp * h)
 		}
 		else
 		{
+			int new_req_buflen;
 			const char * endheaders;
 			/* if 1st arg of realloc() is null,
 			 * realloc behaves the same as malloc() */
-			h->req_buf = (char *)realloc(h->req_buf, n + h->req_buflen + 1);
+			new_req_buflen = n + h->req_buflen + 1;
+			if (new_req_buflen >= 1024 * 1024)
+			{
+				DPRINTF(E_ERROR, L_HTTP, "Receive headers too large (received %d bytes)\n", new_req_buflen);
+				h->state = 100;
+				break;
+			}
+			h->req_buf = (char *)realloc(h->req_buf, new_req_buflen);
+			if (!h->req_buf)
+			{
+				DPRINTF(E_ERROR, L_HTTP, "Receive headers: %s\n", strerror(errno));
+				h->state = 100;
+				break;
+			}
 			memcpy(h->req_buf + h->req_buflen, buf, n);
 			h->req_buflen += n;
 			h->req_buf[h->req_buflen] = '\0';
 			/* search for the string "\r\n\r\n" */
-			endheaders = findendheaders(h->req_buf, h->req_buflen);
+			endheaders = strstr(h->req_buf, "\r\n\r\n");
 			if(endheaders)
 			{
 				h->req_contentoff = endheaders - h->req_buf + 4;
@@ -1024,21 +1083,28 @@ Process_upnphttp(struct upnphttp * h)
 		break;
 	case 1:
 	case 2:
-		n = recv(h->socket, buf, 2048, 0);
-		if(n<0)
+		n = recv(h->socket, buf, sizeof(buf), 0);
+		if(n < 0)
 		{
 			DPRINTF(E_ERROR, L_HTTP, "recv (state%d): %s\n", h->state, strerror(errno));
 			h->state = 100;
 		}
-		else if(n==0)
+		else if(n == 0)
 		{
 			DPRINTF(E_WARN, L_HTTP, "HTTP Connection closed unexpectedly\n");
 			h->state = 100;
 		}
 		else
 		{
+			buf[sizeof(buf)-1] = '\0';
 			/*fwrite(buf, 1, n, stdout);*/	/* debug */
 			h->req_buf = (char *)realloc(h->req_buf, n + h->req_buflen);
+			if (!h->req_buf)
+			{
+				DPRINTF(E_ERROR, L_HTTP, "Receive request body: %s\n", strerror(errno));
+				h->state = 100;
+				break;
+			}
 			memcpy(h->req_buf + h->req_buflen, buf, n);
 			h->req_buflen += n;
 			if((h->req_buflen - h->req_contentoff) >= h->req_contentlen)
@@ -1078,56 +1144,43 @@ BuildHeader_upnphttp(struct upnphttp * h, int respcode,
 	time_t curtime = time(NULL);
 	char date[30];
 	int templen;
+	struct string_s res;
 	if(!h->res_buf)
 	{
 		templen = sizeof(httpresphead) + 256 + bodylen;
 		h->res_buf = (char *)malloc(templen);
 		h->res_buf_alloclen = templen;
 	}
-	h->res_buflen = snprintf(h->res_buf, h->res_buf_alloclen,
-	                         httpresphead, "HTTP/1.1",
-	                         respcode, respmsg,
-	                         (h->respflags&FLAG_HTML)?"text/html":"text/xml; charset=\"utf-8\"",
+	res.data = h->res_buf;
+	res.size = h->res_buf_alloclen;
+	res.off = 0;
+	strcatf(&res, httpresphead, "HTTP/1.1",
+	              respcode, respmsg,
+	              (h->respflags&FLAG_HTML)?"text/html":"text/xml; charset=\"utf-8\"",
 							 bodylen);
 	/* Additional headers */
 	if(h->respflags & FLAG_TIMEOUT) {
-		h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-		                          h->res_buf_alloclen - h->res_buflen,
-		                          "Timeout: Second-");
+		strcatf(&res, "Timeout: Second-");
 		if(h->req_Timeout) {
-			h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-			                          h->res_buf_alloclen - h->res_buflen,
-			                          "%d\r\n", h->req_Timeout);
+			strcatf(&res, "%d\r\n", h->req_Timeout);
 		} else {
-			h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-			                          h->res_buf_alloclen - h->res_buflen,
-			                          "300\r\n");
+			strcatf(&res, "300\r\n");
 		}
 	}
 	if(h->respflags & FLAG_SID) {
-		h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-		                          h->res_buf_alloclen - h->res_buflen,
-		                          "SID: %.*s\r\n", h->req_SIDLen, h->req_SID);
+		strcatf(&res, "SID: %.*s\r\n", h->req_SIDLen, h->req_SID);
 	}
 	if(h->reqflags & FLAG_LANGUAGE) {
-		h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-		                          h->res_buf_alloclen - h->res_buflen,
-		                          "Content-Language: en\r\n");
+		strcatf(&res, "Content-Language: en\r\n");
 	}
 	strftime(date, 30,"%a, %d %b %Y %H:%M:%S GMT" , gmtime(&curtime));
-	h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-	                          h->res_buf_alloclen - h->res_buflen,
-	                          "Date: %s\r\n", date);
-	h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-	                          h->res_buf_alloclen - h->res_buflen,
-	                          "EXT:\r\n");
+	strcatf(&res, "Date: %s\r\n", date);
+	strcatf(&res, "EXT:\r\n");
 #if 0 // DLNA
-	h->res_buflen += snprintf(h->res_buf + h->res_buflen,
-	                          h->res_buf_alloclen - h->res_buflen,
-	                          "contentFeatures.dlna.org: \r\n");
+	strcatf(&res, "contentFeatures.dlna.org: \r\n");
 #endif
-	h->res_buf[h->res_buflen++] = '\r';
-	h->res_buf[h->res_buflen++] = '\n';
+	strcatf(&res, "\r\n");
+	h->res_buflen = res.off;
 	if(h->res_buf_alloclen < (h->res_buflen + bodylen))
 	{
 		h->res_buf = (char *)realloc(h->res_buf, (h->res_buflen + bodylen));
@@ -1150,8 +1203,7 @@ BuildResp2_upnphttp(struct upnphttp * h, int respcode,
 
 /* responding 200 OK ! */
 void
-BuildResp_upnphttp(struct upnphttp * h,
-                        const char * body, int bodylen)
+BuildResp_upnphttp(struct upnphttp *h, const char *body, int bodylen)
 {
 	BuildResp2_upnphttp(h, 200, "OK", body, bodylen);
 }
@@ -1233,21 +1285,25 @@ send_file(struct upnphttp * h, int sendfd, off_t offset, off_t end_offset)
 		/* Fall back to regular I/O */
 		if( !buf )
 			buf = malloc(MIN_BUFFER_SIZE);
-		send_size = ( ((end_offset - offset) < MIN_BUFFER_SIZE) ? (end_offset - offset + 1) : MIN_BUFFER_SIZE);
+		send_size = (((end_offset - offset) < MIN_BUFFER_SIZE) ? (end_offset - offset + 1) : MIN_BUFFER_SIZE);
 		lseek(sendfd, offset, SEEK_SET);
 		ret = read(sendfd, buf, send_size);
 		if( ret == -1 ) {
 			DPRINTF(E_DEBUG, L_HTTP, "read error :: error no. %d [%s]\n", errno, strerror(errno));
-			if( errno != EAGAIN )
+			if( errno == EAGAIN )
+				continue;
+			else
 				break;
 		}
 		ret = write(h->socket, buf, ret);
 		if( ret == -1 ) {
 			DPRINTF(E_DEBUG, L_HTTP, "write error :: error no. %d [%s]\n", errno, strerror(errno));
-			if( errno != EAGAIN )
+			if( errno == EAGAIN )
+				continue;
+			else
 				break;
 		}
-		offset+=ret;
+		offset += ret;
 	}
 	free(buf);
 }
@@ -1350,7 +1406,7 @@ SendResp_icon(struct upnphttp * h, char * icon)
 
 	if( send_data(h, header, ret, MSG_MORE) == 0 )
 	{
- 		if( h->req_command != EHead )
+		if( h->req_command != EHead )
 			send_data(h, data, size, 0);
 	}
 	CloseSocket_upnphttp(h);
@@ -1411,7 +1467,7 @@ SendResp_albumArt(struct upnphttp * h, char * object)
 
 	if( send_data(h, header, ret, MSG_MORE) == 0 )
 	{
- 		if( h->req_command != EHead )
+		if( h->req_command != EHead )
 			send_file(h, fd, 0, size-1);
 	}
 	close(fd);
@@ -1463,7 +1519,7 @@ SendResp_caption(struct upnphttp * h, char * object)
 
 	if( send_data(h, header, ret, MSG_MORE) == 0 )
 	{
- 		if( h->req_command != EHead )
+		if( h->req_command != EHead )
 			send_file(h, fd, 0, size-1);
 	}
 	close(fd);
@@ -1502,6 +1558,7 @@ SendResp_thumbnail(struct upnphttp * h, char * object)
 	if( access(path, F_OK) != 0 )
 	{
 		DPRINTF(E_ERROR, L_HTTP, "Error accessing %s\n", path);
+		Send404(h);
 		sqlite3_free(path);
 		return;
 	}
@@ -1534,7 +1591,7 @@ SendResp_thumbnail(struct upnphttp * h, char * object)
 
 	if( send_data(h, header, ret, MSG_MORE) == 0 )
 	{
- 		if( h->req_command != EHead )
+		if( h->req_command != EHead )
 			send_data(h, (char *)ed->data, ed->size, 0);
 	}
 	exif_data_unref(ed);
@@ -1686,9 +1743,9 @@ SendResp_resizedimg(struct upnphttp * h, char * object)
 	else if( srcw>>2 >= dstw && srch>>2 >= dsth )
 		scale = 2;
 
-        str.data = header;
-        str.size = sizeof(header);
-        str.off = 0;
+	str.data = header;
+	str.size = sizeof(header);
+	str.off = 0;
 
 	strftime(date, 30,"%a, %d %b %Y %H:%M:%S GMT" , gmtime(&curtime));
 	strcatf(&str, "HTTP/1.1 200 OK\r\n"
@@ -1803,8 +1860,13 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 		{
 			char *art;
 			art = sql_get_text_field(db, "SELECT ALBUM_ART from DETAILS where ID = '%lld'", id);
-			SendResp_albumArt(h, art);
-			sqlite3_free(art);
+			if (art)
+			{
+				SendResp_albumArt(h, art);
+				sqlite3_free(art);
+			}
+			else
+				Send404(h);
 			return;
 		}
 	}
@@ -1814,7 +1876,7 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 		ret = sql_get_table(db, buf, &result, &rows, NULL);
 		if( (ret != SQLITE_OK) )
 		{
-			DPRINTF(E_ERROR, L_HTTP, "Didn't find valid file for %lld!\n", id);
+			DPRINTF(E_ERROR, L_HTTP, "Didn't find valid file for %lld!\n", (long long)id);
 			Send500(h);
 			return;
 		}
@@ -1863,11 +1925,11 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 	if( newpid > 0 )
 	{
 		CloseSocket_upnphttp(h);
-		goto error;
+		return;
 	}
 #endif
 
-	DPRINTF(E_INFO, L_HTTP, "Serving DetailID: %lld [%s]\n", id, last_file.path);
+	DPRINTF(E_INFO, L_HTTP, "Serving DetailID: %lld [%s]\n", (long long)id, last_file.path);
 
 	if( h->reqflags & FLAG_XFERSTREAMING )
 	{
@@ -1975,9 +2037,9 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 
 	if( h->reqflags & FLAG_CAPTION )
 	{
-		if( sql_get_int_field(db, "SELECT ID from CAPTIONS where ID = '%lld'", id) > 0 )
+		if( sql_get_int_field(db, "SELECT ID from CAPTIONS where ID = '%lld'", (long long)id) > 0 )
 			strcatf(&str, "CaptionInfo.sec: http://%s:%d/Captions/%lld.srt\r\n",
-			              lan_addr[h->iface].str, runtime_vars.port, id);
+			              lan_addr[h->iface].str, runtime_vars.port, (long long)id);
 	}
 
 	strftime(date, 30,"%a, %d %b %Y %H:%M:%S GMT" , gmtime(&curtime));
@@ -1993,7 +2055,7 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 	//DEBUG DPRINTF(E_DEBUG, L_HTTP, "RESPONSE: %s\n", str.data);
 	if( send_data(h, str.data, str.off, MSG_MORE) == 0 )
 	{
- 		if( h->req_command != EHead )
+		if( h->req_command != EHead )
 			send_file(h, sendfh, offset, h->req_RangeEnd);
 	}
 	close(sendfh);

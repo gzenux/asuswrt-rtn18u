@@ -1,5 +1,5 @@
 /* test.c */
-/* $Id: //BBN_Linux/Branch/Branch_for_SDK_Release_MultiChip_20111013/tclinux_phoenix/apps/public/openssl-1.0.0d/demos/easy_tls/test.c#1 $ */
+/* $Id: test.c,v 1.1 2001/09/17 19:06:59 bodo Exp $ */
 
 #define L_PORT 9999
 #define C_PORT 443

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"> 
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -90,7 +90,13 @@ function initial(){
 	addWANOption(document.form.wans_second, wans_caps_secondary.split(" "));
 	document.form.wans_primary.value = wans_dualwan_orig.split(" ")[0];	
 	form_show(wans_flag);		
-	showLANIPList();	
+	setTimeout("showLANIPList();", 1000);
+
+	if(based_modelid == "RT-AC87U"){ //MODELDEP: RT-AC87 : Quantenna port
+                document.form.wans_lanport1.remove(0);   //Primary LAN1
+                document.form.wans_lanport2.remove(0);   //Secondary LAN1
+        }
+
 }
 
 function form_show(v){
@@ -162,6 +168,12 @@ function form_show(v){
 function applyRule(){
 	if(wans_flag == 1){
 		document.form.wans_dualwan.value = document.form.wans_primary.value +" "+ document.form.wans_second.value;
+		
+		if(!dsl_support && (document.form.wans_dualwan.value == "usb lan" || document.form.wans_dualwan.value == "lan usb")){
+			alert("WAN port should be selected in Dual WAN.");
+			document.form.wans_primary.focus();
+			return;
+		}
 		document.form.wan_unit.value = "<% nvram_get("wan_unit"); %>";
 		if(document.form.wans_mode.value == "lb"){
 			if(document.form.wans_lb_ratio_0.value !=0 && document.form.wans_lb_ratio_1.value!=0)	// To check LoadBalance ratio value is zero or not, Jieming add 2012/08/01
@@ -245,6 +257,14 @@ function applyRule(){
 	if (document.form.wans_primary.value == "lan") document.form.next_page.value = "Advanced_WAN_Content.asp";
 	if (document.form.wans_primary.value == "usb") document.form.next_page.value = "Advanced_Modem_Content.asp";
 
+	if(wans_dualwan_orig.split(" ")[1] == "none")
+		document.form.wan_unit.value = 0;
+		
+	var reboot_time	= eval("<% get_default_reboot_time(); %>");
+	if(based_modelid =="DSL-AC68U")
+		reboot_time += 70;
+	document.form.action_wait.value = reboot_time;	
+
 	showLoading();
 	document.form.submit();
 }
@@ -254,28 +274,41 @@ function addWANOption(obj, wanscapItem){
 	if(dsl_support && obj.name == "wans_second"){
 		for(i=0; i<wanscapItem.length; i++){
 			if(wanscapItem[i] == "dsl"){
-				wanscapItem.splice(i,1);
+				wanscapItem.splice(i,1);	
 			}
 		}
 	}
 	
 	for(i=0; i<wanscapItem.length; i++){
 		if(wanscapItem[i].length > 0){
-			obj.options[i] = new Option(wanscapItem[i].toUpperCase(), wanscapItem[i]);
+			var wanscapName = wanscapItem[i].toUpperCase();
+	               //MODELDEP: DSL-N55U, DSL-N55U-B, DSL-AC68U, DSL-AC68R
+        	        if(wanscapName == "LAN" && 
+                	        (productid == "DSL-N55U" || productid == "DSL-N55U-B" || productid == "DSL-AC68U" || productid == "DSL-AC68R")) 
+				wanscapName = "Ethernet WAN";
+                	else if(wanscapName == "LAN")
+				wanscapName = "Ethernet LAN";
+			obj.options[i] = new Option(wanscapName, wanscapItem[i]);
 		}	
 	}
 }
 
 function changeWANProto(obj){	
-	if(wans_flag == 1){
+	if(wans_flag == 1){	//dual WAN on
 		if(document.form.wans_primary.value == document.form.wans_second.value){
 			if(obj.name == "wans_primary"){
 				if(obj.value == "wan"){			
 					document.form.wans_second.value = "usb";
 					document.form.wans_second.index = 1;
 				}else if (obj.value == "usb"){
-					document.form.wans_second.value = "lan";
-					document.form.wans_second.index = 2;					
+					if(!dsl_support){
+						document.form.wans_second.value = "wan";
+						document.form.wans_second.index = 0;
+					}
+					else{
+						document.form.wans_second.value = "lan";
+						document.form.wans_second.index = 2;
+					}
 				}else if (obj.value == "lan"){
 					if(!dsl_support){		//for DSL model, because DSL type can't set to secondary wan
 						document.form.wans_second.value = "wan";
@@ -286,23 +319,25 @@ function changeWANProto(obj){
 						document.form.wans_second.index = 1;				
 					}
 				}
-			}else if(obj.name == "wans_second"){
+				else if (obj.value == "dsl"){
+					document.form.wans_second.value = "usb";
+					document.form.wans_second.index = 1;
+				}
+			}
+			else if(obj.name == "wans_second"){
 				if(obj.value == "wan"){
 					document.form.wans_primary.value = "usb";
 					document.form.wans_primary.index = 1;
-				}else if (obj.value == "usb"){
-					document.form.wans_primary.value = "lan";
-					document.form.wans_primary.index = 2;
-				}else if (obj.value == "lan"){
+				}else if (obj.value == "usb" || obj.value == "lan"){
 					if(!dsl_support){
-						document.form.wans_primary.value = "wan";
-						document.form.wans_primary.index = 0;
+							document.form.wans_primary.value = "wan";
+							document.form.wans_primary.index = 0;
 					}
 					else{
-						document.form.wans_primary.value = "dsl";
-						document.form.wans_primary.index = 0;					
-					}
-				}	
+							document.form.wans_primary.value = "dsl";
+							document.form.wans_primary.index = 0;
+					}					
+				}
 			}			
 		}
 		appendLANoption1(document.form.wans_primary);
@@ -405,8 +440,18 @@ function appendModeOption(v){
 			document.getElementById("routing_table").style.display = "none";
 
 			document.getElementById("fb_span").style.display = "";
-			document.form.wans_mode.value = '<% nvram_get("wans_mode"); %>';
-			document.getElementById("fb_checkbox").checked = (document.form.wans_mode.value == "fb" ? true : false);
+			if("<% nvram_get("wans_mode"); %>" == "fb" ? true : false)
+			{
+				document.getElementById("fb_checkbox").checked = true;
+				document.getElementById("wandog_fb_count_tr").style.display = "";
+				document.form.wans_mode.value = "fb";
+			}
+			else
+			{
+				document.getElementById("fb_checkbox").checked = false;
+				document.getElementById("wandog_fb_count_tr").style.display = "none";
+				document.form.wans_mode.value = "fo";
+			}
 		}
 }
 
@@ -678,17 +723,20 @@ function del_Row(obj){
 		show_wans_rules();
 }
 
-//copy array from Main_Analysis page
-var client_list_array = [["Google ", "www.google.com"], ["Facebook", "www.facebook.com"], ["Youtube", "www.youtube.com"], ["Yahoo", "www.yahoo.com"],
-												 ["Baidu", "www.baidu.com"], ["Wikipedia", "www.wikipedia.org"], ["Windows Live", "www.live.com"], ["QQ", "www.qq.com"],
-												 ["Amazon", "www.amazon.com"], ["Twitter", "www.twitter.com"], ["Taobao", "www.taobao.com"], ["Blogspot", "www.blogspot.com"], 
-												 ["Linkedin", "www.linkedin.com"], ["Sina", "www.sina.com"], ["eBay", "www.ebay.com"], ["MSN", "msn.com"], ["Bing", "www.bing.com"], 
-												 ["Яндекс", "www.yandex.ru"], ["WordPress", "www.wordpress.com"], ["ВКонтакте", "www.vk.com"]];
 
 function showLANIPList(){
+	//copy array from Main_Analysis page
+	var APPListArray = [
+		["Google ", "www.google.com"], ["Facebook", "www.facebook.com"], ["Youtube", "www.youtube.com"], ["Yahoo", "www.yahoo.com"],
+		["Baidu", "www.baidu.com"], ["Wikipedia", "www.wikipedia.org"], ["Windows Live", "www.live.com"], ["QQ", "www.qq.com"],
+		["Amazon", "www.amazon.com"], ["Twitter", "www.twitter.com"], ["Taobao", "www.taobao.com"], ["Blogspot", "www.blogspot.com"], 
+		["Linkedin", "www.linkedin.com"], ["Sina", "www.sina.com"], ["eBay", "www.ebay.com"], ["MSN", "msn.com"], ["Bing", "www.bing.com"], 
+		["Яндекс", "www.yandex.ru"], ["WordPress", "www.wordpress.com"], ["ВКонтакте", "www.vk.com"]
+	];
+
 	var code = "";
-	for(var i = 0; i < client_list_array.length; i++){
-		code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\''+client_list_array[i][1]+'\');"><strong>'+client_list_array[i][0]+'</strong></div></a>';
+	for(var i = 0; i < APPListArray.length; i++){
+		code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\''+APPListArray[i][1]+'\');"><strong>'+APPListArray[i][0]+'</strong></div></a>';
 	}
 	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
 	$("ClientList_Block_PC").innerHTML = code;
@@ -729,7 +777,7 @@ function pullLANIPList(obj){
 <input type="hidden" name="next_page" value="Advanced_WANPort_Content.asp">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_wait" value="<% get_default_reboot_time(); %>">
+<input type="hidden" name="action_wait" value="">
 <input type="hidden" name="action_script" value="reboot">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
@@ -765,7 +813,7 @@ function pullLANIPList(obj){
 								<tr>
 								  <td bgcolor="#4D595D" valign="top">
 								  <div>&nbsp;</div>
-								  <div class="formfonttitle"><#menu5_3#> - <#dualwan_port#></div>
+								  <div class="formfonttitle"><#menu5_3#> - <#dualwan#></div>
 								  <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 					  			<div class="formfontdesc"><#dualwan_desc#></div>
 									<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
@@ -835,7 +883,7 @@ function pullLANIPList(obj){
 													<option value="fo"><#dualwan_mode_fo#></option>
 													<option value="lb" <% nvram_match("wans_mode", "lb", "selected"); %>><#dualwan_mode_lb#></option>
 												</select>
-										  		<span id="fb_span" style="display:none"><input type="checkbox" id="fb_checkbox">Allow failback</span>
+										  		<span id="fb_span" style="display:none"><input type="checkbox" id="fb_checkbox"><#dualwan_failback_allow#></span>
 										  		<script>
 										  			document.getElementById("fb_checkbox").onclick = function(){
 										  				document.form.wans_mode.value = (this.checked == true ? "fb" : "fo");
@@ -909,7 +957,7 @@ function pullLANIPList(obj){
 					</tr>
 
 					<tr id="wandog_fb_count_tr">
-						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,6);">Failback count</a></th>
+						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,6);"><#dualwan_failback_count#></a></th>
 						<td>
 		        		<input type="text" name="wandog_fb_count" class="input_3_table" maxlength="2" value="<% nvram_get("wandog_fb_count"); %>" onKeyPress="return is_number(this, event);" placeholder="12">
 						</td>

@@ -20,161 +20,161 @@
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
 var $j = jQuery.noConflict();
-</script>
-<!--style type="text/css">
-.qos_table{
-	width:740px;
-	padding:10px; 
-	margin-top:-17px;
-	position:relative;
-	background-color:#4d595d;
-	height: 650px;
-	-webkit-border-bottom-right-radius: 3px;
-	-webkit-border-bottom-left-radius: 3px;
-	-moz-border-radius-bottomright: 3px;
-	-moz-border-radius-bottomleft: 3px;
-	border-bottom-right-radius: 3px;
-	border-bottom-left-radius: 3px;
-}
-</style-->
-<script>
-wan_route_x = '<% nvram_get("wan_route_x"); %>';
-wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
-wan_proto = '<% nvram_get("wan_proto"); %>';
-var qos_rulelist_array = "<% nvram_char_to_ascii("","qos_rulelist"); %>";
-
-var overlib_str0 = new Array();	//Viz add 2011.06 for record longer qos rule desc
-var overlib_str = new Array();	//Viz add 2011.06 for record longer portrange value
 
 function initial(){
 	show_menu();
-
-	if(downsize_4m_support)
-		$("guest_image").parentNode.style.display = "none";
-
+	if(downsize_4m_support || downsize_8m_support)
+			document.getElementById("guest_image").parentNode.style.display = "none";
+	
 	if(document.form.qos_enable.value==1){
-		document.form.qos_obw.parentNode.parentNode.style.display = "";
-		document.form.qos_ibw.parentNode.parentNode.style.display = "";		
+		$('upload_tr').style.display = "";
+		$('download_tr').style.display = "";		
+		if(bwdpi_support)
+			$('qos_type_tr').style.display = "";	
 	}else{
-		document.form.qos_obw.parentNode.parentNode.style.display = "none";
-		document.form.qos_ibw.parentNode.parentNode.style.display = "none";		
+		$('upload_tr').style.display = "none";
+		$('download_tr').style.display = "none";		
+		if(bwdpi_support)
+			$('qos_type_tr').style.display = "none";
 	}
-	init_changeScale("qos_obw");
-	init_changeScale("qos_ibw");	
-	showqos_rulelist();
+
+	if(bwdpi_support){
+		$('content_title').innerHTML = "<#Adaptive_QoS#> - <#Adaptive_QoS_Conf#>";
+		if(document.form.qos_enable.value == 1){
+			if(document.form.qos_type.value == 0){		//Traditional Type
+				document.getElementById("settingSelection").length = 1;
+				add_option($("settingSelection"), '<#qos_user_rules#>', 3, 0);
+				add_option($("settingSelection"), '<#qos_user_prio#>', 4, 0);
+			}
+			else{		//Adaptive Type
+				add_option($("settingSelection"), "<#EzQoS_type_adaptive#>", 2, 0);		
+			}
+		}
+		else{		// hide select option if qos disable
+			document.getElementById('settingSelection').style.display = "none";	
+		}
+	}
+	else{
+		$('content_title').innerHTML = "<#Menu_TrafficManager#> - QoS";
+		document.getElementById('function_desc').innerHTML = "<#ezqosDesw#>";
+		document.getElementById("settingSelection").length = 1;
+		add_option($("settingSelection"), '<#qos_user_rules#>', 3, 0);
+		add_option($("settingSelection"), '<#qos_user_prio#>', 4, 0);
+	}
+	
+	init_changeScale();
 	addOnlineHelp($("faq"), ["ASUSWRT", "QoS"]);
 }
 
-function init_changeScale(_obj_String){
-	if($(_obj_String).value > 999){
-		$(_obj_String+"_scale").value = "Mb/s";
-		$(_obj_String).value = Math.round(($(_obj_String).value/1024)*100)/100;
-	}
-}
-
-function changeScale(_obj_String){
-	if($(_obj_String+"_scale").value == "Mb/s")
-		$(_obj_String).value = Math.round(($(_obj_String).value/1024)*100)/100;
-	else
-		$(_obj_String).value = Math.round($(_obj_String).value*1024);
+function init_changeScale(){
+	var upload = document.form.qos_obw.value;
+	var download = document.form.qos_ibw.value;
+	
+	document.form.obw.value = upload/1024;
+	document.form.ibw.value = download/1024;
 }
 
 function switchPage(page){
-	if(page == "2")	
+	if(page == "1")	
+		location.href = "/QoS_EZQoS.asp";
+	else if(page == "2")	
+		location.href = "/AdaptiveQoS_Adaptive.asp";
+	else if(page == "3")	
 		location.href = "/Advanced_QOSUserRules_Content.asp";
-	else if(page == "3")
+	else if(page == "4")	
 		location.href = "/Advanced_QOSUserPrio_Content.asp";
 	else
 		return false;
 }
 
 function submitQoS(){
+	if(document.form.qos_enable.value == 0 && document.form.qos_enable_orig.value == 0){
+		return false;
+	}
+
 	if(document.form.qos_enable.value == 1){
-		// Jieming To Do: please add a hint here when error occurred, and qos_ibw & qos_obw should allow number only.
-		if(document.form.qos_obw.value.length == 0 || document.form.qos_obw.value == 0){
-				alert("<#JS_fieldblank#>");
-				document.form.qos_obw.focus();
-				document.form.qos_obw.select();
-				return;
+		if(document.form.obw.value.length == 0){	//To check field is empty
+			alert("<#JS_fieldblank#>");
+			document.form.obw.focus();
+			document.form.obw.select();
+			return;
 		}
-		if(document.form.qos_ibw.value.length == 0 || document.form.qos_ibw.value == 0){
-				alert("<#JS_fieldblank#>");
-				document.form.qos_ibw.focus();
-				document.form.qos_ibw.select();
-				return;
+		else if( document.form.obw.value == 0){		// To check field is 0
+			alert("Upload Bandwidth can not be 0");
+			document.form.obw.focus();
+			document.form.obw.select();
+			return;
+		
 		}
-		// end
-  }	
-
-	if($("qos_obw_scale").value == "Mb/s")
-		document.form.qos_obw.value = Math.round(document.form.qos_obw.value*1024);
-	if($("qos_ibw_scale").value == "Mb/s")
-		document.form.qos_ibw.value = Math.round(document.form.qos_ibw.value*1024);
-  
-	if(document.form.qos_enable.value != document.form.qos_enable_orig.value)
-    	FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");
-
-	parent.showLoading();
-	document.form.submit();	
+		else if(document.form.obw.value.split(".").length > 2){		//To check more than two point symbol
+			alert("The format of field of upload bandwidth is invalid");
+			document.form.obw.focus();
+			document.form.obw.select();
+			return;	
+		}
+		
+		if(document.form.ibw.value.length == 0){
+			alert("<#JS_fieldblank#>");
+			document.form.ibw.focus();
+			document.form.ibw.select();
+			return;
+		}
+		else if(document.form.ibw.value == 0){
+			alert("Download Bandwidth can not be 0");
+			document.form.ibw.focus();
+			document.form.ibw.select();
+			return;
+		}
+		else if(document.form.ibw.value.split(".").length > 2){
+			alert("The format of field of download bandwidth is invalid");
+			document.form.ibw.focus();
+			document.form.ibw.select();
+			return;	
+		}
+		
+		if(document.form.qos_type.value != document.form.qos_type_orig.value){
+			FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");	
+		}
+		else{
+			document.form.action_script.value = "restart_qos;restart_firewall";
+		}	
 	
+		document.form.qos_obw.disabled = false;
+		document.form.qos_ibw.disabled = false;
+		document.form.qos_obw.value = document.form.obw.value*1024;
+		document.form.qos_ibw.value = document.form.ibw.value*1024;
+	}	
+
+	if(document.form.qos_enable.value != document.form.qos_enable_orig.value)
+		FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");	
+
+	showLoading();
+	document.form.submit();		
 }
 
-function showqos_rulelist(){
-	var qos_rulelist_row = "";
-	qos_rulelist_row = decodeURIComponent(qos_rulelist_array).split('<');	
-
-	var code = "";
-	code +='<table style="margin-left:3px;margin-bottom:30px;" width="95%" border="1" align="center" cellpadding="4" cellspacing="0" class="list_table" id="qos_rulelist_table">';
-	if(qos_rulelist_row.length == 1)	// no exist "<"
-		code +='<tr><td style="color:#FFCC00;height:30px;" colspan="6"><#IPConnection_VSList_Norule#></td></tr>';
-	else{
-		for(var i = 1; i < qos_rulelist_row.length; i++){
-			overlib_str0[i] ="";
-			overlib_str[i] ="";			
-			code +='<tr id="row'+i+'">';
-			var qos_rulelist_col = qos_rulelist_row[i].split('>');
-			var wid=[22, 21, 17, 14, 16, 12];						
-				for(var j = 0; j < qos_rulelist_col.length; j++){
-						if(j != 0 && j !=2 && j!=5){
-							code +='<td width="'+wid[j]+'%" style="height:30px;">'+ qos_rulelist_col[j] +'</td>';
-						}else if(j==0){
-							if(qos_rulelist_col[0].length >15){
-								overlib_str0[i] += qos_rulelist_col[0];
-								qos_rulelist_col[0]=qos_rulelist_col[0].substring(0, 13)+"...";
-								code +='<td width="'+wid[j]+'%"  title="'+overlib_str0[i]+'" style="height:30px;">'+ qos_rulelist_col[0] +'</td>';
-							}else
-								code +='<td width="'+wid[j]+'%" style="height:30px;">'+ qos_rulelist_col[j] +'</td>';
-						}else if(j==2){
-							if(qos_rulelist_col[2].length >13){
-								overlib_str[i] += qos_rulelist_col[2];
-								qos_rulelist_col[2]=qos_rulelist_col[2].substring(0, 11)+"...";
-								code +='<td width="'+wid[j]+'%"  title="'+overlib_str[i]+'" style="height:30px;">'+ qos_rulelist_col[2] +'</td>';
-							}else
-								code +='<td width="'+wid[j]+'%" style="height:30px;">'+ qos_rulelist_col[j] +'</td>';
-						}else if(j==5){
-								code += '<td width="'+wid[j]+'%" style="height:30px;">';
-
-								if(qos_rulelist_col[5] =="0")
-									code += '<#Highest#>';
-								if(qos_rulelist_col[5] =="1")
-									code += '<#High#>';
-								if(qos_rulelist_col[5] =="2")
-									code += '<#Medium#>';
-								if(qos_rulelist_col[5] =="3")
-									code += '<#Low#>';
-								if(qos_rulelist_col[5] =="4")
-									code += '<#Lowest#>';
-						}
-						code +='</td>';
-				}
-				code +='</tr>';
-		}
+function change_qos_type(value){
+	if(value == 0){		//Traditional
+		$('int_type').checked = false;
+		$('trad_type').checked = true;	
+		if(document.form.qos_type_orig.value == 0 && document.form.qos_enable_orig.value != 0)
+			document.form.action_script.value = "restart_qos;restart_firewall";
+		else{
+			document.form.action_script.value = "reboot";
+			document.form.next_page.value = "Advanced_QOSUserRules_Content.asp";
+		}		
+	}	
+	else{		//Adaptive
+		$('int_type').checked = true;
+		$('trad_type').checked = false;
+		if(document.form.qos_type_orig.value == 1 && document.form.qos_enable_orig.value != 0)
+			document.form.action_script.value = "restart_qos;restart_firewall";
+		else{
+			document.form.action_script.value = "reboot";
+			document.form.next_page.value = "AdaptiveQoS_Adaptive.asp";
+		}	
 	}
-	code +='</table>';
-	$("qos_rulelist_Block").innerHTML = code;
-	
-	
-	parse_port="";
+
+	document.form.qos_type.value = value;
 }
 </script>
 </head>
@@ -192,159 +192,160 @@ function showqos_rulelist(){
 <input type="hidden" name="next_page" value="/QoS_EZQoS.asp">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_script" value="restart_qos">
+<input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="5">
 <input type="hidden" name="flag" value="">
 <input type="hidden" name="qos_enable" value="<% nvram_get("qos_enable"); %>">
 <input type="hidden" name="qos_enable_orig" value="<% nvram_get("qos_enable"); %>">
+<input type="hidden" name="qos_type" value="<% nvram_get("qos_type"); %>">
+<input type="hidden" name="qos_type_orig" value="<% nvram_get("qos_type"); %>">
+<input type="hidden" name="qos_obw" value="<% nvram_get("qos_obw"); %>" disabled>
+<input type="hidden" name="qos_ibw" value="<% nvram_get("qos_ibw"); %>" disabled>
 <table class="content" align="center" cellpadding="0" cellspacing="0">
-  <tr>
-	<td width="17">&nbsp;</td>
+	<tr>
+		<td width="17">&nbsp;</td>	
+		<!--=====Beginning of Main Menu=====-->
+		<td valign="top" width="202">
+		  <div id="mainMenu"></div>
+		  <div id="subMenu"></div>
+		</td>
 	
-	<!--=====Beginning of Main Menu=====-->
-	<td valign="top" width="202">
-	  <div id="mainMenu"></div>
-	  <div id="subMenu"></div>
-	</td>
-	
-    <td valign="top">
+		<td valign="top">
 			<div id="tabMenu" class="submenuBlock"></div>
 		<!--===================================Beginning of Main Content===========================================-->
-		<table width="95%" border="0" align="left" cellpadding="0" cellspacing="0" class="FormTitle" id="FormTitle">
-  		<tr>
-    			<td bgcolor="#4D595D" valign="top">
-    				<table width="760px" border="0" cellpadding="4" cellspacing="0">
-        			<tr>
-						<td bgcolor="#4D595D" valign="top">
-							<table width="100%">
-								<tr>
-									<td  class="formfonttitle" align="left">								
-										<div ><#Menu_TrafficManager#> - QoS</div>
-									</td>
-									<td align="right" >
-										<div>
-											<select onchange="switchPage(this.options[this.selectedIndex].value)" class="input_option">
-												<!--option><#switchpage#></option-->
-												<option value="1" selected><#qos_automatic_mode#></option>
-												<option value="2"><#qos_user_rules#></option>
-												<option value="3"><#qos_user_prio#></option>
-											</select>	    
-										</div>
-									</td>	
-								</tr>
-							</table>	
-						</td>
-        			</tr>
-        			<tr>
-          				<td height="5" bgcolor="#4D595D" valign="top"><img src="images/New_ui/export/line_export.png" /></td>
-        			</tr>
-        			<tr>
-          				<td height="30" align="left" valign="top" bgcolor="#4D595D">
-										<div>
-											<table width="650px">
-												<tr>
-													<td width="130px">
-														<img id="guest_image" src="/images/New_ui/QoS.png">
-													</td>
-													<td style="font-style: italic;font-size: 14px;">
-														<div class="formfontdesc" style="line-height:20px;"><#ezqosDesw#></div>
-														<div class="formfontdesc">
-															<a id="faq" href="" target="_blank" style="text-decoration:underline;">QoS FAQ</a>
-														</div>
-													</td>
-												</tr>
-											</table>
-										</div>
-          				</td>
-        			</tr>
-							
+			<table width="95%" border="0" align="left" cellpadding="0" cellspacing="0" class="FormTitle" id="FormTitle" style="height:820px;">
+				<tr>
+					<td bgcolor="#4D595D" valign="top">
+						<table width="760px" border="0" cellpadding="4" cellspacing="0">
+							<tr>
+								<td bgcolor="#4D595D" valign="top">
+									<table width="100%">
+										<tr style="height:30px;">
+											<td  class="formfonttitle" align="left">								
+												<div id="content_title"><#Adaptive_QoS#> - QoS</div>
+											</td>
+											<td align="right" >
+												<div>
+													<select id="settingSelection" onchange="switchPage(this.options[this.selectedIndex].value)" class="input_option">
+														<option value="1"><#Adaptive_QoS_Conf#></option>										
+													</select>	    
+												</div>
+											</td>	
+										</tr>
+									</table>	
+								</td>
+							</tr>						
+							<tr>
+								<td height="5" bgcolor="#4D595D" valign="top"><img src="images/New_ui/export/line_export.png" /></td>
+							</tr>
+							<tr>
+								<td height="30" align="left" valign="top" bgcolor="#4D595D">
+									<div>
+										<table style="width:700px;margin-left:25px;">
+											<tr>
+												<td style="width:130px">
+													<div id="guest_image" style="background: url(images/New_ui/QoS.png);width: 143px;height: 87px;"></div>
+												</td>
+												<td>&nbsp&nbsp</td>
+												<td style="font-style: italic;font-size: 14px;">
+													<div id="function_desc" class="formfontdesc" style="line-height:20px;">
+														<#EzQoS_desc#>
+														<ul>
+															<li><#EzQoS_desc_Adaptive#></li>
+															<li><#EzQoS_desc_Traditional#></li>
+														</ul>
+														To enable QoS function, click the QoS slide switch , and fill in the upload and download Get the bandwidth information from ISP or go to <a href="http://speedtest.net" target="_blank" style="text-decoration:underline;">http://speedtest.net</a> to check bandwidth.
+													</div>
+													<div class="formfontdesc">
+														<a id="faq" href="" target="_blank" style="text-decoration:underline;">QoS FAQ</a>
+													</div>
+												</td>
+											</tr>
+										</table>
+									</div>
+								</td>
+							</tr>							
 							<tr>
 								<td valign="top">
 									<table style="margin-left:3px;" width="95%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 										<tr>
-										<th><#Enable_defaule_rule#></th>
+											<th><#EzQoS_smart_enable#></th>
 											<td>
 												<div class="left" style="width:94px; float:left; cursor:pointer;" id="radio_qos_enable"></div>
-												<div class="iphone_switch_container" style="height:32px; width:74px; position: relative; overflow: hidden">
-												<script type="text/javascript">
-													$j('#radio_qos_enable').iphoneSwitch('<% nvram_get("qos_enable"); %>', 
-														 function() {
-															document.form.qos_enable.value = "1";
-															document.form.qos_obw.parentNode.parentNode.style.display = "";
-															document.form.qos_ibw.parentNode.parentNode.style.display = "";
-														 },
-														 function() {
-															document.form.qos_enable.value = "0";
-															document.form.qos_obw.parentNode.parentNode.style.display = "none";
-															document.form.qos_ibw.parentNode.parentNode.style.display = "none";
-														 },
-														 {
-															switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
-														 }
-													);
-												</script>			
-												</div>	
+													<script type="text/javascript">
+														$j('#radio_qos_enable').iphoneSwitch('<% nvram_get("qos_enable"); %>', 
+															 function() {
+																document.form.qos_enable.value = 1;
+																if(document.form.qos_enable_orig.value != 1){
+																	document.form.action_script.value = "reboot";
+																	if($('int_type').checked == true && bwdpi_support)
+																		document.form.next_page.value = "AdaptiveQoS_Adaptive.asp";
+																	else
+																		document.form.next_page.value = "Advanced_QOSUserRules_Content.asp";
+																}																
+																
+																$('upload_tr').style.display = "";
+																$('download_tr').style.display = "";
+
+																if(bwdpi_support){
+																	$('qos_type_tr').style.display = "";
+																	$('qos_enable_hint').style.display = "";
+																}	
+															 },
+															 function() {
+																document.form.qos_enable.value = 0;
+																if(document.form.qos_enable_orig.value != 0)
+																	document.form.action_script.value = "reboot";
+																
+																$('upload_tr').style.display = "none";
+																$('download_tr').style.display = "none";
+	
+																if(bwdpi_support)
+																	$('qos_type_tr').style.display = "none";
+															 },
+															 {
+																switch_on_container_path: '/switcherplugin/iphone_switch_container_off.png'
+															 }
+														);
+													</script>			
+												<div id="qos_enable_hint" style="color:#FC0;margin:5px 0px 0px 100px;display:none">Enabling Adaptive QoS may take several minutes.</div>
 											</td>
 										</tr>										
-										<tr>
+										<tr id="upload_tr">
 											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 2);"><#upload_bandwidth#></a></th>
 											<td>
-													<input type="text" maxlength="10" id="qos_obw" name="qos_obw" onKeyPress="return is_number(this,event);" class="input_15_table" value="<% nvram_get("qos_obw"); %>">
-														<select id="qos_obw_scale" class="input_option" style="width:87px;" onChange="changeScale('qos_obw');">
-															<option value="Kb/s">Kb/s</option>
-															<option value="Mb/s">Mb/s</option>
-														</select>
+												<input type="text" maxlength="10" id="obw" name="obw" onKeyPress="return is_number_float(this,event);" class="input_15_table" value="">
+												<label style="margin-left:5px;">Mb/s</label>
 											</td>
-										</tr>
-										
-										<tr>
+										</tr>											
+										<tr id="download_tr">
 											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 2);"><#download_bandwidth#></a></th>
 											<td>
-													<input type="text" maxlength="10" id="qos_ibw" name="qos_ibw" onKeyPress="return is_number(this,event);" class="input_15_table" value="<% nvram_get("qos_ibw"); %>">
-														<select id="qos_ibw_scale" class="input_option" style="width:87px;" onChange="changeScale('qos_ibw');">
-															<option value="Kb/s">Kb/s</option>
-															<option value="Mb/s">Mb/s</option>
-														</select>
+												<input type="text" maxlength="10" id="ibw" name="ibw" onKeyPress="return is_number_float(this,event);" class="input_15_table" value="">
+												<label style="margin-left:5px;">Mb/s</label>
 											</td>
-										</tr>
-
+										</tr>										
+										<tr id="qos_type_tr" style="display:none">
+											<th>QoS Type</th>
+											<td>
+												<input id="int_type" value="1" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "1","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 6);"><#EzQoS_type_adaptive#></a>
+												<input id="trad_type" value="0" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "0","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 7);"><#EzQoS_type_traditional#></a>
+											</td>
+										</tr>								
 									</table>
 								</td>
-				</tr>	
-
-        			<tr>
-          				<td height="50" >
-          					<div style=" *width:136px;margin-left:300px;" class="titlebtn" align="center" onClick="submitQoS();"><span><#CTL_onlysave#></span></div>
-          				</td>
-        			</tr>
-        			<tr>
-          				<td>
-											<table style="margin-left:3px;" width="95%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
-											<thead>
-											<tr>
-													<td colspan="6" id="TriggerList" style="border-right:none;height:22px;"><#BM_UserList_title#></td>
-											</tr>
-											</thead>			
-											<tr>
-													<th width="22%" style="height:30px;"><#BM_UserList1#></th>
-													<th width="21%"><a href="javascript:void(0);" onClick="openHint(18,6);"><div class="table_text">Source IP or MAC</div></a></th>
-													<th width="17%"><a href="javascript:void(0);" onClick="openHint(18,4);"><div class="table_text"><#BM_UserList3#></div></a></th>
-													<th width="14%"><div class="table_text"><#IPConnection_VServerProto_itemname#></div></th>
-													<th width="16%"><a href="javascript:void(0);" onClick="openHint(18,5);"><div class="table_text"><div class="table_text">Transferred</div></a></th>
-													<th width="12%"><#BM_UserList4#></th>
-											</tr>											
-										</table>          					
-          					
-          					<div id="qos_rulelist_Block"></div>
-          				</td>
-        			</tr>        			
-      			</table>
-      		</td>  
-      	</tr>
-		</table>
+							</tr>							
+							<tr>
+								<td height="50" >
+									<div style=" *width:136px;margin-left:300px;" class="titlebtn" align="center" onClick="submitQoS()"><span><#CTL_apply#></span></div>
+								</td>
+							</tr>										
+						</table>
+					</td>  
+				</tr>
+			</table>
 		<!--===================================End of Main Content===========================================-->
-		</td>
-		
+		</td>	
 	</tr>
 </table>
 

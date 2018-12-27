@@ -1,14 +1,22 @@
 ﻿var Untranslated = {
 	fw_size_higher_mem : 'Memory space is NOT enough to upgrade on internet. Please wait for rebooting.',
 	the_array_is_end : "end here.",
-	Guest_Network_enable_ACL : "You must go to enable MAC filter",	
 	link_rate : "Link rate",
-	http_username_hint : "Router login name only accept alphanumeric characters, under line and dash symbol. The first character cannot be dash [-] or under line [_].",
 	ASUSGATE_note6 : "Your DSL line appears to be unstable. We strongly recommend that you submit a feedback form for our analysis.",
+	ASUSGATE_note7 : "If you are experiencing any DSL related issues or have any comments / suggestions, please feel free to inform our support team.",
+	JS_validclientname : "Client device name only accept alphanumeric characters, under line and dash symbol. The first character cannot be dash \"-\" or under line \"_\".",
 	ASUSGATE_act_feedback : "Feedback now"
-
 };
 var clicked_help_string = "<#Help_init_word1#> <a class=\"hintstyle\" style=\"background-color:#7aa3bd\"><#Help_init_word2#></a> <#Help_init_word3#>";
+
+var rc_support = '<% nvram_get("rc_support"); %>';
+function isSupport(_ptn){
+	return (rc_support.search(_ptn) == -1) ? false : true;
+}
+if(isSupport("tmo"))
+        var theUrl = "cellspot.router";
+else
+        var theUrl = "router.asus.com";
 
 // init Helper
 function addNewScript_help(scriptName){
@@ -115,7 +123,60 @@ function overHint(itemNum){
 	var statusmenu = "";
 	var title2 = 0;
 	var title5 = 0;
-
+	var title5_2 = 0;
+	
+	if(itemNum == 91){
+		statusmenu ="<span><#Adaptive_Category1#></span>";
+	}
+	else if(itemNum == 92){
+		statusmenu ="<span><#Adaptive_Category2#></span>";
+	}
+	else if(itemNum == 93){
+		statusmenu ="<span><#Adaptive_Category3#></span>";
+	}
+	else if(itemNum == 94){
+		statusmenu ="<span><#Adaptive_Category4#></span>";
+	}
+	else if(itemNum == 95){
+		statusmenu ="<span><#Adaptive_Category5#></span>";
+	}
+	if(itemNum == 96){
+		statusmenu ="<span><#Adaptive_Category6#></span>";
+	}
+	
+	if(itemNum == 24)		
+		statusmenu += "<span>The USB 3.0 cable without well-shielded would affect the 2.4Ghz wireless range.Enabling this feature to ensure the best wireless performance If your USB 3.0 device is not USB-IF certified.</span>";
+	
+	//for AiProtection-Router Security Scan
+	if(itemNum == 23)		
+		statusmenu += "<span><#AiProtection_scan_note23#></span>";
+	if(itemNum == 22)		
+		statusmenu += "<span><#AiProtection_scan_note22#></span>";
+	if(itemNum == 21)		
+		statusmenu += "<span><#AiProtection_scan_note21#></span>";
+	if(itemNum == 20)		
+		statusmenu += "<span><#AiProtection_scan_note20#></span>";
+	if(itemNum == 19)		
+		statusmenu += "<span><#AiProtection_scan_note19#></span>";
+	if(itemNum == 18)		
+		statusmenu += "<span><#AiProtection_scan_note18#></span>";
+	if(itemNum == 17)		
+		statusmenu += "<span><#AiProtection_scan_note17#></span>";
+	if(itemNum == 16)		
+		statusmenu += "<span><#AiProtection_scan_note16#></span>";
+	if(itemNum == 15)		
+		statusmenu += "<span><#AiProtection_scan_note15#></span>";
+	if(itemNum == 14)		
+		statusmenu += "<span><#AiProtection_scan_note14#></span>";
+	if(itemNum == 13)		
+		statusmenu += "<span><#AiProtection_scan_note13#></span>";
+	if(itemNum == 12)		
+		statusmenu += "<span><#AiProtection_scan_note12#></span>";
+	if(itemNum == 11)		
+		statusmenu += "<span><#AiProtection_scan_note11#></span>";	
+	if(itemNum == 10)		
+		statusmenu += "<span><#AiProtection_scan_note10#></span>";	
+	
 	// Viz add 2013.04 for dsl sync status
 	if(itemNum == 9){
 		statusmenu = "<div class='StatusHint'>ADSL :</div>";
@@ -123,7 +184,7 @@ function overHint(itemNum){
 			lineDesc = "Link up";
 		else if(wan_line_state == "wait for init")	
 			lineDesc = "Wait for init";
-		else if(wan_line_state == "init")
+		else if(wan_line_state == "init" || wan_line_state == "initializing")
 			lineDesc = "Initializing";
 		else
 			lineDesc = "Link down";
@@ -144,8 +205,7 @@ function overHint(itemNum){
 				else
 						wifiDesc = "<b>2.4GHz -</b><br><#btn_Enabled#><br><br><b>5 GHz -</b><br><#btn_Enabled#>";
 			
-				statusmenu += "<span>" + wifiDesc + "</span>";
-		
+				statusmenu += "<span>" + wifiDesc + "</span>";	
 		}
 		else{
 				if(wlan0_radio_flag == "0")
@@ -226,7 +286,10 @@ function overHint(itemNum){
 			for(var i=0; i<gn_array_5g.length; i++){
 				if(gn_array_5g[i][0] == 1){
 					if(title5 == 0){
-						statusmenu += "<div class='StatusHint' style='margin-top:15px;'>5GHz Network:</div>";				
+						if(wl_info.band5g_2_support)
+							statusmenu += "<div class='StatusHint' style='margin-top:15px;'>5GHz-1 Network:</div>";			
+						else	
+							statusmenu += "<div class='StatusHint' style='margin-top:15px;'>5GHz Network:</div>";		
 						title5 = 1;
 					}
 	
@@ -254,7 +317,39 @@ function overHint(itemNum){
 				}
 			}
 		}
-		if(title2 == 0 && title5 == 0)
+		if(wl_info.band5g_2_support){
+			for(var i=0; i<gn_array_5g_2.length; i++){
+				if(gn_array_5g_2[i][0] == 1){
+					if(title5_2 == 0){
+						statusmenu += "<div class='StatusHint' style='margin-top:15px;'>5GHz-2 Network:</div>";				
+						title5_2 = 1;
+					}
+	
+					var show_str = gn_array_5g_2[i][1];
+					show_str = decodeURIComponent(show_str);
+					show_str = handle_show_str(show_str);
+					statusmenu += "<span>" + show_str + " (";
+
+					if(gn_array_5g_2[i][11] == 0)
+						statusmenu += '<#Limitless#>';
+					else{
+						var expire_hr = Math.floor(gn_array_5g_2[i][13]/3600);
+						var expire_min = Math.floor((gn_array_5g_2[i][13]%3600)/60);
+						if(expire_hr > 0)
+							statusmenu += '<b id="expire_hr_'+i+'">'+ expire_hr + '</b> Hr <b id="expire_min_'+i+'">' + expire_min +'</b> Min';
+						else{
+							if(expire_min > 0)
+								statusmenu += '<b id="expire_min_'+i+'">' + expire_min +'</b> Min';
+							else	
+								statusmenu += '<b id="expire_min_'+i+'">< 1</b> Min';
+						}
+					}
+
+					statusmenu += " left)</span><br>";
+				}
+			}
+		}
+		if(title2 == 0 && title5 == 0 && title5_2 == 0)
 			statusmenu += "<div class='StatusHint'><#Guest_Network#>:</div><span><#CTL_Disabled#></span>";
 	}
 
@@ -382,7 +477,7 @@ function openHint(hint_array_id, hint_show_id, flag){
 				}
 			}
 			else if(sw_mode == 2){
-				statusmenu = "<span class='StatusClickHint' onclick='top.location.href=\"http://router.asus.com/QIS_wizard.htm?flag=sitesurvey\";' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#APSurvey_action_search_again_hint2#></span>";
+				statusmenu = "<span class='StatusClickHint' onclick='top.location.href=\"http://"+ theUrl +"/QIS_wizard.htm?flag=sitesurvey\";' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#APSurvey_action_search_again_hint2#></span>";
 			}
 			else if(sw_mode == 4){
 				statusmenu = "<span class='StatusClickHint' onclick='top.location.href=\"/QIS_wizard.htm?flag=sitesurvey_mb\";' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#APSurvey_action_search_again_hint2#></span>";
@@ -649,7 +744,7 @@ if (olNs4) {
 if (olIe4) {
 	var agent = navigator.userAgent;
 	if (/MSIE/.test(agent)) {
-		var versNum = parseFloat(agent.match(/MSIE[ ](\d\.\d+)\.*/i)[1]);
+		var versNum = parseFloat(agent.match(/MSIE[ ](\d+\.\d+)\.*/i)[1]);
 		if (versNum >= 5){
 			olIe5=true;
 			olIe55=(versNum>=5.5&&!olOp) ? true : false;
@@ -2101,87 +2196,44 @@ function chkPass(pwd, flag) {
 			nScore = parseInt(nScore - (nSeqSymbol * nMultSeqSymbol)); 
 			sSeqSymbol = "- " + parseInt(nSeqSymbol * nMultSeqSymbol);
 		}
-		//$("nAlphasOnlyBonus").innerHTML = sAlphasOnly; 
-		//$("nNumbersOnlyBonus").innerHTML = sNumbersOnly; 
-		//$("nRepCharBonus").innerHTML = sRepChar; 
-		//$("nConsecAlphaUCBonus").innerHTML = sConsecAlphaUC; 
-		//$("nConsecAlphaLCBonus").innerHTML = sConsecAlphaLC; 
-		//$("nConsecNumberBonus").innerHTML = sConsecNumber;
-		//$("nSeqAlphaBonus").innerHTML = sSeqAlpha; 
-		//$("nSeqNumberBonus").innerHTML = sSeqNumber; 
-		//$("nSeqSymbolBonus").innerHTML = sSeqSymbol; 
-
-		/* Determine if mandatory requirements have been met and set image indicators accordingly */
-		/*
-		var arrChars = [nLength,nAlphaUC,nAlphaLC,nNumber,nSymbol];
-		var arrCharsIds = ["nLength","nAlphaUC","nAlphaLC","nNumber","nSymbol"];
-		var arrCharsLen = arrChars.length;
-		for (var c=0; c < arrCharsLen; c++) {
-			var oImg = $('div_' + arrCharsIds[c]);
-			var oBonus = $(arrCharsIds[c] + 'Bonus');
-			//$(arrCharsIds[c]).innerHTML = arrChars[c];
-			if (arrCharsIds[c] == "nLength") { var minVal = parseInt(nMinPwdLen - 1); } else { var minVal = 0; }
-			//if (arrChars[c] == parseInt(minVal + 1)) { nReqChar++; oImg.className = "pass"; oBonus.parentNode.className = "pass"; }
-			//else if (arrChars[c] > parseInt(minVal + 1)) { nReqChar++; oImg.className = "exceed"; oBonus.parentNode.className = "exceed"; }
-			//else { oImg.className = "fail"; oBonus.parentNode.className = "fail"; }
-		}
-		nRequirements = nReqChar;
-		if (pwd.length >= nMinPwdLen) { var nMinReqChars = 3; } else { var nMinReqChars = 4; }
-		if (nRequirements > nMinReqChars) {  // One or more required characters exist
-			nScore = parseInt(nScore + (nRequirements * 2)); 
-			sRequirements = "+ " + parseInt(nRequirements * 2);
-		}
-		//$("nRequirementsBonus").innerHTML = sRequirements;
-		*/
-
-		/* Determine if additional bonuses need to be applied and set image indicators accordingly */
-		/*
-		var arrChars = [nMidChar,nRequirements];
-		var arrCharsIds = ["nMidChar","nRequirements"];
-		var arrCharsLen = arrChars.length;
-		for (var c=0; c < arrCharsLen; c++) {
-			var oImg = $('div_' + arrCharsIds[c]);
-			var oBonus = $(arrCharsIds[c] + 'Bonus');
-			//$(arrCharsIds[c]).innerHTML = arrChars[c];
-			if (arrCharsIds[c] == "nRequirements") { var minVal = nMinReqChars; } else { var minVal = 0; }
-			//if (arrChars[c] == parseInt(minVal + 1)) { oImg.className = "pass"; oBonus.parentNode.className = "pass"; }
-			//else if (arrChars[c] > parseInt(minVal + 1)) { oImg.className = "exceed"; oBonus.parentNode.className = "exceed"; }
-			//else { oImg.className = "fail"; oBonus.parentNode.className = "fail"; }
-		}
-		*/
-
-		/* Determine if suggested requirements have been met and set image indicators accordingly */
-		/*
-		var arrChars = [nAlphasOnly,nNumbersOnly,nRepChar,nConsecAlphaUC,nConsecAlphaLC,nConsecNumber,nSeqAlpha,nSeqNumber,nSeqSymbol];
-		var arrCharsIds = ["nAlphasOnly","nNumbersOnly","nRepChar","nConsecAlphaUC","nConsecAlphaLC","nConsecNumber","nSeqAlpha","nSeqNumber","nSeqSymbol"];
-		var arrCharsLen = arrChars.length;
-		for (var c=0; c < arrCharsLen; c++) {
-			var oImg = $('div_' + arrCharsIds[c]);
-			var oBonus = $(arrCharsIds[c] + 'Bonus');
-			//$(arrCharsIds[c]).innerHTML = arrChars[c];
-			//if (arrChars[c] > 0) { oImg.className = "warn"; oBonus.parentNode.className = "warn"; }
-			//else { oImg.className = "pass"; oBonus.parentNode.className = "pass"; }
-		}
-		*/
 		
 		/* Determine complexity based on overall score */
 		if (nScore > 100) { nScore = 100; } else if (nScore < 0) { nScore = 0; }
-		if (nScore >= 0 && nScore < 20) { sComplexity = "<#PASS_score0#>"; }
-		else if (nScore >= 20 && nScore < 40) { sComplexity = "<#PASS_score1#>"; }
-		else if (nScore >= 40 && nScore < 60) { sComplexity = "<#PASS_score2#>"; }
-		else if (nScore >= 60 && nScore < 80) { sComplexity = "<#PASS_score3#>"; }
-		else if (nScore >= 80 && nScore <= 100) { sComplexity = "<#PASS_score4#>"; }
+		if(document.form.current_page.value != "AiProtection_HomeProtection.asp"){	
+			if (nScore >= 0 && nScore < 20) { sComplexity = "<#PASS_score0#>"; }
+			else if (nScore >= 20 && nScore < 40) { sComplexity = "<#PASS_score1#>"; }
+			else if (nScore >= 40 && nScore < 60) { sComplexity = "<#PASS_score2#>"; }
+			else if (nScore >= 60 && nScore < 80) { sComplexity = "<#PASS_score3#>"; }
+			else if (nScore >= 80 && nScore <= 100) { sComplexity = "<#PASS_score4#>"; }
+		}
+		else{
+			if (nScore >= 0 && nScore < 20) { sComplexity = "<a href='Advanced_Wireless_Content.asp' target='_blank'><#PASS_score0#></a>"; }
+			else if (nScore >= 20 && nScore < 40) { sComplexity = "<a href='Advanced_Wireless_Content.asp' target='_blank'><#PASS_score1#></a>"; }
+			else if (nScore >= 40 && nScore < 60) { sComplexity = "<a href='Advanced_Wireless_Content.asp' target='_blank'><#PASS_score2#></a>"; }
+			else if (nScore >= 60 && nScore < 80) { sComplexity = "<a href='Advanced_Wireless_Content.asp' target='_blank'><#PASS_score3#></a>"; }
+			else if (nScore >= 80 && nScore <= 100) { sComplexity = "<a href='Advanced_Wireless_Content.asp' target='_blank'><#PASS_score4#></a>"; }
+		}
 		
 		/* Display updated score criteria to client */
-		$('scorebarBorder').style.display = "";
-		oScorebar.style.backgroundPosition = "-" + parseInt(nScore * 4) + "px";
+		if(document.form.current_page.value != "AiProtection_HomeProtection.asp"){		//for Router weakness status, Jimeing added at 2014/06/07
+			$('scorebarBorder').style.display = "";
+			oScorebar.style.backgroundPosition = "-" + parseInt(nScore * 4) + "px";
+		}
+		else{
+			if(nScore >= 0 && nScore < 40){
+				$('score').className = "status_no";			
+			}
+			else if(nScore >= 40 && nScore <= 100){
+				$('score').className = "status_yes";		
+			}
+		}
+		
 		oScore.innerHTML = sComplexity;
 	}
 	else {
 		/* Display default score criteria to client */
 		if(flag == 'http_passwd'){
-				orig_pwd = decodeURIComponent("<% nvram_char_to_ascii("", "http_passwd"); %>");
-				chkPass(orig_pwd, 'http_passwd');
+			chkPass(" ", 'http_passwd');
 		}
 	}
 }

@@ -253,6 +253,24 @@ extern "C" {
 #define BN_HEX_FMT2	"%08X"
 #endif
 
+/* 2011-02-22 SMS.
+ * In various places, a size_t variable or a type cast to size_t was
+ * used to perform integer-only operations on pointers.  This failed on
+ * VMS with 64-bit pointers (CC /POINTER_SIZE = 64) because size_t is
+ * still only 32 bits.  What's needed in these cases is an integer type
+ * with the same size as a pointer, which size_t is not certain to be. 
+ * The only fix here is VMS-specific.
+ */
+#if defined(OPENSSL_SYS_VMS)
+# if __INITIAL_POINTER_SIZE == 64
+#  define PTR_SIZE_INT long long
+# else /* __INITIAL_POINTER_SIZE == 64 */
+#  define PTR_SIZE_INT int
+# endif /* __INITIAL_POINTER_SIZE == 64 [else] */
+#else /* defined(OPENSSL_SYS_VMS) */
+# define PTR_SIZE_INT size_t
+#endif /* defined(OPENSSL_SYS_VMS) [else] */
+
 #define BN_DEFAULT_BITS	1280
 
 #define BN_FLG_MALLOCED		0x01
@@ -520,6 +538,8 @@ BIGNUM *BN_mod_inverse(BIGNUM *ret,
 BIGNUM *BN_mod_sqrt(BIGNUM *ret,
 	const BIGNUM *a, const BIGNUM *n,BN_CTX *ctx);
 
+void	BN_consttime_swap(BN_ULONG swap, BIGNUM *a, BIGNUM *b, int nwords);
+
 /* Deprecated versions */
 #ifndef OPENSSL_NO_DEPRECATED
 BIGNUM *BN_generate_prime(BIGNUM *ret,int bits,int safe,
@@ -741,11 +761,20 @@ int RAND_pseudo_bytes(unsigned char *buf,int num);
 
 #define bn_fix_top(a)		bn_check_top(a)
 
+#define bn_check_size(bn, bits) bn_wcheck_size(bn, ((bits+BN_BITS2-1))/BN_BITS2)
+#define bn_wcheck_size(bn, words) \
+	do { \
+		const BIGNUM *_bnum2 = (bn); \
+		assert(words <= (_bnum2)->dmax && words >= (_bnum2)->top); \
+	} while(0)
+
 #else /* !BN_DEBUG */
 
 #define bn_pollute(a)
 #define bn_check_top(a)
 #define bn_fix_top(a)		bn_correct_top(a)
+#define bn_check_size(bn, bits)
+#define bn_wcheck_size(bn, words)
 
 #endif
 

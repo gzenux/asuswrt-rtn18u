@@ -18,6 +18,8 @@
 # $Id: Makefile 398971 2013-04-26 22:39:49Z $
 #
 
+include ../../../../.config
+
 ARCH ?= arm
 CPU ?= bcmcore
 BOARD := bcm947xx
@@ -72,9 +74,13 @@ CFG_SDRAM_PARAM_FROM_EMBEDDED_NVRAM := 1
 # Additional options
 COMPRESSED_CFE := 1
 RESCUE_MODE := 1        # disable for tmp
+DSLAC68U := 0
 RTAC68U := 0
 PATYPE := 0
-MTDSIZE := 32
+MTDSIZE ?= $(LINUX_MTD)
+MTDSIZE ?= 32
+DUAL_TRX := 0
+TMO := 0
 
 # HND source base
 SRCBASE := $(shell cd ../../../.. && pwd)
@@ -125,21 +131,42 @@ endif
 ifeq ($(strip $(RESCUE_MODE)),1)
 CFLAGS += -DRESCUE_MODE
 endif
+
+ifeq ($(strip $(DUAL_TRX)),1)
+CFLAGS += -DDUAL_TRX
+endif
+
 ifeq ($(strip $(RTAC68U)),1)
+ifeq ($(strip $(TMO)),1)
+MTDSIZE := 48
+CFLAGS += -DDUAL_TRX
+else
+MTDSIZE := 64
+endif
 CFLAGS += -DRTAC68U
 endif
+
+ifeq ($(strip $(DSLAC68U)),1)
+CFLAGS += -DDSLAC68U
+endif
+
 ifeq ($(strip $(RTAC87U)),1)
 MTDSIZE := 128
 CFLAGS += -DRTAC87U
 endif
+
 ifeq ($(strip $(RTN18U)),1)
 CFLAGS += -DRTN18U
 endif
+
 ifeq ($(strip $(COMPRESSED_CFE)),1)
 CFLAGS += -DCOMPRESSED_CFE
 endif
 ifeq ($(MTDSIZE),32)
 CFLAGS += -D"CONFIG_LINUX_MTD=32"
+endif
+ifeq ($(MTDSIZE),48)
+CFLAGS += -D"CONFIG_LINUX_MTD=48"
 endif
 ifeq ($(MTDSIZE),64)
 CFLAGS += -D"CONFIG_LINUX_MTD=64"

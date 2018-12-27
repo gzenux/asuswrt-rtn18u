@@ -71,11 +71,11 @@ is_image(const char *file);
 int64_t
 get_next_available_id(const char *table, const char *parentID);
 
-int
+int64_t
 insert_directory(const char *name, const char *path, const char *base, const char *parentID, int objectID);
 
 int
-insert_file(char *name, const char *path, const char *parentID, int object);
+insert_file(char *name, const char *path, const char *parentID, int object, media_types dir_types);
 
 int
 CreateDatabase(void);

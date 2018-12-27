@@ -34,6 +34,11 @@ LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += -L$(TOP)/libbcmcrypto -L$(INSTALLDIR)/libbcmcrypto/usr/lib -lbcmcrypto
 LDFLAGS += -lgcc_s
 
+include ../../common.mak
+ifeq ($(RTCONFIG_QTN),y)
+LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
 vpath %.c $(SRCBASE)/router/nas${BCMEX} $(SRCBASE)/shared $(SRCBASE)/router/shared
 
 # build target

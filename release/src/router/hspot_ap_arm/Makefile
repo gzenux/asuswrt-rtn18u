@@ -1,3 +1,5 @@
+include ../common.mak
+
 #Linux Makefile
 
 #test merge
@@ -5,7 +7,7 @@
 #SRCBASE = ../..
 WLAN_ComponentsInUse := bcmwifi ppr olpc
 include ../../../src-rt-6.x.4708/makefiles/WLAN_Common.mk
-SRCBASE := $(WLAN_SrcBaseR)
+#SRCBASE := $(WLAN_SrcBaseR)
 
 include $(SRCBASE)/router/.config
 
@@ -24,8 +26,10 @@ CFLAGS += -DPPR_API
 #LDFLAGS += -m32 --cref -lpthread -lrt
 #LDFLAGS += -Wl,-Map,hspotap.map
 
-LDFLAGS += -L$(TOP)/nvram${BCMEX} -L$(INSTALLDIR)/nvram/usr/lib -lnvram
+#LDFLAGS += -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram
 #LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
+LDFLAGS += -lgcc_s
+LDFLAGS += -L$(TOP)/nvram${BCMEX} -lnvram -L$(TOP)/shared -lshared
 LDFLAGS += $(EXTRA_LDFLAGS)
 
 
@@ -34,7 +38,7 @@ vpath %.c $(SRCBASE)/shared
 vpath %.c $(SRCBASE)/shared/bcmwifi/src
 vpath %.c $(SRCBASE)/security/secfrw/tmr
 vpath %.c $(SRCBASE)/security/secfrw/utils
-vpath %.c $(SRCBASE)/router/hspot_ap
+vpath %.c $(SRCBASE)/router/hspot_ap${BCMEX}
 vpath %.c $(SRCBASE)/hspot/util
 vpath %.c $(SRCBASE)/hspot/pkt
 vpath %.c $(SRCBASE)/hspot/dsp
@@ -50,9 +54,10 @@ OBJS += bcm_encode_gas.o bcm_decode_gas.o
 OBJS += bcm_encode_anqp.o bcm_decode_anqp.o
 OBJS += bcm_encode_hspot_anqp.o bcm_decode_hspot_anqp.o
 OBJS += bcm_encode_wnm.o bcm_decode_wnm.o
+OBJS += bcm_encode_qos.o bcm_decode_qos.o
 OBJS += dsp_ap.o tmr.o
 OBJS += wlu_api.o wlu_linux_api.o
-OBJS += wlu.o wlu_common.o wlu_cmd.o wlu_iov.o miniopt.o bcmwifi_channels.o bcmutils.o wlu_rates_matrix.o wlc_ppr.o
+OBJS += wlu.o wlu_common.o wlu_cmd.o wlu_iov.o miniopt.o bcmutils.o wlu_rates_matrix.o wlc_ppr.o
 OBJS += bcm_app_utils.o bcmseclib_linux_timer.o bcmseclib_timer.o bcm_llist.o
 OBJS += bcm_gas.o
 OBJS += bcmevent.o
@@ -73,6 +78,16 @@ install: all
 	install -d $(INSTALLDIR)/bin
 	install hspotap $(INSTALLDIR)/bin
 	install 1357161475_wifi $(INSTALLDIR)/bin
+	install WiFi-alliancelogo_3D.png $(INSTALLDIR)/bin
+	install wifi-abgn-logo_270x73.png $(INSTALLDIR)/bin
+	install icon_red_eng.png $(INSTALLDIR)/bin
+	install icon_blue_eng.png $(INSTALLDIR)/bin
+	install icon_green_eng.png $(INSTALLDIR)/bin
+	install icon_orange_eng.png $(INSTALLDIR)/bin
+	install icon_red_zxx.png $(INSTALLDIR)/bin
+	install icon_blue_zxx.png $(INSTALLDIR)/bin
+	install icon_green_zxx.png $(INSTALLDIR)/bin
+	install icon_orange_zxx.png $(INSTALLDIR)/bin
 	$(STRIP) $(INSTALLDIR)/bin/hspotap
 
 clean:

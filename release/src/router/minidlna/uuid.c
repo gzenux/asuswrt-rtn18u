@@ -47,6 +47,10 @@ static uint32_t clock_seq;
 static const uint32_t clock_seq_max = 0x3fff; /* 14 bits */
 static int clock_seq_initialized;
 
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC CLOCK_REALTIME
+#endif
+
 unsigned long long
 monotonic_us(void)
 {
@@ -98,7 +102,8 @@ read_random_bytes(unsigned char *buf, size_t size)
 	i = open("/dev/urandom", O_RDONLY);
 	if(i >= 0)
 	{
-		if(read(i, buf, size));
+		if (read(i, buf, size) == -1)
+			DPRINTF(E_MAXDEBUG, L_GENERAL, "Failed to read random bytes\n");
 		close(i);
 	}
 	/* Paranoia. /dev/urandom may be missing.

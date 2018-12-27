@@ -109,7 +109,7 @@
  *
  */
 
-#ifndef _POSIX_C_SOURCE
+#if !defined(_POSIX_C_SOURCE) && defined(OPENSSL_SYS_VMS)
 #define _POSIX_C_SOURCE 2	/* On VMS, you need to define this to get
 				   the declaration of fileno().  The value
 				   2 is to make sure no function defined
@@ -586,12 +586,12 @@ int password_callback(char *buf, int bufsiz, int verify,
 
 		if (ok >= 0)
 			ok = UI_add_input_string(ui,prompt,ui_flags,buf,
-				PW_MIN_LENGTH,BUFSIZ-1);
+				PW_MIN_LENGTH,bufsiz-1);
 		if (ok >= 0 && verify)
 			{
 			buff = (char *)OPENSSL_malloc(bufsiz);
 			ok = UI_add_verify_string(ui,prompt,ui_flags,buff,
-				PW_MIN_LENGTH,BUFSIZ-1, buf);
+				PW_MIN_LENGTH,bufsiz-1, buf);
 			}
 		if (ok >= 0)
 			do
@@ -798,7 +798,9 @@ X509 *load_cert(BIO *err, const char *file, int format,
 	if (file == NULL)
 		{
 #ifdef _IONBF
+# ifndef OPENSSL_NO_SETVBUF_IONBF
 		setvbuf(stdin, NULL, _IONBF, 0);
+# endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 #endif
 		BIO_set_fp(cert,stdin,BIO_NOCLOSE);
 		}
@@ -899,7 +901,9 @@ EVP_PKEY *load_key(BIO *err, const char *file, int format, int maybe_stdin,
 	if (file == NULL && maybe_stdin)
 		{
 #ifdef _IONBF
+# ifndef OPENSSL_NO_SETVBUF_IONBF
 		setvbuf(stdin, NULL, _IONBF, 0);
+# endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 #endif
 		BIO_set_fp(key,stdin,BIO_NOCLOSE);
 		}
@@ -988,7 +992,9 @@ EVP_PKEY *load_pubkey(BIO *err, const char *file, int format, int maybe_stdin,
 	if (file == NULL && maybe_stdin)
 		{
 #ifdef _IONBF
+# ifndef OPENSSL_NO_SETVBUF_IONBF
 		setvbuf(stdin, NULL, _IONBF, 0);
+# endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 #endif
 		BIO_set_fp(key,stdin,BIO_NOCLOSE);
 		}
@@ -1209,7 +1215,8 @@ STACK_OF(X509) *load_certs(BIO *err, const char *file, int format,
 	const char *pass, ENGINE *e, const char *desc)
 	{
 	STACK_OF(X509) *certs;
-	load_certs_crls(err, file, format, pass, e, desc, &certs, NULL);
+	if (!load_certs_crls(err, file, format, pass, e, desc, &certs, NULL))
+		return NULL;
 	return certs;
 	}	
 
@@ -1217,7 +1224,8 @@ STACK_OF(X509_CRL) *load_crls(BIO *err, const char *file, int format,
 	const char *pass, ENGINE *e, const char *desc)
 	{
 	STACK_OF(X509_CRL) *crls;
-	load_certs_crls(err, file, format, pass, e, desc, NULL, &crls);
+	if (!load_certs_crls(err, file, format, pass, e, desc, NULL, &crls))
+		return NULL;
 	return crls;
 	}	
 
@@ -2124,7 +2132,7 @@ X509_NAME *parse_name(char *subject, long chtype, int multirdn)
 	X509_NAME *n = NULL;
 	int nid;
 
-	if (!buf || !ne_types || !ne_values)
+	if (!buf || !ne_types || !ne_values || !mval)
 		{
 		BIO_printf(bio_err, "malloc error\n");
 		goto error;
@@ -2228,6 +2236,7 @@ X509_NAME *parse_name(char *subject, long chtype, int multirdn)
 	OPENSSL_free(ne_values);
 	OPENSSL_free(ne_types);
 	OPENSSL_free(buf);
+	OPENSSL_free(mval);
 	return n;
 
 error:
@@ -2236,6 +2245,8 @@ error:
 		OPENSSL_free(ne_values);
 	if (ne_types)
 		OPENSSL_free(ne_types);
+	if (mval)
+		OPENSSL_free(mval);
 	if (buf)
 		OPENSSL_free(buf);
 	return NULL;
@@ -2761,7 +2772,7 @@ double app_tminterval(int stop,int usertime)
 
 	if (proc==NULL)
 		{
-		if (GetVersion() < 0x80000000)
+		if (check_winnt())
 			proc = OpenProcess(PROCESS_QUERY_INFORMATION,FALSE,
 						GetCurrentProcessId());
 		if (proc==NULL) proc = (HANDLE)-1;

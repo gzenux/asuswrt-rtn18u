@@ -14,11 +14,11 @@
 # License along with MiniDLNA; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA.
-AC_INIT(MiniDLNA,1.1.0,,minidlna)
+AC_INIT(MiniDLNA,1.1.3,,minidlna)
 #LT_INIT
 
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 AM_SILENT_RULES([yes])
 
@@ -31,10 +31,9 @@ AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION(0.18)
 
 # Checks for programs.
-# AC_PROG_CXX
 AC_PROG_AWK
 AC_PROG_CC
-# AC_PROG_CPP
+AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -60,6 +59,7 @@ m4_ifdef([AC_TYPE_INT32_T], [AC_TYPE_INT32_T])
 m4_ifdef([AC_TYPE_UINT32_T], [AC_TYPE_UINT32_T])
 m4_ifdef([AC_TYPE_UINT64_T], [AC_TYPE_UINT64_T])
 m4_ifdef([AC_TYPE_SSIZE_T], [AC_TYPE_SSIZE_T])
+AC_STRUCT_DIRENT_D_TYPE
 AC_STRUCT_ST_BLOCKS
 AC_HEADER_STDBOOL
 AC_C_BIGENDIAN
@@ -68,6 +68,34 @@ AC_C_BIGENDIAN
 AC_FUNC_FORK
 AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
 AC_CHECK_FUNCS([gethostname getifaddrs gettimeofday inet_ntoa memmove memset mkdir realpath select sendfile setlocale socket strcasecmp strchr strdup strerror strncasecmp strpbrk strrchr strstr strtol strtoul])
+
+#
+# Check for struct ip_mreqn
+#
+AC_MSG_CHECKING(for struct ip_mreqn)
+AC_TRY_COMPILE([#include <netinet/in.h>], [
+    struct ip_mreqn mreq;
+    mreq.imr_address.s_addr = 0;
+], [
+    # Yes, we have it...
+    AC_MSG_RESULT(yes)
+    AC_DEFINE([HAVE_STRUCT_IP_MREQN],[],[Support for struct ip_mreqn])
+], [
+    # We'll just have to try and use struct ip_mreq
+    AC_MSG_RESULT(no)
+    AC_MSG_CHECKING(for struct ip_mreq)
+    AC_TRY_COMPILE([#include <netinet/in.h>], [
+        struct ip_mreq mreq;
+        mreq.imr_interface.s_addr = 0;
+    ], [
+        # Yes, we have it...
+        AC_MSG_RESULT(yes)
+        AC_DEFINE([HAVE_STRUCT_IP_MREQ],[],[Support for struct ip_mreq])
+    ], [
+        # No multicast support
+        AC_MSG_ERROR([No multicast support])
+    ])
+])
 
 ################################################################################################################
 # Special include directories
@@ -119,7 +147,7 @@ AC_COMPILE_IFELSE(
     ])
 
 AC_CHECK_HEADER(linux/netlink.h,
-    [AC_DEFINE([HAVE_NETLINK],[1],[Support for Linux netlink])])
+    [AC_DEFINE([HAVE_NETLINK],[1],[Support for Linux netlink])], [], [#include <sys/socket.h>])
 
 ################################################################################################################
 ### Library checks

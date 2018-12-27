@@ -55,7 +55,7 @@
 /* This marks the start of a packed structure section. */
 #include <packed_section_start.h>
 
-#define PPR_SERIALIZATION_VER 1
+#define PPR_SERIALIZATION_VER 2
 
 /* ppr deserialization header */
 typedef BWL_PRE_PACKED_STRUCT struct ppr_deser_header {
@@ -63,6 +63,7 @@ typedef BWL_PRE_PACKED_STRUCT struct ppr_deser_header {
 	uint8  bw;
 	uint16 per_band_size;
 	uint32 flags;
+	uint16 chain3size; /* ppr data size of 3 Tx chains, needed in deserialisation process */
 } BWL_POST_PACKED_STRUCT ppr_deser_header_t;
 
 
@@ -317,6 +318,11 @@ static uint ppr_serialize_data(const ppr_t *pprptr, uint8* buf, uint32 serflag)
 	header->bw      = (uint8)pprptr->ch_bw;
 	header->flags   = HTON32(ppr_get_flag());
 	header->per_band_size	= HTON16(ppr_ser_size_per_band(serflag));
+#if (PPR_MAX_TX_CHAINS > 2)
+	header->chain3size = HTON16(PPR_CHAIN3_SIZE);
+#else
+	header->chain3size = 0;
+#endif
 
 	buf += sizeof(*header);
 	switch (header->bw) {
@@ -352,13 +358,16 @@ static uint ppr_serialize_data(const ppr_t *pprptr, uint8* buf, uint32 serflag)
 
 
 /* Copy serialized ppr data of a bandwidth */
-static void ppr_copy_serdata(uint8* pobuf, const uint8** inbuf, uint32 flag, uint16 per_band_size)
+static void
+ppr_copy_serdata(uint8* pobuf, const uint8** inbuf, uint32 flag, uint16 per_band_size,
+	uint16 chain3size)
 {
 	uint chain   = flag & PPR_MAX_TX_CHAIN_MASK;
 	bool bf      = (flag & PPR_BEAMFORMING) != 0;
 	uint16 len   = PPR_CHAIN1_SIZE;
 	BCM_REFERENCE(chain);
 	BCM_REFERENCE(bf);
+	BCM_REFERENCE(chain3size);
 	bcopy(*inbuf, pobuf, PPR_CHAIN1_SIZE);
 	*inbuf += PPR_CHAIN1_SIZE;
 #if (PPR_MAX_TX_CHAINS > 1)
@@ -372,6 +381,11 @@ static void ppr_copy_serdata(uint8* pobuf, const uint8** inbuf, uint32 flag, uin
 		bcopy(*inbuf, &pobuf[PPR_CHAIN3_FIRST], PPR_CHAIN3_SIZE);
 		*inbuf += PPR_CHAIN3_SIZE;
 		len += PPR_CHAIN3_SIZE;
+	}
+#else
+	if (chain > 2) {
+		 *inbuf += chain3size;
+		 len += chain3size;
 	}
 #endif
 
@@ -398,32 +412,33 @@ static void ppr_copy_serdata(uint8* pobuf, const uint8** inbuf, uint32 flag, uin
 
 /* Deserialize data into a ppr_t structure */
 static void
-ppr_deser_cpy(ppr_t* pptr, const uint8* inbuf, uint32 flag, wl_tx_bw_t bw, uint16 per_band_size)
+ppr_deser_cpy(ppr_t* pptr, const uint8* inbuf, uint32 flag, wl_tx_bw_t bw, uint16 per_band_size,
+	uint16 chain3size)
 {
 	pptr->ch_bw = bw;
 	switch (bw) {
 	case WL_TX_BW_20:
 		{
 			uint8* pobuf = (uint8*)&pptr->ppr_bw.ch20;
-			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size);
+			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size, chain3size);
 		}
 		break;
 	case WL_TX_BW_40:
 		{
 			uint8* pobuf = (uint8*)&pptr->ppr_bw.ch40.b40;
-			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size);
+			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size, chain3size);
 			pobuf = (uint8*)&pptr->ppr_bw.ch40.b20in40;
-			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size);
+			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size, chain3size);
 		}
 		break;
 	case WL_TX_BW_80:
 		{
 			uint8* pobuf = (uint8*)&pptr->ppr_bw.ch80.b80;
-			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size);
+			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size, chain3size);
 			pobuf = (uint8*)&pptr->ppr_bw.ch80.b20in80;
-			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size);
+			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size, chain3size);
 			pobuf = (uint8*)&pptr->ppr_bw.ch80.b40in80;
-			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size);
+			ppr_copy_serdata(pobuf, &inbuf, flag, per_band_size, chain3size);
 		}
 		break;
 	default:
@@ -1825,11 +1840,12 @@ ppr_deserialize_create(osl_t *osh, const uint8* buf, uint buflen, ppr_t** pprptr
 		if ((lpprptr = ppr_create(osh, ch_bw)) != NULL) {
 			uint32 flags = NTOH32(ser_head->flags);
 			uint16 per_band_size = NTOH16(ser_head->per_band_size);
+			uint16 chain3size = NTOH16(ser_head->chain3size);
 			/* set the data with default value before deserialize */
 			ppr_set_cmn_val(lpprptr, WL_RATE_DISABLED);
 
 			ppr_deser_cpy(lpprptr, bptr + sizeof(*ser_head), flags, ch_bw,
-				per_band_size);
+				per_band_size, chain3size);
 		} else if (buflen < ser_size) {
 			err = BCME_BUFTOOSHORT;
 		} else {
@@ -1864,9 +1880,10 @@ ppr_deserialize(ppr_t* pprptr, const uint8* buf, uint buflen)
 		if (ch_bw == pprptr->ch_bw) {
 			uint32 flags = NTOH32(ser_head->flags);
 			uint16 per_band_size = NTOH16(ser_head->per_band_size);
+			uint16 chain3size = NTOH16(ser_head->chain3size);
 			ppr_set_cmn_val(pprptr, WL_RATE_DISABLED);
 			ppr_deser_cpy(pprptr, bptr + sizeof(*ser_head), flags, ch_bw,
-				per_band_size);
+				per_band_size, chain3size);
 		} else {
 			err = BCME_BADARG;
 		}

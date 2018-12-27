@@ -1,37 +1,8 @@
 
+include $(BUILD_NAME)/config
+
+
 SKUDIR = $(INSTALLDIR)/ra_SKU
-
-ifeq ($(BUILD_NAME), RT-AC52U)
-SKU_2G_FCC  = "20131101_FCC_2.4GHz_SingleSKU.dat"
-SKU_2G_CE   = "20131106_CE_2.4GHz_SingleSKU.dat"
-SKU_5G_FCC  = "20131106_FCC_NCC_5GHz_RFMD_SingleSKU.dat"
-SKU_5G_CE   = "20131101_CE_5GHz_RFMD_SingleSKU.dat"
-SKU_2G_SG   = "20130826_SG_2.4GHz_SingleSKU.dat"
-SKU_5G_SG   = "20130826_SG_5GHz_RFMD_SingleSKU.dat"
-SKU_2G_AU   = "20131217_AU_2.4GHz_SingleSKU.dat"
-SKU_5G_AU   = "20131217_AU_5GHz_RFMD_SingleSK.dat"
-endif
-ifeq ($(BUILD_NAME), RT-AC51U)
-SKU_2G_FCC  = "20131101_FCC_2.4GHz_SingleSKU.dat"
-SKU_2G_CE   = "20131106_CE_2.4GHz_SingleSKU.dat"
-SKU_5G_FCC  = "20131106_FCC_NCC_5GHz_RFMD_SingleSKU.dat"
-SKU_5G_CE   = "20131101_CE_5GHz_RFMD_SingleSKU.dat"
-SKU_2G_SG   = "20130826_SG_2.4GHz_SingleSKU.dat"
-SKU_5G_SG   = "20130826_SG_5GHz_RFMD_SingleSKU.dat"
-SKU_2G_AU   = 
-SKU_5G_AU   = 
-endif
-ifeq ($(BUILD_NAME), RT-N11P)
-SKU_2G_FCC  = "20131101_FCC_2.4GHz_SingleSKU.dat"
-SKU_2G_CE   = "20131106_CE_2.4GHz_SingleSKU.dat"
-SKU_2G_SG   = "20130826_SG_2.4GHz_SingleSKU.dat"
-SKU_5G_FCC  =
-SKU_5G_CE   =
-SKU_5G_SG   =
-SKU_2G_AU   =
-SKU_5G_AU   =
-endif
-
 
 SKU_FILES  = $(BUILD_NAME)/$(SKU_2G_FCC) $(BUILD_NAME)/$(SKU_2G_CE) $(BUILD_NAME)/$(SKU_5G_FCC) $(BUILD_NAME)/$(SKU_5G_CE)
 
@@ -56,6 +27,8 @@ all clean:
 	fi
 
 install: all
+	-rm -rf $(TARGETDIR)/ra_SKU
+	-rm -rf $(SKUDIR)
 	@install -d $(SKUDIR)
 ifneq ($(SKU_2G_FCC),)
 	@install $(BUILD_NAME)/$(SKU_2G_FCC) $(SKUDIR)/SingleSKU_FCC.dat
@@ -80,6 +53,18 @@ ifneq ($(SKU_2G_AU),)
 endif
 ifneq ($(SKU_5G_AU),)
 	@install $(BUILD_NAME)/$(SKU_5G_AU) $(SKUDIR)/SingleSKU_5G_AU.dat
+endif
+ifneq ($(SKU_2G_NCC),)
+	@install $(BUILD_NAME)/$(SKU_2G_NCC) $(SKUDIR)/SingleSKU_NCC.dat
+endif
+ifneq ($(SKU_5G_NCC),)
+	@install $(BUILD_NAME)/$(SKU_5G_NCC) $(SKUDIR)/SingleSKU_5G_NCC.dat
+endif
+ifeq ("$(BUILD_NAME)","RT-AC52U")
+	@install $(BUILD_NAME)/$(SKU_2G_FCC_V2) $(SKUDIR)/SingleSKU_FCC_0002.dat
+	@install $(BUILD_NAME)/$(SKU_5G_FCC_V2) $(SKUDIR)/SingleSKU_5G_FCC_0002.dat
+	@install $(BUILD_NAME)/$(SKU_2G_CE_V2) $(SKUDIR)/SingleSKU_CE_0002.dat
+	@install $(BUILD_NAME)/$(SKU_5G_CE_V2) $(SKUDIR)/SingleSKU_5G_CE_0002.dat
 endif
 
 

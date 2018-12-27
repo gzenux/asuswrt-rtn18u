@@ -34,7 +34,7 @@ ifeq ($(RTCONFIG_OPENVPN),y)
 	install -m 0700 -D updown.sh $(INSTALLDIR)/usr/sbin
 endif
 
-ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P),y)
+ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN54U),y)
 # for read/write Ralink PHY registers
 	install -D mii_mgr $(INSTALLDIR)/bin/mii_mgr
 endif

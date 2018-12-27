@@ -23,9 +23,9 @@
 #include <string.h>
 
 #include <typedefs.h>
+#include <rtconfig.h>
 #include <bcmnvram.h>
 
-#include <rtconfig.h>
 
 #define PROFILE_HEADER		"HDR1"
 #ifdef RTCONFIG_DSL

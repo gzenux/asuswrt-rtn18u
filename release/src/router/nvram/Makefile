@@ -29,9 +29,9 @@ libnvram.a: nvram_linux.o nvram_convert.o
 nvram: nvram.o ../shared/defaults.o libnvram.so
 	@echo " [nvram] CC $@"
 ifeq ($(STATIC),1)
-	$(CC) $(CFLAGS) -static -o $@ nvram.o ../shared/defaults.o -L. -lnvram -L$(TOP)/shared -lshared
+	$(CC) $(CFLAGS) -static -o $@ nvram.o ../shared/defaults.o $(LDFLAGS) -lnvram
 else
-	@$(CC) $(CFLAGS) -o $@ nvram.o ../shared/defaults.o -L. -lnvram -L$(TOP)/shared -lshared
+	@$(CC) $(CFLAGS) -o $@ nvram.o ../shared/defaults.o $(LDFLAGS) -lnvram
 endif
 	
 	$(SIZECHECK)

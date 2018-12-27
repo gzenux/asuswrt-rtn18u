@@ -85,11 +85,13 @@ typedef unsigned long ULONG;
 typedef struct {
         unsigned char   ip_addr[255][4];
         unsigned char   mac_addr[255][6];
+	unsigned char   user_define[255][16];
 	unsigned char   device_name[255][16];
         int             type[255];
         int             http[255];
         int             printer[255];
         int             itune[255];
+	int		exist[255];
         int             ip_mac_num;
 	int 		detail_info_num;
 } CLIENT_DETAIL_INFO_TABLE, *P_CLIENT_DETAIL_INFO_TABLE;

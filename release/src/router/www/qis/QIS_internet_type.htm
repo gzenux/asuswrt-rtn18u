@@ -36,6 +36,15 @@ var contentM_height_orig = parent.document.getElementById("contentM").height;
 function QKinternettype_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_type_head#>";
 
+	if('<% nvram_get("autodet_state"); %>' != "2" && '<% nvram_get("autodet_auxstate"); %>' != "6"){
+		document.getElementById("wd3").style.display = "";
+		document.getElementById("wd4").style.display = "";
+		document.getElementById("wd5").style.display = "";
+		document.getElementById("wd3_1").style.display = "";
+		document.getElementById("wd4_1").style.display = "";
+		document.getElementById("wd5_1").style.display = "";
+	}
+
 	if(parent.ISMOBILE){
 		parent.set_step("detect");
 		document.getElementById("field_general").style.display = "none";
@@ -74,7 +83,7 @@ function QKinternettype_load_body(){
 		if(!parent.manualstb_support) 
 			document.applyForm.switch_wantag.remove(8);
 
-		detect_if_wan_plug();
+		detect_if_wan_plug();			
 	}
 }
 
@@ -428,7 +437,7 @@ function detect_if_wan_plug(flag){
 <div id='dhcppppoe_sec' style="margin-top:15px; margin-left:-40px;">
   <table id="tblsetting" class="QISform2" style="width:400px;margin-left:110px" border=0 align="left" cellpadding="2" cellspacing="0"> 
   	<tr>
-		  <td align="center"><input type="radio" id="d1" name="x_WANType" value="0" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
+		  <td align="center"><input type="radio" id="d1" name="x_WANType" value="0" tabindex="1" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
 		  <td class="wan_type_title"><label for="d1"><#BOP_ctype_title1#> (DHCP)</label></td>
 		</tr>
 		<tr>
@@ -436,7 +445,7 @@ function detect_if_wan_plug(flag){
 		  <td><span class="wan_type_dec"><#BOP_ctype_item1#></span></td>
 		</tr>
 		<tr>
-		  <td align="center"><input type="radio" id="d2" name="x_WANType" value="1" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
+		  <td align="center"><input type="radio" id="d2" name="x_WANType" value="1" tabindex="2" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
 		  <td class="wan_type_title"><label for="d2">PPPoE </label></td>
 		</tr>
 		<tr>
@@ -444,27 +453,27 @@ function detect_if_wan_plug(flag){
 		  <td><span class="wan_type_dec"><#BOP_ctype_item2#></span></td>
 		</tr>
 
-		<tr>
-		  <td align="center"><input type="radio" id="d3" name="x_WANType" value="4" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
+		<tr id="wd3" style="display:none;">
+		  <td align="center"><input type="radio" id="d3" name="x_WANType" value="4" tabindex="3" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
 		  <td class="wan_type_title"><label for="d3"><#BOP_ctype_title5#></label></td>
 		</tr>
-		<tr>
+		<tr id="wd3_1" style="display:none;">
 		  <td align="center"></td>
 		  <td><span class="wan_type_dec"><#BOP_ctype_item5#></span></td>
 		</tr>
-		<tr>
-			<td align="center"><input type="radio" id="d4" name="x_WANType" value="2" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
+		<tr id="wd4" style="display:none;">
+			<td align="center"><input type="radio" id="d4" name="x_WANType" value="2" tabindex="4" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
 			<td class="wan_type_title"><label for="d4">PPTP</label></td>
 		</tr>
-		<tr>
+		<tr id="wd4_1" style="display:none;">
 			<td align="center"></td>
 			<td><span class="wan_type_dec"><#BOP_ctype_item3#></span></td>
 		</tr>
-		<tr>
-			<td align="center"><input type="radio" id="d5" name="x_WANType" value="3" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
+		<tr id="wd5" style="display:none;">
+			<td align="center"><input type="radio" id="d5" name="x_WANType" value="3" tabindex="5" onClick="focus_radio(this)" onKeyPress="return submitenter(this,event)"></td>
 			<td class="wan_type_title"><label for="d5">L2TP </label></td>
 		</tr>
-		<tr>
+		<tr id="wd5_1" style="display:none;">
 		  <td align="center"></td>
 		  <td><span class="wan_type_dec"><#BOP_ctype_item4#></span></td>
 		</tr>
@@ -481,8 +490,8 @@ function detect_if_wan_plug(flag){
 		<tr>
 			<td align="center" colspan="2">
 				<div id="apply_gen" class="apply_gen">
-				 	<input id="ruisp_btn" type="button" value="Russia ISP" onclick="location.href='QIS_internet_ruisp.htm';" class="button_gen" width="70px" align="center" style="display:none;">
-				 	<input id="ff123" name="ff123" type="button" value="<#CTL_next#>" onclick="submitForm();" class="button_gen" width="70px" align="center">
+				 	<input id="ruisp_btn" type="button" value="Russia ISP" tabindex="7" onclick="location.href='QIS_internet_ruisp.htm';" class="button_gen" width="70px" align="center" style="display:none;">
+				 	<input id="ff123" name="ff123" type="button" value="<#CTL_next#>" tabindex="6" onclick="submitForm();" class="button_gen" width="70px" align="center">
 				</div>
 			</td>
 		</tr>

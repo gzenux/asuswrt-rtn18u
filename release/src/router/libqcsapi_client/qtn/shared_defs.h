@@ -140,6 +140,8 @@ EH1*/
 #define	 QTN_TPZ_SE5003L1				5
 #define	 QTN_TPZ_SE5003L1_INV				6
 #define  QTN_TPZ_SKY85703				7
+#define  QTN_TPZ_SKY85405_BPF840			8
+#define  QTN_TPZ_SKY85710_NG				11
 
 #ifdef TOPAZ_PLATFORM
 #define QTN_SWITCH_CHANNEL_TIME_AVG	3750	/* microseconds */
@@ -203,13 +205,15 @@ enum qtn_vap_scs_cmds {
 	IEEE80211_SCS_SET_SWITCH_CHANNEL_MANUALLY,
 	IEEE80211_SCS_SET_AS_RX_TIME_SMTH_FCTR,
 	IEEE80211_SCS_SET_AS_TX_TIME_SMTH_FCTR,
+	IEEE80211_SCS_SET_STATS_START,
 	IEEE80211_SCS_SET_MAX
 };
 
-#define IEEE80211_SCS_STATE_INIT                       0
-#define IEEE80211_SCS_STATE_RESET                      1
-#define IEEE80211_SCS_STATE_MEASUREMENT_CHANGE_CLEAN   2    /* either channel switch or param change */
-#define IEEE80211_SCS_STATE_PERIOD_CLEAN               3
+#define IEEE80211_SCS_STATE_INIT			0
+#define IEEE80211_SCS_STATE_RESET			1
+#define IEEE80211_SCS_STATE_CHANNEL_SWITCHING		2
+#define IEEE80211_SCS_STATE_MEASUREMENT_CHANGE_CLEAN	3    /* param change */
+#define IEEE80211_SCS_STATE_PERIOD_CLEAN		4
 
 #define IEEE80211_SCS_COMPARE_INIT_TIMER	5
 #define IEEE80211_SCS_COMPARE_TIMER_INTVAL	2
@@ -484,9 +488,9 @@ enum qtn_ocac_cmds {
 #define IEEE80211_NODE_VHT		0x4000	/* VHT enabled */
 #define IEEE80211_NODE_TPC		0x8000	/* indicate tpc capability */
 
-#define QTN_VAP_PRIORITY_SHIFT		2	/* reserve the low values for internal use */
+#define QTN_VAP_PRIORITY_RESERVED	2	/* reserve the low values for internal use */
 #define QTN_VAP_PRIORITY_NUM		4
-#define QTN_VAP_PRIORITY_MGMT		(QTN_VAP_PRIORITY_SHIFT + QTN_VAP_PRIORITY_NUM)
+#define QTN_VAP_PRIORITY_MGMT		(QTN_VAP_PRIORITY_RESERVED + QTN_VAP_PRIORITY_NUM)
 #define QTN_TACMAP_HW_PRI_NUM		8	/* hw limitation for 128 node mode */
 #define QTN_TACMAP_PRI_PER_VAP		8	/* for maximum 8 TIDs */
 #define QTN_TACMAP_SW_PRI_BASE		64	/* values below this are used for "bad apple" nodes */
@@ -505,6 +509,12 @@ enum qtn_ocac_cmds {
 #define QTN_IS_INTEL_NODE		0x0000400
 #define QTN_IS_IPAD_AIR_NODE		0x0000800
 #define QTN_IS_IPAD4_NODE		0x0001000
+#define QTN_DYN_ENABLE_RTS		0x0002000
+
+/* QTN bandwidth definition */
+#define QTN_BW_20M	0
+#define QTN_BW_40M	1
+#define QTN_BW_80M	2
 
 /*
  * Definitions relating to individual fields from phy_stats,

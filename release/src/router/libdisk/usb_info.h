@@ -40,6 +40,7 @@
 #define USB_DEVICE_PATH "/sys/bus/usb/devices"
 #define SYS_RNDIS_PATH "/sys/module/rndis_host/drivers/usb:rndis_host"
 #define SYS_CDCETH_PATH "/sys/module/cdc_ether/drivers/usb:cdc_ether"
+#define SYS_NCM_PATH "/sys/module/cdc_ncm/drivers/usb:cdc_ncm"
 
 #include <rtstate.h>
 
@@ -97,10 +98,11 @@ extern int hadACMModule(void);
 extern int hadRNDISModule(void);
 extern int isSerialNode(const char *device_name);
 extern int isACMNode(const char *device_name);
-extern int isSerialInterface(const char *interface_name);
-extern int isACMInterface(const char *interface_name);
+extern int isSerialInterface(const char *interface_name, const int specifics, const unsigned int vid, const unsigned int pid);
+extern int isACMInterface(const char *interface_name, const int specifics, const unsigned int vid, const unsigned int pid);
 extern int isRNDISInterface(const char *interface_name, const unsigned int vid, const unsigned int pid);
 extern int isCDCETHInterface(const char *interface_name);
+extern int isNCMInterface(const char *interface_name);
 #ifdef RTCONFIG_USB_BECEEM
 extern int isGCTInterface(const char *interface_name);
 extern int hadBeceemModule();

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -113,17 +113,17 @@ function detect_firmware(){
 
 function detect_update(){
 	
-	if(sw_mode != "1" | (link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")){
+	if(sw_mode != "1" || (link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")){
 		//setCookie("after_check", 1, 365);
-  	document.start_update.action_mode.value="apply";
-  	document.start_update.action_script.value="start_webs_update";  	
-  	$('update_states').innerHTML="<#check_proceeding#>";
-  	$('update_scan').style.display="";
+		document.start_update.action_mode.value="apply";
+		document.start_update.action_script.value="start_webs_update";  	
+		$('update_states').innerHTML="<#check_proceeding#>";
+		$('update_scan').style.display="";
 		document.start_update.submit();				
 	}else{
 		$('update_scan').style.display="none";
-    $('update_states').innerHTML="<#connect_failed#>";
-    return false;	
+		$('update_states').innerHTML="<#connect_failed#>";
+		return false;	
 	}	
 }
 
@@ -172,7 +172,7 @@ function detect_httpd(){
 
 	$j.ajax({
     		url: '/httpd_check.htm',
-    		dataType: 'script',
+    		dataType: 'text',
 				timeout: 1500,
     		error: function(xhr){
     				dead++;
@@ -364,11 +364,21 @@ function submitForm(){
 				<th>RAS</th>
 				<td><input type="text" class="input_20_table" value="<% nvram_dump("adsl/tc_ras_ver.txt",""); %>" readonly="1"></td>
 			</tr>
+[DSL-AC68U]
+                        <tr>
+                                <th>DSL <#FW_item2#></th>
+                                <td><% nvram_get("dsllog_fwver"); %></td>
+                        </tr>
+                        <tr>
+                                <th><#adsl_fw_ver_itemname#></th>
+                                <td><% nvram_get("dsllog_drvver"); %></td>
+                        </tr>
 -->
+
 <!--###HTML_PREP_END###-->
 			<tr>
 				<th><#FW_item2#></th>
-				<td><input type="text" name="firmver_table" class="input_20_table" value="<% nvram_get("firmver"); %>.<% nvram_get("buildno"); %>_<% nvram_get("extendno"); %>" readonly="1"><!--/td-->
+				<td><input type="text" name="firmver_table" class="input_20_table" value="<% nvram_get("firmver"); %>.<% nvram_get("buildno"); %>_<% nvram_get("extendno"); %>" readonly="1">&nbsp&nbsp&nbsp<!--/td-->
 						<input type="button" id="update" name="update" class="button_gen" onclick="detect_update();" value="<#liveupdate#>" />
 						<div id="check_states">
 								<span id="update_states"></span>

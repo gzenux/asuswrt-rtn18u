@@ -32,6 +32,8 @@
 #include <wlutils.h>
 #include <bcmdevs.h>
 
+int wan_phyid = -1;
+
 struct txpower_s {
 	uint16 min;
 	uint16 max;
@@ -54,98 +56,159 @@ struct txpower_s {
 	uint8 bwdup2gpo;
 };
 
+struct txpower_ac_s {
+	uint16 min;
+	uint16 max;
+	uint8 maxp2ga0;
+	uint8 maxp2ga1;
+	uint8 maxp2ga2;
+};
+
 static const struct txpower_s txpower_list_rtn12hp[] = {
 #if !defined(RTCONFIG_RALINK)
 	/* 1-20mW */
 	{ 1, 20, 0x42, 0x42, 0x0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0, 0x0, 0x0, 0x0},
 	/* 20-40mW */
-	{ 21, 40, 0x4A, 0x4A, 0x0, 0x2000, 0x4422, 0x2200, 0x4444, 0x2200, 0x4444, 0x4422, 0x4444, 0x4422, 0x4444, 0x0, 0x0, 0x0, 0x0},
+	{ 21, 40, 0x4A, 0x4A, 0x0, 0x2000, 0x4442, 0x2200, 0x4444, 0x2200, 0x4444, 0x4422, 0x4444, 0x4422, 0x4444, 0x0, 0x0, 0x0, 0x0},
 	/* 40-60mW */
 	{ 41, 60, 0x52, 0x52, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
 	/* 60-80mW */
 	{ 61, 79, 0x5A, 0x5A, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
-	/* 80mW */
-	{ 80, 80, 0x66, 0x66, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
-	/* 80-200mW */
-	{ 81, 200, 0x66, 0x66, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
-	/* 200-300mW */
-	{ 201, 300, 0x66, 0x66, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
-	/* 300-400mW */
-	{ 301, 400, 0x66, 0x66, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
-	/* 400-999mW */
-	{ 401, 999, 0x66, 0x66, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
+	/* > 80mW */
+	{ 80, 999, 0x66, 0x66, 0x0, 0x2000, 0x6442, 0x2200, 0x6644, 0x2200, 0x6644, 0x4422, 0x8866, 0x4422, 0x8866, 0x0, 0x0, 0x0, 0x0},
 #endif	/* !RTCONFIG_RALINK */
 	{ 0, 0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
+};
+
+static const struct txpower_s txpower_list_rtn12hp_b1[] = {
+#if !defined(RTCONFIG_RALINK)
+	/* 1-19mW */
+	{ 1, 19, 0x3C, 0x3C, 0x0, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x4422, 0x0000, 0x4422, 0x0, 0x0, 0x0, 0x0},
+	/* 20-39mW */
+	{ 20, 39, 0x42, 0x42, 0x0, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x4422, 0x0000, 0x4422, 0x0, 0x0, 0x0, 0x0},
+	/* 40-59mW */
+	{ 40, 59, 0x4A, 0x4A, 0x0, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x4422, 0x0000, 0x4422, 0x0, 0x0, 0x0, 0x0},
+	/* 60-79mW */
+	{ 60, 79, 0x52, 0x52, 0x0, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x4422, 0x0000, 0x4422, 0x0, 0x0, 0x0, 0x0},
+	/* > 80mW */
+	{ 80, 999, 0x5E, 0x5E, 0x0, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x2200, 0x0000, 0x4422, 0x0000, 0x4422, 0x0, 0x0, 0x0, 0x0},
+#endif  /* !RTCONFIG_RALINK */
+	{ 0, 0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
+};
+
+static const struct txpower_ac_s txpower_list_rtac87u[] = {
+#if !defined(RTCONFIG_RALINK)
+	/* 1 ~ 25% */
+	{ 1, 25, 70, 70, 70},
+	/* 26 ~ 50% */
+	{ 26, 50, 82, 82, 82},
+	/* 51 ~ 75% */
+	{ 51, 75, 94, 94, 94},
+	/* 76 ~ 100% */
+	{ 76, 100, 106, 106, 106},
+#endif	/* !RTCONFIG_RALINK */
+	{ 0, 0, 0x0, 0x0, 0x0, 0x0}
 };
 
 int setpoweroffset_rtn12hp(uint8 level, char *prefix2)
 {
 	char tmp[100], tmp2[100];
+	const struct txpower_s *p;
+	int model;
+	model = get_model();
 	dbG("[rc] setpoweroffset_rtn12hp, level[%d]\n", level);
 
-	sprintf(tmp2, "0x%02X", txpower_list_rtn12hp[level].maxp2ga0);
+	if(model == MODEL_RTN12HP_B1)
+		p = &txpower_list_rtn12hp_b1[level];
+	else
+		p = &txpower_list_rtn12hp[level];
+
+	sprintf(tmp2, "0x%02X", p->maxp2ga0);
 	nvram_set(strcat_r(prefix2, "maxp2ga0", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%02X", txpower_list_rtn12hp[level].maxp2ga1);
+	sprintf(tmp2, "0x%02X", p->maxp2ga1);
 	nvram_set(strcat_r(prefix2, "maxp2ga1", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%01X", txpower_list_rtn12hp[level].cck2gpo);
+	sprintf(tmp2, "0x%01X", p->cck2gpo);
 	nvram_set(strcat_r(prefix2, "cck2gpo", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X%04X", txpower_list_rtn12hp[level].ofdm2gpo1,
-		txpower_list_rtn12hp[level].ofdm2gpo0);
+	sprintf(tmp2, "0x%04X%04X", p->ofdm2gpo1,p->ofdm2gpo0);
 	nvram_set(strcat_r(prefix2, "ofdm2gpo", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo0);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo0);
 	nvram_set(strcat_r(prefix2, "mcs2gpo0", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo1);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo1);
 	nvram_set(strcat_r(prefix2, "mcs2gpo1", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo2);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo2);
 	nvram_set(strcat_r(prefix2, "mcs2gpo2", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo3);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo3);
 	nvram_set(strcat_r(prefix2, "mcs2gpo3", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo4);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo4);
 	nvram_set(strcat_r(prefix2, "mcs2gpo4", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo5);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo5);
 	nvram_set(strcat_r(prefix2, "mcs2gpo5", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo6);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo6);
 	nvram_set(strcat_r(prefix2, "mcs2gpo6", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%04X", txpower_list_rtn12hp[level].mcs2gpo7);
+	sprintf(tmp2, "0x%04X", p->mcs2gpo7);
 	nvram_set(strcat_r(prefix2, "mcs2gpo7", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%01X", txpower_list_rtn12hp[level].cdd2gpo);
+	sprintf(tmp2, "0x%01X", p->cdd2gpo);
 	nvram_set(strcat_r(prefix2, "cddpo", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%01X", txpower_list_rtn12hp[level].stbc2gpo);
+	sprintf(tmp2, "0x%01X", p->stbc2gpo);
 	nvram_set(strcat_r(prefix2, "stbcpo", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%01X", txpower_list_rtn12hp[level].bw402gpo);
+	sprintf(tmp2, "0x%01X", p->bw402gpo);
 	nvram_set(strcat_r(prefix2, "bw40po", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
-	sprintf(tmp2, "0x%01X", txpower_list_rtn12hp[level].bwdup2gpo);
+	sprintf(tmp2, "0x%01X", p->bwdup2gpo);
 	nvram_set(strcat_r(prefix2, "bwduppo", tmp), tmp2);
+	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
+
+	return 1;
+}
+
+int setpoweroffset_rtac87u(uint8 level, char *prefix2)
+{
+	char tmp[100], tmp2[100];
+	const struct txpower_ac_s *p;
+
+	dbG("[%d][%s]\n", level, prefix2);
+
+	p = &txpower_list_rtac87u[level];
+
+	sprintf(tmp2, "0x%02X", p->maxp2ga0);
+	nvram_set(strcat_r(prefix2, "maxp2ga0", tmp), tmp2);
+	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
+
+	sprintf(tmp2, "0x%02X", p->maxp2ga1);
+	nvram_set(strcat_r(prefix2, "maxp2ga1", tmp), tmp2);
+	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
+
+	sprintf(tmp2, "0x%02X", p->maxp2ga2);
+	nvram_set(strcat_r(prefix2, "maxp2ga2", tmp), tmp2);
 	dbG("[rc] [%s]=[%s]\n", tmp,tmp2);
 
 	return 1;
@@ -153,13 +216,6 @@ int setpoweroffset_rtn12hp(uint8 level, char *prefix2)
 
 void init_devs(void)
 {
-#if 0
-#ifdef CONFIG_BCMWL5
-	// ctf must be loaded prior to any other modules
-	if (nvram_get_int("ctf_disable") == 0)
-		modprobe("ctf");
-#endif
-#endif
 }
 
 
@@ -176,9 +232,13 @@ void generate_switch_para(void)
 		if (cfg < SWCFG_DEFAULT || cfg > SWCFG_STB34)
 			cfg = SWCFG_DEFAULT;
 	}
+        else if (nvram_get_int("sw_mode") == SW_MODE_REPEATER ||
+                ((nvram_get_int("sw_mode") == SW_MODE_AP) && (nvram_get_int("wlc_psta") == 1)))
+		cfg = SWCFG_PSTA;
 	else if (nvram_get_int("sw_mode") == SW_MODE_AP)
 		cfg = SWCFG_BRIDGE;
-	else	cfg = SWCFG_DEFAULT;	// keep wan port, but get ip from bridge
+	else	
+		cfg = SWCFG_DEFAULT;	// keep wan port, but get ip from bridge
 
 	switch(model) {
 		/* BCM5325 series */
@@ -187,6 +247,7 @@ void generate_switch_para(void)
 			const int ports[SWPORT_COUNT] = { 4, 3, 2, 1, 0, 5 };
 			/* TODO: switch_wantag? */
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 			//if (!is_routing_enabled())
 			//	nvram_set("lan_ifnames", "eth0 eth1");	// override
 			switch_gen_config(lan, ports, SWCFG_BRIDGE, 0, "*");
@@ -219,18 +280,19 @@ void generate_switch_para(void)
 			nvram_unset("vlan2ports");
 			nvram_unset("vlan2hwname");
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
+			if (get_wans_dualwan()&WANSCAP_WAN) {
 				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
 				nvram_set("vlan1ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
 					nvram_set("vlan1hwname", "et0");
 			}
 
 			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
+			if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
 				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
+				if (wancfg != SWCFG_DEFAULT) {
 					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
 					nvram_set("vlan0ports", lan);
 					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
@@ -245,7 +307,7 @@ void generate_switch_para(void)
 
 				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
 				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
+				if (get_wans_dualwan()&WANSCAP_WAN)
 					nvram_set("vlan2hwname", "et0");
 			}
 			else{
@@ -258,18 +320,18 @@ void generate_switch_para(void)
 			int unit;
 			char prefix[8], nvram_ports[16];
 
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
+			for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
 				memset(prefix, 0, 8);
 				sprintf(prefix, "%d", unit);
 
 				memset(nvram_ports, 0, 16);
 				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
 
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
+				if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
 					switch_gen_config(wan, ports, wancfg, 1, NULL);
 					nvram_set(nvram_ports, wan);
 				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
+				else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
 					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
 					nvram_set(nvram_ports, wan);
 				}
@@ -309,70 +371,84 @@ void generate_switch_para(void)
 			const int ports[SWPORT_COUNT] = { 4, 3, 2, 1, 0, 5 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
-			int wan1cfg = nvram_get_int("wans_lanport");
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
 
-			nvram_unset("vlan1ports");
-			nvram_unset("vlan1hwname");
-			nvram_unset("vlan2ports");
-			nvram_unset("vlan2hwname");
+				nvram_unset("vlan1ports");
+				nvram_unset("vlan1hwname");
+				nvram_unset("vlan2ports");
+				nvram_unset("vlan2hwname");
 
-			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
-				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
-				nvram_set("vlan1ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
-					nvram_set("vlan1hwname", "et0");
-			}
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN) {
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
+					nvram_set("vlan1ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan1hwname", "et0");
+				}
 
-			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
-				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
-					nvram_set("vlan0ports", lan);
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
-					nvram_set("lanports", lan);
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan0ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan0ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+
+					switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_WAN)
+						nvram_set("vlan2hwname", "et0");
 				}
 				else{
-					switch_gen_config(lan, ports, wan1cfg, 0, "*");
+					switch_gen_config(lan, ports, cfg, 0, "*");
 					nvram_set("vlan0ports", lan);
-					switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
 					nvram_set("lanports", lan);
 				}
 
-				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
-				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
-					nvram_set("vlan2hwname", "et0");
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
 			}
 			else{
 				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
 				nvram_set("vlan0ports", lan);
+				nvram_set("vlan1ports", wan);
 				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-			}
-
-			int unit;
-			char prefix[8], nvram_ports[16];
-
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				memset(prefix, 0, 8);
-				sprintf(prefix, "%d", unit);
-
-				memset(nvram_ports, 0, 16);
-				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
-
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
-					switch_gen_config(wan, ports, wancfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
-					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else
-					nvram_unset(nvram_ports);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
 			}
 #else
 			switch_gen_config(lan, ports, cfg, 0, "*");
@@ -396,70 +472,84 @@ void generate_switch_para(void)
 			const int ports[SWPORT_COUNT] = { 0, 4, 3, 2, 1, 5 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
-			int wan1cfg = nvram_get_int("wans_lanport");
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
 
-			nvram_unset("vlan1ports");
-			nvram_unset("vlan1hwname");
-			nvram_unset("vlan2ports");
-			nvram_unset("vlan2hwname");
+				nvram_unset("vlan1ports");
+				nvram_unset("vlan1hwname");
+				nvram_unset("vlan2ports");
+				nvram_unset("vlan2hwname");
 
-			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
-				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
-				nvram_set("vlan1ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
-					nvram_set("vlan1hwname", "et0");
-			}
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN) {
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
+					nvram_set("vlan1ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan1hwname", "et0");
+				}
 
-			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
-				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
-					nvram_set("vlan0ports", lan);
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
-					nvram_set("lanports", lan);
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan0ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan0ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+
+					switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_WAN)
+						nvram_set("vlan2hwname", "et0");
 				}
 				else{
-					switch_gen_config(lan, ports, wan1cfg, 0, "*");
+					switch_gen_config(lan, ports, cfg, 0, "*");
 					nvram_set("vlan0ports", lan);
-					switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
 					nvram_set("lanports", lan);
 				}
 
-				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
-				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
-					nvram_set("vlan2hwname", "et0");
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
 			}
 			else{
 				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
 				nvram_set("vlan0ports", lan);
+				nvram_set("vlan1ports", wan);
 				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-			}
-
-			int unit;
-			char prefix[8], nvram_ports[16];
-
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				memset(prefix, 0, 8);
-				sprintf(prefix, "%d", unit);
-
-				memset(nvram_ports, 0, 16);
-				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
-
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
-					switch_gen_config(wan, ports, wancfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
-					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else
-					nvram_unset(nvram_ports);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
 			}
 #else
 			switch_gen_config(lan, ports, cfg, 0, "*");
@@ -480,6 +570,7 @@ void generate_switch_para(void)
 			const int ports[SWPORT_COUNT] = { 4, 3, 2, 1, 0, 8 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
 			int wan1cfg = nvram_get_int("wans_lanport");
 
@@ -489,17 +580,17 @@ void generate_switch_para(void)
 			nvram_unset("vlan3hwname");
 
 			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
+			if (get_wans_dualwan()&WANSCAP_WAN) {
 				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
 				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
 					nvram_set("vlan2hwname", "et0");
 			}
 
 			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
+			if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
 				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
+				if (wancfg != SWCFG_DEFAULT) {
 					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
 					nvram_set("vlan1ports", lan);
 					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
@@ -514,7 +605,7 @@ void generate_switch_para(void)
 
 				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
 				nvram_set("vlan3ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
+				if (get_wans_dualwan()&WANSCAP_WAN)
 					nvram_set("vlan3hwname", "et0");
 			}
 			else{
@@ -527,18 +618,18 @@ void generate_switch_para(void)
 			int unit;
 			char prefix[8], nvram_ports[16];
 
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
+			for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
 				memset(prefix, 0, 8);
 				sprintf(prefix, "%d", unit);
 
 				memset(nvram_ports, 0, 16);
 				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
 
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
+				if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
 					switch_gen_config(wan, ports, wancfg, 1, NULL);
 					nvram_set(nvram_ports, wan);
 				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
+				else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
 					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
 					nvram_set(nvram_ports, wan);
 				}
@@ -563,70 +654,84 @@ void generate_switch_para(void)
 			const int ports[SWPORT_COUNT] = { 0, 4, 3, 2, 1, 8 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
-			int wan1cfg = nvram_get_int("wans_lanport");
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
 
-			nvram_unset("vlan2ports");
-			nvram_unset("vlan2hwname");
-			nvram_unset("vlan3ports");
-			nvram_unset("vlan3hwname");
+				nvram_unset("vlan2ports");
+				nvram_unset("vlan2hwname");
+				nvram_unset("vlan3ports");
+				nvram_unset("vlan3hwname");
 
-			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
-				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
-				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
-					nvram_set("vlan2hwname", "et0");
-			}
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN) {
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan2hwname", "et0");
+				}
 
-			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
-				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
-					nvram_set("vlan1ports", lan);
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
-					nvram_set("lanports", lan);
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan1ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan1ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+
+					switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
+					nvram_set("vlan3ports", wan);
+					if (get_wans_dualwan()&WANSCAP_WAN)
+						nvram_set("vlan3hwname", "et0");
 				}
 				else{
-					switch_gen_config(lan, ports, wan1cfg, 0, "*");
+					switch_gen_config(lan, ports, cfg, 0, "*");
 					nvram_set("vlan1ports", lan);
-					switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
 					nvram_set("lanports", lan);
 				}
 
-				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
-				nvram_set("vlan3ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
-					nvram_set("vlan3hwname", "et0");
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
 			}
 			else{
 				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
 				nvram_set("vlan1ports", lan);
+				nvram_set("vlan2ports", wan);
 				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-			}
-
-			int unit;
-			char prefix[8], nvram_ports[16];
-
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				memset(prefix, 0, 8);
-				sprintf(prefix, "%d", unit);
-
-				memset(nvram_ports, 0, 16);
-				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
-
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
-					switch_gen_config(wan, ports, wancfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
-					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else
-					nvram_unset(nvram_ports);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
 			}
 #else
 			switch_gen_config(lan, ports, cfg, 0, "*");
@@ -642,74 +747,89 @@ void generate_switch_para(void)
 		}
 
 		case MODEL_RTAC68U:						/* 0  1  2  3  4 */
+		case MODEL_RTAC3200:
 		case MODEL_RTN18U:						/* 0  1  2  3  4 */
 		case MODEL_RTAC53U:
 		{				/* WAN L1 L2 L3 L4 CPU */	/*vision: WAN L1 L2 L3 L4 */
 			const int ports[SWPORT_COUNT] = { 0, 1, 2, 3, 4, 5 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
-			int wan1cfg = nvram_get_int("wans_lanport");
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
 
-			nvram_unset("vlan3ports");
-			nvram_unset("vlan3hwname");
+				nvram_unset("vlan3ports");
+				nvram_unset("vlan3hwname");
 
-			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
-				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
-				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
-					nvram_set("vlan2hwname", "et0");
-			}
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN) {
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan2hwname", "et0");
+				}
 
-			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
-				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
-					nvram_set("vlan1ports", lan);
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
-					nvram_set("lanports", lan);
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan1ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan1ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+
+					switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
+					nvram_set("vlan3ports", wan);
+					if (get_wans_dualwan()&WANSCAP_WAN)
+						nvram_set("vlan3hwname", "et0");
 				}
 				else{
-					switch_gen_config(lan, ports, wan1cfg, 0, "*");
+					switch_gen_config(lan, ports, cfg, 0, "*");
 					nvram_set("vlan1ports", lan);
-					switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
 					nvram_set("lanports", lan);
 				}
 
-				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
-				nvram_set("vlan3ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
-					nvram_set("vlan3hwname", "et0");
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
 			}
 			else{
 				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
 				nvram_set("vlan1ports", lan);
+				nvram_set("vlan2ports", wan);
 				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-			}
-
-			int unit;
-			char prefix[8], nvram_ports[16];
-
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				memset(prefix, 0, 8);
-				sprintf(prefix, "%d", unit);
-
-				memset(nvram_ports, 0, 16);
-				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
-
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
-					switch_gen_config(wan, ports, wancfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
-					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else
-					nvram_unset(nvram_ports);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
 			}
 #else
 			switch_gen_config(lan, ports, cfg, 0, "*");
@@ -724,73 +844,177 @@ void generate_switch_para(void)
 			break;
 		}
 
-		case MODEL_RTAC87U:						/* 0  1  2  3  4 */
-		{				/* WAN L1 L2 L3 L4 CPU */	/*vision: WAN L1 L2 L3 L4 */
-			const int ports[SWPORT_COUNT] = { 0, 1, 2, 3, 5, 7 };
+		case MODEL_DSLAC68U:
+		{
+			const int ports[SWPORT_COUNT] = { 0, 1, 2, 3, 4, 5 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
-			int wan1cfg = nvram_get_int("wans_lanport");
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
+
+				nvram_unset("vlan3ports");
+				nvram_unset("vlan3hwname");
+
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN || get_wans_dualwan()&WANSCAP_DSL) {	//tmp
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"t");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan2hwname", "et0");
+				}
+
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan1ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan1ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+				}
+				else{
+					switch_gen_config(lan, ports, cfg, 0, "*");
+					nvram_set("vlan1ports", lan);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
+					nvram_set("lanports", lan);
+				}
+
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
+			}
+			else{
+				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
+				nvram_set("vlan1ports", lan);
+				nvram_set("vlan2ports", wan);
+				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
+				nvram_set("lanports", lan);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
+			}
+#else
+			switch_gen_config(lan, ports, cfg, 0, "*");
+			switch_gen_config(wan, ports, wancfg, 1, "t");
+			nvram_set("vlan1ports", lan);
+			nvram_set("vlan2ports", wan);
+			switch_gen_config(lan, ports, cfg, 0, NULL);
+			switch_gen_config(wan, ports, wancfg, 1, NULL);
+			nvram_set("lanports", lan);
+			nvram_set("wanports", wan);
+#endif
+			break;
+		}
+
+		case MODEL_RTAC87U:						/* 0  1  2  3  4 */
+		{				/* WAN L1 L2 L3 L4 CPU */	/*vision: WAN L1 L2 L3 L4 */
+			const int ports[SWPORT_COUNT] = { 0, 5, 3, 2, 1, 7 };
+			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
 			nvram_unset("vlan3ports");
 			nvram_unset("vlan3hwname");
 
-			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
-				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
-				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
-					nvram_set("vlan2hwname", "et1");
-			}
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
+#ifdef RTCONFIG_DUALWAN
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
 
-			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
-				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
-					nvram_set("vlan1ports", lan);
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
-					nvram_set("lanports", lan);
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN) {
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan2hwname", "et1");
+				}
+
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan1ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan1ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+
+					switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
+					nvram_set("vlan3ports", wan);
+					if (get_wans_dualwan()&WANSCAP_WAN)
+						nvram_set("vlan3hwname", "et1");
 				}
 				else{
-					switch_gen_config(lan, ports, wan1cfg, 0, "*");
+					switch_gen_config(lan, ports, cfg, 0, "*");
 					nvram_set("vlan1ports", lan);
-					switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
 					nvram_set("lanports", lan);
 				}
 
-				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
-				nvram_set("vlan3ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
-					nvram_set("vlan3hwname", "et1");
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
 			}
 			else{
 				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
 				nvram_set("vlan1ports", lan);
+				nvram_set("vlan2ports", wan);
 				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-			}
-
-			int unit;
-			char prefix[8], nvram_ports[16];
-
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				memset(prefix, 0, 8);
-				sprintf(prefix, "%d", unit);
-
-				memset(nvram_ports, 0, 16);
-				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
-
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
-					switch_gen_config(wan, ports, wancfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
-					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else
-					nvram_unset(nvram_ports);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
 			}
 #else
 			switch_gen_config(lan, ports, cfg, 0, "*");
@@ -811,68 +1035,82 @@ void generate_switch_para(void)
 			const int ports[SWPORT_COUNT] = { 4, 0, 1, 2, 3, 5 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
-			int wan1cfg = nvram_get_int("wans_lanport");
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
 
-			nvram_unset("vlan3ports");
-			nvram_unset("vlan3hwname");
+				nvram_unset("vlan3ports");
+				nvram_unset("vlan3hwname");
 
-			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
-				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
-				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
-					nvram_set("vlan2hwname", "et0");
-			}
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN) {
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan2hwname", "et0");
+				}
 
-			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
-				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
-					nvram_set("vlan1ports", lan);
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
-					nvram_set("lanports", lan);
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan1ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan1ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+
+					switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
+					nvram_set("vlan3ports", wan);
+					if (get_wans_dualwan()&WANSCAP_WAN)
+						nvram_set("vlan3hwname", "et0");
 				}
 				else{
-					switch_gen_config(lan, ports, wan1cfg, 0, "*");
+					switch_gen_config(lan, ports, cfg, 0, "*");
 					nvram_set("vlan1ports", lan);
-					switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
 					nvram_set("lanports", lan);
 				}
 
-				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
-				nvram_set("vlan3ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
-					nvram_set("vlan3hwname", "et0");
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
 			}
 			else{
 				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
 				nvram_set("vlan1ports", lan);
+				nvram_set("vlan2ports", wan);
 				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-			}
-
-			int unit;
-			char prefix[8], nvram_ports[16];
-
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				memset(prefix, 0, 8);
-				sprintf(prefix, "%d", unit);
-
-				memset(nvram_ports, 0, 16);
-				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
-
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
-					switch_gen_config(wan, ports, wancfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
-					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else
-					nvram_unset(nvram_ports);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
 			}
 #else
 			switch_gen_config(lan, ports, cfg, 0, "*");
@@ -893,70 +1131,84 @@ void generate_switch_para(void)
 			const int ports[SWPORT_COUNT] = { 0, 1, 2, 3, 4, 8 };
 			int wancfg = (!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) ? SWCFG_DEFAULT : cfg;
 
+			wan_phyid = ports[0];	// record the phy num of the wan port on the case
 #ifdef RTCONFIG_DUALWAN
-			int wan1cfg = nvram_get_int("wans_lanport");
+			if(cfg != SWCFG_BRIDGE){
+				int wan1cfg = nvram_get_int("wans_lanport");
 
-			nvram_unset("vlan2ports");
-			nvram_unset("vlan2hwname");
-			nvram_unset("vlan3ports");
-			nvram_unset("vlan3hwname");
+				nvram_unset("vlan2ports");
+				nvram_unset("vlan2hwname");
+				nvram_unset("vlan3ports");
+				nvram_unset("vlan3hwname");
 
-			// The first WAN port.
-			if(get_wans_dualwan()&WANSCAP_WAN){
-				switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
-				nvram_set("vlan2ports", wan);
-				if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
-					nvram_set("vlan2hwname", "et0");
-			}
+				// The first WAN port.
+				if (get_wans_dualwan()&WANSCAP_WAN) {
+					switch_gen_config(wan, ports, wancfg, 1, (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)?"":"u");
+					nvram_set("vlan2ports", wan);
+					if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4)
+						nvram_set("vlan2hwname", "et0");
+				}
 
-			// The second WAN port.
-			if(get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4){
-				wan1cfg += WAN1PORT1-1;
-				if(wancfg != SWCFG_DEFAULT){
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
-					nvram_set("vlan1ports", lan);
-					gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
-					nvram_set("lanports", lan);
+				// The second WAN port.
+				if (get_wans_dualwan()&WANSCAP_LAN && wan1cfg >= 1 && wan1cfg <= 4) {
+					wan1cfg += WAN1PORT1-1;
+					if (wancfg != SWCFG_DEFAULT) {
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, "*");
+						nvram_set("vlan1ports", lan);
+						gen_lan_ports(lan, ports, wancfg, wan1cfg, NULL);
+						nvram_set("lanports", lan);
+					}
+					else{
+						switch_gen_config(lan, ports, wan1cfg, 0, "*");
+						nvram_set("vlan1ports", lan);
+						switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+						nvram_set("lanports", lan);
+					}
+
+					switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
+					nvram_set("vlan3ports", wan);
+					if (get_wans_dualwan()&WANSCAP_WAN)
+						nvram_set("vlan3hwname", "et0");
 				}
 				else{
-					switch_gen_config(lan, ports, wan1cfg, 0, "*");
+					switch_gen_config(lan, ports, cfg, 0, "*");
 					nvram_set("vlan1ports", lan);
-					switch_gen_config(lan, ports, wan1cfg, 0, NULL);
+					switch_gen_config(lan, ports, cfg, 0, NULL);
 					nvram_set("lanports", lan);
 				}
 
-				switch_gen_config(wan, ports, wan1cfg, 1, (get_wans_dualwan()&WANSCAP_WAN)?"":"u");
-				nvram_set("vlan3ports", wan);
-				if(get_wans_dualwan()&WANSCAP_WAN)
-					nvram_set("vlan3hwname", "et0");
+				int unit;
+				char prefix[8], nvram_ports[16];
+
+				for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit) {
+					memset(prefix, 0, 8);
+					sprintf(prefix, "%d", unit);
+
+					memset(nvram_ports, 0, 16);
+					sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
+
+					if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN) {
+						switch_gen_config(wan, ports, wancfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else if (get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN) {
+						switch_gen_config(wan, ports, wan1cfg, 1, NULL);
+						nvram_set(nvram_ports, wan);
+					}
+					else
+						nvram_unset(nvram_ports);
+				}
 			}
 			else{
 				switch_gen_config(lan, ports, cfg, 0, "*");
+				switch_gen_config(wan, ports, wancfg, 1, "");
 				nvram_set("vlan1ports", lan);
+				nvram_set("vlan2ports", wan);
 				switch_gen_config(lan, ports, cfg, 0, NULL);
+				switch_gen_config(wan, ports, wancfg, 1, NULL);
 				nvram_set("lanports", lan);
-			}
-
-			int unit;
-			char prefix[8], nvram_ports[16];
-
-			for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
-				memset(prefix, 0, 8);
-				sprintf(prefix, "%d", unit);
-
-				memset(nvram_ports, 0, 16);
-				sprintf(nvram_ports, "wan%sports", (unit == WAN_UNIT_FIRST)?"":prefix);
-
-				if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_WAN){
-					switch_gen_config(wan, ports, wancfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else if(get_dualwan_by_unit(unit) == WANS_DUALWAN_IF_LAN){
-					switch_gen_config(wan, ports, wan1cfg, 1, NULL);
-					nvram_set(nvram_ports, wan);
-				}
-				else
-					nvram_unset(nvram_ports);
+				nvram_set("wanports", wan);
+				nvram_unset("wan1ports");
 			}
 #else
 			switch_gen_config(lan, ports, cfg, 0, "*");
@@ -1011,23 +1263,24 @@ void init_switch()
 	generate_switch_para();
 
 #ifdef CONFIG_BCMWL5
+//#ifdef RTAC3200
+//	nvram_set("ctf_disable_force", "1");
+//#endif
 	// ctf should be disabled when some functions are enabled
-	if(nvram_get_int("qos_enable") /*|| nvram_get_int("url_enable_x") || nvram_get_int("keyword_enable_x")*/ || nvram_get_int("ctf_disable_force")
-// #ifdef RTCONFIG_WIRELESSREPEATER
-// #ifndef RTCONFIG_PROXYSTA
+	if ((nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") == 0) || nvram_get_int("ctf_disable_force")
 	|| nvram_get_int("sw_mode") == SW_MODE_REPEATER
-// #endif
-// #endif
-#ifdef RTCONFIG_USB_MODEM
-	|| nvram_get_int("ctf_disable_modem")
-#endif
-#if 0
-	|| (get_ipv6_service() != IPV6_DISABLED)
-#endif
+//#ifdef RTCONFIG_USB_MODEM
+//	|| nvram_get_int("ctf_disable_modem")
+//#endif
 	) {
 		nvram_set("ctf_disable", "1");
 //		nvram_set("pktc_disable", "1");
 	}
+#ifdef RTCONFIG_BWDPI
+	else if (nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") == 1 && nvram_get_int("sw_mode") == SW_MODE_ROUTER) {
+		nvram_set("ctf_disable", "0");
+	}
+#endif
 	else {
 		nvram_set("ctf_disable", "0");
 //		nvram_set("pktc_disable", "0");
@@ -1035,12 +1288,16 @@ void init_switch()
 #ifdef RTCONFIG_BCMFA
 	fa_nvram_adjust();
 #endif
+#ifdef RTCONFIG_GMAC3
+	/* Ajuest GMAC3 NVRAM variables */
+	gmac3_nvram_adjust();
+#endif
 	// ctf must be loaded prior to any other modules
 	if (nvram_get_int("ctf_disable") == 0)
 		modprobe("ctf");
 
 /* Requires bridge netfilter, but slows down and breaks EMF/IGS IGMP IPTV Snooping
-	if(nvram_get_int("sw_mode") == SW_MODE_ROUTER && nvram_get_int("qos_enable")) {
+	if (nvram_get_int("sw_mode") == SW_MODE_ROUTER && nvram_get_int("qos_enable") == 1) {
 		// enable netfilter bridge only when phydev is used
 		f_write_string("/proc/sys/net/bridge/bridge-nf-call-iptables", "1", 0, 0);
 		f_write_string("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1", 0, 0);
@@ -1050,14 +1307,14 @@ void init_switch()
 #endif
 
 #ifdef RTCONFIG_SHP
-	if(nvram_get_int("qos_enable") || nvram_get_int("macfilter_enable_x") || nvram_get_int("lfp_disable_force")) {
+	if (nvram_get_int("qos_enable") == 1 || nvram_get_int("macfilter_enable_x") || nvram_get_int("lfp_disable_force")) {
 		nvram_set("lfp_disable", "1");
 	}
 	else {
 		nvram_set("lfp_disable", "0");
 	}
 
-	if(nvram_get_int("lfp_disable")==0) {
+	if (nvram_get_int("lfp_disable")==0) {
 		restart_lfp();
 	}
 #endif
@@ -1065,6 +1322,11 @@ void init_switch()
 	modprobe("bcm57xx");
 	enable_jumbo_frame();
 	ether_led();
+
+#ifdef RTCONFIG_DSL
+	init_switch_dsl();
+	config_switch_dsl();
+#endif
 }
 
 int
@@ -1155,6 +1417,8 @@ reset_mssid_hwaddr(int unit)
 				break;
 			case MODEL_RTN18U:
 			case MODEL_RTAC68U:
+			case MODEL_RTAC3200:
+			case MODEL_DSLAC68U:
 			case MODEL_RTAC87U:
 			case MODEL_RTAC56S:
 			case MODEL_RTAC56U:
@@ -1187,11 +1451,12 @@ reset_mssid_hwaddr(int unit)
 					mac_binary[4],
 					mac_binary[5]);
 			macvalue = strtoll(macbuf, (char **) NULL, 16);
-	
+
 			/* including primary ssid */
 			for (subunit = 1; subunit < max_mssid + 1 ; subunit++)
 			{
 				macvalue++;
+
 				macp = (unsigned char*) &macvalue;
 				memset(macaddr_str, 0, sizeof(macaddr_str));
 				sprintf(macaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", *(macp+5), *(macp+4), *(macp+3), *(macp+2), *(macp+1), *(macp+0));
@@ -1202,6 +1467,84 @@ reset_mssid_hwaddr(int unit)
 	}
 }
 
+#ifdef RTCONFIG_BCM7
+static int
+net_dev_exist(const char *ifname)
+{
+	DIR *dir_to_open = NULL;
+	char tmpstr[128];
+
+	if (ifname == NULL) return 0;
+
+	sprintf(tmpstr, "/sys/class/net/%s", ifname);
+	dir_to_open = opendir(tmpstr);
+	if (dir_to_open)
+	{
+		closedir(dir_to_open);
+		return 1;
+	}
+		return 0;
+}
+
+static int first_load = 1;
+
+void load_wl_war()
+{
+	first_load = 0;
+
+	eval("insmod", "wl");
+
+	while (!net_dev_exist("eth1"))
+		sleep(1);
+
+	ifconfig("eth1", IFUP, NULL, NULL);
+	ifconfig("eth2", IFUP, NULL, NULL);
+	ifconfig("eth3", IFUP, NULL, NULL);
+
+	eval("rmmod", "wl");
+}
+
+void load_wl()
+{
+	char module[80], *modules, *next;
+#ifdef RTCONFIG_DHDAP
+	modules = "dpsta dhd wl";
+#else
+	modules = "dpsta wl";
+#endif
+	int i = 0, maxwl_eth = 0, maxunit = -1;
+	int unit = -1;
+	char ifname[16] = {0};
+	char instance_base[128];
+#ifndef RTCONFIG_DPSTA
+	if (first_load) load_wl_war();
+#endif
+	foreach(module, modules, next) {
+		if ((strcmp(module, "dhd") == 0) || (strcmp(module, "wl") == 0)) {
+			/* Search for existing wl devices and the max unit number used */
+			for (i = 1; i <= DEV_NUMIFS; i++) {
+			snprintf(ifname, sizeof(ifname), "eth%d", i);
+				if (!wl_probe(ifname)) {
+					if (!wl_ioctl(ifname, WLC_GET_INSTANCE, &unit,
+					sizeof(unit))) {
+						maxwl_eth = i;
+						maxunit = (unit > maxunit) ? unit : maxunit;
+					}
+				}
+			}
+			snprintf(instance_base, sizeof(instance_base), "instance_base=%d", maxunit + 1);
+			eval("insmod", module, instance_base);
+		}
+		else {
+			eval("insmod", module);
+#ifdef RTCONFIG_DPSTA
+			if (first_load) load_wl_war();
+#endif
+		}
+	}
+}
+#endif
+
 void init_wl(void)
 {
 #ifdef RTCONFIG_EMF
@@ -1210,16 +1553,23 @@ void init_wl(void)
 #endif
 #ifdef RTCONFIG_BCMWL6
 	switch(get_model()) {
+		case MODEL_RTAC3200:
+		case MODEL_DSLAC68U:
 		case MODEL_RTAC68U:
 		case MODEL_RTAC66U:
 			set_bcm4360ac_vars();
 			break;
 	}
 #endif
+#ifdef RTCONFIG_BCM7
+	load_wl();
+#else
 	modprobe("wl");
-
+#endif
+#ifndef RTCONFIG_BCMARM
 #if defined(NAS_GTK_PER_STA) && defined(PROXYARP)
 	modprobe("proxyarp");
+#endif
 #endif
 
 #ifdef RTCONFIG_BRCM_USBAP
@@ -1296,16 +1646,25 @@ void init_wl(void)
 
 void fini_wl(void)
 {
+#ifndef RTCONFIG_BCMARM
 #if defined(NAS_GTK_PER_STA) && defined(PROXYARP)
 	modprobe_r("proxyarp");
 #endif
+#endif
 
 #ifndef RTCONFIG_BRCM_USBAP
-	if ((get_model() == MODEL_RTAC68U) ||
+	if ((get_model() == MODEL_RTAC3200) ||
+		(get_model() == MODEL_RTAC68U) ||
+		(get_model() == MODEL_DSLAC68U) ||
 		(get_model() == MODEL_RTAC87U) ||
 		(get_model() == MODEL_RTAC66U) ||
 		(get_model() == MODEL_RTN66U))
-	modprobe_r("wl");
+	eval("rmmod", "wl");
+#endif
+#ifdef RTCONFIG_BCM7
+#ifdef RTCONFIG_DHDAP
+	eval("rmmod", "dhd");
+#endif
 #endif
 }
 
@@ -1315,11 +1674,12 @@ void init_syspara(void)
 	int model;
 
 	nvram_set("firmver", rt_version);
+#ifndef RTCONFIG_TMOBILE
 	nvram_set("productid", rt_buildname);
-	nvram_set("buildno", rt_serialno);
-#ifdef RTCONFIG_BCMARM
-	nvram_set("extendno_org", nvram_safe_get("extendno"));
+#else
+	nvram_set("productid", nvram_safe_get("odmpid"));
 #endif
+	nvram_set("buildno", rt_serialno);
 	nvram_set("extendno", rt_extendno);
 	nvram_set("buildinfo", rt_buildinfo);
 	nvram_set("swpjverno", rt_swpjverno);
@@ -1417,6 +1777,7 @@ void init_syspara(void)
 			nvram_set("LANMACADDR", nvram_safe_get("et1macaddr"));
 			break;
 
+		case MODEL_DSLAC68U:
 		case MODEL_RTAC68U:
 		case MODEL_RTAC56S:
 		case MODEL_RTAC56U:
@@ -1425,6 +1786,16 @@ void init_syspara(void)
 			if (!nvram_get("1:macaddr"))	//eth2(5G)
 				nvram_set("1:macaddr", "00:22:15:A5:03:04");
 			nvram_set("0:macaddr", nvram_safe_get("et0macaddr"));
+			break;
+
+		case MODEL_RTAC3200:
+			if (!nvram_get("et0macaddr"))				// eth0 (ethernet)
+				nvram_set("et0macaddr", "00:22:15:A5:03:00");
+			nvram_set("1:macaddr", nvram_safe_get("et0macaddr"));	// eth2 (2.4GHz)
+			if (!nvram_get("0:macaddr"))				// eth1(5GHz)
+				nvram_set("0:macaddr", "00:22:15:A5:03:04");
+			if (!nvram_get("2:macaddr"))				// eth3(5GHz)
+				nvram_set("2:macaddr", "00:22:15:A5:03:08");
 			break;
 
 		case MODEL_RTAC53U:
@@ -1463,12 +1834,55 @@ void init_others(void)
 {
 	int model = get_model();
 
-	if (model == MODEL_RTAC56U || model == MODEL_RTAC56S || model == MODEL_RTAC68U || model == MODEL_RTAC87U || model == MODEL_RTN18U) {
+	if (model == MODEL_RTAC56U || model == MODEL_RTAC56S || model == MODEL_RTAC3200 || model == MODEL_RTAC68U || model == MODEL_RTAC87U || model == MODEL_RTN18U) {
 #ifdef SMP
 		int fd;
 
 		if ((fd = open("/proc/irq/163/smp_affinity", O_RDWR)) >= 0) {
 			close(fd);
+#ifdef RTCONFIG_GMAC3
+			if (nvram_match("gmac3_enable", "1")) {
+				char *fwd_cpumap;
+
+				/* Place network interface vlan1/eth0 on CPU hosting 5G upper */
+				fwd_cpumap = nvram_get("fwd_cpumap");
+
+				if (fwd_cpumap == NULL) {
+					/* BCM4709acdcrh: Network interface GMAC on Core#1
+					 * [5G+2G:163 on Core#0] and [5G:169 on Core#1].
+					 * Bind et2:vlan1:eth0:181 to Core#1
+					 */
+					system("echo 2 > /proc/irq/181/smp_affinity");
+
+				} else {
+
+					char cpumap[32], *next;
+
+					foreach(cpumap, fwd_cpumap, next) {
+						char mode, chan;
+						int band, irq, cpu;
+
+						/* Format: mode:chan:band#:irq#:cpu# */
+						if (sscanf(cpumap, "%c:%c:%d:%d:%d",
+							&mode, &chan, &band, &irq, &cpu) != 5) {
+							break;
+						}
+						if (cpu > 1) {
+							break;
+						}
+						/* Find the single 5G upper */
+						if ((chan == 'u') || (chan == 'U')) {
+							char command[128];
+							snprintf(command, sizeof(command),
+							"echo %d > /proc/irq/181/smp_affinity",
+							1 << cpu);
+							system(command);
+							break;
+						}
+					}
+				}
+			} else
+#endif
 #ifdef ASUS_TWEAK
 			if (nvram_match("enable_samba", "0")) {  // not set txworkq
 #else
@@ -1632,6 +2046,7 @@ int wltxpower_rtn12hp(int txpower,
 	int commit_needed = 0;
 	int level;
 	const struct txpower_s *p;
+	int model;
 
 #if 0	/* move to init.c */
 	if (nvram_match(strcat_r(prefix, "country_code", tmp), "US"))
@@ -1647,8 +2062,12 @@ int wltxpower_rtn12hp(int txpower,
 #if 1	/* TMP, RT-N12HP */
 	/* config power offset */
 	level = 0;
-	for (p = &txpower_list_rtn12hp[0]; p->min != 0; ++p) {
-		if (txpower >= p->min && txpower <= p->max){
+	model = get_model();
+	if(model == MODEL_RTN12HP_B1)	p = &txpower_list_rtn12hp_b1[0];
+	else				p = &txpower_list_rtn12hp[0];
+
+	for (p; p->min != 0; ++p) {
+		if (txpower >= p->min && txpower <= p->max) {
 			dbG("[rc] txpoewr between: min:[%d] to max:[%d]\n",
 									p->min, p->max);
 			/* prefix2 is sb_1 */
@@ -1666,6 +2085,43 @@ int wltxpower_rtn12hp(int txpower,
 
 	return commit_needed;
 }
+
+int wltxpower_rtac87u(int txpower, char *prefix2)
+{
+	int commit_needed = 0;
+	int level;
+	const struct txpower_ac_s *p;
+
+	dbG("[%d][%s]\n", txpower, prefix2);
+#if 1	/* TMP, RT-AC87U */
+	/* config power offset */
+	level = 0;
+
+	p = &txpower_list_rtac87u[0];
+	for (p; p->min != 0; ++p) {
+		if (txpower >= p->min && txpower <= p->max) {
+			dbG("txpoewr between: min:[%d] to max:[%d]\n",
+									p->min, p->max);
+			/* prefix2 is 0: */
+			setpoweroffset_rtac87u(level, prefix2);
+			break;
+		}
+		level++;
+	}
+
+	if ( p->min == 0 )
+		dbG("no correct power offset!\n");
+
+	commit_needed = 1;
+#endif
+
+	return commit_needed;
+}
+
+#define TXPWR_THRESHOLD_1	25
+#define TXPWR_THRESHOLD_2	50
+#define TXPWR_THRESHOLD_3	88
+#define TXPWR_THRESHOLD_4	100
 
 int set_wltxpower()
 {
@@ -1694,8 +2150,10 @@ int set_wltxpower()
 		&& (model != MODEL_APN12HP)
 		&& (model != MODEL_RTAC56S)
 		&& (model != MODEL_RTAC56U)
+		&& (model != MODEL_DSLAC68U)
 		&& (model != MODEL_RTAC87U)
-		&& (model != MODEL_RTAC68U))
+		&& (model != MODEL_RTAC68U)
+		&& (model != MODEL_RTAC3200))
 	{
 		dbG("\n\tDon't do this!\n\n");
 		return -1;
@@ -1744,7 +2202,7 @@ int set_wltxpower()
 			case MODEL_RTN10PV2:
 			case MODEL_RTAC53U:
 			{
-				if(unit == 0){	/* 2.4G */
+				if (unit == 0) {	/* 2.4G */
 					snprintf(prefix2, sizeof(prefix2), "sb/1/");
 				}else{	/* 5G */
 					snprintf(prefix2, sizeof(prefix2), "0:");
@@ -1758,8 +2216,10 @@ int set_wltxpower()
 				snprintf(prefix2, sizeof(prefix2), "pci/%d/1/", unit + 1);
 				break;
 			}
+			case MODEL_RTAC3200:
 			case MODEL_RTN18U:
 			case MODEL_RTAC68U:
+			case MODEL_DSLAC68U:
 			case MODEL_RTAC87U:
 			case MODEL_RTAC56S:
 			case MODEL_RTAC56U:
@@ -1777,64 +2237,15 @@ int set_wltxpower()
 			commit_needed++;
 		}
 
-		txpower = nvram_get_int(wl_nvname("TxPower", unit, 0));
+		txpower = nvram_get_int(wl_nvname("txpower", unit, 0));
 		dbG("unit: %d, txpower: %d\n", unit, txpower);
 
 		switch(model) {
 			case MODEL_RTAC66U:
-#ifdef RTCONFIG_ENGINEERING_MODE
-				{
-					if (nvram_match(strcat_r(prefix, "country_code", tmp), "US"))
-					{
-						nvram_set("regulation_domain_5G", "Q2");
-						nvram_set(strcat_r(prefix, "country_code", tmp), "Q2");
-						nvram_set(strcat_r(prefix2, "ccode", tmp2), "Q2");
-						nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-						nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-						commit_needed++;
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "Q2"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "12"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "EU"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "15"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "15");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "15");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "TW"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "4"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "4");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "4");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "CN"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "5"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "5");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "5");
-							commit_needed++;
-						}
-					}
-				}
-#endif
 				if (set_wltxpower_once) {
 					if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))		// 2.4G
 					{
-						if (txpower < 20)
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x34"))
 							{
@@ -1851,7 +2262,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x40"))
 							{
@@ -1868,7 +2279,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x4C"))
 							{
@@ -1885,7 +2296,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x58"))
 							{
@@ -1902,7 +2313,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x64"))
 							{
@@ -1919,27 +2330,10 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else
-						{
-							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x70"))
-							{
-								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),		"0x70");
-								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),		"0x70");
-								nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2),		"0x70");
-								nvram_set(strcat_r(prefix2, "cckbw202gpo", tmp2),	"0x5555");
-								nvram_set(strcat_r(prefix2, "cckbw20ul2gpo", tmp2),	"0x5555");
-								nvram_set(strcat_r(prefix2, "legofdmbw202gpo", tmp2),	"0x97555555");
-								nvram_set(strcat_r(prefix2, "legofdmbw20ul2gpo", tmp2),	"0x97555555");
-								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),	"0xDA755555");
-								nvram_set(strcat_r(prefix2, "mcsbw20ul2gpo", tmp2),	"0xDA755555");
-								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),	"0xFC965555");
-								commit_needed++;
-							}
-						}
 					}
 					else if (nvram_match(strcat_r(prefix, "nband", tmp), "1"))	// 5G
 					{
-						if (txpower < 20)
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "52,52,52,52"))
 							{
@@ -1958,7 +2352,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "64,64,64,64"))
 							{
@@ -1977,7 +2371,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "76,76,76,76"))
 							{
@@ -1996,7 +2390,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "88,88,88,88"))
 							{
@@ -2015,7 +2409,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "100,100,100,100"))
 							{
@@ -2031,25 +2425,6 @@ int set_wltxpower()
 								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0x99753333");
 								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x99975333");
 								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0x99975333");
-								commit_needed++;
-							}
-						}
-						else
-						{
-							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), ""))
-							{
-								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"104,104,104,104");
-								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"104,104,104,104");
-								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"104,104,104,104");
-								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xBB975311");
-								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xBB975311");
 								commit_needed++;
 							}
 						}
@@ -2092,100 +2467,14 @@ int set_wltxpower()
 				break;
 
 			case MODEL_RTN18U:
-				{
-					if (nvram_match(strcat_r(prefix, "country_code", tmp), "US"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "12"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "Q2"))
-					{
-						nvram_set(strcat_r(prefix, "country_code", tmp), "US");
-						nvram_set(strcat_r(prefix2, "ccode", tmp2), "US");
-						nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-						nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-						commit_needed++;
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "EU"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "31"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "31");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "31");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "TW"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "9"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "9");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "9");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "CN"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "11"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "11");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "11");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "JP"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "31"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "31");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "31");
-							commit_needed++;
-						}
-					}
-				}
 
 				break;
 
-			case MODEL_RTAC68U:
-			case MODEL_RTAC87U:
-#ifdef RTCONFIG_ENGINEERING_MODE
-				{
-					if (nvram_match(strcat_r(prefix, "country_code", tmp), "US"))
-					{
-						nvram_set(strcat_r(prefix, "country_code", tmp), "Q2");
-						nvram_set(strcat_r(prefix2, "ccode", tmp2), "Q2");
-						nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-						nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-						commit_needed++;
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "Q2"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "12"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "TW"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "4"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "4");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "4");
-							commit_needed++;
-						}
-					}
-				}
-#endif
+			case MODEL_DSLAC68U:
 				if (set_wltxpower_once) {
-					if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))	// 2.4G
+					if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))	// 2.4G, same with RT-AC68U
 					{
-						if (txpower < 20)
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "58"))
 							{
@@ -2205,7 +2494,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "70"))
 							{
@@ -2225,7 +2514,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "82"))
 							{
@@ -2245,7 +2534,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "94"))
 							{
@@ -2265,7 +2554,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "106"))
 							{
@@ -2285,18 +2574,219 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else
+					}
+					else if (nvram_match(strcat_r(prefix, "nband", tmp), "1"))	// 5G
+					{
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
-							if (!nvram_match(strcat_r(prefix2, "mcsbw202gpo", tmp2), "0x65320000"))
+							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "58,58,58,58"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"58,58,58,58");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"58,58,58,58");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"58,58,58,58");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_2)
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "70,70,70,70"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"70,70,70,70");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"70,70,70,70");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"70,70,70,70");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_3)
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "82,82,82,82"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"82,82,82,82");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"82,82,82,82");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"82,82,82,82");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_4)
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "94,94,94,94"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"94,94,94,94");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"94,94,94,94");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"94,94,94,94");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else	// txpower == 80 mw
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "106,106,106,106"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"106,106,106,106");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"106,106,106,106");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"106,106,106,106");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+					}
+				}
+				break;
+
+			case MODEL_RTAC68U:
+				if (set_wltxpower_once) {
+					if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))	// 2.4G
+					{
+						if (txpower < TXPWR_THRESHOLD_1)
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "58"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),			"58");
+								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),			"58");
+								nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2),			"58");
+								nvram_set(strcat_r(prefix2, "cckbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "cckbw20ul2gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),		"0x66653320");
+								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),		"0x66653320");
+								nvram_set(strcat_r(prefix2, "dot11agofdmhrbw202gpo", tmp2),	"0x6533");
+								nvram_set(strcat_r(prefix2, "ofdmlrbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40hrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40lrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduphrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduplrpo", tmp2),		"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_2)
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "70"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),			"70");
+								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),			"70");
+								nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2),			"70");
+								nvram_set(strcat_r(prefix2, "cckbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "cckbw20ul2gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "dot11agofdmhrbw202gpo", tmp2),	"0x6533");
+								nvram_set(strcat_r(prefix2, "ofdmlrbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40hrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40lrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduphrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduplrpo", tmp2),		"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_3)
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "82"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),			"82");
+								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),			"82");
+								nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2),			"82");
+								nvram_set(strcat_r(prefix2, "cckbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "cckbw20ul2gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "dot11agofdmhrbw202gpo", tmp2),	"0x6533");
+								nvram_set(strcat_r(prefix2, "ofdmlrbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40hrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40lrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduphrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduplrpo", tmp2),		"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_4)
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "94"))
+							{
+								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),			"94");
+								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),			"94");
+								nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2),			"94");
+								nvram_set(strcat_r(prefix2, "cckbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "cckbw20ul2gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "dot11agofdmhrbw202gpo", tmp2),	"0x6533");
+								nvram_set(strcat_r(prefix2, "ofdmlrbw202gpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40hrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "sb20in40lrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduphrpo", tmp2),		"0");
+								nvram_set(strcat_r(prefix2, "dot11agduplrpo", tmp2),		"0");
+								commit_needed++;
+							}
+						}
+						else	// txpower == 80 mw
+						{
+							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "106"))
 							{
 								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),			"106");
 								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),			"106");
 								nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2),			"106");
 								nvram_set(strcat_r(prefix2, "cckbw202gpo", tmp2),		"0");
 								nvram_set(strcat_r(prefix2, "cckbw20ul2gpo", tmp2),		"0");
-								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),		"0x65320000");
-								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),		"0x65320000");
-								nvram_set(strcat_r(prefix2, "dot11agofdmhrbw202gpo", tmp2),	"0x3200");
+								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),		"0x88653320");
+								nvram_set(strcat_r(prefix2, "dot11agofdmhrbw202gpo", tmp2),	"0x6533");
 								nvram_set(strcat_r(prefix2, "ofdmlrbw202gpo", tmp2),		"0");
 								nvram_set(strcat_r(prefix2, "sb20in40hrpo", tmp2),		"0");
 								nvram_set(strcat_r(prefix2, "sb20in40lrpo", tmp2),		"0");
@@ -2308,7 +2798,10 @@ int set_wltxpower()
 					}
 					else if (nvram_match(strcat_r(prefix, "nband", tmp), "1"))	// 5G
 					{
-						if (txpower < 20)
+						if (!(nvram_match(strcat_r(prefix, "country_code", tmp), "Q2") &&
+						     nvram_match(strcat_r(prefix, "country_rev", tmp), "40"))) {
+
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "58,58,58,58"))
 							{
@@ -2330,7 +2823,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "70,70,70,70"))
 							{
@@ -2352,7 +2845,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "82,82,82,82"))
 							{
@@ -2374,7 +2867,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "94,94,94,94"))
 							{
@@ -2396,7 +2889,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "106,106,106,106"))
 							{
@@ -2418,27 +2911,125 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else
+
+						} else {
+
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
-							if (!nvram_match(strcat_r(prefix2, "mcsbw205glpo", tmp2), "0x65320000"))
+							if (!(nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "58,58,58,58") &&
+							      nvram_match(strcat_r(prefix2, "mcsbw205glpo", tmp2), "0x33333311")))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"58,58,58,58");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"58,58,58,58");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"58,58,58,58");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0x33333311");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_2)
+						{
+							if (!(nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "70,70,70,70") &&
+							      nvram_match(strcat_r(prefix2, "mcsbw205glpo", tmp2), "0x99986422")))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"70,70,70,70");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"70,70,70,70");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"70,70,70,70");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0x99986422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_3)
+						{
+							if (!(nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "82,82,82,82") &&
+							      nvram_match(strcat_r(prefix2, "mcsbw205glpo", tmp2), "0xCAA86422")))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"82,82,82,82");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"82,82,82,82");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"82,82,82,82");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else if (txpower < TXPWR_THRESHOLD_4)
+						{
+							if (!(nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "94,94,94,94") &&
+							      nvram_match(strcat_r(prefix2, "mcsbw205glpo", tmp2), "0xCAA86422")))
+							{
+								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"94,94,94,94");
+								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"94,94,94,94");
+								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"94,94,94,94");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
+								commit_needed++;
+							}
+						}
+						else	// txpower == 80 mw
+						{
+							if (!(nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "106,106,106,106") &&
+							      nvram_match(strcat_r(prefix2, "mcsbw205glpo", tmp2), "0xCAA86422")))
 							{
 								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"106,106,106,106");
 								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"106,106,106,106");
 								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"106,106,106,106");
-								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0x65320000");
-								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0x65320000");
-								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0x65320000");
+								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xCAA86422");
 								nvram_set(strcat_r(prefix2, "mcsbw1605glpo", tmp2),	"0");
-								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0x65320000");
-								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0x65320000");
-								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0x65320000");
+								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xCAA86422");
 								nvram_set(strcat_r(prefix2, "mcsbw1605gmpo", tmp2),	"0");
-								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0x65320000");
-								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x65320000");
-								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0x65320000");
+								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xCAA86422");
+								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xCAA86422");
 								nvram_set(strcat_r(prefix2, "mcsbw1605ghpo", tmp2),	"0");
 								commit_needed++;
 							}
+						}
+
 						}
 					}
 				}
@@ -2446,58 +3037,10 @@ int set_wltxpower()
 
 			case MODEL_RTAC56S:
 			case MODEL_RTAC56U:
-#ifdef RTCONFIG_ENGINEERING_MODE
-				{
-					if (nvram_match(strcat_r(prefix, "country_code", tmp), "US"))
-					{
-						nvram_set(strcat_r(prefix, "country_code", tmp), "Q2");
-						nvram_set(strcat_r(prefix2, "ccode", tmp2), "Q2");
-						nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-						nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-						commit_needed++;
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "Q2"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "12"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "12");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "12");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "EU"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "15"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "15");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "15");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "TW"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "4"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "4");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "4");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "CN"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "5"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "5");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "5");
-							commit_needed++;
-						}
-					}
-				}
-#endif
 				if (set_wltxpower_once) {
 					if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))	// 2.4G
 					{
-						if (txpower < 20)
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x40"))
 							{
@@ -2516,7 +3059,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x48"))
 							{
@@ -2535,7 +3078,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x50"))
 							{
@@ -2554,7 +3097,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x58"))
 							{
@@ -2573,7 +3116,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x64"))
 							{
@@ -2592,29 +3135,10 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else
-						{
-							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x68"))
-							{
-								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),	"0x68");
-								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),	"0x68");
-								nvram_set(strcat_r(prefix2, "cck2gpo",  tmp2),	"0x1111");
-								nvram_set(strcat_r(prefix2, "ofdm2gpo", tmp2),	"0x54333333");
-								nvram_set(strcat_r(prefix2, "mcs2gpo0", tmp2),	"0x3333");
-								nvram_set(strcat_r(prefix2, "mcs2gpo1", tmp2),	"0x9753");
-								nvram_set(strcat_r(prefix2, "mcs2gpo2", tmp2),	"0x3333");
-								nvram_set(strcat_r(prefix2, "mcs2gpo3", tmp2),	"0x9753");
-								nvram_set(strcat_r(prefix2, "mcs2gpo4", tmp2),	"0x5555");
-								nvram_set(strcat_r(prefix2, "mcs2gpo5", tmp2),	"0xB755");
-								nvram_set(strcat_r(prefix2, "mcs2gpo6", tmp2),	"0x5555");
-								nvram_set(strcat_r(prefix2, "mcs2gpo7", tmp2),	"0xB755");
-								commit_needed++;
-							}
-						}
 					}
 					else if (nvram_match(strcat_r(prefix, "nband", tmp), "1"))	// 5G
 					{
-						if (txpower < 20)
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "68,68,68,68"))
 							{
@@ -2632,7 +3156,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "76,76,76,76"))
 							{
@@ -2650,7 +3174,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "84,84,84,84"))
 							{
@@ -2668,7 +3192,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "92,92,92,92"))
 							{
@@ -2686,7 +3210,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "100,100,100,100"))
 							{
@@ -2704,96 +3228,15 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else
-						{
-							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "104,104,104,104"))
-							{
-								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"104,104,104,104");
-								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"104,104,104,104");
-								nvram_set(strcat_r(prefix2, "mcsbw205glpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw405glpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw805glpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw805gmpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0xAA864433");
-								nvram_set(strcat_r(prefix2, "mcsbw805ghpo", tmp2),	"0xAA864433");
-								commit_needed++;
-							}
-						}
 					}
 				}
 				break;
 
 			case MODEL_RTN66U:
-#ifdef RTCONFIG_ENGINEERING_MODE
-				if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))	// 2.4G
-				{
-					if (nvram_match(strcat_r(prefix, "country_code", tmp), "US"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "2"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "2");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "2");
-							commit_needed++;
-						}
-						commit_needed++;
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "Q2"))
-					{
-						nvram_set("regulation_domain_5G", "US");
-						nvram_set(strcat_r(prefix, "country_code", tmp), "US");
-						nvram_set(strcat_r(prefix2, "ccode", tmp2), "US");
-						nvram_set(strcat_r(prefix, "country_rev", tmp), "2");
-						nvram_set(strcat_r(prefix2, "regrev", tmp2), "2");
-						commit_needed++;
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "EU"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "5"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "5");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "5");
-							commit_needed++;
-						}
-					}
-				}
-				else
-				{
-					if (nvram_match(strcat_r(prefix, "country_code", tmp), "US"))
-					{
-						nvram_set("regulation_domain_5G", "Q2");
-						nvram_set(strcat_r(prefix, "country_code", tmp), "Q2");
-						nvram_set(strcat_r(prefix2, "ccode", tmp2), "Q2");
-						nvram_set(strcat_r(prefix, "country_rev", tmp), "0");
-						nvram_set(strcat_r(prefix2, "regrev", tmp2), "0");
-						commit_needed++;
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "Q2"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "0"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "0");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "0");
-							commit_needed++;
-						}
-					}
-					else if (nvram_match(strcat_r(prefix, "country_code", tmp), "EU"))
-					{
-						if (!nvram_match(strcat_r(prefix2, "regrev", tmp2), "3"))
-						{
-							nvram_set(strcat_r(prefix, "country_rev", tmp), "3");
-							nvram_set(strcat_r(prefix2, "regrev", tmp2), "3");
-							commit_needed++;
-						}
-					}
-				}
-#endif
 				if (set_wltxpower_once || nvram_match("bl_version", "1.0.0.9")) {
 					if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))		// 2.4G
 					{
-						if (txpower < 20)
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x38"))
 							{
@@ -2812,7 +3255,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x40"))
 							{
@@ -2831,7 +3274,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x4C"))
 							{
@@ -2850,7 +3293,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x58"))
 							{
@@ -2869,7 +3312,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x64"))
 							{
@@ -2888,29 +3331,10 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else
-						{
-							if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), "0x70"))
-							{
-								nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2),		"0x70");
-								nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2),		"0x70");
-								nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2),		"0x70");
-								nvram_set(strcat_r(prefix2, "cckbw202gpo", tmp2),	"0x5555");
-								nvram_set(strcat_r(prefix2, "cckbw20ul2gpo", tmp2),	"0x5555");
-								nvram_set(strcat_r(prefix2, "legofdmbw202gpo", tmp2),	"0x97555555");
-								nvram_set(strcat_r(prefix2, "legofdmbw20ul2gpo", tmp2),	"0x97555555");
-								nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2),	"0xFC955555");
-								nvram_set(strcat_r(prefix2, "mcsbw20ul2gpo", tmp2),	"0xFC955555");
-								nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2),	"0xFFFF9999");
-								nvram_set(strcat_r(prefix2, "mcs32po", tmp2),		"0x9999");
-								nvram_set(strcat_r(prefix2, "legofdm40duppo", tmp2),	"0x4444");
-								commit_needed++;
-							}
-						}
 					}
 					else if (nvram_match(strcat_r(prefix, "nband", tmp), "1"))	// 5G
 					{
-						if (txpower < 20)
+						if (txpower < TXPWR_THRESHOLD_1)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "0x30"))
 							{
@@ -2935,7 +3359,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 40)
+						else if (txpower < TXPWR_THRESHOLD_2)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "0x3A"))
 							{
@@ -2960,7 +3384,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 70)
+						else if (txpower < TXPWR_THRESHOLD_3)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "0x46"))
 							{
@@ -2985,7 +3409,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower < 80)
+						else if (txpower < TXPWR_THRESHOLD_4)
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "0x52"))
 							{
@@ -3010,7 +3434,7 @@ int set_wltxpower()
 								commit_needed++;
 							}
 						}
-						else if (txpower == 80)
+						else	// txpower == 80 mw
 						{
 							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "0x5E"))
 							{
@@ -3032,31 +3456,6 @@ int set_wltxpower()
 								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x75311111");
 								nvram_set(strcat_r(prefix2, "mcs32po", tmp2),		"0x2222");
 								nvram_set(strcat_r(prefix2, "legofdm40duppo", tmp2),	"0x2222");
-								commit_needed++;
-							}
-						}
-						else
-						{
-							if (!nvram_match(strcat_r(prefix2, "maxp5ga0", tmp2), "0x6A"))
-							{
-								nvram_set(strcat_r(prefix2, "maxp5ga0", tmp2),		"0x6A");
-								nvram_set(strcat_r(prefix2, "maxp5ga1", tmp2),		"0x6A");
-								nvram_set(strcat_r(prefix2, "maxp5ga2", tmp2),		"0x6A");
-								nvram_set(strcat_r(prefix2, "legofdmbw205gmpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "legofdmbw20ul5gmpo", tmp2),"0x77777777");
-								nvram_set(strcat_r(prefix2, "mcsbw205gmpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "mcsbw20ul5gmpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "mcsbw405gmpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "maxp5gha0", tmp2),		"0x6A");
-								nvram_set(strcat_r(prefix2, "maxp5gha1", tmp2),		"0x6A");
-								nvram_set(strcat_r(prefix2, "maxp5gha2", tmp2),		"0x6A");
-								nvram_set(strcat_r(prefix2, "legofdmbw205ghpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "legofdmbw20ul5ghpo", tmp2),"0x77777777");
-								nvram_set(strcat_r(prefix2, "mcsbw205ghpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "mcsbw20ul5ghpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "mcsbw405ghpo", tmp2),	"0x77777777");
-								nvram_set(strcat_r(prefix2, "mcs32po", tmp2),		"0x7777");
-								nvram_set(strcat_r(prefix2, "legofdm40duppo", tmp2),	"0x0000");
 								commit_needed++;
 							}
 						}
@@ -3106,6 +3505,10 @@ int set_wltxpower()
 #endif
 				break;
 
+			case MODEL_RTAC87U:
+				commit_needed = wltxpower_rtac87u(txpower, prefix2);
+				break;
+
 			case MODEL_RTN12HP:
 			case MODEL_RTN12HP_B1:
 			case MODEL_APN12HP:
@@ -3137,8 +3540,8 @@ int is_ure(int unit)
 {
 	// forced to connect to which band
 	// is it suitable
-	if(nvram_get_int("sw_mode")==SW_MODE_REPEATER) {
-		if(nvram_get_int("wlc_band")==unit) return 1;
+	if (nvram_get_int("sw_mode")==SW_MODE_REPEATER) {
+		if (nvram_get_int("wlc_band")==unit) return 1;
 	}
 	return 0;
 }
@@ -3154,7 +3557,7 @@ int wl_max_no_vifs(int unit)
 	int max_no_vifs = 0;
 #ifdef RTCONFIG_QTN
 	if (unit == 1)
-                return 4;
+		return 4;
 #endif
 	sprintf(nv_interface, "wl%d_ifname", unit);
 	name = nvram_safe_get(nv_interface);
@@ -3182,7 +3585,7 @@ void generate_wl_para(int unit, int subunit)
 
 	char tmp[100], prefix[]="wlXXXXXXX_";
 	char tmp2[100], prefix2[]="wlXXXXXXX_";
-	char list[640];
+	char *list;
 	char *nv, *nvp, *b;
 #ifndef RTCONFIG_BCMWL6
 	char word[256], *next;
@@ -3210,7 +3613,7 @@ void generate_wl_para(int unit, int subunit)
 		/* See if other interface also has psta or psr enabled */
 		psta = is_psta(unit);
 		psr = is_psr(unit);
-		db_rpt = ((is_psta(1 - unit) || is_psr(1 - unit)) &&
+		db_rpt = ((psta_exist_except(unit) || psr_exist_except(unit)) &&
 			  (psta || psr));
 
 		/* Disable all VIFS wlX.2 onwards */
@@ -3302,7 +3705,7 @@ void generate_wl_para(int unit, int subunit)
 #ifdef RTCONFIG_WIRELESSREPEATER
 	// convert wlc_xxx to wlX_ according to wlc_band == unit
 	if (is_ure(unit)) {
-		if(subunit==-1) {
+		if (subunit==-1) {
 			nvram_set("ure_disable", "0");
 
 			nvram_set(strcat_r(prefix, "ssid", tmp), nvram_safe_get("wlc_ssid"));
@@ -3324,7 +3727,7 @@ void generate_wl_para(int unit, int subunit)
 			nvram_set(strcat_r(prefix, "bw", tmp), nvram_safe_get("wlc_nbw_cap"));
 #endif
 		}
-		else if(subunit==1) {
+		else if (subunit==1) {
 			nvram_set(strcat_r(prefix, "bss_enabled", tmp), "1");
 			//nvram_set(strcat_r(prefix, "hwaddr", tmp), nvram_safe_get("et0macaddr"));
 /*
@@ -3419,8 +3822,11 @@ void generate_wl_para(int unit, int subunit)
 		nvram_set(strcat_r(prefix, "preauth", tmp), "");
 
 	if (!nvram_match(strcat_r(prefix, "macmode", tmp), "disabled")) {
-		list[0] = 0;
+
 		nv = nvp = strdup(nvram_safe_get(strcat_r(prefix, "maclist_x", tmp)));
+		list = (char*) malloc(sizeof(char) * (strlen(nv)+1));
+		list[0] = 0;
+
 		if (nv) {
 			while ((b = strsep(&nvp, "<")) != NULL) {
 				if (strlen(b)==0) continue;
@@ -3432,6 +3838,7 @@ void generate_wl_para(int unit, int subunit)
 			free(nv);
 		}
 		nvram_set(strcat_r(prefix, "maclist", tmp), list);
+		free(list);
 	}
 	else
 		nvram_set(strcat_r(prefix, "maclist", tmp), "");
@@ -3464,7 +3871,7 @@ void generate_wl_para(int unit, int subunit)
 		else nvram_set(strcat_r(prefix, "mode", tmp), "ap");
 
 		// TODO use lazwds directly
-		//if(!nvram_match(strcat_r(prefix, "wdsmode_ex", tmp), "2"))
+		//if (!nvram_match(strcat_r(prefix, "wdsmode_ex", tmp), "2"))
 		//	nvram_set(strcat_r(prefix, "lazywds", tmp), "1");
 		//else nvram_set(strcat_r(prefix, "lazywds", tmp), "0");
 
@@ -3472,8 +3879,10 @@ void generate_wl_para(int unit, int subunit)
 		// handle wireless wds list
 		if (!nvram_match(strcat_r(prefix, "mode_x", tmp), "0")) {
 			if (nvram_match(strcat_r(prefix, "wdsapply_x", tmp), "1")) {
-				list[0] = 0;
 				nv = nvp = strdup(nvram_safe_get(strcat_r(prefix, "wdslist", tmp)));
+				list = (char*) malloc(sizeof(char) * (strlen(nv)+1));
+				list[0] = 0;
+
 				if (nv) {
 					while ((b = strsep(&nvp, "<")) != NULL) {
 						if (strlen(b)==0) continue;
@@ -3486,6 +3895,7 @@ void generate_wl_para(int unit, int subunit)
 				}
 				nvram_set(strcat_r(prefix, "wds", tmp), list);
 				nvram_set(strcat_r(prefix, "lazywds", tmp), "0");
+				free(list);
 			}
 			else {
 				nvram_set(strcat_r(prefix, "wds", tmp), "");
@@ -3542,13 +3952,15 @@ void generate_wl_para(int unit, int subunit)
 		}
 		nvram_set_int(strcat_r(prefix, "mrate", tmp), mcast_rate);
 
-		if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "0"))		// auto => b/g/n mixed or a/n mixed
+		if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "0"))		// auto => b/g/n mixed or a/n(/ac) mixed
 		{
 			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-1");	// auto rate
 			nvram_set(strcat_r(prefix, "nmode", tmp), "-1");
+#ifndef RTCONFIG_BCMWL6
 			nvram_set(strcat_r(prefix, "nreqd", tmp), "0");
-			if (!unit)
-			nvram_set(strcat_r(prefix, "gmode", tmp), "1");		// 1: 54g Auto, 4: 4g Performance, 5: 54g LRS, 0: 802.11b Only
+#endif
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "1");
+			nvram_set(strcat_r(prefix, "gmode", tmp), nvram_match(strcat_r(prefix, "nband", tmp2), "2") ? "1" : "-1");	// 1: 54g Auto, 4: 4g Performance, 5: 54g LRS, 0: 802.11b Only
 			nvram_set(strcat_r(prefix, "rate", tmp), "0");
 #ifdef RTCONFIG_BCMWL6
 			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "0");	// no requirements on joining devices
@@ -3558,12 +3970,73 @@ void generate_wl_para(int unit, int subunit)
 		{
 			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-1");	// auto rate
 			nvram_set(strcat_r(prefix, "nmode", tmp), "-1");
+#ifndef RTCONFIG_BCMWL6
 			nvram_set(strcat_r(prefix, "nreqd", tmp), "1");
-			if (!unit)
-			nvram_set(strcat_r(prefix, "gmode", tmp), "1");
+#endif
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "0");
+			nvram_set(strcat_r(prefix, "gmode", tmp), nvram_match(strcat_r(prefix, "nband", tmp2), "2") ? "1" : "-1");
 			nvram_set(strcat_r(prefix, "rate", tmp), "0");
 #ifdef RTCONFIG_BCMWL6
 			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "2");	// devices must advertise HT (11n) capabilities to be allowed to associate
+#endif
+		}
+		else if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "4"))	// g/n mixed or a/n mixed
+		{
+			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-1");	// auto rate
+			nvram_set(strcat_r(prefix, "nmode", tmp), "-1");
+#ifndef RTCONFIG_BCMWL6
+			nvram_set(strcat_r(prefix, "nreqd", tmp), "0");
+#endif
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "0");
+			nvram_set(strcat_r(prefix, "gmode", tmp), nvram_match(strcat_r(prefix, "nband", tmp2), "2") ? "1" : "-1");
+			nvram_set(strcat_r(prefix, "rate", tmp), "0");
+#ifdef RTCONFIG_BCMWL6
+			if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))
+			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "1");	// devices must advertise ERP (11g) capabilities to be allowed to associate
+			else
+			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "0");   // no requirements on joining devices
+#endif
+		}
+		else if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "5"))	// g only
+		{
+			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-2");	// legacy rate
+			nvram_set(strcat_r(prefix, "nmode", tmp), "0");
+#ifndef RTCONFIG_BCMWL6
+			nvram_set(strcat_r(prefix, "nreqd", tmp), "0");
+#endif
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "0");
+			nvram_set(strcat_r(prefix, "gmode", tmp), "2");
+			nvram_set(strcat_r(prefix, "rate", tmp), "0");
+#ifdef RTCONFIG_BCMWL6
+			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "1");	// devices must advertise ERP (11g) capabilities to be allowed to associate
+#endif
+		}
+		else if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "6"))	// b only
+		{
+			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-2");	// legacy rate
+			nvram_set(strcat_r(prefix, "nmode", tmp), "0");
+#ifndef RTCONFIG_BCMWL6
+			nvram_set(strcat_r(prefix, "nreqd", tmp), "0");
+#endif
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "0");
+			nvram_set(strcat_r(prefix, "gmode", tmp), "0");
+			nvram_set(strcat_r(prefix, "rate", tmp), "0");
+#ifdef RTCONFIG_BCMWL6
+			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "0");	// no requirements on joining devices
+#endif
+		}
+		else if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "7"))	// a only
+		{
+			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-2");	// legacy rate
+			nvram_set(strcat_r(prefix, "nmode", tmp), "0");
+#ifndef RTCONFIG_BCMWL6
+			nvram_set(strcat_r(prefix, "nreqd", tmp), "0");
+#endif
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "0");
+			nvram_set(strcat_r(prefix, "gmode", tmp), "-1");
+			nvram_set(strcat_r(prefix, "rate", tmp), "0");
+#ifdef RTCONFIG_BCMWL6
+			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "0");   // no requirements on joining devices
 #endif
 		}
 #ifdef RTCONFIG_BCMWL6
@@ -3574,46 +4047,70 @@ void generate_wl_para(int unit, int subunit)
 		{
 			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-2");	// legacy rate
 			nvram_set(strcat_r(prefix, "nmode", tmp), "0");
+#ifndef RTCONFIG_BCMWL6
 			nvram_set(strcat_r(prefix, "nreqd", tmp), "0");
-			if (!unit)
+#endif
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "0");
 			nvram_set(strcat_r(prefix, "gmode", tmp), "1");
-			nvram_set(strcat_r(prefix, "bw", tmp), "1");		// reset to default setting
+			nvram_set(strcat_r(prefix, "rate", tmp), "0");
 #ifdef RTCONFIG_BCMWL6
 			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "0");	// no requirements on joining devices
 #endif
 		}
 #ifdef RTCONFIG_BCMWL6
-		else if (unit)							// ac only
+		else if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "3") && 	// ac only
+			 nvram_match(strcat_r(prefix, "nband", tmp), "1"))
 		{
 			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-1");	// auto rate
 			nvram_set(strcat_r(prefix, "nmode", tmp), "-1");
-			nvram_set(strcat_r(prefix, "nreqd", tmp), "1");
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "1");
+			nvram_set(strcat_r(prefix, "gmode", tmp), "-1");
 			nvram_set(strcat_r(prefix, "rate", tmp), "0");
 			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "3");	// devices must advertise VHT (11ac) capabilities to be allowed to associate
+		}
+		else if (nvram_match(strcat_r(prefix, "nmode_x", tmp), "8"))	// n/ac mixed
+		{
+			nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-1");	// auto rate
+			nvram_set(strcat_r(prefix, "nmode", tmp), "-1");
+			nvram_set(strcat_r(prefix, "vreqd", tmp), "1");
+			nvram_set(strcat_r(prefix, "gmode", tmp), "-1");
+			nvram_set(strcat_r(prefix, "rate", tmp), "0");
+			nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "2");	// devices must advertise HT (11n) capabilities to be allowed to associate
 		}
 #endif
 
 #ifdef RTCONFIG_BCMWL6
-		if (nvram_match(strcat_r(prefix, "bw", tmp), "0"))		// Auto
+		if (nvram_match(strcat_r(prefix, "bw", tmp), "0"))			// Auto
 		{
-			if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))	// 2.4G
-				nvram_set(strcat_r(prefix, "bw_cap", tmp), "3");// 40M
+			if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))		// 2.4G
+			{
+				if (nvram_match(strcat_r(prefix, "nmode", tmp), "-1"))
+					nvram_set(strcat_r(prefix, "bw_cap", tmp), "3");// 40M
+				else
+					nvram_set(strcat_r(prefix, "bw_cap", tmp), "1");// 20M
+			}
 			else
 			{
-				if (get_model() == MODEL_RTAC66U || 
-					get_model() == MODEL_RTAC53U || 
-					get_model() == MODEL_RTAC56U || 
-					get_model() == MODEL_RTAC56S || 
-					get_model() == MODEL_RTAC68U || 
-					get_model() == MODEL_RTAC87U)
-				nvram_set(strcat_r(prefix, "bw_cap", tmp), "7");// 80M
+				if (   (get_model() == MODEL_RTAC66U ||
+					get_model() == MODEL_RTAC53U ||
+					get_model() == MODEL_RTAC56U ||
+					get_model() == MODEL_RTAC56S ||
+					get_model() == MODEL_RTAC3200 ||
+					get_model() == MODEL_RTAC68U ||
+					get_model() == MODEL_DSLAC68U ||
+					get_model() == MODEL_RTAC87U) &&
+					nvram_match(strcat_r(prefix, "vreqd", tmp), "1"))
+					nvram_set(strcat_r(prefix, "bw_cap", tmp), "7");// 80M
+				else if (nvram_match(strcat_r(prefix, "nmode", tmp), "-1"))
+					nvram_set(strcat_r(prefix, "bw_cap", tmp), "3");// 40M
 				else
-				nvram_set(strcat_r(prefix, "bw_cap", tmp), "3");
+					nvram_set(strcat_r(prefix, "bw_cap", tmp), "1");// 20M
 			}
 
 			nvram_set(strcat_r(prefix, "obss_coex", tmp), "1");
 		}
-		else if (nvram_match(strcat_r(prefix, "bw", tmp), "1"))		// 20M
+		else if (nvram_match(strcat_r(prefix, "bw", tmp), "1") ||	// 20M
+			 nvram_match(strcat_r(prefix, "nmcsidx", tmp), "-2"))
 		{
 			nvram_set(strcat_r(prefix, "bw_cap", tmp), "1");
 			nvram_set(strcat_r(prefix, "obss_coex", tmp), "1");
@@ -3621,12 +4118,10 @@ void generate_wl_para(int unit, int subunit)
 		else if (nvram_match(strcat_r(prefix, "bw", tmp), "2"))		// 40M
 		{
 			nvram_set(strcat_r(prefix, "bw_cap", tmp), "3");
-#ifdef RTCONFIG_BCMWL6
 #ifdef RTCONFIG_PROXYSTA
 			if (is_psta(unit) || is_psr(unit))
 				nvram_set(strcat_r(prefix, "obss_coex", tmp), "1");
 			else
-#endif
 #endif
 			nvram_set(strcat_r(prefix, "obss_coex", tmp), "0");
 		}
@@ -3636,16 +4131,15 @@ void generate_wl_para(int unit, int subunit)
 				nvram_set(strcat_r(prefix, "bw_cap", tmp), "3");
 			else
 				nvram_set(strcat_r(prefix, "bw_cap", tmp), "7");
-#ifdef RTCONFIG_BCMWL6
 #ifdef RTCONFIG_PROXYSTA
 			if (is_psta(unit) || is_psr(unit))
 				nvram_set(strcat_r(prefix, "obss_coex", tmp), "1");
 			else
 #endif
-#endif
 			nvram_set(strcat_r(prefix, "obss_coex", tmp), "0");
 		}
 
+		if (nvram_match(strcat_r(prefix, "nband", tmp), "1"))		// 5G
 		chanspec_fix(unit);
 
 //		if (unit)
@@ -3661,6 +4155,9 @@ void generate_wl_para(int unit, int subunit)
 				nvram_set(strcat_r(prefix, "txbf_bfe_cap", tmp), "0");
 			}
 		}
+#ifdef RTCONFIG_BCM7
+		nvram_set(strcat_r(prefix, "txbf_imp", tmp), nvram_safe_get(strcat_r(prefix, "itxbf", tmp2)));
+#endif
 #else
 		if (nvram_match(strcat_r(prefix, "bw", tmp), "1"))
 		{
@@ -3703,21 +4200,27 @@ void generate_wl_para(int unit, int subunit)
 		i = nvram_get_int(strcat_r(prefix, "igs", tmp));
 		nvram_set_int(strcat_r(prefix, "wmf_bss_enable", tmp), i ? 1 : 0);
 #ifdef RTCONFIG_BCMWL6
-		nvram_set_int(strcat_r(prefix, "wmf_ucigmp_query", tmp), i ? 1 : 0);
+		nvram_set_int(strcat_r(prefix, "wmf_ucigmp_query", tmp), /*i ? 1 :*/ 0);
+		nvram_set_int(strcat_r(prefix, "wmf_mdata_sendup", tmp), /*i ? 1 :*/ 0);
 #ifdef RTCONFIG_BCMARM
-		nvram_set_int(strcat_r(prefix, "wmf_ucast_upnp", tmp), i ? 1 : 0);
-		nvram_set_int(strcat_r(prefix, "wmf_igmpq_filter", tmp), i ? 1 : 0);
+		nvram_set_int(strcat_r(prefix, "wmf_ucast_upnp", tmp), /*i ? 1 :*/ 0);
+#ifndef RTCONFIG_BCM7
+		nvram_set_int(strcat_r(prefix, "wmf_igmpq_filter", tmp), /*i ? 1 :*/ 0);
 #endif
-		nvram_set_int(strcat_r(prefix, "acs_fcs_mode", tmp), i && (unit == 1) ? 1 : 0);
+#endif
+		nvram_set_int(strcat_r(prefix, "acs_fcs_mode", tmp), i && nvram_match(strcat_r(prefix, "nband", tmp2), "1") ? 1 : 0);
 		nvram_set_int(strcat_r(prefix, "dcs_csa_unicast", tmp), i ? 1 : 0);
 #endif
 #else
 		nvram_set_int(strcat_r(prefix, "wmf_bss_enable", tmp), 0);
 #ifdef RTCONFIG_BCMWL6
 		nvram_set_int(strcat_r(prefix, "wmf_ucigmp_query", tmp), 0);
+		nvram_set_int(strcat_r(prefix, "wmf_mdata_sendup", tmp), 0);
 #ifdef RTCONFIG_BCMARM
 		nvram_set_int(strcat_r(prefix, "wmf_ucast_upnp", tmp), 0);
+#ifndef RTCONFIG_BCM7
 		nvram_set_int(strcat_r(prefix, "wmf_igmpq_filter", tmp), 0);
+#endif
 #endif
 		nvram_set_int(strcat_r(prefix, "acs_fcs_mode", tmp), 0);
 		nvram_set_int(strcat_r(prefix, "dcs_csa_unicast", tmp), 0);
@@ -3727,13 +4230,14 @@ void generate_wl_para(int unit, int subunit)
 		sprintf(tmp2, "%d", nvram_get_int(strcat_r(prefix, "pmk_cache", tmp)) * 60);
 		nvram_set(strcat_r(prefix, "net_reauth", tmp), tmp2);
 
-		if (unit) {
-			if (	((get_model() == MODEL_RTAC68U) &&
+		if (nvram_match(strcat_r(prefix, "nband", tmp), "1")) {
+			if (	((get_model() == MODEL_RTAC68U || get_model() == MODEL_DSLAC68U) &&
 				nvram_match(strcat_r(prefix, "country_code", tmp), "EU") &&
 				nvram_match(strcat_r(prefix, "country_rev", tmp), "13")) /*||
 				((get_model() == MODEL_RTAC66U) &&
 				nvram_match(strcat_r(prefix, "country_code", tmp), "EU") &&
-				nvram_match(strcat_r(prefix, "country_rev", tmp), "13")) ||
+				nvram_match(strcat_r(prefix, "country_rev", tmp), "13") &&
+				nvram_match(strcat_r(prefix, "dfs", tmp), "1")) ||
 				((get_model() == MODEL_RTN66U) &&
 				nvram_match(strcat_r(prefix, "country_code", tmp), "EU") &&
 				nvram_match(strcat_r(prefix, "country_rev", tmp), "0"))*/
@@ -3757,20 +4261,39 @@ void generate_wl_para(int unit, int subunit)
 	}
 	else
 	{
+#ifdef RTCONFIG_TMOBILE
+		if (subunit == 3)
+			nvram_set(strcat_r(prefix, "bss_maxassoc", tmp), nvram_safe_get(strcat_r(prefix, "maxassoc", tmp2)));
+#endif
 		if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1"))
 		{
+#ifdef RTCONFIG_TMOBILE
+			if (subunit == 3)
+			nvram_set(strcat_r(prefix, "osu_ssid", tmp), nvram_safe_get(strcat_r(prefix, "ssid", tmp2)));
+#endif
+#ifdef RTCONFIG_TMOBILE
+			if (subunit != 3)
+#endif
 			nvram_set(strcat_r(prefix, "bss_maxassoc", tmp), nvram_safe_get(strcat_r(prefix2, "bss_maxassoc", tmp2)));
 			nvram_set(strcat_r(prefix, "ap_isolate", tmp), nvram_safe_get(strcat_r(prefix2, "ap_isolate", tmp2)));
 			nvram_set(strcat_r(prefix, "net_reauth", tmp), nvram_safe_get(strcat_r(prefix2, "net_reauth", tmp2)));
-			nvram_set(strcat_r(prefix, "radius_ipaddr", tmp), nvram_safe_get(strcat_r(prefix2, "radius_ipaddr", tmp2)));
-			nvram_set(strcat_r(prefix, "radius_key", tmp), nvram_safe_get(strcat_r(prefix2, "radius_key", tmp2)));
-			nvram_set(strcat_r(prefix, "radius_port", tmp), nvram_safe_get(strcat_r(prefix2, "radius_port", tmp2)));
+#ifdef RTCONFIG_TMOBILE
+			if (subunit != 3)
+#endif
+			{
+				nvram_set(strcat_r(prefix, "radius_ipaddr", tmp), nvram_safe_get(strcat_r(prefix2, "radius_ipaddr", tmp2)));
+				nvram_set(strcat_r(prefix, "radius_key", tmp), nvram_safe_get(strcat_r(prefix2, "radius_key", tmp2)));
+				nvram_set(strcat_r(prefix, "radius_port", tmp), nvram_safe_get(strcat_r(prefix2, "radius_port", tmp2)));
+			}
 			nvram_set(strcat_r(prefix, "wme", tmp), nvram_safe_get(strcat_r(prefix2, "wme", tmp2)));
 			nvram_set(strcat_r(prefix, "wme_bss_disable", tmp), nvram_safe_get(strcat_r(prefix2, "wme_bss_disable", tmp2)));
 			nvram_set(strcat_r(prefix, "wpa_gtk_rekey", tmp), nvram_safe_get(strcat_r(prefix2, "wpa_gtk_rekey", tmp2)));
 			nvram_set(strcat_r(prefix, "wmf_bss_enable", tmp), nvram_safe_get(strcat_r(prefix2, "wmf_bss_enable", tmp2)));
 			if (!nvram_match(strcat_r(prefix2, "macmode", tmp2), "disabled"))
+			{
+				nvram_set(strcat_r(prefix, "maclmode", tmp), nvram_safe_get(strcat_r(prefix2, "macmode", tmp2)));
 				nvram_set(strcat_r(prefix, "maclist", tmp), nvram_safe_get(strcat_r(prefix2, "maclist", tmp2)));
+			}
 			else
 			{
 				nvram_set(strcat_r(prefix, "macmode", tmp), "disabled");
@@ -3806,13 +4329,18 @@ void generate_wl_para(int unit, int subunit)
 		nvram_set(strcat_r(prefix, "nmcsidx", tmp), "-2");	// legacy rate
 		nvram_set(strcat_r(prefix, "nmode", tmp), "0");
 		nvram_set(strcat_r(prefix, "nreqd", tmp), "0");
-		if (!unit)
+		if (nvram_match(strcat_r(prefix, "nband", tmp), "2"))
 		nvram_set(strcat_r(prefix, "gmode", tmp), "1");
 		nvram_set(strcat_r(prefix, "bw", tmp), "1");		// reset to default setting
 #ifdef RTCONFIG_BCMWL6
 		nvram_set(strcat_r(prefix, "bss_opmode_cap_reqd", tmp), "0");	// no requirements on joining devices
 #endif
 	}
+#ifdef RTCONFIG_QTN
+	if (nvram_get_int("qtn_ready") == 1){
+		runtime_config_qtn(unit, subunit);
+	}
+#endif
 }
 
 void
@@ -3851,12 +4379,12 @@ set_wan_tag(char *interface) {
 		sprintf(port_id, "%d", wan_vid);
 		eval("vconfig", "add", interface, port_id);
 		/* Set Wan prio*/
-		if(!nvram_match("switch_wan0prio", "0"))
+		if (!nvram_match("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 		/* Enable high bits check */
 		eval("et", "robowr", "0x34", "0x3", "0x0080");
 
-		if(nvram_match("switch_wantag", "unifi_home")) {
+		if (nvram_match("switch_wantag", "unifi_home")) {
 			/* vlan0ports= 1 2 3 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x010003ae");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3869,12 +4397,12 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag */
 			eval("et", "robowr", "0x34", "0x10", "0x0258");
 		}
-		else if(nvram_match("switch_wantag", "unifi_biz")) {
+		else if (nvram_match("switch_wantag", "unifi_biz")) {
 			/* Modify vlan500ports= 4 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x011f4030");
 			eval("et", "robowr", "0x34", "0x6", "0x31f4");
 		}
-		else if(nvram_match("switch_wantag", "singtel_mio")) {
+		else if (nvram_match("switch_wantag", "singtel_mio")) {
 			/* vlan0ports= 2 3 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x0100032c");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3890,7 +4418,7 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x10", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "singtel_others")) {
+		else if (nvram_match("switch_wantag", "singtel_others")) {
 			/* vlan0ports= 1 2 3 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x010003ae");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3903,7 +4431,7 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x10", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "m1_fiber")) {
+		else if (nvram_match("switch_wantag", "m1_fiber")) {
 			/* vlan0ports= 0 2 3 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x0100036d");	/*0011|0110|1101*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3914,7 +4442,7 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x34", "0x8", "0x01453012");	/*0000|0001|0010*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3453");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber")) {
+		else if (nvram_match("switch_wantag", "maxis_fiber")) {
 			/* vlan0 ports= 0 2 3 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x0100036d");	/*0011|0110|1101*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3927,7 +4455,7 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x34", "0x8", "0x01336012");	/*0000|0001|0010*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3336");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber_sp")) {
+		else if (nvram_match("switch_wantag", "maxis_fiber_sp")) {
 			/* vlan0ports= 0 2 3 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x0100036d");	/*0011|0110|1101*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3951,11 +4479,11 @@ set_wan_tag(char *interface) {
 		sprintf(port_id, "%d", wan_vid);
 		eval("vconfig", "add", interface, port_id);
 		/* Set Wan prio*/
-		if(!nvram_match("switch_wan0prio", "0"))
+		if (!nvram_match("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 		/* Enable high bits check */
 		eval("et", "robowr", "0x34", "0x3", "0x0080");
-		if(nvram_match("switch_wantag", "unifi_home")) {
+		if (nvram_match("switch_wantag", "unifi_home")) {
 			/* vlan0ports= 0 1 2 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x010001e7");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3968,12 +4496,12 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag */
 			eval("et", "robowr", "0x34", "0x16", "0x0258");
 		}
-		else if(nvram_match("switch_wantag", "unifi_biz")) {
+		else if (nvram_match("switch_wantag", "unifi_biz")) {
 			/* Modify vlan500ports= 4 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x011f4030");
 			eval("et", "robowr", "0x34", "0x6", "0x31f4");
 		}
-		else if(nvram_match("switch_wantag", "singtel_mio")) {
+		else if (nvram_match("switch_wantag", "singtel_mio")) {
 			/* vlan0ports= 0 1 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x010000E3");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -3989,7 +4517,7 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x16", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "singtel_others")) {
+		else if (nvram_match("switch_wantag", "singtel_others")) {
 			/* vlan0ports= 0 1 2 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x010001e7");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4002,7 +4530,7 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x16", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "m1_fiber")) {
+		else if (nvram_match("switch_wantag", "m1_fiber")) {
 			/* vlan0ports= 0 1 3 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x010002eb");	/*0010|1110|1011*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4013,7 +4541,7 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x34", "0x8", "0x01453014");	/*0000|0001|0100*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3453");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber")) {
+		else if (nvram_match("switch_wantag", "maxis_fiber")) {
 			/* vlan0 ports= 0 1 3 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x010002eb");	/*0010|1110|1011*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4026,7 +4554,7 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x34", "0x8", "0x01336014");	/*0000|0001|0100*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3336");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber_sp")) {
+		else if (nvram_match("switch_wantag", "maxis_fiber_sp")) {
 			/* vlan0ports= 0 1 3 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x010002eb");	/*0010|1110|1011*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4047,12 +4575,12 @@ set_wan_tag(char *interface) {
 		sprintf(port_id, "%d", wan_vid);
 		eval("vconfig", "add", interface, port_id);
 		/* Set Wan prio*/
-		if(!nvram_match("switch_wan0prio", "0"))
+		if (!nvram_match("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 		/* Enable high bits check */
 		eval("et", "robowr", "0x34", "0x3", "0x0080");
 
-		if(nvram_match("switch_wantag", "unifi_home")) {
+		if (nvram_match("switch_wantag", "unifi_home")) {
 			/* vlan0ports= 2 3 4 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x0100073c");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4065,12 +4593,12 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag */
 			eval("et", "robowr", "0x34", "0x12", "0x0258");
 		}
-		else if(nvram_match("switch_wantag", "unifi_biz")) {
+		else if (nvram_match("switch_wantag", "unifi_biz")) {
 			/* Modify vlan500ports= 0 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x011f4021");
 			eval("et", "robowr", "0x34", "0x6", "0x31f4");
 		}
-		else if(nvram_match("switch_wantag", "singtel_mio")) {
+		else if (nvram_match("switch_wantag", "singtel_mio")) {
 			/* vlan0ports= 3 4 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x01000638");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4086,7 +4614,7 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x12", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "singtel_others")) {
+		else if (nvram_match("switch_wantag", "singtel_others")) {
 			/* vlan0ports= 2 3 4 5 */
 			eval("et", "robowr", "0x34", "0x8", "0x0100073c");
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4099,7 +4627,7 @@ set_wan_tag(char *interface) {
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x12", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "m1_fiber")) {
+		else if (nvram_match("switch_wantag", "m1_fiber")) {
 			/* vlan0ports= 1 3 4 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x010006ba");	/*0110|1011|1010*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4110,7 +4638,7 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x34", "0x8", "0x01453005");	/*0000|0000|0101*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3453");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber")) {
+		else if (nvram_match("switch_wantag", "maxis_fiber")) {
 			/* vlan0 ports= 1 3 4 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x010006ba");	/*0110|1011|1010*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4123,7 +4651,7 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x34", "0x8", "0x01336005");	/*0000|0000|0101*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3336");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber_sp")) {
+		else if (nvram_match("switch_wantag", "maxis_fiber_sp")) {
 			/* vlan0ports= 1 3 4 5 */				/*5432 1054 3210*/
 			eval("et", "robowr", "0x34", "0x8", "0x010006ba");	/*0110|1011|1010*/
 			eval("et", "robowr", "0x34", "0x6", "0x3000");
@@ -4139,7 +4667,7 @@ set_wan_tag(char *interface) {
 
 	case MODEL_RTN16:
 		// config wan port
-		if(wan_vid) {
+		if (wan_vid) {
 			eval("vconfig", "rem", "vlan2");
 			sprintf(port_id, "%d", wan_vid);
 			eval("vconfig", "add", interface, port_id);
@@ -4150,12 +4678,12 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
 		// Set Wan port PRIO
-		if(nvram_invmatch("switch_wan0prio", "0"))
+		if (nvram_invmatch("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 
-		if(nvram_match("switch_stb_x", "3")) {
+		if (nvram_match("switch_stb_x", "3")) {
 			// config LAN 3 = VoIP
-			if(nvram_match("switch_wantag", "m1_fiber")) {
+			if (nvram_match("switch_wantag", "m1_fiber")) {
 				// Just forward packets between port 0 & 3, without untag
 				sprintf(vlan_entry, "0x%x", voip_vid);
 				_dprintf("vlan entry: %s\n", vlan_entry);
@@ -4178,7 +4706,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 		}
-		else if(nvram_match("switch_stb_x", "4")) {
+		else if (nvram_match("switch_stb_x", "4")) {
 			// config LAN 4 = IPTV
 			iptv_prio = iptv_prio << 13;
 			sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
@@ -4192,9 +4720,9 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
-		else if(nvram_match("switch_stb_x", "6")) {
+		else if (nvram_match("switch_stb_x", "6")) {
 			// config LAN 3 = VoIP
-			if(nvram_match("switch_wantag", "singtel_mio")) {
+			if (nvram_match("switch_wantag", "singtel_mio")) {
 				// Just forward packets between port 0 & 3, without untag
 				sprintf(vlan_entry, "0x%x", voip_vid);
 				_dprintf("vlan entry: %s\n", vlan_entry);
@@ -4204,7 +4732,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 			else {	// Nomo case, untag it.
-			    if(voip_vid) {
+			    if (voip_vid) {
 				voip_prio = voip_prio << 13;
 				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
 				eval("et", "robowr", "0x34", "0x14", tag_register);
@@ -4222,7 +4750,7 @@ set_wan_tag(char *interface) {
 			    }
 			}
 			// config LAN 4 = IPTV
-			if(iptv_vid) {
+			if (iptv_vid) {
 				iptv_prio = iptv_prio << 13;
 				sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
 				eval("et", "robowr", "0x34", "0x12", tag_register);
@@ -4242,8 +4770,9 @@ set_wan_tag(char *interface) {
 		break;
 				/* P0  P1 P2 P3 P4 P5 */
 	case MODEL_RTAC68U:	/* WAN L1 L2 L3 L4 CPU */
+	case MODEL_RTAC3200:
 	case MODEL_RTN18U:	/* WAN L1 L2 L3 L4 CPU */
-		if(wan_vid) { /* config wan port */
+		if (wan_vid) { /* config wan port */
 			eval("vconfig", "rem", "vlan2");
 			sprintf(port_id, "%d", wan_vid);
 			eval("vconfig", "add", interface, port_id);
@@ -4254,11 +4783,11 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
 		/* Set Wan port PRIO */
-		if(nvram_invmatch("switch_wan0prio", "0"))
+		if (nvram_invmatch("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 
-		if(nvram_match("switch_stb_x", "3")) {	// P3
-			if(nvram_match("switch_wantag", "m1_fiber") ||
+		if (nvram_match("switch_stb_x", "3")) {	// P3
+			if (nvram_match("switch_wantag", "m1_fiber") ||
 			   nvram_match("switch_wantag", "maxis_fiber_sp")
 			) {
 				/* Just forward packets between port 0 & 3, without untag */
@@ -4269,7 +4798,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0000");
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
-			else if(nvram_match("switch_wantag", "maxis_fiber")) {
+			else if (nvram_match("switch_wantag", "maxis_fiber")) {
 				/* Just forward packets between port 0 & 3, without untag */
 				eval("et", "robowr", "0x05", "0x83", "0x0009");
 				eval("et", "robowr", "0x05", "0x81", "0x0335"); /* vlan id=821 */
@@ -4294,7 +4823,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 		}
-		else if(nvram_match("switch_stb_x", "4")) { // P4
+		else if (nvram_match("switch_stb_x", "4")) { // P4
 			/* config LAN 4 = IPTV */
 			iptv_prio = iptv_prio << 13;
 			sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
@@ -4308,9 +4837,9 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
-		else if(nvram_match("switch_stb_x", "6")) {
+		else if (nvram_match("switch_stb_x", "6")) {
 			/* config LAN 3 = VoIP */ // P3
-			if(nvram_match("switch_wantag", "singtel_mio")) {
+			if (nvram_match("switch_wantag", "singtel_mio")) {
 				/* Just forward packets between port 0 & 3, without untag */
 				sprintf(vlan_entry, "0x%x", voip_vid);
 				_dprintf("vlan entry: %s\n", vlan_entry);
@@ -4320,7 +4849,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 			else {	/* Nomo case, untag it. */
-			    if(voip_vid) {
+			    if (voip_vid) {
 				voip_prio = voip_prio << 13;
 				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
 				eval("et", "robowr", "0x34", "0x16", tag_register);
@@ -4338,7 +4867,7 @@ set_wan_tag(char *interface) {
 			    }
 			}
 			/* config LAN 4 = IPTV */ // P4
-			if(iptv_vid) {
+			if (iptv_vid) {
 				iptv_prio = iptv_prio << 13;
 				sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
 				eval("et", "robowr", "0x34", "0x18", tag_register);
@@ -4356,116 +4885,116 @@ set_wan_tag(char *interface) {
 			}
 		}
 		break;
-                              	/* P0  P1 P2 P3 P5 P7 */
-        case MODEL_RTAC87U:     /* WAN L4 L3 L2 L1 CPU */
-                if(wan_vid) { /* config wan port */
-                        eval("vconfig", "rem", "vlan2");
-                        sprintf(port_id, "%d", wan_vid);
-                        eval("vconfig", "add", interface, port_id);
-                        sprintf(vlan_entry, "0x%x", wan_vid);
-                        eval("et", "robowr", "0x05", "0x83", "0x0081");
-                        eval("et", "robowr", "0x05", "0x81", vlan_entry);
-                        eval("et", "robowr", "0x05", "0x80", "0x0080");
-                }
-                /* Set Wan port PRIO */
-                if(nvram_invmatch("switch_wan0prio", "0"))
-                        eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
+				/* P0  P1 P2 P3 P5 P7 */
+	case MODEL_RTAC87U:	/* WAN L4 L3 L2 L1 CPU */
+		if (wan_vid) { /* config wan port */
+			eval("vconfig", "rem", "vlan2");
+			sprintf(port_id, "%d", wan_vid);
+			eval("vconfig", "add", interface, port_id);
+			sprintf(vlan_entry, "0x%x", wan_vid);
+			eval("et", "robowr", "0x05", "0x83", "0x0081");
+			eval("et", "robowr", "0x05", "0x81", vlan_entry);
+			eval("et", "robowr", "0x05", "0x80", "0x0080");
+		}
+		/* Set Wan port PRIO */
+		if (nvram_invmatch("switch_wan0prio", "0"))
+			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 
-                if(nvram_match("switch_stb_x", "3")) {  // P3
-                        if(nvram_match("switch_wantag", "m1_fiber") ||
-                           nvram_match("switch_wantag", "maxis_fiber_sp")
-                        ) {
-                                /* Just forward packets between port 0 & 3, without untag */
-                                sprintf(vlan_entry, "0x%x", voip_vid);
-                                _dprintf("vlan entry: %s\n", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x83", "0x0005");
-                                eval("et", "robowr", "0x05", "0x81", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x80", "0x0080");
-                        }
-                        else if(nvram_match("switch_wantag", "maxis_fiber")) {
-                                /* Just forward packets between port 0 & 3, without untag */
-                                eval("et", "robowr", "0x05", "0x83", "0x0005");
-                                eval("et", "robowr", "0x05", "0x81", "0x0335"); /* vlan id=821 */
-                                eval("et", "robowr", "0x05", "0x80", "0x0080");
-                                eval("et", "robowr", "0x05", "0x83", "0x0005");
-                                eval("et", "robowr", "0x05", "0x81", "0x0336"); /* vlan id=822 */
-                                eval("et", "robowr", "0x05", "0x80", "0x0080");
-                        }
-                        else {  /* Nomo case, untag it. */
-                                voip_prio = voip_prio << 13;
-                                sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
-                                eval("et", "robowr", "0x34", "0x14", tag_register);
-                                _dprintf("lan 3 tag register: %s\n", tag_register);
-                                /* Set vlan table entry register */
-                                sprintf(vlan_entry, "0x%x", voip_vid);
-                                _dprintf("vlan entry: %s\n", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x83", "0x0805");
-                                eval("et", "robowr", "0x05", "0x81", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x80", "0x0080");
-                        }
-                }
-                else if(nvram_match("switch_stb_x", "4")) { // P4
-                        /* config LAN 4 = IPTV */
-                        iptv_prio = iptv_prio << 13;
-                        sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
-                        eval("et", "robowr", "0x34", "0x12", tag_register);
-                        _dprintf("lan 4 tag register: %s\n", tag_register);
-                        /* Set vlan table entry register */
-                        sprintf(vlan_entry, "0x%x", iptv_vid);
-                        _dprintf("vlan entry: %s\n", vlan_entry);
-                        eval("et", "robowr", "0x05", "0x83", "0x0403");
-                        eval("et", "robowr", "0x05", "0x81", vlan_entry);
-                        eval("et", "robowr", "0x05", "0x80", "0x0080");
-                }
-                else if(nvram_match("switch_stb_x", "6")) {
-                        /* config LAN 3 = VoIP */ // P3
-                        if(nvram_match("switch_wantag", "singtel_mio")) {
-                                /* Just forward packets between port 0 & 3, without untag */
-                                sprintf(vlan_entry, "0x%x", voip_vid);
-                                _dprintf("vlan entry: %s\n", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x83", "0x0005");
-                                eval("et", "robowr", "0x05", "0x81", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x80", "0x0080");
-                        }
-                        else {  /* Nomo case, untag it. */
-                            if(voip_vid) {
-                                voip_prio = voip_prio << 13;
-                                sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
-                                eval("et", "robowr", "0x34", "0x14", tag_register);
-                                _dprintf("lan 3 tag register: %s\n", tag_register);
-                                /* Set vlan table entry register */
-                                sprintf(vlan_entry, "0x%x", voip_vid);
-                                _dprintf("vlan entry: %s\n", vlan_entry);
-                                if (voip_vid == iptv_vid)
-                                        eval("et", "robowr", "0x05", "0x83", "0x0C07");
-                                else
-                                        eval("et", "robowr", "0x05", "0x83", "0x0805");
-                                eval("et", "robowr", "0x05", "0x81", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x80", "0x0080");
-                            }
-                        }
-                        /* config LAN 4 = IPTV */ // P4
-                        if(iptv_vid) {
-                                iptv_prio = iptv_prio << 13;
-                                sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
-                                eval("et", "robowr", "0x34", "0x12", tag_register);
-                                _dprintf("lan 4 tag register: %s\n", tag_register);
-                                /* Set vlan table entry register */
-                                sprintf(vlan_entry, "0x%x", iptv_vid);
-                                _dprintf("vlan entry: %s\n", vlan_entry);
-                                if (voip_vid == iptv_vid)
-                                        eval("et", "robowr", "0x05", "0x83", "0x0C07");
-                                else
-                                        eval("et", "robowr", "0x05", "0x83", "0x0403");
-                                eval("et", "robowr", "0x05", "0x81", vlan_entry);
-                                eval("et", "robowr", "0x05", "0x80", "0x0080");
-                        }
-                }
-                break;
+		if (nvram_match("switch_stb_x", "3")) {  // P3
+			if (nvram_match("switch_wantag", "m1_fiber") ||
+			   nvram_match("switch_wantag", "maxis_fiber_sp")
+			) {
+				/* Just forward packets between port 0 & 3, without untag */
+				sprintf(vlan_entry, "0x%x", voip_vid);
+				_dprintf("vlan entry: %s\n", vlan_entry);
+				eval("et", "robowr", "0x05", "0x83", "0x0005");
+				eval("et", "robowr", "0x05", "0x81", vlan_entry);
+				eval("et", "robowr", "0x05", "0x80", "0x0080");
+			}
+			else if (nvram_match("switch_wantag", "maxis_fiber")) {
+				/* Just forward packets between port 0 & 3, without untag */
+				eval("et", "robowr", "0x05", "0x83", "0x0005");
+				eval("et", "robowr", "0x05", "0x81", "0x0335"); /* vlan id=821 */
+				eval("et", "robowr", "0x05", "0x80", "0x0080");
+				eval("et", "robowr", "0x05", "0x83", "0x0005");
+				eval("et", "robowr", "0x05", "0x81", "0x0336"); /* vlan id=822 */
+				eval("et", "robowr", "0x05", "0x80", "0x0080");
+			}
+			else {  /* Nomo case, untag it. */
+				voip_prio = voip_prio << 13;
+				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
+				eval("et", "robowr", "0x34", "0x14", tag_register);
+				_dprintf("lan 3 tag register: %s\n", tag_register);
+				/* Set vlan table entry register */
+				sprintf(vlan_entry, "0x%x", voip_vid);
+				_dprintf("vlan entry: %s\n", vlan_entry);
+				eval("et", "robowr", "0x05", "0x83", "0x0805");
+				eval("et", "robowr", "0x05", "0x81", vlan_entry);
+				eval("et", "robowr", "0x05", "0x80", "0x0080");
+			}
+		}
+		else if (nvram_match("switch_stb_x", "4")) { // P4
+			/* config LAN 4 = IPTV */
+			iptv_prio = iptv_prio << 13;
+			sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
+			eval("et", "robowr", "0x34", "0x12", tag_register);
+			_dprintf("lan 4 tag register: %s\n", tag_register);
+			/* Set vlan table entry register */
+			sprintf(vlan_entry, "0x%x", iptv_vid);
+			_dprintf("vlan entry: %s\n", vlan_entry);
+			eval("et", "robowr", "0x05", "0x83", "0x0403");
+			eval("et", "robowr", "0x05", "0x81", vlan_entry);
+			eval("et", "robowr", "0x05", "0x80", "0x0080");
+		}
+		else if (nvram_match("switch_stb_x", "6")) {
+			/* config LAN 3 = VoIP */ // P3
+			if (nvram_match("switch_wantag", "singtel_mio")) {
+				/* Just forward packets between port 0 & 3, without untag */
+				sprintf(vlan_entry, "0x%x", voip_vid);
+				_dprintf("vlan entry: %s\n", vlan_entry);
+				eval("et", "robowr", "0x05", "0x83", "0x0005");
+				eval("et", "robowr", "0x05", "0x81", vlan_entry);
+				eval("et", "robowr", "0x05", "0x80", "0x0080");
+			}
+			else {  /* Nomo case, untag it. */
+			    if (voip_vid) {
+				voip_prio = voip_prio << 13;
+				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
+				eval("et", "robowr", "0x34", "0x14", tag_register);
+				_dprintf("lan 3 tag register: %s\n", tag_register);
+				/* Set vlan table entry register */
+				sprintf(vlan_entry, "0x%x", voip_vid);
+				_dprintf("vlan entry: %s\n", vlan_entry);
+				if (voip_vid == iptv_vid)
+					eval("et", "robowr", "0x05", "0x83", "0x0C07");
+				else
+					eval("et", "robowr", "0x05", "0x83", "0x0805");
+				eval("et", "robowr", "0x05", "0x81", vlan_entry);
+				eval("et", "robowr", "0x05", "0x80", "0x0080");
+			    }
+			}
+			/* config LAN 4 = IPTV */ // P4
+			if (iptv_vid) {
+				iptv_prio = iptv_prio << 13;
+				sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
+				eval("et", "robowr", "0x34", "0x12", tag_register);
+				_dprintf("lan 4 tag register: %s\n", tag_register);
+				/* Set vlan table entry register */
+				sprintf(vlan_entry, "0x%x", iptv_vid);
+				_dprintf("vlan entry: %s\n", vlan_entry);
+				if (voip_vid == iptv_vid)
+					eval("et", "robowr", "0x05", "0x83", "0x0C07");
+				else
+					eval("et", "robowr", "0x05", "0x83", "0x0403");
+				eval("et", "robowr", "0x05", "0x81", vlan_entry);
+				eval("et", "robowr", "0x05", "0x80", "0x0080");
+			}
+		}
+		break;
 				/* P0 P1 P2 P3 P4 P5 */
 	case MODEL_RTAC56S:	/* L1 L2 L3 L4 WAN CPU */
 	case MODEL_RTAC56U:
-		if(wan_vid) { /* config wan port */
+		if (wan_vid) { /* config wan port */
 			eval("vconfig", "rem", "vlan2");
 			sprintf(port_id, "%d", wan_vid);
 			eval("vconfig", "add", interface, port_id);
@@ -4476,11 +5005,11 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
 		/* Set Wan port PRIO */
-		if(nvram_invmatch("switch_wan0prio", "0"))
+		if (nvram_invmatch("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 
-		if(nvram_match("switch_stb_x", "3")) {	// P2
-			if(nvram_match("switch_wantag", "m1_fiber") ||
+		if (nvram_match("switch_stb_x", "3")) {	// P2
+			if (nvram_match("switch_wantag", "m1_fiber") ||
 			   nvram_match("switch_wantag", "maxis_fiber_sp")
 			) {
 				/* Just forward packets between port 4 & 2, without untag */
@@ -4491,7 +5020,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0000");
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
-			else if(nvram_match("switch_wantag", "maxis_fiber")) {
+			else if (nvram_match("switch_wantag", "maxis_fiber")) {
 				/* Just forward packets between port 4 & 2, without untag */
 				eval("et", "robowr", "0x05", "0x83", "0x0014");
 				eval("et", "robowr", "0x05", "0x81", "0x0335"); /* vlan id=821 */
@@ -4516,7 +5045,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 		}
-		else if(nvram_match("switch_stb_x", "4")) { // P3
+		else if (nvram_match("switch_stb_x", "4")) { // P3
 			/* config LAN 4 = IPTV */
 			iptv_prio = iptv_prio << 13;
 			sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
@@ -4530,9 +5059,9 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
-		else if(nvram_match("switch_stb_x", "6")) {
+		else if (nvram_match("switch_stb_x", "6")) {
 			/* config LAN 3 = VoIP */	// P2
-			if(nvram_match("switch_wantag", "singtel_mio")) {
+			if (nvram_match("switch_wantag", "singtel_mio")) {
 				/* Just forward packets between port 2 & 4, without untag */
 				sprintf(vlan_entry, "0x%x", voip_vid);
 				_dprintf("vlan entry: %s\n", vlan_entry);
@@ -4542,7 +5071,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 			else {	/* Nomo case, untag it. */
-			    if(voip_vid) {
+			    if (voip_vid) {
 				voip_prio = voip_prio << 13;
 				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
 				eval("et", "robowr", "0x34", "0x14", tag_register);
@@ -4560,7 +5089,7 @@ set_wan_tag(char *interface) {
 			    }
 			}
 			/* config LAN 4 = IPTV */ //P3
-			if(iptv_vid) {
+			if (iptv_vid) {
 				iptv_prio = iptv_prio << 13;
 				sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
 				eval("et", "robowr", "0x34", "0x16", tag_register);
@@ -4581,7 +5110,7 @@ set_wan_tag(char *interface) {
 
 	case MODEL_RTN66U:
 	case MODEL_RTAC66U:
-		if(wan_vid) { /* config wan port */
+		if (wan_vid) { /* config wan port */
 			eval("vconfig", "rem", "vlan2");
 			sprintf(port_id, "%d", wan_vid);
 			eval("vconfig", "add", interface, port_id);
@@ -4592,11 +5121,11 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
 		/* Set Wan port PRIO */
-		if(nvram_invmatch("switch_wan0prio", "0"))
+		if (nvram_invmatch("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 
-		if(nvram_match("switch_stb_x", "3")) {
-			if(nvram_match("switch_wantag", "m1_fiber") ||
+		if (nvram_match("switch_stb_x", "3")) {
+			if (nvram_match("switch_wantag", "m1_fiber") ||
 			   nvram_match("switch_wantag", "maxis_fiber_sp")
 			) {
 				/* Just forward packets between port 0 & 3, without untag */
@@ -4607,7 +5136,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0000");
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
-			else if(nvram_match("switch_wantag", "maxis_fiber")) {
+			else if (nvram_match("switch_wantag", "maxis_fiber")) {
 				/* Just forward packets between port 0 & 3, without untag */
 				eval("et", "robowr", "0x05", "0x83", "0x0009");
 				eval("et", "robowr", "0x05", "0x81", "0x0335");	/* vlan id=821 */
@@ -4618,6 +5147,46 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0000");
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
+                        else if (nvram_match("switch_wantag", "maxis_fiber_iptv")) {
+                                /* Just forward packets between port 0 & 3, without untag */
+                                eval("et", "robowr", "0x05", "0x83", "0x0009");
+                                eval("et", "robowr", "0x05", "0x81", "0x0335"); /* vlan id=821 */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                                eval("et", "robowr", "0x05", "0x83", "0x0009");
+                                eval("et", "robowr", "0x05", "0x81", "0x0336"); /* vlan id=822 */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                                /* Just forward packets between port 0 & 4 & untag */
+                                eval("et", "robowr", "0x05", "0x83", "0x2011");
+                                eval("et", "robowr", "0x05", "0x81", "0x0337"); /* vlan id=823 */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                                eval("et", "robowr", "0x05", "0x83", "0x2011");
+                                eval("et", "robowr", "0x05", "0x81", "0x0338"); /* vlan id=824 */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                        }
+                        else if (nvram_match("switch_wantag", "maxis_fiber_sp_iptv")) {
+                                /* Just forward packets between port 0 & 3, without untag */
+                                eval("et", "robowr", "0x05", "0x83", "0x0009");
+                                eval("et", "robowr", "0x05", "0x81", "0x0006"); /* vlan id= 6  */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                                eval("et", "robowr", "0x05", "0x83", "0x0009");
+                                eval("et", "robowr", "0x05", "0x81", "0x000E"); /* vlan id= 14 */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                                /* Just forward packets between port 0 & 4 & untag */
+                                eval("et", "robowr", "0x05", "0x83", "0x2011");
+                                eval("et", "robowr", "0x05", "0x81", "0x000F"); /* vlan id= 15 */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                                eval("et", "robowr", "0x05", "0x83", "0x2011");
+                                eval("et", "robowr", "0x05", "0x81", "0x0011"); /* vlan id= 17 */
+                                eval("et", "robowr", "0x05", "0x80", "0x0000");
+                                eval("et", "robowr", "0x05", "0x80", "0x0080");
+                        }
 			else {	/* Nomo case, untag it. */
 				voip_prio = voip_prio << 13;
 				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
@@ -4632,7 +5201,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 		}
-		else if(nvram_match("switch_stb_x", "4")) {
+		else if (nvram_match("switch_stb_x", "4")) {
 			/* config LAN 4 = IPTV */
 			iptv_prio = iptv_prio << 13;
 			sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
@@ -4646,9 +5215,9 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
-		else if(nvram_match("switch_stb_x", "6")) {
+		else if (nvram_match("switch_stb_x", "6")) {
 			/* config LAN 3 = VoIP */
-			if(nvram_match("switch_wantag", "singtel_mio")) {
+			if (nvram_match("switch_wantag", "singtel_mio")) {
 				/* Just forward packets between port 0 & 3, without untag */
 				sprintf(vlan_entry, "0x%x", voip_vid);
 				_dprintf("vlan entry: %s\n", vlan_entry);
@@ -4658,7 +5227,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 			else {	/* Nomo case, untag it. */
-			    if(voip_vid) {
+			    if (voip_vid) {
 				voip_prio = voip_prio << 13;
 				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
 				eval("et", "robowr", "0x34", "0x16", tag_register);
@@ -4675,7 +5244,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			    }
 			}
-			if(iptv_vid) { /* config LAN 4 = IPTV */
+			if (iptv_vid) { /* config LAN 4 = IPTV */
 				iptv_prio = iptv_prio << 13;
 				sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
 				eval("et", "robowr", "0x34", "0x18", tag_register);
@@ -4695,7 +5264,7 @@ set_wan_tag(char *interface) {
 		break;
 
 	case MODEL_RTN15U:
-		if(wan_vid) { /* config wan port */
+		if (wan_vid) { /* config wan port */
 			eval("vconfig", "rem", "vlan2");
 			sprintf(port_id, "%d", wan_vid);
 			eval("vconfig", "add", interface, port_id);
@@ -4706,11 +5275,11 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
 		/* Set Wan port PRIO */
-		if(nvram_invmatch("switch_wan0prio", "0"))
+		if (nvram_invmatch("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 
-		if(nvram_match("switch_stb_x", "3")) {
-			if(nvram_match("switch_wantag", "m1_fiber")) {
+		if (nvram_match("switch_stb_x", "3")) {
+			if (nvram_match("switch_wantag", "m1_fiber")) {
 				/* Just forward packets between LAN3 & WAN(port1 & 4), without untag */
 				sprintf(vlan_entry, "0x%x", voip_vid);
 				_dprintf("vlan entry: %s\n", vlan_entry);
@@ -4733,7 +5302,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 		}
-		else if(nvram_match("switch_stb_x", "4")) {
+		else if (nvram_match("switch_stb_x", "4")) {
 			/* config LAN 4 = IPTV */
 			iptv_prio = iptv_prio << 13;
 			sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
@@ -4747,9 +5316,9 @@ set_wan_tag(char *interface) {
 			eval("et", "robowr", "0x05", "0x80", "0x0000");
 			eval("et", "robowr", "0x05", "0x80", "0x0080");
 		}
-		else if(nvram_match("switch_stb_x", "6")) {
+		else if (nvram_match("switch_stb_x", "6")) {
 			/* config LAN 3 = VoIP */
-			if(nvram_match("switch_wantag", "singtel_mio")) {
+			if (nvram_match("switch_wantag", "singtel_mio")) {
 				/* Just forward packets between LAN3 & WAN(port1 & 4), without untag */
 				sprintf(vlan_entry, "0x%x", voip_vid);
 				_dprintf("vlan entry: %s\n", vlan_entry);
@@ -4759,7 +5328,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			}
 			else {	/* Nomo case, untag it. */
-			    if(voip_vid) {
+			    if (voip_vid) {
 				voip_prio = voip_prio << 13;
 				sprintf(tag_register, "0x%x", (voip_prio | voip_vid));
 				eval("et", "robowr", "0x34", "0x12", tag_register);
@@ -4776,7 +5345,7 @@ set_wan_tag(char *interface) {
 				eval("et", "robowr", "0x05", "0x80", "0x0080");
 			    }
 			}
-			if(iptv_vid) { /* config LAN 4 = IPTV */
+			if (iptv_vid) { /* config LAN 4 = IPTV */
 				iptv_prio = iptv_prio << 13;
 				sprintf(tag_register, "0x%x", (iptv_prio | iptv_vid));
 				eval("et", "robowr", "0x34", "0x10", tag_register);
@@ -4794,107 +5363,107 @@ set_wan_tag(char *interface) {
 			}
 		}
 		break;
-		
-	case MODEL_RTAC53U:	
+
+	case MODEL_RTAC53U:
 		/* WAN L1 L2 L3 L4 CPU */
 		/*  0   1  2  3  4  5  */
 		/*
 			vlan1 : LAN
 			vlan2 : WAN
 		*/
+		/* Enable high bits check */
+		eval("et", "robowr", "0x34", "0x3", "0x80", "0x1");
 		/* Reset vlan 2 */
 		eval("vconfig", "rem", "vlan2");
-		eval("et", "robowr", "0x34", "0x8", "0x01002000");
+		eval("et", "robowr", "0x34", "0x8", "0x01002000", "0x4");
 		eval("et", "robowr", "0x34", "0x6", "0x3002");
 		/* Add wan interface */
 		sprintf(port_id, "%d", wan_vid);
 		eval("vconfig", "add", interface, port_id);
 		/* Set Wan prio*/
-		if(!nvram_match("switch_wan0prio", "0"))
+		if (!nvram_match("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
-		/* Enable high bits check */
-		eval("et", "robowr", "0x34", "0x3", "0x0080");
 
-		if(nvram_match("switch_wantag", "unifi_home")) {
+		if (nvram_match("switch_wantag", "unifi_home")) {
 			/* vlan1ports= 1 2 3 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x010003ae");
+			eval("et", "robowr", "0x34", "0x8", "0x010013ae", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x3001");
 			/* vlan500ports= 0 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x011f4021");
+			eval("et", "robowr", "0x34", "0x8", "0x011f4021", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x31f4");
 			/* vlan600ports= 0 4 */
-			eval("et", "robowr", "0x34", "0x8", "0x01258411");
+			eval("et", "robowr", "0x34", "0x8", "0x01258411", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x3258");
 			/* LAN4 vlan tag */
 			eval("et", "robowr", "0x34", "0x18", "0x0258");
 		}
-		else if(nvram_match("switch_wantag", "unifi_biz")) {
+		else if (nvram_match("switch_wantag", "unifi_biz")) {
 			/* Modify vlan500ports= 0 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x011f4021");
+			eval("et", "robowr", "0x34", "0x8", "0x011f4021", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x31f4");
 		}
-		else if(nvram_match("switch_wantag", "singtel_mio")) {
+		else if (nvram_match("switch_wantag", "singtel_mio")) {
 			/* vlan1ports= 1 2 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x010001a6");
+			eval("et", "robowr", "0x34", "0x8", "0x010011a6", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x3001");
 			/* vlan10ports= 0 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x0100a021");
+			eval("et", "robowr", "0x34", "0x8", "0x0100a021", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x300a");
 			/* vlan20ports= 4 0 */
-			eval("et", "robowr", "0x34", "0x8", "0x01014411");
+			eval("et", "robowr", "0x34", "0x8", "0x01014411", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x3014");
 			/* vlan30ports= 3 0 */
-			eval("et", "robowr", "0x34", "0x8", "0x0101e009");	/*Just forward without untag*/
+			eval("et", "robowr", "0x34", "0x8", "0x0101e009", "0x4");/*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x301e");
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x18", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "singtel_others")) {
+		else if (nvram_match("switch_wantag", "singtel_others")) {
 			/* vlan1ports= 1 2 3 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x010003ae");
+			eval("et", "robowr", "0x34", "0x8", "0x010013ae", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x3001");
 			/* vlan10ports= 0 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x0100a021");
+			eval("et", "robowr", "0x34", "0x8", "0x0100a021", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x300a");
 			/* vlan20ports= 0 4 */
-			eval("et", "robowr", "0x34", "0x8", "0x01014411");
+			eval("et", "robowr", "0x34", "0x8", "0x01014411", "0x4");
 			eval("et", "robowr", "0x34", "0x6", "0x3014");
 			/* LAN4 vlan tag & prio */
 			eval("et", "robowr", "0x34", "0x18", "0x8014");
 		}
-		else if(nvram_match("switch_wantag", "m1_fiber")) {
-			/* vlan1ports= 1 2 4 5 */				/*5432 1054 3210*/
-			eval("et", "robowr", "0x34", "0x8", "0x010005b6");	/*0111|1011|0110*/
+		else if (nvram_match("switch_wantag", "m1_fiber")) {
+			/* vlan1ports= 1 2 4 5 */				 /*5432 1054 3210*/
+			eval("et", "robowr", "0x34", "0x8", "0x010015b6", "0x4");/*0111|1011|0110*/
 			eval("et", "robowr", "0x34", "0x6", "0x3001");
 			/* vlan1103ports= 0 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x0144f021");	/*0000|0010|0001*/ /*Dont untag WAN port*/
+			eval("et", "robowr", "0x34", "0x8", "0x0144f021", "0x4");/*0000|0010|0001*/ /*Dont untag WAN port*/
 			eval("et", "robowr", "0x34", "0x6", "0x344f");
 			/* vlan1107ports= 3 0 */
-			eval("et", "robowr", "0x34", "0x8", "0x01453009");	/*0000|0000|1001*/ /*Just forward without untag*/
+			eval("et", "robowr", "0x34", "0x8", "0x01453009", "0x4");/*0000|0000|1001*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3453");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber")) {
-			/* vlan1ports= 1 2 4 5 */				/*5432 1054 3210*/
-			eval("et", "robowr", "0x34", "0x8", "0x010005b6");	/*0111|1011|0110*/
+		else if (nvram_match("switch_wantag", "maxis_fiber")) {
+			/* vlan1ports= 1 2 4 5 */				 /*5432 1054 3210*/
+			eval("et", "robowr", "0x34", "0x8", "0x010015b6", "0x4");/*0111|1011|0110*/
 			eval("et", "robowr", "0x34", "0x6", "0x3001");
 			/* vlan621 ports= 0 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x0126d021");	/*0000|0010|0001*/ /*Dont untag WAN port*/
+			eval("et", "robowr", "0x34", "0x8", "0x0126d021", "0x4");/*0000|0010|0001*/ /*Dont untag WAN port*/
 			eval("et", "robowr", "0x34", "0x6", "0x326d");
 			/* vlan821/822 ports= 3 0 */
-			eval("et", "robowr", "0x34", "0x8", "0x01335009");	/*0000|0000|1001*/ /*Just forward without untag*/
+			eval("et", "robowr", "0x34", "0x8", "0x01335009", "0x4");/*0000|0000|1001*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3335");
-			eval("et", "robowr", "0x34", "0x8", "0x01336009");	/*0000|0000|1001*/ /*Just forward without untag*/
+			eval("et", "robowr", "0x34", "0x8", "0x01336009", "0x4");/*0000|0000|1001*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x3336");
 		}
-		else if(nvram_match("switch_wantag", "maxis_fiber_sp")) {
-			/* vlan1ports= 1 2 4 5 */				/*5432 1054 3210*/
-			eval("et", "robowr", "0x34", "0x8", "0x010005b6");	/*0111|1011|0110*/
+		else if (nvram_match("switch_wantag", "maxis_fiber_sp")) {
+			/* vlan1ports= 1 2 4 5 */				 /*5432 1054 3210*/
+			eval("et", "robowr", "0x34", "0x8", "0x010015b6", "0x4");/*0111|1011|0110*/
 			eval("et", "robowr", "0x34", "0x6", "0x3001");
 			/* vlan11ports= 0 5 */
-			eval("et", "robowr", "0x34", "0x8", "0x0100b021");	/*0000|0010|0001*/ /*Dont untag WAN port*/
+			eval("et", "robowr", "0x34", "0x8", "0x0100b021", "0x4");/*0000|0010|0001*/ /*Dont untag WAN port*/
 			eval("et", "robowr", "0x34", "0x6", "0x300b");
 			/* vlan14ports= 3 0 */
-			eval("et", "robowr", "0x34", "0x8", "0x0100e009");	/*0000|0000|1001*/ /*Just forward without untag*/
+			eval("et", "robowr", "0x34", "0x8", "0x0100e009", "0x4");/*0000|0000|1001*/ /*Just forward without untag*/
 			eval("et", "robowr", "0x34", "0x6", "0x300e");
 		}
 		break;
@@ -4916,8 +5485,14 @@ wl_exist(char *ifname, int band)
 	char buf[128], *line;
 	int ret = 1;
 #ifdef RTCONFIG_QTN
-        if (!strcmp(ifname, "wifi0"))
-                return 0;
+	if (!strcmp(ifname, "wifi0")){
+		ret = rpc_qcsapi_init();
+		if (ret == 0) {
+			return 1;
+		}else{
+			return -1;
+		}
+	}
 #endif
 	sprintf(buf, "wl -i %s bands", ifname);
 	fp = popen(buf, "r");

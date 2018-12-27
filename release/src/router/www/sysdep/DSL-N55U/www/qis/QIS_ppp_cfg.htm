@@ -147,8 +147,12 @@ function gotoHome() {
 <input type="hidden" name="dsltmp_qis_pppoe_relay" value="0">
 
 <div class="QISmain">
-	<div class="formfonttitle" style="padding:0 0 0 10;">PPPoE/PPPoA</div>
 	<table width="730px">
+		<tr>
+			<td align="left">
+				<span class="description_down">PPPoE / PPPoA</span>
+			</td>
+		</tr>
 		<tr id="home_button">
 			<td align="right">
 				<img onclick="gotoHome();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
@@ -160,21 +164,26 @@ function gotoHome() {
 
 <table id="tblsetting_1" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
   <tr>
-     &nbsp;&nbsp;&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <script>document.write(prctl_str);</script>, VPI/VCI: <% nvram_get("dsltmp_autodet_vpi"); %>/<% nvram_get("dsltmp_autodet_vci"); %><script>document.write(encap_str);</script><br>
-     &nbsp;&nbsp;&nbsp;<#PPP_cfg_usersel_desc#>
-     <div id=hint_msg></div>
+  	<td class="test_css">	
+     <#Layer3Forwarding_x_ConnectionType_itemname#>: <script>document.write(prctl_str);</script>, VPI/VCI: <% nvram_get("dsltmp_autodet_vpi"); %>/<% nvram_get("dsltmp_autodet_vci"); %><script>document.write(encap_str);</script><br>
+     <#PPP_cfg_usersel_desc#>
+     <div id=hint_msg></div>    
      <br><br>
+    </td> 
   </tr>
+</table>
+
+<table style="margin-left:50px;">  
   <tr>
 	<th width="120"><#PPPConnection_UserName_itemname#></th>
 	<td>
-	  <input type="text" name="dsltmp_qis_pppoe_username" value="" maxlength="64" size="36"/>
+	  <input type="text" name="dsltmp_qis_pppoe_username" class="input_30_table" value="" maxlength="64">
 	</td>
   </tr>
   <tr>
 	<th width="120"><#PPPConnection_Password_itemname#></th>
 	<td>
-	  <input type="password" name="dsltmp_qis_pppoe_passwd" value="" maxlength="32" size="36"/>
+	  <input type="password" name="dsltmp_qis_pppoe_passwd" class="input_30_table" value="" maxlength="32">
 	</td>
   </tr>
 </table>

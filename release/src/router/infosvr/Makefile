@@ -25,6 +25,10 @@ CFLAGS += -I$(SRCBASE)/common/include
 LDFLAGS += -lgcc_s
 endif
 
+ifeq ($(RTCONFIG_QTN),y)
+LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
 all: infosvr
 
 clean:
@@ -41,7 +45,7 @@ install: all
 	install infosvr $(INSTALLDIR)/usr/sbin
 
 
-infosvr: ./infosvr.o ./wlutils.o ./common.o ./packet.o ./service.o ./interface.o ./storage.o
+infosvr: ./infosvr.o ./common.o ./packet.o ./interface.o ./storage.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 	$(STRIP) $@
 

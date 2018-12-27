@@ -1197,14 +1197,14 @@ unsigned char * base64_decode(buffer *out, const char *in) {
 
 char* get_mac_address(const char* iface, char* mac){
 	int fd;
-    	struct ifreq ifr;
-    	fd = socket(AF_INET, SOCK_DGRAM, 0);
+    struct ifreq ifr;
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
 	ifr.ifr_addr.sa_family = AF_INET;	
-    	strncpy(ifr.ifr_name, iface, IFNAMSIZ-1);		
-    	ioctl(fd, SIOCGIFHWADDR, &ifr);
+    strncpy(ifr.ifr_name, iface, IFNAMSIZ-1);		
+    ioctl(fd, SIOCGIFHWADDR, &ifr);
 	close(fd);
-    	sprintf(mac,"%.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
-       	(unsigned char)ifr.ifr_hwaddr.sa_data[0],
+    sprintf(mac,"%.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+       		(unsigned char)ifr.ifr_hwaddr.sa_data[0],
          	(unsigned char)ifr.ifr_hwaddr.sa_data[1],
          	(unsigned char)ifr.ifr_hwaddr.sa_data[2],
          	(unsigned char)ifr.ifr_hwaddr.sa_data[3],
@@ -1693,7 +1693,6 @@ int smbc_get_usbdisk_permission(const char* user_name, const char* usbdisk_rel_s
 	int permission = -1;
 	
 	#if EMBEDDED_EANBLE
-
 	int st_samba_mode = nvram_get_st_samba_mode();
 	
 	if( (st_samba_mode==1) ||
@@ -1809,25 +1808,11 @@ void hexstr2binstr(const char* in_str, char** out_str)
 	
 }
 
-char* ten2hex(int  _v )
+void ten2hex(int  _v, char** out )
 {	
-	char ret[5]="\0";		
-	if( _v >=0 && _v <= 9 )		
-		//ret = _v.toString();	
-		sprintf(ret,"%d", _v);
-	else if( _v == 10 )		
-		sprintf(ret,"%s", "a");//ret = "a";	
-	else if( _v == 11 )	
-		sprintf(ret,"%s", "b");//ret = "b";	
-	else if( _v == 12 )		
-		sprintf(ret,"%s", "c");//ret = "c";	
-	else if( _v == 13 )		
-		sprintf(ret,"%s", "d");//ret = "d";	
-	else if( _v == 14 )		
-		sprintf(ret,"%s", "e");//ret = "e";	
-	else if( _v == 15 )		
-		sprintf(ret,"%s", "f");//ret = "f";		
-	return ret;
+	*out = (char*)malloc(5);
+	memset(*out, '\0', 5);
+	sprintf(*out, "%x", _v);
 }
 
 void binstr2hexstr( const char* in_str, char** out_str )
@@ -1836,23 +1821,29 @@ void binstr2hexstr( const char* in_str, char** out_str )
 	if( 0 != strlen(in_str) % 4 )	{
 		buffer_free(ret);
 		return;	
-	}				
-	int ic = strlen(in_str) / 4;				
+	}
+
+	buffer_copy_string(ret, "");
+	
+	int ic = strlen(in_str) / 4;
+	//Cdbg(DBE, "ic=%d", ic);
 	for( int i = 0; i < ic; i++ )
 	{		
 		char str[4]="\0";
 		substr(str, in_str, i*4, 4);
-
-		int uc = bin2ten( str );
-
-		buffer_append_string(ret, ten2hex(uc));
 		
-		//var substr = in_src.substr( i*4, 4 );				
-		//ret += ten2hex( bin2ten( substr ) );	
+		int uc = bin2ten( str );
+		
+		//- ten to hex
+		char* hex;
+		ten2hex(uc, &hex);
+		buffer_append_string(ret, hex);
+		free(hex);
 	}		
 
 	*out_str = (char*)malloc(ret->size+1);
 	strcpy(*out_str, ret->ptr);
+
 	buffer_free(ret);
 }
 
@@ -2466,27 +2457,27 @@ int generate_sharelink(server* srv,
 		pch = strtok(filename, ";");
 		
 		*out = buffer_init();
-
+		
 		char strTime[20]="\0";
 		char mac[20]="\0";
-
-		#if EMBEDDED_EANBLE
-#ifdef APP_IPKG
-                char *router_mac=nvram_get_router_mac();
-                sprintf(mac,"%s",router_mac);
-                free(router_mac);
-#else
-		strcpy( mac, nvram_get_router_mac() );
-#endif
+		
+	#if EMBEDDED_EANBLE
+		#ifdef APP_IPKG
+        char *router_mac=nvram_get_router_mac();
+        sprintf(mac,"%s",router_mac);
+        free(router_mac);
 		#else
-		get_mac_address("eth0", &mac);					
+		char *router_mac=nvram_get_router_mac();
+		strcpy(mac, (router_mac==NULL) ? "00:12:34:56:78:90" : router_mac);
 		#endif
-		
+	#else
+		get_mac_address("eth0", &mac);
+	#endif
+				
 		char* base64_key = ldb_base64_encode(mac, strlen(mac));
-
-		expire = 86400; //- 24hr
-		unsigned long expiretime = (expire==0 ? 0 : time(NULL) + expire);
 		
+		expire = 86400; //- 24hr
+		unsigned long expiretime = (expire==0 ? 0 : time(NULL) + expire);		
 		sprintf(strTime, "%lu", expiretime);
 		
 		char* share_link;
@@ -3427,6 +3418,18 @@ void md5sum(char* output, int counter, ...)
 	output[129] = '\0';
 }
 
+int check_skip_folder_name(char* foldername){	
+	if ( strcmp(foldername, "minidlna")==0 ||		 
+		 strcmp(foldername, "asusware")==0 ||		 
+		 strcmp(foldername, "asusware.big")==0 ||		 
+		 strcmp(foldername, "asusware.mipsbig")==0 ||
+		 strcmp(foldername, "asusware.arm")==0 ||		 
+		 strcmp(foldername, "$RECYCLE.BIN")==0 ) {		
+		 return 1;	
+	}	
+
+	return 0;
+}
 #if 0
 int is_utf8_file(const char* file){
 	FILE* fp;

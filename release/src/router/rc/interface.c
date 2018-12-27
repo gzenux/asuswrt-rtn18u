@@ -55,6 +55,7 @@ static struct switch_config {
 	SWCFG_INIT(SWCFG_STB12,   SW_CPU|            SW_L3|SW_L4,        SW_CPU|SW_WAN|SW_L1|SW_L2),
 	SWCFG_INIT(SWCFG_STB34,   SW_CPU|SW_L1|SW_L2,                    SW_CPU|SW_WAN|SW_L3|SW_L4),
 	SWCFG_INIT(SWCFG_BRIDGE,  SW_CPU|SW_L1|SW_L2|SW_L3|SW_L4|SW_WAN, SW_CPU),
+	SWCFG_INIT(SWCFG_PSTA,	  SW_CPU|SW_L1|SW_L2|SW_L3|SW_L4, 	 SW_CPU),
 	SWCFG_INIT(WAN1PORT1, SW_CPU|SW_L2|SW_L3|SW_L4, SW_CPU|SW_L1),
 	SWCFG_INIT(WAN1PORT2, SW_CPU|SW_L1|SW_L3|SW_L4, SW_CPU|SW_L2),
 	SWCFG_INIT(WAN1PORT3, SW_CPU|SW_L1|SW_L2|SW_L4, SW_CPU|SW_L3),
@@ -410,7 +411,7 @@ int start_vlan(void)
 			eval("vconfig", "set_ingress_map", vlan_id, prio, prio);
 		}
 	}
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U)
 	eval("vconfig", "set_egress_map", "vlan2", "0", nvram_safe_get("switch_wan0prio"));
 #endif
 	close(s);

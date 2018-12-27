@@ -69,7 +69,7 @@ AM_YFLAGS = -d
 
 AM_CFLAGS = \
 	-Wall \
-	-Wcast-align \
+	-Wno-cast-align \
 	-Wcast-qual \
 	-Wpointer-arith \
 	-Wmissing-declarations \
@@ -87,7 +87,7 @@ man_MANS = \
 	radvdump.8
 
 EXTRA_DIST = \
-	CHANGES \
+	CHANGES-1 \
 	COPYRIGHT \
 	INTRO.html \
 	VERSION \

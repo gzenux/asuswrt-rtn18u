@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -38,6 +38,9 @@ var timerID = null;
 var timerRunning = false;
 var timeout = 2000;
 var delay = 1000;
+var wl_ssid_closed = "<% nvram_get("wl_closed"); %>";
+var curState = "<% nvram_get("wps_enable"); %>";
+var band_string = "";
 
 function reject_wps(auth_mode, wep){
 	return (auth_mode == "open" && wep != "0") || auth_mode == "shared" || auth_mode == "psk" || auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "wpawpa2" || auth_mode == "radius";
@@ -46,8 +49,14 @@ function reject_wps(auth_mode, wep){
 function get_band_str(band){
 	if(band == 0)
 		return "2.4GHz";
-	else if(band == 1)
-		return "5GHz";
+	else if(band == 1){
+		if(!wl_info.band5g_2_support)
+			return "5GHz";	
+		else
+			return "5GHz-1";	
+	}
+	else if(band == 2)
+		return "5GHz-2";
 	return "";
 }
 
@@ -57,7 +66,11 @@ function initial(){
 	if(!band5g_support){
 		$("wps_band_tr").style.display = "none";
 		
-	}else{										//Dual band
+	}else{		
+		if(wl_info.band5g_2_support){
+			$("wps_switch").style.display = "none";	
+			$("wps_select").style.display = "";
+		}								//Dual band
 		$("wps_band_tr").style.display = "";
 		if(!wps_multiband_support || document.form.wps_multiband.value == "0") {
 			$("wps_band_word").innerHTML = get_band_str(document.form.wps_band.value);
@@ -133,6 +146,29 @@ function SwitchBand(){
 	applyRule();
 }
 
+function SelectBand(wps_band){
+	if(wps_enable_old == "0"){
+	var wps_band = document.form.wps_band.value;
+	var wps_multiband = document.form.wps_multiband.value;
+	if (!wps_multiband_support){
+		if(document.form.wps_unit[0].selected)
+			document.form.wps_band.value = 0;
+		else if(document.form.wps_unit[1].selected)
+			document.form.wps_band.value = 1;
+		else if(document.form.wps_unit[2].selected)
+			document.form.wps_band.value = 2;
+		}
+	}
+	else{
+		$("wps_band_hint").innerHTML = "* <#1821#>";
+	return false;
+	}
+	FormActions("apply.cgi", "change_wps_unit", "", "");
+	document.form.target = "";
+	document.form.submit();
+	applyRule();
+}
+
 function done_validating(action){
 	refreshpage();
 }
@@ -198,7 +234,17 @@ function ValidateChecksum(PIN){
 }
 
 function PIN_PBC_Check(){
+	var array_temp = new Array();
 	if(document.form.wps_sta_pin.value != ""){
+		if(document.form.wps_sta_pin.value.indexOf(' ')!= -1){
+			array_temp = document.form.wps_sta_pin.value.split(" ");
+			document.form.wps_sta_pin.value = array_temp[0] + array_temp[1];
+		}
+		else if(document.form.wps_sta_pin.value.indexOf('-')!= -1){
+			array_temp = document.form.wps_sta_pin.value.split("-");
+			document.form.wps_sta_pin.value = array_temp[0] + array_temp[1];
+		}
+			
 		if(document.form.wps_sta_pin.value.length != 8 || !ValidateChecksum(document.form.wps_sta_pin.value)){
 			alert("<#JS_InvalidPIN#>");
 			document.form.wps_sta_pin.focus();
@@ -305,6 +351,10 @@ function show_wsc_status(wps_infos){
 		$("wps_enable_word").innerHTML = "<#btn_Enabled#>";
 		$("enableWPSbtn").value = "<#btn_disable#>";
 		$("switchWPSbtn").style.display = "none";
+		if(wl_info.band5g_2_support){
+			$("wps_switch").style.display = "";	
+			$("wps_select").style.display = "none";
+		}
 	}
 	else{
 		$("wps_enable_word").innerHTML = "<#btn_Disabled#>"
@@ -312,10 +362,21 @@ function show_wsc_status(wps_infos){
 
 		if(wps_infos[12].firstChild.nodeValue == 0){
 			$("wps_band_word").innerHTML = "2.4GHz";
+			band_string = "2.4GHz";
 		}
 		else if(wps_infos[12].firstChild.nodeValue == 1){
-			$("wps_band_word").innerHTML = "5GHz";
+			if(!wl_info.band5g_2_support){
+				$("wps_band_word").innerHTML = "5GHz";
+				band_string = "5GHz";
+			}else{
+				$("wps_band_word").innerHTML = "5GHz-1";
+				band_string = "5GHz-1";
+			}
 		}	
+		else if(wps_infos[12].firstChild.nodeValue == 2){
+			$("wps_band_word").innerHTML = "5GHz-2";
+			band_string = "5GHz-2";
+		}
 		$("switchWPSbtn").style.display = "";
 	}
 
@@ -577,6 +638,12 @@ function _change_wl_unit_status(__unit){
 						<script type="text/javascript">
 							$j('#radio_wps_enable').iphoneSwitch('<% nvram_get("wps_enable"); %>', 
 								 function() {
+									if(wl_ssid_closed == 1){
+										alert("If you want to enable WPS, you need to disable hiding " + band_string + " SSID first");
+										$j('#iphone_switch').animate({backgroundPosition: -37}, "slow", function() {});
+										return false;
+									}
+
 									document.form.wps_enable.value = "1";
 									enableWPS();
 								 },
@@ -596,11 +663,18 @@ function _change_wl_unit_status(__unit){
 			<tr id="wps_band_tr">
 				<th width="30%"><a class="hintstyle" href="javascript:void(0);" onclick="openHint(13,5);"><#Current_band#></th>
 				
-				<td>
+				<td id="wps_switch">
 						<span class="devicepin" style="color:#FFF;" id="wps_band_word"></span>&nbsp;&nbsp;
 						<input type="button" class="button_gen_long" name="switchWPSbtn" id="switchWPSbtn" value="<#Switch_band#>" class="button" onClick="SwitchBand();">
 						<br><span id="wps_band_hint"></span>
 		  	</td>
+				<td  id="wps_select" style="display:none">
+						<select name="wps_unit" class="input_option" onChange="SelectBand();">
+							<option id="wps_opt0" class="content_input_fd" value="0" <% nvram_match("wps_band", "0","selected"); %>>2.4GHz</option>
+							<option id="wps_opt1" class="content_input_fd" value="1" <% nvram_match("wps_band", "1","selected"); %>>5GHz-1</option>
+							<option id="wps_opt2" class="content_input_fd" value="2" <% nvram_match("wps_band", "2","selected"); %>>5GHz-2</option>
+						</select>			
+				</td>
 			</tr>
 			
 			<tr id="wps_state_tr">
@@ -650,7 +724,7 @@ function _change_wl_unit_status(__unit){
 			  <td>
 					<input type="radio" name="wps_method" onclick="changemethod(0);" value="0"><#WLANConfig11b_x_WPS_pushbtn#>
 					<input type="radio" name="wps_method" onclick="changemethod(1);" value="1"><#WLANConfig11b_x_WPSPIN_itemname#>
-			  	<input type="text" name="wps_sta_pin" id="wps_sta_pin" value="" size="8" maxlength="8" class="input_15_table">
+			  	<input type="text" name="wps_sta_pin" id="wps_sta_pin" value="" size="9" maxlength="9" class="input_15_table">
 				  <div id="starBtn" style="margin-top:10px;"><input class="button_gen" type="button" style="margin-left:5px;" onClick="configCommand();" id="addEnrolleebtn_client" name="addEnrolleebtn"  value="<#wps_start_btn#>"></div>
 				</td>
 			</tr>

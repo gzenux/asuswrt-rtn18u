@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -138,7 +138,10 @@ function applyRule(){
 //		if(document.form.url_enable_x[0].checked == true && document.form.url_enable_x_orig.value != 1 ||
 //				document.form.url_enable_x[1].checked == true && document.form.url_enable_x_orig.value != 0)
 //			FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");	
-
+		if(tmo_support){
+			FormActions("start_apply.htm", "apply_new", "restart_net_and_phy", "30");
+		}
+		
 		showLoading();
 		document.form.submit();
 }

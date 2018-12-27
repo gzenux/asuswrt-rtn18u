@@ -1,7 +1,7 @@
 /*
  * Wireless Network Adapter Configuration Utility
  *
- * Copyright (C) 2013, Broadcom Corporation
+ * Copyright (C) 2014, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: wlconf.c 415896 2013-08-01 02:59:43Z $
+ * $Id: wlconf.c 454872 2014-02-12 02:49:54Z $
  */
 
 #include <typedefs.h>
@@ -1010,7 +1010,7 @@ wlconf_set_ampdu_retry_limit(char *name, char *prefix)
  * Returns WME setting.
  */
 static int
-wlconf_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int btc_mode)
+wlconf_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int btc_mode, int ap)
 {
 	bool ampdu_valid_option = FALSE;
 	bool amsdu_valid_option = FALSE;
@@ -1019,7 +1019,7 @@ wlconf_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int btc_m
 	int wme_option_val = ON;  /* On by default */
 	char caps[WLC_IOCTL_MEDLEN], var[80], *next, *wme_val;
 	char buf[WLC_IOCTL_SMLEN];
-	int len = strlen("amsdu");
+	int len = (sizeof("amsdu") - 1);
 	int ret, phytype;
 	wlc_rev_info_t rev;
 #ifdef linux
@@ -1080,6 +1080,19 @@ wlconf_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int btc_m
 					rx_amsdu_in_ampdu_option_val = ON;
 				else if (!strcmp(nvram_str, "auto"))
 					rx_amsdu_in_ampdu_option_val = AUTO;
+			}
+
+			/*
+			 * Some tests show problems when AMSDU is enabled on TX
+			 * side together with ps-pretend.
+			 * Ps-pretend is used on AP only.
+			 * Let's disable AMSDU downstream unconditionally
+			 * in devicemode=1.
+			 * When ps-pretend be OK with AMSDU, below statement
+			 * need to be removed.
+			 */
+			if (ap && !strcmp(nvram_safe_get("devicemode"), "1")) {
+				amsdu_option_val = OFF;
 			}
 		}
 	}
@@ -1231,7 +1244,7 @@ trf_mgmt_settings(char *prefix, bool dwm_supported)
 	bool dwm_filters_configured = FALSE;
 	char dscp_filter_buffer[sizeof(trf_mgmt_filter_t)*(MAX_NUM_TRF_MGMT_DWM_RULES)];
 	char dscp_filter_iobuff[sizeof(trf_mgmt_filter_t)*(MAX_NUM_TRF_MGMT_DWM_RULES)+
-	strlen("trf_mgmt_filters_add")+ 1 + OFFSETOF(trf_mgmt_filter_list_t, filter)];
+		sizeof("trf_mgmt_filters_add") + OFFSETOF(trf_mgmt_filter_list_t, filter)];
 	int dscp_filterlen;
 	trf_mgmt_filter_t *trf_mgmt_dwm_filter;
 	trf_mgmt_filter_list_t *trf_mgmt_dwm_filter_list = NULL;
@@ -1592,7 +1605,7 @@ wlconf(char *name)
 	char tmp[100], tmp2[100], prefix[PREFIX_LEN];
 	char var[80], *next, *str, *addr = NULL;
 	/* Pay attention to buffer length requirements when using this */
-	char buf[WLC_IOCTL_SMLEN] __attribute__ ((aligned(4)));
+	char buf[WLC_IOCTL_SMLEN*2] __attribute__ ((aligned(4)));
 	char *country;
 	char *country_rev;
 	wlc_rev_info_t rev;
@@ -1691,8 +1704,9 @@ wlconf(char *name)
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 
 	/* Restore defaults if per-interface parameters do not exist */
-	restore_defaults = !nvram_get(strcat_r(prefix, "ifname", tmp));
-	nvram_validate_all(prefix, restore_defaults);
+//	restore_defaults = !nvram_get(strcat_r(prefix, "ifname", tmp));
+	restore_defaults = !strlen(nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
+//	nvram_validate_all(prefix, restore_defaults);
 	nvram_set(strcat_r(prefix, "ifname", tmp), name);
 	nvram_set(strcat_r(prefix, "hwaddr", tmp), ether_etoa((uchar *)buf, eaddr));
 	snprintf(buf, sizeof(buf), "%d", unit);
@@ -2153,6 +2167,18 @@ wlconf(char *name)
 	/* Store the resolved bandtype */
 	bandtype = val;
 
+	/* Check errors again (will cover 5Ghz-only cards) */
+	if (ret) {
+		int list[3];
+
+		/* default band to the first band in band list */
+		wl_ioctl(name, WLC_GET_BANDLIST, list, sizeof(list));
+		WL_SETINT(name, WLC_SET_BAND, list[1]);
+
+		/* Read it back, and set bandtype accordingly */
+		WL_GETINT(name, WLC_GET_BAND, &bandtype);
+	}
+
 	/* Get current core revision */
 	WL_IOCTL(name, WLC_GET_REVINFO, &rev, sizeof(rev));
 	snprintf(buf, sizeof(buf), "%d", rev.corerev);
@@ -2432,7 +2458,7 @@ wlconf(char *name)
 	btc_mode = atoi(nvram_safe_get(strcat_r(prefix, "btc_mode", tmp)));
 
 	/* Set the AMPDU and AMSDU options based on the N-mode */
-	wme_global = wlconf_ampdu_amsdu_set(name, prefix, nmode, btc_mode);
+	wme_global = wlconf_ampdu_amsdu_set(name, prefix, nmode, btc_mode, ap);
 
 	/* Now that wme_global is known, check per-BSS disable settings */
 	for (i = 0; i < bclist->count; i++) {
@@ -2626,6 +2652,13 @@ wlconf(char *name)
 		val = nvram_match(strcat_r(prefix, "frameburst", tmp), "on");
 	WL_IOCTL(name, WLC_SET_FAKEFRAG, &val, sizeof(val));
 
+	/* Set dynamic frameburst max station limit */
+	str = nvram_get(strcat_r(prefix, "frameburst_dyn_max_stations", tmp));
+	if (!str) { /* Fall back to previous name, frameburst_dyn */
+		str = nvram_safe_get("frameburst_dyn");
+	}
+	wl_iovar_setint(name, "frameburst_dyn_max_stations", atoi(str));
+
 	/* Set STBC tx and rx mode */
 	if (phytype == PHY_TYPE_N ||
 		phytype == PHY_TYPE_HT ||
@@ -2718,12 +2751,22 @@ wlconf(char *name)
 	/* set TAF */
 	val = 0;
 	str = nvram_get(strcat_r(prefix, "taf_enable", tmp));
-	if (str) {
+	if (str && (bandtype == WLC_BAND_5G)) {
 		val = atoi(str);
 	}
 	WL_IOVAR_SETINT(name, "taf", val);
 
-	/* set ebos */
+	val = 0;
+	str = nvram_get(strcat_r(prefix, "taf_rule", tmp));
+	if (str) {
+		val = strtoul(str, NULL, 0);
+		WL_IOVAR_SETINT(name, "taf_rule", val);
+	}
+
+	/* Bring the interface back up */
+	WL_IOCTL(name, WLC_UP, NULL, 0);
+
+	/* set ebos, interface must be up */
 	val = 0;
 	str = nvram_get(strcat_r(prefix, "ebos_enable", tmp));
 	if (str) {
@@ -2734,31 +2777,50 @@ wlconf(char *name)
 	val = 0;
 	str = nvram_get(strcat_r(prefix, "ebos_flags", tmp));
 	if (str) {
-		val = atoi(str);
+		val = strtoul(str, NULL, 0);
 		WL_IOVAR_SETINT(name, "ebos_flags", val);
 	}
 
 	val = 0;
 	str = nvram_get(strcat_r(prefix, "ebos_prr_threshold", tmp));
 	if (str) {
-		val = strtol(str, NULL, 0);
+		val = strtoul(str, NULL, 0);
 		WL_IOVAR_SETINT(name, "ebos_prr_threshold", val);
 	}
 
 	val = 0;
 	str = nvram_get(strcat_r(prefix, "ebos_prr_flags", tmp));
 	if (str) {
-		val = atoi(str);
+		val = strtoul(str, NULL, 0);
 		WL_IOVAR_SETINT(name, "ebos_prr_flags", val);
 	}
 
-	/* Bring the interface back up */
-	WL_IOCTL(name, WLC_UP, NULL, 0);
+	val = 0;
+	str = nvram_get(strcat_r(prefix, "ebos_prr_transit", tmp));
+	if (str) {
+		val = strtol(str, NULL, 0);
+		WL_IOVAR_SETINT(name, "ebos_prr_transit", val);
+	}
+	val = 0;
+
+	str = nvram_get(strcat_r(prefix, "ebos_transit", tmp));
+	if (str) {
+		val = strtol(str, NULL, 0);
+		WL_IOVAR_SETINT(name, "ebos_transit", val);
+	}
 
 	/* set phy_percal_delay */
 	val = atoi(nvram_safe_get(strcat_r(prefix, "percal_delay", tmp)));
 	if (val) {
 		wl_iovar_set(name, "phy_percal_delay", &val, sizeof(val));
+	}
+
+	/* Set phy periodic cal if nvram present. Otherwise, use driver defaults. */
+	str = nvram_get(strcat_r(prefix, "cal_period", tmp));
+	if (str) {
+		/* user specified phy cal period. */
+		val = atoi(str);
+		WL_IOVAR_SET(name, "cal_period", &val, sizeof(val));
 	}
 
 	/* Set antenna */

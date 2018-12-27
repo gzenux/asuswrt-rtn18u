@@ -20,10 +20,12 @@ static const struct model_s model_list[] = {
 	{ "RT-AC56U",	MODEL_RTAC56U	},
 	{ "RT-AC66U",	MODEL_RTAC66U	},
 	{ "RT-AC68U",	MODEL_RTAC68U	},
+	{ "TM-AC1900",	MODEL_RTAC68U	},
 	{ "RT-AC68U_V2",MODEL_RTAC68U	},
 	{ "RT-AC69U",	MODEL_RTAC68U	},
 	{ "RT-AC87U",	MODEL_RTAC87U	},
 	{ "RT-AC53U",	MODEL_RTAC53U	},
+	{ "RT-AC3200",	MODEL_RTAC3200	},
 	{ "RT-N53",	MODEL_RTN53	},
 	{ "RT-N16",	MODEL_RTN16	},
 	{ "RT-N18U",	MODEL_RTN18U	},
@@ -43,6 +45,7 @@ static const struct model_s model_list[] = {
 	{ "RT-N10P",	MODEL_RTN10P	},
 	{ "RT-N10D1",	MODEL_RTN10D1	},
 	{ "RT-N10PV2",	MODEL_RTN10PV2	},
+	{ "DSL-AC68U",	MODEL_DSLAC68U	},
 #else	/* RTCONFIG_RALINK */
 #ifdef RTCONFIG_DSL
 	{ "DSL-N55U",	MODEL_DSLN55U	},
@@ -54,6 +57,7 @@ static const struct model_s model_list[] = {
 	{ "RT-N14U",	MODEL_RTN14U	},
 	{ "RT-AC52U",	MODEL_RTAC52U	},
 	{ "RT-AC51U",	MODEL_RTAC51U	},
+	{ "RT-N54U",	MODEL_RTN54U	},
 	{ "RT-N36U3",	MODEL_RTN36U3	},
 	{ "RT-N56U",	MODEL_RTN56U	},
 	{ "RT-N65U",	MODEL_RTN65U	},
@@ -104,7 +108,7 @@ int get_blver(char *bls) {
         if(bls)
 		strcpy(buf, bls);
 	bp = buf;
-	while(tok = strsep((char**)&bp, delim))
+	while((tok = strsep((char**)&bp, delim)))
 		if(i < BLV_MAX)
 			bv[i++] = atoi(tok);
 

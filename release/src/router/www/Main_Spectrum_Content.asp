@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
 <meta name="svg.render.forceflash" content="false" />	
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
@@ -117,7 +117,7 @@ function refresh_signals(){
 								<tr>
 								  <td bgcolor="#4D595D" height="100px">
 									  <div>&nbsp;</div>
-									  <div class="formfonttitle"><#System_Log#> - Spectrum</div>
+									  <div class="formfonttitle"><#Menu_TrafficManager#> - Spectrum</div>
 									  <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 									  <div class="formfontdesc"><#Spectrum_desc#></div>
 										<span id="signals_update" style="margin-left:5px;margin-top:10px;color:#FFCC00;display:none;"></span>

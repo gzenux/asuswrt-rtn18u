@@ -2,11 +2,11 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<title><#Web_Title#> - <#Parental_Control#></title>
+<title id="web_title"><#Web_Title#> - <#Parental_Control#></title>
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="ParentalControl.css">
@@ -57,6 +57,33 @@
 	border-bottom:solid 1px black;
 	border-right:solid 1px black;
 }
+
+#switch_menu{
+	text-align:right
+}
+#switch_menu span{
+	/*border:1px solid #222;*/
+	
+	border-radius:4px;
+	font-size:16px;
+	padding:3px;
+}
+/*#switch_menu span:hover{
+	box-shadow:0px 0px 5px 3px white;
+	background-color:#97CBFF;
+}*/
+.click:hover{
+	box-shadow:0px 0px 5px 3px white;
+	background-color:#97CBFF;
+}
+.clicked{
+	background-color:#2894FF;
+	box-shadow:0px 0px 5px 3px white;
+
+}
+.click{
+	background:#8E8E8E;
+}
 </style>
 <script>
 
@@ -69,12 +96,6 @@ wan_proto = '<% nvram_get("wan_proto"); %>';
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var client_ip = login_ip_str();
 var client_mac = login_mac_str();
-var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var arps = [<% get_arp_table(); %>];		// [[ip, x, x, MAC, x, type], ...]
-var arls = [<% get_arl_table(); %>];		// [[MAC, port, x, x], ...]
-var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var networkmap_fullscan = '<% nvram_match("networkmap_fullscan", "0", "done"); %>'; //2008.07.24 Add.  1 stands for complete, 0 stands for scanning.;
-var clients_info = getclients();
 
 var MULTIFILTER_ENABLE = '<% nvram_get("MULTIFILTER_ENABLE"); %>'.replace(/&#62/g, ">");
 var MULTIFILTER_MAC = '<% nvram_get("MULTIFILTER_MAC"); %>'.replace(/&#62/g, ">");
@@ -186,12 +207,22 @@ function register_event(){
 
 function initial(){
 	show_menu();
+	if(bwdpi_support){
+		//show_inner_tab();
+		document.getElementById('guest_image').style.background = "url(images/New_ui/TimeLimits.png)";
+		$('content_title').innerHTML = "AiProtection - <#Time_Scheduling#>";
+		$('desc_title').innerHTML = "Time Scheduling allows you to set the time limit for a client's network usage. To use Time Scheduling:";		
+		//$('web_title').innerHTML = "<#Web_Title#> - Time Scheduling";
+		$('PC_enable').innerHTML = "Enable Time Scheduling";
+		$('switch_menu').style.display = "";
+	}
+
 	show_footer();
 	init_array(array);
-	init_cookie();
-	
-	if(downsize_4m_support)
-		$("guest_image").parentNode.style.display = "none";
+	init_cookie();	
+	if(downsize_4m_support || downsize_8m_support){
+			document.getElementById("guest_image").parentNode.style.display = "none";
+	}
 
 	if(!yadns_support){
 		$('FormTitle').style.webkitBorderRadius = "3px";
@@ -200,13 +231,13 @@ function initial(){
 	}
 
 	gen_mainTable();
-	showLANIPList();
+	setTimeout("showLANIPList();", 1000);	
 	if(<% nvram_get("MULTIFILTER_ALL"); %>)
 		showhide("list_table",1);
 	else
 		showhide("list_table",0);
 		
-	count_time();		
+	count_time();
 }
 
 /*------------ Mouse event of fake LAN IP select menu {-----------------*/
@@ -218,31 +249,27 @@ function setClientIP(devname, macaddr){
 }
 
 function showLANIPList(){
-	var code = "";
-	var show_name = "";
-	var client_list_array = '<% get_client_detail_info(); %>';	
-	var client_list_row = client_list_array.split('<');
+	var htmlCode = "";
+	for(var i=0; i<clientList.length;i++){
+		var clientObj = clientList[clientList[i]];
 
-	for(var i = 1; i < client_list_row.length; i++){
-		var client_list_col = client_list_row[i].split('>');
-		if(client_list_col[1] && client_list_col[1].length > 20)
-			show_name = client_list_col[1].substring(0, 16) + "..";
-		else
-			show_name = client_list_col[1];
+		if(clientObj.ip == "offline") clientObj.ip = "";
+		if(clientObj.name.length > 30) clientObj.name = clientObj.name.substring(0, 28) + "..";
 
-		if(client_list_col[1])
-			code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\''+client_list_col[1]+'\', \''+client_list_col[3]+'\');"><strong>'+client_list_col[2]+'</strong> ';
-		else
-			code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\''+client_list_col[3]+'\', \''+client_list_col[3]+'\');"><strong>'+client_list_col[2]+'</strong> ';
-			
-		if(show_name && show_name.length > 0)
-			code += '( '+show_name+')';
-				
-		code += ' </div></a>';
+		htmlCode += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\'';
+		htmlCode += clientObj.name;
+		htmlCode += '\', \'';
+		htmlCode += clientObj.mac;
+		htmlCode += '\');"><strong>';
+		htmlCode += clientObj.name;
+		htmlCode += "</strong></div></a><!--[if lte IE 6.5]><script>alert(\"<#ALERT_TO_CHANGE_BROWSER#>\");</script><![endif]-->";	
 	}
-	
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
-	$("ClientList_Block_PC").innerHTML = code;
+
+	$("ClientList_Block_PC").innerHTML = htmlCode;
+}
+
+function show_custome_name(){
+
 }
 
 function pullLANIPList(obj){
@@ -286,7 +313,7 @@ function gen_mainTable(){
 	code +='<td style="border-bottom:2px solid #000;">--</td>';
 	code +='<td style="border-bottom:2px solid #000;"><input class="url_btn" type="button" onClick="addRow_main(16)" value=""></td></tr>';
 	if(MULTIFILTER_DEVICENAME == "" && MULTIFILTER_MAC == "")
-		code +='<tr><td style="color:#FFCC00;" colspan="10"><#IPConnection_VSList_Norule#></td>';
+		code +='<tr><td style="color:#FFCC00;" colspan="5"><#IPConnection_VSList_Norule#></td>';
 	else{
 		for(var i=0; i<MULTIFILTER_DEVICENAME_row.length; i++){
 			code +='<tr id="row'+i+'">';
@@ -483,8 +510,10 @@ function redraw_selected_time(obj){
 		end_day =  parseInt(time_temp.substring(1,2));
 		start_time =  parseInt(time_temp.substring(2,4));
 		end_time =  parseInt(time_temp.substring(4,6));
+		if((start_day == end_day) && (end_time - start_time) < 0)	//for Sat 23 cross to Sun 00
+			end_day = 7;
 		
-		if(start_day == end_day){
+		if(start_day == end_day){			// non cross day
 			duration = end_time - start_time;
 			if(duration == 0)	//for whole selected
 				duration = 7*24;
@@ -507,7 +536,7 @@ function redraw_selected_time(obj){
 				duration--;
 				id = "";		
 			}	
-		}else{
+		}else{			// cross day
 			var duration_day = 0;
 			if(end_day - start_day < 0)
 				duration_day = 7 - start_day;
@@ -583,7 +612,6 @@ function select_all(){
 		}
 	}
 }
-
 
 function select_all_day(day){
 	var check_flag = 0
@@ -864,7 +892,28 @@ function genEnableArray_main(j, obj){
                         MULTIFILTER_ENABLE += ">";
         }       
 }
+
+function show_inner_tab(){
+	var code = "";
+	if(document.form.current_page.value == "ParentalControl.asp"){		
+		code += "<span class=\"clicked\"><#Time_Scheduling#></span>";
+		code += '<a href="AiProtection_WebProtector.asp">';
+		code += "<span style=\"margin-left:10px\" class=\"click\"><#AiProtection_filter#></span>";
+		code += '</a>';
+	}
+	else{
+		code += '<a href="AiProtection_WebProtector.asp">';
+		code += "<span class=\"click\"><#Time_Scheduling#></span>";
+		code += '</a>';		
+		code += "<span style=\"margin-left:10px\" class=\"clicked\"><#AiProtection_filter#></span>";	
+	}
+	
+	$('switch_menu').innerHTML = code;
+}
 </script>
+
+
+
 </head>
 
 <body onload="initial();" onunload="unload_body();" onselectstart="return false;">
@@ -909,17 +958,37 @@ function genEnableArray_main(j, obj){
 	<tr>
 		<td bgcolor="#4D595D" valign="top">
 		<div>&nbsp;</div>
-		<div class="formfonttitle"><#Parental_Control#></div>
-		<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
+		<div style="margin-top:-5px;">
+			<table width="730px">
+				<tr>
+					<td align="left" >
+						<div id="content_title" class="formfonttitle" style="width:400px"><#Parental_Control#></div>
+					</td>				
+					<td style="width:300px">
+						<div id="switch_menu" style="margin:-20px 0px 0px -20px;;display:none;">
+							<a href="AiProtection_WebProtector.asp">
+								<div style="background-image:url('images/New_ui/left-light.png');width:173px;height:40px;">
+									<div style="text-align:center;padding-top:9px;color:#FFFFFF;font-size:14px"><#AiProtection_filter#></div>
+								</div>
+							</a>
+							<div style="background-image:url('images/New_ui/right-dark.png');width:172px;height:40px;margin:-40px 0px 0px 173px;">
+								<div style="text-align:center;padding-top:9px;color:#93A9B1;font-size:14px"><#Time_Scheduling#></div>
+							</div>
+						</div>
+					<td>
+				</tr>
+			</table>
+			<div style="margin:0px 0px 10px 5px;"><img src="/images/New_ui/export/line_export.png"></div>
+		</div>
 		<div id="PC_desc">
 			<table width="700px" style="margin-left:25px;">
 				<tr>
 					<td>
-						<img id="guest_image" src="/images/New_ui/parental-control.png">
+						<div id="guest_image" style="background: url(images/New_ui/parental-control.png);width: 130px;height: 87px;"></div>
 					</td>
 					<td>&nbsp;&nbsp;</td>
 					<td style="font-style: italic;font-size: 14px;">
-						<span><#ParentalCtrl_Desc#></span>
+						<span id="desc_title"><#ParentalCtrl_Desc#></span>
 						<ol>	
 							<li><#ParentalCtrl_Desc1#></li>
 							<li><#ParentalCtrl_Desc2#></li>
@@ -941,7 +1010,7 @@ function genEnableArray_main(j, obj){
 			<!--=====Beginning of Main Content=====-->
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 				<tr>
-					<th><#ParentalCtrl_Enable#></th>
+					<th id="PC_enable"><#ParentalCtrl_Enable#></th>
 					<td>
 						<div align="center" class="left" style="width:94px; float:left; cursor:pointer;" id="radio_ParentControl_enable"></div>
 						<div class="iphone_switch_container" style="height:32px; width:74px; position: relative; overflow: hidden">
@@ -978,7 +1047,7 @@ function genEnableArray_main(j, obj){
 								<tr>
 									<th width="20%"><#General_x_SystemTime_itemname#></th>
 									<td align="left"><input type="text" id="system_time" name="system_time" class="devicepin" value="" readonly="1" style="font-size:12px;width:200px;">
-										<div id="svc_hint_div" style="display:none;"><span onClick="location.href='Advanced_System_Content.asp?af=ntp_server0'" style="color:#FFCC00;text-decoration:underline;cursor:pointer;">* Remind: Did not synchronize your system time with NTP server yet.</span></div>
+										<div id="svc_hint_div" style="display:none;"><span onClick="location.href='Advanced_System_Content.asp?af=ntp_server0'" style="color:#FFCC00;text-decoration:underline;cursor:pointer;"><#General_x_SystemTime_syncNTP#></span></div>
 		  								<div id="timezone_hint_div" style="display:none;"><span id="timezone_hint" onclick="location.href='Advanced_System_Content.asp?af=time_zone_select'" style="color:#FFCC00;text-decoration:underline;cursor:pointer;"></span></div>
 									</td>
 								</tr>

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -20,11 +20,12 @@
 
 <script>
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
+var level2CTF_supprot = ('<% nvram_get("ctf_fa_mode"); %>' == '') ? false : true;
 
 function initial(){
 	show_menu();
 
-	if('<% nvram_get("ctf_fa_mode"); %>' != ''){
+	if(level2CTF_supprot){
 		document.form.ctf_level.length = 0;
 		add_option(document.form.ctf_level, "<#WLANConfig11b_WirelessCtrl_buttonname#>", 0, getCtfLevel(0));
 		add_option(document.form.ctf_level, "Level 1 CTF", 1, getCtfLevel(1));
@@ -33,21 +34,38 @@ function initial(){
 }
 
 /*
-					ctf_disable_force   ctf_fa_mode
-Disable   1                   0
-Level 1   0                   0
-Level 2   0                   2 
+for RT-AC87U:
+		 ctf_disable_force   ctf_fa_mode_close
+Level 1          0                   1
+Level 2          0                   0 
+Disable          1                   1
 
+for Others:
+         ctf_disable_force   ctf_fa_mode
+Level 1          0                0
+Level 2          0                2 
+Disable          1                0
 */
+
 function getCtfLevel(val){
 	var curVal;
 
-	if(document.form.ctf_disable_force.value == 0 && document.form.ctf_fa_mode.value == 0)
-		curVal = 1;
-	else if(document.form.ctf_disable_force.value == 0 && document.form.ctf_fa_mode.value == 2)
-		curVal = 2;
-	else
-		curVal = 0;
+	if(based_modelid == 'RT-AC87U'){ // MODELDEP: RT-AC87U
+		if(document.form.ctf_disable_force.value == 0 && document.form.ctf_fa_mode_close.value == 1)
+			curVal = 1;
+		else if(document.form.ctf_disable_force.value == 0 && document.form.ctf_fa_mode_close.value == 0)
+			curVal = 2;
+		else
+			curVal = 0;
+	}
+	else{
+		if(document.form.ctf_disable_force.value == 0 && document.form.ctf_fa_mode.value == 0)
+			curVal = 1;
+		else if(document.form.ctf_disable_force.value == 0 && document.form.ctf_fa_mode.value == 2)
+			curVal = 2;
+		else
+			curVal = 0;		
+	}
 
 	if(curVal == val)
 		return true;
@@ -56,27 +74,49 @@ function getCtfLevel(val){
 }
 
 function applyRule(){
-	if(document.form.ctf_level.value == 1){
-		document.form.ctf_disable_force.value = 0;
-		document.form.ctf_fa_mode.value = 0;
-	}
-	else if(document.form.ctf_level.value == 2){
-		document.form.ctf_disable_force.value = 0;
-		document.form.ctf_fa_mode.value = 2;
+	if(based_modelid == 'RT-AC87U'){ // MODELDEP: RT-AC87U
+		document.form.ctf_fa_mode.disabled = true;
+
+		if(document.form.ctf_level.value == 1){
+			document.form.ctf_disable_force.value = 0;
+			document.form.ctf_fa_mode_close.value = 1;
+		}
+		else if(document.form.ctf_level.value == 2){
+			document.form.ctf_disable_force.value = 0;
+			document.form.ctf_fa_mode_close.value = 0;
+		}
+		else{
+			document.form.ctf_disable_force.value = 1;
+			document.form.ctf_fa_mode_close.value = 1;
+		}
 	}
 	else{
-		document.form.ctf_disable_force.value = 1;
-		document.form.ctf_fa_mode.value = 0;
+		if(level2CTF_supprot){		// for RT-AC68U, RT-AC56U support Level 2 CTF
+			if(document.form.wan_proto.value != "dhcp" && document.form.wan_proto.value != "static"){
+				if(document.form.ctf_level.value == 2){
+					alert("Can not use Level 2 CTF if WAN type is PPPoE、PPTP or L2TP");
+					return false;
+				}		
+			}		
+		}
+
+		document.form.ctf_fa_mode_close.disabled = true;
+		if(document.form.ctf_level.value == 1){
+			document.form.ctf_disable_force.value = 0;
+			document.form.ctf_fa_mode.value = 0;
+		}
+		else if(document.form.ctf_level.value == 2){
+			document.form.ctf_disable_force.value = 0;
+			document.form.ctf_fa_mode.value = 2;
+		}
+		else{
+			document.form.ctf_disable_force.value = 1;
+			document.form.ctf_fa_mode.value = 0;
+		}
 	}
 
-	if(valid_form()){
-			showLoading();
-			document.form.submit();	
-	}
-}
-
-function valid_form(){		
-	return true;	
+	showLoading();
+	document.form.submit();	
 }
 
 </script>
@@ -108,92 +148,87 @@ function valid_form(){
 <input type="hidden" name="productid" value="<% nvram_get("productid"); %>">
 <input type="hidden" name="current_page" value="Advanced_SwitchCtrl_Content.asp">
 <input type="hidden" name="next_page" value="Advanced_SwitchCtrl_Content.asp">
-<input type="hidden" name="group_id" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_script" value="reboot">
+<input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="60">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
+<input type="hidden" name="ctf_fa_mode_close" value="<% nvram_get("ctf_fa_mode_close"); %>">
 <input type="hidden" name="ctf_fa_mode" value="<% nvram_get("ctf_fa_mode"); %>">
 <input type="hidden" name="ctf_disable_force" value="<% nvram_get("ctf_disable_force"); %>">
+<input type="hidden" name="wan_proto" value="<% nvram_get("wan_proto"); %>" disabled>
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
-  <tr>
-	<td width="17">&nbsp;</td>
-	
-	<!--=====Beginning of Main Menu=====-->
-	<td valign="top" width="202">
-	  <div id="mainMenu"></div>
-	  <div id="subMenu"></div>
-	</td>
-	
-    <td valign="top">
-	<div id="tabMenu" class="submenuBlock"></div>
-		<!--===================================Beginning of Main Content===========================================-->
-<table width="98%" border="0" align="left" cellpadding="0" cellspacing="0">
 	<tr>
-		<td align="left" valign="top">
-  <table width="760px" border="0" cellpadding="5" cellspacing="0" class="FormTitle" id="FormTitle">
-	<tbody>
-	<tr>
-		  <td bgcolor="#4D595D" valign="top">
-		  <div>&nbsp;</div>
-		  <div class="formfonttitle"><#menu5_2#> - Switch Control</div>
-      <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-      <div class="formfontdesc">Setting <#Web_Title2#> switch control.</div>
-		  
-		  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
-      <tr>
-      <th><!--a class="hintstyle" href="javascript:void(0);" onClick="openHint(4,4);"--><#jumbo_frame#><!--/a--></th>
-          <td>
-						<select name="jumbo_frame_enable" class="input_option">
-							<option class="content_input_fd" value="0" <% nvram_match("jumbo_frame_enable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-							<option class="content_input_fd" value="1" <% nvram_match("jumbo_frame_enable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
-						</select>
-          </td>
-      </tr>
-
-      <tr>
-      <th>NAT Acceleration</th>
-          <td>
-						<select name="ctf_level" class="input_option">
-							<option class="content_input_fd" value="0" <% nvram_match("ctf_disable_force", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-							<option class="content_input_fd" value="1" <% nvram_match("ctf_disable_force", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
-						</select>			
-          </td>
-      </tr>     
-
-	    <tr style="display:none">
-	      <th>Enable GRO(Generic Receive Offload)</th>
-	          <td>
-	              <input type="radio" name="gro_disable_force" value="0" <% nvram_match("gro_disable_force", "0", "checked"); %>><#checkbox_Yes#>
-	              <input type="radio" name="gro_disable_force" value="1" <% nvram_match("gro_disable_force", "1", "checked"); %>><#checkbox_No#>
-	          </td>
-	      </tr>       
-			</table>	
-
-		<div class="apply_gen">
-			<input class="button_gen" onclick="applyRule()" type="button" value="<#CTL_apply#>"/>
-		</div>
+		<td width="17">&nbsp;</td>
 		
-	  </td>
-	</tr>
-
-	</tbody>	
-  </table>		
-					
+		<!--=====Beginning of Main Menu=====-->
+		<td valign="top" width="202">
+		  <div id="mainMenu"></div>
+		  <div id="subMenu"></div>
 		</td>
-	</form>					
+		
+	    <td valign="top">
+			<div id="tabMenu" class="submenuBlock"></div>
+				<!--===================================Beginning of Main Content===========================================-->
+			<table width="98%" border="0" align="left" cellpadding="0" cellspacing="0">
+				<tr>
+					<td align="left" valign="top">
+		  				<table width="760px" border="0" cellpadding="5" cellspacing="0" class="FormTitle" id="FormTitle">
+							<tbody>
+								<tr>
+				  					<td bgcolor="#4D595D" valign="top">
+				  						<div>&nbsp;</div>
+				  						<div class="formfonttitle"><#menu5_2#> - Switch Control</div>
+		      							<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
+										<div class="formfontdesc"><#SwitchCtrl_desc#></div>
+
+										<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+											<tr>
+												<th><#jumbo_frame#></th>
+												<td>
+													<select name="jumbo_frame_enable" class="input_option">
+														<option class="content_input_fd" value="0" <% nvram_match("jumbo_frame_enable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+														<option class="content_input_fd" value="1" <% nvram_match("jumbo_frame_enable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+													</select>
+												</td>
+											</tr>
+
+											<tr>
+		      									<th><#NAT_Acceleration#></th>
+												<td>
+													<select name="ctf_level" class="input_option">
+														<option class="content_input_fd" value="0" <% nvram_match("ctf_disable_force", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+														<option class="content_input_fd" value="1" <% nvram_match("ctf_disable_force", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+													</select>			
+												</td>
+											</tr>     
+
+											<tr style="display:none">
+												<th>Enable GRO(Generic Receive Offload)</th>
+												<td>
+													<input type="radio" name="gro_disable_force" value="0" <% nvram_match("gro_disable_force", "0", "checked"); %>><#checkbox_Yes#>
+													<input type="radio" name="gro_disable_force" value="1" <% nvram_match("gro_disable_force", "1", "checked"); %>><#checkbox_No#>
+												</td>
+											</tr>       
+										</table>	
+
+										<div class="apply_gen">
+											<input class="button_gen" onclick="applyRule()" type="button" value="<#CTL_apply#>"/>
+										</div>
+									</td>
+								</tr>
+							</tbody>	
+						</table>		
+					</td>
 				</tr>
 			</table>				
-			<!--===================================End of Main Content===========================================-->
-</td>
-
-    <td width="10" align="center" valign="top">&nbsp;</td>
+		</td>
+	    <td width="10" align="center" valign="top">&nbsp;</td>
 	</tr>
 </table>
-
+</form>
 <div id="footer"></div>
 </body>
 </html>

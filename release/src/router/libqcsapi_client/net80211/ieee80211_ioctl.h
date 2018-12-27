@@ -1218,6 +1218,24 @@ enum {
 	IEEE80211_PARAM_CONFIG_BW_TXPOWER = 267,	/* Configure the TX powers different bandwidths */
 	IEEE80211_PARAM_SCAN_CANCEL = 268,			/* Cancel any ongoing scanning */
 	IEEE80211_PARAM_VHT_NSS_CAP = 269,	/* Set max spatial streams for VHT mode */
+	IEEE80211_PARAM_FIXED_BW = 270,		/* Configure fixed tx bandwidth without changing BSS bandwidth */
+	IEEE80211_PARAM_DYN_RTSCTS = 271,	/* Dynamic RTS/CTS paramters */
+	IEEE80211_PARAM_TUNEPD = 272,       /* Specify number of tunning packets to send for power detector tuning */
+	IEEE80211_PARAM_TUNEPD_DONE = 273,              /* Specify number of tunning packets to send for power detector tuning */
+	IEEE80211_PARAM_BF_RX_STS = 274,	/* Set max BF sounding receive STS */
+	IEEE80211_PARAM_PC_OVERRIDE = 275,              /* RSSI based Power-contraint override */
+	IEEE80211_PARAM_INTRA_BSS_ISOLATE = 276,/* Intra BSS isolation */
+	IEEE80211_PARAM_BSS_ISOLATE = 277,      /* BSS isolation */
+	IEEE80211_PARAM_RX_AMSDU_ENABLE = 278,     /* RX AMSDU: 0 - disable, 1 - enable, 2 - enable dynamically */
+	IEEE80211_PARAM_DISASSOC_REASON = 279,	/* Get Disassoc reason */
+	IEEE80211_PARAM_RX_AMSDU_THRESHOLD_CCA = 280,	/* The threshold of cca intf for dynamic RX AMSDU */
+	IEEE80211_PARAM_RX_AMSDU_THRESHOLD_PMBL = 281,	/* The threshold of pmbl error for dynamic RX AMSDU */
+	IEEE80211_PARAM_RX_AMSDU_PMBL_WF_SP = 282,	/* The weight factor of short preamble error for calculating the pmbl error */
+	IEEE80211_PARAM_RX_AMSDU_PMBL_WF_LP = 283,	/* The weight factor of long preamble error for calculating the pmbl error */
+	IEEE80211_PARAM_BA_SETUP_ENABLE = 284,	/* enable the BA according the rssi threshold, 0 - disable, 1 - enable */
+	IEEE80211_PARAM_BB_PARAM = 285,	/* Baseband param */
+	IEEE80211_PARAM_NDPA_DUR = 286,         /* set vht NDPA duration field */
+	IEEE80211_PARAM_TXBF_PKT_CNT = 287,     /* set the pkt cnt per txbf interval to fire sounding to a node */
 };
 
 #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)

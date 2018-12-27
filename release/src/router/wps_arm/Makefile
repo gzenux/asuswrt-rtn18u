@@ -99,6 +99,10 @@ CFLAGS += -I$(SRCBASE)/include -I$(SRCBASE)/common/include -I$(SRCBASE)/wps/comm
 
 LDFLAGS += -lgcc_s
 
+ifeq ($(RTCONFIG_QTN),y)
+LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+
 WPSM_LIBS = -lnvram -lbcm -lshared -lbcmcrypto -lm
 # Set link libraries search path
 export LIBPATH  = -L$(TOP)/libbcmcrypto -L$(INSTALLDIR)/libbcmcrypto/usr/lib

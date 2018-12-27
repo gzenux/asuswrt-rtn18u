@@ -73,14 +73,6 @@
 #define balloc(B_ARGS, num) malloc(num)
 #define brealloc(B_ARGS, p, num) realloc(p, num)
 
-#ifndef max
-#define max(a,b)  (((a) > (b)) ? (a) : (b))
-#endif /* max */
-
-#ifndef min
-#define min(a,b)  (((a) < (b)) ? (a) : (b))
-#endif /* min */
-
 #define STR_REALLOC		0x1				/* Reallocate the buffer as required */
 #define STR_INC			64				/* Growth increment */
 
@@ -1038,15 +1030,7 @@ remove_dups(char *inlist, int inlist_size)
 int
 ure_any_enabled(void)
 {
-	char *temp;
-	char nv_param[NVRAM_MAX_PARAM_LEN];
-
-	sprintf(nv_param, "ure_disable");
-	temp = nvram_safe_get(nv_param);
-	if (temp && (strncmp(temp, "0", 1) == 0))
-		return 1;
-	else
-		return 0;
+	return nvram_match("ure_disable", "0");
 }
 
 
@@ -1623,3 +1607,20 @@ int _vstrsep(char *buf, const char *sep, ...)
 	va_end(ap);
 	return n;
 }
+
+#ifdef CONFIG_BCMWL5
+char *
+wl_ether_etoa(const struct ether_addr *n)
+{
+	static char etoa_buf[ETHER_ADDR_LEN * 3];
+	char *c = etoa_buf;
+	int i;
+
+	for (i = 0; i < ETHER_ADDR_LEN; i++) {
+		if (i)
+			*c++ = ':';
+		c += sprintf(c, "%02X", n->octet[i] & 0xff);
+	}
+	return etoa_buf;
+}
+#endif

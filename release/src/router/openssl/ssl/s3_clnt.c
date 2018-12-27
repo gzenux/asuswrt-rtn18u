@@ -280,7 +280,16 @@ int ssl3_connect(SSL *s)
 			if (ret <= 0) goto end;
 
 			if (s->hit)
+				{
 				s->state=SSL3_ST_CR_FINISHED_A;
+#ifndef OPENSSL_NO_TLSEXT
+				if (s->tlsext_ticket_expected)
+					{
+					/* receive renewed session ticket */
+					s->state=SSL3_ST_CR_SESSION_TICKET_A;
+					}
+#endif
+				}
 			else
 				s->state=SSL3_ST_CR_CERT_A;
 			s->init_num=0;
@@ -507,6 +516,7 @@ int ssl3_connect(SSL *s)
 		case SSL3_ST_CR_FINISHED_A:
 		case SSL3_ST_CR_FINISHED_B:
 
+			s->s3->flags |= SSL3_FLAGS_CCS_OK;
 			ret=ssl3_get_finished(s,SSL3_ST_CR_FINISHED_A,
 				SSL3_ST_CR_FINISHED_B);
 			if (ret <= 0) goto end;
@@ -820,6 +830,7 @@ int ssl3_get_server_hello(SSL *s)
 		SSLerr(SSL_F_SSL3_GET_SERVER_HELLO,SSL_R_ATTEMPT_TO_REUSE_SESSION_IN_DIFFERENT_CONTEXT);
 		goto f_err;
 		}
+	    s->s3->flags |= SSL3_FLAGS_CCS_OK;
 	    s->hit=1;
 	    }
 	else	/* a miss or crap from the other end */
@@ -879,7 +890,10 @@ int ssl3_get_server_hello(SSL *s)
 		}
 	s->s3->tmp.new_cipher=c;
 	if (!ssl3_digest_cached_records(s))
+		{
+		al = SSL_AD_INTERNAL_ERROR;
 		goto f_err;
+		}
 
 	/* lets get the compression algorithm */
 	/* COMPRESSION */
@@ -953,13 +967,15 @@ int ssl3_get_server_hello(SSL *s)
 		/* wrong packet length */
 		al=SSL_AD_DECODE_ERROR;
 		SSLerr(SSL_F_SSL3_GET_SERVER_HELLO,SSL_R_BAD_PACKET_LENGTH);
-		goto err;
+		goto f_err;
 		}
 
 	return(1);
 f_err:
 	ssl3_send_alert(s,SSL3_AL_FATAL,al);
+#ifndef OPENSSL_NO_TLSEXT
 err:
+#endif
 	return(-1);
 	}
 
@@ -1837,7 +1853,7 @@ int ssl3_get_new_session_ticket(SSL *s)
 	if (n < 6)
 		{
 		/* need at least ticket_lifetime_hint + ticket length */
-		al = SSL3_AL_FATAL,SSL_AD_DECODE_ERROR;
+		al = SSL_AD_DECODE_ERROR;
 		SSLerr(SSL_F_SSL3_GET_NEW_SESSION_TICKET,SSL_R_LENGTH_MISMATCH);
 		goto f_err;
 		}
@@ -1848,7 +1864,7 @@ int ssl3_get_new_session_ticket(SSL *s)
 	/* ticket_lifetime_hint + ticket_length + ticket */
 	if (ticklen + 6 != n)
 		{
-		al = SSL3_AL_FATAL,SSL_AD_DECODE_ERROR;
+		al = SSL_AD_DECODE_ERROR;
 		SSLerr(SSL_F_SSL3_GET_NEW_SESSION_TICKET,SSL_R_LENGTH_MISMATCH);
 		goto f_err;
 		}
@@ -2243,6 +2259,7 @@ int ssl3_send_client_key_exchange(SSL *s)
 			if (!DH_generate_key(dh_clnt))
 				{
 				SSLerr(SSL_F_SSL3_SEND_CLIENT_KEY_EXCHANGE,ERR_R_DH_LIB);
+				DH_free(dh_clnt);
 				goto err;
 				}
 
@@ -2254,6 +2271,7 @@ int ssl3_send_client_key_exchange(SSL *s)
 			if (n <= 0)
 				{
 				SSLerr(SSL_F_SSL3_SEND_CLIENT_KEY_EXCHANGE,ERR_R_DH_LIB);
+				DH_free(dh_clnt);
 				goto err;
 				}
 
@@ -2283,6 +2301,13 @@ int ssl3_send_client_key_exchange(SSL *s)
 			EC_KEY *tkey;
 			int ecdh_clnt_cert = 0;
 			int field_size = 0;
+
+			if (s->session->sess_cert == NULL) 
+				{
+				ssl3_send_alert(s,SSL3_AL_FATAL,SSL_AD_UNEXPECTED_MESSAGE);
+				SSLerr(SSL_F_SSL3_SEND_CLIENT_KEY_EXCHANGE,SSL_R_UNEXPECTED_MESSAGE);
+				goto err;
+				}
 
 			/* Did we send out the client's
 			 * ECDH share for use in premaster

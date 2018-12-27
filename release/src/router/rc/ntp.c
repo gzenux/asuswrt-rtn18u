@@ -25,7 +25,6 @@
  */
  
 #include <stdio.h>
-#include <signal.h>
 #include <time.h>
 #include <sys/time.h>
 #include <string.h>
@@ -42,14 +41,15 @@
 #define NTP_RETRY_INTERVAL 30
 
 static char servers[32];
-int first_sync = 1;
 static int sig_cur = -1;
 
 static void ntp_service()
 {
-	if (first_sync)
-	{
+	static int first_sync = 1;
+
+	if (first_sync) {
 		first_sync = 0;
+
 		nvram_set("reload_svc_radio", "1");
 		nvram_set("svc_ready", "1");
 
@@ -58,11 +58,17 @@ static void ntp_service()
 		if (is_routing_enabled())
 			notify_rc("restart_upnp");
 #ifdef RTCONFIG_IPV6
-		if (get_ipv6_service() != IPV6_DISABLED)
+#ifdef RTCONFIG_WIDEDHCP6
+/* switch to monotonic clock usage *//*
+		if (get_ipv6_service() != IPV6_DISABLED) {
+			notify_rc("restart_dhcp6s");
 			notify_rc("restart_radvd");
+		}
+*/
+#endif /* RTCONFIG_WIDEDHCP6 */
 #endif
 #ifdef RTCONFIG_DISK_MONITOR
-			notify_rc("restart_diskmon");
+		notify_rc("restart_diskmon");
 #endif
 	}
 }
@@ -84,6 +90,9 @@ static void catch_sig(int sig)
 			server_idx = (server_idx + 1) % 2;
 		}
 		else strcpy(servers, "");
+
+		if (pids("ntpclient"))
+			killall_tk("ntpclient");
 	}
 	else if (sig == SIGTSTP)
 	{
@@ -118,6 +127,7 @@ int ntp_main(int argc, char *argv[])
 
 	nvram_set("ntp_ready", "0");
 	nvram_set("svc_ready", "0");
+
 	while (1)
 	{
 		if ((sig_cur != SIGALRM) && (sig_cur != -1))
@@ -140,8 +150,6 @@ int ntp_main(int argc, char *argv[])
 
 			if(nvram_get_int("ntp_ready"))
 			{
-				nvram_set("ntp_ready", "0");
-
 				/* ntp sync every hour when time_zone set as "DST" */
 				if(strstr(nvram_safe_get("time_zone_x"), "DST")) {
 					struct tm local;
@@ -170,7 +178,9 @@ int ntp_main(int argc, char *argv[])
 			}
 			else
 			{
-				sleep(NTP_RETRY_INTERVAL - SECONDS_TO_WAIT);
+				refresh_ntpc();
+				//sleep(NTP_RETRY_INTERVAL - SECONDS_TO_WAIT);
+				sleep(SECONDS_TO_WAIT);
 			}
 		}
 		else pause();

@@ -2,11 +2,20 @@ include ../common.mak
 
 CFLAGS	= -Os -Wall $(EXTRACFLAGS) #-mips32
 CFLAGS	+= -I$(SRCBASE)/include -I$(TOP)/shared -DRTCONFIG_ISP_METER -DDEBUG
-LDFLAGS	=
+LDFLAGS	= $(EXTRALDFLAGS)
 
+ifeq ($(RTCONFIG_BCMARM),y)
+CFLAGS += -I$(SRCBASE)/common/include
+endif
+
+ifeq ($(RTCONFIG_DSL_TCLINUX),y)
+OBJS = spectrum-tclinux.o
+else
 OBJS = spectrum.o
+endif
 
 ifeq ($(wildcard $(TOP)/spectrum/*.c),)
+all:
 	-cp -f $(TOP)/spectrum/prebuilt/spectrum spectrum
 else
 all: spectrum
@@ -14,7 +23,7 @@ endif
 
 spectrum: $(OBJS)
 	@echo " [spectrum] CC -o $@"
-	@$(CC) $(LDFLAGS) -o $@ $(OBJS) -L../nvram -lnvram -L../shared -lshared
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) -L../nvram$(BCMEX) -lnvram -L../shared -lshared
 
 	$(SIZECHECK)
 	$(CPTMP)

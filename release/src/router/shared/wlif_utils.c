@@ -40,7 +40,7 @@
 #include "shared.h"
 
 #ifndef MAX_NVPARSE
-#define MAX_NVPARSE 255
+#define MAX_NVPARSE 16
 #endif
 
 /* wireless interface name descriptors */
@@ -193,7 +193,7 @@ get_real_mac(char *mac, int maclen)
 	if (ptr == NULL)
 		return -1;
 
-	ether_atoe(ptr, mac);
+	ether_atoe(ptr, (unsigned char *) mac);
 	return 0;
 }
 
@@ -210,13 +210,13 @@ get_wlmacstr_by_unit(char *unit)
 	if (!macaddr)
 		return NULL;
 
-	return macaddr;
+	return (unsigned char *) macaddr;
 }
 
 int
 get_lan_mac(unsigned char *mac)
 {
-	unsigned char *lanmac_str = nvram_get("lan_hwaddr");
+	char *lanmac_str = nvram_get("lan_hwaddr");
 
 	if (mac)
 		memset(mac, 0, 6);
@@ -270,7 +270,8 @@ wl_wlif_is_psta(char *ifname)
 	if (wl_probe(ifname) < 0)
 		return FALSE;
 
-	wl_iovar_getint(ifname, "psta_if", &psta);
+	if (wl_iovar_getint(ifname, "psta_if", &psta) < 0)
+		return FALSE;
 
 	return psta ? TRUE : FALSE;
 }
@@ -284,9 +285,7 @@ wl_wlif_is_dwds(char *ifname)
 	if (wl_probe(ifname) < 0)
 		return FALSE;
 
-	wl_iovar_getint(ifname, "wds_type", &wds_type);
-
-	return (wds_type == WL_WDSIFTYPE_DWDS);
+	return (!wl_iovar_getint(ifname, "wds_type", &wds_type) && wds_type == WL_WDSIFTYPE_DWDS);
 #else
 	return FALSE;
 #endif

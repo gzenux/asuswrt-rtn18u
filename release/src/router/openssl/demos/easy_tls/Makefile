@@ -1,5 +1,5 @@
 # Makefile for easy-tls example application (rudimentary client and server)
-# $Id: //BBN_Linux/Branch/Branch_for_SDK_Release_MultiChip_20111013/tclinux_phoenix/apps/public/openssl-1.0.0d/demos/easy_tls/Makefile#1 $
+# $Id: Makefile,v 1.2 2001/09/18 09:15:40 bodo Exp $
 
 SOLARIS_CFLAGS=-Wall -pedantic -g -O2
 SOLARIS_LIBS=-lxnet

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -17,6 +17,7 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
+<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <style>
 #ClientList_Block_PC{
 	border:1px outset #999;
@@ -103,7 +104,7 @@ function initial(){
 	}
 	//}Viz 2011.10
 	showdhcp_staticlist();
-	showLANIPList();
+	setTimeout("showLANIPList();", 1000);
 	
 	if(pptpd_support){	 
 		var chk_vpn = check_vpn();
@@ -112,6 +113,14 @@ function initial(){
 	 		$("VPN_conflict_span").innerHTML = "<#vpn_conflict_dhcp#>"+pptpd_clients;
 		}
 	}	
+
+	//Viz keep this, disabled temporarily. if(!tmo_support){
+			document.form.sip_server.disabled = true;
+			document.form.sip_server.parentNode.parentNode.style.display = "none";
+	//}else{
+	//		document.form.sip_server.disabled = false;
+	//		document.form.sip_server.parentNode.parentNode.style.display = "";		
+	//}
 
 	addOnlineHelp($("faq"), ["set", "up", "specific", "IP", "address"]);
 }
@@ -280,7 +289,7 @@ function validate_dhcp_range(ip_obj){
 
 function validForm(){	
 	var re = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\.\-]*[a-zA-Z0-9]$','gi');
-  if(!re.test(document.form.lan_domain.value) && document.form.lan_domain.value != ""){
+	if((!re.test(document.form.lan_domain.value) || document.form.lan_domain.value.indexOf("asuscomm.com") > 0) && document.form.lan_domain.value != ""){
       alert("<#JS_validchar#>");                
       document.form.lan_domain.focus();
       document.form.lan_domain.select();
@@ -291,6 +300,9 @@ function validForm(){
 			!validate_ipaddr_final(document.form.dhcp_dns1_x, 'dhcp_dns1_x') ||
 			!validate_ipaddr_final(document.form.dhcp_wins_x, 'dhcp_wins_x'))
 		return false;
+		
+	if(tmo_support && !validate_ipaddr_final(document.form.sip_server, 'sip_server'))
+		return false;	
 	
 	if(!validate_dhcp_range(document.form.dhcp_start)
 			|| !validate_dhcp_range(document.form.dhcp_end))
@@ -320,6 +332,10 @@ function validForm(){
 	if(!validate_range(document.form.dhcp_lease, 120, 604800))
 		return false;
 	
+      	//Filtering ip address with leading zero
+	document.form.dhcp_start.value = ipFilterZero(document.form.dhcp_start.value);
+        document.form.dhcp_end.value = ipFilterZero(document.form.dhcp_end.value);
+
 	return true;
 }
 
@@ -373,27 +389,23 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 //Viz add 2012.02 DHCP client MAC { start
 
 function showLANIPList(){
-	var code = "";
-	var show_name = "";
-	var client_list_array = '<% get_client_detail_info(); %>';	
-	var client_list_row = client_list_array.split('<');	
+	var htmlCode = "";
+	for(var i=0; i<clientList.length;i++){
+		var clientObj = clientList[clientList[i]];
 
-	for(var i = 1; i < client_list_row.length; i++){
-		var client_list_col = client_list_row[i].split('>');
-		if(client_list_col[1] && client_list_col[1].length > 20)
-			show_name = client_list_col[1].substring(0, 16) + "..";
-		else
-			show_name = client_list_col[1];	
+		if(clientObj.ip == "offline") clientObj.ip = "";
+		if(clientObj.name.length > 30) clientObj.name = clientObj.name.substring(0, 28) + "..";
 
-		//client_list_col[]  0:type 1:device 2:ip 3:mac 4: 5: 6:
-		code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\''+client_list_col[3]+'\', \''+client_list_col[2]+'\');"><strong>'+client_list_col[3]+'</strong> ';
-		
-		if(show_name && show_name.length > 0)
-				code += '( '+show_name+')';
-		code += ' </div></a>';
-		}
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
-	$("ClientList_Block_PC").innerHTML = code;
+		htmlCode += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP(\'';
+		htmlCode += clientObj.mac;
+		htmlCode += '\', \'';
+		htmlCode += clientObj.ip;
+		htmlCode += '\');"><strong>';
+		htmlCode += clientObj.name;
+		htmlCode += '</strong></div></a><!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	}
+
+	$("ClientList_Block_PC").innerHTML = htmlCode;
 }
 
 function setClientIP(macaddr, ipaddr){
@@ -586,6 +598,13 @@ function check_vpn(){		//true: (DHCP ip pool & static ip ) conflict with VPN cli
               <input type="text" maxlength="15" class="input_15_table" name="dhcp_gateway_x" value="<% nvram_get("dhcp_gateway_x"); %>" onKeyPress="return is_ipaddr(this,event)">
             </td>
 			  </tr>
+
+			  <tr>
+            <th>Sip Server</th>
+            <td>
+              <input type="text" maxlength="15" class="input_15_table" name="sip_server" value="<% nvram_get("sip_server"); %>" onKeyPress="return is_ipaddr(this,event)">
+            </td>
+			  </tr>			  
 			</table>
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable" style="margin-top:8px">
 			  <thead>

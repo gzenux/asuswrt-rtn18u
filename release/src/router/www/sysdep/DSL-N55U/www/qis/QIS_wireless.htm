@@ -172,9 +172,11 @@ function QKWireless_load_body(){
 	}
 
 	if (is_admin_pswd_set == "1") {
+		document.form.http_username.value="<% nvram_get("dsltmp_qis_admin_username"); %>";
 		document.form.http_passwd.value="<% nvram_get("dsltmp_qis_admin_passwd"); %>";
 	}
 	else {
+		document.form.http_username.disabled = true;
 		document.form.http_passwd.disabled = true;
 	}
 
@@ -259,6 +261,13 @@ function submitForm(){
 		document.form.flag.value = "finish";
 		document.form.sw_mode.value = 1;
 	//}
+
+	if(document.form.dslx_transmode.value == "atm")
+		document.form.dsl0_enable.value = 1;
+	else {//PTM
+		document.form.action_script.value = "restart_dsl_setting;".concat(document.form.action_script.value);
+		document.form.dsl8_enable.value = 1;
+	}
 
 	//parent.w_Setting_tmp = document.form.w_Setting.value
 	//document.getElementById("loadingIcon").style.display = "";
@@ -360,8 +369,9 @@ function gotoHome(){
 <input type="hidden" name="lan_dns2_x" value="" disabled>
 <input type="hidden" name="lan_ipaddr_rt" value="" disabled>
 <input type="hidden" name="lan_netmask_rt" value="" disabled>
+<input type="hidden" name="http_username" value="">
 <input type="hidden" name="http_passwd" value="<% nvram_get("password"); %>">
-<input type="hidden" name="dsl0_enable" value="1">
+<input type="hidden" name="dsl0_enable" value="0">
 <input type="hidden" name="dsl0_vpi" value="<% nvram_get("dsltmp_qis_vpi"); %>">
 <input type="hidden" name="dsl0_vci" value="<% nvram_get("dsltmp_qis_vci"); %>">
 <input type="hidden" name="dsl0_proto" value="<% nvram_get("dsltmp_qis_proto"); %>">
@@ -403,6 +413,10 @@ function gotoHome(){
 <input type="hidden" name="dsl6_enable" value="0">
 <input type="hidden" name="dsl7_enable" value="0">
 <!-- IPTV end -->
+<input type="hidden" name="dsl8_enable" value="0">
+<input type="hidden" name="dsl8_proto" value="<% nvram_get("dsltmp_qis_proto"); %>">
+<input type="hidden" name="dsl8_dot1q" value="<% nvram_get("dsltmp_cfg_dot1q"); %>">
+<input type="hidden" name="dsl8_vid" value="<% nvram_get("dsltmp_cfg_vid"); %>">
 <input type="hidden" name="dslx_pppoe_username" value="<% nvram_get("dsltmp_qis_pppoe_username"); %>">
 <input type="hidden" name="dslx_pppoe_passwd" value="<% nvram_get("dsltmp_qis_pppoe_passwd"); %>">
 <input type="hidden" name="dslx_pppoe_idletime" value="<% nvram_get("dsltmp_qis_pppoe_idletime"); %>">
@@ -419,6 +433,7 @@ function gotoHome(){
 <input type="hidden" name="dslx_ipaddr" value="<% nvram_get("dsltmp_qis_ipaddr"); %>">
 <input type="hidden" name="dslx_netmask" value="<% nvram_get("dsltmp_qis_netmask"); %>">
 <input type="hidden" name="dslx_gateway" value="<% nvram_get("dsltmp_qis_gateway"); %>">
+<input type="hidden" name="dslx_transmode" value="<% nvram_get("dsltmp_transmode"); %>">
 <input type="hidden" name="dslx_dnsenable" value="<% nvram_get("dsltmp_qis_dnsenable"); %>">
 <input type="hidden" name="dslx_dns1" value="<% nvram_get("dsltmp_qis_dns1"); %>">
 <input type="hidden" name="dslx_dns2" value="<% nvram_get("dsltmp_qis_dns2"); %>">
@@ -460,35 +475,35 @@ function gotoHome(){
 	<tr>
 	<th width="180"><span onmouseout="return nd();" onclick="openHint(0, 22);" style="cursor:help;"><#QIS_finish_wireless_item1#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 	<td class="QISformtd">
-		<input type="text" id="wl0_ssid" name="wl0_ssid" onkeypress="return is_string(this, event);" onkeyup="Sync_2ghz(2);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
+		<input type="text" id="wl0_ssid" name="wl0_ssid" tabindex="1" onkeypress="return is_string(this, event);" onkeyup="Sync_2ghz(2);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
 	</td>
 	</tr>
 
 	<tr id="wl_unit_field_0">
 	<th width="180"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#Network_key#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 	<td class="QISformtd">
-			<input id="wl0_wpa_psk" name="wl0_wpa_psk" type="password" autocapitalization="off" onBlur="switchType(this, false);" onFocus="switchType(this, true);" value="<% nvram_char_to_ascii("WLANConfig11b", "wl0_wpa_psk"); %>" onkeyup="Sync_2ghz(2);" style="height:25px;" class="input_32_table" maxlength="64">
+			<input id="wl0_wpa_psk" name="wl0_wpa_psk" type="password" tabindex="2" autocapitalization="off" onBlur="switchType(this, false);" onFocus="switchType(this, true);" value="<% nvram_char_to_ascii("WLANConfig11b", "wl0_wpa_psk"); %>" onkeyup="Sync_2ghz(2);" style="height:25px;" class="input_32_table" maxlength="64">
 	</td>
 	</tr>
 
 	<tr id="wl_unit_field_1">
 	<th width="180">5GHz - <#Security#> </th>
 	<td class="QISformtd">
-			<span id="syncCheckbox"><input type="checkbox" id="sync_with_2ghz" name="sync_with_2ghz" class="input" onclick="setTimeout('Sync_2ghz(2);',0);"><#qis_ssid_desc#></span>
+			<span id="syncCheckbox"><input type="checkbox" id="sync_with_2ghz" name="sync_with_2ghz" tabindex="3" class="input" onclick="setTimeout('Sync_2ghz(2);',0);"><#qis_ssid_desc#></span>
 	</td>
 	</tr>
 
 	<tr id="wl_unit_field_2">
 	<th width="180"><span onmouseout="return nd();" onclick="openHint(0, 22);" style="cursor:help;"><#QIS_finish_wireless_item1#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 	<td class="QISformtd">
-		<input type="text" id="wl1_ssid" name="wl1_ssid" onkeypress="return is_string(this, event);" onkeyup="Sync_2ghz(5);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
+		<input type="text" id="wl1_ssid" name="wl1_ssid" tabindex="4" onkeypress="return is_string(this, event);" onkeyup="Sync_2ghz(5);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
 	</td>
 	</tr>
 
 	<tr id="wl_unit_field_3">
 	<th width="180"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#Network_key#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 	<td class="QISformtd">
-			<input id="wl1_wpa_psk" name="wl1_wpa_psk" type="password" autocapitalization="off" onBlur="switchType(this, false);" onFocus="switchType(this, true);" value="<% nvram_char_to_ascii("WLANConfig11b", "wl1_wpa_psk"); %>" onkeyup="Sync_2ghz(5);" style="height:25px;" class="input_32_table" maxlength="64">
+			<input id="wl1_wpa_psk" name="wl1_wpa_psk" type="password" tabindex="5" autocapitalization="off" onBlur="switchType(this, false);" onFocus="switchType(this, true);" value="<% nvram_char_to_ascii("WLANConfig11b", "wl1_wpa_psk"); %>" onkeyup="Sync_2ghz(5);" style="height:25px;" class="input_32_table" maxlength="64">
 	</td>
 	</tr>
 </table>
@@ -498,7 +513,7 @@ function gotoHome(){
 <br/>
 
 <div class="apply_gen" style="margin-top:10px">
-	<input type="button" value="<#btn_next#>" onclick="submitForm();" class="button_gen">
+	<input type="button" value="<#btn_next#>" tabindex="6" onclick="submitForm();" class="button_gen">
 </div>
 
 </form>

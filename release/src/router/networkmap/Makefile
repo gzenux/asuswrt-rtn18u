@@ -1,7 +1,7 @@
 include ../.config
 
 EXEC = networkmap
-OBJS = function.o networkmap.o
+OBJS = function.o asusdiscovery.o networkmap.o
 
 CFLAGS  += -Wall -DASUS -DBCMNVRAM -I. -I$(TOP)/shared -I$(TOP)/kernel_header/include -I$(SRCBASE)/include
 CFLAGS  += -s -O2 -DNO_PARALLEL
@@ -10,17 +10,14 @@ ifeq ($(RTCONFIG_BCMARM),y)
 LDFLAGS += -lgcc_s
 endif
 
-include $(SRCBASE)/.config
-
-ifneq ($(findstring DSL,$(BUILD_NAME)),)
-MODEL = $(subst -,_,$(BUILD_NAME))
-else
-MODEL = $(subst -,,$(BUILD_NAME))
+ifeq ($(RTCONFIG_QTN),y)
+LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
 endif
 
-export CFLAGS += -D$(MODEL)
+include $(SRCBASE)/.config
 
-#CFLAGS	+= -DDEBUG -DDEBUG_MORE
+#CFLAGS	+= -DDEBUG #-DDEBUG_MORE
+CFLAGS  += -DNMP_DB
 
 all: $(EXEC) arpstorm
 

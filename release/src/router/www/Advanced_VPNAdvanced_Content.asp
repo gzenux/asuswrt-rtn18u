@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"> 
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -128,7 +128,6 @@ var staticclist_row = dhcp_staticlists.split('&#60');
 //var openvpn_clientlist_array = '<% nvram_get("vpn_server_ccd_val"); %>';
 var openvpn_clientlist_array = decodeURIComponent('<% nvram_char_to_ascii("", "vpn_server_ccd_val"); %>');
 var openvpn_unit = '<% nvram_get("vpn_server_unit"); %>';
-
 
 if (openvpn_unit == '1')
 	var service_state = (<% sysinfo("pid.vpnserver1"); %> > 0);
@@ -257,12 +256,14 @@ function update_visibility(){
 		ccd = 0;
 	else
 		ccd = getRadioValue(document.openvpn_form.vpn_server_ccd);
-	dns = getRadioValue(document.openvpn_form.vpn_server_x_dns);
+	dns = getRadioValue(document.openvpn_form.vpn_serverx_dns);
 
 	showhide("server_snnm", ((auth == "tls") && (iface == "tun")));
 	showhide("server_plan", ((auth == "tls") && (iface == "tun")));
 	showhide("server_local", ((auth == "secret") && (iface == "tun")));
+	showhide("server_reneg", (auth != "secret"));		//add by Viz 2014.06
 	showhide("server_ccd", (auth == "tls"));
+	
 
 	showhide("server_c2c", ccd);
 	showhide("server_ccd_excl", ccd);
@@ -275,6 +276,7 @@ function update_visibility(){
 	showhide("server_tls_crypto_text", (auth == "tls"));		//add by Viz
 	showhide("server_static_crypto_text", (auth == "secret"));		//add by Viz
 	showhide("server_custom_crypto_text", (auth == "custom"));
+	
 }
 
 function del_openvpnRow(r){
@@ -429,18 +431,144 @@ function pptpd_applyRule(){
 	if(check_pptpd_clients_range() == false)
 		return false;
 
+	if(!validate_range(document.form.pptpd_mru, 576, 1492))
+		return false;
+	if(!validate_range(document.form.pptpd_mtu, 576, 1492))
+		return false;
+
 	showLoading();
 	document.form.submit();	
 }
 
+function check_openvpn_conflict(){		//if conflict with LAN ip & DHCP ip pool & static
+	
+   if(document.openvpn_form.vpn_server_if.value == 'tun'){	
+	if(document.openvpn_form.vpn_server_sn.value==""){
+			alert("<#JS_fieldblank#>");
+			document.openvpn_form.vpn_server_sn.focus();
+			document.openvpn_form.vpn_server_sn.select();
+			return false;
+		}
+	if(!validate_iprange(document.openvpn_form.vpn_server_sn, "")){
+			document.openvpn_form.vpn_server_sn.focus();
+			document.openvpn_form.vpn_server_sn.select();
+			return false;		
+	}
+		
+	var openvpn_server_subnet = document.openvpn_form.vpn_server_sn.value.split(".")[0] + "." +
+		   document.openvpn_form.vpn_server_sn.value.split(".")[1] + "." +
+		   document.openvpn_form.vpn_server_sn.value.split(".")[2] + ".";
+	
+	//LAN ip
+  if(origin_lan_ip == document.openvpn_form.vpn_server_sn.value){
+  		alert("<#vpn_conflict_LANIP#>" + origin_lan_ip);
+  		return false;
+  }
+			
+  //LAN ip pool
+  if(lan_ip_subnet == openvpn_server_subnet){
+  		alert("<#vpn_conflict_DHCPpool#>"+pool_start+" ~ "+pool_end);
+  		return false;
+  }
+		
+		//test if netmask is valid.
+		var default_netmask = "";
+		var wrong_netmask = 0;
+		var netmask_obj = document.openvpn_form.vpn_server_nm;
+		var netmask_num = inet_network(netmask_obj.value);
+		
+		if(netmask_num==0){
+			var netmask_reverse_num = 0;
+		}else{
+		var netmask_reverse_num = ~netmask_num;
+		}
+		
+		if(netmask_num < 0) wrong_netmask = 1;
 
+		var test_num = netmask_reverse_num;
+		while(test_num != 0){
+			if((test_num+1)%2 == 0)
+				test_num = (test_num+1)/2-1;
+			else{
+				wrong_netmask = 1;
+				break;
+			}
+		}
+		if(wrong_netmask == 1){
+			alert(netmask_obj.value+" <#JS_validip#>");
+			netmask_obj.value = default_netmask;
+			netmask_obj.focus();
+			netmask_obj.select();
+			return false;
+		}
+   }else if(document.openvpn_form.vpn_server_if.value == 'tap' && document.openvpn_form.vpn_server_dhcp.value == '0'){
+		if(!valid_IP(document.openvpn_form.vpn_server_r1, "")){
+			document.openvpn_form.vpn_server_r1.focus();
+			document.openvpn_form.vpn_server_r1.select();
+			return false;		
+		}
+   	if(!valid_IP(document.openvpn_form.vpn_server_r2, "")){
+			document.openvpn_form.vpn_server_r2.focus();
+			document.openvpn_form.vpn_server_r2.select();
+			return false;		
+		}	
+		var openvpn_clients_start_subnet = document.openvpn_form.vpn_server_r1.value.split(".")[0] + "." +
+				   document.openvpn_form.vpn_server_r1.value.split(".")[1] + "." +
+				   document.openvpn_form.vpn_server_r1.value.split(".")[2] + ".";
+		var openvpn_clients_end_subnet = document.openvpn_form.vpn_server_r2.value.split(".")[0] + "." +
+				   document.openvpn_form.vpn_server_r2.value.split(".")[1] + "." +
+				   document.openvpn_form.vpn_server_r2.value.split(".")[2] + ".";
+		var openvpn_clients_start_ip = parseInt(document.openvpn_form.vpn_server_r1.value.split(".")[3]);
+		var openvpn_clients_end_ip = parseInt(document.openvpn_form.vpn_server_r2.value.split(".")[3]);
+  	//LAN ip
+  	if((lan_ip_subnet == openvpn_clients_start_subnet || lan_ip_subnet == openvpn_clients_end_subnet)
+		&& (lan_ip_end >= openvpn_clients_start_ip 
+  		&& lan_ip_end <= openvpn_clients_end_ip)){
+  		alert("<#vpn_conflict_LANIP#>"+origin_lan_ip);
+  		return false;
+  	}
+  	//DHCP pool
+	if(pool_subnet != openvpn_clients_start_subnet){
+  		alert(document.openvpn_form.vpn_server_r1.value + " <#JS_validip#>");
+  		return false;
+	}
+	if(pool_subnet != openvpn_clients_end_subnet){
+  		alert(document.openvpn_form.vpn_server_r2.value + " <#JS_validip#>");
+  		return false;
+	}
+	//DHCP static IP
+	if(dhcp_staticlists != ""){
+		for(var i = 1; i < staticclist_row.length; i++){
+			var static_subnet ="";
+			var static_end ="";					
+			var static_ip = staticclist_row[i].split('>')[1];
+			static_subnet = static_ip.split(".")[0]+"."+static_ip.split(".")[1]+"."+static_ip.split(".")[2]+".";
+			static_end = parseInt(static_ip.split(".")[3]);
+			if(static_subnet != openvpn_clients_start_subnet){
+  						alert(document.openvpn_form.vpn_server_r1.value + " <#JS_validip#>");
+  						return false;
+  			}	
+			if(static_subnet != openvpn_clients_end_subnet){
+  						alert(document.openvpn_form.vpn_server_r2.value + " <#JS_validip#>");
+  						return false;
+  			}				
+  		}
+	}
+   }
+   return true;
+}
 function openvpn_applyRule(){
 
+   if(check_openvpn_conflict()){
 	showLoading();
 	
 	var client_num = $('openvpn_clientlist_table').rows.length;
 	var item_num = $('openvpn_clientlist_table').rows[0].cells.length;
 	var tmp_value = "";
+	
+	//Viz add 2014.06
+	if(document.getElementById("server_reneg").style.display == "none")
+			document.openvpn_form.vpn_server_reneg.disabled = true;
 
 	for(i=0; i<client_num; i++){
 
@@ -494,6 +622,7 @@ function openvpn_applyRule(){
 	}		
 		
 	document.openvpn_form.submit();
+   }
 }
 
 
@@ -520,16 +649,20 @@ function valid_IP(obj_name, obj_flag){
 		}
 		
 		
-		if(ip_num > A_class_start && ip_num < A_class_end)
+		if(ip_num > A_class_start && ip_num < A_class_end){
+		   obj_name.value = ipFilterZero(ip_obj.value);
 			return true;
+		}
 		else if(ip_num > B_class_start && ip_num < B_class_end){
 			alert(ip_obj.value+" <#JS_validip#>");
 			ip_obj.focus();
 			ip_obj.select();
 			return false;
 		}
-		else if(ip_num > C_class_start && ip_num < C_class_end)
+		else if(ip_num > C_class_start && ip_num < C_class_end){
+			obj_name.value = ipFilterZero(ip_obj.value);
 			return true;
+		}
 		else{
 			alert(ip_obj.value+" <#JS_validip#>");
 			ip_obj.focus();
@@ -741,12 +874,12 @@ function cal_panel_block(){
 <div id="tlsKey_panel"  class="contentM_qis" style="box-shadow: 3px 3px 10px #000;">
 		<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0">
 			<tr>
-				<div class="description_down">Keys and Certification</div>
+				<div class="description_down"><#vpn_openvpn_Keys_Cert#></div>
 			</tr>
 			<tr>
 				<div style="margin-left:30px; margin-top:10px;">
-					<p>Only paste the content of the <span style="color:#FFCC00;">----- BEGIN xxx ----- </span>/<span style="color:#FFCC00;"> ----- END xxx -----</span> block (including those two lines).
-					<p>Limit: 2999 characters per field
+					<p><#vpn_openvpn_KC_Edit1#> <span style="color:#FFCC00;">----- BEGIN xxx ----- </span>/<span style="color:#FFCC00;"> ----- END xxx -----</span> <#vpn_openvpn_KC_Edit2#>
+					<p><#vpn_openvpn_KC_Limit#>
 				</div>
 				<div style="margin:5px;*margin-left:-5px;"><img style="width: 730px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
 			</tr>			
@@ -759,25 +892,25 @@ function cal_panel_block(){
                 		<td valign="top">
 							<table width="100%" id="page1_tls" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
 								<tr>
-									<th>Certificate Authority</th>
+									<th><#vpn_openvpn_KC_CA#></th>
 									<td>
 										<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_server1_ca" name="edit_vpn_crt_server1_ca" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_ca"); %></textarea>
 									</td>
 								</tr>
 								<tr>
-									<th>Server Certificate</th>
+									<th><#vpn_openvpn_KC_SA#></th>
 									<td>
 										<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_server1_crt" name="edit_vpn_crt_server1_crt" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_crt"); %></textarea>
 									</td>
 								</tr>
 								<tr>
-									<th>Server Key</th>
+									<th><#vpn_openvpn_KC_SK#></th>
 									<td>
 										<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_server1_key" name="edit_vpn_crt_server1_key" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_key"); %></textarea>
 									</td>
 								</tr>
 								<tr>
-									<th>Diffie Hellman parameters</th>
+									<th><#vpn_openvpn_KC_DH#></th>
 									<td>
 										<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_server1_dh" name="edit_vpn_crt_server1_dh" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_dh"); %></textarea>
 									</td>
@@ -801,12 +934,12 @@ function cal_panel_block(){
 <div id="staticKey_panel"   class="contentM_qis" style="box-shadow: 3px 3px 10px #000;">
 	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0">
 		<tr>
-			<div class="description_down">Keys and Certification</div>
+			<div class="description_down"><#vpn_openvpn_Keys_Cert#></div>
 		</tr>
 		<tr>
 			<div style="margin-left:30px; margin-top:10px;">
-				<p>Only paste the content of the <span style="color:#FFCC00;">----- BEGIN xxx ----- </span>/<span style="color:#FFCC00;"> ----- END xxx -----</span> block (including those two lines).
-				<p>Limit: 2999 characters per field
+				<p><#vpn_openvpn_KC_Edit1#> <span style="color:#FFCC00;">----- BEGIN xxx ----- </span>/<span style="color:#FFCC00;"> ----- END xxx -----</span> <#vpn_openvpn_KC_Edit2#>
+				<p><#vpn_openvpn_KC_Limit#>
 			</div>
 			<div style="margin:5px;*margin-left:-5px;"><img style="width: 730px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
 		</tr>
@@ -819,7 +952,7 @@ function cal_panel_block(){
                 	<td valign="top">
 					<table width="100%" id="page1_static" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
 						<tr>
-							<th>Static Key</th>
+							<th><#vpn_openvpn_KC_StaticK#></th>
 							<td>
 								<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_server1_static" name="edit_vpn_crt_server1_static" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_server1_static"); %></textarea>
 							</td>
@@ -898,9 +1031,9 @@ function cal_panel_block(){
 											<td>
 												<select name="pptpd_broadcast" class="input_option">
 													<option class="content_input_fd" value="disable" <% nvram_match("pptpd_broadcast", "disable","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-													<option class="content_input_fd" value="br0"<% nvram_match("pptpd_broadcast", "br0","selected"); %>>LAN to VPN Client</option>
-													<option class="content_input_fd" value="ppp" <% nvram_match("pptpd_broadcast", "ppp","selected"); %>>VPN Client to LAN</option>
-													<option class="content_input_fd" value="br0ppp"<% nvram_match("pptpd_broadcast", "br0ppp","selected"); %>>Both</option>
+													<option class="content_input_fd" value="br0"<% nvram_match("pptpd_broadcast", "br0","selected"); %>><#vpn_broadcast_opt1#></option>
+													<option class="content_input_fd" value="ppp" <% nvram_match("pptpd_broadcast", "ppp","selected"); %>><#vpn_broadcast_opt2#></option>
+													<option class="content_input_fd" value="br0ppp"<% nvram_match("pptpd_broadcast", "br0ppp","selected"); %>><#vpn_broadcast_opt3#></option>
 												</select>			
 											</td>
 										</tr>
@@ -959,11 +1092,11 @@ function cal_panel_block(){
 <!-- Yau add mru/mtu-->
                                     <tr>
 										<th><a class="hintstyle" href="javascript:void(0);">MRU</a></th>
-										<td><input type="text" maxlength="15" class="input_15_table" name="pptpd_mru" value="<% nvram_get("pptpd_mru"); %>" ></td>
+										<td><input type="text" maxlength="4" class="input_15_table" name="pptpd_mru" value="<% nvram_get("pptpd_mru"); %>" onKeyPress="return is_number(this,event)" ></td>
                                     </tr>
                                     <tr>
 										<th><a class="hintstyle" href="javascript:void(0);">MTU</a></th>
-										<td><input type="text" maxlength="15" class="input_15_table" name="pptpd_mtu" value="<% nvram_get("pptpd_mtu"); %>" ></td>
+										<td><input type="text" maxlength="4" class="input_15_table" name="pptpd_mtu" value="<% nvram_get("pptpd_mtu"); %>" onKeyPress="return is_number(this,event)" ></td>
                                     </tr>
 <!-- Yau -->
 								<tr>
@@ -1083,7 +1216,7 @@ function cal_panel_block(){
  									</tr>
 
 									<tr>
-										<th>Interface Type</th>
+										<th><#vpn_openvpn_interface#></th>
 			        			<td>
 			       						<select name="vpn_server_if" class="input_option" onclick="update_visibility();">
 													<option value="tap" <% nvram_match("vpn_server_if","tap","selected"); %> >TAP</option>
@@ -1103,7 +1236,7 @@ function cal_panel_block(){
 									</tr>
 
 									<tr>
-										<th><#Port_Num#><br><i><#Setting_factorydefault_value#> : 1194</i></th>
+										<th><#WLANAuthentication11a_ExAuthDBPortNumber_itemname#><br><i><#Setting_factorydefault_value#> : 1194</i></th>
 										<td>
 											<input type="text" maxlength="5" class="input_6_table" name="vpn_server_port" onKeyPress="return is_number(this,event);" onblur="validate_number_range(this, 1, 65535)" value="<% nvram_get("vpn_server_port"); %>" >
 										</td>
@@ -1114,28 +1247,28 @@ function cal_panel_block(){
 			        					<td>
 			        						<select name="vpn_server_firewall" class="input_option">
 												<option value="auto" <% nvram_match("vpn_server_firewall","auto","selected"); %> ><#Auto#></option>
-												<option value="external" <% nvram_match("vpn_server_firewall","external","selected"); %> >External only</option>
-												<option value="custom" <% nvram_match("vpn_server_firewall","custom","selected"); %> >Custom</option>
+												<option value="external" <% nvram_match("vpn_server_firewall","external","selected"); %> ><#External#></option>
+												<option value="custom" <% nvram_match("vpn_server_firewall","custom","selected"); %> ><#Custom#></option>
 											</select>
 			   							</td>
 									</tr>
 
 									<tr>
-										<th>Authorization Mode</th>
+										<th><#vpn_openvpn_Auth#></th>
 			        			<td>
 			        				<select name="vpn_server_crypt" class="input_option" onclick="update_visibility();">
 												<option value="tls" <% nvram_match("vpn_server_crypt","tls","selected"); %> >TLS</option>
 												<option value="secret" <% nvram_match("vpn_server_crypt","secret","selected"); %> >Static Key</option>
 												<option value="custom" <% nvram_match("vpn_server_crypt","custom","selected"); %> >Custom</option>
 											</select>
-											<span id="server_tls_crypto_text" onclick="set_Keys('tls');" style="text-decoration:underline;cursor:pointer;">Content modification of Keys & Certification.</span>
-											<span id="server_static_crypto_text" onclick="set_Keys('secret');" style="text-decoration:underline;cursor:pointer;">Content modification of Keys & Certification.</span>
-											<span id="server_custom_crypto_text">Must be manually configured.</span>
+											<span id="server_tls_crypto_text" onclick="set_Keys('tls');" style="text-decoration:underline;cursor:pointer;"><#vpn_openvpn_ModifyKeys#></span>
+											<span id="server_static_crypto_text" onclick="set_Keys('secret');" style="text-decoration:underline;cursor:pointer;"><#vpn_openvpn_ModifyKeys#></span>
+											<span id="server_custom_crypto_text"><#vpn_openvpn_MustManual#></span>
 			   						</td>
 									</tr>
 
 									<tr>
-											<th>Username / Password Auth. Only</th>
+											<th><#vpn_openvpn_AuthOnly#></th>
 											<td>
 													<input type="radio" name="vpn_server_igncrt" class="input" value="1" <% nvram_match_x("", "vpn_server_igncrt", "1", "checked"); %>><#checkbox_Yes#>
 													<input type="radio" name="vpn_server_igncrt" class="input" value="0" <% nvram_match_x("", "vpn_server_igncrt", "0", "checked"); %>><#checkbox_No#>
@@ -1143,7 +1276,7 @@ function cal_panel_block(){
 									</tr>
 
 									<tr>
-										<th>Extra HMAC authorization<br><i>(tls-auth)</i></th>
+										<th><#vpn_openvpn_AuthHMAC#><br><i>(tls-auth)</i></th>
 			        					<td>
 			        						<select name="vpn_server_hmac" class="input_option">
 												<option value="-1" <% nvram_match("vpn_server_hmac","-1","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
@@ -1155,7 +1288,7 @@ function cal_panel_block(){
 									</tr>
 									
 									<tr id="server_snnm">
-										<th>VPN Subnet / Netmask</th>
+										<th><#vpn_openvpn_SubnetMsak#></th>
 										<td>
 											<input type="text" maxlength="15" class="input_15_table" name="vpn_server_sn" onkeypress="return is_ipaddr(this, event);" value="<% nvram_get("vpn_server_sn"); %>">
 											<input type="text" maxlength="15" class="input_15_table" name="vpn_server_nm" onkeypress="return is_ipaddr(this, event);" value="<% nvram_get("vpn_server_nm"); %>">
@@ -1163,7 +1296,7 @@ function cal_panel_block(){
 									</tr>
 
 									<tr id="server_dhcp">
-										<th>Allocate from DHCP</th>
+										<th><#vpn_openvpn_dhcp#></th>
 										<td>
 											<input type="radio" name="vpn_server_dhcp" class="input" value="1" onclick="update_visibility();" <% nvram_match_x("", "vpn_server_dhcp", "1", "checked"); %>><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_dhcp" class="input" value="0" onclick="update_visibility();" <% nvram_match_x("", "vpn_server_dhcp", "0", "checked"); %>><#checkbox_No#>
@@ -1171,7 +1304,7 @@ function cal_panel_block(){
  									</tr>
 
 									<tr id="server_range">
-										<th>Client Address Pool</th>
+										<th><#vpn_openvpn_ClientPool#></th>
 										<td>
 											<input type="text" maxlength="15" class="input_15_table" name="vpn_server_r1" onkeypress="return is_ipaddr(this, event);" value="<% nvram_get("vpn_server_r1"); %>">
 											<input type="text" maxlength="15" class="input_15_table" name="vpn_server_r2" onkeypress="return is_ipaddr(this, event);" value="<% nvram_get("vpn_server_r2"); %>">
@@ -1179,7 +1312,7 @@ function cal_panel_block(){
 									</tr>
 
 									<tr id="server_local">
-										<th>Local / remote endpoint addresses</th>
+										<th><#vpn_openvpn_LocalRemote_IP#></th>
 										<td>
 											<input type="text" maxlength="15" class="input_15_table" name="vpn_server_local" onkeypress="return is_ipaddr(this, event);" value="<% nvram_get("vpn_server_local"); %>">
 											<input type="text" maxlength="15" class="input_15_table" name="vpn_server_remote" onkeypress="return is_ipaddr(this, event);" value="<% nvram_get("vpn_server_remote"); %>">
@@ -1195,14 +1328,14 @@ function cal_panel_block(){
 									</thead>
 
 									<tr>
-										<th>Poll Interval<br><i>(0 to disable)</th>
+										<th><#vpn_openvpn_PollInterval#><br><i>( <#zero_disable#> )</th>
 										<td>
 											<input type="text" maxlength="4" class="input_6_table" name="vpn_server_poll" onKeyPress="return is_number(this,event);" onblur="validate_number_range(this, 0, 1440)" value="<% nvram_get("vpn_server_poll"); %>"> <#Minute#>
 										</td>
 									</tr>
 
 									<tr id="server_plan">
-										<th>Push LAN to clients</th>
+										<th><#vpn_openvpn_PushLAN#></th>
 										<td>
 											<input type="radio" name="vpn_server_plan" class="input" value="1" <% nvram_match_x("", "vpn_server_plan", "1", "checked"); %>><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_plan" class="input" value="0" <% nvram_match_x("", "vpn_server_plan", "0", "checked"); %>><#checkbox_No#>
@@ -1210,7 +1343,7 @@ function cal_panel_block(){
  									</tr>
 
 									<tr>
-										<th>Direct clients to redirect Internet traffic</th>
+										<th><#vpn_openvpn_RedirectInternet#></th>
 										<td>
 											<input type="radio" name="vpn_server_rgw" class="input" value="1" <% nvram_match_x("", "vpn_server_rgw", "1", "checked"); %>><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_rgw" class="input" value="0" <% nvram_match_x("", "vpn_server_rgw", "0", "checked"); %>><#checkbox_No#>
@@ -1218,7 +1351,7 @@ function cal_panel_block(){
  									</tr>
 
 									<tr>
-										<th>Respond to DNS</th>
+										<th><#vpn_openvpn_ResponseDNS#></th>
 										<td>
 											<input type="radio" name="vpn_server_x_dns" class="input" value="1" onclick="update_visibility();"><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_x_dns" class="input" value="0" onclick="update_visibility();"><#checkbox_No#>
@@ -1227,7 +1360,7 @@ function cal_panel_block(){
 
 
 									<tr id="server_pdns">
-										<th>Advertise DNS to clients</th>
+										<th><#vpn_openvpn_AdvDNS#></th>
 										<td>
 											<input type="radio" name="vpn_server_pdns" class="input" value="1" <% nvram_match_x("", "vpn_server_pdns", "1", "checked"); %>><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_pdns" class="input" value="0" <% nvram_match_x("", "vpn_server_pdns", "0", "checked"); %>><#checkbox_No#>
@@ -1235,7 +1368,7 @@ function cal_panel_block(){
  									</tr>
 
 									<tr>
-										<th>Encryption cipher</th>
+										<th><#vpn_openvpn_Encrypt#></th>
 			        					<td>
 			        						<select name="vpn_server_cipher" class="input_option">
 												<option value="<% nvram_get("vpn_server_cipher"); %>" selected><% nvram_get("vpn_server_cipher"); %></option>
@@ -1244,26 +1377,26 @@ function cal_panel_block(){
 									</tr>
 
 									<tr>
-										<th>Compression</th>
+										<th><#vpn_openvpn_Compression#></th>
 			        					<td>
 			        						<select name="vpn_server_comp" class="input_option">
 												<option value="-1" <% nvram_match("vpn_server_comp","-1","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
 												<option value="no" <% nvram_match("vpn_server_comp","no","selected"); %> ><#wl_securitylevel_0#></option>
 												<option value="yes" <% nvram_match("vpn_server_comp","yes","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
-												<option value="adaptive" <% nvram_match("vpn_server_comp","adaptive","selected"); %> >Adaptive</option>
+												<option value="adaptive" <% nvram_match("vpn_server_comp","adaptive","selected"); %> ><#Adaptive#></option>
 											</select>
 			   							</td>
 									</tr>
 
-									<tr>
-										<th>TLS Renegotiation Time<br><i>( -1 for default )</th>
+									<tr id="server_reneg">
+										<th><#vpn_openvpn_TLSTime#><br><i>( <#MinusOne_default#> )</th>
 										<td>
 											<input type="text" maxlength="5" class="input_6_table" name="vpn_server_reneg" onblur="validate_range(this, -1, 2147483647)" value="<% nvram_get("vpn_server_reneg"); %>"> <#Second#>
 										</td>
 									</tr>
 
 									<tr id="server_ccd">
-										<th>Manage Client-Specific Options</th>
+										<th><#vpn_openvpn_SpecificOpt#></th>
 										<td>
 											<input type="radio" name="vpn_server_ccd" class="input" value="1" onclick="update_visibility();" <% nvram_match_x("", "vpn_server_ccd", "1", "checked"); %>><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_ccd" class="input" value="0" onclick="update_visibility();" <% nvram_match_x("", "vpn_server_ccd", "0", "checked"); %>><#checkbox_No#>
@@ -1271,7 +1404,7 @@ function cal_panel_block(){
  									</tr>
 
 									<tr id="server_c2c">
-										<th>Allow Client &lt;-&gt; Client</th>
+										<th><#vpn_openvpn_ClientMutual#></th>
 										<td>
 											<input type="radio" name="vpn_server_c2c" class="input" value="1" <% nvram_match_x("", "vpn_server_c2c", "1", "checked"); %>><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_c2c" class="input" value="0" <% nvram_match_x("", "vpn_server_c2c", "0", "checked"); %>><#checkbox_No#>
@@ -1279,7 +1412,7 @@ function cal_panel_block(){
 									</tr>
 
 									<tr id="server_ccd_excl">
-										<th>Allow only specified clients</th>
+										<th><#vpn_openvpn_ClientSpecified#></th>
 										<td>
 											<input type="radio" name="vpn_server_ccd_excl" class="input" value="1" onclick="update_visibility();" <% nvram_match_x("", "vpn_server_ccd_excl", "1", "checked"); %>><#checkbox_Yes#>
 											<input type="radio" name="vpn_server_ccd_excl" class="input" value="0" onclick="update_visibility();" <% nvram_match_x("", "vpn_server_ccd_excl", "0", "checked"); %>><#checkbox_No#>
@@ -1298,7 +1431,7 @@ function cal_panel_block(){
 										<th width="36%"><#PPPConnection_UserName_itemname#></th>
 										<th width="20%"><#IPConnection_ExternalIPAddress_itemname#></th>
 										<th width="20%"><#IPConnection_x_ExternalSubnetMask_itemname#></th>
-										<th width="12%">Push</th>
+										<th width="12%"><#Push#></th>
 										<th width="12%"><#list_add_delete#></th>
 									</tr>
 
@@ -1330,7 +1463,7 @@ function cal_panel_block(){
 								<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
 									<thead>
 									<tr>
-										<td colspan="2">Custom configuration</td>
+										<td colspan="2"><#vpn_openvpn_CustomConf#></td>
 									</tr>
 									</thead>
 

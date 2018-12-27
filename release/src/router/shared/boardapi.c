@@ -109,13 +109,16 @@ int init_gpio(void)
 	/* led output */
 	for(i = 0; i < ASIZE(led_list); i++)
 	{
-#ifdef RTN14U
-		if (!strcmp(led_list[i],"led_2g_gpio"))
-			continue;
-#endif
 		use_gpio = nvram_get_int(led_list[i]);
+
 		if((gpio_pin = use_gpio & 0xff) == 0xff)
 			continue;
+
+#if defined(RTCONFIG_RALINK_MT7620)
+		if(gpio_pin == 72)	//skip 2g wifi led NOT to be gpio LED
+			continue;
+#endif
+
 		disable = (use_gpio&GPIO_ACTIVE_LOW)==0 ? 0: 1;
 		gpio_dir(gpio_pin, GPIO_DIR_OUT);
 		set_gpio(gpio_pin, disable);
@@ -147,7 +150,8 @@ int set_pwr_usb(int boolOn){
 	switch(get_model()) {
 		case MODEL_RTAC68U:
 			if((nvram_get_int("HW_ver") != 170) &&
-				(atof(nvram_safe_get("HW_ver")) != 1.10))
+			   (atof(nvram_safe_get("HW_ver")) != 1.10) &&
+			   (atof(nvram_safe_get("HW_ver")) != 2.10))
 				return 0;
 			break;
 	}
@@ -390,6 +394,9 @@ int led_control(int which, int mode)
 	}
 	return 0;
 }
+
+extern uint32_t get_phy_status(uint32_t portmask);
+extern uint32_t set_phy_ctrl(uint32_t portmask, int ctrl);
 
 int wanport_status(int wan_unit)
 {

@@ -576,13 +576,13 @@ extern int is_partition_name(const char *device_name, u32 *partition_order){
 int find_partition_label(const char *dev_name, char *label){
 	struct volume_id id;
 	char dev_path[128];
-	char usb_port[8];
+	char usb_port[32];
 	char nvram_label[32], nvram_value[512];
 
 	if(label) *label = 0;
 
-	memset(usb_port, 0, 8);
-	if(get_usb_port_by_device(dev_name, usb_port, 8) == NULL)
+	memset(usb_port, 0, 32);
+	if(get_usb_port_by_device(dev_name, usb_port, 32) == NULL)
 		return 0;
 
 	memset(nvram_label, 0, 32);

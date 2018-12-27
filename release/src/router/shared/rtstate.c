@@ -32,6 +32,24 @@ void add_rc_support(char *feature)
 		nvram_set("rc_support", feature);
 }
 
+int is_wan_connect(int unit){
+	char tmp[100], prefix[]="wanXXXXXX_";
+	int wan_state, wan_sbstate, wan_auxstate;
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+
+	wan_state = nvram_get_int(strcat_r(prefix, "state_t", tmp));
+	wan_sbstate = nvram_get_int(strcat_r(prefix, "sbstate_t", tmp));
+	wan_auxstate = nvram_get_int(strcat_r(prefix, "auxstate_t", tmp));
+
+	if(wan_state == 2 && wan_sbstate == 0 &&
+			(wan_auxstate == 0 || wan_auxstate == 2)
+			)
+		return 1;
+	else
+		return 0;
+}
+
 int get_wan_state(int unit)
 {
 	char tmp[100], prefix[]="wanXXXXXX_";
@@ -72,7 +90,8 @@ int get_wan_unit(char *ifname)
 int get_wan_unit(char *ifname)
 {
 	char tmp[100], prefix[32]="wanXXXXXX_";
-	int unit;
+	int unit = 0;
+	int model = get_model();
 
 	if(ifname == NULL)
 		return -1;
@@ -80,12 +99,27 @@ int get_wan_unit(char *ifname)
 	for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 
-		if(!strncmp(ifname, "ppp", 3)){
-			if(nvram_match(strcat_r(prefix, "pppoe_ifname", tmp), ifname))
-				return unit;
+		if(!strncmp(ifname, "ppp", 3) ){
+
+			if(nvram_match(strcat_r(prefix, "pppoe_ifname", tmp), ifname)) {
+				if (model ==  MODEL_RTN65U) {
+					if(!nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") || nvram_match(strcat_r(prefix, "is_usb_modem_ready", tmp), "1"))						
+						return unit;
+				}	
+				else if (nvram_match(strcat_r(prefix, "state_t", tmp), "2") && nvram_match(strcat_r(prefix, "auxstate_t", tmp), "0") && nvram_match(strcat_r(prefix, "gw_ifname", tmp), ifname)) 
+					return unit;				
+			}
+
+				
 		}
-		else if(nvram_match(strcat_r(prefix, "ifname", tmp), ifname))
-			return unit;
+		else if(nvram_match(strcat_r(prefix, "ifname", tmp), ifname)) {
+			
+			if (model == MODEL_RTN65U && !nvram_match(strcat_r(prefix, "proto", tmp), "l2tp") && !nvram_match(strcat_r(prefix, "proto", tmp), "pptp"))
+					return unit;
+			
+			if (!nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") && !nvram_match(strcat_r(prefix, "proto", tmp), "l2tp") && !nvram_match(strcat_r(prefix, "proto", tmp), "pptp") && nvram_match(strcat_r(prefix, "gw_ifname", tmp), ifname))
+					return unit;						
+		}   
 	}
 
 	return -1;
@@ -180,6 +214,8 @@ int get_lanports_status(void)
 	return lanport_status();
 }
 
+extern int wanport_status(int wan_unit);
+
 // OR all wan port status
 int get_wanports_status(int wan_unit)
 {
@@ -196,7 +232,11 @@ int get_wanports_status(int wan_unit)
 #ifdef RTCONFIG_DUALWAN
 	if(get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_LAN)
 	{
-		return rtkswitch_wanPort_phyStatus(wan_unit); //Paul modify 2012/12/4	
+	#ifdef RTCONFIG_RALINK
+		return rtkswitch_wanPort_phyStatus(wan_unit); //Paul modify 2012/12/4
+	#else
+		return wanport_status(wan_unit);
+	#endif
 	}
 #endif
 	// TO CHENI:

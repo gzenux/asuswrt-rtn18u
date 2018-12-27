@@ -82,6 +82,10 @@ static int rctest_main(int argc, char *argv[])
 			if(on) start_wan();
 			else stop_wan();
 		}
+		else if (strcmp(argv[1], "wan_port") == 0) {
+			if(on) start_wan_port();
+			else stop_wan_port();
+		}
 		else if (strcmp(argv[1], "firewall") == 0) {
 			//if(on) start_firewall();
 			//else stop_firewall();
@@ -104,6 +108,12 @@ static int rctest_main(int argc, char *argv[])
 		}
 #endif
 #endif
+#ifdef RTCONFIG_IPERF
+		else if (strcmp(argv[1], "monitor") == 0) {
+			if(on) start_monitor();
+			else stop_monitor();
+		}
+#endif
 		else if (strcmp(argv[1], "qos") == 0) {//qos test
 			if(on){
 #ifdef RTCONFIG_RALINK
@@ -117,7 +127,16 @@ static int rctest_main(int argc, char *argv[])
 #endif
 				}
 #endif
-				add_iQosRules(get_wan_ifname(0));
+#ifdef RTCONFIG_TMOBILE_QOS
+			add_EbtablesRules();
+#else
+			add_iQosRules(get_wan_ifname(0));
+#endif
+#ifdef RTCONFIG_BWDPI
+				if(nvram_get_int("qos_type") == 1)
+					start_dpi_engine_service();
+				else
+#endif
 				start_iQos();
 			}
 			else 
@@ -137,7 +156,7 @@ static int rctest_main(int argc, char *argv[])
 					system("echo 2 > /proc/sys/net/ipv4/conf/all/force_igmp_version");
 #endif
 
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN54U)
 					if (!(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")))
 #endif
 					{
@@ -145,6 +164,12 @@ static int rctest_main(int argc, char *argv[])
 						sleep(1);
 					}	
 				}
+#endif
+#ifdef RTCONFIG_BWDPI
+				if(nvram_get_int("qos_type") == 1){
+					stop_dpi_engine_service();
+				}
+				else
 #endif
 				stop_iQos();
 				del_iQosRules();
@@ -219,11 +244,11 @@ typedef struct {
 } applets_t;
 
 static const applets_t applets[] = {
-        { "preinit",                    init_main                               },
+	{ "preinit",			init_main				},
 	{ "init",			init_main				},
-	{ "console",			console_main			},
+	{ "console",			console_main				},
 #ifdef DEBUG_RCTEST
-	{ "rc",				rctest_main			},
+	{ "rc",				rctest_main				},
 #endif
 	{ "ip-up",			ipup_main				},
 	{ "ip-down",			ipdown_main				},
@@ -235,18 +260,18 @@ static const applets_t applets[] = {
 	{ "auth-fail",			authfail_main				},
 #ifdef RTCONFIG_VPNC
 	{ "vpnc-ip-up",			vpnc_ipup_main				},
-	{ "vpnc-ip-down",		vpnc_ipdown_main				},
-	{ "vpnc-ip-pre-up",		vpnc_ippreup_main				},
-	{ "vpnc-auth-fail",		vpnc_authfail_main				},
+	{ "vpnc-ip-down",		vpnc_ipdown_main			},
+	{ "vpnc-ip-pre-up",		vpnc_ippreup_main			},
+	{ "vpnc-auth-fail",		vpnc_authfail_main			},
 #endif
 #ifdef RTCONFIG_EAPOL
 	{ "wpa_cli",			wpacli_main			},
 #endif
 	{ "hotplug",			hotplug_main			},
 #ifdef RTCONFIG_BCMARM
-        { "mtd-write",                  mtd_write_main_old                      },
-        { "mtd-erase",                  mtd_unlock_erase_main_old               },
-        { "mtd-unlock",                 mtd_unlock_erase_main_old               },
+	{ "mtd-write",			mtd_write_main_old		},
+	{ "mtd-erase",			mtd_unlock_erase_main_old	},
+	{ "mtd-unlock",			mtd_unlock_erase_main_old	},
 #else
 	{ "mtd-write",			mtd_write_main			},
 	{ "mtd-erase",			mtd_unlock_erase_main		},
@@ -261,6 +286,12 @@ static const applets_t applets[] = {
 	{ "psta_monitor",		psta_monitor_main		},
 #endif
 #endif
+#ifdef RTCONFIG_IPERF
+	{ "monitor",			monitor_main			},
+#endif
+#ifdef RTCONFIG_QTN
+	{ "qtn_monitor",		qtn_monitor_main		},
+#endif
 #ifdef RTCONFIG_USB
 	{ "usbled",			usbled_main			},
 #endif
@@ -271,7 +302,7 @@ static const applets_t applets[] = {
 	{ "udhcpc_lan",			udhcpc_lan			},
 	{ "zcip",			zcip_wan			},
 #ifdef RTCONFIG_IPV6
-	{ "dhcp6c-state",		dhcp6c_state_main		},
+	{ "dhcp6c",			dhcp6c_wan			},
 #endif
 #ifdef RTCONFIG_WPS
 	{ "wpsaide",			wpsaide_main			},
@@ -282,8 +313,8 @@ static const applets_t applets[] = {
 #ifdef RTCONFIG_RALINK
 	{ "rtkswitch",			config_rtkswitch		},
 #endif
-	{ "wanduck",                    wanduck_main                    },
-	{ "tcpcheck",                   tcpcheck_main                   },
+	{ "wanduck",			wanduck_main			},
+	{ "tcpcheck",			tcpcheck_main			},
 	{ "autodet", 			autodet_main			},
 #ifdef RTCONFIG_CIFS
 	{ "mount-cifs",			mount_cifs_main			},
@@ -296,6 +327,20 @@ static const applets_t applets[] = {
 	{ "disk_remove",		diskremove_main			},
 #endif
 	{ "firmware_check",		firmware_check_main		},
+#ifdef RTCONFIG_HTTPS
+	{ "rsasign_check",		rsasign_check_main		},
+#endif
+	{ "service",		service_main		},
+	{ "speedtest",			speedtest_main			},
+#ifdef RTCONFIG_BWDPI
+	{ "bwdpi",			bwdpi_main			},
+	{ "bwdpi_monitor",		bwdpi_monitor_main		},
+	{ "bwdpi_check",		bwdpi_check_main		},
+	{ "rsasign_sig_check",		rsasign_sig_check_main		},
+#endif
+#ifdef RTCONFIG_TMOBILE
+	{ "sendm",			sendm_main			},
+#endif
 	{NULL, NULL}
 };
 
@@ -388,10 +433,10 @@ int main(int argc, char **argv)
 		restart_wireless();
 		return 0;
 	}
-        else if(!strcmp(base, "nvram_erase")){
-                erase_nvram();
-                return 0;
-        }
+	else if(!strcmp(base, "nvram_erase")){
+		erase_nvram();
+		return 0;
+	}
 #ifdef RTCONFIG_USB
 	else if(!strcmp(base, "get_apps_name")){
 		if(argc != 2){
@@ -554,7 +599,7 @@ int main(int argc, char **argv)
 		}
 		else
 			printf("ATE_ERROR\n");
-                return 0;
+		return 0;
 	}
 #if defined(RTCONFIG_RALINK)
 	else if (!strcmp(base, "FWRITE")) {
@@ -580,12 +625,14 @@ int main(int argc, char **argv)
 		printf("ATE_ERROR\n");
 		return 0;
 	}
+#if defined(RTCONFIG_HAS_5G)
 	else if (!strcmp(base, "asuscfe_5g")) {
 		if (argc == 2)
 			return asuscfe(argv[1], WIF_5G);
 		else
 			return EINVAL;
 	}
+#endif	/* RTCONFIG_HAS_5G */
 	else if (!strcmp(base, "asuscfe_2g")) {
 		if (argc == 2)
 			return asuscfe(argv[1], WIF_2G);
@@ -595,9 +642,11 @@ int main(int argc, char **argv)
 	else if (!strcmp(base, "stainfo_2g")) {
 		return stainfo(0);
 	}
+#if defined(RTCONFIG_HAS_5G)
 	else if (!strcmp(base, "stainfo_5g")) {
 		return stainfo(1);
 	}
+#endif	/* RTCONFIG_HAS_5G */
 #ifdef RTCONFIG_DSL
 	else if(!strcmp(base, "gen_ralink_config")){
 		if(argc != 3){
@@ -612,6 +661,12 @@ int main(int argc, char **argv)
 		run_telnetd();
 		return 0;
 	}
+#ifdef RTCONFIG_SSH
+	else if(!strcmp(base, "run_sshd")) {
+		start_sshd();
+		return 0;
+	}
+#endif
 #if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
 	else if(!strcmp(base, "run_pptpd")) {
 		start_pptpd();
@@ -628,6 +683,23 @@ int main(int argc, char **argv)
 	else if (!strcmp(base, "wlcscan")) {
 		return wlcscan_main();
 	}
+#ifdef RTCONFIG_QTN
+	else if (!strcmp(base, "start_psta_qtn")) {
+		return start_psta_qtn();
+	}
+	else if (!strcmp(base, "start_ap_qtn")) {
+		return start_ap_qtn();
+	}
+	else if (!strcmp(base, "start_nodfs_scan_qtn")) {
+		return start_nodfs_scan_qtn();
+	}
+	else if (!strcmp(base, "start_qtn_stateless")) {
+		return gen_stateless_conf();
+	}
+	else if (!strcmp(base, "restart_qtn")){
+		return reset_qtn(1);
+	}
+#endif
 #endif
 #ifdef RTCONFIG_WIRELESSREPEATER
 	else if (!strcmp(base, "wlcconnect")) {
@@ -647,32 +719,31 @@ int main(int argc, char **argv)
 		return(led_control(atoi(argv[1]), atoi(argv[2])));
 	}
 #ifdef RTCONFIG_BCMARM
-        /* mtd-erase2 [device] */
-        else if (!strcmp(base, "mtd-erase2")) {
-                if (argv[1] && ((!strcmp(argv[1], "boot")) ||
-                        (!strcmp(argv[1], "linux")) ||
-                        (!strcmp(argv[1], "linux2")) ||
-                        (!strcmp(argv[1], "rootfs")) ||
-                        (!strcmp(argv[1], "rootfs2")) ||
-                        (!strcmp(argv[1], "nvram")))) {
-
-                        return mtd_erase(argv[1]);
-                } else {
-                        fprintf(stderr, "usage: mtd-erase2 [device]\n");
-                        return EINVAL;
-                }
-        }
-        /* mtd-write2 [path] [device] */
-        else if (!strcmp(base, "mtd-write2")) {
-                if (argc >= 3)
-                        return mtd_write(argv[1], argv[2]);
-                else {
-                        fprintf(stderr, "usage: mtd-write2 [path] [device]\n");
-                        return EINVAL;
-                }
-        }
+	/* mtd-erase2 [device] */
+	else if (!strcmp(base, "mtd-erase2")) {
+		if (argv[1] && ((!strcmp(argv[1], "boot")) ||
+				(!strcmp(argv[1], "linux")) ||
+				(!strcmp(argv[1], "linux2")) ||
+				(!strcmp(argv[1], "rootfs")) ||
+				(!strcmp(argv[1], "rootfs2")) ||
+				(!strcmp(argv[1], "nvram")))) {
+			return mtd_erase(argv[1]);
+		} else {
+			fprintf(stderr, "usage: mtd-erase2 [device]\n");
+			return EINVAL;
+		}
+	}
+	/* mtd-write2 [path] [device] */
+	else if (!strcmp(base, "mtd-write2")) {
+		if (argc >= 3)
+			return mtd_write(argv[1], argv[2]);
+		else {
+			fprintf(stderr, "usage: mtd-write2 [path] [device]\n");
+			return EINVAL;
+		}
+	}
 #endif
-        else if(!strcmp(base, "test_endian")){
+	else if(!strcmp(base, "test_endian")){
 		int num = 0x04030201;
 		char c = *(char *)(&num);
 
@@ -699,8 +770,8 @@ int main(int argc, char **argv)
 				switch(c){
 					case 'c': // set the clean-cache mode: 0~3.
 						test_num = strtol(optarg, NULL, 10);
-        		if(test_num == LONG_MIN || test_num == LONG_MAX){
-        			_dprintf("ERROR: unknown value %s...\n", optarg);
+			if(test_num == LONG_MIN || test_num == LONG_MAX){
+				_dprintf("ERROR: unknown value %s...\n", optarg);
 							return 0;
 						}
 
@@ -714,8 +785,8 @@ int main(int argc, char **argv)
 						break;
 					case 'w': // set the waited time for cleaning.
 						test_num = strtol(optarg, NULL, 10);
-        		if(test_num < 0 || test_num == LONG_MIN || test_num == LONG_MAX){
-        			_dprintf("ERROR: unknown value %s...\n", optarg);
+			if(test_num < 0 || test_num == LONG_MIN || test_num == LONG_MAX){
+				_dprintf("ERROR: unknown value %s...\n", optarg);
 							return 0;
 						}
 
@@ -724,8 +795,8 @@ int main(int argc, char **argv)
 						break;
 					case 't': // set the waited time for cleaning.
 						test_num = strtol(optarg, NULL, 10);
-        		if(test_num < 0 || test_num == LONG_MIN || test_num == LONG_MAX){
-        			_dprintf("ERROR: unknown value %s...\n", optarg);
+			if(test_num < 0 || test_num == LONG_MIN || test_num == LONG_MAX){
+				_dprintf("ERROR: unknown value %s...\n", optarg);
 							return 0;
 						}
 
@@ -746,6 +817,13 @@ int main(int argc, char **argv)
 
 		return 0;
 	}
+#ifdef RTCONFIG_USB_MODEM
+	else if(!strcmp(base, "write_3g_ppp_conf")){
+		write_3g_ppp_conf();
+
+		return 0;
+	}
+#endif
 	printf("Unknown applet: %s\n", base);
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,7 +18,8 @@
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
 #define EDNS_PKTSZ 4096 /* default max EDNS.0 UDP packet from RFC5625 */
-#define KEYBLOCK_LEN 140 /* choose to mininise fragmentation when storing DNSSEC keys */
+#define KEYBLOCK_LEN 40 /* choose to mininise fragmentation when storing DNSSEC keys */
+#define DNSSEC_WORK 50 /* Max number of queries to validate one question */
 #define TIMEOUT 10 /* drop UDP queries after TIMEOUT seconds */
 #define FORWARD_TEST 50 /* try all servers every 50 queries */
 #define FORWARD_TIME 20 /* or 20 seconds */
@@ -30,7 +31,8 @@
 #define PING_CACHE_TIME 30 /* Ping test assumed to be valid this long. */
 #define DECLINE_BACKOFF 600 /* disable DECLINEd static addresses for this long */
 #define DHCP_PACKET_MAX 16384 /* hard limit on DHCP packet size */
-#define SMALLDNAME 40 /* most domain names are smaller than this */
+#define SMALLDNAME 50 /* most domain names are smaller than this */
+#define CNAME_CHAIN 10 /* chains longer than this atr dropped for loop protection */
 #define HOSTSFILE "/etc/hosts"
 #define ETHERSFILE "/etc/ethers"
 #define DEFLEASE 3600 /* default lease time, 1 hour */
@@ -109,6 +111,8 @@ HAVE_AUTH
    define this to include the facility to act as an authoritative DNS
    server for one or more zones.
 
+HAVE_DNSSEC
+   include DNSSEC validator.
 
 NO_IPV6
 NO_TFTP
@@ -123,6 +127,11 @@ NO_IPSET
    which are enabled  by default in the distributed source tree. Building dnsmasq
    with something like "make COPTS=-DNO_SCRIPT" will do the trick.
 
+NO_NETTLE_ECC
+   Don't include the ECDSA cypher in DNSSEC validation. Needed for older Nettle versions.
+NO_GMP
+   Don't use and link against libgmp, Useful if nettle is built with --enable-mini-gmp.
+
 LEASEFILE
 CONFFILE
 RESOLVFILE
@@ -131,6 +140,12 @@ RESOLVFILE
 
 */
 
+/* Defining this builds a binary which handles time differently and works better on a system without a 
+   stable RTC (it uses uptime, not epoch time) and writes the DHCP leases file less often to avoid flash wear. 
+*/
+
+/* #define HAVE_BROKEN_RTC */
+/* #define HAVE_LEASEFILE_EXPIRE */
 
 /* The default set of options to build. Built with these options, dnsmasq
    has no library dependencies other than libc */
@@ -141,12 +156,19 @@ RESOLVFILE
 #define HAVE_SCRIPT
 #define HAVE_AUTH
 #define HAVE_IPSET 
+
+/* Build options which require external libraries.
+   
+   Defining HAVE_<opt>_STATIC as _well_ as HAVE_<opt> will link the library statically.
+
+   You can use "make COPTS=-DHAVE_<opt>" instead of editing these.
+*/
+
 /* #define HAVE_LUASCRIPT */
-/* #define HAVE_BROKEN_RTC */
-/* #define HAVE_LEASEFILE_EXPIRE */
 /* #define HAVE_DBUS */
 /* #define HAVE_IDN */
 /* #define HAVE_CONNTRACK */
+/* #define HAVE_DNSSEC */
 
 
 /* Default locations for important system files. */
@@ -256,6 +278,7 @@ HAVE_SOCKADDR_SA_LEN
 /* Select the RFC_3542 version of the IPv6 socket API. 
    Define before netinet6/in6.h is included. */
 #define __APPLE_USE_RFC_3542 
+#define NO_IPSET
 
 #elif defined(__NetBSD__)
 #define HAVE_BSD_NETWORK
@@ -325,7 +348,7 @@ HAVE_SOCKADDR_SA_LEN
 #undef HAVE_AUTH
 #endif
 
-#if defined(NO_IPSET) || !defined(HAVE_LINUX_NETWORK)
+#if defined(NO_IPSET)
 #undef HAVE_IPSET
 #endif
 
@@ -394,7 +417,12 @@ static char *compile_opts =
 #ifndef HAVE_AUTH
 "no-"
 #endif
-  "auth";
+"auth "
+#ifndef HAVE_DNSSEC
+"no-"
+#endif
+"DNSSEC";
+
 
 #endif
 

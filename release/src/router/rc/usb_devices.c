@@ -7,12 +7,10 @@
 #include <limits.h>
 #include <dirent.h>
 #include <errno.h>
-#include <signal.h>
 
 #include "rc.h"
 #include "dongles.h"
 
-#include <bcmnvram.h>
 #ifdef RTCONFIG_BCMARM
 #include <bcmgpio.h>
 #endif
@@ -36,7 +34,7 @@
 int is_create_file_dongle(const unsigned int vid, const unsigned int pid)
 {
 	if((vid == 0x0408 && pid == 0xf000) // Q110
-			|| (vid == 0x07d1 && pid == 0xa800) // DWM-156
+			|| (vid == 0x07d1 && pid == 0xa800) // DWM-156 A3
 			)
 		return 1;
 
@@ -800,11 +798,39 @@ int write_3g_conf(FILE *fp, int dno, int aut, const unsigned int vid, const unsi
 			fprintf(fp, "TargetClass=0x%02x\n",	0xff);
 			fprintf(fp, "SonyMode=1\n");
 			break;
-		case SN_DLINK_DWM_156:
+		case SN_DLINK_DWM_156_A1:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x07d1);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0xa800);
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x07d1);
+			fprintf(fp, "TargetProduct=0x%04x\n",	0x3e02);
+			fprintf(fp, "MessageContent=%s\n",	"5553424312345678000000000000061b000000020000000000000000000000");
+			break;
+		case SN_DLINK_DWM_156_A3:
 			fprintf(fp, "DefaultVendor=0x%04x\n",	0x07d1);
 			fprintf(fp, "DefaultProduct=0x%04x\n",	0xa804);
 			fprintf(fp, "TargetVendor=0x%04x\n",	0x07d1);
 			fprintf(fp, "TargetProduct=0x%04x\n",	0x7e11);
+			fprintf(fp, "MessageContent=%s\n",	"5553424312345678000000000000061b000000020000000000000000000000");
+			break;
+		case SN_DLINK_DWM_156_A7_1:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x2001);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0xa706);
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x2001);
+			fprintf(fp, "TargetProduct=0x%04x\n",	0x7d01);
+			fprintf(fp, "MessageContent=%s\n",	"5553424312345678000000000000061b000000020000000000000000000000");
+			break;
+		case SN_DLINK_DWM_156_A7_2:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x2001);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0xa707);
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x2001);
+			fprintf(fp, "TargetProduct=0x%04x\n",	0x7d02);
+			fprintf(fp, "MessageContent=%s\n",	"5553424312345678000000000000061b000000020000000000000000000000");
+			break;
+		case SN_DLINK_DWM_156_A7_3:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x2001);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0xa708);
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x2001);
+			fprintf(fp, "TargetProduct=0x%04x\n",	0x7d03);
 			fprintf(fp, "MessageContent=%s\n",	"5553424312345678000000000000061b000000020000000000000000000000");
 			break;
 		case SN_Huawei_U8220:
@@ -892,13 +918,6 @@ int write_3g_conf(FILE *fp, int dno, int aut, const unsigned int vid, const unsi
 			fprintf(fp, "DefaultVendor=0x%04x\n",	0x1fac);
 			fprintf(fp, "DefaultProduct=0x%04x\n",	0x0032);
 			fprintf(fp, "Configuration=%d\n",	2);
-			break;
-		case SN_DLINK_DWM_156_2:
-			fprintf(fp, "DefaultVendor=0x%04x\n",	0x07d1);
-			fprintf(fp, "DefaultProduct=0x%04x\n",	0xa800);
-			fprintf(fp, "TargetVendor=0x%04x\n",	0x07d1);
-			fprintf(fp, "TargetProduct=0x%04x\n",	0x3e02);
-			fprintf(fp, "MessageContent=%s\n",	"5553424312345678000000000000061b000000020000000000000000000000");
 			break;
 		case SN_Exiss_E_190:
 			fprintf(fp, "DefaultVendor=0x%04x\n",	0x8888);
@@ -1507,8 +1526,30 @@ int write_3g_conf(FILE *fp, int dno, int aut, const unsigned int vid, const unsi
 			fprintf(fp, "DefaultProduct=0x%04x\n",	0x6803);
 			fprintf(fp, "TargetVendor=0x%04x\n",	0x22de);
 			fprintf(fp, "TargetProduct=0x%04x\n",	0x6801);
+#if 0
 			fprintf(fp, "MessageContent=%s\n",	"5553424312345678000000000000061e000000000000000000000000000000");
 			fprintf(fp, "MessageContent2=%s\n",	"5553424312345679000000000000061b000000020000000000000000000000");
+#else
+			fprintf(fp, "StandardEject=1\n");
+#endif
+			break;
+		case SN_Huawei_K5150:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x12d1);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0x1f16);
+#if 1
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x12d1);
+			fprintf(fp, "TargetProductList=%s\n", "14f8,1575");
+			fprintf(fp, "MessageContent=%s\n",	"55534243123456780000000000000011062000000101000100000000000000");
+#else
+			fprintf(fp, "Configuration=2\n");
+#endif
+			break;
+		case SN_ZTE_MF823:
+			fprintf(fp, "DefaultVendor=0x%04x\n",	0x19d2);
+			fprintf(fp, "DefaultProduct=0x%04x\n",	0x1225);
+			fprintf(fp, "TargetVendor=0x%04x\n",	0x19d2);
+			fprintf(fp, "TargetProduct=0x%04x\n",	0x1405);
+			fprintf(fp, "StandardEject=1\n");
 			break;
 		default:
 			fprintf(fp, "\n");
@@ -1736,8 +1777,16 @@ usb_dbg("3G: Auto setting.\n");
 			write_3g_conf(fp, SN_ZTE_ffe, 1, vid, pid);
 		else if(vid == 0x0fce && pid == 0xd103)	
 			write_3g_conf(fp, SN_SE_MD400G, 1, vid, pid);
+		/*else if(vid == 0x07d1 && pid == 0xa800)	
+			write_3g_conf(fp, SN_DLINK_DWM_156_A1, 1, vid, pid);//*/ // Couldn't usb usb_modeswitch.
 		else if(vid == 0x07d1 && pid == 0xa804)	
-			write_3g_conf(fp, SN_DLINK_DWM_156, 1, vid, pid);
+			write_3g_conf(fp, SN_DLINK_DWM_156_A3, 1, vid, pid);
+		else if(vid == 0x2001 && pid == 0xa706)	
+			write_3g_conf(fp, SN_DLINK_DWM_156_A7_1, 1, vid, pid);
+		else if(vid == 0x2001 && pid == 0xa707)	
+			write_3g_conf(fp, SN_DLINK_DWM_156_A7_2, 1, vid, pid);
+		else if(vid == 0x2001 && pid == 0xa708)	
+			write_3g_conf(fp, SN_DLINK_DWM_156_A7_3, 1, vid, pid);
 		else if(vid == 0x12d1 && pid == 0x1030)	
 			write_3g_conf(fp, SN_Huawei_U8220, 1, vid, pid);
 		else if(vid == 0x12d1 && pid == 0x14fe)	
@@ -1762,8 +1811,6 @@ usb_dbg("3G: Auto setting.\n");
 			write_3g_conf(fp, SN_Haier_CE_100, 1, vid, pid);
 		else if(vid == 0x1fac && pid == 0x0032)	
 			write_3g_conf(fp, SN_Franklin_Wireless_U210_var, 1, vid, pid);
-		/*else if(vid == 0x07d1 && pid == 0xa800)	
-			write_3g_conf(fp, SN_DLINK_DWM_156_2, 1, vid, pid);//*/ // Couldn't usb usb_modeswitch.
 		else if(vid == 0x8888 && pid == 0x6500)	
 			write_3g_conf(fp, SN_Exiss_E_190, 1, vid, pid);
 		else if(vid == 0x05c6 && pid == 0x2000)	
@@ -1914,6 +1961,10 @@ usb_dbg("3G: Auto setting.\n");
 			write_3g_conf(fp, SN_Onda_MSA14_4, 1, vid, pid);
 		else if(vid == 0x22de && pid == 0x6803)
 			write_3g_conf(fp, SN_WeTelecom_WMD300, 1, vid, pid);
+		else if(vid == 0x12d1 && pid == 0x1f16)
+			write_3g_conf(fp, SN_Huawei_K5150, 1, vid, pid);
+		else if(vid == 0x19d2 && pid == 0x1225)
+			write_3g_conf(fp, SN_ZTE_MF823, 1, vid, pid);
 		else if(vid == 0x12d1)
 			write_3g_conf(fp, UNKNOWNDEV, 1, vid, pid);
 		else{
@@ -2102,7 +2153,8 @@ usb_dbg("3G: manaul setting.\n");
 	return 1;
 }
 
-int write_3g_ppp_conf(const char *modem_node){
+int write_3g_ppp_conf(void){
+	char modem_node[16];
 	FILE *fp;
 	char usb_node[32];
 	unsigned int vid, pid;
@@ -2110,13 +2162,19 @@ int write_3g_ppp_conf(const char *modem_node){
 	char prefix[] = "wanXXXXXXXXXX_", tmp[100];
 	int retry, lock;
 
+	snprintf(modem_node, 16, "%s", nvram_safe_get("usb_modem_act_int"));
+	if(strlen(modem_node) <= 0){
+		usb_dbg(": Fail to get the act modem node.\n");
+		return 0;
+	}
+
 	if(get_device_type_by_device(modem_node) != DEVICE_TYPE_MODEM){
 		usb_dbg("(%s): test 1.\n", modem_node);
 		return 0;
 	}
 
 	if ((wan_unit = get_usbif_dualwan_unit()) < 0) {
-		usb_dbg("(%s): test 2.\n", modem_node);
+		usb_dbg("(%s): Don't enable the USB interface as the WAN type yet.\n", modem_node);
 		return 0;
 	}
 
@@ -2622,14 +2680,12 @@ int set_usb_common_nvram(const char *action, const char *device_name, const char
 				nvram_unset(tmp);
 			if(strlen(nvram_safe_get(strcat_r(prefix, "_node", tmp))) > 0)
 				nvram_unset(tmp);
+			if(strlen(nvram_safe_get(strcat_r(prefix, "_act_def", tmp))) > 0)
+				nvram_unset(tmp);
 		}
 		else{
 			if(!strcmp(known_type, "storage")){
-				snprintf(prefix, sizeof(prefix), "usb_path_%s", device_name);
-				nvram_unset(prefix);
-				nvram_unset(strcat_r(prefix, "_label", tmp));
-
-				ptr = device_name+strlen(device_name)-1;
+				ptr = (char *)device_name+strlen(device_name)-1;
 				if(!isdigit(*ptr)){
 					snprintf(prefix, sizeof(prefix), "usb_path%s", port_path);
 					if(strlen(nvram_safe_get(strcat_r(prefix, "_vid", tmp))) <= 0)
@@ -2735,8 +2791,8 @@ int set_usb_common_nvram(const char *action, const char *device_name, const char
 
 int asus_sd(const char *device_name, const char *action){
 #ifdef RTCONFIG_USB
-	char usb_node[32], usb_port[8];
-	int retry, isLock;
+	char usb_node[32], usb_port[32];
+	int isLock;
 	char nvram_value[32];
 	char env_dev[64], env_port[64];
 	char port_path[8];
@@ -2748,6 +2804,9 @@ int asus_sd(const char *device_name, const char *action){
 	char speed[256];
 #endif
 	char *ptr;
+#ifdef RTCONFIG_USB_PRINTER
+	int retry;
+#endif
 
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
@@ -2767,7 +2826,7 @@ int asus_sd(const char *device_name, const char *action){
 		return 0;
 	}
 
-	ptr = device_name+strlen(device_name)-1;
+	ptr = (char *)device_name+strlen(device_name)-1;
 
 	// If remove the device?
 	if(!check_hotplug_action(action)){
@@ -2775,6 +2834,8 @@ int asus_sd(const char *device_name, const char *action){
 		sprintf(buf1, "usb_path_%s", device_name);
 		memset(usb_node, 0, 32);
 		strcpy(usb_node, nvram_safe_get(buf1));
+		nvram_unset(buf1);
+		nvram_unset(strcat_r(buf1, "_label", tmp));
 
 		if(get_path_by_node(usb_node, port_path, 8) == NULL){
 			usb_dbg("(%s): Fail to get usb path.\n", usb_node);
@@ -2846,7 +2907,7 @@ int asus_sd(const char *device_name, const char *action){
 	}
 
 	// Get USB port.
-	if(get_usb_port_by_string(usb_node, usb_port, 8) == NULL){
+	if(get_usb_port_by_string(usb_node, usb_port, 32) == NULL){
 		usb_dbg("(%s): Fail to get usb port.\n", usb_node);
 		file_unlock(isLock);
 		return 0;
@@ -3016,6 +3077,7 @@ int asus_lp(const char *device_name, const char *action){
 		sprintf(buf1, "usb_path_%s", device_name);
 		memset(usb_node, 0, 32);
 		strcpy(usb_node, nvram_safe_get(buf1));
+		nvram_unset(buf1);
 
 		if(strlen(usb_node) > 0){
 			u2ec_fifo = open(U2EC_FIFO, O_WRONLY|O_NONBLOCK);
@@ -3176,15 +3238,17 @@ int asus_sg(const char *device_name, const char *action){
 		; // had do usb_modeswitch before.
 	else if(vid == 0x19d2 && pid == 0x0167) // MF821's modem mode.
 		; // do nothing.
+	else if(is_create_file_dongle(vid, pid))
+		; // do nothing.
 	else if(init_3g_param(port_path, vid, pid)){
 		if(strcmp(nvram_safe_get("stop_sg_remove"), "1")){
 			usb_dbg("(%s): Running usb_modeswitch...\n", device_name);
 			xstart("usb_modeswitch", "-c", switch_file);
 		}
 	}
-	else if(atoi(port_path) != 3 // usb_path3 is worked for the built-in card reader.
-			&& !is_create_file_dongle(vid, pid)
-			){
+	else if(atoi(port_path) == 3)
+		; // usb_path3 is worked for the built-in card reader.
+	else{
 		if(strcmp(nvram_safe_get("stop_sg_remove"), "1"))
 		{
 			usb_dbg("(%s): insmod cdrom!\n", device_name);
@@ -3205,7 +3269,7 @@ int asus_sr(const char *device_name, const char *action){
 	char usb_node[32];
 	unsigned int vid, pid;
 	int isLock;
-	char eject_cmd[32];
+	char eject_cmd[128];
 	char port_path[8];
 	char nvram_name[32], nvram_value[32];
 	char sg_device[32];
@@ -3280,14 +3344,12 @@ int asus_sr(const char *device_name, const char *action){
 	else if(strcmp(nvram_safe_get("stop_cd_remove"), "1")){
 		usb_dbg("(%s): Running sdparm...\n", device_name);
 
-		memset(eject_cmd, 0, 32);
-		sprintf(eject_cmd, "/dev/%s", device_name);
+		snprintf(eject_cmd, 128, "/dev/%s", device_name);
 		eval("sdparm", "--command=eject", eject_cmd);
 		sleep(1);
 
 		if(find_sg_of_device(device_name, sg_device, sizeof(sg_device)) != NULL){
-			memset(eject_cmd, 0, 32);
-			sprintf(eject_cmd, "/dev/%s", sg_device);
+			snprintf(eject_cmd, 128, "/dev/%s", sg_device);
 			eval("sdparm", "--command=eject", eject_cmd);
 			sleep(1);
 		}
@@ -3318,6 +3380,7 @@ int asus_tty(const char *device_name, const char *action){
 	int wan_unit;
 	char port_path[8];
 	char buf1[32];
+	char act_dev[8];
 	char prefix[] = "usb_pathXXXXXXXXXXXXXXXXX_", tmp[100];
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
@@ -3339,22 +3402,33 @@ int asus_tty(const char *device_name, const char *action){
 
 	// If remove the device?
 	if(!check_hotplug_action(action)){
-		memset(buf1, 0, 32);
-		sprintf(buf1, "usb_path_%s", device_name);
-		memset(usb_node, 0, 32);
-		strncpy(usb_node, nvram_safe_get(buf1), 32);
-		if(get_path_by_node(usb_node, port_path, 8) == NULL){
-			usb_dbg("(%s): Fail to get usb path.\n", usb_node);
-			file_unlock(isLock);
-			return 0;
-		}
+		snprintf(current_act, 16, "%s", nvram_safe_get("usb_modem_act_path"));
+		snprintf(buf1, 32, "usb_path_%s", device_name);
+		snprintf(usb_node, 32, "%s", nvram_safe_get(buf1));
+		nvram_unset(buf1);
+		snprintf(act_dev, 8, "%s", nvram_safe_get("usb_modem_act_dev"));
 
-		snprintf(prefix, sizeof(prefix), "usb_path%s", port_path);
-		if(!strcmp(nvram_safe_get(strcat_r(prefix, "_act", tmp)), device_name)){
-			nvram_unset(tmp);
-			nvram_unset(strcat_r(prefix, "_act_def", tmp));
-			nvram_unset("usb_modem_act_path");
+		if(!strcmp(current_act, usb_node)){
+			if(get_path_by_node(usb_node, port_path, 8) == NULL){
+				usb_dbg("(%s): Fail to get usb path.\n", usb_node);
+				file_unlock(isLock);
+				return 0;
+			}
 
+			if(strncmp(act_dev, "usb", 3) && strncmp(act_dev, "eth", 3)){
+				snprintf(prefix, sizeof(prefix), "usb_path%s", port_path);
+				nvram_unset(strcat_r(prefix, "_act", tmp));
+				nvram_unset(strcat_r(prefix, "_act_def", tmp));
+				nvram_unset("usb_modem_act_path");
+				nvram_unset("usb_modem_act_type");
+				nvram_unset("usb_modem_act_dev");
+			}
+			nvram_unset("usb_modem_act_int");
+			nvram_unset("usb_modem_act_bulk");
+			nvram_unset("usb_modem_act_vid");
+			nvram_unset("usb_modem_act_pid");
+			nvram_unset("usb_modem_act_signal");
+#if 0
 			// TODO: for the bad CTF. After updating CTF, need to mark these codes.
 			if(nvram_match("ctf_disable_modem", "1")){
 				set_usb_common_nvram(action, device_name, usb_node, "modem");
@@ -3366,7 +3440,7 @@ int asus_tty(const char *device_name, const char *action){
 
 				return 0;
 			}
-
+#endif
 			// Modem remove action.
 			unlink(PPP_CONF_FOR_3G);
 
@@ -3465,9 +3539,10 @@ int asus_tty(const char *device_name, const char *action){
 	}
 	else if(strlen(buf1) <= 0){
 		nvram_set("usb_modem_act_path", usb_node);
-		memset(buf1, 0, 32);
 		snprintf(buf1, 32, "%u",  vid);
-		nvram_set("modem_vid", buf1);
+		nvram_set("usb_modem_act_vid", buf1);
+		snprintf(buf1, 32, "%u",  pid);
+		nvram_set("usb_modem_act_pid", buf1);
 	}
 
 	// Find the control node of modem.
@@ -3492,7 +3567,9 @@ int asus_tty(const char *device_name, const char *action){
 	strcpy(current_def, nvram_safe_get(strcat_r(prefix, "_act_def", tmp)));
 	usb_dbg("(%s): interface_name=%s, current_act=%s, current_def=%s.\n", device_name, interface_name, current_act, current_def);
 
-	if(isSerialNode(device_name)){
+	if(strlen(current_act) > 0 && strncmp(current_act, "tty", 3)) // for ECM, NCM, QMI...etc.
+		;
+	else if(isSerialNode(device_name)){
 		// Find the endpoint: 03(Int).
 		got_Int_endpoint = get_interface_Int_endpoint(interface_name);
 		usb_dbg("(%s): got_Int_endpoint(%d)!\n", device_name, got_Int_endpoint);
@@ -3583,20 +3660,10 @@ usb_dbg("(%s): cur_val=%d, tmp_val=%d.\n", device_name, cur_val, tmp_val);
 
 		// Wait all ttyUSB nodes to ready.
 		sleep(1);
-
-		// Write dial config file.
-		if(!write_3g_ppp_conf(current_act)){
-			usb_dbg("(%s): Fail to write PPP's conf for 3G process!\n", device_name);
-			file_unlock(isLock_tty);
-			file_unlock(isLock);
-			return 0;
-		}
-		else
-			usb_dbg("(%s): Had wrrtten the 3g ppp file.\n", device_name);
 	}
 	else{ // isACMNode(device_name).
 		// Find the control interface of cdc-acm.
-		if(!isACMInterface(interface_name)){
+		if(!isACMInterface(interface_name, 1, vid, pid)){
 			usb_dbg("(%s): Not control interface!\n", device_name);
 			file_unlock(isLock_tty);
 			file_unlock(isLock);
@@ -3605,19 +3672,8 @@ usb_dbg("(%s): cur_val=%d, tmp_val=%d.\n", device_name, cur_val, tmp_val);
 
 		if(!strcmp(device_name, "ttyACM0")){
 			nvram_set(strcat_r(prefix, "_act", tmp), device_name);
-
-			// Write dial config file.
-			if(!write_3g_ppp_conf(device_name)){
-				usb_dbg("(%s): Fail to write PPP's conf for 3G process!\n", device_name);
-				file_unlock(isLock_tty);
-				file_unlock(isLock);
-				return 0;
-			}
-			else
-				usb_dbg("(%s): Had wrrtten the 3g ppp file.\n", device_name);
 		}
 		else{
-			usb_dbg("(%s): Skip to write PPP's conf.\n", device_name);
 			file_unlock(isLock_tty);
 			file_unlock(isLock);
 			return 0;
@@ -3629,6 +3685,8 @@ usb_dbg("(%s): cur_val=%d, tmp_val=%d.\n", device_name, cur_val, tmp_val);
 	if(!nvram_match("wans_mode", "off") && strcmp(current_def, "1")){
 #endif
 		if ((wan_unit = get_usbif_dualwan_unit()) >= 0) {
+			// show the manual-setting dongle in Networkmap when it was plugged after reboot.
+			init_3g_param(port_path, vid, pid);
 #if 0
 			// TODO: for the bad CTF. After updating CTF, need to mark these codes.
 			if(nvram_invmatch("ctf_disable", "1") && nvram_invmatch("ctf_disable_modem", "1")){
@@ -3649,9 +3707,6 @@ usb_dbg("(%s): got tty nodes and notify restart wan(%d)...\n", device_name, wan_
 			sprintf(cmd, "restart_wan_if %d", wan_unit);
 			notify_rc_and_wait(cmd);
 #endif
-
-			// show the manual-setting dongle in Networkmap when it was plugged after reboot.
-			init_3g_param(port_path, vid, pid);
 		}
 #ifdef RTCONFIG_DUALWAN
 		else
@@ -3701,6 +3756,8 @@ int asus_usbbcm(const char *device_name, const char *action){
 		sprintf(buf1, "usb_path_%s", device_name);
 		memset(usb_node, 0, 32);
 		strncpy(usb_node, nvram_safe_get(buf1), 32);
+		nvram_unset(buf1);
+
 		if(get_path_by_node(usb_node, port_path, 8) == NULL){
 			usb_dbg("(%s): Fail to get usb path.\n", usb_node);
 			file_unlock(isLock);
@@ -3772,14 +3829,18 @@ int asus_usbbcm(const char *device_name, const char *action){
 
 int asus_usb_interface(const char *device_name, const char *action){
 #if defined(RTCONFIG_USB) || defined(RTCONFIG_USB_PRINTER) || defined(RTCONFIG_USB_MODEM)
-	char usb_node[32], usb_port[8];
+	char usb_node[32], usb_port[32];
 #ifdef RTCONFIG_USB_MODEM
 	unsigned int vid, pid;
-	char modem_cmd[64], buf[64];
+	char modem_cmd[128], buf[128];
 #endif
-	int retry, isLock;
+#if defined(RTCONFIG_USB_PRINTER) || defined(RTCONFIG_USB_BECEEM)
+	int retry;
+#endif
+	int isLock;
 	char device_type[16];
-	char nvram_usb_path[16];
+	char nvram_usb_path[32];
+	char prefix[] = "usb_pathXXXXXXXXXXXXXXXXX_", tmp[100];
 	char conf_file[32];
 	char port_path[8];
 	int port_num;
@@ -3810,7 +3871,7 @@ int asus_usb_interface(const char *device_name, const char *action){
 	}
 
 	// Get USB port.
-	if(get_usb_port_by_string(usb_node, usb_port, 8) == NULL){
+	if(get_usb_port_by_string(usb_node, usb_port, 32) == NULL){
 		usb_dbg("(%s): Fail to get usb port.\n", usb_node);
 		file_unlock(isLock);
 		return 0;
@@ -3823,17 +3884,21 @@ int asus_usb_interface(const char *device_name, const char *action){
 		return 0;
 	}
 
+	// check the current working node of modem.
+	snprintf(prefix, sizeof(prefix), "usb_path%s", port_path);
+
 	// If remove the device? Handle the remove hotplug of the printer and modem.
 	if(!check_hotplug_action(action)){
-		snprintf(nvram_usb_path, 16, "usb_led%d", port_num);
+		snprintf(nvram_usb_path, 32, "usb_led%d", port_num);
 		if(!strcmp(nvram_safe_get(nvram_usb_path), "1"))
 			nvram_unset(nvram_usb_path);
 
-		snprintf(nvram_usb_path, 16, "usb_path%s", port_path);
-		strcpy(device_type, nvram_safe_get(nvram_usb_path));
+		strcpy(device_type, nvram_safe_get(prefix));
 
 #ifdef RTCONFIG_USB_MODEM
 		if(!strcmp(device_type, "modem")){
+			snprintf(buf, 128, "%s", nvram_safe_get(strcat_r(prefix, "_act", tmp)));
+
 			// remove the device between adding interface and adding tty.
 			modprobe_r("option");
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(2,6,36)
@@ -3843,19 +3908,29 @@ int asus_usb_interface(const char *device_name, const char *action){
 			modprobe_r("cdc-acm");
 #ifdef RTCONFIG_USB_BECEEM
 			modprobe_r("drxvi314");
+
+			vid = atoi(nvram_safe_get("usb_modem_act_vid"));
+			pid = atoi(nvram_safe_get("usb_modem_act_pid"));
+			if(is_samsung_dongle(1, vid, pid) || is_gct_dongle(1, vid, pid)){
+				nvram_unset("usb_modem_act_path");
+				nvram_unset("usb_modem_act_vid");
+				nvram_unset("usb_modem_act_pid");
+				nvram_unset(tmp);
+
+				// Notify wanduck to switch the wan line to WAN port.
+				kill_pidfile_s("/var/run/wanduck.pid", SIGUSR2);
+			}
 #endif
 
-			memset(conf_file, 0, 32);
-			sprintf(conf_file, "%s.%s", USB_MODESWITCH_CONF, port_path);
+			snprintf(conf_file, 32, "%s.%s", USB_MODESWITCH_CONF, port_path);
 			unlink(conf_file);
 
-			memset(nvram_usb_path, 0, 16);
-			sprintf(nvram_usb_path, "usb_path%s_act", port_path);
-
 			// When ACM dongles are removed, there are no removed hotplugs of ttyACM nodes.
-			if(!strncmp(nvram_safe_get(nvram_usb_path), "ttyACM", 6)){
+			if(!strncmp(buf, "ttyACM", 6)){
 				// No methods let DUT restore the normal state after removing the ACM dongle.
 				notify_rc("reboot");
+				file_unlock(isLock);
+				return 0;
 			}
 		}
 #endif
@@ -3873,7 +3948,7 @@ int asus_usb_interface(const char *device_name, const char *action){
 		return 0;
 	}
 
-	snprintf(nvram_usb_path, 16, "usb_led%d", port_num);
+	snprintf(nvram_usb_path, 32, "usb_led%d", port_num);
 	if(strcmp(nvram_safe_get(nvram_usb_path), "1"))
 		nvram_set(nvram_usb_path, "1");
 
@@ -3889,11 +3964,10 @@ int asus_usb_interface(const char *device_name, const char *action){
 	// there is no any bounded drivers with Some Sierra dongles in the default state.
 	if(vid == 0x1199 && isStorageInterface(device_name)){
 		if(init_3g_param(port_path, vid, pid)){
-			memset(modem_cmd, 0, sizeof(modem_cmd));
-			sprintf(modem_cmd, "%s.%s", USB_MODESWITCH_CONF, port_path);
 
 			if(strcmp(nvram_safe_get("stop_ui_remove"), "1")){
 				usb_dbg("(%s): Running usb_modeswitch...\n", device_name);
+				snprintf(modem_cmd, 128, "%s.%s", USB_MODESWITCH_CONF, port_path);
 				xstart("usb_modeswitch", "-c", modem_cmd);
 			}
 
@@ -3902,10 +3976,11 @@ int asus_usb_interface(const char *device_name, const char *action){
 		}
 	}
 
-	if(!isSerialInterface(device_name)
-			&& !isACMInterface(device_name)
+	if(!isSerialInterface(device_name, 1, vid, pid)
+			&& !isACMInterface(device_name, 1, vid, pid)
 			&& !isRNDISInterface(device_name, vid, pid)
 			&& !isCDCETHInterface(device_name)
+			&& !isNCMInterface(device_name)
 #ifdef RTCONFIG_USB_BECEEM
 			&& !isGCTInterface(device_name)
 #endif
@@ -3937,12 +4012,17 @@ int asus_usb_interface(const char *device_name, const char *action){
 	set_usb_common_nvram(action, device_name, usb_node, "modem");
 
 	// Don't support the second modem device on a DUT.
+#if 0
 	if(hadSerialModule() || hadACMModule() || hadRNDISModule()
 #ifdef RTCONFIG_USB_BECEEM
 			|| hadBeceemModule()
 			|| hadGCTModule()
 #endif
-			){
+			)
+#else
+	if(strcmp(nvram_safe_get("usb_modem_act_path"), "") && strcmp(nvram_safe_get("usb_modem_act_path"), usb_node))
+#endif
+	{
 		usb_dbg("(%s): Had inserted the modem module.\n", device_name);
 		file_unlock(isLock);
 		return 0;
@@ -3995,44 +4075,30 @@ int asus_usb_interface(const char *device_name, const char *action){
 	else if(is_samsung_dongle(1, vid, pid)){ // Samsung U200
 		// need to run one time and fillfull the nvram: usb_path%d_act.
 		usb_dbg("(%s): Runing madwimax...\n", device_name);
-		modprobe("tun");
-		sleep(1);
 
-		retry = 0;
-		while(retry < 3){
-			if(pids("madwimax")){
-				killall_tk("madwimax");
-				sleep(1);
+		nvram_set(strcat_r(prefix, "_act", tmp), "wimax0");
+		nvram_set("usb_modem_act_path", usb_node);
+		snprintf(buf, 128, "%u",  vid);
+		nvram_set("usb_modem_act_vid", buf);
+		snprintf(buf, 128, "%u",  pid);
+		nvram_set("usb_modem_act_pid", buf);
 
-				++retry;
-			}
-			else
-				break;
-		}
-
-		xstart("madwimax");
+		// Notify wanduck that DUT can switch the wan line to the USB Modem.
+		kill_pidfile_s("/var/run/wanduck.pid", SIGUSR2);
 	}
 	else if(is_gct_dongle(1, vid, pid)){
 		// need to run one time and fillfull the nvram: usb_path%d_act.
 		usb_dbg("(%s): Runing GCT dongle...\n", device_name);
-		modprobe("tun");
-		sleep(1);
 
-		retry = 0;
-		while(retry < 3){
-			if(pids("gctwimax")){
-				killall_tk("gctwimax");
-				sleep(1);
+		nvram_set(strcat_r(prefix, "_act", tmp), "wimax0");
+		nvram_set("usb_modem_act_path", usb_node);
+		snprintf(buf, 128, "%u",  vid);
+		nvram_set("usb_modem_act_vid", buf);
+		snprintf(buf, 128, "%u",  pid);
+		nvram_set("usb_modem_act_pid", buf);
 
-				++retry;
-			}
-			else
-				break;
-		}
-
-		write_gct_conf();
-
-		xstart("gctwimax", "-C", WIMAX_CONF);
+		// Notify wanduck that DUT can switch the wan line to the USB Modem.
+		kill_pidfile_s("/var/run/wanduck.pid", SIGUSR2);
 	}
 	else
 #endif
@@ -4045,24 +4111,29 @@ int asus_usb_interface(const char *device_name, const char *action){
 	else if(isCDCETHInterface(device_name)){
 		usb_dbg("(%s): Runing cdc_ether...\n", device_name);
 	}
+	else if(isNCMInterface(device_name)){
+		usb_dbg("(%s): Runing cdc_ncm...\n", device_name);
+	}
 	else if(!strcmp(nvram_safe_get("stop_ui_insmod"), "1")){
 		usb_dbg("(%s): Don't insmod the serial modules.\n", device_name);
 	}
-	else if(isSerialInterface(device_name)){
+	else if(!strncmp(nvram_safe_get(strcat_r(prefix, "_manufacturer", tmp)), "Android", 7)
+			|| !strncmp(nvram_safe_get(strcat_r(prefix, "_product", tmp)), "Android", 7)){
+		usb_dbg("(%s): Android phone: Runing RNDIS...\n", device_name);
+	}
+	else if(isSerialInterface(device_name, 1, vid, pid)){
 		usb_dbg("(%s): Runing USB serial with (0x%04x/0x%04x)...\n", device_name, vid, pid);
 		sleep(1);
 		modprobe("usbserial");
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(2,6,36)
 		modprobe("usb_wwan");
 #endif
-		memset(modem_cmd, 0, sizeof(modem_cmd));
-		sprintf(modem_cmd, "vendor=0x%04x", vid);
-		memset(buf, 0, sizeof(buf));
-		sprintf(buf, "product=0x%04x", pid);
+		snprintf(modem_cmd, 128, "vendor=0x%04x", vid);
+		snprintf(buf, 128, "product=0x%04x", pid);
 		eval("insmod", "option", modem_cmd, buf);
 		sleep(1);
 	}
-	else{ // isACMInterface(device_name)
+	else if(isACMInterface(device_name, 1, vid, pid)){
 		usb_dbg("(%s): Runing USB ACM...\n", device_name);
 		modprobe("cdc-acm");
 		sleep(1);

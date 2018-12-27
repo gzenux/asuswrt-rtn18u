@@ -28,6 +28,7 @@
 #if defined(DEBUG) && defined(DMALLOC)
 #include <dmalloc.h>
 #endif
+#include <rtconfig.h>
 
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
@@ -216,5 +217,9 @@ extern int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit);
 extern int ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wps_info_2g(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wps_info(int eid, webs_t wp, int argc, char_t **argv);
+
+#ifdef RTCONFIG_HTTPS
+extern char *pwenc(const char *input);
+#endif
 
 #endif /* _httpd_h_ */

@@ -236,9 +236,18 @@ struct muc_tx_stats {
 	uint32_t	pppc_scale_ncidx;	/* last node to have Tx gain scaling set */
 	uint32_t	pppc_scale_val;		/* Tx gain scaling for this node (0 is max) */
 	uint32_t	pppc_scale_base_cnt;	/* times Tx gain scaling base has been set for any node */
-	uint32_t	pppc_scale_base_20m;	/* times Tx gain scaling base for 20MHz */
-	uint32_t	pppc_scale_base_40m;	/* times Tx gain scaling base for 40MHz */
-	uint32_t	pppc_scale_base_80m;	/* times Tx gain scaling base for 80MHz */
+	uint32_t	pppc_scale_base_1ss_20m;	/* times Tx gain scaling base for 20MHz and 1SS */
+	uint32_t	pppc_scale_base_1ss_40m;	/* times Tx gain scaling base for 40MHz and 1SS */
+	uint32_t	pppc_scale_base_1ss_80m;	/* times Tx gain scaling base for 80MHz and 1SS */
+	uint32_t	pppc_scale_base_2ss_20m;	/* times Tx gain scaling base for 20MHz and 2SS */
+	uint32_t	pppc_scale_base_2ss_40m;	/* times Tx gain scaling base for 40MHz and 2SS */
+	uint32_t	pppc_scale_base_2ss_80m;	/* times Tx gain scaling base for 80MHz and 2SS */
+	uint32_t	pppc_scale_base_3ss_20m;	/* times Tx gain scaling base for 20MHz and 3SS */
+	uint32_t	pppc_scale_base_3ss_40m;	/* times Tx gain scaling base for 40MHz and 3SS */
+	uint32_t	pppc_scale_base_3ss_80m;	/* times Tx gain scaling base for 80MHz and 3SS */
+	uint32_t	pppc_scale_base_4ss_20m;	/* times Tx gain scaling base for 20MHz and 4SS */
+	uint32_t	pppc_scale_base_4ss_40m;	/* times Tx gain scaling base for 40MHz and 4SS */
+	uint32_t	pppc_scale_base_4ss_80m;	/* times Tx gain scaling base for 80MHz and 4SS */
 	uint32_t	pppc_scale_overstep;	/* tx scale exceed the maximum scale indices */
 	uint32_t	pppc_scale_rollback;	/* tx scale roll back because scale index over step */
 	uint32_t	pppc_0_gput;		/* times pppc comparing goodput and both are zero */
@@ -247,6 +256,8 @@ struct muc_tx_stats {
 	uint32_t	nc_csr_write_count;	/* number of times Node Cache was written to */
 	uint32_t	nc_csr_done_watermark;	/* Node cache done retries high watermark */
 	uint32_t	nc_csr_watermark_count; /* Number of times read retries reached max */
+	uint32_t	auc_dtim_notify;
+	uint32_t	tx_beacon_done;
 };
 
 /**
@@ -518,6 +529,7 @@ struct muc_rx_stats {
 	u_int32_t	mac_irq_rx_strq_oflow;
 	u_int32_t	mac_irq_rx_bb_uflow_intr;
 	u_int32_t	mac_irq_rx_bb_oflow_intr;
+	u_int32_t	bb_irq_hready_wdg_reset;
 
 	/**
 	 * \internal
@@ -673,6 +685,11 @@ struct muc_rx_stats {
 	u_int32_t	soft_ring_add_to_head;
 	u_int32_t	soft_ring_add_continue;
 	u_int32_t	mimo_ps_mode_switch;	/* times STA switch MIMO power-save mode by HT action */
+
+	/* RX frames BW mode*/
+	u_int32_t	rx_bw_80;
+	u_int32_t	rx_bw_40;
+	u_int32_t	rx_bw_20;
 };
 
 #define MUC_HT_NUM_RATES	77

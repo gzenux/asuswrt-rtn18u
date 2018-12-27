@@ -20,8 +20,6 @@ var $j = jQuery.noConflict();
 <% wl_get_parameter(); %>
 
 function initial(){
-	$("t0").className = <% nvram_get("wl_unit"); %> ? "tab_NW" : "tabclick_NW";
-	$("t1").className = <% nvram_get("wl_unit"); %> ? "tabclick_NW" : "tab_NW";
 
 	if(sw_mode == 2){
 		if('<% nvram_get("wl_unit"); %>' == '<% nvram_get("wlc_band"); %>' && '<% nvram_get("wl_subunit"); %>' != '1'){
@@ -65,11 +63,24 @@ function initial(){
 	if(band5g_support){
 		$("t0").style.display = "";
 		$("t1").style.display = "";
+		if(wl_info.band5g_2_support){
+			$("t2").style.display = "";
+			$("span1").innerHTML = "5GHz-1";
+			$("t0").style.width = "66px";
+			$("t1").style.width = "66px";
+			$("t2").style.width = "66px";
+			$("t3").style.width = "66px";
+		}
+
+		change_tabclick();
 
 		// disallow to use the other band as a wireless AP
 		if(parent.sw_mode == 4 && !localAP_support){
 			$('t'+((parseInt(<% nvram_get("wlc_band"); %>+1))%2)).style.display = 'none';
 		}
+	}
+	else{
+		$("t0").style.display = "";	
 	}
 
 	if($("t1").className == "tabclick_NW" && 	parent.Rawifi_support)	//no exist Rawifi
@@ -95,21 +106,36 @@ function initial(){
 	else
 		parent.show_middle_status(document.form.wl_auth_mode_x.value, parseInt(document.form.wl_wep_x.value));
 
-	flash_button();
-	automode_hint();		
+	flash_button();	
+}
+
+function change_tabclick(){
+	switch('<% nvram_get("wl_unit"); %>'){
+		case '0': $("t0").className = "tabclick_NW";
+				break;
+		case '1': $("t1").className = "tabclick_NW";
+				break;
+		case '2': $("t2").className = "tabclick_NW";
+				break;
+	}
 }
 
 function tabclickhandler(wl_unit){
-	if((parent.sw_mode == 2 || parent.sw_mode == 4) && '<% nvram_get("wlc_band"); %>' == wl_unit)
-		document.form.wl_subunit.value = 1;
-	else
-		document.form.wl_subunit.value = -1;
+	if(wl_unit == 3){
+		location.href = "router_status.asp";
+	}
+	else{
+		if((parent.sw_mode == 2 || parent.sw_mode == 4) && '<% nvram_get("wlc_band"); %>' == wl_unit)
+			document.form.wl_subunit.value = 1;
+		else
+			document.form.wl_subunit.value = -1;
 
-	document.form.wl_unit.value = wl_unit;
-	document.form.current_page.value = "device-map/router.asp";
-	FormActions("/apply.cgi", "change_wl_unit", "", "");
-	document.form.target = "";
-	document.form.submit();
+		document.form.wl_unit.value = wl_unit;
+		document.form.current_page.value = "device-map/router.asp";
+		FormActions("/apply.cgi", "change_wl_unit", "", "");
+		document.form.target = "";
+		document.form.submit();
+	}
 }
 
 function disableAdvFn(){
@@ -223,7 +249,6 @@ function change_wlweptype(wep_type_obj){
 	}
 	
 	wl_wep_change();
-	automode_hint();
 }
 
 function wl_wep_change(){
@@ -269,14 +294,23 @@ function show_LAN_info(){
 	showtext($("MAC"), '<% nvram_get("lan_hwaddr"); %>');
 	showtext($("MAC_wl2"), '<% nvram_get("wl0_hwaddr"); %>');
 	showtext($("MAC_wl5"), '<% nvram_get("wl1_hwaddr"); %>');
+	showtext($("MAC_wl5_2"), '<% nvram_get("wl2_hwaddr"); %>');
 
 	if(document.form.wl_unit.value == 0){
 		$("macaddr_wl5").style.display = "none";
+		$("macaddr_wl5_2").style.display = "none";
 		if(!band5g_support)
 			$("macaddr_wl2_title").style.display = "none";
 	}
-	else
+	else if (document.form.wl_unit.value == 1){
 		$("macaddr_wl2").style.display = "none";
+		$("macaddr_wl5_2").style.display = "none";
+	}
+	else if (document.form.wl_unit.value == 2){
+		$("macaddr_wl2").style.display = "none";
+		$("macaddr_wl5").style.display = "none";
+	}
+
 }
 
 var secs;
@@ -285,6 +319,13 @@ var timerRunning = false;
 var timeout = 1000;
 var delay = 500;
 var stopFlag=0;
+
+function detect_qtn_ready(){
+	if(parent.qtn_state_t != "1")
+		setTimeout('detect_qtn_ready();', 1000);
+	else
+		document.form.submit();
+}
 
 function submitForm(){
 	var auth_mode = document.form.wl_auth_mode_x.value;
@@ -322,7 +363,13 @@ function submitForm(){
 	document.form.wsc_config_state.value = "1";
 
 	parent.showLoading();
-	document.form.submit();	
+
+	if(based_modelid == "RT-AC87U" && "<% nvram_get("wl_unit"); %>" == "1"){
+		parent.stopFlag = '0';
+		detect_qtn_ready();
+	}else
+		document.form.submit();	
+
 	return true;
 }
 
@@ -388,14 +435,24 @@ function manualSetup(){
 <tr>
 	<td>		
 		<table width="100px" border="0" align="left" style="margin-left:8px;" cellpadding="0" cellspacing="0">
-  		<td>
-				<div id="t0" class="tabclick_NW" align="center" style="font-weight: bolder;display:none; margin-right:2px; width:90px;" onclick="tabclickhandler(0)">
-					<span id="span1" style="cursor:pointer;font-weight: bolder;">2.4GHz</span>
+			<td>
+				<div id="t0" class="tab_NW" align="center" style="font-weight: bolder;display:none; margin-right:2px; width:90px;" onclick="tabclickhandler(0)">
+					<span id="span0" style="cursor:pointer;font-weight: bolder;">2.4GHz</span>
 				</div>
 			</td>
-  		<td>
+			<td>
 				<div id="t1" class="tab_NW" align="center" style="font-weight: bolder;display:none; margin-right:2px; width:90px;" onclick="tabclickhandler(1)">
 					<span id="span1" style="cursor:pointer;font-weight: bolder;">5GHz</span>
+				</div>
+			</td>
+			<td>
+				<div id="t2" class="tab_NW" align="center" style="font-weight: bolder;display:none; margin-right:2px; width:90px;" onclick="tabclickhandler(2)">
+					<span id="span2" style="cursor:pointer;font-weight: bolder;">5GHz-2</span>
+				</div>
+			</td>
+			<td>
+				<div id="t3" class="tab_NW" align="center" style="font-weight: bolder; margin-right:2px; width:90px;" onclick="tabclickhandler(3)">
+					<span id="span3" style="cursor:pointer;font-weight: bolder;">Status</span>
 				</div>
 			</td>
 		</table>
@@ -585,6 +642,13 @@ function manualSetup(){
     			<td style="padding:5px 10px 0px 10px;">
     				<p class="formfonttitle_nwm" >Wireless 5GHz <#MAC_Address#></p>
     				<p style="padding-left:10px; margin-top:3px; *margin-top:-5px; padding-bottom:3px; margin-right:10px; background-color:#444f53; line-height:20px;" id="MAC_wl5"></p>
+    				<img style="margin-top:5px; *margin-top:-10px;" src="/images/New_ui/networkmap/linetwo2.png">
+    			</td>
+  		</tr>
+  		<tr id="macaddr_wl5_2">
+    			<td style="padding:5px 10px 0px 10px;">
+    				<p class="formfonttitle_nwm" >Wireless 5GHz <#MAC_Address#></p>
+    				<p style="padding-left:10px; margin-top:3px; *margin-top:-5px; padding-bottom:3px; margin-right:10px; background-color:#444f53; line-height:20px;" id="MAC_wl5_2"></p>
     				<img style="margin-top:5px; *margin-top:-10px;" src="/images/New_ui/networkmap/linetwo2.png">
     			</td>
   		</tr>

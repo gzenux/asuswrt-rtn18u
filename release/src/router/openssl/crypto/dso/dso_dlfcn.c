@@ -85,6 +85,7 @@ DSO_METHOD *DSO_METHOD_dlfcn(void)
 # define HAVE_DLINFO 1
 # if defined(_AIX) || defined(__CYGWIN__) || \
      defined(__SCO_VERSION__) || defined(_SCO_ELF) || \
+     (defined(__osf__) && !defined(RTLD_NEXT))     || \
      (defined(__OpenBSD__) && !defined(RTLD_SELF))
 #  undef HAVE_DLINFO
 # endif
@@ -462,7 +463,7 @@ static int dlfcn_pathbyaddr(void *addr,char *path,int sz)
 		return len;
 		}
 
-	ERR_add_error_data(4, "dlfcn_pathbyaddr(): ", dlerror());
+	ERR_add_error_data(2, "dlfcn_pathbyaddr(): ", dlerror());
 #endif
 	return -1;
 	}

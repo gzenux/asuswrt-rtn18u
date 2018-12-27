@@ -131,7 +131,10 @@ am__libavahi_core_la_SOURCES_DIST = timeeventq.c timeeventq.h iface.c \
 	log.h browse-dns-server.c fdutil.h fdutil.c util.c util.h \
 	hashmap.c hashmap.h wide-area.c wide-area.h multicast-lookup.c \
 	multicast-lookup.h querier.c querier.h addr-util.h addr-util.c \
-	domain-util.h domain-util.c dns-srv-rr.h iface-linux.c \
+	domain-util.h domain-util.c dns-srv-rr.h llmnr-querier.c \
+	llmnr-querier.h llmnr-query-sched.c llmnr-query-sched.h \
+	verify.c verify.h llmnr-lookup.c llmnr-lookup.h \
+	llmnr-response.c llmnr-response.h llmnr-server.c iface-linux.c \
 	iface-linux.h netlink.c netlink.h iface-pfroute.c \
 	iface-pfroute.h iface-none.c
 @HAVE_NETLINK_TRUE@am__objects_1 = libavahi_core_la-iface-linux.lo \
@@ -158,7 +161,12 @@ am_libavahi_core_la_OBJECTS = libavahi_core_la-timeeventq.lo \
 	libavahi_core_la-hashmap.lo libavahi_core_la-wide-area.lo \
 	libavahi_core_la-multicast-lookup.lo \
 	libavahi_core_la-querier.lo libavahi_core_la-addr-util.lo \
-	libavahi_core_la-domain-util.lo $(am__objects_1) \
+	libavahi_core_la-domain-util.lo \
+	libavahi_core_la-llmnr-querier.lo \
+	libavahi_core_la-llmnr-query-sched.lo \
+	libavahi_core_la-verify.lo libavahi_core_la-llmnr-lookup.lo \
+	libavahi_core_la-llmnr-response.lo \
+	libavahi_core_la-llmnr-server.lo $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3)
 libavahi_core_la_OBJECTS = $(am_libavahi_core_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -306,8 +314,6 @@ AVAHI_GROUP = @AVAHI_GROUP@
 AVAHI_PRIV_ACCESS_GROUP = @AVAHI_PRIV_ACCESS_GROUP@
 AVAHI_USER = @AVAHI_USER@
 AWK = @AWK@
-CATALOGS = @CATALOGS@
-CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -362,7 +368,6 @@ GACUTIL = @GACUTIL@
 GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
 GLIB20_CFLAGS = @GLIB20_CFLAGS@
 GLIB20_LIBS = @GLIB20_LIBS@
-GMOFILES = @GMOFILES@
 GMSGFMT = @GMSGFMT@
 GOBJECT_CFLAGS = @GOBJECT_CFLAGS@
 GOBJECT_LIBS = @GOBJECT_LIBS@
@@ -377,8 +382,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-INSTOBJEXT = @INSTOBJEXT@
-INTLLIBS = @INTLLIBS@
 INTLTOOL_EXTRACT = @INTLTOOL_EXTRACT@
 INTLTOOL_MERGE = @INTLTOOL_MERGE@
 INTLTOOL_PERL = @INTLTOOL_PERL@
@@ -411,12 +414,12 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MCS = @MCS@
 MDASSEMBLER = @MDASSEMBLER@
 MKDIR_P = @MKDIR_P@
-MKINSTALLDIRS = @MKINSTALLDIRS@
 MOC_QT3 = @MOC_QT3@
 MOC_QT4 = @MOC_QT4@
 MONODOCER = @MONODOCER@
@@ -424,7 +427,6 @@ MONODOC_CFLAGS = @MONODOC_CFLAGS@
 MONODOC_DIR = @MONODOC_DIR@
 MONODOC_LIBS = @MONODOC_LIBS@
 MSGFMT = @MSGFMT@
-MSGFMT_OPTS = @MSGFMT_OPTS@
 MSGMERGE = @MSGMERGE@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -441,10 +443,6 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POFILES = @POFILES@
-POSUB = @POSUB@
-PO_IN_DATADIR_FALSE = @PO_IN_DATADIR_FALSE@
-PO_IN_DATADIR_TRUE = @PO_IN_DATADIR_TRUE@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
@@ -559,8 +557,11 @@ libavahi_core_la_SOURCES = timeeventq.c timeeventq.h iface.c iface.h \
 	log.h browse-dns-server.c fdutil.h fdutil.c util.c util.h \
 	hashmap.c hashmap.h wide-area.c wide-area.h multicast-lookup.c \
 	multicast-lookup.h querier.c querier.h addr-util.h addr-util.c \
-	domain-util.h domain-util.c dns-srv-rr.h $(am__append_1) \
-	$(am__append_2) $(am__append_3)
+	domain-util.h domain-util.c dns-srv-rr.h llmnr-querier.c \
+	llmnr-querier.h llmnr-query-sched.c llmnr-query-sched.h \
+	verify.c verify.h llmnr-lookup.c llmnr-lookup.h \
+	llmnr-response.c llmnr-response.h llmnr-server.c \
+	$(am__append_1) $(am__append_2) $(am__append_3)
 libavahi_core_la_CFLAGS = $(AM_CFLAGS)
 libavahi_core_la_LIBADD = $(AM_LDADD) ../avahi-common/libavahi-common.la
 libavahi_core_la_LDFLAGS = $(AM_LDFLAGS)  -version-info $(LIBAVAHI_CORE_VERSION_INFO)
@@ -631,7 +632,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -656,9 +657,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
@@ -772,6 +773,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-iface-none.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-iface-pfroute.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-iface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-llmnr-lookup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-llmnr-querier.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-llmnr-query-sched.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-llmnr-response.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-llmnr-server.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-log.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-multicast-lookup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-netlink.Plo@am__quote@
@@ -789,6 +795,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-socket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-timeeventq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-verify.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libavahi_core_la-wide-area.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prioq_test-prioq-test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prioq_test-prioq.Po@am__quote@
@@ -1070,6 +1077,54 @@ libavahi_core_la-domain-util.lo: domain-util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='domain-util.c' object='libavahi_core_la-domain-util.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -c -o libavahi_core_la-domain-util.lo `test -f 'domain-util.c' || echo '$(srcdir)/'`domain-util.c
+
+libavahi_core_la-llmnr-querier.lo: llmnr-querier.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -MT libavahi_core_la-llmnr-querier.lo -MD -MP -MF $(DEPDIR)/libavahi_core_la-llmnr-querier.Tpo -c -o libavahi_core_la-llmnr-querier.lo `test -f 'llmnr-querier.c' || echo '$(srcdir)/'`llmnr-querier.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libavahi_core_la-llmnr-querier.Tpo $(DEPDIR)/libavahi_core_la-llmnr-querier.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='llmnr-querier.c' object='libavahi_core_la-llmnr-querier.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -c -o libavahi_core_la-llmnr-querier.lo `test -f 'llmnr-querier.c' || echo '$(srcdir)/'`llmnr-querier.c
+
+libavahi_core_la-llmnr-query-sched.lo: llmnr-query-sched.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -MT libavahi_core_la-llmnr-query-sched.lo -MD -MP -MF $(DEPDIR)/libavahi_core_la-llmnr-query-sched.Tpo -c -o libavahi_core_la-llmnr-query-sched.lo `test -f 'llmnr-query-sched.c' || echo '$(srcdir)/'`llmnr-query-sched.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libavahi_core_la-llmnr-query-sched.Tpo $(DEPDIR)/libavahi_core_la-llmnr-query-sched.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='llmnr-query-sched.c' object='libavahi_core_la-llmnr-query-sched.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -c -o libavahi_core_la-llmnr-query-sched.lo `test -f 'llmnr-query-sched.c' || echo '$(srcdir)/'`llmnr-query-sched.c
+
+libavahi_core_la-verify.lo: verify.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -MT libavahi_core_la-verify.lo -MD -MP -MF $(DEPDIR)/libavahi_core_la-verify.Tpo -c -o libavahi_core_la-verify.lo `test -f 'verify.c' || echo '$(srcdir)/'`verify.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libavahi_core_la-verify.Tpo $(DEPDIR)/libavahi_core_la-verify.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='verify.c' object='libavahi_core_la-verify.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -c -o libavahi_core_la-verify.lo `test -f 'verify.c' || echo '$(srcdir)/'`verify.c
+
+libavahi_core_la-llmnr-lookup.lo: llmnr-lookup.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -MT libavahi_core_la-llmnr-lookup.lo -MD -MP -MF $(DEPDIR)/libavahi_core_la-llmnr-lookup.Tpo -c -o libavahi_core_la-llmnr-lookup.lo `test -f 'llmnr-lookup.c' || echo '$(srcdir)/'`llmnr-lookup.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libavahi_core_la-llmnr-lookup.Tpo $(DEPDIR)/libavahi_core_la-llmnr-lookup.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='llmnr-lookup.c' object='libavahi_core_la-llmnr-lookup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -c -o libavahi_core_la-llmnr-lookup.lo `test -f 'llmnr-lookup.c' || echo '$(srcdir)/'`llmnr-lookup.c
+
+libavahi_core_la-llmnr-response.lo: llmnr-response.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -MT libavahi_core_la-llmnr-response.lo -MD -MP -MF $(DEPDIR)/libavahi_core_la-llmnr-response.Tpo -c -o libavahi_core_la-llmnr-response.lo `test -f 'llmnr-response.c' || echo '$(srcdir)/'`llmnr-response.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libavahi_core_la-llmnr-response.Tpo $(DEPDIR)/libavahi_core_la-llmnr-response.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='llmnr-response.c' object='libavahi_core_la-llmnr-response.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -c -o libavahi_core_la-llmnr-response.lo `test -f 'llmnr-response.c' || echo '$(srcdir)/'`llmnr-response.c
+
+libavahi_core_la-llmnr-server.lo: llmnr-server.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -MT libavahi_core_la-llmnr-server.lo -MD -MP -MF $(DEPDIR)/libavahi_core_la-llmnr-server.Tpo -c -o libavahi_core_la-llmnr-server.lo `test -f 'llmnr-server.c' || echo '$(srcdir)/'`llmnr-server.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libavahi_core_la-llmnr-server.Tpo $(DEPDIR)/libavahi_core_la-llmnr-server.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='llmnr-server.c' object='libavahi_core_la-llmnr-server.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -c -o libavahi_core_la-llmnr-server.lo `test -f 'llmnr-server.c' || echo '$(srcdir)/'`llmnr-server.c
 
 libavahi_core_la-iface-linux.lo: iface-linux.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libavahi_core_la_CFLAGS) $(CFLAGS) -MT libavahi_core_la-iface-linux.lo -MD -MP -MF $(DEPDIR)/libavahi_core_la-iface-linux.Tpo -c -o libavahi_core_la-iface-linux.lo `test -f 'iface-linux.c' || echo '$(srcdir)/'`iface-linux.c

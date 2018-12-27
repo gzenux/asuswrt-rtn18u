@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -156,6 +156,8 @@ var vpnc_clientlist_array = decodeURIComponent(vpnc_clientlist_array_ori);
 var overlib_str0 = new Array();	//Viz add 2013.04 for record longer VPN client username/pwd
 var overlib_str1 = new Array();	//Viz add 2013.04 for record longer VPN client username/pwd
 
+var restart_vpncall_flag = 0; //Viz add 2014.04 for Edit Connecting rule then restart_vpncall
+
 function initial(){
 	show_menu();
 	show_vpnc_rulelist();
@@ -197,9 +199,24 @@ function Add_profile(){
 }
 
 function cancel_add_rule(){
+	restart_vpncall_flag = 0;
 	idx_tmp = "";
 	$j("#openvpnc_setting_openvpn").fadeOut(1);
 	$j("#openvpnc_setting").fadeOut(300);
+}
+
+function get_vpnc_appendix_auto_conn(idx){
+		var orig_array = decodeURIComponent('<% nvram_char_to_ascii("", "vpnc_appendix"); %>');				
+		if(idx >= 0){	//get orig value
+			var orig_value = orig_array.split("<")[idx];			
+			if(orig_value == 1)	
+					return true;
+			else
+					return false;		
+		}
+		else{	//default 0
+			return false;
+		}	
 }
 
 function addRow_Group(upper, flag, idx){
@@ -207,17 +224,18 @@ function addRow_Group(upper, flag, idx){
 		document.openvpnManualForm.vpn_crt_client1_crt.disabled = true;
 		document.openvpnManualForm.vpn_crt_client1_key.disabled = true;
 		document.openvpnManualForm.vpn_crt_client1_static.disabled = true;
-		idx = parseInt(idx);
+		idx = parseInt(idx);		
 	if(idx >= 0){		//idx: edit row		
 		var table_id = "vpnc_clientlist_table";
 		var rule_num = $(table_id).rows.length;
-		var item_num = $(table_id).rows[0].cells.length;
+		var item_num = $(table_id).rows[0].cells.length;		
 		if(flag == 'PPTP' || flag == 'L2TP'){
-			type_obj = document.form.vpnc_type;
 			description_obj = document.form.vpnc_des_edit;
+			type_obj = document.form.vpnc_type;			
 			server_obj = document.form.vpnc_svr_edit;
 			username_obj = document.form.vpnc_account_edit;
-			password_obj = document.form.vpnc_pwd_edit;						
+			password_obj = document.form.vpnc_pwd_edit;
+			auto_conn_obj = document.form.vpnc_auto_conn_edit[0];
 		
 		}else{	//OpenVPN: openvpn
 			description_obj = document.vpnclientForm.vpnc_openvpn_des_edit;
@@ -225,20 +243,11 @@ function addRow_Group(upper, flag, idx){
 			server_obj = document.vpnclientForm.vpnc_openvpn_unit_edit;	// vpn_client_unit: 1 or 2
 			username_obj = document.vpnclientForm.vpnc_openvpn_username_edit;
 			password_obj = document.vpnclientForm.vpnc_openvpn_pwd_edit;
+			auto_conn_obj = document.vpnclientForm.vpn_clientx_eas_edit[0];					
 		}
 		
 		if(validForm(flag)){
-			//check same rule  //match(description) is not accepted		
-			if(item_num >= 2){
-				for(i=0; i<rule_num; i++){
-					if(i != idx && description_obj.value.toLowerCase() == $(table_id).rows[i].cells[1].innerHTML.toLowerCase()){
-						alert("<#JS_duplicate#>");
-						description_obj.focus();
-						description_obj.select();
-						return false;
-					}	
-				}
-			}
+			
 			duplicateCheck.tmpIdx = "";
 			duplicateCheck.saveTotmpIdx(idx);
 			duplicateCheck.tmpStr = "";
@@ -255,15 +264,73 @@ function addRow_Group(upper, flag, idx){
 			
 			var vpnc_clientlist_row = vpnc_clientlist_array.split('<');
 			vpnc_clientlist_row[idx] = description_obj.value+">"+type_obj.value+">"+server_obj.value+">"+username_obj.value+">"+password_obj.value;
-			//alert(idx+" ; "+vpnc_clientlist_row.join("<"));
 						
 			vpnc_clientlist_array = vpnc_clientlist_row.join("<");
-			show_vpnc_rulelist();
-			cancel_add_rule();
-			idx_tmp= "";
-			document.vpnclientForm.vpnc_clientlist.value = vpnc_clientlist_row.join("<");
-			document.vpnclientForm.submit();		
 			
+			if(decodeURIComponent('<% nvram_char_to_ascii("", "vpnc_appendix"); %>') == ""){
+				re_fill_empty_auto_conn(idx, auto_conn_obj);		//idx: NaN=Add i=edit row
+			}else{		//add orr edit vpnc_appendix
+				edit_auto_conn(idx, auto_conn_obj);
+			}	
+			
+			show_vpnc_rulelist();
+			if(restart_vpncall_flag == 1){	//restart_vpncall
+						var vpnc_clientlist_row = vpnc_clientlist_array.split('<');
+						var vpnc_clientlist_col = vpnc_clientlist_row[idx].split('>');
+						for(var j=0; j<vpnc_clientlist_col.length; j++){
+							if(j == 0){
+									document.form.vpnc_des_edit.value = vpnc_clientlist_col[0];
+							}
+							else if(j ==1){
+									if(vpnc_clientlist_col[1] == "PPTP")
+										document.form.vpnc_proto.value = "pptp";
+									else if(vpnc_clientlist_col[1] == "L2TP")
+										document.form.vpnc_proto.value = "l2tp";
+									else	//OpenVPN
+										document.form.vpnc_proto.value = "openvpn";
+							} 
+							else if(j ==2){
+									if(vpnc_clientlist_col[1] == "OpenVPN")
+										document.form.vpn_client_unit.value = 1;	//1, 2
+									else
+										document.form.vpnc_heartbeat_x.value = vpnc_clientlist_col[2];
+							} 
+							else if(j ==3){
+									if(vpnc_clientlist_col[1] == "OpenVPN")
+										document.form.vpn_client1_username.value = vpnc_clientlist_col[3];
+									else
+										document.form.vpnc_pppoe_username.value = vpnc_clientlist_col[3];
+							} 
+							else if(j ==4){
+									if(vpnc_clientlist_col[1] == "OpenVPN")				
+										document.form.vpn_client1_password.value = vpnc_clientlist_col[4];
+									else	
+										document.form.vpnc_pppoe_passwd.value = vpnc_clientlist_col[4];
+							} 
+						}
+						
+						// renew auto_conn
+						var auto_conn_obj_value = "";
+						if(auto_conn_obj.checked == true)
+								auto_conn_obj_value = 1;
+						else
+								auto_conn_obj_value = 0;	
+						if(vpnc_clientlist_col[1] != "OpenVPN")				
+								document.form.vpnc_auto_conn.value = auto_conn_obj_value;
+						else	
+								document.form.vpn_clientx_eas.value = auto_conn_obj_value+",";								
+						
+						document.form.vpnc_clientlist.value = vpnc_clientlist_array;	
+						document.getElementById("vpnc_clientlist_table").rows[idx].cells[0].innerHTML = "-";
+						document.getElementById("vpnc_clientlist_table").rows[idx].cells[5].innerHTML = "<img src='/images/InternetScan.gif'>";
+						document.form.submit();	
+			}
+			else{
+						document.vpnclientForm.vpnc_clientlist.value = vpnc_clientlist_row.join("<");
+						document.vpnclientForm.submit();		
+			}
+			cancel_add_rule();
+			setTimeout("location.reload();",500);		
 		}		
 	}
 	else{	//Add Rule
@@ -281,7 +348,8 @@ function addRow_Group(upper, flag, idx){
 			description_obj = document.form.vpnc_des_edit;
 			server_obj = document.form.vpnc_svr_edit;
 			username_obj = document.form.vpnc_account_edit;
-			password_obj = document.form.vpnc_pwd_edit;						
+			password_obj = document.form.vpnc_pwd_edit;
+			auto_conn_obj = document.form.vpnc_auto_conn_edit[0];
 		
 		}else{	//OpenVPN: openvpn
 			description_obj = document.vpnclientForm.vpnc_openvpn_des_edit;
@@ -289,20 +357,10 @@ function addRow_Group(upper, flag, idx){
 			server_obj = document.vpnclientForm.vpnc_openvpn_unit_edit;	// vpn_client_unit: 1 or 2
 			username_obj = document.vpnclientForm.vpnc_openvpn_username_edit;
 			password_obj = document.vpnclientForm.vpnc_openvpn_pwd_edit;
+			auto_conn_obj = document.vpnclientForm.vpn_clientx_eas_edit[0];
 		}
 		
 		if(validForm(flag)){
-			//Viz check same rule  //match(description) is not accepted
-			if(item_num >= 2){
-				for(i=0; i<rule_num; i++){
-					if(description_obj.value.toLowerCase() == $(table_id).rows[i].cells[1].innerHTML.toLowerCase()){
-						alert("<#JS_duplicate#>");
-						description_obj.focus();
-						description_obj.select();
-						return false;
-					}	
-				}
-			}
 
 			duplicateCheck.tmpStr = "";
 			duplicateCheck.saveToTmpStr(type_obj, 0);
@@ -320,16 +378,85 @@ function addRow_Group(upper, flag, idx){
 			addRow(username_obj, 0);
 			addRow(password_obj, 0);
 
-			if(vpnc_clientlist_array.charAt(0) == "<")
+			if(vpnc_clientlist_array.charAt(0) == "<")	//rempve the 1st "<"
 				vpnc_clientlist_array = vpnc_clientlist_array.substr(1,vpnc_clientlist_array.length);
+				
+			if(decodeURIComponent('<% nvram_char_to_ascii("", "vpnc_appendix"); %>') == ""){
+				re_fill_empty_auto_conn(idx, auto_conn_obj);		//idx: 0=Add i=edit row
+			}else{		//add orr edit vpnc_appendix
+				edit_auto_conn(idx, auto_conn_obj);				
+			}	
 
 			show_vpnc_rulelist();
 			cancel_add_rule();
-			idx_tmp= "";
+			setTimeout("location.reload();",500);
+	
 			document.vpnclientForm.vpnc_clientlist.value = vpnc_clientlist_array;
-			document.vpnclientForm.submit();
+			document.vpnclientForm.submit();			
 		}				
 	}	
+}
+
+function re_fill_empty_auto_conn(idx, obj){
+		var obj_value = "";
+		if(obj.checked == true)
+			obj_value = 1;
+		else
+			obj_value = 0;	
+	
+		var temp_value = "";
+		var rules_num = vpnc_clientlist_array.split("<").length;		
+		if(idx >= 0){	//row edit	//The 1st time set vpnc_appendix
+				for(var i=0;i<rules_num;i++){
+						if(i == idx)
+							temp_value += "<"+obj_value;
+						else	
+							temp_value += "<0";
+				}
+		}
+		else{		//NaN, Add rule		//The 1st time set vpnc_appendix
+				for(var i=0;i<rules_num-1;i++){
+						temp_value += "<0";
+				}						
+				temp_value += "<"+obj_value;			
+		}
+		
+		if(temp_value.charAt(0) == "<")	//rempve the 1st "<"
+				temp_value = temp_value.substr(1,temp_value.length);
+		
+		document.vpnclientForm.vpnc_appendix.value = temp_value;	//for OpenVPN Edit/Add
+		document.form.vpnc_appendix.value = temp_value;						//for PPTP/L2TP Edit/Add
+}
+
+function edit_auto_conn(idx, obj){	
+		var obj_value = "";
+		if(obj.checked == true)
+			obj_value = 1;
+		else
+			obj_value = 0;		
+			
+		var temp_value = "";		
+		var rules_num = vpnc_clientlist_array.split("<").length;
+		var rules_auto_conn_orig = decodeURIComponent('<% nvram_char_to_ascii("", "vpnc_appendix"); %>');
+		var rules_auto_conn_array = rules_auto_conn_orig.split("<");
+		if(idx >= 0){	//row edit	//Update vpnc_appendix		
+				for(var j=0;j<rules_num;j++){
+						if(idx == j)
+							temp_value += "<"+obj_value;			
+						else		
+							temp_value += "<"+rules_auto_conn_array[j];
+				}
+		}
+		else{		//NaN, Add rule		//Update vpnc_appendix
+				temp_value += rules_auto_conn_orig;
+				temp_value += "<"+obj_value;
+		}
+		
+		if(temp_value.charAt(0) == "<")	//rempve the 1st "<"
+				temp_value = temp_value.substr(1,temp_value.length);
+		
+		document.vpnclientForm.vpnc_appendix.value = temp_value;
+		document.form.vpnc_appendix.value = temp_value;
 }
 
 var duplicateCheck = {
@@ -350,10 +477,9 @@ var duplicateCheck = {
 
 	isDuplicate: function(){
 		var vpnc_clientlist_row = vpnc_clientlist_array.split('<');
-		for(var i=0; i<vpnc_clientlist_row.length; i++){
-			//alert(i+"; "+this.tmpIdx+" ; "+vpnc_clientlist_array.search(this.tmpStr));
-			if(i != this.tmpIdx && vpnc_clientlist_row[i].search(this.tmpStr) != -1)
-				return true;
+		for(var i=0; i<vpnc_clientlist_row.length; i++){			
+			if((this.tmpIdx == "" || i != this.tmpIdx) && vpnc_clientlist_row[i].search(this.tmpStr) >= 0)
+					return true;
 		}
 		return false;		
 	}
@@ -406,6 +532,11 @@ function validForm(mode){
 		}else if(!Block_chars(valid_password, ["<", ">"])){
 			return false;		
 		}
+		
+		if(!document.form.vpnc_auto_conn_edit[0].checked && !document.form.vpnc_auto_conn_edit[1].checked)
+				document.form.vpnc_auto_conn_edit[1].checked = true;
+	
+	
 	}
 	else{		//OpenVPN
 		valid_des = document.vpnclientForm.vpnc_openvpn_des_edit;
@@ -416,7 +547,8 @@ function validForm(mode){
 			alert("<#JS_fieldblank#>");
 			valid_des.focus();
 			return false;		
-		}else if(!Block_chars(valid_des, ["*", "+", "|", ":", "?", "<", ">", ",", ".", "/", ";", "[", "]", "\\", "=", "\"" ])){
+		}
+		else if(!Block_chars(valid_des, ["*", "+", "|", ":", "?", "<", ">", ",", ".", "/", ";", "[", "]", "\\", "=", "\"" ])){
 			return false;		
 		}
 		
@@ -426,7 +558,10 @@ function validForm(mode){
 
 		if(valid_password.value != "" && !Block_chars(valid_password, ["<", ">"])){
 			return false;		
-		}						
+		}
+		
+		if(!document.vpnclientForm.vpn_clientx_eas_edit[0].checked && !document.vpnclientForm.vpn_clientx_eas_edit[1].checked)
+				document.vpnclientForm.vpn_clientx_eas_edit[1].checked = true;
 	}	
 	
 	return true;
@@ -445,7 +580,7 @@ function tabclickhandler(_type){
 		document.vpnclientForm.vpnc_type.value = "PPTP";
 		document.getElementById('pptpcTitle').className = "vpnClientTitle_td_click";
 		document.getElementById('openvpnc_simple').style.display = "none"; 
-		document.getElementById('openvpnc_setting_openvpn').style.display = "none";  
+		document.getElementById('openvpnc_setting_openvpn').style.display = "none";		
 	}
 	else if(_type == 1){
 		save_flag = "L2TP";
@@ -461,15 +596,15 @@ function tabclickhandler(_type){
 		document.vpnclientForm.vpnc_type.value = "OpenVPN";
 		document.getElementById('opencTitle').className = "vpnClientTitle_td_click";
 		document.getElementById('openvpnc_simple').style.display = "block"; 
-		document.getElementById('openvpnc_setting_openvpn').style.display = "block";  
+		document.getElementById('openvpnc_setting_openvpn').style.display = "block";  		
 	}
 }
 
 function show_vpnc_rulelist(){
-	if(vpnc_clientlist_array[0] == "<")
-		vpnc_clientlist_array = vpnc_clientlist_array.split("<")[1];
+	//if(vpnc_clientlist_array[0] == "<")
+		//vpnc_clientlist_array = vpnc_clientlist_array.split("<")[1];
 
-	var vpnc_clientlist_row = vpnc_clientlist_array.split('<');	
+	var vpnc_clientlist_row = vpnc_clientlist_array.split('<');		
 	var code = "";
 	code +='<table style="margin-bottom:30px;" width="98%" border="1" align="center" cellpadding="4" cellspacing="0" class="list_table" id="vpnc_clientlist_table">';
 	if(vpnc_clientlist_array == "")
@@ -482,14 +617,13 @@ function show_vpnc_rulelist(){
 
 			var vpnc_clientlist_col = vpnc_clientlist_row[i].split('>');
 
-
 			if(vpnc_clientlist_col[1] == "OpenVPN"){
-				if(vpnc_proto == "openvpn"){
-					if(vpnc_state_t == 2)
+				if(vpnc_proto == "openvpn"){	//matched connecting rule, because openvpn only unit 1 for now.
+					if(vpnc_state_t == 2)	//connected
 						code +='<td width="10%"><img src="/images/checked_parentctrl.png" style="width:25px;"></td>';
-					else if(vpnc_state_t == 1)
+					else if(vpnc_state_t == 1)	//connecting
 						code +='<td width="10%"><img src="/images/InternetScan.gif"></td>';
-					else	
+					else		//Stop connection
 						code +='<td width="10%"><img src="/images/button-close2.png" style="width:25px;"></td>';
 				}
 				else
@@ -498,7 +632,7 @@ function show_vpnc_rulelist(){
 			else{
 				if(vpnc_clientlist_col[1] == document.form.vpnc_proto.value.toUpperCase() &&
 			     vpnc_clientlist_col[2] == document.form.vpnc_heartbeat_x.value &&
-				   vpnc_clientlist_col[3] == document.form.vpnc_pppoe_username.value)
+				   vpnc_clientlist_col[3] == document.form.vpnc_pppoe_username.value)		//matched connecting rule
 				{
 					if(vpnc_state_t == 0 || vpnc_state_t ==1) // Initial or Connecting
 						code +='<td width="10%"><img src="/images/InternetScan.gif"></td>';
@@ -530,11 +664,11 @@ function show_vpnc_rulelist(){
 		 	code += '<td width="10%"><input class="edit_btn" type="button" onclick="Edit_Row(this, \'vpnc\');" value=""/></td>';
 
 			if(vpnc_clientlist_col[1] == "OpenVPN"){ 
-				if(vpnc_proto == "openvpn"){
+				if(vpnc_proto == "openvpn"){	//OpenVPN is connecting
 					code += '<td width="10%"><input class="remove_btn" type="button" onclick="del_Row(this, \'vpnc_enable\');" value=""/></td>';
 					code += '<td width="25%"><input class="button_gen" type="button" onClick="connect_Row(this, \'disconnect\');" id="disonnect_btn" value="Disconnect" style="padding:0 0.3em 0 0.3em;" >';
 				}
-				else{
+				else{			//OpenVPN is not connecting
 					code += '<td width="10%"><input class="remove_btn" type="button" onclick="del_Row(this, \'vpnc\');" value=""/></td>';
 					code += '<td width="25%"><input class="button_gen" type="button" onClick="connect_Row(this, \'vpnc\');" id="Connect_btn" name="Connect_btn" value="Connect" style="padding:0 0.3em 0 0.3em;" >';
 				}
@@ -543,11 +677,11 @@ function show_vpnc_rulelist(){
 				if(vpnc_clientlist_col[1] == document.form.vpnc_proto.value.toUpperCase() &&
 					 vpnc_clientlist_col[2] == document.form.vpnc_heartbeat_x.value && 
 					 vpnc_clientlist_col[3] == document.form.vpnc_pppoe_username.value)
-				{
+				{		// This rule is connecting
 					code += '<td width="10%"><input class="remove_btn" type="button" onclick="del_Row(this, \'vpnc_enable\');" value=""/></td>';
 					code += '<td width="25%"><input class="button_gen" type="button" onClick="connect_Row(this, \'disconnect\');" id="disonnect_btn" value="Disconnect" style="padding:0 0.3em 0 0.3em;" >';
 				}
-				else{
+				else{		// This rule is not connecting
 					code += '<td width="10%"><input class="remove_btn" type="button" onclick="del_Row(this, \'vpnc\');" value=""/></td>';
 					code += '<td width="25%"><input class="button_gen" type="button" onClick="connect_Row(this, \'vpnc\');" id="Connect_btn" name="Connect_btn" value="Connect" style="padding:0 0.3em 0 0.3em;" >';
 				}
@@ -575,20 +709,23 @@ function connect_Row(rowdata, flag){
 	var idx = rowdata.parentNode.parentNode.rowIndex;
 	var vpnc_clientlist_row = vpnc_clientlist_array.split('<');
 	var vpnc_clientlist_col = vpnc_clientlist_row[idx].split('>');	
+	
 	if(flag == "disconnect"){
 		if(vpnc_clientlist_col[1] == "OpenVPN"){
 			document.form.vpnc_proto.value = "disable";
-			document.form.vpn_client_unit.value = "";
+			document.form.vpn_client_unit.value = vpnc_clientlist_col[2];
 			document.form.vpn_client1_username.value = "";
 			document.form.vpn_client1_password.value = "";
+			document.form.vpn_clientx_eas.value = "";
 		}else{ //pptp/l2tp
 			document.form.vpnc_proto.value = "disable";
 			document.form.vpnc_heartbeat_x.value = "";
 			document.form.vpnc_pppoe_username.value = "";
 			document.form.vpnc_pppoe_passwd.value = "";
-		}	
+			document.form.vpnc_auto_conn.value = "";
+		}			
 	}
-	else{
+	else{		//"vpnc" making connection
 		for(var j=0; j<vpnc_clientlist_col.length; j++){
 			if(j == 0){
 				document.form.vpnc_des_edit.value = vpnc_clientlist_col[0];
@@ -620,11 +757,30 @@ function connect_Row(rowdata, flag){
 					document.form.vpnc_pppoe_passwd.value = vpnc_clientlist_col[4];
 			} 
 		}
-		//document.form.vpnc_clientlist.value = vpnc_clientlist_array;
+								
+		// renew auto_conn
+		var rules_auto_conn_orig = decodeURIComponent('<% nvram_char_to_ascii("", "vpnc_appendix"); %>');
+		if(rules_auto_conn_orig != ""){		//vpnc_appendix exist
+			var rules_auto_conn_array = rules_auto_conn_orig.split("<");
+			var set_auto_conn = rules_auto_conn_array[idx];						
+										
+			if(vpnc_clientlist_col[1] != "OpenVPN")				
+					document.form.vpnc_auto_conn.value = set_auto_conn;
+			else	
+					document.form.vpn_clientx_eas.value = set_auto_conn+",";
+		}
+		else{		//vpnc_appendix is empty
+			if(vpnc_clientlist_col[1] != "OpenVPN")				
+					document.form.vpnc_auto_conn.value = "";
+			else	
+					document.form.vpn_clientx_eas.value = "";			
+		}			
 	}
 
+	document.form.vpnc_appendix.value = decodeURIComponent('<% nvram_char_to_ascii("", "vpnc_appendix"); %>');
 	document.form.vpnc_clientlist.value = vpnc_clientlist_array;	
 	rowdata.parentNode.innerHTML = "<img src='/images/InternetScan.gif'>";
+	setTimeout("location.reload();",500);
 	document.form.submit();	
 }
 var idx_tmp = "";
@@ -633,14 +789,24 @@ function Edit_Row(rowdata, flag){
 	$("cancelBtn_openvpn").style.display = "";
 
 	var idx = rowdata.parentNode.parentNode.rowIndex;
+	if(document.getElementById("vpnc_clientlist_table").rows[idx].cells[0].innerHTML != "-")
+			restart_vpncall_flag = 1;			
 	idx_tmp = rowdata.parentNode.parentNode.rowIndex;
 	var vpnc_clientlist_row = vpnc_clientlist_array.split('<');
 	var vpnc_clientlist_col = vpnc_clientlist_row[idx].split('>');
+	
+	var auto_conn_obj_checked = get_vpnc_appendix_auto_conn(idx);
 
 	if(vpnc_clientlist_col[1] == "OpenVPN"){
 		document.vpnclientForm.vpnc_openvpn_des.value = vpnc_clientlist_col[0];
 		document.vpnclientForm.vpnc_openvpn_username.value = vpnc_clientlist_col[3];
 		document.vpnclientForm.vpnc_openvpn_pwd.value = vpnc_clientlist_col[4];
+		
+		if(auto_conn_obj_checked)
+				document.vpnclientForm.vpn_clientx_eas_edit[0].checked = true;
+		else
+				document.vpnclientForm.vpn_clientx_eas_edit[1].checked = true;		
+				
 		tabclickhandler(2);
 		document.getElementById("caFiled").style.display = "";
 		document.getElementById("manualFiled").style.display = "";
@@ -671,6 +837,11 @@ function Edit_Row(rowdata, flag){
 				document.form.vpnc_pwd_edit.value = vpnc_clientlist_col[4];
 			} 
 		}
+		
+		if(auto_conn_obj_checked)
+				document.form.vpnc_auto_conn_edit[0].checked = true;
+		else	
+				document.form.vpnc_auto_conn_edit[1].checked = true;		
 	}
 
 	$j("#openvpnc_setting").fadeIn(300);
@@ -689,26 +860,38 @@ function Edit_Row(rowdata, flag){
 	}	
 }
 
-function del_Row(rowdata, flag){  
+function del_Row(rowdata, flag){
   var idx = rowdata.parentNode.parentNode.rowIndex;
-  if(flag.search("vpnc") != -1){		
-		$('vpnc_clientlist_table').deleteRow(idx);
+	$("vpnc_clientlist_table").deleteRow(idx);
 
-		var vpnc_clientlist_value = "";
-		var vpnc_clientlist_row = vpnc_clientlist_array.split('<');
-		for(k=0; k<vpnc_clientlist_row.length; k++){
-			if(k != idx){
-				if(k != 0)
-					vpnc_clientlist_value += "<";
-				vpnc_clientlist_value += vpnc_clientlist_row[k];
+	var vpnc_clientlist_value = "";
+	var vpnc_clientlist_row = vpnc_clientlist_array.split('<');	
+	for(k=0; k<vpnc_clientlist_row.length; k++){
+			if(k != idx){				
+				vpnc_clientlist_value += "<"+vpnc_clientlist_row[k];
 			}
-		}
-
-		vpnc_clientlist_array = vpnc_clientlist_value;
-		if(vpnc_clientlist_array == "")
+	}	
+	if(vpnc_clientlist_value.charAt(0) == "<")	//remove the 1st "<"
+				vpnc_clientlist_value = vpnc_clientlist_value.substr(1,vpnc_clientlist_value.length);		
+	vpnc_clientlist_array = vpnc_clientlist_value;	
+	
+	if(vpnc_clientlist_array == "")
 			show_vpnc_rulelist();
+			
+	//Update vpnc_appendix
+	var vpnc_appendix_value = "";
+	var rules_auto_conn_orig = decodeURIComponent('<% nvram_char_to_ascii("", "vpnc_appendix"); %>');
+	var rules_auto_conn_array = rules_auto_conn_orig.split("<");
+	for(var m=0; m<rules_auto_conn_array.length; m++){
+			if(m != idx){	//save exist items
+				vpnc_appendix_value += "<"+rules_auto_conn_array[m];
+			}
+	}
+	if(vpnc_appendix_value.charAt(0) == "<")	//remove the 1st "<"
+				vpnc_appendix_value = vpnc_appendix_value.substr(1,vpnc_appendix_value.length);	
+	document.vpnclientForm.vpnc_appendix.value = vpnc_appendix_value;
 
-		if(flag == "vpnc_enable"){
+	if(flag == "vpnc_enable"){	//remove connecting rule.
 			document.vpnclientForm.vpnc_proto.value = "disable";
 			document.vpnclientForm.vpnc_proto.disabled = false;
 
@@ -717,10 +900,14 @@ function del_Row(rowdata, flag){
   		document.vpnclientForm.encoding = "application/x-www-form-urlencoded";
 
 			document.vpnclientForm.action_script.value = "restart_vpncall";
-		}
-  }
+			if("<% nvram_get("vpnc_proto"); %>" == "openvpn")					
+					document.vpnclientForm.vpn_clientx_eas.value = "";
+			else
+					document.vpnclientForm.vpnc_auto_conn.value = "";		
+	}
 
 	document.vpnclientForm.vpnc_clientlist.value = vpnc_clientlist_array;
+	setTimeout("location.reload();",500);
 	document.vpnclientForm.submit();
 }
 
@@ -938,9 +1125,12 @@ function addOpenvpnProfile(){
 <input type="hidden" name="vpnc_proto" value="<% nvram_get("vpnc_proto"); %>">
 <input type="hidden" name="vpnc_clientlist" value='<% nvram_get("vpnc_clientlist"); %>'>
 <input type="hidden" name="vpnc_type" value="PPTP">
+<input type="hidden" name="vpnc_auto_conn" value="">
 <input type="hidden" name="vpn_client_unit" value="1">
 <input type="hidden" name="vpn_client1_username" value="<% nvram_get("vpn_client1_username"); %>">
 <input type="hidden" name="vpn_client1_password" value="<% nvram_get("vpn_client1_password"); %>">
+<input type="hidden" name="vpn_clientx_eas" value="">
+<input type="hidden" name="vpnc_appendix" value="">
 
 <div id="openvpnc_setting"  class="contentM_qis" style="box-shadow: 3px 3px 10px #000;">
 	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0">
@@ -988,6 +1178,14 @@ function addOpenvpnProfile(){
 					  	<input type="text" name="vpnc_pwd" id="vpnc_pwd_edit" value="" class="input_32_table" style="float:left;"></input>
 					  </td>
 		  		</tr>  
+
+		  		<tr>
+						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(14,2);">Auto-reconnection</a></th>
+					  <td>
+					  		<input type="radio" value="1" name="vpnc_auto_conn_edit" class="content_input_fd"><#checkbox_Yes#>
+				  			<input type="radio" value="0" name="vpnc_auto_conn_edit" class="content_input_fd"><#checkbox_No#>
+					  </td>
+		  		</tr>
 		 
 		 		</table>
 		 		</div>
@@ -1123,6 +1321,9 @@ function addOpenvpnProfile(){
 						<input type="hidden" name="vpnc_openvpn_unit_edit" value="1">
 						<input type="hidden" name="vpnc_type" value="PPTP">
 						<input type="hidden" name="vpnc_proto" value="<% nvram_get("vpnc_proto"); %>" disabled>
+						<input type="hidden" name="vpn_clientx_eas" value="<% nvram_get("vpn_clientx_eas"); %>">
+						<input type="hidden" name="vpnc_auto_conn" value="<% nvram_get("vpnc_auto_conn"); %>">
+						<input type="hidden" name="vpnc_appendix" value="">
 		 				<tr>
 							<th><#IPConnection_autofwDesc_itemname#></th>
 					  	<td>
@@ -1141,8 +1342,17 @@ function addOpenvpnProfile(){
 					  		<input type="text" name="vpnc_openvpn_pwd" id="vpnc_openvpn_pwd_edit" value="" class="input_32_table" style="float:left;"></input>
 					  	</td>
 		  			</tr>  
+		  			
+		  		<tr>
+						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(14,2);">Auto-reconnection</a></th>
+					  <td>
+					  		<input type="radio" value="1" name="vpn_clientx_eas_edit" class="content_input_fd"><#checkbox_Yes#>
+				  			<input type="radio" value="0" name="vpn_clientx_eas_edit" class="content_input_fd"><#checkbox_No#>
+					  </td>
+		  		</tr>		  			
+		  			
 		  			<tr>
-							<th>Import ovpn file</th>
+							<th><#vpn_openvpnc_importovpn#></th>
 					  	<td>
 					  		<input type="file" name="file" class="input" style="color:#FFCC00;*color:#000;"><br>
 		  					<input id="" class="button_gen" onclick="ImportOvpn();" type="button" value="<#CTL_upload#>" />
@@ -1161,7 +1371,7 @@ function addOpenvpnProfile(){
 
 			 		<br>
 					<div style="color:#FC0;margin-bottom: 10px;">
-						<input type="checkbox" class="input" onclick="manualImport(this.checked)">Import the CA file or edit the .ovpn file manually.
+						<input type="checkbox" class="input" onclick="manualImport(this.checked)"><#vpn_openvpnc_manual#>
 					</div>
 
 					<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable" id="caFiled" style="display:none">
@@ -1178,7 +1388,7 @@ function addOpenvpnProfile(){
 						<input type="hidden" name="vpn_upload_type" value="ca">
 						<input type="hidden" name="vpn_upload_unit" value="1">
 						<tr>
-							<th>Import CA file</th>
+							<th><#vpn_openvpnc_importCA#></th>
 					  	<td>								
 							<input type="file" name="file" class="input" style="color:#FFCC00;*color:#000;"><br>
 		  					<input id="importCA" class="button_gen" onclick="startImportCA();" type="button" value="<#CTL_upload#>" />
@@ -1279,45 +1489,58 @@ function addOpenvpnProfile(){
 							<input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 							<input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 							<input type="hidden" name="vpn_upload_unit" value="1">
-							<input type="hidden" name="vpn_crt_client1_ca" value="<% nvram_get("vpn_crt_client1_ca"); %>" disabled>
-							<input type="hidden" name="vpn_crt_client1_crt" value="<% nvram_get("vpn_crt_client1_crt"); %>" disabled>
-							<input type="hidden" name="vpn_crt_client1_key" value="<% nvram_get("vpn_crt_client1_key"); %>" disabled>
-							<input type="hidden" name="vpn_crt_client1_static" value="<% nvram_get("vpn_crt_client1_static"); %>" disabled>
+							<input type="hidden" name="vpn_crt_client1_ca" value="<% nvram_clean_get("vpn_crt_client1_ca"); %>" disabled>
+							<input type="hidden" name="vpn_crt_client1_crt" value="<% nvram_clean_get("vpn_crt_client1_crt"); %>" disabled>
+							<input type="hidden" name="vpn_crt_client1_key" value="<% nvram_clean_get("vpn_crt_client1_key"); %>" disabled>
+							<input type="hidden" name="vpn_crt_client1_static" value="<% nvram_clean_get("vpn_crt_client1_static"); %>" disabled>
 					    <tr>
 					    	<td valign="top">
-					     		<table width="700px" border="0" cellpadding="4" cellspacing="0">
-					         	<tbody>
+					     		<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0">
+					         		<tr>
+					         				<td>
+														<div class="description_down"><#vpn_openvpn_Keys_Cert#></div>
+													</td>		
+											</tr>
+											<tr>
+													<td>
+														<div style="margin-left:30px; margin-top:10px;">
+															<p><#vpn_openvpn_KC_Edit1#> <span style="color:#FFCC00;">----- BEGIN xxx ----- </span>/<span style="color:#FFCC00;"> ----- END xxx -----</span> <#vpn_openvpn_KC_Edit2#>
+															<p><#vpn_openvpn_KC_Limit#>
+														</div>
+														
+														<div style="margin:5px;*margin-left:-5px;"><img style="width: 700px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
+													</td>	
+											</tr>
 					          	<tr>
 					           		<td valign="top">
-													<table width="100%" id="page1_tls" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
+													<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
 														<tr>
 															<th id="manualCa">Certificate Authority</th>
 															<td>
-																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_ca" name="edit_vpn_crt_client1_ca" cols="65" maxlength="2999"><% nvram_get("vpn_crt_client1_ca"); %></textarea>
+																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_ca" name="edit_vpn_crt_client1_ca" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_client1_ca"); %></textarea>
 															</td>
 														</tr>
 														<tr>
 															<th id="manualCert">Client Certificate</th>
 															<td>
-																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_crt" name="edit_vpn_crt_client1_crt" cols="65" maxlength="2999"><% nvram_get("vpn_crt_client1_crt"); %></textarea>
+																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_crt" name="edit_vpn_crt_client1_crt" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_client1_crt"); %></textarea>
 															</td>
 														</tr>
 														<tr>
 															<th id="manualKey">Client Key</th>
 															<td>
-																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_key" name="edit_vpn_crt_client1_key" cols="65" maxlength="2999"><% nvram_get("vpn_crt_client1_key"); %></textarea>
+																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_key" name="edit_vpn_crt_client1_key" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_client1_key"); %></textarea>
 															</td>
 														</tr>
 														<tr>
 															<th id="manualStatic">Static Key (Optional)</th>
 															<td>
-																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_static" name="edit_vpn_crt_client1_static" cols="65" maxlength="2999"><% nvram_get("vpn_crt_client1_static"); %></textarea>
+																<textarea rows="8" class="textarea_ssh_table" id="edit_vpn_crt_client1_static" name="edit_vpn_crt_client1_static" cols="65" maxlength="2999"><% nvram_clean_get("vpn_crt_client1_static"); %></textarea>
 															</td>
 														</tr>
 													</table>
 								  			</td>
-								  		</tr>						
-					    			</tbody>						
+								  		</tr>				
 					  				</table>
 										<div style="margin-top:5px;width:100%;text-align:center;">
 											<input class="button_gen" type="button" onclick="cancel_Key_panel();" value="<#CTL_Cancel#>">

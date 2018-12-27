@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -17,10 +17,58 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/jquery.js"></script>
+<style>
+#Aidisk_png{
+  background: url(images/New_ui/USBExt/APP_list.png);
+  background-position: 0px 0px;
+  width: 66px;
+  height: 66px;
+}
+#server_png{
+  background: url(images/New_ui/USBExt/APP_list.png);
+  background-position: 0px -76px;
+  width: 66px;
+  height: 66px;
+}
+#PrinterServer_png{
+  background: url(images/New_ui/USBExt/APP_list.png);
+  background-position: 0px -152px;
+  width: 66px;
+  height: 66px;
+}
+#modem_png{
+  background: url(images/New_ui/USBExt/APP_list.png);
+  background-position: 0px -228px;
+  width: 66px;
+  height: 66px;
+}
+#downloadmaster_png{
+  background: url(images/New_ui/USBExt/APP_list.png);
+  background-position: 0px -304px;
+  width: 66px;
+  height: 66px;
+}
+#mediaserver_png{
+  background: url(images/New_ui/USBExt/APP_list.png);
+  background-position: 0px -380px;
+  width: 66px;
+  height: 66px;
+}
+#aicloud_png{
+  background: url(images/New_ui/USBExt/APP_list.png);
+  background-position: 0px -456px;
+  width: 66px;
+  height: 66px;
+}
+#TimeMachine_png{
+  background: url(images/New_ui/USBExt/TimeMachine.png);
+  width: 66px;
+  height: 66px;
+}
+</style>
 <script>
 var $j = jQuery.noConflict();
-</script>
-<script>
+
 <% login_state_hook(); %>
 wan_route_x = '<% nvram_get("wan_route_x"); %>';
 wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
@@ -60,11 +108,11 @@ var webs_state_info;
 function initial(){
 	show_menu();
 
-	default_apps_array = [["AiDisk", "aidisk.asp", "<#AiDiskWelcome_desp1#>", "Aidisk.png", ""],
-												["<#Servers_Center#>", tablink[3][1], "<#UPnPMediaServer_Help#>", "server.png", ""],
-												["<#Network_Printer_Server#>", "PrinterServer.asp", "<#Network_Printer_desc#>", "PrinterServer.png", ""],
-												["3G/4G", "Advanced_Modem_Content.asp", "<#HSDPAConfig_hsdpa_enable_hint1#>", "modem.png", ""],
-												["Time Machine", "Advanced_TimeMachine.asp", "Time Machine Support.", "TimeMachine.png", "1.0.0.1"]];
+	default_apps_array = [["AiDisk", "aidisk.asp", "<#AiDiskWelcome_desp1#>", "Aidisk_png", ""],
+												["<#Servers_Center#>", tablink[4][1], "<#UPnPMediaServer_Help#>", "server_png", ""],
+												["<#Network_Printer_Server#>", "PrinterServer.asp", "<#Network_Printer_desc#>", "PrinterServer_png", ""],
+												["3G/4G", "Advanced_Modem_Content.asp", "<#HSDPAConfig_hsdpa_enable_hint1#>", "modem_png", ""],
+												["Time Machine", "Advanced_TimeMachine.asp", "Enable Time Machine functionality.", "TimeMachine_png", "1.0.0.1"]];
 	
 	if(!media_support){
 			default_apps_array[1].splice(2,1,"<#MediaServer_Help#>");						
@@ -101,7 +149,7 @@ function initial(){
 
 	if(!nodm_support){
 		addOnlineHelp($("faq"), ["ASUSWRT", "download","master"]);
-		addOnlineHelp($("faq2"), ["ASUSWRT", "download","tool"]);
+		addOnlineHelp($("faq2"), ["ASUSWRT", "download","associated"]);
 	}
 }
 
@@ -415,15 +463,15 @@ function show_apps(){
 
 	var counter = 0;
 	appnum = 0;
-
+	
 	if(apps_array == "" && (appnet_support || appbase_support)){
-		apps_array = [["downloadmaster", "", "", "no", "no", "", "", "Download tools", "downloadmaster.png", "", "", ""],
-									["mediaserver", "", "", "no", "no", "", "", "", "mediaserver.png", "", "", ""]];
+		apps_array = [["downloadmaster", "", "", "no", "no", "", "", "PC-free download manager.", "downloadmaster_png", "", "", ""],
+									["mediaserver", "", "", "no", "no", "", "", "", "mediaserver_png", "", "", ""]];
 		if(nodm_support)
 			apps_array[1][0] = "mediaserver2";
 
 		if(aicloudipk_support)
-			apps_array.push(["aicloud", "", "", "no", "no", "", "", "AiCloud utilities", "aicloud.png", "", "", ""]);
+			apps_array.push(["aicloud", "", "", "no", "no", "", "", "AiCloud 2.0 utilities", "aicloud_png", "", "", ""]);
 	}
 
 	if(!aicloudipk_support){
@@ -461,7 +509,7 @@ function show_apps(){
 		var media_idx = apps_array.getIndexByValue2D("mediaserver");
 		if(!nodm_support && (media_idx == -1 || media_idx[1] == -1)){
 			var apps_len = apps_array.length;
-			apps_array[apps_len] = ["mediaserver", "", "", "no", "no", "", "", "", "mediaserver.png", "", "", ""];
+			apps_array[apps_len] = ["mediaserver", "", "", "no", "no", "", "", "", "mediaserver_png", "", "", ""];
 		}
   }
 
@@ -470,9 +518,17 @@ function show_apps(){
 	
 	//show default Apps
 	for(var i = 0; i < default_apps_array.length; i++){
-		htmlcode += '<tr><td align="center" class="app_table_radius_left" style="width:85px"><img style="margin-top:0px;" src="/images/New_ui/USBExt/'+ default_apps_array[i][3] +'" style="cursor:pointer" onclick="location.href=\''+ default_apps_array[i][1] +'\';"></td><td class="app_table_radius_right" style="width:350px;">\n';
+		htmlcode += '<tr><td align="center" class="app_table_radius_left" style="width:85px">';
+		//Viz modified to CSS sprites : htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/'+ default_apps_array[i][3] +'" style="cursor:pointer" onclick="location.href=\''+ default_apps_array[i][1] +'\';">';
+		htmlcode += '<div id="'+default_apps_array[i][3]+'" style="cursor:pointer" onclick="location.href=\''+ default_apps_array[i][1] +'\';"></div>';
+		htmlcode += '</td><td class="app_table_radius_right" style="width:350px;">\n';
 		htmlcode += '<div class="app_name"><a style="text-decoration: underline;" href="' + default_apps_array[i][1] + '">' + default_apps_array[i][0] + '</a></div>\n';
-		htmlcode += '<div class="app_desc">' + default_apps_array[i][2] + '</div>\n';
+		if(i ==3){
+			htmlcode += '<div class="app_desc">' + default_apps_array[i][2] + ' <a href="http://www.asus.com/event/networks_3G4G_support/" target="_blank" style="text-decoration:underline;">Support</a></div>\n';
+		}
+		else{
+			htmlcode += '<div class="app_desc">' + default_apps_array[i][2] + '</div>\n';
+		}
 		htmlcode += '<div style="margin-top:10px;"></div><br/><br/></td></tr>\n';
 	}
 
@@ -503,20 +559,18 @@ function show_apps(){
 		htmlcode += '<tr style="height: 100px;"><td class="app_table_radius_left" align="center" style="width:85px">\n';
 		if(apps_array[i][4] == "yes" && apps_array[i][3] == "yes"){
 			if(apps_array[i][6] != ""){
-				if(apps_array[i][0] == "mediaserver" || apps_array[i][0] == "mediaserver2")
-					htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/mediaserver.png" style="cursor:pointer" onclick="location.href=\''+ apps_array[i][6] +'\';"></td>\n';
-				else
-					htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/'+ apps_array[i][0] +'.png" style="cursor:pointer" onclick="location.href=\''+ apps_array[i][6] +'\';"></td>\n';
+					//htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/mediaserver.png" style="cursor:pointer" onclick="location.href=\''+ apps_array[i][6] +'\';"></td>\n';
+					htmlcode += '<div id="'+apps_array[i][0]+'_png" style="cursor:pointer" onclick="location.href=\''+ apps_array[i][6] +'\';"></div>';
 			}
-			else
-				htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/'+ apps_array[i][0] +'.png"></td>\n';				
+			else{
+					//htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/'+ apps_array[i][0] +'.png"></td>\n';
+					htmlcode += '<div id="'+apps_array[i][0]+'_png"></div>';	
+			}
 		}	
 		else{
-			if(apps_array[i][0] == "mediaserver" || apps_array[i][0] == "mediaserver2")
-				htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/mediaserver.png"></td>\n';			
-			else
-				htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/'+ apps_array[i][0] +'.png"></td>\n';			
+				htmlcode += '<div id="'+apps_array[i][0]+'_png"></div>';
 		}
+		htmlcode += '</td>\n';
 
 		// apps_name
 		htmlcode += '<td class="app_table_radius_right" style="width:350px;">\n';
@@ -525,7 +579,7 @@ function show_apps(){
 		else if(apps_array[i][0] == "mediaserver" || apps_array[i][0] == "mediaserver2")
 			apps_array[i][0] = "Media Server";
 		else if(apps_array[i][0] == "aicloud")
-			apps_array[i][0] = "AiCloud";
+			apps_array[i][0] = "AiCloud 2.0";
 
 		if(apps_array[i][6] != ""){ // with hyper-link
 			htmlcode += '<div class="app_name">';
@@ -572,7 +626,7 @@ function show_apps(){
 			else
 				apps_array[i][0] = "mediaserver2";
 		}
-		else if(apps_array[i][0] == "AiCloud")
+		else if(apps_array[i][0] == "AiCloud 2.0")
 			apps_array[i][0] = "aicloud";
 
 		// apps_desc
@@ -788,7 +842,7 @@ function divdisplayctrl(flag1, flag2, flag3, flag4){
 			$("realLink").href = _quick_dmlink;
 		}
 		else{
-			$("quick_dmlink").onclick = function(){alert(Untranslated.DM_DisableHint);return false;}
+			$("quick_dmlink").onclick = function(){alert("<#DM_DisableHint#>");return false;}
 		}	
 			
 		$("return_btn").style.display = "";

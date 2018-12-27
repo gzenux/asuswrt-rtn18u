@@ -14,9 +14,15 @@
 #endif
 
 #ifdef RTCONFIG_PUSH_EMAIL
-#define logmessage logmessage_push
+//#define logmessage logmessage_push
+#define logmessage logmessage_normal	//tmp
 #else
 #define logmessage logmessage_normal
+#endif
+
+#ifdef RTCONFIG_DSL
+#define SYNC_LOG_FILE "/tmp/adsl/sync_status_log.txt"
+#define LOG_RECORD_FILE "/tmp/adsl/log_record.txt"
 #endif
 
 #define Y2K			946684800UL		// seconds since 1970
@@ -54,7 +60,6 @@ extern const char *rt_swpjverno;
 #ifdef RTCONFIG_IPV6
 enum {
 	IPV6_DISABLED = 0,
-	IPV6_NATIVE,
 	IPV6_NATIVE_DHCP,
 	IPV6_6TO4,
 	IPV6_6IN4,
@@ -132,7 +137,9 @@ extern const char *ipv6_gateway_address(void);
 #define ipv6_enabled()	(0)
 #endif
 extern void notice_set(const char *path, const char *format, ...);
+#ifdef REMOVE
 extern const dns_list_t *get_dns(void);
+#endif
 extern void set_action(int a);
 extern int check_action(void);
 extern int wait_action_idle(int n);
@@ -195,12 +202,14 @@ extern int is_no_partition(const char *discname);
 enum {
 	MODEL_UNKNOWN,
 	MODEL_DSLN55U,
+	MODEL_DSLAC68U,
 	MODEL_EAN66,
 	MODEL_RTN11P,
 	MODEL_RTN13U,
 	MODEL_RTN14U,
 	MODEL_RTAC52U,
 	MODEL_RTAC51U,
+	MODEL_RTN54U,
 	MODEL_RTN36U3,
 	MODEL_RTN56U,
 	MODEL_RTN65U,
@@ -225,6 +234,7 @@ enum {
 	MODEL_RTAC56S,
 	MODEL_RTAC56U,
 	MODEL_RTAC53U,
+	MODEL_RTAC3200,
 	MODEL_RTN14UHP,
 	MODEL_RTN10U,
 	MODEL_RTN10P,
@@ -363,6 +373,38 @@ extern int f_wait_notexists(const char *name, int max);
 #define HAVE_FAN_OFF			4
 #define	HAVE_FAN_ON			5
 
+#define MAX_NR_WLVIF			3
+enum iface_id {
+	IFACE_INTERNET = 0,		/* INTERNET: Only one interface can be considered as INTERNET. */
+	IFACE_WIRED,
+	IFACE_BRIDGE,
+
+	IFACE_WL0,			/* WIRELESS0 */
+	IFACE_WL1,			/* WIRELESS1, may not exist. */
+
+	IFACE_MAIN_IF_MAX,
+
+	IFACE_WL0_0,					/* WIRELESS0.0 */
+	IFACE_WL1_0 = IFACE_WL0_0 + MAX_NR_WLVIF,	/* WIRELESS1.0, may not exist. */
+
+	IFACE_MAX,			/* last item */
+};
+
+struct if_stats {
+	char ifname[IFNAMSIZ];
+	unsigned long rx, tx;
+};
+
+/* INTERNET interface may varies at run-time.
+ * The rx_shift and tx_shirt are used to report
+ * continuously statistice information to upper-level code,
+ * e.g. Web UI
+ */
+struct ifaces_stats {
+	struct if_stats iface[IFACE_MAIN_IF_MAX];
+	unsigned long rx_shift, tx_shift;
+};
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(ary) (sizeof(ary) / sizeof((ary)[0]))
 #endif
@@ -372,6 +414,38 @@ extern int f_wait_notexists(const char *name, int max);
 #else	/* ! RTCONFIG_HAS_5G */
 #define MAX_NR_WL_IF			1	/* Single 2G */
 #endif	/* ! RTCONFIG_HAS_5G */
+
+#if defined(RTCONFIG_WIRELESSREPEATER)
+static inline int __is_repeater_mode(int sw_mode)
+{
+	return (sw_mode == SW_MODE_REPEATER
+#if defined(RTCONFIG_PROXYSTA)
+		&& nvram_get_int("wlc_psta") != 1
+#endif
+		);
+}
+static inline int is_repeater_mode(void)
+{
+	return __is_repeater_mode(nvram_get_int("sw_mode"));
+}
+#else
+static inline int __is_repeater_mode(int sw_mode) { return 0; }
+static inline int is_repeater_mode(void) { return 0; }
+#endif
+
+#if defined(RTCONFIG_WIRELESSREPEATER) && defined(RTCONFIG_PROXYSTA)
+static inline int __is_mediabridge_mode(int sw_mode)
+{
+	return (sw_mode == SW_MODE_REPEATER && nvram_get_int("wlc_psta") == 1);
+}
+static inline int is_mediabridge_mode(void)
+{
+	return __is_mediabridge_mode(nvram_get_int("sw_mode"));
+}
+#else
+static inline int __is_mediabridge_mode(int sw_mode) { return 0; }
+static inline int is_mediabridge_mode(void) { return 0; }
+#endif
 
 static inline int get_wps_multiband(void)
 {
@@ -407,7 +481,11 @@ extern int get_primaryif_dualwan_unit(void);
 #else
 static inline int dualwan_unit__usbif(int unit)
 {
+#ifdef RTCONFIG_USB
 	return (unit == WAN_UNIT_SECOND);
+#else
+	return 0;
+#endif
 }
 
 static inline int dualwan_unit__nonusbif(int unit)
@@ -416,7 +494,11 @@ static inline int dualwan_unit__nonusbif(int unit)
 }
 static inline int get_usbif_dualwan_unit(void)
 {
+#ifdef RTCONFIG_USB
 	return WAN_UNIT_SECOND;
+#else
+	return -1;
+#endif
 }
 static inline int get_primaryif_dualwan_unit(void)
 {
@@ -497,7 +579,8 @@ extern int nvram_get_file(const char *key, const char *fname, int max);
 extern int nvram_set_file(const char *key, const char *fname, int max);
 #endif
 extern int free_caches(const char *clean_mode, const int clean_time, const unsigned int threshold);
-extern unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2);
+extern void iface_name_str(enum iface_id id, char *str);
+extern int load_ifaces_stats(struct ifaces_stats *old, struct ifaces_stats *new, char *exclude);
 extern int update_6rd_info(void);
 extern const char *get_wanip(void);
 extern int is_private_subnet(const char *ip);
@@ -572,5 +655,9 @@ extern void init_spinlock(void);
 /* misc.c */
 extern int is_psta(int unit);
 extern int is_psr(int unit);
+extern int psta_exist();
+extern int psta_exist_except(int unit);
+extern int psr_exist_except(int unit);
+extern unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2);
 
 #endif

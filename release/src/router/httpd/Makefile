@@ -12,14 +12,6 @@ endif
 
 include $(SRCBASE)/.config
 
-ifneq ($(findstring DSL,$(BUILD_NAME)),)
-MODEL = $(subst -,_,$(BUILD_NAME))
-else
-MODEL = $(subst -,,$(BUILD_NAME))
-endif
-
-export CFLAGS += -D$(MODEL)
-
 ifeq ($(RTN11P),y)
 CFLAGS += -DBAND_2G_ONLY
 endif
@@ -28,12 +20,8 @@ ifeq ($(RTN14U),y)
 CFLAGS += -DBAND_2G_ONLY
 endif
 
-ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P),y)
+ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN54U),y)
 CFLAGS += -DRA_ESW
-endif
-
-ifeq ($(RTCONFIG_HTTPS),y)
-CFLAGS += -I$(TOP)/mssl
 endif
 
 ifeq ($(RTCONFIG_USB),y)
@@ -42,6 +30,10 @@ endif
 
 ifeq ($(RTCONFIG_DNSMASQ),y)
 CFLAGS += -DDNSMASQ
+endif
+
+ifeq ($(RTCONFIG_BWDPI),y)
+CFLAGS += -I$(TOP)/bwdpi/ -I$(TOP)/sqlite
 endif
 
 OBJS = httpd.o cgi.o ej.o 
@@ -54,7 +46,6 @@ else
 ifeq ($(RTCONFIG_BCMWL6),y)
 OBJS += web-broadcom-wl6.o
 ifeq ($(RTCONFIG_QTN),y)
-OBJS += web-qtn.o
 OBJS += find_host_addr.o
 endif
 else
@@ -64,7 +55,17 @@ endif
 
 ifeq ($(RTCONFIG_DSL),y)
 OBJS += web-dsl.o
+ifeq ($(RTCONFIG_RALINK),y)
 OBJS += web-dsl-upg.o
+endif
+endif
+
+ifeq ($(RTCONFIG_GEOIP),y)
+OBJS += geoiplookup.o
+endif
+
+ifeq ($(RTCONFIG_HTTPS),y)
+OBJS += pwenc.o
 endif
 
 LIBS = -L$(TOP)/nvram${BCMEX} -lnvram -L$(TOP)/shared -lshared
@@ -82,7 +83,7 @@ CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include
 CFLAGS += -I$(SRCBASE)/common/include
 LIBS += -lgcc_s
 ifeq ($(RTCONFIG_QTN),y)
-CFLAGS += -I$(TOP)/libqcsapi_client
+CFLAGS += -I$(TOP)/libqcsapi_client -I$(TOP)/shared/sysdeps/qtn
 LIBS += -L$(TOP)/libqcsapi_client -lqcsapi_client
 endif
 endif
@@ -92,6 +93,8 @@ LIBS += -L$(TOP)/libdisk -ldisk
 endif
 
 ifeq ($(RTCONFIG_HTTPS),y)
+CFLAGS += -I$(TOP)/mssl
+CFLAGS += -I$(TOP)/openssl/include
 LIBS += -L$(TOP)/mssl -lmssl
 LIBS += -L$(TOP)/openssl -lssl -lcrypto
 endif
@@ -101,9 +104,21 @@ OBJS += openvpn_options.o
 LIBS += -L$(TOP)/openssl -lssl -lcrypto
 endif
 
+ifeq ($(RTCONFIG_BWDPI),y)
+LIBS += -L$(TOP)/bwdpi -lbwdpi
+LIBS += -L$(TOP)/bwdpi_sqlite -lbwdpi_sql
+LIBS += -L$(TOP)/sqlite/.libs -lsqlite3
+#LIBS += -lpthread
+endif
+
+ifeq ($(RTCONFIG_GEOIP),y)
+CFLAGS += -I$(TOP)/GeoIP-1.6.2/libGeoIP
+LIBS += -L$(TOP)/GeoIP-1.6.2/libGeoIP/.libs -lGeoIP
+endif
+
 export CFLAGS
 ifeq ($(RTCONFIG_QTN),y)
-vpath %.c sysdeps $(TOP)/libqcsapi_client/qcsapi_rpc_common/client
+vpath %.c sysdeps $(TOP)/libqcsapi_client/qcsapi_rpc_common/client $(TOP)/shared/sysdeps/qtn
 else
 vpath %.c sysdeps
 endif
@@ -134,6 +149,14 @@ clean:
 
 size: httpd
 	mipsel-uclibc-nm --print-size --size-sort httpd
+
+# handle prebuilt object here
+ifneq ($(wildcard, ./prebuild),)
+ifeq ($(RTCONFIG_HTTPS),y)
+pwenc.o:
+	@-cp -f ./prebuild/pwenc.o .
+endif
+endif
 
 %.o: %.c .%.depend
 	@echo " [httpd] CC $@"

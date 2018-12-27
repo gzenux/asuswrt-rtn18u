@@ -56,8 +56,8 @@
 my $ossl_path;
 my $redir = " 2> cms.err > cms.out";
 # Make VMS work
-if ( $^O eq "VMS" && -f "$ENV{EXE_DIR}openssl.exe" ) {
-    $ossl_path = "pipe mcr $ENV{EXE_DIR}openssl.exe";
+if ( $^O eq "VMS" && -f "OSSLX:openssl.exe" ) {
+    $ossl_path = "pipe mcr OSSLX:openssl";
 }
 # Make MSYS work
 elsif ( $^O eq "MSWin32" && -f "../apps/openssl.exe" ) {
@@ -415,8 +415,10 @@ sub run_smime_tests {
 }
 
 sub cmp_files {
+    use FileHandle;
     my ( $f1, $f2 ) = @_;
-    my ( $fp1, $fp2 );
+    my $fp1 = FileHandle->new();
+    my $fp2 = FileHandle->new();
 
     my ( $rd1, $rd2 );
 

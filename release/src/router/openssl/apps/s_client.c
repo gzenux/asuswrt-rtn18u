@@ -440,13 +440,7 @@ int MAIN(int argc, char **argv)
 	char *jpake_secret = NULL;
 #endif
 
-#if !defined(OPENSSL_NO_SSL2) && !defined(OPENSSL_NO_SSL3)
 	meth=SSLv23_client_method();
-#elif !defined(OPENSSL_NO_SSL3)
-	meth=SSLv3_client_method();
-#elif !defined(OPENSSL_NO_SSL2)
-	meth=SSLv2_client_method();
-#endif
 
 	apps_startup();
 	c_Pause=0;
@@ -581,7 +575,7 @@ int MAIN(int argc, char **argv)
 			psk_key=*(++argv);
 			for (j = 0; j < strlen(psk_key); j++)
                                 {
-                                if (isxdigit((int)psk_key[j]))
+                                if (isxdigit((unsigned char)psk_key[j]))
                                         continue;
                                 BIO_printf(bio_err,"Not a hex number '%s'\n",*argv);
                                 goto bad;
@@ -749,14 +743,13 @@ bad:
 			goto end;
 			}
 		psk_identity = "JPAKE";
+		if (cipher)
+			{
+			BIO_printf(bio_err, "JPAKE sets cipher to PSK\n");
+			goto end;
+			}
+		cipher = "PSK";
 		}
-
-	if (cipher)
-		{
-		BIO_printf(bio_err, "JPAKE sets cipher to PSK\n");
-		goto end;
-		}
-	cipher = "PSK";
 #endif
 
 	OpenSSL_add_ssl_algorithms();
@@ -1603,6 +1596,8 @@ end:
 		EVP_PKEY_free(key);
 	if (pass)
 		OPENSSL_free(pass);
+	if (vpm)
+		X509_VERIFY_PARAM_free(vpm);
 	if (cbuf != NULL) { OPENSSL_cleanse(cbuf,BUFSIZZ); OPENSSL_free(cbuf); }
 	if (sbuf != NULL) { OPENSSL_cleanse(sbuf,BUFSIZZ); OPENSSL_free(sbuf); }
 	if (mbuf != NULL) { OPENSSL_cleanse(mbuf,BUFSIZZ); OPENSSL_free(mbuf); }

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -39,10 +39,14 @@ function initial(){
 	}
 
 	if(band5g_support && band5g_11ac_support && document.form.wl_unit[1].selected == true){
-		document.form.wl_nmode_x[1].text = "N + AC";	
 		document.getElementById('wl_mode_desc').onclick=function(){return openHint(1, 5)};		
 	}else if(band5g_support && document.form.wl_unit[1].selected == true){
 		document.getElementById('wl_mode_desc').onclick=function(){return openHint(1, 4)};
+	}
+
+	if(band5g_support && band5g_11ac_support && document.form.wl_unit[1].selected == true)
+	{
+		document.form.wl_nmode_x.remove(3); //add "N/AC Mixed" for AC router and in 5G
 	}
 
 	// special case after modifing GuestNetwork
@@ -106,8 +110,6 @@ function initial(){
 	if("<% nvram_get("wl_closed"); %>" == 1){
 		$('WPS_hideSSID_hint').style.display = "";	
 	}	
-	
-	automode_hint();
 }
 
 function check_channel_2g(){
@@ -383,6 +385,7 @@ function high_power_auto_channel(){
 		<td>
 			<div class="drword" id="drword"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
 				<br/>
+				<div id="disconnect_hint" style="display:none;">This may interrupt your internet connection.</div>
 				<br/>
 		    </div>
 			<div id="wireless_client_detect" style="margin-left:10px;position:absolute;display:none">
@@ -506,9 +509,10 @@ function high_power_auto_channel(){
 							<option value="0" <% nvram_match("wl_nmode_x", "0","selected"); %>><#Auto#></option>
 							<option value="1" <% nvram_match("wl_nmode_x", "1","selected"); %>>N Only</option>
 							<option value="2" <% nvram_match("wl_nmode_x", "2","selected"); %>>Legacy</option>
+							<option value="8" <% nvram_match("wl_nmode_x", "8","selected"); %>>N/AC Mixed</option>
 						</select>
-						<span id="wl_optimizexbox_span" style="display:none"><input type="checkbox" name="wl_optimizexbox_ckb" id="wl_optimizexbox_ckb" value="<% nvram_get("wl_optimizexbox"); %>" onclick="document.form.wl_optimizexbox.value=(this.checked==true)?1:0;"> Optimized for Xbox</input></span>
-						<span id="wl_gmode_checkbox" style="display:none;"><input type="checkbox" name="wl_gmode_check" id="wl_gmode_check" value="" onClick="wl_gmode_protection_check();"> b/g Protection</input></span>
+						<span id="wl_optimizexbox_span" style="display:none"><input type="checkbox" name="wl_optimizexbox_ckb" id="wl_optimizexbox_ckb" value="<% nvram_get("wl_optimizexbox"); %>" onclick="document.form.wl_optimizexbox.value=(this.checked==true)?1:0;"> <#WLANConfig11b_x_Mode_xbox#></input></span>
+						<span id="wl_gmode_checkbox" style="display:none;"><input type="checkbox" name="wl_gmode_check" id="wl_gmode_check" value="" onClick="wl_gmode_protection_check();"> <#WLANConfig11b_x_Mode_protectbg#></input></span>
 						<span id="wl_nmode_x_hint" style="display:none;"><br><#WLANConfig11n_automode_limition_hint#><br></span>
 						<span id="wl_NOnly_note" style="display:none;"></span>
 						<!-- [N only] is not compatible with current guest network authentication method(TKIP or WEP),  Please go to <a id="gn_link" href="/Guest_network.asp?af=wl_NOnly_note" target="_blank" style="color:#FFCC00;font-family:Lucida Console;text-decoration:underline;">guest network</a> and change the authentication method. -->

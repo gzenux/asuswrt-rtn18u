@@ -100,7 +100,6 @@ $("document").ready(function() {
 	}
 	
 	var browserVer = navigator.userAgent.toLowerCase();
-	
 	if( isIE() && 
 		getInternetExplorerVersion() <= 7 ){
 		
@@ -133,15 +132,6 @@ $("document").ready(function() {
 	
 	$("input#username").focus();
 });
-
-function parseXml(xml) {
-  if (jQuery.browser.msie) {
-  	var xmlDoc = new ActiveXObject("Microsoft.XMLDOM"); 
-    xmlDoc.loadXML(xml);
-    xml = xmlDoc;
-  }   
-  return xml;
-}
 
 function generateCaptcha(){
 	
@@ -191,17 +181,6 @@ function generateCaptcha(){
 function adjustUI(){
 	var logo_left = ($(document).width() - $("div#login_logo").width())/2;
 	$("div#login_logo").css("left", logo_left);	
-}
-
-function getInternetExplorerVersion(){
-   var rv = -1; // Return value assumes failure.
-   if (navigator.appName == 'Microsoft Internet Explorer'){
-      var ua = navigator.userAgent;
-      var re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
-      if (re.exec(ua) != null)
-         rv = parseFloat( RegExp.$1 );
-   }
-   return rv;
 }
 
 function doOK(e) {
@@ -254,17 +233,6 @@ function doOK(e) {
 			}, 100);
 		}
 	});
-}
-
-function getUrlVars(){
-    var vars = [], hash;
-    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-    for(var i = 0; i < hashes.length; i++){
-        hash = hashes[i].split('=');
-        vars.push(hash[0]);
-        vars[hash[0]] = hash[1];
-    }
-    return vars;
 }
 
 function onKeyHandler(e){

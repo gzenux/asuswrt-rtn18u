@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"> 
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -75,14 +75,15 @@ function initial(){
 }
 
 function pptpd_connected_status(){
-	var rule_num = $("pptpd_clientlist_table").rows.length;
+	var rule_num = document.getElementById('pptpd_clientlist_table').rows.length;
 	var username_status = "";	
 		for(var x=0; x < rule_num; x++){
 			var ind = x+1;
 			username_status = "status"+ind;
 			if(pptpd_connected_clients.length >0){
 				for(var y=0; y<pptpd_connected_clients.length; y++){
-					if($("pptpd_clientlist_table").rows[x].cells[1].innerHTML == pptpd_connected_clients[y].username){
+									
+					if(document.getElementById('pptpd_clientlist_table').rows[x].cells[1].title == pptpd_connected_clients[y].username){
 						document.getElementById(username_status).innerHTML = '<a class="hintstyle2" href="javascript:void(0);" onClick="showPPTPClients(\''+pptpd_connected_clients[y].username+'\');"><#Connected#></a>';
 							break;
 					}		
@@ -105,7 +106,7 @@ function openvpnd_connected_status(){
 			username_status = "conn"+ind;
 			if(openvpnd_connected_clients.length >0){
 				for(var y=0; y<openvpnd_connected_clients.length; y++){
-					if($("openvpnd_clientlist_table").rows[x].cells[1].innerHTML == openvpnd_connected_clients[y].username){
+					if($("openvpnd_clientlist_table").rows[x].cells[1].title == openvpnd_connected_clients[y].username){
 							document.getElementById(username_status).innerHTML = '<a class="hintstyle2" href="javascript:void(0);" onClick="showOpenVPNClients(\''+openvpnd_connected_clients[y].username+'\');"><#Connected#></a>';
 							break;
 					}		
@@ -208,9 +209,14 @@ function applyRule(){
 	}else{		//disable server
 			document.form.action_script.value = "stop_vpnd";
 			document.form.pptpd_enable.value = "0";
-			document.form.pptpd_clientlist.disabled = true;
-			document.form.vpn_server_clientlist.disabled = true;	
-
+			if(document.getElementById("PPTP_setting").style.display == ""){
+				document.form.pptpd_clientlist.value = get_group_value("pptpd");
+				document.form.vpn_server_clientlist.disabled = true;
+			}
+			if(document.getElementById("OpenVPN_setting").style.display == ""){	
+				document.form.vpn_server_clientlist.value = get_group_value("openvpnd");
+				document.form.pptpd_clientlist.disabled = true;
+			}	
 	}	
 	
 	showLoading();
@@ -249,7 +255,7 @@ function validForm(mode){
 			alert("<#JS_fieldblank#>");
 			valid_username.focus();
 			return false;		
-		}else if(!Block_chars(valid_username, [" ", "@", "*", "+", "|", ":", "?", "<", ">", ",", ".", "/", ";", "[", "]", "\\", "=", "\"" ])){
+		}else if(!Block_chars(valid_username, [" ", "@", "*", "+", "|", ":", "?", "<", ">", ",", ".", "/", ";", "[", "]", "\\", "=", "\"", "&" ])){
 			return false;		
 		}
 
@@ -257,7 +263,7 @@ function validForm(mode){
 			alert("<#JS_fieldblank#>");
 			valid_password.focus();
 			return false;
-		}else if(!Block_chars(valid_password, ["<", ">"])){
+		}else if(!Block_chars(valid_password, ["<", ">", "&"])){
 			return false;		
 		}
 		
@@ -272,7 +278,7 @@ function addRow_Group(upper, flag){
 
 		var rule_num = $(table_id).rows.length;
 		var item_num = $(table_id).rows[0].cells.length;		
-		if(rule_num > upper){
+		if(rule_num >= upper){
 			alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
 			return false;	
 		}		
@@ -284,7 +290,7 @@ function addRow_Group(upper, flag){
 		
 		var rule_num = $(table_id).rows.length;
 		var item_num = $(table_id).rows[0].cells.length;		
-		if(rule_num > upper+1){
+		if(rule_num >= upper+1){
 			alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
 			return false;	
 		}
@@ -294,7 +300,7 @@ function addRow_Group(upper, flag){
 		//Viz check same rule  //match(username) is not accepted
 		if(item_num >=2){
 			for(i=0; i<rule_num; i++){	
-				if(username_obj.value == $(table_id).rows[i].cells[1].innerHTML){
+				if(username_obj.value == $(table_id).rows[i].cells[1].title){
 					alert("<#JS_duplicate#>");
 					username_obj.focus();
 					username_obj.select();
@@ -320,17 +326,17 @@ function del_Row(rowdata, flag){
   
   var i=rowdata.parentNode.parentNode.rowIndex;
   if(flag == "pptpd"){
-  		$('pptpd_clientlist_table').deleteRow(i);
+  		document.getElementById('pptpd_clientlist_table').deleteRow(i);
   
   		var pptpd_clientlist_value = "";
-		for(k=0; k<$('pptpd_clientlist_table').rows.length; k++){
-			for(j=1; j<$('pptpd_clientlist_table').rows[k].cells.length-1; j++){
+		for(k=0; k<document.getElementById('pptpd_clientlist_table').rows.length; k++){
+			for(j=1; j<document.getElementById('pptpd_clientlist_table').rows[k].cells.length-1; j++){
 				if(j == 1)
 					pptpd_clientlist_value += "<";
 				else{
-					pptpd_clientlist_value += $('pptpd_clientlist_table').rows[k].cells[1].innerHTML;
+					pptpd_clientlist_value += document.getElementById('pptpd_clientlist_table').rows[k].cells[1].innerHTML;
 					pptpd_clientlist_value += ">";
-					pptpd_clientlist_value += $('pptpd_clientlist_table').rows[k].cells[2].innerHTML;
+					pptpd_clientlist_value += document.getElementById('pptpd_clientlist_table').rows[k].cells[2].innerHTML;
 				}
 			}
 		}
@@ -386,7 +392,7 @@ function showpptpd_clientlist(){
 										pptpd_clientlist_col[0]=pptpd_clientlist_col[0].substring(0, 30)+"...";
 										code +='<td width="35%" title="'+overlib_str0[i]+'">'+ pptpd_clientlist_col[0] +'</td>';
 								}else
-										code +='<td width="35%">'+ pptpd_clientlist_col[0] +'</td>';
+										code +='<td width="35%" title="'+pptpd_clientlist_col[0]+'">'+ pptpd_clientlist_col[0] +'</td>';
 						}
 						else if(j == 1){
 								if(pptpd_clientlist_col[1].length >32){
@@ -426,17 +432,17 @@ function showopenvpnd_clientlist(){
 				for(var j = 0; j < vpn_server_clientlist_col.length; j++){
 						if(j == 0){
 								if(vpn_server_clientlist_col[0].length >32){
-										overlib_str0[i] += vpn_server_clientlist_col[0];
+										overlib_str2[i] += vpn_server_clientlist_col[0];
 										vpn_server_clientlist_col[0] = vpn_server_clientlist_col[0].substring(0, 30)+"...";
-										code +='<td width="35%" title="'+overlib_str0[i]+'">'+ vpn_server_clientlist_col[0] +'</td>';
+										code +='<td width="35%" title="'+overlib_str2[i]+'">'+ vpn_server_clientlist_col[0] +'</td>';
 								}else
-										code +='<td width="35%">'+ vpn_server_clientlist_col[0] +'</td>';
+										code +='<td width="35%" title="'+vpn_server_clientlist_col[0]+'">'+ vpn_server_clientlist_col[0] +'</td>';
 						}
 						else if(j ==1){
 								if(vpn_server_clientlist_col[1].length >32){
-										overlib_str1[i] += vpn_server_clientlist_col[1];
+										overlib_str3[i] += vpn_server_clientlist_col[1];
 										vpn_server_clientlist_col[1] = vpn_server_clientlist_col[1].substring(0, 30)+"...";
-										code +='<td width="35%" title="'+overlib_str1[i]+'">'+ vpn_server_clientlist_col[1] +'</td>';
+										code +='<td width="35%" title="'+overlib_str3[i]+'">'+ vpn_server_clientlist_col[1] +'</td>';
 								}else
 										code +='<td width="35%">'+ vpn_server_clientlist_col[1] +'</td>';
 						} 
@@ -490,16 +496,20 @@ function valid_IP(obj_name, obj_flag){
 		}
 }
 
-function parsePPTPClients(){
-	var Loginfo = document.form.status_pptpd.value;
+function parsePPTPClients(){	
+	var Loginfo = document.getElementById("pptp_connected_info").firstChild.innerHTML;
 	if (Loginfo == "") {return;}
 	
+	Loginfo = Loginfo.replace('\r\n', '\n');
+	Loginfo = Loginfo.replace('\n\r', '\n');
+	Loginfo = Loginfo.replace('\r', '\n');	
+	
 	var lines = Loginfo.split('\n');	
-	for (i = 0; i < lines.length-1; i++){
-		var fields = lines[i].split(' ');		
-		if ( fields.length != 5 ) continue;		
-   	pptpd_connected_clients.push({"username":fields[4],"remoteIP":fields[3],"VPNIP":fields[2]});
-	}	
+	for (i = 0; i < lines.length; i++){
+				var fields = lines[i].split(' ');
+				if ( fields.length != 5 ) continue;		
+   			pptpd_connected_clients.push({"username":fields[4],"remoteIP":fields[3],"VPNIP":fields[2]});
+	}
 }
 var _caption = "";
 function showPPTPClients(uname) {
@@ -507,7 +517,7 @@ function showPPTPClients(uname) {
 	var statustitle = "";
 	statustitle += "<div style=\"text-decoration:underline;\">VPN IP ( Remote IP )</div>";
 	_caption = statustitle;
-	 
+	
 	for (i = 0; i < pptpd_connected_clients.length; i++){
 		if(uname == pptpd_connected_clients[i].username){		
 			statusmenu += "<div>"+pptpd_connected_clients[i].VPNIP+" \t( "+pptpd_connected_clients[i].remoteIP+" )</div>";
@@ -517,12 +527,16 @@ function showPPTPClients(uname) {
 	return overlib(statusmenu, WIDTH, 260, OFFSETX, -360, LEFT, STICKY, CAPTION, _caption, CLOSETITLE, '');	
 }
 
-function parseOpenVPNClients(){		//192.168.123.82:46954 10.8.0.6 pine\n
-	var Loginfo = document.form.status_openvpnd.value;
+function parseOpenVPNClients(){		//192.168.123.82:46954 10.8.0.6 pine\n	
+	var Loginfo = document.getElementById("openvpn_connected_info").firstChild.innerHTML;
 	if (Loginfo == "") {return;}
+
+	Loginfo = Loginfo.replace('\r\n', '\n');
+	Loginfo = Loginfo.replace('\n\r', '\n');
+	Loginfo = Loginfo.replace('\r', '\n');
 	
 	var lines = Loginfo.split('\n');
-	for (i = 0; i < lines.length-1; i++){
+	for (i = 0; i < lines.length; i++){
 		var fields = lines[i].split(' ');
 		if ( fields.length != 3 ) continue;		
    	openvpnd_connected_clients.push({"username":fields[2],"remoteIP":fields[0],"VPNIP":fields[1]});
@@ -621,9 +635,30 @@ $j.ajax({
     		},
 
     		success: function(){
-      			if(vpnd_state != '2'){
+    				if(vpnd_state != '2' && (vpn_server1_errno == '1' || vpn_server1_errno == '2')){
+    						document.getElementById('openvpn_initial').style.display = "none";    						
+      					document.getElementById('openvpn_error_message').innerHTML = "<span>Routing conflict! <p>Please check your IP address configuration of client profile on advanced setting page or check routing table on system log.</span>";
+      					document.getElementById('openvpn_error_message').style.display = "";
+      			}
+      			else if(vpnd_state != '2' && vpn_server1_errno == '4'){
+      					document.getElementById('openvpn_initial').style.display = "none";
+      					document.getElementById('openvpn_error_message').innerHTML = "<span>Certification Auth. /Server cert. /Server Key field error! <p>Please check your contents of Keys&Certification on advanced setting page.</span>";
+      					document.getElementById('openvpn_error_message').style.display = "";
+      			}
+      			else if(vpnd_state != '2' && vpn_server1_errno == '5'){
+      					document.getElementById('openvpn_initial').style.display = "none";
+      					document.getElementById('openvpn_error_message').innerHTML = "<span>Diffle Hellman parameters field error!  <p>Please check your contents of Keys&Certification on advanced setting page.</span>";
+      					document.getElementById('openvpn_error_message').style.display = "";
+      			}
+      			else if(vpnd_state == '-1' && vpn_server1_errno == '0'){
+      					document.getElementById('openvpn_initial').style.display = "none";
+      					document.getElementById('openvpn_error_message').innerHTML = "<span>OpenVPN server daemon start fail!  <p>Please check your device environment or contents on advanced setting page.</span>";
+      					document.getElementById('openvpn_error_message').style.display = "";
+      			}
+      			else if(vpnd_state != '2'){
       					setTimeout("update_vpn_server_state();", 1000);
-      			}else{	// OpenVPN server ready , vpn_server1_state==2
+      			}
+      			else{	// OpenVPN server ready , vpn_server1_state==2
       					setTimeout("location.href='Advanced_VPN_Content.asp';", 1000);
       					return;
 						}
@@ -663,6 +698,8 @@ function switchPage(page){
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
 <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
+<div id="pptp_connected_info" style="display:none;"><pre><% nvram_dump("pptp_connected",""); %></pre></div>
+<div id="openvpn_connected_info" style="display:none;"><pre><% nvram_dump("openvpn_connected",""); %></pre></div>
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
@@ -690,10 +727,10 @@ function switchPage(page){
 			<input type="hidden" name="pptpd_enable" value="<% nvram_get("pptpd_enable"); %>">
 			<input type="hidden" name="pptpd_broadcast" value="<% nvram_get("pptpd_broadcast"); %>">	
 			<input type="hidden" name="pptpd_clientlist" value="<% nvram_get("pptpd_clientlist"); %>">
-			<input type="hidden" name="status_pptpd" value="<% nvram_dump("pptp_connected",""); %>">
+			<!-- input type="hidden" name="status_pptpd" value="<% nvram_dump("pptp_connected",""); %>" -->
 			<!-- openvpn -->
 			<input type="hidden" name="vpn_server_clientlist" value="<% nvram_get("vpn_server_clientlist"); %>">
-			<input type="hidden" name="status_openvpnd" value="<% nvram_dump("openvpn_connected",""); %>">
+			<!-- input type="hidden" name="status_openvpnd" value="<% nvram_dump("openvpn_connected",""); %>" -->
 			<table width="98%" border="0" align="left" cellpadding="0" cellspacing="0">				
 				<tr>
 					<td valign="top" >
@@ -760,7 +797,7 @@ function switchPage(page){
             								<td>
 																<div id="export_div">
 	              									<input id="exportToLocal" class="button_gen" type="button" value="<#btn_Export#>" />
-	              									<input id="exportViaEmail" class="button_gen" type="button" value="via Email" />
+	              									<input id="exportViaEmail" class="button_gen" type="button" value="via Email" style="display:none;"/><!-- Viz hide it temp 2014.06 -->
 																</div>
 																<script type="text/javascript">
 																	document.getElementById("exportToLocal").onclick = function(){
@@ -773,10 +810,12 @@ function switchPage(page){
 																</script>
               									<div id="openvpn_initial" style="display:none;margin-left:5px;">
               											<span>              												
-              												 Initialinzing the settings of OpenVPN server now, please wait a few minutes to let the server to setup completed before VPN clients establish the connection.
+              												 <#vpn_openvpn_init#>
               												 <img id="initialing" src="images/InternetScan.gif" />
               											</span>              											
               									</div>
+              									<div id="openvpn_error_message" style="display:none;margin-left:5px;">              											
+              									</div>	
             								</td>
           								</tr>
 									</table>									
@@ -963,7 +1002,7 @@ function switchPage(page){
 							<option value="smtp.gmail.com" <% nvram_match( "PM_SMTP_SERVER", "smtp.gmail.com", "selected"); %>>Google Gmail</option>
 				    </select>
 						<script>
-							var smtpServer = new Array()
+							var smtpList = new Array()
 							smtpList = [
 								{smtpServer: "smtp.gmail.com", smtpPort: "587", smtpDomain: "gmail.com"},
 								{end: 0}
@@ -995,7 +1034,7 @@ function switchPage(page){
 				<tr>
 					<th>PM_SMTP_AUTH_PASS</th>
 					<td valign="top">
-						<input type="password" class="input_32_table" name="PM_SMTP_AUTH_PASS_TMP" value="<% nvram_get("PM_SMTP_AUTH_PASS"); %>">
+						<input type="password" class="input_32_table" name="PM_SMTP_AUTH_PASS_TMP" maxlength="100" value="">
 					</td>
 				</tr>    				      			
 				<tr>

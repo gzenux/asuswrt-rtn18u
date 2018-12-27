@@ -29,6 +29,17 @@ span{
 
 <script>
 <% wanlink(); %>
+<% secondary_wanlink(); %>
+
+
+var wan_primary = "";
+var wan0_primary = '<% nvram_get("wan0_primary"); %>';
+var wan1_primary = '<% nvram_get("wan1_primary"); %>';
+
+if(wan0_primary == 1)
+	wan_primary = "wan0";
+else if(wan1_primary == 1)
+	wan_primary = "wan1";
 
 var auth_mode2 = '<% nvram_get("wl0_auth_mode_x"); %>';
 var wep_x2 = '<% nvram_get("wl0_wep_x"); %>';
@@ -52,6 +63,16 @@ var webs_state_update = '<% nvram_get("webs_state_update"); %>';
 var webs_state_upgrade = '<% nvram_get("webs_state_upgrade"); %>';
 var webs_state_error = '<% nvram_get("webs_state_error"); %>';
 var webs_state_info = '<% nvram_get("webs_state_info"); %>';
+
+var auth_mode_5_2 = '<% nvram_get("wl2_auth_mode_x"); %>';
+var wep_x_5_2 = '<% nvram_get("wl2_wep_x"); %>';
+var key_x_5_2 = '<% nvram_get("wl2_key"); %>';
+var wpa_mode_5_2 = '<% nvram_get("wl2_wpa_mode"); %>';
+
+if(parent.tmo_support)
+        var theUrl = "cellspot.router"; 
+else
+        var theUrl = "router.asus.com";
 
 var timezones = {
 	"UTC12":	"(GMT-12:00)",
@@ -263,6 +284,14 @@ function QKfinish_load_body(){
 	$("#security_item2")[0].innerHTML = "<#QIS_finish_wireless_item2#>";
 	$("#security_item5")[0].innerHTML = "<#QIS_finish_wireless_item2#>";
 
+	if(parent.wl_info.band5g_2_support){
+		parent.document.getElementById("contentM").style.height = "630px";
+		$("#band5g_desc")[0].innerHTML = "(5GHz-1)";
+		$("#ssid_5_2_item")[0].innerHTML = "<#QIS_finish_wireless_item1#>";
+		$("#ssid_5_2")[0].innerHTML = handle_show_str(decodeURIComponent('<% nvram_char_to_ascii("", "wl2_ssid"); %>'));
+		$("#security_item5_2")[0].innerHTML = "<#QIS_finish_wireless_item2#>";
+	}
+
 		shown_str = "";
 		if(auth_mode2 == "open" && wep_x2 == "0"){
 			$("#security2")[0].innerHTML = "Open System";
@@ -375,6 +404,67 @@ function QKfinish_load_body(){
 			}
 			$("#key5")[0].innerHTML = handle_show_str(decodeURIComponent(shown_str));
 		}
+
+		if(!parent.wl_info.band5g_2_support){
+			$("#desc2g")[0].style.display = "none";
+			$("#freqtitle5_2")[0].style.display = "none";
+			$("#ssid5_2_block")[0].style.display = "none";
+			$("#key5_2_block")[0].style.display = "none";
+			$("#security5_2_block")[0].style.display = "none";
+		}
+		else{
+			shown_str = "";
+			if(auth_mode_5_2 == "open" && wep_x_5_2 == "0"){
+				$("#security5_2")[0].innerHTML = "Open System";
+				$("#key5_block_2")[0].style.display = "none";
+			}
+			else if(auth_mode_5_2 == "open" && wep_x_5_2 != "0"){
+				$("#security5_2")[0].innerHTML = "Open System";
+				$("#key5_2_item")[0].innerHTML = "<#WLANConfig11b_WEPKey_itemname#>";
+				if(key_x_5_2 ==1)
+					shown_str = '<% nvram_get("wl2_key1"); %>';
+				else if(key_x_5_2 ==2)	
+					shown_str = '<% nvram_get("wl2_key2"); %>';
+				else if(key_x_5_2 ==3)
+					shown_str = '<% nvram_get("wl2_key3"); %>';
+				else if(key_x_5_2 ==4)		
+					shown_str = '<% nvram_get("wl2_key4"); %>';
+			}
+			else if(auth_mode_5_2 == "shared"){
+				$("#security5_2")[0].innerHTML = "Shared Key";
+				$("#key5_2_item")[0].innerHTML = "<#WLANConfig11b_WEPKey_itemname#>";
+				if(key_x_5_2 ==1)
+					shown_str = '<% nvram_get("wl2_key1"); %>';
+				else if(key_x_5_2 ==2)	
+					shown_str = '<% nvram_get("wl2_key2"); %>';
+				else if(key_x_5_2 ==3)
+					shown_str = '<% nvram_get("wl2_key3"); %>';
+				else if(key_x_5_2 ==4)		
+					shown_str = '<% nvram_get("wl2_key4"); %>';
+			}
+			else if(auth_mode_5_2 == "psk"){
+				$("#security5_2")[0].innerHTML = "WPA-Personal - TKIP";
+				$("#key5_2_item")[0].innerHTML = "<#QIS_finish_wireless_item3#>";
+				shown_str = '<% nvram_char_to_ascii("", "wl2_wpa_psk"); %>';
+			}
+			else if(auth_mode_5_2 == "psk2"){
+				$("#security5_2")[0].innerHTML = "WPA2-Personal - AES";
+				$("#key5_2_item")[0].innerHTML = "<#QIS_finish_wireless_item3#>";
+				shown_str = '<% nvram_char_to_ascii("", "wl2_wpa_psk"); %>';
+			}
+			else if(auth_mode_5_2 == "pskpsk2"){
+				$("#security5_2")[0].innerHTML = "WPA-Auto-Personal - TKIP + AES";
+				$("#key5_2_item")[0].innerHTML = "<#QIS_finish_wireless_item3#>";
+				shown_str = '<% nvram_char_to_ascii("", "wl2_wpa_psk"); %>';
+			}
+			else{	
+				$("#freqtitle5_2")[0].style.display = "none";
+				$("#ssid5_2_block")[0].style.display = "none";
+				$("#key5_2_block")[0].style.display = "none";
+				$("#security5_2_block")[0].style.display = "none";
+			}
+			$("#key5_2")[0].innerHTML = handle_show_str(decodeURIComponent(shown_str));
+		}		
 
 	//Repeater mode wireless LAN 2.4G/5G
 	if('<% nvram_get("sw_mode"); %>' == "2"){
@@ -515,7 +605,7 @@ function QKfinish_load_body(){
 	
 	if(wanlink_type() == "dhcp")
 		var wanlink_type_conv = "<#BOP_ctype_title1#>";
-	else 	if(wanlink_type() == "pppoe" ||wanlink_type() == "PPPOE" )
+	else 	if(wanlink_type() == "pppoe" || wanlink_type() == "PPPOE" )
 		var wanlink_type_conv = "PPPoE";
 	else 	if(wanlink_type() == "static")
 		var wanlink_type_conv = "<#BOP_ctype_title5#>";
@@ -524,9 +614,30 @@ function QKfinish_load_body(){
 	else 	if(wanlink_type() == "l2tp")
 		var wanlink_type_conv = "L2TP";
 	else
-		var wanlink_type_conv = wanlink_type();	
+		var wanlink_type_conv = wanlink_type();
+
+	if(secondary_wanlink_type() == "dhcp")
+		var secondary_wanlink_type_conv = "<#BOP_ctype_title1#>";
+	else 	if(secondary_wanlink_type() == "pppoe" || secondary_wanlink_type() == "PPPOE" )
+		var secondary_wanlink_type_conv = "PPPoE";
+	else 	if(secondary_wanlink_type() == "static")
+		var secondary_wanlink_type_conv = "<#BOP_ctype_title5#>";
+	else 	if(secondary_wanlink_type() == "pptp")
+		var secondary_wanlink_type_conv = "PPTP";
+	else 	if(secondary_wanlink_type() == "l2tp")
+		var secondary_wanlink_type_conv = "L2TP";
+	else
+		var secondary_wanlink_type_conv = secondary_wanlink_type();	
 	
-	$("#wantype")[0].innerHTML = wanlink_type_conv;
+	if(parent.dualWAN_support){
+		if(wan_primary == "wan0")
+			$("#wantype")[0].innerHTML = wanlink_type_conv;
+		else if(wan_primary == "wan1")	 
+			$("#wantype")[0].innerHTML = secondary_wanlink_type_conv;
+	
+	}
+	else
+		$("#wantype")[0].innerHTML = wanlink_type_conv;
 
 	// 2013.09.24 Viz: Hide this button to make sure User click 'next step'
 	//if('<% nvram_get("autodet_auxstate"); %>' == '6')
@@ -543,7 +654,7 @@ function QKfinish_load_body(){
 			$("#wlcstate")[0].innerHTML = "<#APSurvey_action_ConnectingStatus24#>";
 		}
 		else{
-			$("#wlcstate")[0].innerHTML = "<span style='color:#FC0;text-decoration:underline;cursor:pointer;' onclick=\"javascript:parent.location.href=\'http://router.asus.com/QIS_wizard.htm?flag=sitesurvey\';\"><#APSurvey_action_ConnectingStatus0#></span>";
+			$("#wlcstate")[0].innerHTML = "<span style='color:#FC0;text-decoration:underline;cursor:pointer;' onclick=\"javascript:parent.location.href=\'http://'+ theUrl +'/QIS_wizard.htm?flag=sitesurvey\';\"><#APSurvey_action_ConnectingStatus0#></span>";
 		}
 
 		$("#wlcip")[0].innerHTML = reIP;
@@ -552,7 +663,16 @@ function QKfinish_load_body(){
 		$(".wlcItem").css("display", "");
 	}
 	else{
-		$("#wanip")[0].innerHTML = wanlink_ipaddr();
+		if(parent.dualWAN_support){
+			if(wan_primary == "wan0")
+				$("#wanip")[0].innerHTML = wanlink_ipaddr();
+			else if(wan_primary == "wan1")	 
+				$("#wanip")[0].innerHTML = secondary_wanlink_ipaddr();
+		}
+		else{
+			$("#wanip")[0].innerHTML = wanlink_ipaddr();
+		}
+
 		$("#lanip_item")[0].innerHTML = "LAN IP";
 		$("#lanip")[0].innerHTML = reIP;
 		$(".wlcItem").css("display", "none");
@@ -562,8 +682,7 @@ function QKfinish_load_body(){
 	$("#account_item")[0].innerHTML = "<#QIS_finish_admin_item1#>";
 	$("#account")[0].innerHTML = '<% nvram_get("http_username"); %>';
 	$("#password_item")[0].innerHTML = "<#QIS_finish_admin_item2#>";
-	var http_password = decodeURIComponent('<% nvram_char_to_ascii("", "http_passwd"); %>');
- 	$("#password")[0].innerHTML = http_password;
+ 	$("#password")[0].innerHTML = "*";
 	
 	//NTP sync or not
 	if('<% nvram_get("svc_ready"); %>' == '0')
@@ -632,7 +751,7 @@ function QKfinish_load_body(){
 }
 
 function gotoASUS(){
-	parent.location.href = "http://support.asus.com";
+	parent.location.href = "http://www.asus.com/support/";
 }
 
 function goto_tutorial(){
@@ -694,15 +813,33 @@ function submitenter(myfield,event){
 
 function set_timezone(){
 	var systime = new Date();
-	var system_timezone_dut = document.form.time_zone.value;
-	var system_timezone = parseInt(document.form.time_zone_x.value.substring(3));
-	var client_timezone = systime.getTimezoneOffset();
-	if(parent.isFirst && (system_timezone*60 != client_timezone)){		
-		systime_millsec += (-client_timezone*60000);
+	Date.prototype.stdTimezoneOffset_north = function() {
+    var jan = new Date(this.getFullYear(), 0, 1);
+    var jul = new Date(this.getFullYear(), 6, 1);
+    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+	}
+
+	Date.prototype.stdTimezoneOffset_south = function() {
+    var jan = new Date(this.getFullYear(), 0, 1);
+    var jul = new Date(this.getFullYear(), 6, 1);
+    return Math.min(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+	}
+
+	Date.prototype.dst = function() {
+    return (this.getTimezoneOffset() < this.stdTimezoneOffset_north() || this.getTimezoneOffset() > this.stdTimezoneOffset_south());
 	}	
+	
+	var system_timezone_dut = document.form.time_zone.value;
+	var system_timezone = parseInt(document.form.time_zone_x.value.substring(3));	
+	var client_timezone = systime.getTimezoneOffset();
+
+	if(parent.isFirst && (system_timezone*60 != client_timezone)){		//Tune DUT time while x_Setting=0
+			systime_millsec += (-client_timezone*60000);			
+	}
+	
 	document.getElementById('change_tz').innerHTML = timezones[system_timezone_dut];
 
-	if(system_timezone_dut.search("DST") >= 0 && "<% nvram_get("time_zone_dst"); %>" == "1"){
+	if(system_timezone_dut.search("DST") >= 0){
 		document.getElementById('dstzone').style.display = "";
 		document.getElementById('dstzone').innerHTML = "<#General_x_SystemTime_dst#>";
 	}
@@ -740,6 +877,8 @@ function showclock(){
 <input type="hidden" name="wl1_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl1_ssid"); %>">
 <input type="hidden" name="wl0_wpa_psk" value="<% nvram_char_to_ascii("WLANConfig11b", "wl0_wpa_psk"); %>">
 <input type="hidden" name="wl1_wpa_psk" value="<% nvram_char_to_ascii("WLANConfig11b", "wl1_wpa_psk"); %>">
+<input type="hidden" name="wl2_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl2_ssid"); %>">
+<input type="hidden" name="wl2_wpa_psk" value="<% nvram_char_to_ascii("WLANConfig11b", "wl2_wpa_psk"); %>">
 <input type="hidden" name="time_zone_x" value="<% nvram_get("time_zone_x"); %>" disabled>
 <input type="hidden" name="time_zone" value="<% nvram_get("time_zone"); %>" disabled>
 <div class="QISmain" id="QISmain" style="display:none">
@@ -789,7 +928,7 @@ function showclock(){
 
 	<!-- WL 5GHz -->
 	<tr id="freqtitle5">
-		<td align="left" colspan="4" style="color:#5AD;font-size:16px; border-bottom:1px dashed #AAA;"><#menu5_1#> <span style="color:#5AD;">(5GHz)</span></td>	
+		<td align="left" colspan="4" style="color:#5AD;font-size:16px; border-bottom:1px dashed #AAA;"><#menu5_1#> <span id="band5g_desc" style="color:#5AD;">(5GHz)</span></td>	
 	</tr>
 	<tr id="ssid5_block">
 	  <th width="180"><span id="ssid_5_item"></span></th>
@@ -807,6 +946,29 @@ function showclock(){
 	  <th width="180"><span id="security_item5"></span></th>
 	  <td class="QISformtd">
 			<span id="security5"></span>
+	  </td>
+	</tr>
+
+		<!-- WL 5GHz-2 -->
+	<tr id="freqtitle5_2">
+		<td align="left" colspan="4" style="color:#5AD;font-size:16px; border-bottom:1px dashed #AAA;"><#menu5_1#> <span style="color:#5AD;">(5GHz-2)</span></td>	
+	</tr>
+	<tr id="ssid5_2_block">
+	  <th width="180"><span id="ssid_5_2_item"></span></th>
+	  <td class="QISformtd">
+			<span id="ssid_5_2" style="white-space: pre;"></span>
+	  </td>
+	</tr>
+	<tr id="key5_2_block">
+	  <th width="180"><span id="key5_2_item"></span></th>
+	  <td class="QISformtd">
+			<span id="key5_2"></span>
+	  </td>
+	</tr>
+	<tr id="security5_2_block">
+	  <th width="180"><span id="security_item5_2"></span></th>
+	  <td class="QISformtd">
+			<span id="security5_2"></span>
 	  </td>
 	</tr>
 

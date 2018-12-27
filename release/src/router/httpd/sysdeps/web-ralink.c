@@ -88,7 +88,7 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 {
 #ifdef REMOVE
 	int needlen = 0, listlen, i;
-    	netconf_nat_t *nat_list = 0;
+	netconf_nat_t *nat_list = 0;
 //	netconf_nat_t **plist, *cur;
 #endif
 	// value need to init
@@ -105,16 +105,16 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 	ret += websWrite(wp, "Destination     Proto.  Port Range  Redirect to\n");
 
 #ifdef REMOVE
-    	netconf_get_nat(NULL, &needlen);
+	netconf_get_nat(NULL, &needlen);
 
-    	if (needlen > 0) 
+	if (needlen > 0)
 	{
 
 		nat_list = (netconf_nat_t *) malloc(needlen);
 		if (nat_list) {
-	    		memset(nat_list, 0, needlen);
-	    		listlen = needlen;
-	    		if (netconf_get_nat(nat_list, &listlen) == 0 && needlen == listlen) {
+			memset(nat_list, 0, needlen);
+			listlen = needlen;
+			if (netconf_get_nat(nat_list, &listlen) == 0 && needlen == listlen) {
 				listlen = needlen/sizeof(netconf_nat_t);
 
 				for (i=0;i<listlen;i++)
@@ -146,7 +146,7 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 						else
 						sprintf(line, "%s %-11d", line, ntohs(nat_list[i].match.dst.ports[0]));
 					}
-					else 
+					else
 					{
 						sprintf(tstr, "%d:%d", ntohs(nat_list[i].match.dst.ports[0]),
 						ntohs(nat_list[i].match.dst.ports[1]));
@@ -156,10 +156,10 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 					ret += websWrite(wp, line);
 				}
 				}
-	    		}
-	    		free(nat_list);
+			}
+			free(nat_list);
 		}
-    	}
+	}
 #endif
 	return ret;
 }
@@ -368,7 +368,7 @@ char* GetBW(int BW)
 		case BW_40:
 			return "40M";
 
-#if defined(RTAC52U) || defined(RTAC51U)
+#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN54U) 
 		case BW_80:
 			return "80M";
 #endif
@@ -393,7 +393,7 @@ char* GetPhyMode(int Mode)
 		case MODE_HTGREENFIELD:
 			return "GREEN";
 
-#if defined(RTAC52U) || defined(RTAC51U)
+#if defined(RTAC52U) || defined(RTAC51U)  || defined(RTN54U) 
 		case MODE_VHT:
 			return "VHT";
 #endif
@@ -467,11 +467,10 @@ _fn_(_st_ HTSetting)							\
 	return (MCSMappingRateTable[rate_index] * 5)/10;		\
 }
 
-int FN_GETRATE(getRate,      MACHTTRANSMIT_SETTING)		//getRate(MACHTTRANSMIT_SETTING)
-int FN_GETRATE(getRate_2g,   MACHTTRANSMIT_SETTING_2G)		//getRate_2g(MACHTTRANSMIT_SETTING_2G)
-#if defined(RTAC52U) || defined(RTAC51U)
-int FN_GETRATE(getRate_11ac, MACHTTRANSMIT_SETTING_11AC)	//getRate_11ac(MACHTTRANSMIT_SETTING_11AC)
-#endif
+#if defined(RTCONFIG_HAS_5G)
+int FN_GETRATE(getRate,      MACHTTRANSMIT_SETTING_for_5G)		//getRate   (MACHTTRANSMIT_SETTING_for_5G)
+#endif	/* RTCONFIG_HAS_5G */
+int FN_GETRATE(getRate_2g,   MACHTTRANSMIT_SETTING_for_2G)		//getRate_2g(MACHTTRANSMIT_SETTING_for_2G)
 
 
 
@@ -623,14 +622,14 @@ wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 	}
 
 	wl_mode_x = nvram_get_int(strcat_r(prefix, "mode_x", tmp));
-	if      (wl_mode_x == 1)
+	if	(wl_mode_x == 1)
 		ret+=websWrite(wp, "OP Mode		: WDS Only\n");
 	else if (wl_mode_x == 2)
 		ret+=websWrite(wp, "OP Mode		: Hybrid\n");
 	else
 		ret+=websWrite(wp, "OP Mode		: AP\n");
 
-#if defined(RTAC52U) || defined(RTAC51U)
+#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN54U) 
 	if (unit == 1)
 	{
 		char *p = tmp;
@@ -688,7 +687,7 @@ wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 		return ret;
 	}
 
-	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
+	RT_802_11_MAC_TABLE_5G* mp =(RT_802_11_MAC_TABLE_5G*)wrq3.u.data.pointer;
 	RT_802_11_MAC_TABLE_2G* mp2=(RT_802_11_MAC_TABLE_2G*)wrq3.u.data.pointer;
 	int i;
 
@@ -696,17 +695,6 @@ wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 	ret+=websWrite(wp, "----------------------------------------\n");
 	ret+=websWrite(wp, "%-18s%-4s%-8s%-4s%-4s%-4s%-5s%-5s%-12s\n",
 			   "MAC", "PSM", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "Connect Time");
-#if 0
-	int entrySize;
-	entrySize = sizeof(RT_802_11_MAC_ENTRY);			//52 Bytes default size
-	if (get_model() == MODEL_RTN65U)
-	{
-		if(strcmp(ifname, WIF_2G) == 0)
-			entrySize = sizeof(RT_802_11_MAC_ENTRY_2G);	//24 Bytes used by iNIC fw binary
-		else
-			entrySize = sizeof(RT_802_11_MAC_ENTRY_RT3883);	//40 Bytes used by RT3883
-	}
-#endif
 
 #define SHOW_STA_INFO(_p,_i,_st, _gr) {											\
 		int hr, min, sec;											\
@@ -731,26 +719,16 @@ wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 
 	if (!strcmp(ifname, WIF_2G)) {
 		for (i=0;i<mp->Num;i++) {
-#if defined(RTN65U)
-			SHOW_STA_INFO(mp->Entry, i, RT_802_11_MAC_ENTRY_RT3352_iNIC, getRate_2g);
-#elif defined(RTAC52U) || defined(RTAC51U)
-			SHOW_STA_INFO(mp2->Entry, i, RT_802_11_MAC_ENTRY_2G, getRate_2g);
-#else
-			SHOW_STA_INFO(mp2->Entry, i, RT_802_11_MAC_ENTRY_2G, getRate_2g);
-#endif
+			SHOW_STA_INFO(mp2->Entry, i, RT_802_11_MAC_ENTRY_for_2G, getRate_2g);
 		}
 	}
+#if defined(RTCONFIG_HAS_5G)
 	else {
 		for (i=0;i<mp->Num;i++) {
-#if defined(RTN65U)
-			SHOW_STA_INFO(mp->Entry, i, RT_802_11_MAC_ENTRY_RT3883, getRate_2g);
-#elif defined(RTAC52U) || defined(RTAC51U)
-			SHOW_STA_INFO(mp2->Entry, i, RT_802_11_MAC_ENTRY_11AC, getRate_11ac);
-#else
-			SHOW_STA_INFO(mp->Entry, i, RT_802_11_MAC_ENTRY_RT3883, getRate_2g);
-#endif
+			SHOW_STA_INFO(mp->Entry, i, RT_802_11_MAC_ENTRY_for_5G, getRate);
 		}
 	}
+#endif	/* RTCONFIG_HAS_5G */
 
 	return ret;
 }
@@ -793,7 +771,7 @@ void getWPSEncrypType(WSC_CONFIGURED_VALUE *result, char *ret_str)
 }
 
 /*
- * these definitions are from rt2860v2 driver include/wsc.h 
+ * these definitions are from rt2860v2 driver include/wsc.h
  */
 char *getWscStatusStr(int status)
 {
@@ -1021,7 +999,7 @@ wl_wps_info(int eid, webs_t wp, int argc, char_t **argv, int unit)
 
 		//6. WPAKey
 		memset(tmpstr, 0, sizeof(tmpstr));
-		for (i=0; i<64; i++)	// WPA key default length is 64 (defined & hardcode in driver) 
+		for (i=0; i<64; i++)	// WPA key default length is 64 (defined & hardcode in driver)
 		{
 			sprintf(tmpstr, "%s%c", tmpstr, result.WscWPAKey[i]);
 		}
@@ -1097,6 +1075,7 @@ int ej_wl_sta_list_2g(int eid, webs_t wp, int argc, char_t **argv)
 	char mac[ETHER_ADDR_STR_LEN];
 	RT_802_11_MAC_TABLE_2G *mp2;
 	char *value;
+	int rssi, cnt;
 
 	memset(mac, 0, sizeof(mac));
 
@@ -1111,8 +1090,24 @@ int ej_wl_sta_list_2g(int eid, webs_t wp, int argc, char_t **argv)
 	/* build wireless sta list */
 	firstRow = 1;
 	mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
-	for (i=0; i<mp2->Num; i++)
+	for (i = 0; i<mp2->Num; i++)
 	{
+		rssi = cnt = 0;
+		if (mp2->Entry[i].AvgRssi0) {
+			rssi += mp2->Entry[i].AvgRssi0;
+			cnt++;
+		}
+		if (mp2->Entry[i].AvgRssi1) {
+			rssi += mp2->Entry[i].AvgRssi1;
+			cnt++;
+		}
+		if (mp2->Entry[i].AvgRssi2) {
+			rssi += mp2->Entry[i].AvgRssi2;
+			cnt++;
+		}
+		if (cnt == 0)
+			continue;	//skip this sta info
+
 		if (firstRow == 1)
 			firstRow = 0;
 		else
@@ -1124,10 +1119,16 @@ int ej_wl_sta_list_2g(int eid, webs_t wp, int argc, char_t **argv)
 				mp2->Entry[i].Addr[2], mp2->Entry[i].Addr[3],
 				mp2->Entry[i].Addr[4], mp2->Entry[i].Addr[5]);
 		websWrite(wp, "\"%s\"", mac);
-		value = "YES";
+
+		value = "Yes";
 		websWrite(wp, ", \"%s\"", value);
+
 		value = "";
 		websWrite(wp, ", \"%s\"", value);
+
+		rssi = rssi / cnt;
+		websWrite(wp, ", \"%d\"", rssi);
+
 		websWrite(wp, "]");
 	}
 
@@ -1138,12 +1139,14 @@ exit:
 
 int ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
+#if defined(RTCONFIG_HAS_5G)
 	struct iwreq wrq;
 	int i, firstRow;
 	char data[16384];
 	char mac[ETHER_ADDR_STR_LEN];
-	RT_802_11_MAC_TABLE *mp;
+	RT_802_11_MAC_TABLE_5G *mp;
 	char *value;
+	int rssi, cnt;
 
 	memset(mac, 0, sizeof(mac));
 
@@ -1157,9 +1160,25 @@ int ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	/* build wireless sta list */
 	firstRow = 1;
-	mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+	mp = (RT_802_11_MAC_TABLE_5G *)wrq.u.data.pointer;
 	for (i = 0; i<mp->Num; i++)
 	{
+		rssi = cnt = 0;
+		if (mp->Entry[i].AvgRssi0) {
+			rssi += mp->Entry[i].AvgRssi0;
+			cnt++;
+		}
+		if (mp->Entry[i].AvgRssi1) {
+			rssi += mp->Entry[i].AvgRssi1;
+			cnt++;
+		}
+		if (mp->Entry[i].AvgRssi2) {
+			rssi += mp->Entry[i].AvgRssi2;
+			cnt++;
+		}
+		if (cnt == 0)
+			continue;	//skip this sta info
+
 		if (firstRow == 1)
 			firstRow = 0;
 		else
@@ -1172,16 +1191,20 @@ int ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]);
 		websWrite(wp, "\"%s\"", mac);
 
-		value = "YES";
+		value = "Yes";
 		websWrite(wp, ", \"%s\"", value);
 
 		value = "";
 		websWrite(wp, ", \"%s\"", value);
 
+		rssi = rssi / cnt;
+		websWrite(wp, ", \"%d\"", rssi);
+
 		websWrite(wp, "]");
 	}
 
 	/* error/exit */
+#endif	/* RTCONFIG_HAS_5G */
 exit:
 	return 0;
 }
@@ -1192,7 +1215,7 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	int i, firstRow;
 	char data[16384];
 	char mac[ETHER_ADDR_STR_LEN];
-	RT_802_11_MAC_TABLE *mp;
+	RT_802_11_MAC_TABLE_5G *mp;
 	RT_802_11_MAC_TABLE_2G *mp2;
 	char *value;
 
@@ -1209,7 +1232,7 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	/* build wireless sta list */
 	firstRow = 1;
 	mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
-	for (i=0; i<mp2->Num; i++)
+	for (i = 0; i<mp2->Num; i++)
 	{
 		if (firstRow == 1)
 			firstRow = 0;
@@ -1222,13 +1245,17 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 				mp2->Entry[i].Addr[2], mp2->Entry[i].Addr[3],
 				mp2->Entry[i].Addr[4], mp2->Entry[i].Addr[5]);
 		websWrite(wp, "\"%s\"", mac);
-		value = "YES";
+
+		value = "Yes";
 		websWrite(wp, ", \"%s\"", value);
+
 		value = "";
 		websWrite(wp, ", \"%s\"", value);
+
 		websWrite(wp, "]");
 	}
 
+#if defined(RTCONFIG_HAS_5G)
 	/* query wl for authenticated sta list */
 	memset(data, 0, sizeof(data));
 	wrq.u.data.pointer = data;
@@ -1238,7 +1265,7 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 		goto exit;
 
 	/* build wireless sta list */
-	mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+	mp = (RT_802_11_MAC_TABLE_5G *)wrq.u.data.pointer;
 	for (i = 0; i<mp->Num; i++)
 	{
 		if (firstRow == 1)
@@ -1253,7 +1280,7 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]);
 		websWrite(wp, "\"%s\"", mac);
 
-		value = "YES";
+		value = "Yes";
 		websWrite(wp, ", \"%s\"", value);
 
 		value = "";
@@ -1261,12 +1288,13 @@ int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 
 		websWrite(wp, "]");
 	}
+#endif	/* RTCONFIG_HAS_5G */
 
 	/* error/exit */
 exit:
 	return 0;
 }
-
+#if defined(RTN65U)
 static void convertToUpper(char *str)
 {
 	if(str == NULL)
@@ -1280,7 +1308,7 @@ static void convertToUpper(char *str)
 		str++;
 	}
 }
-
+#endif
 static int wl_scan(int eid, webs_t wp, int argc, char_t **argv, int unit)
 {
 	int retval = 0, i = 0, apCount = 0;

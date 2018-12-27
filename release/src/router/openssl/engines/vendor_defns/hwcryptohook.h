@@ -65,7 +65,7 @@
  * please contact nCipher.
  *
  *
- * $Id: //BBN_Linux/Branch/Branch_for_SDK_Release_MultiChip_20111013/tclinux_phoenix/apps/public/openssl-1.0.0d/engines/vendor_defns/hwcryptohook.h#1 $
+ * $Id: hwcryptohook.h,v 1.1 2002/10/11 17:10:59 levitte Exp $
  */
 
 #ifndef HWCRYPTOHOOK_H

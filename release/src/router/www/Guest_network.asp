@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -31,6 +31,10 @@ var wl1_macmode = '<% nvram_get("wl1_macmode"); %>';
 var wl0_macmode = '<% nvram_get("wl0_macmode"); %>';
 var wl1_nmode_x = '<% nvram_get("wl1_nmode_x"); %>';
 var wl0_nmode_x = '<% nvram_get("wl0_nmode_x"); %>';
+if(wl_info.band5g_2_support){
+var wl2_nmode_x = '<% nvram_get("wl2_nmode_x"); %>';
+var wl2_macmode = '<% nvram_get("wl2_macmode"); %>';
+}
 
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
@@ -41,13 +45,12 @@ wl_channel_list_2g = '<% channel_list_2g(); %>';
 wl_channel_list_5g = '<% channel_list_5g(); %>';
 
 function initial(){
-	$('ACL_disabled_hint').innerHTML = Untranslated.Guest_Network_enable_ACL;
 	$('enable_macfilter').innerHTML = "<#enable_macmode#>";
 	show_menu();	
 	//insertExtChannelOption();		
 
-	if(downsize_4m_support)
-		$("guest_image").parentNode.style.display = "none";
+	if(downsize_4m_support || downsize_8m_support)
+		document.getElementById("guest_image").parentNode.parentNode.removeChild(document.getElementById("guest_image").parentNode);
 
 	mbss_display_ctrl();
 	gen_gntable();
@@ -59,8 +62,12 @@ function initial(){
 	else
 		document.form.wl_gmode_check.checked = false;
 
-	if(!band5g_support || no5gmssid_support){
+	if(!band5g_support || no5gmssid_support)
 		$("guest_table5").style.display = "none";
+	if(wl_info.band5g_2_support){
+		$("wl_opt1").innerHTML = "5GHz-1";
+		$("wl_opt2").style.display = "";
+		$("guest_table5_2").style.display = "";
 	}
 
 	if(radio_2 != 1){
@@ -145,7 +152,11 @@ function gen_gntable_tr(unit, gn_array, slicesb){
 	htmlcode += '<tr><th align="left" style="height:40px;"></th></tr>';		
 	htmlcode += '</table></th>';
 	
-	for(var i=0; i<gn_array.length; i++){			
+	if(tmo_support)	//keep wlx.3 for usingg Passpoint
+		var gn_array_length = gn_array.length-1;
+	else	
+		var gn_array_length = gn_array.length;
+	for(var i=0; i<gn_array_length; i++){			
 			var subunit = i+1+slicesb*4;
 			var show_str;
 			htmlcode += '<td><table id="GNW_'+GN_band+'G'+i+'" class="gninfo_table" align="center" style="margin:auto;border-collapse:collapse;">';			
@@ -183,12 +194,12 @@ function gen_gntable_tr(unit, gn_array, slicesb){
 							var expire_hr = Math.floor(gn_array[i][13]/3600);
 							var expire_min = Math.floor((gn_array[i][13]%3600)/60);
 							if(expire_hr > 0)
-									htmlcode += '<tr><td align="center" onclick="change_guest_unit('+ unit +','+ subunit +');"><b id="expire_hr_'+i+'">'+ expire_hr + '</b> Hr <b id="expire_min_'+i+'">' + expire_min +'</b> Min</td></tr>';
+									htmlcode += '<tr><td align="center" onclick="change_guest_unit('+ unit +','+ subunit +');"><b id="expire_hr_'+i+'">'+ expire_hr + '</b> <#Hour#> <b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#></td></tr>';
 							else{
 									if(expire_min > 0)
-											htmlcode += '<tr><td align="center" onclick="change_guest_unit('+ unit +','+ subunit +');"><b id="expire_min_'+i+'">' + expire_min +'</b> Min</td></tr>';
+											htmlcode += '<tr><td align="center" onclick="change_guest_unit('+ unit +','+ subunit +');"><b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#></td></tr>';
 									else
-											htmlcode += '<tr><td align="center" onclick="change_guest_unit('+ unit +','+ subunit +');"><b id="expire_min_'+i+'">< 1</b> Min</td></tr>';
+											htmlcode += '<tr><td align="center" onclick="change_guest_unit('+ unit +','+ subunit +');"><b id="expire_min_'+i+'">< 1</b> <#Minute#></td></tr>';
 							}				
 					}					
 					
@@ -203,13 +214,13 @@ function gen_gntable_tr(unit, gn_array, slicesb){
 										
 			if(gn_array[i][0] == "1"){
 					htmlcode += '<tr><td align="center" class="gninfo_table_bottom"></td></tr>';
-					htmlcode += '<tfoot><tr><td align="center"><input type="button" class="button_gen" value="<#btn_disable#>" onclick="close_guest_unit('+ unit +','+ subunit +');"></td></tr></tfoot>';
+					htmlcode += '<tfoot><tr><td align="center"><input type="button" class="button_gen" value="<#btn_remove#>" onclick="close_guest_unit('+ unit +','+ subunit +');"></td></tr></tfoot>';
 			}
 			htmlcode += '</table></td>';		
 	}	
 
 	if(slicesb > 0){
-		for(var td=0; td<(4-gn_array.length); td++)
+		for(var td=0; td<(4-gn_array_length); td++)
 			htmlcode += '<td style="width:135px"></td>';
 	}			
 
@@ -253,10 +264,13 @@ function goToACLFilter(){
 function gen_gntable(){
 	var htmlcode = ""; 
 	var htmlcode5 = ""; 
+	var htmlcode5_2 = ""; 
 	var gn_array_2g_tmp = gn_array_2g;
 	var gn_array_5g_tmp = gn_array_5g;
+	var gn_array_5g_2_tmp = gn_array_5g_2;
 	var band2sb = 0;
 	var band5sb = 0;
+	var band5sb_2 = 0;
 
 	htmlcode += '<table style="margin-left:20px;margin-top:25px;" width="95%" align="center" cellpadding="4" cellspacing="0" class="gninfo_head_table" id="gninfo_table_2g">';
 	htmlcode += '<tr id="2g_title"><td align="left" style="color:#5AD;font-size:16px; border-bottom:1px dashed #AAA;"><span>2.4GHz</span>';
@@ -278,7 +292,11 @@ function gen_gntable(){
 	$("guest_table2").innerHTML = htmlcode;
 	
 	htmlcode5 += '<table style="margin-left:20px;margin-top:25px;" width="95%" align="center" cellpadding="4" cellspacing="0" class="gninfo_head_table" id="gninfo_table_5g">';
-	htmlcode5 += '<tr id="5g_title"><td align="left" style="color:#5AD; font-size:16px; border-bottom:1px dashed #AAA;"><span>5GHz</span>';
+	htmlcode5 += '<tr id="5g_title"><td align="left" style="color:#5AD; font-size:16px; border-bottom:1px dashed #AAA;">';
+	if(wl_info.band5g_2_support)
+		htmlcode5 += '<span>5GHz-1</span>';
+	else
+		htmlcode5 += '<span>5GHz</span>';
 	htmlcode5 += '<span id="5g_radio_hint" style="font-size: 14px;display:none;color:#FC0;margin-left:17px;">* <#GuestNetwork_Radio_Status#>	<a style="font-family:Lucida Console;color:#FC0;text-decoration:underline;cursor:pointer;" onclick="_change_wl_unit_status(1);"><#btn_go#></a></span></td></tr>';
 
 	while(gn_array_5g_tmp.length > 4){
@@ -294,6 +312,27 @@ function gen_gntable(){
 	htmlcode5 += '</td></tr>';
 	htmlcode5 += '</table>';	
 	$("guest_table5").innerHTML = htmlcode5;
+
+  if(wl_info.band5g_2_support){
+	htmlcode5_2 += '<table style="margin-left:20px;margin-top:25px;" width="95%" align="center" cellpadding="4" cellspacing="0" class="gninfo_head_table" id="gninfo_table_5g_2">';
+	htmlcode5_2 += '<tr id="5g_2_title"><td align="left" style="color:#5AD; font-size:16px; border-bottom:1px dashed #AAA;"><span>5GHz-2</span>';
+	htmlcode5_2 += '<span id="5g_2_radio_hint" style="font-size: 14px;display:none;color:#FC0;margin-left:17px;">* <#GuestNetwork_Radio_Status#>	<a style="font-family:Lucida Console;color:#FC0;text-decoration:underline;cursor:pointer;" onclick="_change_wl_unit_status(1);"><#btn_go#></a></span></td></tr>';
+
+	while(gn_array_5g_2_tmp.length > 4){
+		htmlcode5_2 += '<tr><td >';
+		htmlcode5_2 += gen_gntable_tr(2, gn_array_5g_2_tmp.slice(0, 4), band5sb_2);
+		band5sb++;
+		gn_array_5g_2_tmp = gn_array_5g_2_tmp.slice(4);
+		htmlcode5_2 += '</td></tr>';
+	}
+	
+	htmlcode5_2 += '<tr><td>';
+	htmlcode5_2 += gen_gntable_tr(2, gn_array_5g_2_tmp, band5sb_2);
+	htmlcode5_2 += '</td></tr>';
+	htmlcode5_2 += '</table>';	
+	$("guest_table5_2").innerHTML = htmlcode5_2;
+  }
+
 }
 
 function add_options_value(o, arr, orig){
@@ -350,7 +389,7 @@ function validForm(){
 		if(!validate_wlphrase('WLANConfig11b', 'wl_phrase_x', document.form.wl_phrase_x))
 			return false;	
 	if(auth_mode == "psk" || auth_mode == "psk2" || auth_mode == "pskpsk2"){ //2008.08.04 lock modified
-		if(!validate_psk(document.form.wl_wpa_psk))
+		if(!validate_psk(document.form.wl_wpa_psk, document.form.wl_unit.value))
 			return false;
 	}
 	else{
@@ -384,18 +423,24 @@ function guest_divctrl(flag){
 		$("guest_table2").style.display = "none";
 		if(band5g_support)
 			$("guest_table5").style.display = "none";
+		if(wl_info.band5g_2_support)
+			$("guest_table5_2").style.display = "none";
 		$("gnset_table").style.display = "";
 		if(sw_mode == "3")
 				inputCtrl(document.form.wl_lanaccess, 0);
 		$("applyButton").style.display = "";
-		automode_hint();
 	}
 	else{
 		$("guest_table2").style.display = "";
-		if(!band5g_support || no5gmssid_support)
+		if(!band5g_support || no5gmssid_support){
 				$("guest_table5").style.display = "none";
+			if(!wl_info.band5g_2_support)
+				("guest_table5_2").style.display = "none";
+		}
 		else
 				$("guest_table5").style.display = "";
+				if(wl_info.band5g_2_support)
+					$("guest_table5_2").style.display = "";
 		$("gnset_table").style.display = "none";
 		$("applyButton").style.display = "none";
 	}
@@ -414,6 +459,9 @@ function mbss_display_ctrl(){
 		$("guest_table2").style.display = "none";
 		if(band5g_support)
 			$("guest_table5").style.display = "none";
+		if(wl_info.band5g_2_support)
+			$("guest_table5_2").style.display = "none";
+		
 		$("applyButton").style.display = "none";
 		$("applyButton").innerHTML = "Not support!";
 		$("applyButton").style.fontSize = "25px";
@@ -439,21 +487,26 @@ function close_guest_unit(_unit, _subunit){
 
 function change_guest_unit(_unit, _subunit){
 	var gn_array, macmode, idx;
-	if(_unit)
-	{
-		gn_array = gn_array_5g;
-		macmode = wl1_macmode;
-		document.form.wl_nmode_x.value = wl1_nmode_x;
-	}
-	else
-	{
-		gn_array = gn_array_2g;
-		macmode = wl0_macmode;
-		document.form.wl_nmode_x.value = wl0_nmode_x;
+	switch(_unit){
+		case 0:
+			gn_array = gn_array_2g;
+			macmode = wl0_macmode;
+			document.form.wl_nmode_x.value = wl0_nmode_x;
+			break;
+		case 1:			
+			gn_array = gn_array_5g;
+			macmode = wl1_macmode;
+			document.form.wl_nmode_x.value = wl1_nmode_x;
+			break;
+		case 2:
+			gn_array = gn_array_5g_2;
+			macmode = wl2_macmode;
+			document.form.wl_nmode_x.value = wl2_nmode_x;
+			break;
 	}
 	idx = _subunit - 1;
 
-	limit_auth_method();	
+	limit_auth_method(_unit);	
 	document.form.wl_unit.value = _unit;
 	document.form.wl_subunit.value = _subunit;
 	$("wl_vifname").innerHTML = document.form.wl_subunit.value;
@@ -499,13 +552,16 @@ function change_guest_unit(_unit, _subunit){
 
 function create_guest_unit(_unit, _subunit){
 	var gn_array;
-	if(_unit)
-	{
-		gn_array = gn_array_5g;
-	}
-	else
-	{
-		gn_array = gn_array_2g;
+	switch(_unit){
+		case 0:
+			gn_array = gn_array_2g;
+			break;
+		case 1:
+			gn_array = gn_array_5g;
+			break;
+		case 2:
+			gn_array = gn_array_5g_2;
+			break;						
 	}
 	if(gn_array[_subunit-1][15] != "1"){
 		change_guest_unit(_unit, _subunit);
@@ -553,6 +609,7 @@ function genBWTable(_unit){
 		<td>
 			<div class="drword" id="drword"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
 				<br/>
+			<div id="disconnect_hint" style="display:none;">This may interrupt your internet connection.</div>	
 				<br/>
 		    </div>
 			<div id="wireless_client_detect" style="margin-left:10px;position:absolute;display:none">
@@ -653,6 +710,7 @@ function genBWTable(_unit){
 			<!-- info table -->
 			<div id="guest_table2"></div>			
 			<div id="guest_table5"></div>
+			<div id="guest_table5_2"></div>
 
 			<!-- setting table -->
 			<table width="80%" border="1" align="center" style="margin-top:10px;margin-bottom:20px;display:none" cellpadding="4" cellspacing="0" id="gnset_table" class="FormTable">
@@ -660,8 +718,9 @@ function genBWTable(_unit){
 					<th><#Interface#></th>
 					<td>
 						<select name="wl_unit" class="input_option" onChange="change_wl_unit();" style="display:none">
-							<option class="content_input_fd" value="0" <% nvram_match("wl_unit", "0","selected"); %>>2.4GHz</option>
-							<option class="content_input_fd" value="1" <% nvram_match("wl_unit", "1","selected"); %>>5GHz</option>
+							<option id="wl_opt0" class="content_input_fd" value="0" <% nvram_match("wl_unit", "0","selected"); %>>2.4GHz</option>
+							<option id="wl_opt1" class="content_input_fd" value="1" <% nvram_match("wl_unit", "1","selected"); %>>5GHz</option>
+							<option id="wl_opt2" class="content_input_fd" value="2" <% nvram_match("wl_unit", "2","selected"); %>>5GHz-2</option>
 						</select>			
 						<p id="wl_ifname">2.4GHz</p>
 					</td>
@@ -829,9 +888,9 @@ function genBWTable(_unit){
 					<th><#Access_Time#></th>
 					<td>
          		<input type="radio" value="1" name="wl_expire_radio" class="content_input_fd" onClick="">
-						<input type="text" maxlength="2" name="wl_expire_hr" class="input_3_table"  value="" onKeyPress="return is_number(this,event);" onblur="validate_number_range(this, 0, 23)"> Hr
-						<input type="text" maxlength="2" name="wl_expire_min" class="input_3_table"  value="" onKeyPress="return is_number(this,event);" onblur="validate_number_range(this, 0, 59)"> Min
-         		<input type="radio" value="0" name="wl_expire_radio" class="content_input_fd" onClick="">Limitless
+						<input type="text" maxlength="2" name="wl_expire_hr" class="input_3_table"  value="" onKeyPress="return is_number(this,event);" onblur="validate_number_range(this, 0, 23)"> <#Hour#>
+						<input type="text" maxlength="2" name="wl_expire_min" class="input_3_table"  value="" onKeyPress="return is_number(this,event);" onblur="validate_number_range(this, 0, 59)"> <#Minute#>
+         		<input type="radio" value="0" name="wl_expire_radio" class="content_input_fd" onClick=""><#Limitless#>
 					</td>
 			 	</tr>
 
@@ -854,7 +913,7 @@ function genBWTable(_unit){
 						</select>
 						&nbsp;
 						<span id="ACL_enabled_hint" style="cursor:pointer;display:none;text-decoration:underline;" onclick="goToACLFilter();"><#FirewallConfig_MFList_groupitemname#></span>
-						<span id="ACL_disabled_hint" style="cursor:pointer;display:none;text-decoration:underline;" onclick="goToACLFilter();"></span>				
+						<span id="ACL_disabled_hint" style="cursor:pointer;display:none;text-decoration:underline;" onclick="goToACLFilter();"><#Guest_Network_enable_ACL#></span>	
 					</td>
 				</tr>
 			</table>

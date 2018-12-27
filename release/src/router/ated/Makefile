@@ -3,6 +3,11 @@ include ../common.mak
 CFLAGS += -I. -I$(TOP)/shared -I$(SRCBASE)/include
 LDFLAGS += -L$(TOP)/nvram -lnvram 
 LDFLAGS +=-L$(TOP)/shared -lshared
+ifeq ($(RTCONFIG_HTTPS),y)
+#CFLAGS += -I$(TOP)/openssl/include
+LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl
+endif
+
 EXEC = ated
 SRCS = ated.c
 

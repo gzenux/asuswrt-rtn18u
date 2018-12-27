@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -17,7 +17,7 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
-
+<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <style>
 .Portrange{
 	font-size: 12px;
@@ -83,13 +83,19 @@ function key_event(evt){
 
 function initial(){
 	show_menu();
+	if(bwdpi_support){
+		$('content_title').innerHTML = "<#Adaptive_QoS#> - <#EzQoS_type_traditional#>";
+	}
+	else{
+		$('content_title').innerHTML = "<#Menu_TrafficManager#> - QoS";
+	}
+	
 	showqos_rulelist();
-
 	load_QoS_rule();
 	if('<% nvram_get("qos_enable"); %>' == "1")
 		$('is_qos_enable_desc').style.display = "none";
 		
-	showLANIPList();	
+	setTimeout("showLANIPList();", 1000);
 }
 
 function applyRule(){	
@@ -734,28 +740,23 @@ function valid_IPorMAC(obj){
 
 
 function showLANIPList(){
-	var code = "";
-	var show_name = "";
-	var client_list_array = '<% get_client_detail_info(); %>';	
-	var client_list_row = client_list_array.split('<');
+	var htmlCode = "";
+	for(var i=0; i<clientList.length;i++){
+		var clientObj = clientList[clientList[i]];
 
-	for(var i = 1; i < client_list_row.length; i++){
-		var client_list_col = client_list_row[i].split('>');
-		if(client_list_col[1] && client_list_col[1].length > 20)
-			show_name = client_list_col[1].substring(0, 16) + "..";
-		else
-			show_name = client_list_col[1];
+		if(clientObj.ip == "offline") clientObj.ip = "";
+		if(clientObj.name.length > 30) clientObj.name = clientObj.name.substring(0, 28) + "..";
 
-		if(client_list_col[1])
-			code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP_mac(\''+client_list_col[1]+'\', \''+client_list_col[3]+'\');"><strong>'+client_list_col[2]+'</strong> ';
-		else
-			code += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP_mac(\''+client_list_col[3]+'\', \''+client_list_col[3]+'\');"><strong>'+client_list_col[2]+'</strong> ';
-			if(show_name && show_name.length > 0)
-				code += '( '+show_name+')';
-			code += ' </div></a>';
-		}
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
-	$("ClientList_Block_PC").innerHTML = code;
+		htmlCode += '<a><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP_mac(\'';
+		htmlCode += clientObj.name;
+		htmlCode += '\', \'';
+		htmlCode += clientObj.mac;
+		htmlCode += '\');"><strong>';
+		htmlCode += clientObj.name;
+		htmlCode += '</strong></div></a><!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	}
+
+	$("ClientList_Block_PC").innerHTML = htmlCode;
 }
 
 function pullLANIPList(obj){
@@ -780,6 +781,8 @@ function hideClients_Block_mac(){
 
 function setClientIP_mac(devname, macaddr){
 	document.form.qos_ip_x_0.value = macaddr;
+	document.form.qos_service_name_x_0.value = devname;
+
 	hideClients_Block_mac();
 	over_var = 0;
 }
@@ -806,7 +809,7 @@ function linkport(obj){
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_wait" value="5">
-<input type="hidden" name="action_script" value="restart_qos">
+<input type="hidden" name="action_script" value="restart_qos;restart_firewall">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
@@ -835,13 +838,13 @@ function linkport(obj){
 						<table width="100%" >
 						<tr >
 						<td  class="formfonttitle" align="left">								
-										<div style="margin-top:5px;"><#Menu_TrafficManager#> - QoS</div>
-									</td>
+							<div id="content_title" style="margin-top:5px;"></div>
+						</td>
 						<td align="right" >	
 						<div style="margin-top:5px;">
 							<select onchange="switchPage(this.options[this.selectedIndex].value)" class="input_option">
 								<!--option><#switchpage#></option-->
-								<option value="1"><#qos_automatic_mode#></option>
+								<option value="1">Configuration</option>
 								<option value="2" selected><#qos_user_rules#></option>
 								<option value="3"><#qos_user_prio#></option>
 							</select>	    
@@ -882,10 +885,10 @@ function linkport(obj){
 			
 							<tr>
 								<th><#BM_UserList1#></th>
-								<th><a href="javascript:void(0);" onClick="openHint(18,6);"><div class="table_text">Source IP or MAC</div></a></th>
+								<th><a href="javascript:void(0);" onClick="openHint(18,6);"><div class="table_text"><#BM_UserList2#></div></a></th>
 								<th><a href="javascript:void(0);" onClick="openHint(18,4);"><div class="table_text"><#BM_UserList3#></div></a></th>
 								<th><div class="table_text"><#IPConnection_VServerProto_itemname#></div></th>
-								<th><a href="javascript:void(0);" onClick="openHint(18,5);"><div class="table_text"><div class="table_text">Transferred</div></a></th>
+								<th><a href="javascript:void(0);" onClick="openHint(18,5);"><div class="table_text"><div class="table_text"><#UserQoS_transferred#></div></a></th>
 								<th><#BM_UserList4#></th>
 								<th><#list_add_delete#></th>
 							</tr>							

@@ -522,10 +522,13 @@ typedef struct ssl_session_st
 #define SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG		0x00000008L
 #define SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG		0x00000010L
 #define SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER		0x00000020L
-#define SSL_OP_MSIE_SSLV2_RSA_PADDING			0x00000040L /* no effect since 0.9.7h and 0.9.8b */
+#define SSL_OP_SAFARI_ECDHE_ECDSA_BUG			0x00000040L
 #define SSL_OP_SSLEAY_080_CLIENT_DH_BUG			0x00000080L
 #define SSL_OP_TLS_D5_BUG				0x00000100L
 #define SSL_OP_TLS_BLOCK_PADDING_BUG			0x00000200L
+
+/* Hasn't done anything since OpenSSL 0.9.7h, retained for compatibility */
+#define SSL_OP_MSIE_SSLV2_RSA_PADDING			0x0
 
 /* Disable SSL 3.0/TLS 1.0 CBC vulnerability workaround that was added
  * in OpenSSL 0.9.6d.  Usually (depending on the application protocol)
@@ -822,7 +825,7 @@ struct ssl_ctx_st
 	 */
 	unsigned int max_send_fragment;
 
-#ifndef OPENSSL_ENGINE
+#ifndef OPENSSL_NO_ENGINE
 	/* Engine to pass requests for client certs to
 	 */
 	ENGINE *client_cert_engine;
@@ -1825,6 +1828,7 @@ void ERR_load_SSL_strings(void);
 #define SSL_F_DTLS1_ACCEPT				 246
 #define SSL_F_DTLS1_ADD_CERT_TO_BUF			 295
 #define SSL_F_DTLS1_BUFFER_RECORD			 247
+#define SSL_F_DTLS1_CHECK_TIMEOUT_NUM			 305
 #define SSL_F_DTLS1_CLIENT_HELLO			 248
 #define SSL_F_DTLS1_CONNECT				 249
 #define SSL_F_DTLS1_ENC					 250
@@ -1882,6 +1886,7 @@ void ERR_load_SSL_strings(void);
 #define SSL_F_SSL3_CALLBACK_CTRL			 233
 #define SSL_F_SSL3_CHANGE_CIPHER_STATE			 129
 #define SSL_F_SSL3_CHECK_CERT_AND_ALGORITHM		 130
+#define SSL_F_SSL3_CHECK_CLIENT_HELLO			 304
 #define SSL_F_SSL3_CLIENT_HELLO				 131
 #define SSL_F_SSL3_CONNECT				 132
 #define SSL_F_SSL3_CTRL					 213
@@ -1966,6 +1971,7 @@ void ERR_load_SSL_strings(void);
 #define SSL_F_SSL_GET_NEW_SESSION			 181
 #define SSL_F_SSL_GET_PREV_SESSION			 217
 #define SSL_F_SSL_GET_SERVER_SEND_CERT			 182
+#define SSL_F_SSL_GET_SERVER_SEND_PKEY			 317
 #define SSL_F_SSL_GET_SIGN_PKEY				 183
 #define SSL_F_SSL_INIT_WBIO_BUFFER			 184
 #define SSL_F_SSL_LOAD_CLIENT_CA_FILE			 185
@@ -2139,6 +2145,7 @@ void ERR_load_SSL_strings(void);
 #define SSL_R_MISSING_TMP_RSA_KEY			 172
 #define SSL_R_MISSING_TMP_RSA_PKEY			 173
 #define SSL_R_MISSING_VERIFY_MESSAGE			 174
+#define SSL_R_MULTIPLE_SGC_RESTARTS			 346
 #define SSL_R_NON_SSLV2_INITIAL_PACKET			 175
 #define SSL_R_NO_CERTIFICATES_RETURNED			 176
 #define SSL_R_NO_CERTIFICATE_ASSIGNED			 177

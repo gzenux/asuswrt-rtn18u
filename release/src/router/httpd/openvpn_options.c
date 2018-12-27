@@ -11,6 +11,7 @@
 #define TYPEDEF_BOOL
 #include <bcmnvram.h>
 #include <shared.h>
+#include "shutils.h"
 
 struct buffer
 alloc_buf (size_t size)
@@ -480,7 +481,7 @@ add_option (char *p[], int line, int unit)
 		else
 		{
 			if(p[2]) {
-				sprintf(buf, "vpn_server%d_hmac", unit);
+				sprintf(buf, "vpn_client%d_hmac", unit);
 				nvram_set(buf, p[2]);
 			}
 			return VPN_UPLOAD_NEED_STATIC;
@@ -607,12 +608,16 @@ void parse_openvpn_status(int unit){
 	FILE *fpi, *fpo;
 	char buf[512];
 	char *token;
+	char nv_name[32] = "";
+	char prefix_vpn[] = "vpn_serverXX_";
 
 	sprintf(buf, "/etc/openvpn/server%d/status", unit);
 	fpi = fopen(buf, "r");
 
 	sprintf(buf, "/etc/openvpn/server%d/client_status", unit);
 	fpo = fopen(buf, "w");
+
+	snprintf(prefix_vpn, sizeof(prefix_vpn), "vpn_server%d_", unit);
 
 	if(fpi && fpo) {
 		while(!feof(fpi)){
@@ -624,15 +629,32 @@ void parse_openvpn_status(int unit){
 				token = strtok(buf, ",");	//CLIENT_LIST
 				token = strtok(NULL, ",");	//Common Name
 				token = strtok(NULL, ",");	//Real Address
-				fprintf(fpo, "%s ", token);
-				token = strtok(NULL, ",");	//Virtual Address
-				fprintf(fpo, "%s ", token);
+				if(token)
+					fprintf(fpo, "%s ", token);
+				else
+					fprintf(fpo, "NoRealAddress ");
+				snprintf(nv_name, sizeof(nv_name) -1, "vpn_server%d_if", unit);
+
+				if(nvram_match(strcat_r(prefix_vpn, "if", nv_name), "tap")
+					&& nvram_match(strcat_r(prefix_vpn, "dhcp", nv_name), "1")) {
+					fprintf(fpo, "VirtualAddressAssignedByDhcp ");
+				}
+				else {
+					token = strtok(NULL, ",");	//Virtual Address
+					if(token)
+						fprintf(fpo, "%s ", token);
+					else
+						fprintf(fpo, "NoVirtualAddress ");
+				}
 				token = strtok(NULL, ",");	//Bytes Received
 				token = strtok(NULL, ",");	//Bytes Sent
 				token = strtok(NULL, ",");	//Connected Since
 				token = strtok(NULL, ",");	//Connected Since (time_t)
 				token = strtok(NULL, ",");	//Username, include'\n'
-				fprintf(fpo, "%s", token);
+				if(token)
+					fprintf(fpo, "%s", token);
+				else
+					fprintf(fpo, "NoUsername");
 			}
 		}
 		fclose(fpi);
