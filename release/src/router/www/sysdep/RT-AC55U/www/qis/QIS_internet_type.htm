@@ -252,6 +252,14 @@ function ISP_Profile_Selection(isp){
 		document.getElementById("wan_voip_port3_x").style.display = "none";
 		document.applyForm.switch_wantag.value = "maxis_fiber_sp";
 	}
+        else if(isp == "hinet"){
+                document.getElementById("wan_iptv_x").style.display = "";
+                document.getElementById("wan_voip_x").style.display = "none";
+                document.getElementById("wan_internet_x").style.display = "none";
+                document.getElementById("wan_iptv_port4_x").style.display = "none";
+                document.getElementById("wan_voip_port3_x").style.display = "none";
+                document.applyForm.switch_wantag.value = "hinet";
+        }
 	else if(isp == "movistar"){
 		document.getElementById("wan_iptv_x").style.display = "";
 		document.getElementById("wan_voip_x").style.display = "";
@@ -342,6 +350,15 @@ function set_ISP_profile(){
         document.applyForm.switch_wan2tagid.value = "14";
         document.applyForm.switch_wan2prio.value = "0";
     }
+        if(document.applyForm.switch_wantag.value == "hinet") {
+                document.applyForm.switch_stb_x.value = "4";
+                document.applyForm.switch_wan0tagid.value = "";
+                document.applyForm.switch_wan0prio.value = "0";
+                document.applyForm.switch_wan1tagid.value = "";
+                document.applyForm.switch_wan1prio.value = "0";
+                document.applyForm.switch_wan2tagid.value = "0";
+                document.applyForm.switch_wan2prio.value = "0";
+        }
 	else if(document.applyForm.switch_wantag.value == "movistar") {
 		document.applyForm.switch_stb_x.value = "6";
 		document.applyForm.switch_wan0tagid.value = "6";
@@ -825,7 +842,8 @@ function enable_ISP_special(){
 						<option value="m1_fiber" <% nvram_match("switch_wantag", "m1_fiber", "selected"); %>>M1-Fiber</option>
 						<option value="maxis_fiber" <% nvram_match("switch_wantag", "maxis_fiber", "selected"); %>>Maxis-Fiber</option>
 						<option value="maxis_fiber_sp" <% nvram_match("switch_wantag", "maxis_fiber_sp", "selected"); %>>Maxis-Fiber-Special</option>
-						<option value="movistar" <% nvram_match("switch_wantag", "movistar", "selected"); %>>Movistar</option>
+						<option value="hinet" <% nvram_match( "switch_wantag", "hinet", "selected"); %>>Hinet MOD</option>
+						<!--option value="movistar" <% nvram_match("switch_wantag", "movistar", "selected"); %>>Movistar</option-->
 						<option id="meoOption" value="meo" <% nvram_match("switch_wantag", "meo", "selected"); %>>Meo</option>
 						<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
 					</select>
@@ -975,6 +993,9 @@ function enable_ISP_special(){
 			<div class="row">
 				<a class="iuiA_unsel" onclick="document.applyForm.switch_wantag.value='m1_fiber';mySel(this, false);" myselected="false">M1-Fiber</a>
 			</div>
+                        <div class="row">
+                                <a class="iuiA_unsel" onclick="document.applyForm.switch_wantag.value='hinet';mySel(this, false);" myselected="false">Hinet MOD</a>
+                        </div>
 			<div class="row_end">
 				<a class="iuiA_unsel_check" onclick="document.applyForm.switch_wantag.value='manual';mySel(this, false);" myselected="false"><#Manual_Setting_btn#></a>
 				<span class="sel_check" onclick='showHidden_slide("unify_input", ["field_mobile_unify"]);'></span>

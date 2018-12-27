@@ -102,8 +102,15 @@ body{
 	color: rgb(255, 204, 0);
 	margin:10px 0px -10px 78px; 
 	font-size: 18px;
-	font-weight: bolder;
 }
+
+.error_hint1{
+	margin:40px 0px -10px 78px; 
+	font-size: 24px;
+	line-height:32px;
+	width: 580px;
+}
+
 .main_field_gap{
 	margin:100px auto 0;
 }
@@ -179,13 +186,20 @@ body{
 }
 </style>
 <script>
+var lock_time = '<% get_parameter("lock_time"); %>';
+var remaining_time;
+remaining_time = 60 - lock_time;
+var countdownid, rtime_obj;
+
+var redirect_page = '<% get_parameter("page"); %>';
+
 function initial(){
 	var flag = '<% get_parameter("error_status"); %>';
 
 	if('<% check_asus_model(); %>' == '0'){
 		document.getElementById("warming_field").style.display ="";
-		disable_input();
-		disable_button();
+		disable_input(0);
+		disable_button(1);
 	}
 
 	if(flag != ""){
@@ -193,9 +207,13 @@ function initial(){
 		if(flag == 3)
 			document.getElementById("error_status_field").innerHTML ="* Invalid username or password";
 		else if(flag == 7){
-			document.getElementById("error_status_field").innerHTML ="* Detect abnormal logins many times, please try again after 1 minute.";
-			document.form.login_username.disabled = true;
-			document.form.login_passwd.disabled = true;
+			document.getElementById("error_status_field").innerHTML ="You have entered an incorrect username or password 5 times. Please try again after "+"<span id='rtime'></span>"+" seconds.";
+			document.getElementById("error_status_field").className = "error_hint error_hint1";
+			disable_input(1);
+			disable_button(1);
+			rtime_obj=document.getElementById("rtime");
+			rtime_obj.innerHTML=remaining_time;
+			countdownid = window.setInterval(countdownfunc,1000);
 		}else if(flag == 8){
 			document.getElementById("login_filed").style.display ="none";
 			document.getElementById("logout_field").style.display ="";
@@ -262,8 +280,16 @@ function initial(){
 	if(history.pushState != undefined) history.pushState("", document.title, window.location.pathname);
 }
 
+function countdownfunc(){ 
+	rtime_obj.innerHTML=remaining_time;
+	if (remaining_time==0){
+		clearInterval(countdownid);
+		setTimeout("top.location.href='/Main_Login.asp';", 2000);
+	}
+	remaining_time--;
+}
+
 function login(){
-	var redirect_page = '<% get_parameter("page"); %>';
 
 	var trim = function(val){
 		val = val+'';
@@ -325,21 +351,28 @@ function login(){
 	document.form.login_authorization.value = btoa(document.form.login_username.value + ':' + document.form.login_passwd.value);
 	document.form.login_username.disabled = true;
 	document.form.login_passwd.disabled = true;
-	if(redirect_page == "" || redirect_page == "Logout.asp" || redirect_page == "Main_Login.asp")
+	if(redirect_page == "" || redirect_page == "Logout.asp" || redirect_page == "Main_Login.asp" || redirect_page.indexOf(" ") != -1 || (redirect_page.indexOf(".asp") == -1 && redirect_page.indexOf(".htm") == -1))
 		document.form.next_page.value = "index.asp";
 	else
 		document.form.next_page.value = redirect_page;
 	document.form.submit();
 }
 
-function disable_input(){
+function disable_input(val){
 	var disable_input_x = document.getElementsByClassName('form_input');
-	for(i=0;i<disable_input_x.length;i++)
-		disable_input_x[i].disabled = true;
+	for(i=0;i<disable_input_x.length;i++){
+		if(val == 0)
+			disable_input_x[i].disabled = true;
+		else
+			disable_input_x[i].style.display = "none";
+	}
 }
 
-function disable_button(){
-	document.getElementsByClassName('button')[0].style.display = "none";
+function disable_button(val){
+	if(val == 0)
+		document.getElementsByClassName('button')[0].disabled = true;
+	else
+		document.getElementsByClassName('button')[0].style.display = "none";
 }
 </script>
 </head>

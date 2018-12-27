@@ -2394,7 +2394,7 @@ NEITHER_WDS_OR_PSTA:
 				return;
 			}
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 			if((nvram_get_int("usb_gobi") == 1 && strcmp(port_path, "2"))
 					|| (nvram_get_int("usb_gobi") != 1 && !strcmp(port_path, "2"))
 					)

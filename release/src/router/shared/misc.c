@@ -1792,18 +1792,18 @@ int check_bwdpi_nvram_setting()
 	if(nvram_get_int("wrs_enable") == 0 && nvram_get_int("wrs_app_enable") == 0 && 
 		nvram_get_int("wrs_vp_enable") == 0 && nvram_get_int("wrs_cc_enable") == 0 &&
 		nvram_get_int("wrs_mals_enable") == 0 &&
-		nvram_get_int("wrs_adblock_popup") == 0 && nvram_get_int("wrs_adblock_stream") == 0 &&
 		nvram_get_int("bwdpi_db_enable") == 0 &&
+		nvram_get_int("apps_analysis") == 0 &&
 		nvram_get_int("qos_enable") == 0)
 		enabled = 0;
 
-	// check traditional qos service
+	// check qos service (not adaptive qos)
 	if(nvram_get_int("wrs_enable") == 0 && nvram_get_int("wrs_app_enable") == 0 && 
 		nvram_get_int("wrs_vp_enable") == 0 && nvram_get_int("wrs_cc_enable") == 0 &&
 		nvram_get_int("wrs_mals_enable") == 0 &&
-		nvram_get_int("wrs_adblock_popup") == 0 && nvram_get_int("wrs_adblock_stream") == 0 &&
 		nvram_get_int("bwdpi_db_enable") == 0 &&
-		nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") == 0)
+		nvram_get_int("apps_analysis") == 0 &&
+		nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") != 1)
 		enabled = 0;
 
 	if(debug) dbg("[check_bwdpi_nvram_setting] enabled= %d\n", enabled);

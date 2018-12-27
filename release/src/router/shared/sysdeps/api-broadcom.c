@@ -162,7 +162,6 @@ int get_switch_model(void)
 	close(fd);
 	if (ret < 0)
 		goto skip;
-
 	if (devid == 0x25)
 		return SWITCH_BCM5325;
 	else if (devid == 0x3115)
@@ -187,7 +186,7 @@ int robo_ioctl(int fd, int write, int page, int reg, uint32_t *value)
 	ifr.ifr_data = (caddr_t) vecarg;
 
 	vecarg[0] = (page << 16) | reg;
-#ifdef BCM5301X
+#if defined(BCM5301X) || defined(RTAC1200G) || defined(RTAC1200GP)
 	vecarg[1] = 0;
 	vecarg[2] = *value;
 #else
@@ -195,7 +194,7 @@ int robo_ioctl(int fd, int write, int page, int reg, uint32_t *value)
 #endif
 	ret = ioctl(fd, __ioctl_args[write], (caddr_t)&ifr);
 
-#ifdef BCM5301X
+#if defined(BCM5301X) || defined(RTAC1200G) || defined(RTAC1200GP)
 	*value = vecarg[2];
 #else
 	*value = vecarg[1];

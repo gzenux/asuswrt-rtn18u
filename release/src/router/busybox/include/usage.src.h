@@ -3157,7 +3157,9 @@ INSERT
      "\n	-4, -6		Force IP or IPv6 name resolution" \
      "\n	-c CNT		Send only CNT pings" \
      "\n	-s SIZE		Send SIZE data bytes in packets (default:56)" \
+     "\n	-t TTL		Set TTL" \
      "\n	-I IFACE/IP	Use interface or IP address as source" \
+     "\n	-M hint		Path MTU Discovery strategy [do|want|dont]" \
      "\n	-W SEC		Seconds to wait for the first response (default:10)" \
      "\n			(after all -c CNT packets are sent)" \
      "\n	-w SEC		Seconds until ping exits (default:infinite)" \
@@ -3172,7 +3174,9 @@ INSERT
      "\nOptions:" \
      "\n	-c CNT		Send only CNT pings" \
      "\n	-s SIZE		Send SIZE data bytes in packets (default:56)" \
+     "\n	-t TTL		Set TTL" \
      "\n	-I IFACE/IP	Use interface or IP address as source" \
+     "\n	-M hint		Path MTU Discovery strategy [do|want|dont]" \
      "\n	-q		Quiet, only displays output at start" \
      "\n			and when finished" \
 

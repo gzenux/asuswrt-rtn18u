@@ -106,7 +106,7 @@ function suspendconn(wan_index, wanenable){
 
 function enableMonomode(){
 	document.titleForm.action = "/apply.cgi";
-	document.titleForm.current_page.value = top.location.pathname;
+	document.titleForm.current_page.value = top.location.pathname.split("/")[1];
 	document.titleForm.action_mode.value = "mfp_monopolize";
 	document.titleForm.action_wait.value = "2";
 	showLoading(2);

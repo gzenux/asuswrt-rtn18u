@@ -90,6 +90,7 @@
 #define CASE_PPPNOIP       7
 #define CASE_AP_DISCONN    8
 #define CASE_DATALIMIT     9
+#define CASE_DYN_MODEM     10
 
 #pragma pack(1) // let struct be neat by byte.
 
@@ -168,7 +169,7 @@ int WAN_FB_UNIT;
 #ifdef RTCONFIG_USB_MODEM
 char modem_type[32];
 int sim_lock = 0;
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 char usb_if[16];
 #endif
 #endif

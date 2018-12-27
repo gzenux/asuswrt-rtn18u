@@ -268,7 +268,10 @@ function initial(){
 	}
 	
 	init_changeScale();
-	//addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "QoS"]);	
+	//addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "QoS"]);
+
+	if((isFirefox || isOpera) && document.getElementById("FormTitle"))
+		document.getElementById("FormTitle").className = "FormTitle";
 }
 
 function init_changeScale(){
@@ -365,7 +368,7 @@ function submitQoS(){
 					else if(document.getElementById("Web_act")) 
 						document.form.bwdpi_app_rulelist.value = "9,20<13,24<4<0,5,6,15,17<8<1,3,14<7,10,11,21,23<<web";
 					else	
-						document.form.bwdpi_app_rulelist.value = document.PriorityForm.bwdpi_app_rulelist_edit.value;	
+						document.form.bwdpi_app_rulelist.value = bwdpi_app_rulelist;	
 				}
 				else{
 					alert("You have not selected QoS priority mode.");	
@@ -555,12 +558,13 @@ function regen_priority(obj){
 }
 
 function gen_category_block(){
-	bwdpi_app_rulelist = bwdpi_app_rulelist.replace(/&#60/g, "<");	
-	if(bwdpi_app_rulelist == ""){
-		//customize default 
+	bwdpi_app_rulelist = bwdpi_app_rulelist.replace(/&#60/g, "<");
+	var bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");
+	if(bwdpi_app_rulelist == "" || bwdpi_app_rulelist_row.length != 9){	//Avoid customized app list cannot show out
+		//customize default "bwdpi_app_rulelist", "9,20<8<4<0,5,6,15,17<13,24<1,3,14<7,10,11,21,23<<"
 		bwdpi_app_rulelist = "9,20<8<4<0,5,6,15,17<13,24<1,3,14<7,10,11,21,23<<";
-	}	
-	var bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");	
+		bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");
+	}		
 	var index = 0;
 	var code = "";
 

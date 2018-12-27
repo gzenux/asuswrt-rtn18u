@@ -129,12 +129,14 @@ function cancel_demo(){
 
 var top5_client_array = new Array();
 var top5_app_array = new Array();
+var total_clients_array = new Array();
+var total_apps_array = new Array();
 //var total_client_rx = 0;
 //var total_client_tx = 0;
 var total_apps_rx = 0
 var total_apps_tx = 0
 
-function get_client_used_apps_info(client_index, used_data_array, top5_info, type){
+function get_client_used_apps_info(client_index, used_data_array, top5_info, type, type_detail){
 	var total_traffic = 0;
 	var total_apps_traffic = 0;
 	var total_apps_traffic_temp = 0;
@@ -159,15 +161,43 @@ function get_client_used_apps_info(client_index, used_data_array, top5_info, typ
 		document.getElementById('top_client_traffic').innerHTML = "No Traffic";
 	}
 	else{
-		document.getElementById('top_client_name').innerHTML = top5_info[client_index].name;
-		if(document.getElementById('traffic_option').value == "both"){
-			total_traffic = top5_info[client_index].rx + top5_info[client_index].tx;
-		}
-		else if(document.getElementById('traffic_option').value == "down"){
-			total_traffic = top5_info[client_index].rx;
+		if(type_detail == "detail"){
+			if(type == "router"){
+				document.getElementById('top_client_name').innerHTML = total_clients_array[client_index].name;
+				if(document.getElementById('traffic_option').value == "both"){
+					total_traffic = total_clients_array[client_index].rx + total_clients_array[client_index].tx;
+				}
+				else if(document.getElementById('traffic_option').value == "down"){
+					total_traffic = total_clients_array[client_index].rx;
+				}
+				else{
+					total_traffic = total_clients_array[client_index].tx;
+				}			
+			}
+			else{
+				document.getElementById('top_client_name').innerHTML = total_apps_array[client_index].name;
+				if(document.getElementById('traffic_option').value == "both"){
+					total_traffic = total_apps_array[client_index].rx + total_apps_array[client_index].tx;
+				}
+				else if(document.getElementById('traffic_option').value == "down"){
+					total_traffic = total_apps_array[client_index].rx;
+				}
+				else{
+					total_traffic = top5_info[client_index].tx;
+				}
+			}			
 		}
 		else{
-			total_traffic = top5_info[client_index].tx;
+			document.getElementById('top_client_name').innerHTML = top5_info[client_index].name;
+			if(document.getElementById('traffic_option').value == "both"){
+				total_traffic = top5_info[client_index].rx + top5_info[client_index].tx;
+			}
+			else if(document.getElementById('traffic_option').value == "down"){
+				total_traffic = top5_info[client_index].rx;
+			}
+			else{
+				total_traffic = top5_info[client_index].tx;
+			}
 		}
 
 		traffic_unit = translate_traffic(total_traffic);
@@ -262,7 +292,10 @@ function get_client_info(list_info, type){
 	var code = "";
 	var match_flag = 0;
 	var temp_array = new Array();
-	code = "<option value='all' selected>All Clients</option>";
+	if(type == "router")
+		code = "<option value='all' selected>All Clients</option>";
+	else
+		code = "<option value='all' selected>All apps</option>";
 	top5_client_array = [];
 	top5_app_array = [];
 
@@ -313,9 +346,16 @@ function get_client_info(list_info, type){
 			
 			match_flag = 0;
 			
+			total_clients_array[i] = all_client_traffic[i][0];
+			total_clients_array[all_client_traffic[i][0]] = {
+				"mac":all_client_traffic[i][0], 
+				"name":all_client_traffic[i][0],
+				"tx":all_client_traffic[i][1],				
+				"rx":all_client_traffic[i][2]
+			};			
 		}
 		else{
-			code += "<option value=" + all_app_traffic[i][0] + ">" + all_app_traffic[i][0] + "</option>";
+			code += "<option value=" + all_app_traffic[i][0].replace(/\s/g, '_') + ">" + all_app_traffic[i][0] + "</option>";
 			if(i<6){
 				top5_app_array[i] = all_app_traffic[i][0];
 				top5_app_array[all_app_traffic[i][0]] = { 
@@ -323,7 +363,14 @@ function get_client_info(list_info, type){
 					"tx":all_app_traffic[i][1],				
 					"rx":all_app_traffic[i][2]};
 			}
-
+			
+			total_apps_array[i] = all_app_traffic[i][0];
+			total_apps_array[all_app_traffic[i][0]] = {
+				"mac":all_app_traffic[i][0], 
+				"name":all_app_traffic[i][0],
+				"tx":all_app_traffic[i][1],				
+				"rx":all_app_traffic[i][2]
+			};	
 		}
 	}
 	
@@ -471,21 +518,38 @@ function show_detail_info(mac, used_data_array, type){
 	var traffic_temp = new Array();
 	code += '<table style="width:95%;margin-left:20px;">';
 	code += '<tr style="font-size:14px;">';
-	if(clientList[mac] == undefined)
-		code += '<th colspan="4">Client: '+ mac +'</th>';
-	else
-		code += '<th colspan="4">Client: '+ getClientCurrentName(mac); +'</th>';
+	if(type == "router"){
+		if(clientList[mac] == undefined)
+			code += '<th colspan="4">Client: '+ mac +'</th>';
+		else
+			code += '<th colspan="4">Client: '+ getClientCurrentName(mac); +'</th>';	
+	}
+	else{
+		code += '<th colspan="4">App: '+ mac +'</th>';	
+	}
 	
 	code += '</tr>';
 	code += '<tr style="font-size:13px;">';
-	code += '<th style="width:55%;text-align:left;">App\'s Name</th>';
+	if(type == "router"){
+		code += '<th style="width:55%;text-align:left;">App\'s Name</th>';	
+	}
+	else{
+		code += '<th style="width:55%;text-align:left;">Client\'s Name</th>';
+	}
+	
 	code += '<th style="width:15%;text-align:right;">Upload</th>';
 	code += '<th style="width:15%;text-align:right;">Download</th>';
 	code += '<th style="width:15%;text-align:right;">Total</th>';
 	code += '</tr>';
 	for(i=0;i<used_data_array.length;i++){
-		code += '<tr>';										
-		code += '<td style="text-align:left;">' + used_data_array[i][0] + '</td>';	
+		code += '<tr>';
+		if(type == "router"){
+			code += '<td style="text-align:left;">' + used_data_array[i][0] + '</td>';		
+		}
+		else{
+			code += '<td style="text-align:left;">' + getClientCurrentName(used_data_array[i][0]) + '</td>';		
+		}
+			
 		traffic_temp = translate_traffic(used_data_array[i][1]);	
 		code += '<td style="text-align:right;">' + traffic_temp[0] + ' ' + traffic_temp[1] + '</td>';										
 		traffic_temp = translate_traffic(used_data_array[i][2]);
@@ -548,7 +612,12 @@ function show_all_info(mac, type){
 					
 		for(i=0;i<app_used_by_client_array.length;i++){
 			code += '<tr>';
-			code += '<td style="text-align:left;">' + app_used_by_client_array[i][0] + '</td>';
+			if(clientList[app_used_by_client_array[i][0]] == undefined)
+				code += '<td style="text-align:left;">' + app_used_by_client_array[i][0] + '</td>';
+			else
+				code += '<td style="text-align:left;">' + clientList[app_used_by_client_array[i][0]].name + '</td>';
+			
+			
 			traffic_temp = translate_traffic(app_used_by_client_array[i][1]);	
 			code += '<td style="text-align:right;">' + traffic_temp[0] + ' ' + traffic_temp[1] +'</td>';
 			traffic_temp = translate_traffic(app_used_by_client_array[i][2]);	
@@ -574,7 +643,7 @@ function hide_show_all_info(){
 
 
 var app_used_by_client_array = new Array();
-function get_app_used_by_client_data(client, mode, dura, time, date_string){
+function get_app_used_by_client_data(client, mode, dura, time, date_string, type, info_type, type_detail){
 	$.ajax({
 		url: '/getAppTraffic.asp?client=' + client + '&mode=' + mode + '&dura=' + dura + '&date=' + time,
 		dataType: 'script',		
@@ -599,8 +668,11 @@ function get_app_used_by_client_data(client, mode, dura, time, date_string){
 					return 	b[1] - a[1];
 				});
 			}
+
+			get_client_used_apps_info(client, app_used_by_client_array, total_apps_array, "app" , "detail");
 			
-			get_client_used_apps_info(client, app_used_by_client_array, top5_app_array, "app");
+			if(info_type == "app")
+				show_detail_info(client, app_used_by_client_array, "app");
 		}
 	});
 }
@@ -695,7 +767,8 @@ function register_event(){
 			if(date < 10)
 				date = "0" + date.toString();
 			
-			date_string = year + "/" + month + "/" + date + "/" + hour;	
+			date_string = year + "/" + month + "/" + date + "/" + hour;
+			date_second += 86400; // shift 24 hour to make traffic chart correct
 			if(document.getElementById('duration_option').value == "monthly"){
 				duration = 31;
 				mode = "day";
@@ -790,6 +863,11 @@ function switch_content(obj){
 	else{
 		get_every_app_data("all", "detail", duration, date_second, date_string);
 	}
+	
+	
+	document.getElementById('graphical_info_block').style.display = "";
+	document.getElementById('detail_info_block').style.display = "none";
+	document.getElementById('top5_info_block').style.backgroundColor = color[0];
 }
 
 function switch_date_type(obj){
@@ -821,7 +899,11 @@ function switch_date_type(obj){
 	}
 
 	document.getElementById('info_block_title').innerHTML = info_date + " Top 5 " + info_type + " Used"
-	get_every_client_data("all", "detail", duration, date_second, date_string);
+	if(info_type == "Clients")
+		get_every_client_data("all", "detail", duration, date_second, date_string);
+	else
+		get_every_app_data("all", "detail", duration, date_second, date_string);
+	
 	get_wan_data("all", mode, duration, date_second, date_string);
 	document.getElementById('graphical_info_block').style.display = "block";
 	document.getElementById('detail_info_block').style.display = "none";
@@ -834,6 +916,7 @@ function switch_date_type(obj){
 		get_client_used_app_data(top5_client_array[0], "detail", duration, date_second, date_string);
 	},3000);*/
 
+	document.getElementById('top5_info_block').style.backgroundColor = color[0];
 }
 
 function change_traffic_direction(obj){
@@ -884,16 +967,18 @@ function change_traffic_direction(obj){
 		else
 			get_client_used_apps_info(document.getElementById("client_option").value, app_used_by_client_array, top5_app_array, "app");
 	}
+	
+	document.getElementById('top5_info_block').style.backgroundColor = color[0];
 }
 
 function change_client(mac){
 	var duration = "";
 	var mode = "";
+	var info_type = "";
 
 	if(document.getElementById('duration_option').value == "monthly"){
 		mode = "day";
-		duration = "31";
-	
+		duration = "31";	
 	}
 	else if(document.getElementById('duration_option').value == "weekly"){
 		mode = "day";
@@ -904,19 +989,37 @@ function change_client(mac){
 		duration = "24";
 	}
 	
-	get_wan_data(mac, mode, duration, date_second, date_string);
-	if(mac != "all"){
-		
-		get_client_used_app_data(mac, "detail", duration, date_second, date_string, "router", "client");
-		document.getElementById('graphical_info_block').style.display = "none";
-		document.getElementById('detail_info_block').style.display = "";
-		
+	if(document.getElementById('router').className == "block_filter_pressed"){
+		info_type = "Clients";		
 	}
 	else{
-		document.getElementById('graphical_info_block').style.display = "";
-		document.getElementById('detail_info_block').style.display = "none";
-		
-	
+		info_type = "Apps";
+	}
+
+	if(info_type == "Clients"){
+		get_wan_data(mac, mode, duration, date_second, date_string);
+		if(mac != "all"){	
+			get_client_used_app_data(mac, "detail", duration, date_second, date_string, "router", "client");
+			document.getElementById('graphical_info_block').style.display = "none";
+			document.getElementById('detail_info_block').style.display = "";		
+		}
+		else{
+			document.getElementById('graphical_info_block').style.display = "";
+			document.getElementById('detail_info_block').style.display = "none";
+		}		
+	}
+	else{
+		get_app_data(mac, mode, duration, date_second, date_string);
+		if(mac != "all"){
+			mac = mac.replace(/\_/g," ");
+			get_app_used_by_client_data(mac, "detail", duration , date_second, date_string, "router", "app", "1");
+			document.getElementById('graphical_info_block').style.display = "none";
+			document.getElementById('detail_info_block').style.display = "";		
+		}
+		else{
+			document.getElementById('graphical_info_block').style.display = "";
+			document.getElementById('detail_info_block').style.display = "none";
+		}	
 	}	
 }
 
@@ -1353,7 +1456,7 @@ function cancel(){
 }
 
 function applyRule(){
-	document.form.action_script.value = "restart_hour_monitor;restart_wrs;restart_firewall";
+	document.form.action_script.value = "restart_wrs;restart_firewall";
 	document.form.submit();
 }
 

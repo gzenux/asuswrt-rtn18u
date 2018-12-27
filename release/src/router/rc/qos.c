@@ -730,7 +730,7 @@ static int start_tqos(void)
 	// judge interface by get_wan_ifname
 	// add Qos iptable rules in mangle table,
 	// move it to firewall - mangle_setting
-	// add_iQosRules(get_wan_ifname(0)); // iptables start
+	// add_iQosRules(get_wan_ifname(wan_primary_ifunit())); // iptables start
 
 	ibw = strtoul(nvram_safe_get("qos_ibw"), NULL, 10);
 	obw = strtoul(nvram_safe_get("qos_obw"), NULL, 10);
@@ -782,7 +782,7 @@ static int start_tqos(void)
 #endif
 		"# upload 1:1\n"
 		"\t$TCA parent 1: classid 1:1 htb rate %ukbit ceil %ukbit %s\n" ,
-			get_wan_ifname(0), // judge WAN interface
+			get_wan_ifname(wan_primary_ifunit()), // judge WAN interface
 			(nvram_get_int("qos_default") + 1) * 10,
 #ifdef CLS_ACT
 			(nvram_get_int("qos_default") + 1) * 10,
@@ -1038,9 +1038,11 @@ static int add_bandwidth_limiter_rules(char *pcWANIF)
 		case MODEL_RTN13U:
 		case MODEL_RTN56U:
 			action = "CONNMARK --set-return";
+			manual_return = 0;
 			break;
 		default:
 			action = "MARK --set-mark";
+			manual_return = 1;
 			break;
 	}
 
@@ -1063,6 +1065,23 @@ static int add_bandwidth_limiter_rules(char *pcWANIF)
 		":OUTPUT ACCEPT [0:0]\n"
 		);
 
+	// access router : mark 9
+	fprintf(fn,
+		"-A POSTROUTING -s %s -d %s -j %s 9\n"
+		"-A PREROUTING -s %s -d %s -j %s 9\n"
+		, nvram_safe_get("lan_ipaddr"), lan_addr, action
+		, lan_addr, nvram_safe_get("lan_ipaddr"), action
+		);
+	
+	if(manual_return){
+	fprintf(fn,
+		"-A POSTROUTING -s %s -d %s -j RETURN\n"
+		"-A PREROUTING -s %s -d %s -j RETURN\n"
+		, nvram_safe_get("lan_ipaddr"), lan_addr
+		, lan_addr, nvram_safe_get("lan_ipaddr")
+		);
+	}
+
 	g = buf = strdup(nvram_safe_get("qos_bw_rulelist"));
 	while (g) {
 		if ((p = strsep(&g, "<")) == NULL) break;
@@ -1079,12 +1098,25 @@ static int add_bandwidth_limiter_rules(char *pcWANIF)
 				, lan_addr, addr_new, action, atoi(prio)+10
 				, addr_new, lan_addr, action, atoi(prio)+10
 				);
+			if(manual_return){
+			fprintf(fn,
+				"-A POSTROUTING ! -s %s -d %s -j RETURN\n"
+				"-A PREROUTING -s %s ! -d %s -j RETURN\n"
+				, lan_addr, addr_new, addr_new, lan_addr
+				);
+			}
 		}
 		else if (addr_type == TYPE_MAC){
 			fprintf(fn,
 				"-A PREROUTING -m mac --mac-source %s ! -d %s  -j %s %d\n"
 				, addr_new, lan_addr, action, atoi(prio)+10
 				);
+			if(manual_return){
+			fprintf(fn,
+				"-A PREROUTING -m mac --mac-source %s ! -d %s  -j RETURN\n"
+				, addr_new, lan_addr
+				);
+			}
 		}
 		else if (addr_type == TYPE_IPRANGE){
 			fprintf(fn,
@@ -1093,6 +1125,13 @@ static int add_bandwidth_limiter_rules(char *pcWANIF)
 				, lan_addr, addr_new, action, atoi(prio)+10
 				, addr_new, lan_addr, action, atoi(prio)+10
 				);
+			if(manual_return){
+			fprintf(fn,
+				"-A POSTROUTING ! -s %s -m iprange --dst-range %s -j RETURN\n"
+				"-A PREROUTING -m iprange --src-range %s ! -d %s -j RETURN\n"
+				, lan_addr, addr_new, addr_new, lan_addr
+				);
+			}
 		}
 		else if (addr_type == TYPE_GUEST) continue;
 	}
@@ -1129,7 +1168,7 @@ static int start_bandwidth_limiter(void)
 		"\n"
 		"case \"$1\" in\n"
 		"start)\n"
-		, get_wan_ifname(0)
+		, get_wan_ifname(wan_primary_ifunit())
 	);
 
 	/* ASUSWRT
@@ -1165,6 +1204,19 @@ static int start_bandwidth_limiter(void)
 		"\n"
 		"$TQAU root handle 2: htb\n"
 		"$TCAU parent 2: classid 2:1 htb rate 10240000kbit\n"
+		);
+
+		// access router : mark 9
+		// default : 10Gbps
+		fprintf(f,
+		"\n"
+		"$TCA parent 1:1 classid 1:9 htb rate 10240000kbit ceil 10240000kbit prio 1\n"
+		"$TQA parent 1:9 handle 9: $SFQ\n"
+		"$TFA parent 1: prio 1 protocol ip handle 9 fw flowid 1:9\n"
+		"\n"
+		"$TCAU parent 2:1 classid 2:9 htb rate 10240000kbit ceil 10240000kbit prio 1\n"
+		"$TQAU parent 2:9 handle 9: $SFQ\n"
+		"$TFAU parent 2: prio 1 protocol ip handle 9 fw flowid 2:9\n"
 		);
 	}
 

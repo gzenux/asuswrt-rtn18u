@@ -350,7 +350,7 @@ void btn_check(void)
 		}
 #endif
 #endif
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 		if (button_pressed(BTN_LTE))
 		{
 			TRACE_PT("button LTE pressed\n");
@@ -742,7 +742,7 @@ void btn_check(void)
 	if (LED_status_changed)
 	{
 		TRACE_PT("button BTN_LED pressed\n");
-#ifdef RTCONFIG_LED_BTN_MODE
+#if 0
 #ifdef RTAC68U
 		if (nvram_get_int("btn_led_mode"))
 			reboot(RB_AUTOBOOT);
@@ -3241,7 +3241,7 @@ watchdog_main(int argc, char *argv[])
 	nvram_set("btn_wifi_sw", "0");
 #endif
 	nvram_unset("wps_ign_btn");
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	nvram_set("btn_lte", "0");
 #endif
 

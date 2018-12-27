@@ -1,0 +1,41 @@
+[CONFIGURATION]
+release/buildtools/target.mak.3004
+
+[USB]
+release/src/router/rc/usb.c
+
+[INTERNET]
+release/src/router/rc/lan.c
+releaes/src/router/rc/wan.c
+release/src/router/rc/ppp.c
+
+[WIRELESS]
+release/src/router/rc/wireless.c
+
+[SERVICE]
+release/src/router/rc/service.c
+
+[WEBUI]
+release/src/router/httpd
+release/src/router/www
+release/src/router/networkmap
+release/src/router/rstats
+
+[BROADCOM MODELS]
+release/src/router/rc/sysdeps/init-broadcom.c
+release/src/router/rc/sysdeps/broadcom
+release/src/router/shared/sysdeps/broadcom
+
+[MTK MODELS]
+release/src/router/rc/sysdeps/init-ralink.c
+release/src/router/rc/sysdeps/ralink
+release/src/router/shared/sysdeps/ralink
+
+[QCA MODELS]
+release/src/router/rc/sysdeps/init-qca.c
+release/src/router/rc/sysdeps/qca
+release/src/router/shared/sysdeps/qca
+
+[QTN MODELS]
+release/src/router/rc/sysdeps/qtn
+release/src/router/shared/sysdeps/qtn

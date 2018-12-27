@@ -345,7 +345,7 @@ int gen_ath_config(int band, int is_iNIC,int subnet)
 	FILE *fp4 = NULL;
 	char path4[50];
 #endif   
-	FILE *fp,*fp2,*fp3;
+	FILE *fp, *fp2, *fp3, *fp5;
 	char *str = NULL;
 	char *str2 = NULL;
 	int i;
@@ -1179,9 +1179,11 @@ int gen_ath_config(int band, int is_iNIC,int subnet)
 			if(WdsEnable!=2 || nvram_match(strcat_r(prefix, "wdsapply_x", tmp),"1"))
 				fprintf(fp2,"wlanconfig %s nawds mode %d\n",wif,(WdsEnable==2)?4:3);
 			   
+			if (band && !nvram_match("wl1_wds_vht", "1"))
+				caps = 0;
 			for(i=0;i<4;i++)
 				if(strlen(wds_mac[i]) && nvram_match(strcat_r(prefix, "wdsapply_x", tmp),"1"))
-					fprintf(fp2,"wlanconfig %s nawds add-repeater %s 0\n",wif,wds_mac[i]);
+					fprintf(fp5, "wlanconfig %s nawds add-repeater %s 0x%x\n", wif, wds_mac[i], caps);
 
 			if(WdsEncrypType==0)
 		      		dbg("WDS:open/none");

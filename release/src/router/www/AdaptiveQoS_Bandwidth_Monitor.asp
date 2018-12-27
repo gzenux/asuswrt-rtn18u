@@ -258,15 +258,15 @@ function calculate_router_traffic(traffic){
 		router_traffic_old = [0, 0];
 	}
 	
-	if(router_traffic_new[0] - router_traffic_old[0] < 0){		// to control overflow issue
-		tx = (parseInt(router_traffic_new[0]) + Math.pow(2,32)) - router_traffic_old[0];	
+	if((router_traffic_new[0] - router_traffic_old[0]) < 0){		// to control overflow issue
+		//tx = (parseInt(router_traffic_new[0]) + Math.pow(2,32)) - router_traffic_old[0];	
 	}
 	else{
 		tx = router_traffic_new[0] - router_traffic_old[0];
 	}
 	
-	if(router_traffic_new[1] - router_traffic_old[1] < 0){
-		rx = (parseInt(router_traffic_new[1]) + Math.pow(2,32)) - router_traffic_old[1];
+	if((router_traffic_new[1] - router_traffic_old[1]) < 0){
+		//rx = (parseInt(router_traffic_new[1]) + Math.pow(2,32)) - router_traffic_old[1];
 	}
 	else{
 		rx = router_traffic_new[1] - router_traffic_old[1];
@@ -735,7 +735,7 @@ function calculate_traffic(array_traffic){
 			
 			if(client_traffic_old[client_traffic_new[i]]){
 				if((client_traffic_new[client_traffic_new[i]].tx - client_traffic_old[client_traffic_new[i]].tx) < 0){
-					diff_tx = (parseInt(client_traffic_new[client_traffic_new[i]].tx) + Math.pow(2,32)) - client_traffic_old[client_traffic_new[i]].tx;
+					//diff_tx = (parseInt(client_traffic_new[client_traffic_new[i]].tx) + Math.pow(2,32)) - client_traffic_old[client_traffic_new[i]].tx;
 				}
 				else{
 					diff_tx = client_traffic_new[client_traffic_new[i]].tx - client_traffic_old[client_traffic_new[i]].tx;
@@ -747,7 +747,7 @@ function calculate_traffic(array_traffic){
 			
 			if(client_traffic_old[client_traffic_new[i]]){
 				if((client_traffic_new[client_traffic_new[i]].rx - client_traffic_old[client_traffic_new[i]].rx) < 0){
-					diff_rx = (parseInt(client_traffic_new[client_traffic_new[i]].rx) + Math.pow(2,32)) - client_traffic_old[client_traffic_new[i]].rx;
+					//diff_rx = (parseInt(client_traffic_new[client_traffic_new[i]].rx) + Math.pow(2,32)) - client_traffic_old[client_traffic_new[i]].rx;
 				}
 				else{
 					diff_rx = client_traffic_new[client_traffic_new[i]].rx - client_traffic_old[client_traffic_new[i]].rx;

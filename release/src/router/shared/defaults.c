@@ -498,7 +498,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_txpower",		"100"		},
 
 #if defined (RTCONFIG_RALINK) || defined (RTCONFIG_BCMWL6)
-#if defined(RTAC53U) || defined(RTCONFIG_QTN)
+#if defined(RTAC53U)
 	/* RT-AC53U disable txbf by default */
 	{ "wl_txbf", "0" },
 #else
@@ -510,11 +510,7 @@ struct nvram_tuple router_defaults[] = {
 #endif
 #ifdef RTCONFIG_BCMWL6
 #ifdef RTCONFIG_BCMARM
-#ifdef RTCONFIG_QTN
-	{ "wl_itxbf", "0" },
-#else
 	{ "wl_itxbf", "1" },
-#endif
 #endif
 #endif
 
@@ -949,6 +945,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "sr_rulelist", ""},
 	{ "dr_enable_x", "1" }, // oleg patch
 	{ "mr_enable_x", "0" }, // oleg patch
+	{ "mr_altnet_x", "" },
 
 	// Domain Name
 	{ "local_domain", "router.asus.com"},
@@ -1043,7 +1040,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "upnp_clean_threshold", "20" },
 
 #ifdef RTCONFIG_DUALWAN // RTCONFIG_DUALWAN
-#if defined(RT4GAC55U)
+#ifdef RTCONFIG_INTERNAL_GOBI
 	{ "wans_mode", "lb" },
 #else
 	{ "wans_mode", "fo" }, 		// off/failover/failback/loadbance(off/fo/fb/lb)
@@ -1065,7 +1062,7 @@ struct nvram_tuple router_defaults[] = {
 
 	{ "wandog_enable", "0" },
 	{ "wandog_target", "" },
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	{ "wandog_interval", "3" }, // Be the same with lteled's interval.
 #else
 	{ "wandog_interval", "5" },
@@ -1503,7 +1500,7 @@ struct nvram_tuple router_defaults[] = {
 	// remain default setting control as tomato
 	{ "usb_enable", "1"},
 	{ "usb_uhci", "0"},
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	{ "usb_ohci", "0"},
 	{ "usb_gobi", "1"},
 #else
@@ -2449,8 +2446,12 @@ struct nvram_tuple router_defaults[] = {
 	{ "wtf_login", 	""},
 #endif
 	{ "guard_mode",	"0"},
-#ifdef RTCONFIG_BCM_7114
-	{ "stop_tweak_usb",	"1"},
+#ifdef RTCONFIG_QUAGGA
+        	{ "quagga_enable", "0"},          // 0: Disable, 1: enable quagga(zebra + ripd)
+	{ "zebra_passwd", "zebra"},       // Set password for vty interface. If there is no password, a vty won? accept connections.(default: zebra)
+        	{ "zebra_enpasswd", "zebra"},     // Set enable password for VTY.(default: zebra)
+	{ "rip_hostname", "ripd"},        // Set hostname of the ripd.(default: ripd)
+	{ "rip_passwd", "zebra"},         // Set password for vty interface. If there is no password, a vty won? accept connections.(default: zebra)
 #endif
 	{ NULL, NULL }
 }; // router_defaults

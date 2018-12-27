@@ -288,10 +288,6 @@ ifeq ($(ART2),y)
 obj-y += LinuxART2
 endif
 
-ifeq ($(RT4GAC55U),y)
-obj-y += usb-gobi
-endif
-
 else
 #################################################################################
 # Broadcom-specific packages
@@ -392,7 +388,9 @@ endif
 obj-$(RTCONFIG_USB_PRINTER) += u2ec
 obj-$(RTCONFIG_USB_PRINTER) += LPRng
 
-ifneq ($(RT4GAC55U),y)
+ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
+obj-$(RTCONFIG_INTERNAL_GOBI) += usb-gobi
+else
 obj-$(RTCONFIG_USB_MODEM) += sdparm-1.02
 obj-$(RTCONFIG_USB_MODEM) += comgt-0.32
 obj-$(RTCONFIG_USB_MODEM) += $(if $(RTCONFIG_QCA),,uqmi)
@@ -402,7 +400,7 @@ ifneq ($(or $(findstring linux-2.6.36.x,$(LINUXDIR)),$(findstring linux-2.6.36,$
 ifeq ($(or $(RTN65U),$(RTAC55U),$(RTAC55UHP),$(RTN56UB1)),y)
 obj-$(RTCONFIG_USB_MODEM) += usbmodeswitch-1.2.3
 else
-ifneq ($(RT4GAC55U),y)
+ifneq ($(RTCONFIG_INTERNAL_GOBI),y)
 obj-$(RTCONFIG_USB_MODEM) += usb-modeswitch-2.2.3
 endif
 endif
@@ -1316,7 +1314,11 @@ bonnie-configure:
 bonnie-install:
 	install -D bonnie/bonnie++ $(INSTALLDIR)/bonnie/sbin/bonnie++
 	$(STRIP) $(INSTALLDIR)/bonnie/sbin/bonnie++
-	install -D $(shell dirname $(shell which $(CXX)))/../lib/libstdc++.so.6 $(INSTALLDIR)/bonnie/lib/libstdc++.so.6
+ifeq ($(RTCONFIG_BCMARM),y)
+	install -D $(shell dirname $(shell which $(CXX)))/../arm-brcm-linux-uclibcgnueabi/lib/libstdc++.so.6 $(INSTALLDIR)/bonnie/usr/lib/libstdc++.so.6
+else
+	install -D $(shell dirname $(shell which $(CXX)))/../lib/libstdc++.so.6 $(INSTALLDIR)/bonnie/usr/lib/libstdc++.so.6
+endif
 
 bonnie-clean:
 	[ ! -f bonnie/Makefile ] || $(MAKE) -C bonnie clean
@@ -3353,6 +3355,7 @@ ifeq ($(RTCONFIG_BCMARM),y)
 else
 	install -D $(shell dirname $(shell which $(CXX)))/../lib/libstdc++.so.6 $(INSTALLDIR)/ftpclient/usr/lib/libstdc++.so.6
 endif
+
 ftpclient-clean:
 	-@$(MAKE) -C ftpclient clean
 
@@ -3372,6 +3375,7 @@ ifeq ($(RTCONFIG_BCMARM),y)
 else
 	install -D $(shell dirname $(shell which $(CXX)))/../lib/libstdc++.so.6 $(INSTALLDIR)/sambaclient/usr/lib/libstdc++.so.6
 endif
+
 sambaclient-clean:
 	-@$(MAKE) -C sambaclient clean
 	rm -rf sambaclient/stamp-h1
@@ -3392,6 +3396,7 @@ ifeq ($(RTCONFIG_BCMARM),y)
 else
 	install -D $(shell dirname $(shell which $(CXX)))/../lib/libstdc++.so.6 $(INSTALLDIR)/usbclient/usr/lib/libstdc++.so.6
 endif
+
 usbclient-clean:
 	-@$(MAKE) -C usbclient clean
 	rm -rf usbclient/stamp-h1
@@ -4011,11 +4016,6 @@ mastiff-install:
 mastiff-clean:
 	cd aaews && make clean 
 	echo $(INSTALLDIR)
-ifeq ($(RTCONFIG_BCMARM),y)
-LIBSTDCPP_PATH=$(shell dirname $(shell which $(CXX)))/../arm-brcm-linux-uclibcgnueabi/lib
-else
-LIBSTDCPP_PATH=$(TOP)/../../../tools/brcm/hndtools-mipsel-uclibc/lib
-endif
 
 
 #aaews: wb
@@ -4036,7 +4036,11 @@ aaews-install:
 	$(STRIP) -s $(INSTALLDIR)/wb/usr/lib/libws.so
 	install -D aaews/aaews $(INSTALLDIR)/wb/usr/sbin/aaews
 	$(STRIP) -s $(INSTALLDIR)/wb/usr/sbin/aaews
-	install -D $(LIBSTDCPP_PATH)/libstdc++.so.6 $(INSTALLDIR)/wb/usr/lib/libstdc++.so.6
+ifeq ($(RTCONFIG_BCMARM),y)
+	install -D $(shell dirname $(shell which $(CXX)))/../arm-brcm-linux-uclibcgnueabi/lib/libstdc++.so.6 $(INSTALLDIR)/wb/usr/lib/libstdc++.so.6
+else
+	install -D $(shell dirname $(shell which $(CXX)))/../lib/libstdc++.so.6 $(INSTALLDIR)/wb/usr/lib/libstdc++.so.6
+endif
 
 aaews-clean:
 	cd aaews && make clean

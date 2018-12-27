@@ -41,13 +41,16 @@ jQuery.fn.iphoneSwitch = function(start_state, switched_on_callback, switched_of
 		// click handling
 		jQuery(this).unbind("click"); // initial click event
 		jQuery(this).click(function() {
-			if((this.id == "radio_clouddisk_enable" || this.id == "radio_web_restrict_enable" || this.id == "apps_analysis_enable" || this.id == "radio_wps_enable" || this.id == "nm_radio_dualwan_enable" || this.id == "simdetect_switch") && typeof(curState))
+			if((this.id == "radio_clouddisk_enable" || this.id == "radio_web_restrict_enable" || this.id == "apps_analysis_enable" || this.id == "radio_wps_enable" || this.id == "nm_radio_dualwan_enable" || this.id == "simdetect_switch" || this.id == "dns_switch") && typeof(curState))
 				state = curState;
 			else if(this.id.length > 18 && this.id.substr(0, 18) == "wtfast_rule_enable"){
 				var index = (this.id).substr(18);
 				var index_int = parseInt(index);
 				state = rule_enable_array[index_int];
 			}
+
+                        if((this.id == "wandhcp_switch") && typeof(curWandhcpState))
+                                state = curWandhcpState;
 
 			if(state == '1') {
 				jQuery(this).find('.iphone_switch').animate({backgroundPosition: -37}, "slow", function() {

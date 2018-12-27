@@ -1008,7 +1008,7 @@ extern void check_hour_monitor_service();
 extern void hm_traffic_analyzer_save();
 extern void hm_traffic_control_save();
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 extern int lteled_main(int argc, char **argv);
 extern int start_lteled(void);
 extern void stop_lteled(void);

@@ -89,6 +89,7 @@ String.prototype.trim = function() {
 }
 
 var sw_mode = '<% nvram_get("sw_mode"); %>';
+var wlc_band = '<% nvram_get("wlc_band"); %>';
 /*Media Bridge mode
 Broadcom: sw_mode = 3, wlc_psta = 1
 MTK/QCA: sw_mode = 2, wlc_psta = 1

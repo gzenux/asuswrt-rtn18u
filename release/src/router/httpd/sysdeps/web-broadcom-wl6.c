@@ -1542,6 +1542,9 @@ wl_control_channel(int unit)
 	wl_bss_info_107_t *old_bi;
 	char tmp[128], prefix[] = "wlXXXXXXXXXX_";
 	char *name;
+#ifdef RTCONFIG_QTN
+	qcsapi_unsigned_int channel;
+#endif
 
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
@@ -1570,8 +1573,16 @@ wl_control_channel(int unit)
 
 		}
 	}
+#ifdef RTCONFIG_QTN
+	ret = rpc_qcsapi_get_channel(&channel);
+#endif
 
+#ifdef RTCONFIG_QTN
+	if (ret < 0) return 0;
+	else return channel;
+#else
 	return 0;
+#endif
 }
 
 int

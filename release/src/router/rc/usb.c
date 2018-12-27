@@ -350,7 +350,7 @@ void start_usb(void)
 #endif
 #ifdef RTCONFIG_USB_MODEM
 		modprobe("usbnet");
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 		if(nvram_get_int("usb_gobi") == 1)
 			modprobe("gobi");
 #else
@@ -373,7 +373,7 @@ void remove_usb_modem_modules(void)
 #ifdef RTCONFIG_USB_BECEEM
 	modprobe_r("drxvi314");
 #endif
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	killall_tk("gobi");
 	modprobe_r("gobi");
 #else
@@ -1285,10 +1285,8 @@ done:
 	{
 		chmod(mountpoint, 0777);
 
-#ifdef RTCONFIG_USB_MODEM
 		char usb_node[32], port_path[8];
 		char prefix[] = "usb_pathXXXXXXXXXXXXXXXXX_", tmp[100];
-		unsigned int vid, pid;
 
 		ptr = dev_name+5;
 
@@ -1299,6 +1297,9 @@ done:
 				// for ATE.
 				if(strlen(nvram_safe_get(strcat_r(prefix, "_fs_path0", tmp))) <= 0)
 					nvram_set(tmp, ptr);
+
+#ifdef RTCONFIG_USB_MODEM
+				unsigned int vid, pid;
 
 				vid = strtoul(nvram_safe_get(strcat_r(prefix, "_vid", tmp)), NULL, 16);
 				pid = strtoul(nvram_safe_get(strcat_r(prefix, "_pid", tmp)), NULL, 16);
@@ -1312,9 +1313,9 @@ done:
 
 					return 0; // skip to restart_nasapps.
 				}
+#endif
 			}
 		}
-#endif
 
 #if defined(RTCONFIG_APP_PREINSTALLED) || defined(RTCONFIG_APP_NETINSTALLED)
 		if(!strcmp(nvram_safe_get("apps_mounted_path"), "")){

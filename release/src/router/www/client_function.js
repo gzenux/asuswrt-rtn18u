@@ -275,7 +275,7 @@ function genClientList(){
 		var thisClient = originData.asusDevice[i].split(">");
 		var thisClientMacAddr = (typeof thisClient[3] == "undefined") ? false : thisClient[3].toUpperCase();
 
-		if(!thisClientMacAddr || thisClient[2] == '<% nvram_get("lan_ipaddr"); %>'){
+		if(!thisClientMacAddr || thisClient.length != 8 || thisClient[2] == '<% nvram_get("lan_ipaddr"); %>'){
 			continue;
 		}
 
@@ -313,8 +313,12 @@ function genClientList(){
 	for(var i=0; i<originData.fromNetworkmapd.length; i++){
 		var thisClient = originData.fromNetworkmapd[i].split(">");
 		var thisClientMacAddr = (typeof thisClient[3] == "undefined") ? false : thisClient[3].toUpperCase();
+		var thisClientLength = 8;
+		if(bwdpi_support) {
+			thisClientLength = 12;
+		}
 
-		if(!thisClientMacAddr){
+		if(!thisClientMacAddr || thisClient.length != thisClientLength){
 			continue;
 		}
 
@@ -459,7 +463,7 @@ function genClientList(){
 		var thisClient = originData.customList[i].split(">");
 		var thisClientMacAddr = (typeof thisClient[1] == "undefined") ? false : thisClient[1].toUpperCase();
 
-		if(!thisClientMacAddr){
+		if(!thisClientMacAddr || thisClient.length != 6){
 			continue;
 		}
 

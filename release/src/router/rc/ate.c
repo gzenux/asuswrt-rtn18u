@@ -11,7 +11,7 @@
 #include <qca.h>
 #endif
 #include "ate.h"
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 #include <at_cmd.h>
 #endif
 #ifdef RTCONFIG_QCA_PLC_UTILS
@@ -822,12 +822,6 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		puts(nvram_safe_get("btn_ez"));
 		return 0;
 	}
-#ifdef RT4GAC55U
-	else if (!strcmp(command, "Get_LteButtonStatus")) {
-		puts(nvram_safe_get("btn_lte"));
-		return 0;
-	}
-#endif
 #ifdef RTCONFIG_WIFI_TOG_BTN
 	else if (!strcmp(command, "Get_WirelessButtonStatus")) {
 		puts(nvram_safe_get("btn_wifi_toggle"));
@@ -1318,7 +1312,11 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 	}
 #endif
 #endif	/* RTCONFIG_QCA */
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
+	else if(!strcmp(command, "Get_LteButtonStatus")) {
+		puts(nvram_safe_get("btn_lte"));
+		return 0;
+	}
 	else if(!strcmp(command, "Get_GobiSimCard")) {
 		char line[128];
 		if (!Gobi_SimCardReady(Gobi_SimCard(line, sizeof(line))))
@@ -1413,7 +1411,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		cprintf("line(%p) band(%p)\n", line, band);
 		printf("%s\n", band);
 	}
-#endif	/* RT4GAC55U */
+#endif	/* RTCONFIG_INTERNAL_GOBI */
 #if defined(RTCONFIG_TCODE)
         else if (!strcmp(command, "Set_TerritoryCode")) {
 #if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)

@@ -301,7 +301,7 @@ OBJS += pwdec.o
 endif
 endif
 
-ifeq ($(RT4GAC55U),y)
+ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
 OBJS += lteled.o
 endif
 
@@ -564,7 +564,7 @@ endif
 ifeq ($(RTCONFIG_IPERF),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc monitor
 endif
-ifeq ($(RT4GAC55U),y)
+ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc lteled
 endif
 ifeq ($(RTCONFIG_TR069),y)

@@ -687,6 +687,7 @@ start_ecmh(const char *wan_ifname)
 void
 stop_igmpproxy()
 {
+_dprintf("!!!!!! stop_igmpproxy !!!!\n");
 	if (pids("udpxy"))
 		killall_tk("udpxy");
 	if (pids("igmpproxy"))
@@ -700,6 +701,7 @@ start_igmpproxy(char *wan_ifname)
 	static char *igmpproxy_conf = "/tmp/igmpproxy.conf";
 	char *altnet = nvram_safe_get("mr_altnet_x");
 
+_dprintf("======== start_igmpproxy: %s =====\n", wan_ifname);
 #ifdef RTCONFIG_DSL
 #ifdef RTCONFIG_DUALWAN
 	if ( nvram_match("wan0_ifname", wan_ifname)
@@ -713,6 +715,12 @@ start_igmpproxy(char *wan_ifname)
 #endif
 #endif
 
+#ifdef RTCONFIG_MULTICAST_IPTV
+	if ( nvram_match("switch_wantag", "movistar") &&
+	    !nvram_match("iptv_ifname", wan_ifname) )
+		return;
+#endif
+_dprintf("------ stop igmp 3 -----\n");
 	stop_igmpproxy();
 
 	if (nvram_get_int("udpxy_enable_x")) {
@@ -726,7 +734,7 @@ start_igmpproxy(char *wan_ifname)
 	if (!nvram_match("mr_enable_x", "1"))
 		return;
 
-	_dprintf("start igmpproxy [%s]\n", wan_ifname);
+	logmessage("start_igmpproxy on %s\n", wan_ifname);
 
 	if ((fp = fopen(igmpproxy_conf, "w")) == NULL) {
 		perror(igmpproxy_conf);
@@ -744,6 +752,7 @@ start_igmpproxy(char *wan_ifname)
 
 	fclose(fp);
 
+_dprintf(">>>>> Call igmpproxy <<<<<<\n\n");
 	eval("/usr/sbin/igmpproxy", igmpproxy_conf);
 }
 
@@ -1846,7 +1855,13 @@ stop_wan_if(int unit)
 		killall_tk("auth-fail");
 #endif
 
+#ifdef RTCONFIG_MULTICAST_IPTV
+		if ( nvram_match("switch_wantag", "movistar") && (unit == WAN_UNIT_IPTV) )
+#endif
+		{
+		_dprintf("------ stop igmp 1 unit= %d -----\n", unit);
 		stop_igmpproxy();
+		}
 	}
 
 #ifdef RTCONFIG_VPNC
@@ -1954,7 +1969,7 @@ stop_wan_if(int unit)
 		}
 #endif	/* RTCONFIG_USB_BECEEM */
 
-#if defined(RT4GAC55U)
+#ifdef RTCONFIG_INTERNAL_GOBI
 		char *const modem_argv[] = {"modem_stop.sh", NULL};
 
 		_eval(modem_argv, ">>/tmp/usb.log", 0, NULL);
@@ -2366,7 +2381,11 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 		/* the gateway is in the local network */
 		if (gateway &&
 		    inet_addr_(gateway) != inet_addr_(nvram_safe_get(strcat_r(prefix, "ipaddr", tmp))))
-			route_add(wan_ifname, 0, gateway, NULL, "255.255.255.255");
+		{
+			/* Rawny: delete gateway route in IPTV(movistar) case to enable QUAGGA */
+			if(!nvram_match("switch_wantag", "movistar"))
+				route_add(wan_ifname, 0, gateway, NULL, "255.255.255.255");
+		}
 		/* replaced with add_multi_routes()
 		route_add(wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0"); */
 	}
@@ -2407,6 +2426,19 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	}
 #endif
 
+#ifdef RTCONFIG_MULTICAST_IPTV
+	if ( nvram_match("iptv_ifname", wan_ifname) ) {
+		if( nvram_match("switch_wantag", "maxis_fiber_iptv") ) 
+			route_add(wan_ifname, 0, "172.17.90.1", NULL, "255.255.255.255");
+		start_igmpproxy(wan_ifname);
+	}
+
+	if(wan_unit == WAN_UNIT_IPTV) {
+		stop_quagga();
+		start_quagga();
+	}
+#endif
+
 #if defined(RTCONFIG_QCA) || \
     (defined(RTCONFIG_RALINK) && !defined(RTCONFIG_DSL) && !defined(RTN13U))
 	reinit_hwnat(wan_unit);
@@ -2444,7 +2476,7 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	add_multi_routes();
 
 #ifdef RTCONFIG_USB_MODEM
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	if(dualwan_unit__usbif(wan_unit)){
 		eval("modem_status.sh", "operation");
 #if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
@@ -2593,7 +2625,7 @@ wan_down(char *wan_ifname)
 
 	_dprintf("%s(%s): %s.\n", __FUNCTION__, wan_ifname, nvram_safe_get(strcat_r(prefix, "dns", tmp)));
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	if(dualwan_unit__usbif(wan_unit))
 		nvram_unset("usb_modem_act_startsec");
 #endif
@@ -2616,7 +2648,13 @@ wan_down(char *wan_ifname)
 		/* Stop multicast router when not VPN */
 		if (strcmp(wan_proto, "dhcp") == 0 ||
 		    strcmp(wan_proto, "static") == 0)
+		{
+_dprintf("------ stop igmp 2 unit= %d -----\n", wan_unit);
+#ifdef RTCONFIG_MULTICAST_IPTV
+	        if ( !nvram_match("switch_wantag", "movistar"))
+#endif
 			stop_igmpproxy();
+		}
 
 		/* Remove default route to gateway if specified */
 		gateway = nvram_safe_get(strcat_r(prefix, "gateway", tmp));
@@ -2671,6 +2709,18 @@ wan_ifunit(char *wan_ifname)
 			     nvram_match(strcat_r(prefix, "proto", tmp), "static")))
 				return unit;
 		}
+#ifdef RTCONFIG_MULTICAST_IPTV
+                if( nvram_get_int("switch_stb_x") > 6 )
+                {
+	      	    for (unit = WAN_UNIT_IPTV; unit < WAN_UNIT_MULTICAST_IPTV_MAX; unit++) {
+                        snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+                        if (nvram_match(strcat_r(prefix, "ifname", tmp), wan_ifname) &&
+                            (nvram_match(strcat_r(prefix, "proto", tmp), "dhcp") ||
+                             nvram_match(strcat_r(prefix, "proto", tmp), "static")))
+                                return unit;
+                    }
+		}
+#endif
 	}
 
 	return -1;
@@ -2691,6 +2741,17 @@ wanx_ifunit(char *wan_ifname)
 		     nvram_match(strcat_r(prefix, "proto", tmp), "l2tp")))
 			return unit;
 	}
+#ifdef RTCONFIG_MULTICAST_IPTV
+        for (unit = WAN_UNIT_IPTV; unit < WAN_UNIT_MULTICAST_IPTV_MAX; unit++) {
+                snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+
+                if (nvram_match(strcat_r(prefix, "ifname", tmp), wan_ifname) &&
+                    (nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") ||
+                     nvram_match(strcat_r(prefix, "proto", tmp), "pptp") ||
+                     nvram_match(strcat_r(prefix, "proto", tmp), "l2tp")))
+                        return unit;
+        }
+#endif
 	return -1;
 }
 
@@ -2928,6 +2989,17 @@ start_wan(void)
 #endif
 #endif
 
+#ifdef RTCONFIG_MULTICAST_IPTV
+        /* Start each configured and enabled wan connection and its undelying i/f */
+        if(nvram_get_int("switch_stb_x") > 6)
+        {
+	        for(unit = WAN_UNIT_IPTV; unit < WAN_UNIT_MULTICAST_IPTV_MAX; ++unit){
+        	        _dprintf("*** Multicast IPTV case *** %s: start_wan_if(%d)!\n", __FUNCTION__, unit);
+                		start_wan_if(unit);
+	        }
+	}
+#endif
+
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(2,6,36)
 	f_write_string("/proc/sys/net/bridge/bridge-nf-call-iptables", "0", 0, 0);
 	f_write_string("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0", 0, 0);
@@ -3032,6 +3104,17 @@ void convert_wan_nvram(char *prefix, int unit)
 	else nvram_set(strcat_r(prefix, "hwaddr", tmp), nvram_safe_get("et1macaddr"));
 #endif
 
+#ifdef RTCONFIG_MULTICAST_IPTV
+	if(unit >9) {
+		strcpy(tmp, nvram_safe_get("et0macaddr"));
+		int mac_int = atoi(&tmp[16]);
+		mac_int+= unit-9;
+		memset(macbuf, 0, 32);
+		memcpy(macbuf, tmp, 16);
+		sprintf(macbuf, "%s%d", macbuf, mac_int);
+		nvram_set(strcat_r(prefix, "hwaddr", tmp), macbuf);
+	}
+#endif
 	// sync proto
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "static"))
 		nvram_set_int(strcat_r(prefix, "dhcpenable_x", tmp), 0);

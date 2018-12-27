@@ -179,8 +179,8 @@ extern int ej_get_default_reboot_time(int eid, webs_t wp, int argc, char_t **arg
 
 static int b64_decode( const char* str, unsigned char* space, int size );
 
-extern void send_login_page(int fromapp_flag, int error_status);
-extern void __send_login_page(int fromapp_flag, int error_status);
+extern void send_login_page(int fromapp_flag, int error_status, char* url, int lock_time);
+extern void __send_login_page(int fromapp_flag, int error_status, char* url, int lock_time);
 
 extern char *get_cgi_json(char *name, json_object *root);
 
@@ -257,6 +257,7 @@ extern int redirect;
 extern int change_passwd;	// 2008.08 magic
 extern int reget_passwd;	// 2008.08 magic
 extern int skip_auth;
+extern int lock_flag;
 extern char host_name[64];
 extern char user_agent[1024];
 extern char referer_host[64];
@@ -1917,6 +1918,22 @@ int validate_instance(webs_t wp, char *name, json_object *root)
 				found = NVRAM_MODIFIED_BIT;
 			}
 		}
+                if(nvram_match("switch_wantag", "movistar")){
+                        sprintf(prefix, "wan10_", i++);//IPTV
+                        value = websGetVar(wp, strcat_r(prefix, name+4, tmp), NULL);
+                        if(value && strcmp(nvram_safe_get(tmp), value)) {
+                                dbG("nvram set %s = %s\n", tmp, value);
+                                nvram_set(tmp, value);
+                                found = NVRAM_MODIFIED_BIT;
+                        }
+                        sprintf(prefix, "wan11_", i++);//VoIP
+                        value = websGetVar(wp, strcat_r(prefix, name+4, tmp), NULL);
+                        if(value && strcmp(nvram_safe_get(tmp), value)) {
+                                dbG("nvram set %s = %s\n", tmp, value);
+                                nvram_set(tmp, value);
+                                found = NVRAM_MODIFIED_BIT;
+                        }
+                }
 	}
 #ifdef RTCONFIG_DSL
 	else if(strncmp(name, "dsl", 3)==0) {
@@ -4043,17 +4060,15 @@ static int ej_get_parameter(int eid, webs_t wp, int argc, char_t **argv){
 
 	last_was_escaped = FALSE;
 
-	//char *value = websGetVar(wp, argv[0], "");
+	char *value = websGetVar(wp, argv[0], "");
+	if(value != NULL){
+		if(strstr(value, "javascript")){
+			return ret;		
+		}	
+	}
 	//websWrite(wp, "%s", value);
 	for (c = websGetVar(wp, argv[0], ""); *c; c++){
-		if (isprint((int)*c) &&
-			*c != '"' && *c != '&' && *c != '<' && *c != '>' && *c != '\\' &&  *c != '(' && *c != ')' &&
-			((!last_was_escaped) || !isdigit(*c)))
-		{
-			ret += websWrite(wp, "%c", *c);
-			last_was_escaped = FALSE;
-		}
-		else if ((*c & 0x80) != 0)
+		if (isalnum(*c) != 0 || *c == '-' || *c == '_' || *c == '.' || *c == '/' || *c == ':')
 		{
 			ret += websWrite(wp, "%c", *c);
 			last_was_escaped = FALSE;
@@ -5156,7 +5171,7 @@ static int ej_get_ap_info(int eid, webs_t wp, int argc, char_t **argv)
 static int ej_get_client_detail_info(int eid, webs_t wp, int argc, char_t **argv){
 	int i, shm_client_info_id;
 	void *shared_client_info=(void *) 0;
-	char output_buf[256], dev_name[16];
+	char output_buf[256], dev_name[32];
 	P_CLIENT_DETAIL_INFO_TABLE p_client_info_tab;
 	int lock;
 	char devname[LINE_SIZE], character;
@@ -5941,7 +5956,7 @@ static long old_uptime = 0;
 static int ej_get_modem_info(int eid, webs_t wp, int argc, char_t **argv){
 	int i, j, got_modem;
 	char prefix[] = "usb_pathXXXXXXXXXXXXXXXXX_", tmp[100];
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	char modem_array[MAX_USB_PORT*MAX_USB_HUB_PORT][6][64];
 #else
 	char modem_array[MAX_USB_PORT*MAX_USB_HUB_PORT][4][64];
@@ -5949,7 +5964,7 @@ static int ej_get_modem_info(int eid, webs_t wp, int argc, char_t **argv){
 	char port_path[8];
 	char act_node[32], act_port_path[8];
 	long now;
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	char *cmd_sig[] = {"/usr/sbin/modem_status.sh", "signal", NULL};
 	char *cmd_op[] = {"/usr/sbin/modem_status.sh", "operation", NULL};
 	int pid;
@@ -5963,7 +5978,7 @@ static int ej_get_modem_info(int eid, webs_t wp, int argc, char_t **argv){
 	else{
 		now = uptime();
 		if(!old_uptime || now-old_uptime >= 60){
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 _dprintf("httpd: run modem_status.sh.\n");
 #if 0
 			_eval(cmd_sig, NULL, 0, &pid);
@@ -5977,7 +5992,7 @@ _dprintf("httpd: run modem_status.sh.\n");
 		}
 	}
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	memset(modem_array, 0, MAX_USB_PORT*MAX_USB_HUB_PORT*6*64);
 #else
 	memset(modem_array, 0, MAX_USB_PORT*MAX_USB_HUB_PORT*4*64);
@@ -5993,7 +6008,7 @@ _dprintf("httpd: run modem_status.sh.\n");
 			strncpy(modem_array[got_modem][1], nvram_safe_get(strcat_r(prefix, "_product", tmp)), 64);
 			strncpy(modem_array[got_modem][2], nvram_safe_get(strcat_r(prefix, "_serial", tmp)), 64);
 			strncpy(modem_array[got_modem][3], port_path, 64);
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 			if(!strcmp(port_path, act_port_path)){
 				strncpy(modem_array[got_modem][4], nvram_safe_get("usb_modem_act_signal"), 64);
 				strncpy(modem_array[got_modem][5], nvram_safe_get("usb_modem_act_operation"), 64);
@@ -6013,7 +6028,7 @@ _dprintf("httpd: run modem_status.sh.\n");
 					strncpy(modem_array[got_modem][1], nvram_safe_get(strcat_r(prefix, "_product", tmp)), 64);
 					strncpy(modem_array[got_modem][2], nvram_safe_get(strcat_r(prefix, "_serial", tmp)), 64);
 					strncpy(modem_array[got_modem][3], port_path, 64);
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 					if(!strcmp(port_path, act_port_path)){
 						strncpy(modem_array[got_modem][4], nvram_safe_get("usb_modem_act_signal"), 64);
 						strncpy(modem_array[got_modem][5], nvram_safe_get("usb_modem_act_operation"), 64);
@@ -6090,7 +6105,7 @@ _dprintf("httpd: run modem_status.sh.\n");
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	websWrite(wp, "function modem_signal(){\n");
 	websWrite(wp, "    return [");
 
@@ -6128,7 +6143,7 @@ _dprintf("httpd: run modem_status.sh.\n");
 }
 #if 0
 static int modem_simstatus_hook(int eid, webs_t wp, int argc, char_t **argv){//Cherry Cho added in 2014/9/4.
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	char act_node[32], act_port_path[8];
 	char *cmd_simsignal[] = {"modem_status.sh", "signal", NULL};
 	char *cmd_simop[] = {"modem_status.sh", "operation", NULL};
@@ -6164,7 +6179,7 @@ static int ej_check_modem_sim(int eid, webs_t wp, int argc, char_t **argv){
 }
 #endif
 static int ej_get_isp_scan_results(int eid, webs_t wp, int argc, char_t **argv){
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	char file_name[MAX_LINE_SIZE];
 	int ret = 0;
 
@@ -6179,7 +6194,7 @@ static int ej_get_isp_scan_results(int eid, webs_t wp, int argc, char_t **argv){
 }
 
 static int ej_get_simact_result(int eid, webs_t wp, int argc, char_t **argv){
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	char act_node[32], act_port_path[8];
 	FILE *fp;
 	char buf[256];
@@ -6793,7 +6808,7 @@ wps_finish:
 			websWrite(wp, "done<br>");
 	}
 #endif /* __CONFIG_NORTON__ */
-#ifdef RT4GAC55U	
+#ifdef RTCONFIG_INTERNAL_GOBI
 	else if (!strcmp(action_mode, "scan_isp"))
 	{
 		char act_node[32], act_port_path[8];
@@ -8247,6 +8262,11 @@ asus_token_t* search_timeout_in_list(asus_token_t **prev, int fromapp_flag)
 	int found = 0;
 
 	time_t now = 0;
+
+	int logout_time = 30;
+
+	if(!nvram_match("http_autologout", "0"))
+		logout_time = nvram_get_int("http_autologout");
 	
 	now = uptime();
 
@@ -8260,7 +8280,7 @@ asus_token_t* search_timeout_in_list(asus_token_t **prev, int fromapp_flag)
 			break;
 		}
 
-		if((unsigned long)(now-atol(ptr->login_timestampstr)) > 60 && strcmp( cp, "asusrouter") != 0)
+		if((unsigned long)(now-atol(ptr->login_timestampstr)) > (logout_time * 60) && strcmp( cp, "asusrouter") != 0)
 		{
 			found = 1;
 			break;
@@ -8295,11 +8315,23 @@ int check_token_timeout_in_list(void)
 {
 	int i;
 	int list_len = get_token_list_length();
-	char *cp = strtok(user_agent, "-");
+
 	int fromapp_flag = 0;
 
-	if(cp != NULL && strcmp( cp, "asusrouter") == 0)
-		fromapp_flag = 1;
+	if(user_agent != NULL){
+		char *cp1=NULL, *app_router=NULL, *app_platform=NULL, *app_framework=NULL, *app_verison=NULL;
+		cp1 = strdup(user_agent);
+
+		vstrsep(cp1, "-", &app_router, &app_platform, &app_framework, &app_verison);
+
+		if(app_router != NULL && app_framework != NULL && strcmp( app_router, "asusrouter") == 0){
+				fromapp_flag = FROM_ASUSROUTER;
+			if(strcmp( app_framework, "DUTUtil") == 0)
+				fromapp_flag = FROM_DUTUtil;
+			else if(strcmp( app_framework, "ASSIA") == 0)
+				fromapp_flag = FROM_ASSIA;
+		}
+	}
 
 	for(i=0; i < list_len; i++){
 		asus_token_t *prev = NULL;
@@ -8336,11 +8368,22 @@ int check_login_in_list(void)
 	asus_token_t *prev = NULL;
 	asus_token_t *del = NULL;
 
-	char *cp1 = strtok(user_agent, "-");
 	int fromapp_flag = 0;
 
-	if(strcmp( cp1, "asusrouter") == 0)
-	fromapp_flag = 1;
+	if(user_agent != NULL){
+		char *cp1=NULL, *app_router=NULL, *app_platform=NULL, *app_framework=NULL, *app_verison=NULL;
+		cp1 = strdup(user_agent);
+
+		vstrsep(cp1, "-", &app_router, &app_platform, &app_framework, &app_verison);
+
+		if(app_router != NULL && app_framework != NULL && strcmp( app_router, "asusrouter") == 0){
+				fromapp_flag = FROM_ASUSROUTER;
+			if(strcmp( app_framework, "DUTUtil") == 0)
+				fromapp_flag = FROM_DUTUtil;
+			else if(strcmp( app_framework, "ASSIA") == 0)
+				fromapp_flag = FROM_ASSIA;
+		}
+	}
 
 	del = search_timeout_in_list(&prev, fromapp_flag);
 	if(del == NULL)
@@ -8406,12 +8449,22 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	int l;
 	char asus_token[32];
 	char *next_page=NULL;
-
-	char *cp1 = strtok(user_agent, "-");
 	int fromapp_flag = 0;
 
-	if(strcmp( cp1, "asusrouter") == 0)
-		fromapp_flag = 1;
+	if(user_agent != NULL){
+		char *cp1=NULL, *app_router=NULL, *app_platform=NULL, *app_framework=NULL, *app_verison=NULL;
+		cp1 = strdup(user_agent);
+
+		vstrsep(cp1, "-", &app_router, &app_platform, &app_framework, &app_verison);
+
+		if(app_router != NULL && app_framework != NULL && strcmp( app_router, "asusrouter") == 0){
+				fromapp_flag = FROM_ASUSROUTER;
+			if(strcmp( app_framework, "DUTUtil") == 0)
+				fromapp_flag = FROM_DUTUtil;
+			else if(strcmp( app_framework, "ASSIA") == 0)
+				fromapp_flag = FROM_ASSIA;
+		}
+	}
 
 	next_page = websGetVar(wp, "next_page", "");
 
@@ -8440,28 +8493,34 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	if(last_login_timestamp != 0 && dt > 60){
 		login_try = 0;
 		last_login_timestamp = 0;
+		lock_flag = 0;
 	}
 	if (MAX_login <= DEFAULT_LOGIN_MAX_NUM){
 		MAX_login = DEFAULT_LOGIN_MAX_NUM;
 	}
 	if(login_try >= MAX_login){
+		lock_flag = 1;
 		temp_ip_addr.s_addr = login_ip_tmp;
 		temp_ip_str = inet_ntoa(temp_ip_addr);
 
 		if(login_try%MAX_login == 0){
 			logmessage("httpd login lock", "Detect abnormal logins at %d times. The newest one was from %s.", login_try, temp_ip_str);
 		}
-		__send_login_page(fromapp_flag, LOGINLOCK);
+		__send_login_page(fromapp_flag, LOGINLOCK, NULL, dt);
 		return LOGINLOCK;
 	}
 
 	websWrite(wp,"%s %d %s\r\n", PROTOCOL, 200, "OK" );
 	websWrite(wp,"Server: %s\r\n", SERVER_NAME );
-        if (fromapp_flag == 1){
+        if (fromapp_flag != 0){
 		websWrite(wp, "Cache-Control: no-store\r\n");	
 		websWrite(wp, "Pragma: no-cache\r\n");
-		websWrite(wp,"AiHOMEAPILevel: %d\r\n", EXTEND_AIHOME_API_LEVEL );
-		websWrite(wp,"Httpd_AiHome_Ver: %d\r\n", EXTEND_HTTPD_AIHOME_VER );
+		if(fromapp_flag == FROM_DUTUtil){
+			websWrite(wp, "AiHOMEAPILevel: %d\r\n", EXTEND_AIHOME_API_LEVEL );
+			websWrite(wp, "Httpd_AiHome_Ver: %d\r\n", EXTEND_HTTPD_AIHOME_VER );
+		}else if(fromapp_flag == FROM_ASSIA){
+			websWrite(wp, "ASSIA_API_Level: %d\r\n", EXTEND_ASSIA_API_LEVEL );
+		}
 	}
 	(void) strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
 	websWrite(wp,"Date: %s\r\n", timebuf );
@@ -8506,13 +8565,17 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}else{
 		websWrite(wp,"Connection: close\r\n" );
 		websWrite(wp,"\r\n" );
-		if(fromapp_flag == 1){
+		if(fromapp_flag != 0){
 			websWrite(wp, "{\n\"error_status\":\"%d\"\n}\n", ACCOUNTFAIL);
 		}else{
 			login_try++;
 			last_login_timestamp = login_timestamp_tmp;
 			websWrite(wp,"<HTML><HEAD>\n" );
-			websWrite(wp,"<script>parent.location.href='/Main_Login.asp?error_status=%d';</script>\n",ACCOUNTFAIL);
+			if(login_try >= MAX_login){
+				lock_flag = 1;
+				websWrite(wp,"<script>parent.location.href='/Main_Login.asp?error_status=%d&lock_time=%d';</script>\n",LOGINLOCK, dt);
+			}else
+				websWrite(wp,"<script>parent.location.href='/Main_Login.asp?error_status=%d';</script>\n",ACCOUNTFAIL);
 			websWrite(wp,"</HEAD></HTML>\n" );	
 		}
 		return 0;
@@ -8564,7 +8627,7 @@ app_call(char *func, FILE *stream)
 		}
 	}
 	if (app_method_hit == 0)
-		websWrite(stream,"Not Support");
+		websWrite(stream," ");	//Not Support
 	
 	if (!argv[0] || strcmp(argv[0], "appobj") != 0)
 		websWrite(stream,"\"" );

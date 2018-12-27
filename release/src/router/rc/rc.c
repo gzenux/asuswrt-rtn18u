@@ -143,7 +143,7 @@ static int rctest_main(int argc, char *argv[])
 #endif
 				}
 #endif
-			add_iQosRules(get_wan_ifname(0));
+			add_iQosRules(get_wan_ifname(wan_primary_ifunit()));
 #ifdef RTCONFIG_BWDPI
 				if(nvram_get_int("qos_type") == 1)
 					start_dpi_engine_service();
@@ -391,7 +391,7 @@ static const applets_t applets[] = {
 	{ "rsasign_sig_check",		rsasign_sig_check_main		},
 #endif
 	{ "hour_monitor",		hour_monitor_main		},
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	{ "lteled",			lteled_main			},
 #endif
 #ifdef RTCONFIG_TR069

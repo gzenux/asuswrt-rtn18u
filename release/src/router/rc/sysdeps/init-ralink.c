@@ -847,6 +847,31 @@ void init_syspara(void)
 		}
 	}
 
+#ifdef RA_SINGLE_SKU
+#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+	gen_ra_sku(nvram_safe_get("reg_spec"));
+#endif	/* RTAC52U && RTAC51U && RTN54U && RTAC54U && RTAC1200HP && RTN56UB1 */
+#endif	/* RA_SINGLE_SKU */
+
+	{
+#ifdef RTCONFIG_ODMPID
+		char modelname[16];
+		FRead(modelname, OFFSET_ODMPID, sizeof(modelname));
+		modelname[sizeof(modelname)-1] = '\0';
+		if(modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff && is_valid_hostname(modelname) && strcmp(modelname, "ASUS"))
+		{
+#if defined(RTN11P)
+			if(strcmp(modelname, "RT-N12E_B")==0)
+				nvram_set("odmpid", "RT-N12E_B1");
+			else
+#endif	/* RTN11P */
+			nvram_set("odmpid", modelname);
+		}
+		else
+#endif
+			nvram_unset("odmpid");
+	}
+
 	/* reserved for Ralink. used as ASUS country code. */
 #if !defined(RTCONFIG_NEW_REGULATION_DOMAIN)
 	dst = (unsigned char*) country_code;
@@ -919,7 +944,6 @@ void init_syspara(void)
 		else
 			nvram_set("wl0_country_code", "DB");
 	}
-
 #ifdef RTCONFIG_HAS_5G
 	if (FRead(dst, REG5G_EEPROM_ADDR, MAX_REGDOMAIN_LEN)<0 || memcmp(dst,"5G_", 3) != 0)
 	{
@@ -1016,6 +1040,22 @@ void init_syspara(void)
 			nvram_set("territory_code", buffer);
 		}
 	}
+
+#if defined(RTN11P)
+	if (nvram_match("odmpid", "RT-N12+") && nvram_match("reg_spec", "CN"))
+	{
+		char *str;
+		str = nvram_get("territory_code");
+		if(str == NULL || str[0] == '\0') {
+			nvram_set("territory_code", "CN/01");
+		}
+	}
+
+	if( nvram_match("odmpid", "RT-N12+") && !strncmp(nvram_safe_get("territory_code"), "IN", 2 )) {
+		nvram_set("reg_spec", "NCC");
+		nvram_set("wl0_country_code", "US");
+	}
+#endif	/* RTN11P */
 	/* PSK */
         memset(buffer, 0, sizeof(buffer));
 	if (FRead(buffer, OFFSET_PSK, 14) < 0) {
@@ -1100,40 +1140,6 @@ void init_syspara(void)
 	}
 #endif
 
-#ifdef RA_SINGLE_SKU
-#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
-	gen_ra_sku(nvram_safe_get("reg_spec"));
-#endif	/* RTAC52U && RTAC51U && RTN54U && RTAC54U && RTAC1200HP && RTN56UB1 */
-#endif	/* RA_SINGLE_SKU */
-
-	{
-#ifdef RTCONFIG_ODMPID
-		char modelname[16];
-		FRead(modelname, OFFSET_ODMPID, sizeof(modelname));
-		modelname[sizeof(modelname)-1] = '\0';
-		if(modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff && is_valid_hostname(modelname) && strcmp(modelname, "ASUS"))
-		{
-#if defined(RTN11P) || defined(RTN300)
-			if(strcmp(modelname, "RT-N12E_B")==0)
-				nvram_set("odmpid", "RT-N12E_B1");
-			else
-#endif	/* RTN11P */
-			nvram_set("odmpid", modelname);
-		}
-		else
-#endif
-			nvram_unset("odmpid");
-	}
-#if defined(RTCONFIG_TCODE) && defined(RTN11P)
-	if (nvram_match("odmpid", "RT-N12+") && nvram_match("reg_spec", "CN"))
-	{
-		char *str;
-		str = nvram_get("territory_code");
-		if(str == NULL || str[0] == '\0') {
-			nvram_set("territory_code", "CN/01");
-		}
-	}
-#endif	/* RTCONFIG_TCODE && RTN11P */
 
 	nvram_set("firmver", rt_version);
 	nvram_set("productid", rt_buildname);

@@ -407,18 +407,22 @@ function generate_region(){
 	var region_name = ["Asia", "China", "Europe", "Korea", "Russia", "Singapore", "United States"];	//Viz mod 2015.06.15
 	var region_value = ["AP", "CN", "EU", "KR", "RU", "SG", "US"]; //Viz mod 2015.06.15
 	var current_region = '<% nvram_get("location_code"); %>';
-	var is_CN_sku = (function(){
+	var isUsing_AU_sku = (function(){
 		if( productid !== "RT-AC87U" && productid !== "RT-AC68U" && productid !== "RT-AC66U" && productid !== "RT-N66U" && productid !== "RT-N18U" && productid != "RT-AC51U" &&
 			productid !== "RT-N12+" && productid !== "RT-N12D1" && productid !== "RT-N12HP_B1" && productid !== "RT-N12HP" && productid !== "RT-AC55U" && productid !== "RT-AC1200" && productid != "RT-AC51U" &&
 			productid !== "RT-AC88U" && productid !== "RT-AC5300" && productid !== "RT-AC55U"
 		  )	return false;
-		return ('<% nvram_get("territory_code"); %>'.search("CN") == -1) ? false : true;
+	
+		if(ttc.search("CN") == 0 ) 
+			return true;
+		
+		return false;	
 	})();
 
 	if(current_region == '')
 		current_region = ttc.split("/")[0];
 
-	if(is_CN_sku){
+	if(isUsing_AU_sku){
 		region_name.push("Australia");
 		region_value.push("XX");
 	} 
@@ -427,6 +431,11 @@ function generate_region(){
 		var idx = region_value.getIndexByValue("US");
 		region_value.splice(idx, 1);
 		region_name.splice(idx, 1);
+	}
+
+	if( region_value.indexOf(ttc.split("/")[0]) < 0 ) {   
+		region_name.splice(0, 0, "Default");
+		region_value.splice(0, 0, ttc.split("/")[0]);
 	}
 
 	add_options_x2(document.form.location_code, region_name, region_value, current_region);

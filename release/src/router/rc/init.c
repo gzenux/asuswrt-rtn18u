@@ -694,15 +694,40 @@ wan_defaults(void)
 		}
 	}
 
-	unit = WAN_UNIT_FIRST;
-	foreach(word, nvram_safe_get("wan_ifnames"), next){
-		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+        unit = WAN_UNIT_FIRST;
+        foreach(word, nvram_safe_get("wan_ifnames"), next){
+                snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 
-		if(dualwan_unit__nonusbif(unit))
-			nvram_set(strcat_r(prefix, "ifname", tmp), word);
+                if(dualwan_unit__nonusbif(unit))
+                        nvram_set(strcat_r(prefix, "ifname", tmp), word);
 
-		++unit;
+                ++unit;
+        }
+
+#ifdef RTCONFIG_MULTICAST_IPTV
+_dprintf("**** wan default: define MULTICAST_IPTV ***\n");
+	if( nvram_get_int("switch_stb_x") > 5 ) {
+	        unit = WAN_UNIT_IPTV;
+        	foreach (word, nvram_safe_get("iptv_wan_ifnames"), next) {
+                	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	                nvram_set(strcat_r(prefix, "ifname", tmp), word);
+//Yaudbg
+_dprintf("*** Multicast IPTV defaults: nvram add: %s ****\n", word);
+			if(nvram_match("switch_wantag", "singtel"))
+				nvram_set(strcat_r(prefix, "vendorid", tmp),"S_iptvsys");
+
+	                for (t = router_defaults; t->name; t++) {
+        	                if(strncmp(t->name, "wan_", 4)!=0) continue;
+
+                	        if(!nvram_get(strcat_r(prefix, &t->name[4], tmp))){
+                        	        _dprintf("_set %s = %s\n", tmp, t->value);
+                                	nvram_set(tmp, t->value);
+	                        }
+        	        }
+                	++unit;
+        	}
 	}
+#endif
 }
 
 void
@@ -1105,7 +1130,7 @@ restore_defaults(void)
 	}
 
 #ifdef RTCONFIG_USB_MODEM
-#ifndef RT4GAC55U
+#ifndef RTCONFIG_INTERNAL_GOBI
 	// can't support all kinds of modem.
 	nvram_set("modem_mode", "0");
 #endif
@@ -1779,10 +1804,12 @@ int init_nvram(void)
 #endif
 	nvram_unset("led_wan_red_gpio");
 	nvram_unset("btn_lte_gpio");
+	nvram_unset("led_3g_gpio");
 	nvram_unset("led_lte_gpio");
 	nvram_unset("led_sig1_gpio");
 	nvram_unset("led_sig2_gpio");
 	nvram_unset("led_sig3_gpio");
+	nvram_unset("led_sig4_gpio");
 	/* In the order of physical placement */
 	nvram_set("ehci_ports", "");
 	nvram_set("ohci_ports", "");
@@ -2526,7 +2553,7 @@ int init_nvram(void)
 		break;
 #endif	/* RTAC55U | RTAC55UHP */
 
-#if defined(RT4GAC55U)
+#ifdef RT4GAC55U
 	case MODEL_RT4GAC55U:
 		nvram_set("boardflags", "0x100"); // although it is not used in ralink driver, set for vlan
 		//nvram_set("vlan1hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface.
@@ -2537,7 +2564,7 @@ int init_nvram(void)
 		nvram_set_int("btn_wps_gpio", 16|GPIO_ACTIVE_LOW);
 		nvram_set_int("btn_rst_gpio", 17|GPIO_ACTIVE_LOW);
 		nvram_set_int("btn_lte_gpio", 21|GPIO_ACTIVE_LOW);
-#if defined(RTAC55U_SR1)
+#ifdef RTAC55U_SR1
 		nvram_set_int("led_usb_gpio",  4|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_5g_gpio" , 12|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_2g_gpio" , 13|GPIO_ACTIVE_LOW);
@@ -2587,7 +2614,6 @@ int init_nvram(void)
 		add_rc_support("switchctrl");
 		add_rc_support("manual_stb");
 		add_rc_support("11AC");
-		add_rc_support("gobi");
 		break;
 #endif	/* RT4GAC55U */
 
@@ -3830,22 +3856,31 @@ int init_nvram(void)
 		nvram_set("wl1_vifnames", "wl1.1 wl1.2 wl1.3");
 #endif
 
+#ifdef RTCONFIG_INTERNAL_GOBI
+		nvram_set_int("led_3g_gpio", 1|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_lte_gpio", 2|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_sig1_gpio", 4|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_sig2_gpio", 5|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_sig3_gpio", 8|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_sig4_gpio", 6|GPIO_ACTIVE_LOW);
+#else
+		nvram_set_int("led_5g_gpio", 6|GPIO_ACTIVE_LOW);	// 4360's fake led 5g
+#ifdef RTCONFIG_LED_BTN
+		nvram_set_int("btn_led_gpio", 5);	// active high
+#endif
+#endif
 		nvram_set_int("pwr_usb_gpio", 9|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_usb_gpio", 0|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_pwr_gpio", 3|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_wps_gpio", 3|GPIO_ACTIVE_LOW);
 		nvram_set_int("btn_wps_gpio", 7|GPIO_ACTIVE_LOW);
 		nvram_set_int("btn_rst_gpio", 11|GPIO_ACTIVE_LOW);
-		nvram_set_int("led_5g_gpio", 6|GPIO_ACTIVE_LOW);	// 4360's fake led 5g
 		nvram_set_int("led_usb3_gpio", 14|GPIO_ACTIVE_LOW);
 #ifdef RTCONFIG_WIFI_TOG_BTN
 		nvram_set_int("btn_wltog_gpio", 15|GPIO_ACTIVE_LOW);
 #endif
 #ifdef RTCONFIG_TURBO
 		nvram_set_int("led_turbo_gpio", 4|GPIO_ACTIVE_LOW);
-#endif
-#ifdef RTCONFIG_LED_BTN
-		nvram_set_int("btn_led_gpio", 5);	// active high
 #endif
 
 #ifdef RTCONFIG_XHCIMODE
@@ -4671,7 +4706,8 @@ int init_nvram(void)
 		break;
 	}
 
-#if (defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA)) && !defined(RTCONFIG_DUALWAN)
+#if (defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || (defined(RTCONFIG_RALINK) && (defined(RTCONFIG_RALINK_MT7620) || defined(RTCONFIG_RALINK_MT7621)))) && !defined(RTCONFIG_DUALWAN)
+	/* Broadcom, QCA, MTK (use MT7620/MT7621 ESW) platform */
 	if (nvram_get("switch_wantag") && !nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")) {
 		char wan_if[10];
 		if (!nvram_match("switch_wan0tagid", "") && !nvram_match("switch_wan0tagid", "0"))
@@ -4680,6 +4716,24 @@ int init_nvram(void)
 			sprintf(wan_if, "eth0");
 
 		nvram_set("wan_ifnames", wan_if);
+	}
+#endif
+
+#ifdef RTCONFIG_MULTICAST_IPTV
+        if(nvram_match("switch_wantag", "singtel")) {
+                nvram_set("iptv_wan_ifnames", "vlan30 vlan40");
+        }
+        else if(nvram_match("switch_wantag", "maxis_fiber_sp_iptv")) {
+                nvram_set("iptv_wan_ifnames", "vlan15");
+		nvram_set("iptv_ifname", "vlan15");
+        }
+        else if(nvram_match("switch_wantag", "maxis_fiber_iptv")) {
+                nvram_set("iptv_wan_ifnames", "vlan823");
+		nvram_set("iptv_ifname", "vlan823");
+        }
+	else if(nvram_match("switch_wantag", "movistar")) {
+		nvram_set("iptv_wan_ifnames", "vlan2 vlan3");
+		nvram_set("iptv_ifname", "vlan2");
 	}
 #endif
 
@@ -5016,6 +5070,9 @@ int init_nvram(void)
 #endif
 #ifdef RTCONFIG_WIFILOGO
 	add_rc_support("wifilogo");
+#endif
+#ifdef RTCONFIG_INTERNAL_GOBI
+	add_rc_support("gobi");
 #endif
 	return 0;
 }
@@ -5505,8 +5562,8 @@ gmac3_override_nvram()
 	/* set fwddevs */
 #if defined(RTAC5300)
 	nvram_set("fwddevs", "fwd0 fwd1");
-	nvram_set("fwd_cpumap", "d:x:2:163:0 d:u:5:163:0 d:l:5:169:1");
-	nvram_set("fwd_wlandevs", "eth1 eth2");
+	nvram_set("fwd_cpumap", "d:l:5:163:0 d:x:2:163:0 d:u:5:169:1");
+	nvram_set("fwd_wlandevs", "eth1 eth2 eth3");
 #elif defined(RTAC88U)
 	nvram_set("fwddevs", "fwd1");
 	nvram_set("fwd_cpumap", "d:x:2:163:1 d:l:5:169:1");
@@ -5518,7 +5575,7 @@ gmac3_override_nvram()
 #elif defined(RTAC3200)
 	nvram_set("fwddevs", "fwd0 fwd1");
 	nvram_set("fwd_cpumap", "d:u:5:163:0 d:x:2:169:1 d:l:5:169:1");
-	nvram_set("fwd_wlandevs", "eth1 eth2");
+	nvram_set("fwd_wlandevs", "eth1 eth2 eth3");
 #endif
 }
 
@@ -5538,7 +5595,7 @@ do {								\
 static void
 gmac3_restore_nvram()
 {
-	ONE_ENTRANT();
+	// ONE_ENTRANT();
 
 	/* back up old embedded nvram */
 	GMAC3_ENVRAM_RESTORE("et0macaddr");
@@ -5586,16 +5643,18 @@ gmac3_nvram_adjust()
 	bool _reboot = FALSE;
 	bool gmac3_enable, gmac3_configured = FALSE;
 
-	_dprintf("\n\n============ !! gmac3 nvram adjust ===========\n\n");	// tmp test
-	sleep(3);
-
 	/* gmac3_enable nvram control everything */
 	gmac3_enable = nvram_match("gmac3_enable", "1") ? TRUE : FALSE;
 
 	/* nvram variables will be changed when gmac3_enable */
 	if (!strcmp(nvram_safe_get("wandevs"), "et2") &&
-	    *nvram_safe_get("fwd_wlandevs") &&
-	    *nvram_safe_get("fwddevs"))
+#if defined(RTAC5300) || defined(RTAC88U)
+	    nvram_get("fwd_wlandevs") && (strlen(nvram_get("fwd_wlandevs")) > 3) &&
+	    nvram_get("fwddevs"))
+#else
+	    nvram_get("fwd_wlandevs") &&
+	    nvram_get("fwddevs"))
+#endif
 		gmac3_configured = TRUE;
 
 	fa_mode = nvram_get_int("ctf_fa_mode");

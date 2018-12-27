@@ -727,11 +727,11 @@ void traffic_control_sendSMS(int flag)
 	else if(flag == 1)
 		snprintf(message, PATH_MAX, "%s %s bytes.", nvram_safe_get("modem_sms_message2"), nvram_safe_get("traffic_control_limit_max"));
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	stop_lteled();
 #endif
 	_eval(at_cmd, ">/tmp/modem_action.ret", 0, NULL);
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	start_lteled();
 #endif
 }
@@ -1274,6 +1274,13 @@ void start_dnsmasq(void)
 		/* Faster for moving clients, if authoritative */
 		if (nvram_get_int("dhcpd_auth") >= 0)
 			fprintf(fp, "dhcp-authoritative\n");
+
+		/* Rawny: Add vendor class ID and DNS info for Movistar IPTV */
+		if(nvram_match("switch_wantag", "movistar")) {
+			fprintf(fp, "dhcp-vendorclass=ial,IAL\n");
+			fprintf(fp, "dhcp-option=ial,6,172.26.23.3\n");
+			fprintf(fp, "dhcp-option=ial,240,:::::239.0.2.10:22222:v6.0:239.0.2.30:22222\n");
+		}
 	} else
 		fprintf(fp, "no-dhcp-interface=%s\n", lan_ifname);
 
@@ -3734,7 +3741,7 @@ start_services(void)
 	start_ixia_endpoint();
 #endif
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	start_lteled();
 #endif
 
@@ -3779,7 +3786,7 @@ stop_logger(void)
 void
 stop_services(void)
 {
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	stop_lteled();
 #endif
 
@@ -4768,7 +4775,7 @@ again:
 			start_mdns();
 #endif
 			start_wan();
-#ifndef RT4GAC55U
+#ifndef RTCONFIG_INTERNAL_GOBI
 #ifdef RTCONFIG_USB_MODEM
 			if((unit = get_usbif_dualwan_unit()) >= 0)
 				start_wan_if(unit);
@@ -5586,11 +5593,11 @@ check_ddr_done:
 		else
 			snprintf(message, PATH_MAX, "%s %s bytes.", nvram_safe_get("modem_sms_message2"), nvram_safe_get("modem_bytes_data_limit"));
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 		stop_lteled();
 #endif
 		_eval(at_cmd, ">/tmp/modem_action.ret", 0, NULL);
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 		start_lteled();
 #endif
 	}
@@ -5625,7 +5632,7 @@ check_ddr_done:
 		_eval(at_cmd, ">/tmp/modem_action.ret", 0, NULL);
 	}
 #endif
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	else if(!strncmp(script, "simdetect", 9)){
 		// Need to reboot after this.
 		char buf[4];
@@ -6361,6 +6368,13 @@ _dprintf("test 2. turn off the USB power during %d seconds.\n", reset_seconds[re
 	else if (!strcmp(script, "eco_guard")) {
 		start_ecoguard();
 	}
+#ifdef RTCONFIG_QUAGGA
+        else if (strcmp(script, "quagga") == 0)
+        {
+                if(action & RC_SERVICE_STOP) stop_quagga();
+                if(action & RC_SERVICE_START) start_quagga();
+        }
+#endif
 	else
 	{
 		fprintf(stderr,
@@ -6827,7 +6841,7 @@ int stop_dhd_monitor(void)
 }
 #endif /* RTCONFIG_DHDAP */
 
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 int start_lteled(void)
 {
 	char *lteled_argv[] = {"lteled", NULL};
@@ -6845,7 +6859,7 @@ void stop_lteled(void)
 {
 	killall_tk("lteled");
 }
-#endif	/* RT4GAC55U */
+#endif	/* RTCONFIG_INTERNAL_GOBI */
 
 
 int
@@ -7251,6 +7265,91 @@ void start_ecoguard(void){
 		}
 	}
 }
+
+#ifdef RTCONFIG_QUAGGA
+int start_quagga(void)
+{
+	FILE *fp, *fp2;
+	char *wan_ip, *wan_ifname;
+	char *zebra_hostname;
+	char *zebra_passwd;
+	char *zebra_enpasswd;
+	char *rip_hostname;
+	char *rip_passwd;
+	int   unit;
+	char tmp[32], prefix[] = "wanXXXXXXXXXX_";
+
+	if (!is_routing_enabled()) {
+		_dprintf("return -1\n");
+		return -1;
+	}
+	if (nvram_invmatch("quagga_enable", "1"))
+		return -1;
+
+/*
+	unit = wan_primary_ifunit();
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+
+	wan_ip = nvram_safe_get(strcat_r(prefix, "ipaddr", tmp));
+	wan_ifname = get_wan_ifname(unit);
+
+	if (!wan_ip || strcmp(wan_ip, "") == 0 || !inet_addr(wan_ip)) {
+		logmessage("quagga", "WAN IP is empty.");
+		return -1;
+	}
+*/
+	zebra_passwd = nvram_safe_get("zebra_passwd");
+	zebra_enpasswd = nvram_safe_get("zebra_enpasswd");
+        rip_passwd = nvram_safe_get("rip_passwd");
+
+	zebra_hostname = nvram_safe_get("productid");
+	rip_hostname = nvram_safe_get("productid");
+
+	if (pids("zebra")){
+		killall("zebra", SIGINT);
+		sleep(1);
+	}
+	if (pids("ripd")){
+                killall("ripd", SIGINT);
+                sleep(1);
+        }
+	if (fp = fopen("/etc/zebra.conf", "w")){
+		fprintf(fp, "hostname %s\n", zebra_hostname);
+		fprintf(fp, "password %s\n", zebra_passwd);
+		fprintf(fp, "enable password %s\n", zebra_enpasswd);
+		fprintf(fp, "log file /etc/zebra.log\n");
+		fclose(fp);
+		eval("zebra", "-d", "-f", "/etc/zebra.conf");
+	}
+	if (fp2 = fopen("/etc/ripd.conf", "w")){
+                fprintf(fp2, "hostname %s\n", rip_hostname);
+                fprintf(fp2, "password %s\n", rip_passwd);
+                fprintf(fp2, "debug rip events\n");
+		fprintf(fp2, "debug rip packet\n");
+		fprintf(fp2, "router rip\n");
+		fprintf(fp2, " version 2\n");
+		fprintf(fp2, " network vlan2\n");
+		fprintf(fp2, " network vlan3\n");
+		fprintf(fp2, " passive-interface vlan2\n");
+		fprintf(fp2, " passive-interface vlan3\n");			 
+                fprintf(fp2, "log file /etc/ripd.log\n");
+		fprintf(fp2, "log stdout\n");
+		fclose(fp2);
+		eval("ripd", "-d", "-f", "/etc/ripd.conf");
+        }	
+	return 0;
+}
+
+void stop_quagga(void)
+{
+	if (pids("zebra")){
+                killall("zebra", SIGINT);
+        }
+        if (pids("ripd")){
+                killall("ripd", SIGINT);
+        }	
+}
+#endif
 
 int service_main(int argc, char *argv[])
 {

@@ -4351,7 +4351,7 @@ int asus_usb_interface(const char *device_name, const char *action){
 			}
 #endif
 
-#ifndef RT4GAC55U
+#ifndef RTCONFIG_INTERNAL_GOBI
 			// When ACM dongles are removed, there are no removed hotplugs of ttyACM nodes.
 			if(!strncmp(buf, "ttyACM", 6)){
 				// No methods let DUT restore the normal state after removing the ACM dongle.
@@ -4383,11 +4383,11 @@ int asus_usb_interface(const char *device_name, const char *action){
 		turn_on_led = 0;
 
 	snprintf(nvram_usb_path, 32, "usb_led%d", port_num);
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	if(nvram_get_int("usb_buildin") == port_num)
 		; //skip this LED
 	else
-#endif	/* RT4GAC55U */
+#endif	/* RTCONFIG_INTERNAL_GOBI */
 	if (turn_on_led && strcmp(nvram_safe_get(nvram_usb_path), "1"))
 		nvram_set(nvram_usb_path, "1");
 
@@ -4457,7 +4457,7 @@ int asus_usb_interface(const char *device_name, const char *action){
 		file_unlock(isLock);
 		return 0;
 	}
-#ifdef RT4GAC55U
+#ifdef RTCONFIG_INTERNAL_GOBI
 	else if((nvram_get_int("usb_gobi") == 1 && strcmp(port_path, "2"))
 			|| (nvram_get_int("usb_gobi") != 1 && !strcmp(port_path, "2"))
 			){

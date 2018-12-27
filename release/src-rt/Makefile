@@ -663,10 +663,6 @@ define RouterOptions
 		sed -i "/RTCONFIG_LED_BTN/d" $(1); \
 		echo "RTCONFIG_LED_BTN=y" >>$(1); \
 	fi; \
-	if [ "$(LED_BTN_MODE)" = "y" ]; then \
-		sed -i "/RTCONFIG_LED_BTN_MODE/d" $(1); \
-		echo "RTCONFIG_LED_BTN_MODE=y" >>$(1); \
-	fi; \
 	if [ "$(USBEJECT)" = "y" ]; then \
 		sed -i "/RTCONFIG_USBEJECT/d" $(1); \
 		echo "RTCONFIG_USBEJECT=y" >>$(1); \
@@ -823,9 +819,17 @@ define RouterOptions
 				sed -i "/RTCONFIG_USB_BECEEM/d" $(1); \
 				echo "RTCONFIG_USB_BECEEM=y" >>$(1); \
 			fi; \
+			if [ "$(GOBI)" = "y" ]; then \
+				sed -i "/RTCONFIG_INTERNAL_GOBI/d" $(1); \
+				echo "RTCONFIG_INTERNAL_GOBI=y" >>$(1); \
+			fi; \
 			if [ "$(LESSMODEM)" = "y" ]; then \
 				sed -i "/RTCONFIG_USB_LESSMODEM/d" $(1); \
 				echo "RTCONFIG_USB_LESSMODEM=y" >>$(1); \
+			fi; \
+			if [ "$(DYNMODEM)" = "y" ]; then \
+				sed -i "/RTCONFIG_DYN_MODEM/d" $(1); \
+				echo "RTCONFIG_DYN_MODEM=y" >>$(1); \
 			fi; \
 		fi; \
 		if [ "$(PRINTER)" = "y" ]; then \
@@ -890,6 +894,10 @@ define RouterOptions
 	if [ "$(ZEBRA)" = "y" ]; then \
 		sed -i "/RTCONFIG_ZEBRA/d" $(1); \
 		echo "RTCONFIG_ZEBRA=y" >>$(1); \
+	fi; \
+	if [ "$(QUAGGA)" = "y" ]; then \
+		sed -i "/RTCONFIG_QUAGGA/d" $(1); \
+		echo "RTCONFIG_QUAGGA=y" >>$(1); \
 	fi; \
 	if [ "$(JFFS2)" = "y" ]; then \
 		sed -i "/RTCONFIG_JFFS2/d" $(1); \
@@ -1368,6 +1376,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_REBOOT_SCHEDULE/d" $(1); \
 		echo "RTCONFIG_REBOOT_SCHEDULE=y" >>$(1); \
 	fi; \
+	if [ "$(MULTICASTIPTV)" = "y" ]; then \
+		sed -i "/RTCONFIG_MULTICAST_IPTV/d" $(1); \
+                echo "RTCONFIG_MULTICAST_IPTV=y" >>$(1); \
+	fi; \
 	)
 	$(call platformRouterOptions, $(1))
 endef
@@ -1774,44 +1786,6 @@ define KernelConfig
 		sed -i "/CONFIG_KALLSYMS/d" $(1); \
 		echo "# CONFIG_KALLSYMS is not set" >>$(1); \
 	fi; \
-	if [ "$(USB)" = "" ]; then \
-		sed -i "/CONFIG_MSDOS_PARTITION/d" $(1); \
-		echo "# CONFIG_MSDOS_PARTITION is not set" >>$(1); \
-		sed -i "/CONFIG_EFI_PARTITION/d" $(1); \
-		echo "# CONFIG_EFI_PARTITION is not set" >>$(1); \
-	elif [ "$(MODEM)" = "y" ]; then \
-		if [ "$(BECEEM)" = "y" ]; then \
-			sed -i "/CONFIG_USB_BECEEM/d" $(1); \
-			echo "CONFIG_USB_BECEEM=m" >>$(1); \
-		fi; \
-		if [ "$(LESSMODEM)" = "y" ]; then \
-			sed -i "/CONFIG_HSO/d" $(1); \
-			echo "# CONFIG_HSO is not set" >>$(1); \
-			sed -i "/CONFIG_USB_IPHETH/d" $(1); \
-			echo "# CONFIG_USB_IPHETH is not set" >>$(1); \
-		fi; \
-		if [ "$(RT4GAC55U)" = "y" ]; then \
-			sed -i "/CONFIG_USB_NET_AX8817X/d" $(1); \
-			echo "# CONFIG_USB_NET_AX8817X is not set" >>$(1); \
-			sed -i "/CONFIG_USB_NET_CDCETHER/d" $(1); \
-			echo "# CONFIG_USB_NET_CDCETHER is not set" >>$(1); \
-			sed -i "/CONFIG_USB_NET_RNDIS_HOST/d" $(1); \
-			echo "# CONFIG_USB_NET_RNDIS_HOST is not set" >>$(1); \
-			sed -i "/CONFIG_USB_NET_CDC_NCM/d" $(1); \
-			echo "# CONFIG_USB_NET_CDC_NCM is not set" >>$(1); \
-		fi; \
-	else \
-		sed -i "/CONFIG_USB_SERIAL/d" $(1); \
-		echo "# CONFIG_USB_SERIAL is not set" >>$(1); \
-		sed -i "/CONFIG_USB_ACM/d" $(1); \
-		echo "# CONFIG_USB_ACM is not set" >>$(1); \
-		sed -i "/CONFIG_USB_USBNET/d" $(1); \
-		echo "# CONFIG_USB_USBNET is not set" >>$(1); \
-		sed -i "/CONFIG_USB_WDM/d" $(1); \
-		echo "# CONFIG_USB_WDM is not set" >>$(1); \
-		sed -i "/CONFIG_USB_IPHETH/d" $(1); \
-		echo "# CONFIG_USB_IPHETH is not set" >>$(1); \
-	fi; \
 	if [ "$(AP_CARRIER_DETECTION)" = "y" ]; then \
 		sed -i "/CONFIG_RALINK_TIMER_DFS/d" $(1); \
 		echo "CONFIG_RALINK_TIMER_DFS=y" >>$(1); \
@@ -1985,6 +1959,54 @@ define KernelConfig
 		sed -i "/CONFIG_EXT4_FS/d" $(1); \
 		echo "# CONFIG_EXT4_FS is not set" >>$(1); \
 	fi; \
+	fi; \
+	if [ "$(USB)" = "" ]; then \
+		sed -i "/CONFIG_MSDOS_PARTITION/d" $(1); \
+		echo "# CONFIG_MSDOS_PARTITION is not set" >>$(1); \
+		sed -i "/CONFIG_EFI_PARTITION/d" $(1); \
+		echo "# CONFIG_EFI_PARTITION is not set" >>$(1); \
+	elif [ "$(MODEM)" = "y" ]; then \
+		if [ "$(BECEEM)" = "y" ]; then \
+			sed -i "/CONFIG_USB_BECEEM/d" $(1); \
+			echo "CONFIG_USB_BECEEM=m" >>$(1); \
+		fi; \
+		if [ "$(LESSMODEM)" = "y" ]; then \
+			sed -i "/CONFIG_HSO/d" $(1); \
+			echo "# CONFIG_HSO is not set" >>$(1); \
+			sed -i "/CONFIG_USB_IPHETH/d" $(1); \
+			echo "# CONFIG_USB_IPHETH is not set" >>$(1); \
+		fi; \
+		if [ "$(GOBI)" = "y" ]; then \
+			sed -i "/CONFIG_USB_SERIAL/d" $(1); \
+			echo "# CONFIG_USB_SERIAL is not set" >>$(1); \
+			sed -i "/CONFIG_USB_NET_AX8817X/d" $(1); \
+			echo "# CONFIG_USB_NET_AX8817X is not set" >>$(1); \
+			sed -i "/CONFIG_USB_NET_CDCETHER/d" $(1); \
+			echo "# CONFIG_USB_NET_CDCETHER is not set" >>$(1); \
+			sed -i "/CONFIG_USB_NET_CDC_NCM/d" $(1); \
+			echo "# CONFIG_USB_NET_CDC_NCM is not set" >>$(1); \
+			sed -i "/CONFIG_USB_NET_CDC_MBIM/d" $(1); \
+			echo "# CONFIG_USB_NET_CDC_MBIM is not set" >>$(1); \
+			sed -i "/CONFIG_USB_NET_RNDIS_HOST/d" $(1); \
+			echo "# CONFIG_USB_NET_RNDIS_HOST is not set" >>$(1); \
+			sed -i "/CONFIG_USB_NET_QMI_WWAN/d" $(1); \
+			echo "# CONFIG_USB_NET_QMI_WWAN is not set" >>$(1); \
+			sed -i "/CONFIG_USB_IPHETH/d" $(1); \
+			echo "# CONFIG_USB_IPHETH is not set" >>$(1); \
+			sed -i "/CONFIG_USB_WDM/d" $(1); \
+			echo "# CONFIG_USB_WDM is not set" >>$(1); \
+		fi; \
+	else \
+		sed -i "/CONFIG_USB_SERIAL/d" $(1); \
+		echo "# CONFIG_USB_SERIAL is not set" >>$(1); \
+		sed -i "/CONFIG_USB_ACM/d" $(1); \
+		echo "# CONFIG_USB_ACM is not set" >>$(1); \
+		sed -i "/CONFIG_USB_USBNET/d" $(1); \
+		echo "# CONFIG_USB_USBNET is not set" >>$(1); \
+		sed -i "/CONFIG_USB_IPHETH/d" $(1); \
+		echo "# CONFIG_USB_IPHETH is not set" >>$(1); \
+		sed -i "/CONFIG_USB_WDM/d" $(1); \
+		echo "# CONFIG_USB_WDM is not set" >>$(1); \
 	fi; \
 	if [ "$(ARMCPUSMP)" = "up" ]; then \
 		sed -i "/CONFIG_GENERIC_CLOCKEVENTS_BROADCAST/d" $(1); \

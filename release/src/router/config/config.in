@@ -700,11 +700,6 @@ config RTCONFIG_LED_BTN
 	bool "HW LED Button"
 	default n
 
-config RTCONFIG_LED_BTN_MODE
-	bool "HW LED Button Mode"
-	depends on RTCONFIG_LED_BTN
-	default n
-
 config RTCONFIG_USBEJECT
 	bool "HW LED Button usage"
 	default n
@@ -1018,4 +1013,16 @@ config RTCONFIG_ERP_TEST
 
 config RTCONFIG_REBOOT_SCHEDULE
 	bool "Reboot_schedule"
+	default n
+
+config RTCONFIG_INTERNAL_GOBI
+	bool "built-in Gobi"
+	default n
+
+config RTCONFIG_MULTICAST_IPTV
+	bool "Multicsat IPTV"
+	default n
+
+config RTCONFIG_DYN_MODEM
+	bool "Dynamic enable the USB Modem"
 	default n
