@@ -5497,6 +5497,10 @@ int init_nvram(void)
 	add_rc_support("usbsms");
 #endif
 
+#ifdef RTCONFIG_FBWIFI
+	add_rc_support("fbwifi");
+#endif
+
 	return 0;
 }
 

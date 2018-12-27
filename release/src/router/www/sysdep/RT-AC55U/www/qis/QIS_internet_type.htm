@@ -72,14 +72,19 @@ function QKinternettype_load_body(){
 	
 		ISP_Profile_Selection(original_switch_wantag);
 
-		if( parent.based_modelid != "RT-AC3200" &&
+		if( parent.based_modelid != "RT-AC5300" &&
+			parent.based_modelid != "RT-AC3200" &&
+			parent.based_modelid != "RT-AC3100" &&
+			parent.based_modelid != "RT-AC1200G+" &&
+			parent.based_modelid != "RT-AC88U" &&
                         parent.based_modelid != "RT-AC87U" &&
                         parent.based_modelid != "RT-AC68U" &&
                         parent.based_modelid != "RT-AC66U" &&
+			parent.based_modelid != "RT-AC56U" &&
                         parent.based_modelid != "RT-AC51U" &&
                         parent.based_modelid != "RT-N66U" &&
                         parent.based_modelid != "RT-N18U"
-                ){      // MODELDEP: RT-AC3200, RT-AC87U@sysdep/RT-AC55U, RT-AC68U, RT-AC66U, RT-AC51U, RT-N66U, RT-N18U
+                ){
 			document.getElementById('meoOption').outerHTML = "";
 			document.getElementById('vodafoneOption').outerHTML = "";
 		}
@@ -87,12 +92,12 @@ function QKinternettype_load_body(){
 		if( parent.based_modelid != "RT-AC5300" &&
 			parent.based_modelid != "RT-AC3200" &&
 			parent.based_modelid != "RT-AC3100" &&
+			parent.based_modelid != "RT-AC1200G+" &&
 			parent.based_modelid != "RT-AC88U" &&
 			parent.based_modelid != "RT-AC87U" &&
 			parent.based_modelid != "RT-AC68U" &&
 			parent.based_modelid != "RT-AC66U" &&
 			parent.based_modelid != "RT-AC56U" &&
-			//based_modelid != "RT-AC51U" &&
 			parent.based_modelid != "RT-N66U" &&
 			parent.based_modelid != "RT-N18U"
 	        ){
@@ -291,6 +296,16 @@ function ISP_Profile_Selection(isp){
 		document.getElementById("iptv_configuration").style.display = "none";
 		document.applyForm.switch_wantag.value = "manual";
 	}
+
+        if(isp == "vodafone" || isp == "meo")
+                document.getElementById("iptv_title").innerHTML = "Bridge Port: ";
+        else
+                document.getElementById("iptv_title").innerHTML = "IPTV STB Port: ";
+
+        if(isp == "vodafone")
+                document.getElementById("voip_title").innerHTML = "IPTV STB Port: ";
+        else
+                document.getElementById("voip_title").innerHTML = "VoIP Port: ";
 }
 
 function set_ISP_profile(){
@@ -377,7 +392,7 @@ function set_ISP_profile(){
 		document.applyForm.switch_wan2tagid.value = "";
 		document.applyForm.switch_wan2prio.value = "0";
 	}
-    else if(document.form.switch_wantag.value == "vodafone") {
+    else if(document.applyForm.switch_wantag.value == "vodafone") {
         document.applyForm.switch_stb_x.value = "3";
         document.applyForm.switch_wan0tagid.value = "100";
         document.applyForm.switch_wan0prio.value = "1";
@@ -389,7 +404,8 @@ function set_ISP_profile(){
 
 	if(document.applyForm.switch_wantag.value == "maxis_fiber_sp_iptv" || 
 		document.applyForm.switch_wantag.value == "maxis_fiber_iptv" || 
-		document.applyForm.switch_wantag.value == "meo"
+		document.applyForm.switch_wantag.value == "meo" ||
+		document.applyForm.switch_wantag.value == "vodafone"
         ){
 		document.applyForm.mr_enable_x.value = "1";
 		document.applyForm.emf_enable.value = "1";

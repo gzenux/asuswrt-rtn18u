@@ -1041,6 +1041,10 @@ config RTCONFIG_BONJOUR
 	bool "Apple device query support"
 	default y
 
+config RTCONFIG_FBWIFI
+	bool "enable FBWIFI for FaceBook"
+	default n
+
 config RTCONFIG_FORCE_AUTO_UPGRADE
 	bool "Force auto update"
 	default n

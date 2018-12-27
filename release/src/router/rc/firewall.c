@@ -1352,6 +1352,12 @@ void nat_setting(char *wan_if, char *wan_ip, char *wanx_if, char *wanx_ip, char 
 		fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, lan_if, lan_class, lan_class);
 	}
 
+#ifdef RTCONFIG_FBWIFI
+	{
+		fbwifi_nat(fp);
+	}
+#endif
+
 	fprintf(fp, "COMMIT\n");
 	fclose(fp);
 
@@ -4055,6 +4061,12 @@ mangle_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		eval("ip6tables", "-t", "mangle", "-F");
 #endif
 	}
+
+#ifdef RTCONFIG_FBWIFI
+	{
+		fbwifi_mangle();
+	}
+#endif
 
 #ifdef RTCONFIG_YANDEXDNS
 #ifdef RTCONFIG_IPV6

@@ -98,6 +98,10 @@ LDFLAGS += -L$(TOP)/wb -lws
 LDFLAGS += -L$(TOP)/push_log -lpush_log
 endif
 
+ifeq ($(RTCONFIG_FBWIFI),y)
+LDFLAGS += -L$(TOP)/fb_wifi -lfbwifi
+endif
+
 ifeq ($(RTCONFIG_NOTIFICATION_CENTER),y)
 CFLAGS  += -I$(TOP)/sqlite
 CFLAGS  += -I$(TOP)/nt_center/lib

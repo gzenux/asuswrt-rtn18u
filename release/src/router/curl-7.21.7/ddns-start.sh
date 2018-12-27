@@ -27,42 +27,22 @@ case $result in
 	nvram set ddns_return_code=200
 	nvram set ddns_return_code_chk=200
 	`ddns_updated`
-	rm -rf /tmp/etc/ddns_result
-	echo "user : $USER host : $HOST passwd : $PASSWD">>/tmp/etc/ddns_result
-	#echo "host : $HOST token : $TOKEN">>/tmp/etc/ddns_result
-	echo "result : $result">>/tmp/etc/ddns_result
-    	echo "ddns result : OK">/tmp/etc/ddns_result
 	;;
 	
 	OK)
 	nvram set ddns_return_code=200
 	nvram set ddns_return_code_chk=200
 	`ddns_updated`
-	rm -rf /tmp/etc/ddns_result
-	#echo "host : $HOST token : $TOKEN">>/tmp/etc/ddns_result
-	echo "user : $USER host : $HOST passwd : $PASSWD">>/tmp/etc/ddns_result
-        echo "result : $result">>/tmp/etc/ddns_result
-	echo "ddns result : OK">/tmp/etc/ddns_result
 	;;
 
 	abuse)
 	nvram set ddns_return_code=200
         nvram set ddns_return_code_chk=200
 	`ddns_updated`
-        rm -rf /tmp/etc/ddns_result
-	#echo "host : $HOST token : $TOKEN">>/tmp/etc/ddns_result
-	echo "user : $USER host : $HOST passwd : $PASSWD">>/tmp/etc/ddns_result
-        echo "result : $result">>/tmp/etc/ddns_result
-        echo "ddns result : OK">/tmp/etc/ddns_result
 	;;
 
 	*)
 	nvram set ddns_return_code=401
 	nvram set ddns_return_code_chk=401
-	rm -rf /tmp/etc/ddns_result
-	#echo "host : $HOST token : $TOKEN">>/tmp/etc/ddns_result
-	echo "user : $USER host : $HOST passwd : $PASSWD">>/tmp/etc/ddns_result
-        echo "result : $result">>/tmp/etc/ddns_result
-	echo "ddns result : NG">>/tmp/etc/ddns_result
 	;;
 esac

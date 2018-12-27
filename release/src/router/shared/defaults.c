@@ -53,6 +53,46 @@ struct nvram_tuple router_defaults[] = {
 	//Use to do force submit form request
 	{ "force_change", "0"},
 
+	//NVRAM for fbwifi
+#ifdef RTCONFIG_FBWIFI
+	{ "fbwifi_enable",				"off"			},
+	{ "fbwifi_2g",					"off"			},
+	{ "fbwifi_5g",					"off"			},
+#if defined (RTAC3200)
+	{ "fbwifi_5g_2",				"off"			},
+	{ "fbwifi_ssid_2_temp",			""				},
+	{ "fbwifi_auth_mode_x_2_temp",	"open"			},
+	{ "fbwifi_crypto_2_temp",		"aes"			},
+	{ "fbwifi_wpa_psk_2_temp",		""				},
+	{ "fbwifi_macmode_2_temp",		"disabled"		},
+	{ "fbwifi_lanaccess_2_temp",	"off"			},
+	{ "fbwifi_expire_2_temp",		"0"				},
+	{ "fbwifi_5g_2_temp",			"off"			},
+#endif
+	{ "fbwifi_secret",				""				},
+	{ "fbwifi_id",					"off"			},
+	{ "fbwifi_ssid",				"ASUS-FBWiFi"	},
+	{ "fbwifi_auth_mode_x",			"open"			},
+	{ "fbwifi_crypto",				"aes"			},
+	{ "fbwifi_wpa_psk",				""				},
+	{ "fbwifi_ssid_0_temp",			""				},
+	{ "fbwifi_auth_mode_x_0_temp",	"open"			},
+	{ "fbwifi_crypto_x_0_temp",		"aes"			},
+	{ "fbwifi_wpa_psk_0_temp",		""				},
+	{ "fbwifi_macmode_0_temp",		"disabled"		},
+	{ "fbwifi_lanaccess_0_temp",	"off"			},
+	{ "fbwifi_expire_0_temp",		"0"				},
+	{ "fbwifi_ssid_1_temp",			""				},
+	{ "fbwifi_auth_mode_x_1_temp",	"open"			},
+	{ "fbwifi_crypto_1_temp",		"aes"			},
+	{ "fbwifi_wpa_psk_1_temp",		""				},
+	{ "fbwifi_macmode_1_temp",		"disabled"		},
+	{ "fbwifi_lanaccess_1_temp",	"off"			},
+	{ "fbwifi_expire_1_temp",		"0"				},
+	{ "fbwifi_2g_temp",				"off"			},
+	{ "fbwifi_5g_temp",				"off"			},
+#endif
+
 	// NVRAM for switch
 	{ "switch_stb_x", "0"}, 		// oleg patch
 #if defined(RTCONFIG_QCA)

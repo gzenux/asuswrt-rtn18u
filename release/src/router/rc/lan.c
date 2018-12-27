@@ -4007,7 +4007,11 @@ void lanaccess_mssid_ban(const char *limited_ifname)
 	eval("ebtables", "-A", "FORWARD", "-o", (char*)limited_ifname, "-j", "DROP"); // so that traffic via host and nat is passed
 
 	snprintf(lan_subnet, sizeof(lan_subnet), "%s/%s", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+#ifdef RTCONFIG_FBWIFI
+	eval("ebtables", "-t", "broute", "-A", "BROUTING", "-i", (char*)limited_ifname, "-p", "ipv4", "--ip-dst", lan_subnet, "--ip-dport", "!", "8083", "--ip-proto", "tcp", "-j", "DROP");
+#else
 	eval("ebtables", "-t", "broute", "-A", "BROUTING", "-i", (char*)limited_ifname, "-p", "ipv4", "--ip-dst", lan_subnet, "--ip-proto", "tcp", "-j", "DROP");
+#endif
 #endif
 }
 
@@ -4080,6 +4084,28 @@ void lanaccess_wl(void)
 #endif
 }
 
+#ifdef RTCONFIG_FBWIFI
+void stop_fbwifi_check()
+{
+	killall("fb_wifi_check", SIGTERM);
+}
+void start_fbwifi_check()
+{
+	char *fbwifi_argv[] = {"fb_wifi_check",NULL};
+	pid_t pid;
+
+	_eval(fbwifi_argv, NULL, 0, &pid);
+}
+
+void restart_fbwifi_register()
+{
+	char *fbwifi_argv[] = {"fb_wifi_register",nvram_get("wl_unit"),nvram_get("wl_subunit"),NULL};
+	pid_t pid;
+
+	_eval(fbwifi_argv, NULL, 0, &pid);
+}
+#endif
+
 void restart_wireless(void)
 {
 #ifdef RTCONFIG_WIRELESSREPEATER
@@ -4127,6 +4153,13 @@ void restart_wireless(void)
 #ifdef RTCONFIG_PORT_BASED_VLAN
 	set_port_based_vlan_config(NULL);
 #endif
+
+//#ifdef FB_WIFI
+#ifdef RTCONFIG_FBWIFI
+	//start_fb_wifi();
+	start_firewall(wan_primary_ifunit(), 0);
+#endif
+
 	start_lan_wl();
 
 	reinit_hwnat(-1);

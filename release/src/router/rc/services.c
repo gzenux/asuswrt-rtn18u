@@ -3950,6 +3950,11 @@ start_services(void)
 	start_monitor();
 #endif
 
+#ifdef RTCONFIG_FBWIFI
+	//start_fb_wifi();
+	start_fbwifi();
+#endif
+
 #ifdef RTCONFIG_IXIAEP
 	start_ixia_endpoint();
 #endif
@@ -3992,6 +3997,123 @@ start_services(void)
 	return 0;
 
 }
+
+#ifdef RTCONFIG_FBWIFI
+void start_httpd_uam()
+{
+	char *httpd_argv[] = {"httpd_uam", NULL};
+	pid_t pid;
+
+	chdir("/www/fbwifi");
+
+
+	_eval(httpd_argv, NULL, 0, &pid);
+	logmessage(LOGNAME, "start httpd_uam");
+
+	chdir("/");
+
+	return;
+}
+
+void stop_httpd_uam()
+{
+
+	if (pids("httpd_uam"))
+		killall_tk("httpd_uam");
+}
+
+void stop_fbwifi_register()
+{
+
+	if (pids("fb_wifi_register"))
+		killall_tk("fb_wifi_register");
+}
+
+void clean_certificaion_rules()
+{
+	int count = nvram_get_int("fbwifi_user_conut");
+
+    char name[128] = {0};
+    int i = 0;
+    for (i=0 ; i< count ; i++)
+    {
+        memset(name, 0x0, sizeof(name));
+        sprintf(name, "fbwifi_user_%d", i);
+        nvram_unset(name);
+    }
+    nvram_set_int("fbwifi_user_conut", 0);
+
+    nvram_commit();
+}
+
+void stop_fbwifi()
+{
+	stop_fbwifi_check();
+	clean_certificaion_rules();
+	stop_httpd_uam();
+	start_firewall(wan_primary_ifunit(), 0);
+}
+
+void my_mkdir(char *path)
+{
+    DIR *pDir;
+    pDir=opendir(path);
+    if(NULL == pDir)
+    {
+        if(-1 == mkdir(path,0777))
+        {
+            return ;
+        }
+    }
+    else
+        closedir(pDir);
+}
+
+void start_fbwifi()
+{
+	my_mkdir("/tmp/fbwifi");
+	if(nvram_match("fbwifi_enable","on"))
+	{			
+		char *gw_id = nvram_safe_get("fbwifi_id");
+		_dprintf("gw_id = %s\n",gw_id);
+//		if(gw_id == NULL || gw_id == "")
+		if(nvram_match("fbwifi_id","off"))
+		{
+			_dprintf("restart_fbwifi_register\n");
+			restart_fbwifi_register();
+		}
+		char *fbwifi_2g = nvram_safe_get("fbwifi_2g");
+		char *fbwifi_5g = nvram_safe_get("fbwifi_5g");
+		char *fbwifi_5g_2 = nvram_safe_get("fbwifi_5g_2");
+		if(strcmp(fbwifi_2g,"off") || strcmp(fbwifi_5g,"off") || strcmp(fbwifi_5g_2,"off") )
+		{
+			start_fbwifi_check();
+			start_httpd_uam();
+		}
+	}
+	start_firewall(wan_primary_ifunit(), 0);
+}
+
+void restart_fbwifi()
+{
+	if(nvram_match("fbwifi_enable","on"))
+	{			
+		char *gw_id = nvram_safe_get("fbwifi_id");
+		_dprintf("gw_id = %s\n",gw_id);
+//		if(gw_id == NULL || gw_id == "")
+		if(nvram_match("fbwifi_id","off"))
+		{
+			stop_fbwifi_register();
+			_dprintf("restart_fbwifi_register\n");
+			
+			restart_fbwifi_register();
+		}
+
+	}
+
+}
+
+#endif
 
 void
 stop_logger(void)
@@ -4118,6 +4240,10 @@ stop_services(void)
 #endif /* __CONFIG_NORTON__ */
 #ifdef RTCONFIG_QTN
 	stop_qtn_monitor();
+#endif
+
+#ifdef RTCONFIG_FBWIFI
+	stop_fbwifi();
 #endif
 
 #ifdef RTCONFIG_PARENTALCTRL
@@ -6347,6 +6473,13 @@ check_ddr_done:
 		if(action & RC_SERVICE_START) start_wps();
 		kill_pidfile_s("/var/run/watchdog.pid", SIGUSR2);
 	}
+#ifdef RTCONFIG_FBWIFI
+	else if (strcmp(script, "fbwifi")==0)
+	{
+		if(action&RC_SERVICE_STOP) stop_fbwifi();
+		if(action&RC_SERVICE_START) start_fbwifi();
+	}
+#endif
 	else if (strcmp(script, "autodet")==0)
 	{
 		if(action & RC_SERVICE_STOP) stop_autodet();
@@ -6799,6 +6932,14 @@ _dprintf("test 2. turn off the USB power during %d seconds.\n", reset_seconds[re
 	{
 		if(action & RC_SERVICE_STOP) stop_quagga();
 		if(action & RC_SERVICE_START) start_quagga();
+	}
+#endif
+#ifdef RTCONFIG_FBWIFI
+	else if (strcmp(script, "set_fbwifi_profile") == 0)
+	{
+		_dprintf("set_fbwifi_profile: start\n");
+		set_fbwifi_profile();
+		_dprintf("set_fbwifi_profile: end\n");
 	}
 #endif
 	else
@@ -7577,3 +7718,518 @@ int service_main(int argc, char *argv[])
 	printf("\nDone.\n");
 	return 0;
 }
+
+#ifdef RTCONFIG_FBWIFI
+void
+set_fbwifi_profile(void) {
+	char wl_unit[10];
+	char wl_unit_temp[10];
+	char wl_item[30];
+
+	//backup 2.4G profile and set fbwifi profile to wl0.X
+	memset(wl_unit, 0, sizeof(wl_unit));
+	memset(wl_unit_temp, 0, sizeof(wl_unit_temp));
+
+	sprintf(wl_unit, "%s", nvram_safe_get("fbwifi_2g"));
+	sprintf(wl_unit_temp, "%s", nvram_safe_get("fbwifi_2g_temp"));
+	if(strcmp(wl_unit, "off") && !strcmp(nvram_safe_get("fbwifi_enable"), "on")) {
+		_dprintf("Backup 2G profile and set fbwifi profile\n");
+		
+		//ssid
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_ssid", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) { //first time enable fbwifi need backup wl0.x value 
+			nvram_set("fbwifi_ssid_0_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_ssid_0_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_ssid"))) { //set fbwifi value to wl0.x
+			nvram_set(wl_item, nvram_safe_get("fbwifi_ssid"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_ssid"));
+		}
+
+		//auth_mode_x
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_auth_mode_x", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_auth_mode_x_0_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_auth_mode_x_0_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_auth_mode_x"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_auth_mode_x"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_auth_mode_x"));
+		}
+				
+		//crypto
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_crypto", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_crypto_0_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_crypto_0_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_crypto"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_crypto"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_crypto"));
+		}
+				
+		//wpa_psk
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_wpa_psk", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_wpa_psk_0_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_wpa_psk_0_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_wpa_psk"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_wpa_psk"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_wpa_psk"));
+		}
+
+		//macmode
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_macmode", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_macmode_0_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_macmode_0_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "disabled")) {
+			nvram_set(wl_item, "disabled");
+			_dprintf("set %s : %s\n", wl_item, "disabled");
+		}
+
+		//lanaccess
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_lanaccess", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_lanaccess_0_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_lanaccess_0_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "off")) {
+			nvram_set(wl_item, "off");
+			_dprintf("set %s : %s\n", wl_item, "off");
+		}
+
+		//expire
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_expire", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_expire_0_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_expire_0_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "0")) {
+			nvram_set(wl_item, "0");
+			_dprintf("set %s : %s\n", wl_item, "0");
+		}
+				
+		//bss_enable
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_bss_enabled", wl_item);
+		if(strcmp(nvram_safe_get(wl_item), "1")) {
+			nvram_set(wl_item, "1");
+			_dprintf("set %s : %s\n", wl_item, "1");
+		}
+
+		//fbwifi_2g
+		if(strcmp(nvram_safe_get("fbwifi_2g_temp"),wl_unit)) {
+			nvram_set("fbwifi_2g_temp", wl_unit);
+			_dprintf("set fbwifi_2g_temp : %s\n",wl_unit);
+		}
+
+	}
+	else {
+		_dprintf("Reset 2G profile\n");
+		//reset 2.4G profile
+		memset(wl_unit, 0, sizeof(wl_unit));
+		sprintf(wl_unit, "%s", nvram_safe_get("fbwifi_2g_temp"));
+		if(strcmp(wl_unit, "off")) {
+			//fbwifi_2g
+			nvram_set("fbwifi_2g_temp", "off");
+			_dprintf("set fbwifi_2g_temp : %s\n", "off");
+
+			//ssid
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_ssid", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_ssid_0_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_ssid_0_temp"));
+
+			//auth_mode_x
+			 memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_auth_mode_x", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_auth_mode_x_0_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_auth_mode_x_0_temp"));
+					
+			//crypto
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_crypto", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_crypto_0_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_crypto_0_temp"));
+					
+			//wpa_psk
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_wpa_psk", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_wpa_psk_0_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_wpa_psk_0_temp"));
+
+			//macmode
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_macmode", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_macmode_0_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_macmode_0_temp"));
+
+			//lanaccess
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_lanaccess", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_lanaccess_0_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_lanaccess_0_temp"));
+
+			//expire
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_expire", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_expire_0_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_expire_0_temp"));
+					
+			//bss_enable
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_bss_enabled", wl_item);
+			nvram_set(wl_item, "0");
+			_dprintf("set %s : %s\n", wl_item, "0");
+		}
+	}
+
+	//backup 5G profile and set fbwifi profile to wl1.X
+	memset(wl_unit, 0, sizeof(wl_unit));
+	memset(wl_unit_temp, 0, sizeof(wl_unit_temp));
+
+	sprintf(wl_unit, "%s", nvram_safe_get("fbwifi_5g"));
+	sprintf(wl_unit_temp, "%s", nvram_safe_get("fbwifi_5g_temp"));
+	if(strcmp(wl_unit, "off") && !strcmp(nvram_safe_get("fbwifi_enable"), "on")) {
+		_dprintf("Backup 5G profile and set fbwifi profile\n");
+		
+		//ssid
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_ssid", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_ssid_1_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_ssid_1_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_ssid"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_ssid"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_ssid"));
+		}
+
+		//auth_mode_x
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_auth_mode_x", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_auth_mode_x_1_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_auth_mode_x_1_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_auth_mode_x"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_auth_mode_x"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_auth_mode_x"));
+		}
+				
+		//crypto
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_crypto", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_crypto_1_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_crypto_1_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_crypto"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_crypto"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_crypto"));
+		}
+				
+		//wpa_psk
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_wpa_psk", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_wpa_psk_1_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_wpa_psk_1_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_wpa_psk"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_wpa_psk"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_wpa_psk"));
+		}
+
+		//macmode
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_macmode", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_macmode_1_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_macmode_1_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "disabled")) {
+			nvram_set(wl_item, "disabled");
+			_dprintf("set %s : %s\n", wl_item, "disabled");
+		}
+
+		//lanaccess
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_lanaccess", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_lanaccess_1_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_lanaccess_1_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "off")) {
+			nvram_set(wl_item, "off");
+			_dprintf("set %s : %s\n", wl_item, "off");
+		}
+
+		//expire
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_expire", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_expire_1_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_expire_1_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "0")) {
+			nvram_set(wl_item, "0");
+			_dprintf("set %s : %s\n", wl_item, "0");
+		}
+				
+		//bss_enable
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_bss_enabled", wl_item);
+		if(strcmp(nvram_safe_get(wl_item), "1")) {
+			nvram_set(wl_item, "1");
+			_dprintf("set %s : %s\n", wl_item, "1");
+		}
+
+		//fbwifi_5g
+		if(strcmp(nvram_safe_get("fbwifi_5g_temp"), wl_unit)) {
+			nvram_set("fbwifi_5g_temp", wl_unit);
+			_dprintf("set fbwifi_5g_temp : %s\n",wl_unit);
+		}
+
+	}
+	else {
+		 _dprintf("Reset 5G profile\n");
+		//reset 5G profile
+		memset(wl_unit, 0, sizeof(wl_unit));
+		sprintf(wl_unit, "%s", nvram_safe_get("fbwifi_5g_temp"));
+		if(strcmp(wl_unit, "off")) {
+			//fbwifi_5g
+			nvram_set("fbwifi_5g_temp", "off");
+			_dprintf("set fbwifi_5g_temp : %s\n", "off");
+
+			//ssid
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_ssid", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_ssid_1_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_ssid_1_temp"));
+
+			//auth_mode_x
+			 memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_auth_mode_x", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_auth_mode_x_1_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_auth_mode_x_1_temp"));
+					
+			//crypto
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_crypto", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_crypto_1_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_crypto_1_temp"));
+					
+			//wpa_psk
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_wpa_psk", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_wpa_psk_1_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_wpa_psk_1_temp"));
+
+			//macmode
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_macmode", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_macmode_1_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_macmode_1_temp"));
+
+			//lanaccess
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_lanaccess", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_lanaccess_1_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_lanaccess_1_temp"));
+
+			//expire
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_expire", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_expire_1_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_expire_1_temp"));
+					
+			//bss_enable
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_bss_enabled", wl_item);
+			nvram_set(wl_item, "0");
+			_dprintf("set %s : %s\n", wl_item, "0");
+		}
+	}
+
+#ifdef RTAC3200
+//backup 5G-2 profile and set fbwifi profile to wl2.X
+	memset(wl_unit, 0, sizeof(wl_unit));
+	memset(wl_unit_temp, 0, sizeof(wl_unit_temp));
+
+	sprintf(wl_unit, "%s", nvram_safe_get("fbwifi_5g_2"));
+	sprintf(wl_unit_temp, "%s", nvram_safe_get("fbwifi_5g_2_temp"));
+	if(strcmp(wl_unit, "off") && !strcmp(nvram_safe_get("fbwifi_enable"), "on")) {
+		_dprintf("Backup 5G-2 profile and set fbwifi profile\n");
+		
+		//ssid
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_ssid", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_ssid_2_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_ssid_2_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_ssid"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_ssid"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_ssid"));
+		}
+
+		//auth_mode_x
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_auth_mode_x", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_auth_mode_x_2_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_auth_mode_x_2_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_auth_mode_x"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_auth_mode_x"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_auth_mode_x"));
+		}
+				
+		//crypto
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_crypto", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_crypto_2_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_crypto_2_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_crypto"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_crypto"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_crypto"));
+		}
+				
+		//wpa_psk
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_wpa_psk", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_wpa_psk_2_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_wpa_psk_2_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), nvram_safe_get("fbwifi_wpa_psk"))) {
+			nvram_set(wl_item, nvram_safe_get("fbwifi_wpa_psk"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_wpa_psk"));
+		}
+
+		//macmode
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_macmode", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_macmode_2_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_macmode_2_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "disabled")) {
+			nvram_set(wl_item, "disabled");
+			_dprintf("set %s : %s\n", wl_item, "disabled");
+		}
+
+		//lanaccess
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_lanaccess", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_lanaccess_2_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_lanaccess_2_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "off")) {
+			nvram_set(wl_item, "off");
+			_dprintf("set %s : %s\n", wl_item, "off");
+		}
+
+		//expire
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_expire", wl_item);
+		if(!strcmp(wl_unit_temp, "off")) {
+			nvram_set("fbwifi_expire_2_temp", nvram_safe_get(wl_item));
+			_dprintf("set fbwifi_expire_2_temp : %s\n", nvram_safe_get(wl_item));
+		}
+		if(strcmp(nvram_safe_get(wl_item), "0")) {
+			nvram_set(wl_item, "0");
+			_dprintf("set %s : %s\n", wl_item, "0");
+		}
+				
+		//bss_enable
+		memset(wl_item, 0, sizeof(wl_item));
+		(void)strcat_r(wl_unit, "_bss_enabled", wl_item);
+		if(strcmp(nvram_safe_get(wl_item), "1")) {
+			nvram_set(wl_item, "1");
+			_dprintf("set %s : %s\n", wl_item, "1");
+		}
+
+		//fbwifi_5g_2
+		if(strcmp(nvram_safe_get("fbwifi_5g_2_temp"), wl_unit)) {
+			nvram_set("fbwifi_5g_2_temp", wl_unit);
+			_dprintf("set fbwifi_5g_2_temp : %s\n",wl_unit);
+		}
+
+	}
+	else {
+		 _dprintf("Reset 5G-2 profile\n");
+		//reset 5G-2 profile
+		memset(wl_unit, 0, sizeof(wl_unit));
+		sprintf(wl_unit, "%s", nvram_safe_get("fbwifi_5g_2_temp"));
+		if(strcmp(wl_unit, "off")) {
+			//fbwifi_5g_2
+			nvram_set("fbwifi_5g_2_temp", "off");
+			_dprintf("set fbwifi_5g_2_temp : %s\n", "off");
+
+			//ssid
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_ssid", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_ssid_2_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_ssid_2_temp"));
+
+			//auth_mode_x
+			 memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_auth_mode_x", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_auth_mode_x_2_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_auth_mode_x_2_temp"));
+					
+			//crypto
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_crypto", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_crypto_2_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_crypto_2_temp"));
+					
+			//wpa_psk
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_wpa_psk", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_wpa_psk_2_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_wpa_psk_2_temp"));
+
+			//macmode
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_macmode", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_macmode_2_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_macmode_2_temp"));
+
+			//lanaccess
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_lanaccess", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_lanaccess_2_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_lanaccess_2_temp"));
+
+			//expire
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_expire", wl_item);
+			nvram_set(wl_item, nvram_safe_get("fbwifi_expire_2_temp"));
+			_dprintf("set %s : %s\n", wl_item, nvram_safe_get("fbwifi_expire_2_temp"));
+					
+			//bss_enable
+			memset(wl_item, 0, sizeof(wl_item));
+			(void)strcat_r(wl_unit, "_bss_enabled", wl_item);
+			nvram_set(wl_item, "0");
+			_dprintf("set %s : %s\n", wl_item, "0");
+		}
+	}
+#endif
+}
+#endif

@@ -478,3 +478,8 @@ endif
 ifneq ($(RTCONFIG_IFTTT), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_IFTTT_Pincode.asp
 endif
+
+ifneq ($(RTCONFIG_FBWIFI), y)
+	rm -rf $(INSTALLDIR)/www/Guest_network_fbwifi.asp
+	rm -rf $(INSTALLDIR)/www/ajax_fbwifi.asp
+endif

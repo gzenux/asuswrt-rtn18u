@@ -346,6 +346,7 @@ var wtfast_support = isSupport("wtfast");
 var powerline_support = isSupport("plc");
 var reboot_schedule_support = isSupport("reboot_schedule");
 var noiptv_support = isSupport("noiptv");
+var fbwifi_support = isSupport("fbwifi");
 var app_support = false;
 
 if( based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC88U"
@@ -894,10 +895,14 @@ if(bwdpi_support){
 		tabtitle[11] = new Array("", "<#Bandwidth_monitor#>", "<#menu5_3_2#>", "<#Adaptive_History#>", "<table style='margin-top:-10px \\9;'><tr><td><img src='/images/ROG_Logo.png' style='border:0px;width:32px;'></td><td>ROG First</td></tr></table>", "Spectrum");
 		tabtitle[12] = new Array("", "<#AiProtection_Home#>", "<#Parental_Control#>", "Ad Blocking", "Key Guard");
 		tabtitle[13] = new Array("", "Time Limits", "<#AiProtection_filter#>");
-		if(traffic_limiter_support)
+		if(traffic_limiter_support) {
 			tabtitle[14] = new Array("", "Statistic", "Traffic Monitor", "Traffic Limiter");
-		else
+			tabtitle[15] = new Array("", "<#Guest_Network#>", "Facebook Wi-Fi");
+		}
+		else {
 			tabtitle[14] = new Array("", "Statistic", "Traffic Monitor");
+			tabtitle[15] = new Array("", "<#Guest_Network#>", "Facebook Wi-Fi");
+		}
 	}
 	else{
 		if(traffic_limiter_support)
@@ -907,6 +912,8 @@ if(bwdpi_support){
 		
 		tabtitle[12] = new Array("", "<#AiProtection_Home#>", "<#Parental_Control#>", "Ad Blocking", "Key Guard");
 		tabtitle[13] = new Array("", "Time Limits", "<#AiProtection_filter#>");
+		tabtitle[14] = new Array("");
+		tabtitle[15] = new Array("", "<#Guest_Network#>", "Facebook Wi-Fi");
 	}
 }
 else{
@@ -916,6 +923,9 @@ else{
 		tabtitle[11] = new Array("", "<#menu5_3_2#>", "<#traffic_monitor#>", "<table style='margin-top:-10px \\9;'><tr><td><img src='/images/ROG_Logo.png' style='border:0px;width:32px;'></td><td>ROG First</td></tr></table>", "Spectrum");
 
 		tabtitle[12] = new Array("", "<#Parental_Control#>", "<#YandexDNS#>");
+		tabtitle[13] = new Array("");
+		tabtitle[14] = new Array("");
+		tabtitle[15] = new Array("", "<#Guest_Network#>", "Facebook Wi-Fi");
 }
 
 
@@ -936,10 +946,14 @@ if(bwdpi_support){
 		tablink[11] = new Array("", "AdaptiveQoS_Bandwidth_Monitor.asp", "QoS_EZQoS.asp", "AdaptiveQoS_WebHistory.asp", "AdaptiveQoS_ROG.asp", "Main_Spectrum_Content.asp", "Advanced_QOSUserPrio_Content.asp", "Advanced_QOSUserRules_Content.asp", "AdaptiveQoS_Adaptive.asp", "Bandwidth_Limiter.asp");
 		tablink[12] = new Array("", "AiProtection_HomeProtection.asp", "AiProtection_WebProtector.asp", "AiProtection_AdBlock.asp", "AiProtection_Key_Guard.asp");
 		tablink[13] = new Array("");
-		if(traffic_limiter_support)
+		if(traffic_limiter_support) {
 			tablink[14] = new Array("", "TrafficAnalyzer_Statistic.asp", "Main_TrafficMonitor_realtime.asp", "AdaptiveQoS_TrafficLimiter.asp", "Main_TrafficMonitor_last24.asp",  "Main_TrafficMonitor_daily.asp");
-		else
+			tablink[15] = new Array("", "Guest_network.asp", "Guest_network_fbwifi.asp");
+		}
+		else {
 			tablink[14] = new Array("", "TrafficAnalyzer_Statistic.asp", "Main_TrafficMonitor_realtime.asp", "Main_TrafficMonitor_last24.asp",  "Main_TrafficMonitor_daily.asp");
+			tablink[15] = new Array("", "Guest_network.asp", "Guest_network_fbwifi.asp");
+		}
 	}
 	else{
 		if(traffic_limiter_support)
@@ -948,6 +962,9 @@ if(bwdpi_support){
 			tablink[11] = new Array("", "AdaptiveQoS_Bandwidth_Monitor.asp", "QoS_EZQoS.asp", "AdaptiveQoS_WebHistory.asp", "AdaptiveQoS_ROG.asp", "Main_TrafficMonitor_realtime.asp", "Main_Spectrum_Content.asp", "Main_TrafficMonitor_last24.asp",  "Main_TrafficMonitor_daily.asp", "Advanced_QOSUserPrio_Content.asp", "Advanced_QOSUserRules_Content.asp", "AdaptiveQoS_Adaptive.asp", "Bandwidth_Limiter.asp");
 		
 		tablink[12] = new Array("", "AiProtection_HomeProtection.asp", "AiProtection_WebProtector.asp", "AiProtection_AdBlock.asp", "AiProtection_Key_Guard.asp");
+		tablink[13] = new Array("");
+		tablink[14] = new Array("");
+		tablink[15] = new Array("", "Guest_network.asp", "Guest_network_fbwifi.asp");
 	}
 }
 else{
@@ -957,6 +974,9 @@ else{
 		tablink[11] = new Array("", "QoS_EZQoS.asp", "Main_TrafficMonitor_realtime.asp", "AdaptiveQoS_ROG.asp", "Main_Spectrum_Content.asp", "Main_TrafficMonitor_last24.asp", "Main_TrafficMonitor_daily.asp", "Advanced_QOSUserPrio_Content.asp", "Advanced_QOSUserRules_Content.asp", "Bandwidth_Limiter.asp");
 	
 	tablink[12] = new Array("", "ParentalControl.asp", "YandexDNS.asp");
+	tablink[13] = new Array("");
+	tablink[14] = new Array("");
+	tablink[15] = new Array("", "Guest_network.asp", "Guest_network_fbwifi.asp");
 }
 // Level 2 Menu
 menuL2_title = new Array("", "<#menu5_1#>", "Passpoint", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_4#>", "IPv6", "VPN", "<#menu5_5#>", "<#menu5_6#>", "<#System_Log#>", "<#Network_Tools#>");
@@ -1333,6 +1353,11 @@ function remove_url(){
 	if(wtfast_support && sw_mode != 1){
 		remove_menuL1_item("GameBoost.asp");
 	}
+
+	if(!fbwifi_support) {
+		tabtitle[15][2] = "";
+		tablink[15][2] = "";
+	}
 }
 
 function remove_menu_item(remove_url){
@@ -1617,6 +1642,18 @@ function show_menu(){
 		L1 = traffic_L1_dx;	
 		L2 = traffic_L2_dx;
 		L3 = 5;
+	}
+
+	//Guestnetwork
+	if(current_url.indexOf("Guest_network") == 0){
+		L1 = menuL1_link.indexOf("Guest_network.asp");
+		traffic_L2_dx = 16;
+		traffic_L3_dx = 1;
+		L2 = traffic_L2_dx;
+		L3 = traffic_L3_dx;
+		if(current_url.indexOf("Guest_network_fbwifi.asp") == 0) {
+			L3 = 2;
+		}
 	}
 	
 	show_banner(L3);

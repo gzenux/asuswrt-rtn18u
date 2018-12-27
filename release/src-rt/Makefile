@@ -203,8 +203,8 @@ ifeq ($(CONFIG_RALINK),y)
 # MTK/Ralink platform
 	# generate kernel part
 	@rm -rf $(PLATFORMDIR)/zImage.lzma ; \
-	mipsel-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(PLATFORMDIR)/vmlinus ; \
-	asustools/lzma -9 -f -c $(PLATFORMDIR)/vmlinus > $(PLATFORMDIR)/zImage.lzma ; \
+	mipsel-linux-objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux $(PLATFORMDIR)/vmlinus ; \
+	asustools/lzma_9k e $(PLATFORMDIR)/vmlinus $(PLATFORMDIR)/zImage.lzma -lc2 -lp2 -pb2 -mfbt2 ; \
 	cp -f $(PLATFORMDIR)/zImage.lzma $(PLATFORMDIR)/zImage.img ; \
 	# padded kernel image size
 	@SIZE=`wc -c $(PLATFORMDIR)/zImage.img | awk '{print $$1}'`; \
@@ -615,6 +615,8 @@ define RouterOptions
 		echo "# RTCONFIG_UPNPC is not set" >>$(1); \
 		sed -i "/RTCONFIG_BONJOUR/d" $(1); \
 		echo "# RTCONFIG_BONJOUR is not set" >>$(1); \
+		sed -i "/RTCONFIG_SPEEDTEST/d" $(1); \
+		echo "# RTCONFIG_SPEEDTEST is not set" >>$(1); \
 	fi; \
 	if [ "$(SFP8M)" = "y" ]; then \
 		sed -i "/RTCONFIG_8M_SFP/d" $(1); \
@@ -623,6 +625,8 @@ define RouterOptions
 		echo "# RTCONFIG_UPNPC is not set" >>$(1); \
 		sed -i "/RTCONFIG_BONJOUR/d" $(1); \
 		echo "# RTCONFIG_BONJOUR is not set" >>$(1); \
+		sed -i "/RTCONFIG_SPEEDTEST/d" $(1); \
+		echo "# RTCONFIG_SPEEDTEST is not set" >>$(1); \
 	fi; \
 	if [ "$(SFPRAM16M)" = "y" ]; then \
 		sed -i "/RTCONFIG_16M_RAM_SFP/d" $(1); \
@@ -1407,6 +1411,10 @@ define RouterOptions
 	if [ "$(WTFAST)" = "y" ]; then \
 		sed -i "/RTCONFIG_WTFAST/d" $(1); \
 		echo "RTCONFIG_WTFAST=y" >>$(1); \
+	fi; \
+	if [ "$(FBWIFI)" = "y" ]; then \
+		sed -i "/RTCONFIG_FBWIFI/d" $(1); \
+		echo "RTCONFIG_FBWIFI=y" >>$(1); \
 	fi; \
 	if [ "$(IFTTT)" = "y" ]; then \
 		sed -i "/RTCONFIG_IFTTT/d" $(1); \

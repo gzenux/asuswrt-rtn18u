@@ -557,6 +557,9 @@ obj-y += mDNSResponder
 endif
 endif
 
+obj-$(RTCONFIG_FBWIFI) += fb_wifi
+obj-$(RTCONFIG_FBWIFI) += httpd_uam
+
 #add for snmpd
 SNMPD_CFLAGS += -D$(BUILD_NAME)
 ifeq ($(BUILD_NAME), $(filter $(BUILD_NAME), RT-N66U RT-AC66U RT-AC68U))
@@ -1339,6 +1342,10 @@ httpd: shared nvram$(BCMEX) libdisk $(if $(RTCONFIG_HTTPS),mssl) $(if $(RTCONFIG
 	@$(SEP)
 	@$(MAKE) -C httpd
 
+httpd_uam: shared nvram$(BCMEX) libdisk $(if $(RTCONFIG_HTTPS),mssl) $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_FBWIFI),fb_wifi)
+	@$(SEP)
+	@$(MAKE) -C httpd_uam
+
 bonnie: bonnie/Makefile
 	$(MAKE) CXX=$(CXX) -C bonnie
 
@@ -1515,7 +1522,7 @@ wb: openssl libxml2 curl-7.21.7
 
 push_log: wb
 
-rc: nvram$(BCMEX) shared libbcmcrypto libdisk $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_BWDPI),bwdpi)
+rc: nvram$(BCMEX) shared libbcmcrypto libdisk $(if $(RTCONFIG_FBWIFI),fb_wifi) $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_BWDPI),bwdpi)
 
 networkmap: shared
 
@@ -3337,18 +3344,16 @@ sdparm-1.02: sdparm-1.02/Makefile
 	$(MAKE) -C $@
 
 sdparm-1.02/Makefile: sdparm-1.02/configure
-	$(MAKE) sdparm-1.02-configure
-
-sdparm-1.02/configure:
-	( cd sdparm-1.02 ; ./autogen.sh )
-
-sdparm-1.02-configure:
-	( cd sdparm-1.02 ; \
-		$(CONFIGURE) \
+	cd sdparm-1.02 && \
+	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+	LDFLAGS="$(EXTRALDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	$(CONFIGURE) \
 		--prefix=/usr \
 		--bindir=/usr/bin \
-		--libdir=/usr/lib \
-	)
+		--libdir=/usr/lib
+
+sdparm-1.02/configure:
+	cd sdparm-1.02 && ./autogen.sh
 
 sdparm-1.02-install: sdparm-1.02
 	@[ ! -d sdparm-1.02 ] || install -D sdparm-1.02/src/sdparm $(INSTALLDIR)/sdparm-1.02/usr/bin/sdparm
@@ -3666,6 +3671,26 @@ webdav_client-install: webdav_client
 webdav_client-clean:
 	-@$(MAKE) -C webdav_client clean
 	rm -rf webdav_client/stamp-h1
+
+#fbwifi
+fb_wifi/stamp-h1:
+	touch $@
+
+fb_wifi: curl-7.21.7 fb_wifi/stamp-h1
+	@$(MAKE) -C fb_wifi
+
+fb_wifi-install: fb_wifi
+	@$(SEP)
+	install -D fb_wifi/fb_wifi_check $(INSTALLDIR)/fb_wifi/usr/sbin/fb_wifi_check
+	install -D fb_wifi/fb_wifi_register $(INSTALLDIR)/fb_wifi/usr/sbin/fb_wifi_register
+	install -D fb_wifi/libfbwifi.so $(INSTALLDIR)/fb_wifi/usr/lib/libfbwifi.so
+	$(STRIP) $(INSTALLDIR)/fb_wifi/usr/sbin/fb_wifi_check
+	$(STRIP) $(INSTALLDIR)/fb_wifi/usr/sbin/fb_wifi_register
+	$(STRIP) $(INSTALLDIR)/fb_wifi/usr/lib/libfbwifi.so
+
+fb_wifi-clean:
+	-@$(MAKE) -C fb_wifi clean
+	rm -rf fb_wifi/stamp-h1
 
 #add by gauss
 #add install libcurl

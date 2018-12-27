@@ -1,0 +1,176 @@
+include ../common.mak
+
+CFLAGS += -Os -Wall $(EXTRACFLAGS)
+CFLAGS += -I$(SRCBASE) -I$(SRCBASE)/include -I. -I$(TOP)/shared -I$(TOP)/zlib
+CFLAGS += -I$(TOP)/push_log
+CFLAGS += -DASUS_DDNS -DTRANSLATE_ON_FLY -DFLASH_EMULATOR -DLinux -DWSC 
+
+ifeq ($(RTCONFIG_RALINK),y)
+CFLAGS += -DRalink_WPS
+CFLAGS += -I$(TOP)/shared/sysdeps/ralink -I$(TOP)/wireless_tools
+endif
+
+include $(SRCBASE)/.config
+
+ifeq ($(RTN11P),y)
+CFLAGS += -DBAND_2G_ONLY
+endif
+
+ifeq ($(RTN14U),y)
+CFLAGS += -DBAND_2G_ONLY
+endif
+
+ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN54U),y)
+CFLAGS += -DRA_ESW
+endif
+
+ifeq ($(RTCONFIG_USB),y)
+CFLAGS += -I$(TOP)/libdisk	
+endif
+
+ifeq ($(RTCONFIG_DNSMASQ),y)
+CFLAGS += -DDNSMASQ
+endif
+
+ifeq ($(RTCONFIG_BWDPI),y)
+CFLAGS += -I$(TOP)/bwdpi/ -I$(TOP)/sqlite
+endif
+
+OBJS = httpd.o cgi.o ej.o 
+OBJS += web.o common.o nvram_f.o 
+OBJS += aspbw.o initial_web_hook.o
+OBJS += apps.o
+ifeq ($(CONFIG_RALINK),y)
+OBJS += web-ralink.o
+else
+ifeq ($(RTCONFIG_BCMWL6),y)
+OBJS += web-broadcom-wl6.o
+ifeq ($(RTCONFIG_QTN),y)
+OBJS += find_host_addr.o
+endif
+else
+OBJS += web-broadcom.o
+endif
+endif
+
+ifeq ($(RTCONFIG_DSL),y)
+OBJS += web-dsl.o
+ifeq ($(RTCONFIG_RALINK),y)
+OBJS += web-dsl-upg.o
+endif
+endif
+
+ifeq ($(RTCONFIG_GEOIP),y)
+OBJS += geoiplookup.o
+endif
+
+ifeq ($(RTCONFIG_HTTPS),y)
+OBJS += pwenc.o
+endif
+
+LIBS = -L$(TOP)/nvram${BCMEX} -lnvram -L$(TOP)/shared -lshared
+
+ifeq ($(RTCONFIG_FBWIFI),y)
+LIBS += -L$(TOP)/fb_wifi -lfbwifi
+LIBS += -L$(TOP)/openssl -lcrypto -lssl
+LIBS += -L$(TOP)/curl-7.21.7/lib/.libs -lcurl
+endif
+
+ifeq ($(RTCONFIG_PUSH_EMAIL),y)
+LIBS += -L$(TOP)/openssl -lcrypto -lssl
+LIBS += -L$(TOP)/curl-7.21.7/lib/.libs -lcurl
+LIBS += -L$(TOP)/libxml2/.libs -lxml2
+LIBS += -L$(TOP)/wb -lws
+LIBS += -L$(TOP)/push_log -lpush_log
+endif
+
+ifeq ($(RTCONFIG_BCMARM),y)
+CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include
+CFLAGS += -I$(SRCBASE)/common/include
+LIBS += -lgcc_s
+ifeq ($(RTCONFIG_QTN),y)
+CFLAGS += -I$(TOP)/libqcsapi_client -I$(TOP)/shared/sysdeps/qtn
+LIBS += -L$(TOP)/libqcsapi_client -lqcsapi_client
+endif
+endif
+
+ifeq ($(RTCONFIG_USB),y)
+LIBS += -L$(TOP)/libdisk -ldisk
+endif
+
+ifeq ($(RTCONFIG_HTTPS),y)
+CFLAGS += -I$(TOP)/mssl
+CFLAGS += -I$(TOP)/openssl/include
+LIBS += -L$(TOP)/mssl -lmssl
+LIBS += -L$(TOP)/openssl -lssl -lcrypto
+endif
+
+ifeq ($(RTCONFIG_OPENVPN),y)
+OBJS += openvpn_options.o
+LIBS += -L$(TOP)/openssl -lssl -lcrypto
+endif
+
+ifeq ($(RTCONFIG_BWDPI),y)
+LIBS += -L$(TOP)/bwdpi -lbwdpi
+LIBS += -L$(TOP)/bwdpi_sqlite -lbwdpi_sql
+LIBS += -L$(TOP)/sqlite/.libs -lsqlite3
+#LIBS += -lpthread
+endif
+
+ifeq ($(RTCONFIG_GEOIP),y)
+CFLAGS += -I$(TOP)/GeoIP-1.6.2/libGeoIP
+LIBS += -L$(TOP)/GeoIP-1.6.2/libGeoIP/.libs -lGeoIP
+endif
+
+export CFLAGS
+ifeq ($(RTCONFIG_QTN),y)
+vpath %.c sysdeps $(TOP)/libqcsapi_client/qcsapi_rpc_common/client $(TOP)/shared/sysdeps/qtn
+else
+vpath %.c sysdeps
+endif
+
+OBJS_FB = captive_portal.o
+
+all: httpd_uam #test_apps
+
+#test_apps: apps.c
+#	$(CC) -DAPPS $(CFLAGS) $(LIBS) $^ -o $@
+
+httpd_uam: $(OBJS_FB)
+	@echo " [httpd_uam] CC $@"
+	$(CC) -o $@ $(OBJS_FB) $(LIBS)
+
+	$(SIZECHECK)
+	$(CPTMP)
+
+
+install: all
+	@echo " [httpd_uam] Installing to $(INSTALLDIR)"
+	@install -D httpd_uam $(INSTALLDIR)/usr/sbin/httpd_uam
+	@$(STRIP) $(INSTALLDIR)/usr/sbin/httpd_uam
+	@chmod 0500 $(INSTALLDIR)/usr/sbin/httpd_uam
+	#@install -m 0755 test_apps $(INSTALLDIR)/usr/sbin
+	#@$(STRIP) $(INSTALLDIR)/usr/sbin/test_apps
+
+clean:
+	rm -f httpd_uam *.o .*.depend test_apps
+
+size: httpd_uam
+	mipsel-uclibc-nm --print-size --size-sort httpd_uam
+
+# handle prebuilt object here
+ifneq ($(wildcard, ./prebuild),)
+ifeq ($(RTCONFIG_HTTPS),y)
+pwenc.o:
+	@-cp -f ./prebuild/pwenc.o .
+endif
+endif
+
+%.o: %.c .%.depend
+	@echo " [httpd_uam] CC $@"
+	@$(CC) $(CFLAGS) -o $@ -c $<
+
+.%.depend: %.c
+	@$(CC) $(CFLAGS) -M $< > $@
+
+-include $(OBJS:%.o=.%.depend)
