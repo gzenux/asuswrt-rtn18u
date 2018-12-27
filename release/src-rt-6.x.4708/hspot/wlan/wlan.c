@@ -1,7 +1,7 @@
 /*
  * WLAN functions.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -48,10 +48,6 @@ typedef struct {
 } wlanCreateRspT;
 
 typedef struct {
-	int enable;
-} wlanEnableT;
-
-typedef struct {
 	int event;
 } wlanEventMsgReqT;
 
@@ -95,6 +91,10 @@ typedef struct {
 } wlanTdlsReqT;
 
 typedef struct {
+	int enable;
+} wlanDropGratuitousArpT;
+
+typedef struct {
 	int mask;
 } wlanWnmT;
 
@@ -114,18 +114,6 @@ typedef struct {
 	struct ether_addr addr[1];	/* variable length */
 } wlanMacT;
 
-typedef struct {
-	uint16 len;
-	uint8 data[ACTION_FRAME_SIZE];
-} wlanSendFrameReqT;
-
-typedef struct {
-	bool isStatic;
-	uint16 staCount;
-	uint8 utilization;
-	uint16 aac;
-} wlanBssLoadStaticReqT;
-
 struct wlanReq {
 	requestHandlerT handler;
 	union {
@@ -135,16 +123,11 @@ struct wlanReq {
 		wlanStartEscanReqT startEscan;
 		wlanActionFrameReqT actionFrame;
 		wlanTdlsReqT tdls;
-		wlanEnableT dropGratuitousArp;
+		wlanDropGratuitousArpT dropGratuitousArp;
 		wlanWnmT wnm;
 		wlanWnmBssTransReqEssDisassocImminentT wnmBssTransReqEssDisassocImminent;
 		wlanPmfT pmf;
 		wlanMacT mac;
-		wlanEnableT interworking;
-		wlanEnableT osen;
-		wlanSendFrameReqT sendFrame;
-		wlanEnableT bssLoad;
-		wlanBssLoadStaticReqT bssLoadStatic;
 	};
 };
 
@@ -185,13 +168,6 @@ static void wlanCreateHandler(wlanT *wlanNull,
 	TRACE(TRACE_VERBOSE, "wlanCreateHandler\n");
 
 	rsp->wlan = 0;
-
-	/* check driver loaded */
-	if (wl() == 0) {
-		TRACE(TRACE_ERROR, "wl.ko driver not loaded\n");
-		return;
-	}
-
 	wlan = malloc(sizeof(*wlan));
 	if (wlan == 0)
 		return;
@@ -218,16 +194,7 @@ static void wlanCreateHandler(wlanT *wlanNull,
 	if (wl_enable_event_msg(wl(), WLC_E_ESCAN_RESULT) < 0) {
 		TRACE(TRACE_ERROR, "failed to enable escan event\n");
 	}
-	if (wl_enable_event_msg(wl(), WLC_E_DEAUTH) < 0) {
-		TRACE(TRACE_ERROR, "failed to enable deauth event\n");
-	}
 	if (wl_enable_event_msg(wl(), WLC_E_DISASSOC) < 0) {
-		TRACE(TRACE_ERROR, "failed to enable disassoc event\n");
-	}
-	if (wl_enable_event_msg(wl(), WLC_E_DEAUTH_IND) < 0) {
-		TRACE(TRACE_ERROR, "failed to enable deauth event\n");
-	}
-	if (wl_enable_event_msg(wl(), WLC_E_DISASSOC_IND) < 0) {
 		TRACE(TRACE_ERROR, "failed to enable disassoc event\n");
 	}
 	if (wl_enable_event_msg(wl(), WLC_E_LINK) < 0) {
@@ -249,7 +216,6 @@ wlanT *wlanCreate(void)
 
 	TRACE(TRACE_VERBOSE, "wlanCreate\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = (requestHandlerT)wlanCreateHandler;
 	if (!dspRequestSynch(dsp(), 0, sizeof(req), (uint8 *)&req, (uint8 *)&rsp))
 	{
@@ -281,7 +247,6 @@ int wlanDestroy(wlanT *wlan)
 
 	TRACE(TRACE_VERBOSE, "wlanDestroy\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanDestroyHandler;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
 }
@@ -330,7 +295,6 @@ int wlanEnableEventMsg(wlanT *wlan, int event)
 
 	TRACE(TRACE_VERBOSE, "wlanEnableEventMsg\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanEnableEventMsgHandler;
 	req.eventMsg.event = event;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
@@ -362,7 +326,6 @@ int wlanDisableEventMsg(wlanT *wlan, int event)
 
 	TRACE(TRACE_VERBOSE, "wlanDisableEventMsg\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanDisableEventMsgHandler;
 	req.eventMsg.event = event;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
@@ -394,7 +357,6 @@ int wlanAddVendorIe(wlanT *wlan, uint32 pktflag, int len, uchar *data)
 
 	TRACE(TRACE_VERBOSE, "wlanAddVendorIe\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanAddVendorIeHandler;
 	req.vendorIe.pktflag = pktflag;
 	req.vendorIe.len = len;
@@ -427,39 +389,10 @@ int wlanDeleteVendorIe(wlanT *wlan, uint32 pktflag, int len, uchar *data)
 
 	TRACE(TRACE_VERBOSE, "wlanDeleteVendorIe\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanDeleteVendorIeHandler;
 	req.vendorIe.pktflag = pktflag;
 	req.vendorIe.len = len;
 	memcpy(req.vendorIe.data, data, req.vendorIe.len);
-	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
-}
-
-/* ----------------------------------------------------------- */
-
-static void wlanDeleteAllVendorIeHandler(wlanT *wlan,
-	int reqLength, wlanReqT *req, void *rspNull)
-{
-	(void)rspNull;
-	if (wlan == 0 || reqLength != sizeof(wlanReqT) || req == 0) {
-		TRACE(TRACE_ERROR, "invalid parameter\n");
-		return;
-	}
-
-	TRACE(TRACE_VERBOSE, "wlanDeleteAllVendorIeHandler\n");
-
-	wl_del_all_vndr_ie(wl(), DEFAULT_BSSCFG_INDEX);
-}
-
-/* delete all vendor IEs */
-int wlanDeleteAllVendorIe(wlanT *wlan)
-{
-	wlanReqT req;
-
-	TRACE(TRACE_VERBOSE, "wlanDeleteAllVendorIe\n");
-
-	memset(&req, 0, sizeof(req));
-	req.handler = wlanDeleteAllVendorIeHandler;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
 }
 
@@ -477,7 +410,7 @@ static void wlanIeHandler(wlanT *wlan,
 	TRACE(TRACE_VERBOSE, "wlanIeHandler\n");
 
 	if (wl_ie(wl(), req->ie.id, req->ie.len, req->ie.data) < 0) {
-		TRACE(TRACE_ERROR, "wl_ie failed %d\n", req->ie.id);
+		TRACE(TRACE_ERROR, "failed IE %d\n", req->ie.id);
 	}
 }
 
@@ -488,7 +421,6 @@ int wlanIe(wlanT *wlan, uint8 id, uint8 len, uchar *data)
 
 	TRACE(TRACE_VERBOSE, "wlanIe\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanIeHandler;
 	req.ie.id = id;
 	req.ie.len = len;
@@ -501,10 +433,8 @@ int wlanIe(wlanT *wlan, uint8 id, uint8 len, uchar *data)
 static void wlanStartEscanHandler(wlanT *wlan,
 	int reqLength, wlanReqT *req, void *rspNull)
 {
-#define ESCAN_RETRY		10
 	int numChannels = 0;
 	uint16 *channels = 0;
-	int i;
 
 	(void)rspNull;
 	if (wlan == 0 || reqLength != sizeof(wlanReqT) || req == 0) {
@@ -522,21 +452,10 @@ static void wlanStartEscanHandler(wlanT *wlan,
 	if (wl_scan_abort(wl()) != 0) {
 		TRACE(TRACE_ERROR, "wl_scan_abort failed\n");
 	}
-
-	/* retry the scan as it may be busy */
-	for (i = 0; i < ESCAN_RETRY; i++) {
-		if (wl_escan(wl(), ++wlan->syncId, req->startEscan.isActive,
-			req->startEscan.numProbes, req->startEscan.activeDwellTime,
-			req->startEscan.passiveDwellTime,
-			numChannels, channels) == 0) {
-				break;
-			}
-			else {
-				usleep(500 * 1000);
-				dbg("escan retry: %d\n", i);
-			}
-	}
-	if (i >= ESCAN_RETRY) {
+	if (wl_escan(wl(), ++wlan->syncId, req->startEscan.isActive,
+		req->startEscan.numProbes, req->startEscan.activeDwellTime,
+		req->startEscan.passiveDwellTime,
+		numChannels, channels) != 0) {
 		TRACE(TRACE_ERROR, "wl_escan failed\n");
 	}
 }
@@ -549,7 +468,6 @@ int wlanStartEscan(wlanT *wlan, int isActive, int numProbes,
 
 	TRACE(TRACE_VERBOSE, "wlanStartEscan isActive=%d\n", isActive);
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanStartEscanHandler;
 	req.startEscan.isActive = isActive;
 	req.startEscan.numProbes = numProbes;
@@ -583,7 +501,6 @@ int wlanStopScan(wlanT *wlan)
 
 	TRACE(TRACE_VERBOSE, "wlanStopScan\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanStopScanHandler;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
 }
@@ -613,7 +530,6 @@ int wlanDisassociate(wlanT *wlan)
 
 	TRACE(TRACE_VERBOSE, "wlanDisassociate\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanDisassociateHandler;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
 }
@@ -643,7 +559,6 @@ int wlanPmfDisassociate(wlanT *wlan)
 
 	TRACE(TRACE_VERBOSE, "wlanPmfDisassociate\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanPmfDisassociateHandler;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
 }
@@ -673,7 +588,6 @@ int wlanBssTransitionQuery(wlanT *wlan)
 
 	TRACE(TRACE_VERBOSE, "wlanBssTransitionQuery\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanBssTransitionQueryHandler;
 	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
 }
@@ -715,7 +629,6 @@ int wlanBssTransReqEssDisassocImminent(wlanT *wlan,
 
 	TRACE(TRACE_VERBOSE, "wlanBssTransReqEssDisassocImminent\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanBssTransReqEssDisassocImminentHandler;
 	req.wnmBssTransReqEssDisassocImminent.disassocTimer = disassocTimer;
 	strncpy(req.wnmBssTransReqEssDisassocImminent.url, url,
@@ -758,7 +671,6 @@ int wlanActionFrame(wlanT *wlan, uint32 packetId, uint32 channel, int32 dwellTim
 	if (len > ACTION_FRAME_SIZE)
 		return 0;
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanActionFrameHandler;
 	req.actionFrame.packetId = packetId;
 	req.actionFrame.channel = channel;
@@ -798,7 +710,6 @@ int wlanAssociationStatus(wlanT *wlan, int *isAssociated,
 
 	TRACE(TRACE_VERBOSE, "wlanAssociationStatus\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = (requestHandlerT)wlanAssociationStatusHandler;
 	rsp.isAssociated = isAssociated;
 	rsp.biBufferSize = biBufferSize;
@@ -844,7 +755,6 @@ int wlanTdlsDiscoveryRequest(wlanT *wlan, struct ether_addr *ea)
 
 	TRACE(TRACE_VERBOSE, "wlanTdlsDiscoveryRequest\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanTdlsDiscoveryRequestHandler;
 	memcpy(&req.tdls.ea, ea, sizeof(req.tdls.ea));
 
@@ -887,7 +797,6 @@ int wlanTdlsSetupRequest(wlanT *wlan, struct ether_addr *ea)
 
 	TRACE(TRACE_VERBOSE, "wlanTdlsSetupRequest\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanTdlsSetupRequestHandler;
 	memcpy(&req.tdls.ea, ea, sizeof(req.tdls.ea));
 
@@ -919,7 +828,6 @@ int wlanDropGratuitousArp(wlanT *wlan, int enable)
 
 	TRACE(TRACE_VERBOSE, "wlanDropGratuitousArp\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanDropGratuitousArpHandler;
 	req.dropGratuitousArp.enable = enable;
 
@@ -951,7 +859,6 @@ int wlanWnm(wlanT *wlan, int mask)
 
 	TRACE(TRACE_VERBOSE, "wlanWnm\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanWnmHandler;
 	req.wnm.mask = mask;
 
@@ -982,7 +889,6 @@ int wlanWnmGet(wlanT *wlan, int *mask)
 
 	TRACE(TRACE_VERBOSE, "wlanWnmGet\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanWnmGetHandler;
 
 	return dspRequestSynch(dsp(), wlan, sizeof(req), (uint8 *)&req,
@@ -1009,13 +915,12 @@ static void wlanPmfHandler(wlanT *wlan,
 }
 
 /* PMF mode (0=disable, 1=capable, 2=required) */
-int wlanPmf(wlanT *wlan, wlanPmfModeT mode)
+int wlanPmf(wlanT *wlan, int mode)
 {
 	wlanReqT req;
 
 	TRACE(TRACE_VERBOSE, "wlanPmf\n");
 
-	memset(&req, 0, sizeof(req));
 	req.handler = wlanPmfHandler;
 	req.pmf.mode = mode;
 
@@ -1059,182 +964,11 @@ int wlanMac(wlanT *wlan, int mode, int count, struct ether_addr *addr)
 	req->handler = wlanMacHandler;
 	req->mac.mode = mode;
 	req->mac.count = count;
-	if (addr != 0)
-		memcpy(req->mac.addr, addr, count * sizeof(*addr));
+	memcpy(req->mac.addr, addr, count * sizeof(*addr));
 
 	ret = dspRequest(dsp(), wlan, len, (uint8 *)req);
 	free(req);
 	return ret;
-}
-
-/* ----------------------------------------------------------- */
-
-static void wlanInterworkingHandler(wlanT *wlan,
-	int reqLength, wlanReqT *req, void *rspNull)
-{
-	(void)rspNull;
-	if (wlan == 0 || reqLength != sizeof(wlanReqT) || req == 0) {
-		TRACE(TRACE_ERROR, "invalid parameter\n");
-		return;
-	}
-
-	TRACE(TRACE_VERBOSE, "wlanInterworkingHandler\n");
-
-	if (wl_interworking(wl(), req->interworking.enable) < 0) {
-		TRACE(TRACE_ERROR, "wl_interworking failed\n");
-	}
-}
-
-/* enable/disable interworking */
-int wlanInterworking(wlanT *wlan, int enable)
-{
-	wlanReqT req;
-
-	TRACE(TRACE_VERBOSE, "wlanInterworking\n");
-
-	memset(&req, 0, sizeof(req));
-	req.handler = wlanInterworkingHandler;
-	req.interworking.enable = enable;
-
-	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
-}
-
-/* ----------------------------------------------------------- */
-
-static void wlanOsenHandler(wlanT *wlan,
-	int reqLength, wlanReqT *req, void *rspNull)
-{
-	(void)rspNull;
-	if (wlan == 0 || reqLength != sizeof(wlanReqT) || req == 0) {
-		TRACE(TRACE_ERROR, "invalid parameter\n");
-		return;
-	}
-
-	TRACE(TRACE_VERBOSE, "wlanOsenHandler\n");
-
-	if (wl_osen(wl(), req->osen.enable) < 0) {
-		TRACE(TRACE_ERROR, "wl_osen failed\n");
-	}
-}
-
-/* enable/disable OSEN */
-int wlanOsen(wlanT *wlan, int enable)
-{
-	wlanReqT req;
-
-	TRACE(TRACE_VERBOSE, "wlanOsen\n");
-
-	memset(&req, 0, sizeof(req));
-	req.handler = wlanOsenHandler;
-	req.osen.enable = enable;
-
-	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
-}
-
-/* ----------------------------------------------------------- */
-
-static void wlanSendFrameHandler(wlanT *wlan,
-	int reqLength, wlanReqT *req, void *rspNull)
-{
-	(void)rspNull;
-	if (wlan == 0 || reqLength != sizeof(wlanReqT) || req == 0) {
-		TRACE(TRACE_ERROR, "invalid parameter\n");
-		return;
-	}
-
-	TRACE(TRACE_VERBOSE, "wlanSendFrameHandler\n");
-
-	if (wl_send_frame(wl(),	req->sendFrame.len, req->sendFrame.data) < 0) {
-		TRACE(TRACE_ERROR, "wl_send_frame failed\n");
-	}
-}
-
-/* send frame */
-int wlanSendFrame(wlanT *wlan, uint16 len, uint8 *data)
-{
-	wlanReqT req;
-
-	TRACE(TRACE_VERBOSE, "wlanSendFrame\n");
-
-	if (len > ACTION_FRAME_SIZE)
-		return 0;
-
-	memset(&req, 0, sizeof(req));
-	req.handler = wlanSendFrameHandler;
-	req.sendFrame.len = len;
-	memcpy(req.sendFrame.data, data, req.sendFrame.len);
-
-	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
-}
-
-/* ----------------------------------------------------------- */
-
-static void wlanBssLoadHandler(wlanT *wlan,
-	int reqLength, wlanReqT *req, void *rspNull)
-{
-	(void)rspNull;
-	if (wlan == 0 || reqLength != sizeof(wlanReqT) || req == 0) {
-		TRACE(TRACE_ERROR, "invalid parameter\n");
-		return;
-	}
-
-	TRACE(TRACE_VERBOSE, "wlanBssLoadHandler\n");
-
-	if (wl_bssload(wl(), req->bssLoad.enable) < 0) {
-		TRACE(TRACE_ERROR, "wl_bssload failed\n");
-	}
-}
-
-/* enable/disable BSS load */
-int wlanBssLoad(wlanT *wlan, int enable)
-{
-	wlanReqT req;
-
-	TRACE(TRACE_VERBOSE, "wlanBssLoad\n");
-
-	memset(&req, 0, sizeof(req));
-	req.handler = wlanBssLoadHandler;
-	req.bssLoad.enable = enable;
-
-	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
-}
-
-/* ----------------------------------------------------------- */
-
-static void wlanBssLoadStaticHandler(wlanT *wlan,
-	int reqLength, wlanReqT *req, void *rspNull)
-{
-	(void)rspNull;
-	if (wlan == 0 || reqLength != sizeof(wlanReqT) || req == 0) {
-		TRACE(TRACE_ERROR, "invalid parameter\n");
-		return;
-	}
-
-	TRACE(TRACE_VERBOSE, "wlanBssLoadStaticHandler\n");
-
-	if (wl_bssload_static(wl(), req->bssLoadStatic.isStatic,
-		req->bssLoadStatic.staCount, req->bssLoadStatic.utilization,
-		req->bssLoadStatic.aac) < 0) {
-		TRACE(TRACE_ERROR, "wl_bssload_static failed\n");
-	}
-}
-
-/* configure static BSS load */
-int wlanBssLoadStatic(wlanT *wlan, bool isStatic, uint16 staCount,
-	uint8 utilization, uint16 aac)
-{
-	wlanReqT req;
-
-	TRACE(TRACE_VERBOSE, "wlanBssLoadStatic\n");
-
-	memset(&req, 0, sizeof(req));
-	req.handler = wlanBssLoadStaticHandler;
-	req.bssLoadStatic.isStatic = isStatic;
-	req.bssLoadStatic.staCount = staCount;
-	req.bssLoadStatic.utilization = utilization;
-	req.bssLoadStatic.aac = aac;
-
-	return dspRequest(dsp(), wlan, sizeof(req), (uint8 *)&req);
 }
 
 /* ----------------------------------------------------------- */

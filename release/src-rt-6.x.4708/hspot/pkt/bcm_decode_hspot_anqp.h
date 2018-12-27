@@ -2,7 +2,7 @@
  * Decode functions which provides decoding of Hotspot2.0 ANQP packets
  * as defined in Hotspot2.0 specification.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -55,7 +55,6 @@ int bcm_decode_hspot_anqp(bcm_decode_t *pkt, int isReset, bcm_decode_hspot_anqp_
 #define BCM_DECODE_ANQP_MAX_LIST_SIZE	16
 typedef struct
 {
-	int isDecodeValid;
 	uint16 queryLen;
 	uint8 queryId[BCM_DECODE_ANQP_MAX_LIST_SIZE];
 } bcm_decode_hspot_anqp_query_list_t;
@@ -69,7 +68,6 @@ void bcm_decode_hspot_anqp_query_list_print(bcm_decode_hspot_anqp_query_list_t *
 
 typedef struct
 {
-	int isDecodeValid;
 	uint16 capLen;
 	uint8 capId[BCM_DECODE_ANQP_MAX_LIST_SIZE];
 } bcm_decode_hspot_anqp_capability_list_t;
@@ -81,10 +79,6 @@ int bcm_decode_hspot_anqp_capability_list(bcm_decode_t *pkt,
 /* print decoded capability list */
 void bcm_decode_hspot_anqp_capability_list_print(bcm_decode_hspot_anqp_capability_list_t *capList);
 
-/* is capability supported */
-int bcm_decode_hspot_anqp_is_capability(
-	bcm_decode_hspot_anqp_capability_list_t *capList, uint8 capId);
-
 typedef struct {
 	uint8 langLen;
 	char lang[VENUE_LANGUAGE_CODE_SIZE + 1];	/* null terminated */
@@ -94,7 +88,6 @@ typedef struct {
 
 #define BCM_DECODE_HSPOT_ANQP_MAX_OPERATOR_NAME	4
 typedef struct {
-	int isDecodeValid;
 	int numName;
 	bcm_decode_hspot_anqp_name_duple_t duple[BCM_DECODE_HSPOT_ANQP_MAX_OPERATOR_NAME];
 } bcm_decode_hspot_anqp_operator_friendly_name_t;
@@ -108,7 +101,6 @@ void bcm_decode_hspot_anqp_operator_friendly_name_print(
 	bcm_decode_hspot_anqp_operator_friendly_name_t *op);
 
 typedef struct {
-	int isDecodeValid;
 	uint8 linkStatus;
 	uint8 symmetricLink;
 	uint8 atCapacity;
@@ -117,8 +109,6 @@ typedef struct {
 	uint8 dlinkLoad;
 	uint8 ulinkLoad;
 	uint16 lmd;
-	uint32 dlinkAvailable;
-	uint32 ulinkAvailable;
 } bcm_decode_hspot_anqp_wan_metrics_t;
 
 /* decode WAN metrics */
@@ -136,7 +126,6 @@ typedef struct {
 
 #define BCM_DECODE_HSPOT_ANQP_MAX_CONNECTION_CAPABILITY	16
 typedef struct {
-	int isDecodeValid;
 	int numConnectCap;
 	bcm_decode_hspot_anqp_proto_port_t tuple[BCM_DECODE_HSPOT_ANQP_MAX_CONNECTION_CAPABILITY];
 } bcm_decode_hspot_anqp_connection_capability_t;
@@ -149,11 +138,6 @@ int bcm_decode_hspot_anqp_connection_capability(bcm_decode_t *pkt,
 void bcm_decode_hspot_anqp_connection_capability_print(
 	bcm_decode_hspot_anqp_connection_capability_t *cap);
 
-/* is connection capability supported */
-int bcm_decode_hspot_anqp_is_connection_capability(
-	bcm_decode_hspot_anqp_connection_capability_t *cap,
-	uint8 ipProtocol, uint16 portNumber);
-
 typedef struct {
 	uint8 encoding;
 	uint8 nameLen;
@@ -162,7 +146,6 @@ typedef struct {
 
 #define BCM_DECODE_HSPOT_ANQP_MAX_HOME_REALM	16
 typedef struct {
-	int isDecodeValid;
 	uint8 count;
 	bcm_decode_hspot_anqp_nai_home_realm_data_t data[BCM_DECODE_HSPOT_ANQP_MAX_HOME_REALM];
 } bcm_decode_hspot_anqp_nai_home_realm_query_t;
@@ -178,7 +161,6 @@ void bcm_decode_hspot_anqp_nai_home_realm_query_print(
 #define BCM_DECODE_HSPOT_ANQP_MAX_OPCLASS_LIST_SIZE	255
 typedef struct
 {
-	int isDecodeValid;
 	uint16 opClassLen;
 	uint8 opClass[BCM_DECODE_HSPOT_ANQP_MAX_OPCLASS_LIST_SIZE];
 } bcm_decode_hspot_anqp_operating_class_indication_t;
@@ -191,7 +173,7 @@ int bcm_decode_hspot_anqp_operating_class_indication(bcm_decode_t *pkt,
 void bcm_decode_hspot_anqp_operating_class_indication_print(
 	bcm_decode_hspot_anqp_operating_class_indication_t *opClassList);
 
-#define BCM_DECODE_HSPOT_ANQP_MAX_ICON_TYPE_LENGTH	128
+#define BCM_DECODE_HSPOT_ANQP_MAX_ICON_TYPE_LENGTH		128
 #define BCM_DECODE_HSPOT_ANQP_MAX_ICON_FILENAME_LENGTH	128
 typedef struct
 {
@@ -205,10 +187,10 @@ typedef struct
 		BCM_DECODE_HSPOT_ANQP_MAX_ICON_FILENAME_LENGTH + 1];	/* null terminated */
 } bcm_decode_hspot_anqp_icon_metadata_t;
 
-#define BCM_DECODE_HSPOT_ANQP_MAX_NAI_LENGTH		128
-#define BCM_DECODE_HSPOT_ANQP_MAX_METHOD_LENGTH		2
+#define BCM_DECODE_HSPOT_ANQP_MAX_NAI_LENGTH				128
+#define BCM_DECODE_HSPOT_ANQP_MAX_METHOD_LENGTH			2
 #define BCM_DECODE_HSPOT_ANQP_MAX_ICON_METADATA_LENGTH	8
-#define BCM_DECODE_HSPOT_ANQP_MAX_URI_LENGTH		128
+#define BCM_DECODE_HSPOT_ANQP_MAX_URI_LENGTH				128
 typedef struct
 {
 	bcm_decode_hspot_anqp_operator_friendly_name_t name;
@@ -228,7 +210,6 @@ typedef struct
 #define BCM_DECODE_HSPOT_ANQP_MAX_OSU_PROVIDER		16
 typedef struct
 {
-	int isDecodeValid;
 	uint8 osuSsidLength;
 	uint8 osuSsid[BCM_DECODE_HSPOT_ANQP_MAX_OSU_SSID_LENGTH + 1];	/* null terminated */
 	uint8 osuProviderCount;
@@ -245,25 +226,16 @@ void bcm_decode_hspot_anqp_osu_provider_list_print(bcm_decode_hspot_anqp_osu_pro
 /* search decoded OSU provider list for specified provider */
 bcm_decode_hspot_anqp_osu_provider_t *bcm_decode_hspot_anqp_find_osu_provider(
 	bcm_decode_hspot_anqp_osu_provider_list_t *list,
-	int langLength, char *lang,
-	int friendlyLength, char *friendly,
-	int isOsuMethod, uint8 osuMethod,
-	bcm_decode_hspot_anqp_name_duple_t **duple);
+	int providerLength, char *provider,	uint8 osuMethod);
 
 /* search decoded OSU provider list for specified SSID and provider */
 bcm_decode_hspot_anqp_osu_provider_t *bcm_decode_hspot_anqp_find_osu_ssid_provider(
 	bcm_decode_hspot_anqp_osu_provider_list_t *list,
-	int osuSsidLength, char *osuSsid, int langLength, char *lang,
-	int friendlyLength, char *friendly,
-	int isOsuMethod, uint8 osuMethod,
-	bcm_decode_hspot_anqp_name_duple_t **duple);
-
-/* get the providers OSU method */
-int bcm_decode_hspot_get_osu_method(bcm_decode_hspot_anqp_osu_provider_t *p);
+	int osuSsidLength, char *osuSsid, int providerLength, char *provider,
+	uint8 osuMethod);
 
 #define BCM_DECODE_HSPOT_ANQP_MAX_NAI_SIZE	255
 typedef struct {
-	int isDecodeValid;
 	uint16 naiLen;
 	char nai[BCM_DECODE_HSPOT_ANQP_MAX_NAI_SIZE + 1];		/* null terminated */
 } bcm_decode_hspot_anqp_anonymous_nai_t;
@@ -277,7 +249,6 @@ void bcm_decode_hspot_anqp_anonymous_nai_print(
 	bcm_decode_hspot_anqp_anonymous_nai_t *anonymous);
 
 typedef struct {
-	int isDecodeValid;
 	uint8 filenameLength;
 	char filename[
 		BCM_DECODE_HSPOT_ANQP_MAX_ICON_FILENAME_LENGTH + 1];	/* null terminated */
@@ -293,7 +264,6 @@ void bcm_decode_hspot_anqp_icon_request_print(
 
 #define BCM_DECODE_HSPOT_ANQP_MAX_ICON_BINARY_SIZE	65535
 typedef struct {
-	int isDecodeValid;
 	uint8 status;
 	uint8 typeLength;
 	uint8 type[BCM_DECODE_HSPOT_ANQP_MAX_ICON_TYPE_LENGTH + 1];	/* null terminated */

@@ -332,7 +332,8 @@ function bsd_disable(val){
 		document.form.wl1_bsd_if_qualify_policy.disabled = false;
 		document.form.wl2_bsd_if_qualify_policy.disabled = false;
 		document.form.bsd_bounce_detect.disabled = false;
-		document.form.bsd_ifnames.disabled = false;
+		if(!(wl_info.band2g_support && wl_info.band5g_support && !wl_info.band5g_2_support)) //dual band
+			document.form.bsd_ifnames.disabled = false;
 	}
 }
 
@@ -367,6 +368,8 @@ function gen_bsd_steering_div(flag){
 	code +='<tr><th width="20%"><#Interface#></th>';
 	if(start_band_idx == '1')
 		code +='<td width="40%" align="center" >5GHz-1</td><td width="40%" align="center" >5GHz-2</td>';
+	else if(!wl_info.band5g_2_support)
+		code +='<td width="40%" align="center" >2.4GHz</td><td width="40%" align="center" >5GHz</td>';
 	else
 		code +='<td width="27%" align="center" >2.4GHz</td><td width="27%" align="center" >5GHz-1</td><td width="27%" align="center" >5GHz-2</td>';
 	code +='</tr>';
@@ -450,7 +453,7 @@ function gen_bsd_sta_select_div(){
 	
 	code +='<tr><th width="20%">RSSI</th>';
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
-		if('<% nvram_get("smart_connect_x"); %>' == '2')
+		if('<% nvram_get("smart_connect_x"); %>' == '2' || !wl_info.band5g_2_support)
 			code +='<td width="40%"><div><table><tr>';
 		else
 			code +='<td width="27%"><div><table><tr>';
@@ -508,10 +511,10 @@ function gen_bsd_if_select_div(){
 	var code="";
 
 	code +='<table cellspacing="0" cellpadding="4" bordercolor="#6b8fa3" border="1" align="center" width="100%" class="FormTable" id="MainTable2" style="margin-top:10px">';
-	code +='<thead><tr><td colspan="4"><#smart_connect_ISQP#></td></tr></thead>';
+	code +="<thead><tr><td colspan=\"4\"><#smart_connect_ISQP#></td></tr></thead>";
 
 	code +='<tr><th width="20%"><#Interface_target#></th>';
-     if('<% nvram_get("smart_connect_x"); %>' != 2){
+     if('<% nvram_get("smart_connect_x"); %>' != 2 && wl_info.band5g_2_support){
 	for(i = start_band_idx; i < wl_info.wl_if_total; i++){
 		code +='<td width="27%" style="padding:0px 0px 0px 0px;"><div><table><tr>';
 		code +='<td style="border:0px; padding:0px 0px 0px 3px;">1:</td>';
@@ -561,9 +564,10 @@ function gen_bsd_if_select_div(){
 		code +='</option>';
 		code +='</select></td></tr></table></div></td>';
 	}
-     }else{
+     }else if(!wl_info.band5g_2_support){
+		code +='<td width="40%">5GHz</td><td width="40%">2.4GHz</td>'
+	}else
 		code +='<td width="40%">5GHz-2</td><td width="40%">5GHz-1</td>'
-	}
 	code +='</tr>';
 
 	code +='<tr><th><#smart_connect_Bandwidth#></th>';
@@ -668,7 +672,7 @@ function handle_bsd_nvram(){
 	else if(bsd_sta_select_policy_bin[i][2] == 1 && bsd_sta_select_policy_bin[i][3] == 0)	//legacy
 		document.form['wl'+i+'_bsd_sta_select_policy_vht_s'].value = 2;	
 
-	if('<% nvram_get("smart_connect_x"); %>' != 2){
+	if('<% nvram_get("smart_connect_x"); %>' != 2 && wl_info.band5g_2_support){
 		/* [Interface Select and Qualify Procedures] - bsd_if_qualify_policy setting*/
 		var bsd_if_select_policy_1st = wl_name[wl_ifnames.indexOf(bsd_if_select_policy[i][0])]; 
 		var bsd_if_select_policy_2nd = wl_name[wl_ifnames.indexOf(bsd_if_select_policy[i][1])]; 
@@ -794,9 +798,17 @@ function applyRule(){
 		bsd_if_qualify_policy_bin_t[i][2] = 1;
   	}	
   	bsd_if_qualify_policy[i][1] = '0x' + (parseInt(reverse_bin(bsd_if_qualify_policy_bin_t[i].join("")),2)).toString(16);
-  	if('<% nvram_get("smart_connect_x"); %>' != '2')
+  	if('<% nvram_get("smart_connect_x"); %>' != '2'){
 		document.form['wl'+i+'_bsd_if_qualify_policy'].value = bsd_if_qualify_policy[i].toString().replace(/,/g,' ');
-	else
+		if(wl_info.band5g_2_support){
+			bsd_if_select_policy[i][0] = wl_ifnames[wl_name.indexOf(wl_names[i][document.form['wl'+i+'_bsd_if_select_policy_first'].value])];
+			bsd_if_select_policy[i][1] = wl_ifnames[wl_name.indexOf(wl_names[i][document.form['wl'+i+'_bsd_if_select_policy_second'].value])];
+			document.form['wl'+i+'_bsd_if_select_policy'].value = bsd_if_select_policy[i].toString().replace(/,/g,' ');
+		}else if(wl_info.band2g_support && wl_info.band5g_support && !wl_info.band5g_2_support){ //dual wan
+			document.form.wl0_bsd_if_select_policy.value = '<% nvram_default_get("wl0_bsd_if_select_policy"); %>';
+			document.form.wl1_bsd_if_select_policy.value = '<% nvram_default_get("wl1_bsd_if_select_policy"); %>';
+		}
+	}else
 		document.form['wl'+i+'_bsd_if_qualify_policy_x'].value = bsd_if_qualify_policy[i].toString().replace(/,/g,' ');
   }
 
@@ -838,7 +850,7 @@ function restoreRule(){
 		document.form.wl1_bsd_if_qualify_policy.value = '<% nvram_default_get("wl1_bsd_if_qualify_policy"); %>';
 		document.form.wl2_bsd_if_qualify_policy.value = '<% nvram_default_get("wl2_bsd_if_qualify_policy"); %>';
 		document.form.bsd_bounce_detect.value = '<% nvram_default_get("bsd_bounce_detect"); %>';
-		document.form.bsd_ifnames_x.value = '<% nvram_default_get("bsd_ifnames"); %>';
+		document.form.bsd_ifnames.value = '<% nvram_default_get("bsd_ifnames"); %>';
 	}
 	document.form.submit();
 }
@@ -891,7 +903,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 600,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?1000:600,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl0_bsd_steering_phy_l').value = ui.value; 
@@ -905,7 +917,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 600,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?1000:600,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl0_bsd_steering_phy_g').value = ui.value; 
@@ -919,7 +931,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl1_bsd_steering_phy_l').value = ui.value; 
@@ -933,7 +945,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl1_bsd_steering_phy_g').value = ui.value; 
@@ -947,7 +959,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl2_bsd_steering_phy_l').value = ui.value; 
@@ -961,7 +973,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl2_bsd_steering_phy_g').value = ui.value; 
@@ -975,7 +987,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 600,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?1000:600,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl0_bsd_sta_select_policy_phy_l').value = ui.value; 
@@ -989,7 +1001,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 600,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?1000:600,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl0_bsd_sta_select_policy_phy_g').value = ui.value; 
@@ -1003,7 +1015,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl1_bsd_sta_select_policy_phy_l').value = ui.value; 
@@ -1017,7 +1029,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl1_bsd_sta_select_policy_phy_g').value = ui.value; 
@@ -1031,7 +1043,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl2_bsd_sta_select_policy_phy_l').value = ui.value; 
@@ -1045,7 +1057,7 @@ function register_event(){
 			orientation: "horizontal",
 			range: "min",
 			min:0,
-			max: 1300,
+			max: (based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")?2167:1300,
 			value:1,
 			slide:function(event, ui){
 				document.getElementById('wl2_bsd_sta_select_policy_phy_g').value = ui.value; 
@@ -1112,9 +1124,14 @@ function check_power(power_value,flag){
 			alert("The maximun value of power is 100");
 		}
 	}else if(flag == 'phyrate'){
-		if(power_value > 1300){
-			power_value = 1300;
-			alert("The maximun value of PHY rate is 1300 Mpbs");
+		var power_value_limit;
+		if(based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")
+			power_value_limit = 2167;
+		else
+			power_value_limit = 1300;
+		if(power_value > power_value_limit){
+			power_value = power_value_limit;
+			alert("The maximun value of PHY rate is "+power_value_limit+" Mpbs");
 		}
 	}
 }
@@ -1129,10 +1146,18 @@ function set_bandutil_qualify_power(power_value,flag){
 
 function set_lg_power(power_value,flag,idx){
 	var divd;
-	if(idx == 0)
-		var divd = 6;
-	else
-		var divd = 13;
+	if(idx == 0){
+		if(based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")
+			divd = 10;
+		else
+			divd = 6;
+	}
+	else{
+		if(based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC88U")
+			divd = 21;
+		else
+			divd = 13;
+	}
 	document.getElementById('slider_'+flag).children[0].style.width = power_value/divd + "%";
 	document.getElementById('slider_'+flag).children[1].style.left = power_value/divd + "%";
 	document.form[flag].value = power_value;

@@ -8,7 +8,6 @@
 	JS_validclientname : "Client device name only accept alphanumeric characters, under line and dash symbol. The first character cannot be dash \"-\" or under line \"_\".",
 	ASUSGATE_act_feedback : "Feedback now",
 	ASUSGATE_DSL_setting : "Go setting DSL",
-	ISP_not_support : 'We currently do not support this location, please use "Manual".',
 	period_time_validation : 'The value of check period can\'t be less than',
 	filter_lw_date_valid : 'Please select at least one day or disable this feature.',
 	ctf_fa_hint : 'System will reboot automatically after enable AiProtection for function working fine. Please click apply to enable this function or click cancel to back to page.'
@@ -95,6 +94,13 @@ function suspendconn(wan_index, wanenable){
 	if(gobi_support && (wan_index == usb_index)){
 		document.internetForm_title.wan_enable.value = wanenable;
 		document.internetForm_title.wan_unit.value = wan_index;
+	}
+	else if(wan_index == dsl_index) {
+		document.internetForm_title.dslx_link_enable.value = wanenable;
+		if(wanenable)
+			document.internetForm_title.action_script.value = "start_dslwan_if 0";
+		else
+			document.internetForm_title.action_script.value = "stop_dslwan_if 0";
 	}
 	else{
 		document.internetForm_title.wan_enable.value = wanenable;
@@ -192,15 +198,26 @@ function overHint(itemNum){
 	if(itemNum == 50){
 		statusmenu ="<span>Enable PPTP or L2TP client (optional)</span>";
 	}
-	
-	if(itemNum == 90){
-		statusmenu ="<span>Enable this function allow you to block websites used to display banner or popup advertisement.</span>";		 
+		
+	if(itemNum == 85){
+		statusmenu ="<span>Manually prioritize apps category depending on your preference.</span>";		/* untranslated */
+	}
+	else if(itemNum == 86){
+		statusmenu ="<span>This mode is suitable for playing internet game and boost your gaming bandwidth.<br><#Adaptive_Category1#></span>";		/* untranslated */
+	}
+	else if(itemNum == 87){
+		statusmenu ="<span>This mode is suitable for playing video streaming and make sure your viewing experience.<br><#Adaptive_Category2#></span>";	/* untranslated */
+	}
+	else if(itemNum == 88){
+		statusmenu ="<span>This mode is suitable for general web browsing and avoid to networking latency whileﬁfile transferring.<br><#Adaptive_Category4#></span>";	/* untranslated */
 	}
 	else if(itemNum == 89){
-		statusmenu ="<span>Enable this function allow block advertisement in the streaming video.</span>";		 
+		statusmenu ="<span>Enable this function allow block advertisement in the streaming video.</span>";
 	}
-	
-	if(itemNum == 91){
+	else if(itemNum == 90){
+		statusmenu ="<span>Enable this function allow you to block websites used to display banner or popup advertisement.</span>";
+	}
+	else if(itemNum == 91){
 		statusmenu ="<span><#Adaptive_Category1#></span>";
 	}
 	else if(itemNum == 92){
@@ -215,8 +232,7 @@ function overHint(itemNum){
 	else if(itemNum == 95){
 		statusmenu ="<span><#Adaptive_Category5#></span>";
 	}
-	
-	if(itemNum == 96){
+	else if(itemNum == 96){
 		statusmenu ="<span><#Adaptive_Category6#></span>";
 	}
 	
@@ -264,33 +280,33 @@ function overHint(itemNum){
 	//for AiProtection-Router Security Assessment
 	if(itemNum == 25)
 		statusmenu += "<span>Disable Wi-Fi Protected Setup to avoid attacker to obtain the keys via an intelligent brute force </span>";
-	if(itemNum == 23)		
+	else if(itemNum == 23)		
 		statusmenu += "<span><#AiProtection_scan_note23#></span>";
-	if(itemNum == 22)		
+	else if(itemNum == 22)		
 		statusmenu += "<span><#AiProtection_scan_note22#></span>";
-	if(itemNum == 21)		
+	else if(itemNum == 21)		
 		statusmenu += "<span><#AiProtection_scan_note21#></span>";
-	if(itemNum == 20)		
+	else if(itemNum == 20)		
 		statusmenu += "<span><#AiProtection_scan_note20#></span>";
-	if(itemNum == 19)		
+	else if(itemNum == 19)		
 		statusmenu += "<span><#AiProtection_scan_note19#></span>";
-	if(itemNum == 18)		
+	else if(itemNum == 18)		
 		statusmenu += "<span><#AiProtection_scan_note18#></span>";
-	if(itemNum == 17)		
+	else if(itemNum == 17)		
 		statusmenu += "<span><#AiProtection_scan_note17#></span>";
-	if(itemNum == 16)		
+	else if(itemNum == 16)		
 		statusmenu += "<span><#AiProtection_scan_note16#></span>";
-	if(itemNum == 15)		
+	else if(itemNum == 15)		
 		statusmenu += "<span><#AiProtection_scan_note15#></span>";
-	if(itemNum == 14)		
+	else if(itemNum == 14)		
 		statusmenu += "<span><#AiProtection_scan_note14#></span>";
-	if(itemNum == 13)		
+	else if(itemNum == 13)		
 		statusmenu += "<span><#AiProtection_scan_note13#></span>";
-	if(itemNum == 12)		
+	else if(itemNum == 12)		
 		statusmenu += "<span><#AiProtection_scan_note12#></span>";
-	if(itemNum == 11)		
+	else if(itemNum == 11)		
 		statusmenu += "<span><#AiProtection_scan_note11#></span>";	
-	if(itemNum == 10)		
+	else if(itemNum == 10)		
 		statusmenu += "<span><#AiProtection_scan_note10#></span>";	
 	
 	// Viz add 2015.07 bwdpi : Adpative QoS mode start
@@ -318,7 +334,7 @@ function overHint(itemNum){
 		statusmenu = "<div class='StatusHint'>DSL :</div>";
 		if(wan_diag_state == "1" && allUsbStatus.search("storage") >= 0){
 			lineDesc = "Diagnostic debug log capture in progress.<br>";
-			lineDesc += show_diagTime();
+			lineDesc += show_diagTime(boottime_update);
 		}
 		else if(wan_line_state == "up")
 			lineDesc = "Link up";
@@ -409,23 +425,27 @@ function overHint(itemNum){
 				var show_str = gn_array_2g[i][1];
 				show_str = decodeURIComponent(show_str);
 				show_str = handle_show_str(show_str);
-				statusmenu += "<span>" + show_str + " (";
+				statusmenu += "<span><b>" + show_str + "</b><br> (";
 
 				if(gn_array_2g[i][11] == 0)
 					statusmenu += "<#Limitless#>)</span><br>";
 				else{
-					var expire_hr = Math.floor(gn_array_2g[i][13]/3600);
+					var expire_day = Math.floor(gn_array_2g[i][13]/86400);
+					var expire_hr = Math.floor((gn_array_2g[i][13]%86400)/3600);
 					var expire_min = Math.floor((gn_array_2g[i][13]%3600)/60);
-					if(expire_hr > 0){
-						statusmenu += '<b id="expire_hr_'+i+'">'+ expire_hr + '</b> Hr <b id="expire_min_'+i+'">' + expire_min +'</b> Min(s)';
-					}
+					
+					statusmenu += '<#mssid_time_remaining#>: ';
+					if(expire_day > 0)
+						statusmenu += '<b id="expire_day_'+i+'">'+ expire_day + '</b> <#Day#> <b id="expire_hr_'+i+'">'+ expire_hr + '</b> <#Hour#> <b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
+					else if(expire_hr > 0)
+						statusmenu += '<b id="expire_hr_'+i+'">'+ expire_hr + '</b> <#Hour#> <b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
 					else{
 						if(expire_min > 0)
-								statusmenu += '<b id="expire_min_'+i+'">' + expire_min +'</b> Min(s)';
+								statusmenu += '<b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
 						else	
-								statusmenu += '<b id="expire_min_'+i+'">< 1</b> Min(s)';
+								statusmenu += '<b id="expire_min_'+i+'">< 1</b> <#Minute#>';
 					}
-					statusmenu += " left)</span><br>";
+					statusmenu += ")</span><br>";
 				}
 			}
 		}
@@ -443,23 +463,27 @@ function overHint(itemNum){
 					var show_str = gn_array_5g[i][1];
 					show_str = decodeURIComponent(show_str);
 					show_str = handle_show_str(show_str);
-					statusmenu += "<span>" + show_str + " (";
-
+					statusmenu += "<span><b>" + show_str + "</b><br> (";
+					
 					if(gn_array_5g[i][11] == 0)
 						statusmenu += '<#Limitless#>)</span><br>';
 					else{
-						var expire_hr = Math.floor(gn_array_5g[i][13]/3600);
+						var expire_day = Math.floor(gn_array_5g[i][13]/86400);
+						var expire_hr = Math.floor((gn_array_5g[i][13]%86400)/3600);
 						var expire_min = Math.floor((gn_array_5g[i][13]%3600)/60);
-						if(expire_hr > 0){
-							statusmenu += '<b id="expire_hr_'+i+'">'+ expire_hr + '</b> Hr <b id="expire_min_'+i+'">' + expire_min +'</b> Min(s)';
-						}
+						
+						statusmenu += '<#mssid_time_remaining#>: ';						
+						if(expire_day > 0)
+							statusmenu += '<b id="expire_day_'+i+'">'+ expire_day + '</b> <#Day#> <b id="expire_hr_'+i+'">'+ expire_hr + '</b> <#Hour#> <b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
+						else if(expire_hr > 0)
+							statusmenu += '<b id="expire_hr_'+i+'">'+ expire_hr + '</b> <#Hour#> <b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
 						else{
 							if(expire_min > 0)
-								statusmenu += '<b id="expire_min_'+i+'">' + expire_min +'</b> Min(s)';
+								statusmenu += '<b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
 							else	
-								statusmenu += '<b id="expire_min_'+i+'">< 1</b> Min(s)';
+								statusmenu += '<b id="expire_min_'+i+'">< 1</b> <#Minute#>';
 						}
-						statusmenu += " left)</span><br>";
+						statusmenu += ")</span><br>";
 					}
 				}
 			}
@@ -475,23 +499,27 @@ function overHint(itemNum){
 					var show_str = gn_array_5g_2[i][1];
 					show_str = decodeURIComponent(show_str);
 					show_str = handle_show_str(show_str);
-					statusmenu += "<span>" + show_str + " (";
+					statusmenu += "<span><b>" + show_str + "</b><br> (";
 
 					if(gn_array_5g_2[i][11] == 0)
 						statusmenu += '<#Limitless#>)</span><br>';
 					else{
-						var expire_hr = Math.floor(gn_array_5g_2[i][13]/3600);
+						var expire_day = Math.floor(gn_array_5g_2[i][13]/86400);
+						var expire_hr = Math.floor((gn_array_5g_2[i][13]%86400)/3600);
 						var expire_min = Math.floor((gn_array_5g_2[i][13]%3600)/60);
-						if(expire_hr > 0){
-							statusmenu += '<b id="expire_hr_'+i+'">'+ expire_hr + '</b> Hr <b id="expire_min_'+i+'">' + expire_min +'</b> Min(s)';
-						}
+						
+						statusmenu += '<#mssid_time_remaining#>: ';
+						if(expire_day > 0)
+							statusmenu += '<b id="expire_day_'+i+'">'+ expire_day + '</b> <#Day#> <b id="expire_hr_'+i+'">'+ expire_hr + '</b> <#Hour#> <b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
+						else if(expire_hr > 0)
+							statusmenu += '<b id="expire_hr_'+i+'">'+ expire_hr + '</b> <#Hour#> <b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
 						else{
 							if(expire_min > 0)
-								statusmenu += '<b id="expire_min_'+i+'">' + expire_min +'</b> Min(s)';
+								statusmenu += '<b id="expire_min_'+i+'">' + expire_min +'</b> <#Minute#>';
 							else	
-								statusmenu += '<b id="expire_min_'+i+'">< 1</b> Min(s)';
+								statusmenu += '<b id="expire_min_'+i+'">< 1</b> <#Minute#>';
 						}
-						statusmenu += " left)</span><br>";
+						statusmenu += ")</span><br>";
 					}
 				}
 			}
@@ -582,7 +610,7 @@ function overHint(itemNum){
 						else{
 							if(first_link_auxstatus == "1"){
 								if( wans_dualwan_array[0] == "lan"){
-									statusmenu += "<span><#Check_cable#> <#Port_Mapping_item1#> : "+wans_lanport+"</span>";
+									statusmenu += "<span><#Check_cable#> : <#Port_Mapping_item1#> "+wans_lanport+"</span>";
 								}
 								else	
 									statusmenu += "<span><#QKSet_detect_wanconnfault#></span>";
@@ -655,7 +683,7 @@ function overHint(itemNum){
 						else{
 							if(link_auxstatus == "1"){
 								if( wans_dualwan_array[0] == "lan"){
-									statusmenu += "<span><#Check_cable#> <#Port_Mapping_item1#> : "+wans_lanport+"</span>";
+									statusmenu += "<span><#Check_cable#> : <#Port_Mapping_item1#> "+wans_lanport+"</span>";
 								}
 								else	
 									statusmenu += "<span><#QKSet_detect_wanconnfault#></span>";
@@ -767,7 +795,7 @@ function overHint(itemNum){
 						else{
 							if(secondary_link_auxstatus == "1"){
 								if( wans_dualwan_array[1] == "lan"){
-									statusmenu += "<span><#Check_cable#> <#Port_Mapping_item1#> : "+wans_lanport+"</span>";
+									statusmenu += "<span><#Check_cable#> : <#Port_Mapping_item1#> "+wans_lanport+"</span>";
 								}
 								else	
 									statusmenu += "<span><#QKSet_detect_wanconnfault#></span>";
@@ -828,13 +856,12 @@ function overHint(itemNum){
 		return overlib(statusmenu, OFFSETX, -160, LEFT, DELAY, 400);
 }
 
-function show_diagTime(){
+function show_diagTime(boottime_update){
 				
-	Etime = debug_end_time - boottime;
-	EHours = Math.floor((Etime / 3600) % 24);	
+	Etime = debug_end_time - boottime_update;
+	EHours = Math.floor(Etime / 3600);	
 	EMinutes = Math.floor(Etime % 3600 / 60);	
-	boottime += 1;
-	//setTimeout("show_diagTime();", 1000);
+	
 	if(EHours <= 0 && EMinutes <= 0)
 		return "<#mssid_time_remaining#> : <span>0</span> <#Hour#> <span>0</span> <#Minute#>";
 	else
@@ -1015,10 +1042,10 @@ function openHint(hint_array_id, hint_show_id, flag){
 	for (var i=0;i<tag_name.length;i++)
 		tag_name[i].onmouseout=nd;
 	
-	if(hint_array_id == 0 && hint_show_id > 21) // for status icon
-		return overlib(helpcontent[hint_array_id][hint_show_id], FIXX, 270, FIXY, 30);
-	else if(helpcontent == [] || helpcontent == "" || hint_array_id > helpcontent.length)
+	if(helpcontent == [] || helpcontent == "" || hint_array_id > helpcontent.length)
 		return overlib('<#defaultHint#>', HAUTO, VAUTO);
+	else if(hint_array_id == 0 && hint_show_id > 21 && hint_show_id < 24)
+		return overlib(helpcontent[hint_array_id][hint_show_id], FIXX, 270, FIXY, 30);
 	else{
 		if(hint_show_id > helpcontent[hint_array_id].length)
 			return overlib('<#defaultHint#>', HAUTO, VAUTO);
@@ -2534,8 +2561,8 @@ function check_common_string(pwd, flag){
 	var termKeyboards1 = "qwertyuiop";
 	var termKeyboards2 = "asdfghjkl";
 	var termKeyboards3 = "zxcvbnm";
-	var termCommon5 = ["123123","abc123","ashley","bailey","dragon","letmein","master","michael","monkey","qazwsx","shadow"];
-	var termCommon8 = ["adminpassword","baseball","football","iloveyou","loginpassword","passw0rd","password","sunshine","superman","trustno1","useradmin","userpassword"];
+	var termCommon5 = ["123123","abc123","letmein","master","qazwsx","admin"];
+	var termCommon8 = ["adminpassword","loginpassword","passw0rd","password","useradmin","userpassword"];
 	var nSeqString = 0;
 	if(flag == "httpd_password"){	//at lease length 5		
 		if(termAlphas.toLowerCase().indexOf(pwd) != -1 || termAlphas.strReverse().toLowerCase().indexOf(pwd) != -1) { nSeqString++; }
@@ -2799,6 +2826,8 @@ function goToWAN(index){
 		else
 			document.titleForm.current_page.value = "Advanced_Modem_Content.asp";
 	}
+	else if(index == dsl_index)
+		document.titleForm.current_page.value = "Advanced_DSL_Content.asp";
 	else
 		document.titleForm.current_page.value = "Advanced_WAN_Content.asp";
 	document.titleForm.action_mode.value = "change_wan_unit";

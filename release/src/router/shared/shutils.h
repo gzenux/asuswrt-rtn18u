@@ -365,3 +365,5 @@ extern int str_bprintf(struct strbuf *b, const char *fmt, ...);
 
 extern int strArgs(int argc, char **argv, char *fmt, ...);
 extern char *trimNL(char *str);
+extern pid_t get_pid_by_name(char *name);
+extern char *get_process_name_by_pid(const int pid);

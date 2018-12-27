@@ -1,7 +1,7 @@
 /*
  * Encode functions which provides encoding of GAS packets as defined in 802.11u.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;

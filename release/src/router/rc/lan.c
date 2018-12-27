@@ -70,6 +70,13 @@ typedef u_int8_t u8;
 #include <dpsta_linux.h>
 #endif
 
+const int ifup_vap =
+#if defined(RTCONFIG_QCA)
+	0;
+#else
+	1;
+#endif
+
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 static time_t s_last_lan_port_stopped_ts = 0;
@@ -86,7 +93,7 @@ void update_lan_state(int state, int reason)
 #ifdef RTCONFIG_QTN	/* AP and Repeater mode, workaround to infosvr, RT-AC87U bug#38, bug#44, bug#46 */
 	_dprintf("%s(workaround to infosvr)\n", __FUNCTION__);
 	eval("ifconfig", "br0:0", "169.254.39.3", "netmask", "255.255.255.0");
-	if(!nvram_match("QTN_RPC_CLIENT", ""))
+	if(*nvram_safe_get("QTN_RPC_CLIENT"))
 		eval("ifconfig", "br0:0", nvram_safe_get("QTN_RPC_CLIENT"), "netmask", "255.255.255.0");
 	else
 		eval("ifconfig", "br0:0", "169.254.39.1", "netmask", "255.255.255.0");
@@ -204,15 +211,13 @@ static int wlconf(char *ifname, int unit, int subunit)
 		snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 
 #if 0
-#ifdef RTCONFIG_BCMWL6
-#ifdef RTCONFIG_PROXYSTA
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 		if (psta_exist_except(unit) || psr_exist_except(unit))
 		{
 			eval("wlconf", ifname, "down");
 			eval("wl", "-i", ifname, "radio", "off");
 			return -1;
 		}
-#endif
 #endif
 #endif
 
@@ -313,7 +318,7 @@ GEN_CONF:
 			}
 #else
 #ifdef RTCONFIG_PROXYSTA
-			if (psta_exist_except(unit) || psr_exist_except(unit))
+			if (psta_exist_except(unit)/* || psr_exist_except(unit)*/)
 			{
 				eval("wl", "-i", ifname, "closed", "1");
 				eval("wl", "-i", ifname, "maxassoc", "0");
@@ -344,7 +349,7 @@ GEN_CONF:
 
 		if (wl_client(unit, subunit)) {
 			if (nvram_match(wl_nvname("mode", unit, subunit), "wet")) {
-				ifconfig(ifname, IFUP|IFF_ALLMULTI, NULL, NULL);
+				ifconfig(ifname, IFUP | IFF_ALLMULTI, NULL, NULL);
 			}
 			if (nvram_get_int(wl_nvname("radio", unit, 0))) {
 				snprintf(wl, sizeof(wl), "%d", unit);
@@ -436,7 +441,7 @@ wl_vif_hwaddr_set(const char *name)
 		retry++;
 	}
 	if (retry >= 100) {
-		fprintf(stderr, "Unable to check if mac was set properly for  %s\n", name);
+		fprintf(stderr, "Unable to check if mac was set properly for %s\n", name);
 	}
 }
 #endif
@@ -724,10 +729,8 @@ void start_wl(void)
 					}
 				}
 				else
-#ifdef RTCONFIG_BCMWL6
-#ifdef RTCONFIG_PROXYSTA
-				if (!psta_exist_except(unit) && !psr_exist_except(unit))
-#endif
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+				if (!psta_exist_except(unit)/* && !psr_exist_except(unit)*/)
 #endif
 				{
 #ifdef RTCONFIG_QTN
@@ -756,6 +759,10 @@ void start_wl(void)
 	if (is_client)
 		xstart("radio", "join");
 
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	start_vlan_wl();
+#endif
+
 	/* manual turn on 5g led for some gpio-ctrl-5g-led */
 #ifdef RTCONFIG_BCMWL6
 #if defined(RTAC66U) || defined(BCM4352)
@@ -780,7 +787,7 @@ void start_wl(void)
 
 #ifdef RTCONFIG_TURBO
 	if ((nvram_match("wl0_radio", "1") || nvram_match("wl1_radio", "1")
-#if defined(RTAC3200) || defined(RTAC5300)
+#if defined(RTAC3200) || defined(RTAC5300) || defined(RTAC5300R)
 		|| nvram_match("wl2_radio", "1")
 #endif
 	)
@@ -845,18 +852,23 @@ del_lan_routes(char *lan_ifname)
 #if defined(RTCONFIG_QCA)||defined(RTCONFIG_RALINK)
 char *get_hwaddr(const char *ifname)
 {
-	int s;
+	int s = -1;
 	struct ifreq ifr;
 	char eabuf[32];
+	char *p = NULL;
 
 	if (ifname == NULL) return NULL;
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) return NULL;
 
 	strcpy(ifr.ifr_name, ifname);
-	if (ioctl(s, SIOCGIFHWADDR, &ifr)) return NULL;
+	if (ioctl(s, SIOCGIFHWADDR, &ifr)) goto error;
 
-	return strdup(ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	p = strdup(ether_etoa((const unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+
+error:
+	close(s);
+	return p;
 }
 #endif
 
@@ -864,18 +876,10 @@ char *get_hwaddr(const char *ifname)
 void
 qca_wif_up(const char* wif)
 {
-	char wi2_gn[10],wi5_gn[10];
-	sprintf(wi2_gn,"%s0",WIF_2G);
-	sprintf(wi5_gn,"%s0",WIF_5G);
-	if (!strcmp(wif, WIF_2G) || !strncmp(wif,wi2_gn,strlen(wi2_gn))
-	    || !strcmp(wif, WIF_5G) || !strncmp(wif,wi5_gn,strlen(wi5_gn))
 #ifdef RTCONFIG_WIRELESSREPEATER
-	    ||(nvram_get_int("sw_mode")==SW_MODE_REPEATER && !strncmp(wif,"sta",3))
-#endif
-	    )
+	if ((nvram_get_int("sw_mode") == SW_MODE_REPEATER && !strncmp(wif,"sta",3)))
 		ifconfig(wif, IFUP, NULL, NULL);
-	else
-	   	return;
+#endif
 }
 
 
@@ -885,16 +889,18 @@ gen_qca_wifi_cfgs(void)
 	pid_t pid;
 	char *argv[]={"/sbin/delay_exec","1","/tmp/postwifi.sh",NULL};
 	char wi2_gn[10],wi5_gn[10];
-	char *p1;
+	char *p1, path2[50];
 	char wif[256], *next;
 	FILE *fp,*fp2;
 	char tmp[100], prefix[]="wlXXXXXXX_";
 	int led_onoff[2] = { LED_ON, LED_ON }, unit = -1, sunit = 0;
+	int sidx = 0;
 	unsigned int m, wl_mask = 0;	/* bit0~3: 2G, bit4~7: 5G */
 	char conf_path[] = "/etc/Wireless/conf/hostapd_athXXX.confYYYYYY";
 	char pid_path[] = "/var/run/hostapd_athXXX.pidYYYYYY";
 	char entropy_path[] = "/var/run/entropy_athXXX.binYYYYYY";
 	char path[] = "/sys/class/net/ath001XXXXXX";
+	char path1[sizeof(NAWDS_SH_FMT) + 6];
 	int i;
 #ifdef RTCONFIG_WIRELESSREPEATER
 	char cmd[200];
@@ -912,6 +918,7 @@ gen_qca_wifi_cfgs(void)
 
 	foreach (wif, nvram_safe_get("lan_ifnames"), next) {
 
+		extern int get_wlsubnet(int band, const char *ifname);
 		if (!guest_wlif(wif) && (unit = get_wifi_unit(wif)) >= 0 && unit < sizeof(led_onoff)) {
 			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 			if (nvram_match(strcat_r(prefix, "radio", tmp), "0"))
@@ -924,10 +931,11 @@ gen_qca_wifi_cfgs(void)
 		else if (!strncmp(wif,wi2_gn,strlen(wi2_gn)))	// 2.4G guest
 		{
 			p1=strstr(wif,wi2_gn);
-			if (p1) {
-				sunit = atoi(p1 + strlen(wi2_gn));
+			sunit = get_wlsubnet(0, wif);
+			if (p1 && sunit > 0) {
+				sidx = atoi(p1 + strlen(wi2_gn));
 				wl_mask |= 1 << sunit;
-				gen_ath_config(0, 0, sunit);
+				gen_ath_config(0, 0, sidx);
 			}
 		}
 		else if (!strcmp(wif, WIF_5G)) {		// 5G
@@ -937,23 +945,24 @@ gen_qca_wifi_cfgs(void)
 		else if (!strncmp(wif,wi5_gn,strlen(wi5_gn)))	// 5G guest
 		{
 			p1=strstr(wif,wi5_gn);
-			if (p1) {
-				sunit = atoi(p1 + strlen(wi5_gn));
+			sunit = get_wlsubnet(1, wif);
+			if (p1 && sunit > 0) {
+				sidx = atoi(p1 + strlen(wi5_gn));
 				wl_mask |= 1 << (sunit + 4);
-				gen_ath_config(1, 1, sunit);
+				gen_ath_config(1, 1, sidx);
 			}
 		}
 
 #ifdef RTCONFIG_WIRELESSREPEATER
-		else if (!strcmp(wif,"sta0")||!strcmp(wif,"sta1"))
+		else if (!strcmp(wif, STA_2G) || !strcmp(wif, STA_5G))
 		{
 			if(nvram_get_int("sw_mode") == SW_MODE_REPEATER){
-   		   		sprintf(cmd,"wpa_supplicant -B -P /var/run/wifi-%s.pid -D athr -i %s -b br0 -c /etc/Wireless/conf/wpa_supplicant-%s.conf",wif,wif,wif);
+				sprintf(cmd,"wpa_supplicant -B -P /var/run/wifi-%s.pid -D athr -i %s -b br0 -c /etc/Wireless/conf/wpa_supplicant-%s.conf",wif,wif,wif);
 			}
 		}
 #endif
 		else
-	   		continue;
+			continue;
 
 #ifdef RTCONFIG_WIRELESSREPEATER
 		if (strcmp(wif,"sta0")&&strcmp(wif,"sta1"))
@@ -964,17 +973,37 @@ gen_qca_wifi_cfgs(void)
 		}
 	}
 
+#if defined(PLN12)
+	//fprintf(fp2, "led_ctrl %d %d\n", LED_2G_GREEN, led_onoff[0]);
+	//fprintf(fp2, "led_ctrl %d %d\n", LED_2G_ORANGE, led_onoff[0]);
+	fprintf(fp2, "led_ctrl %d %d\n", LED_2G_RED, led_onoff[0]);
+	set_wifiled(1);
+#elif defined(PLAC56)
+	fprintf(fp2, "led_ctrl %d %d\n", LED_2G_GREEN, led_onoff[0]);
+	//fprintf(fp2, "led_ctrl %d %d\n", LED_2G_RED, led_onoff[0]);
+	fprintf(fp2, "led_ctrl %d %d\n", LED_5G_GREEN, led_onoff[0]);
+	//fprintf(fp2, "led_ctrl %d %d\n", LED_5G_RED, led_onoff[0]);
+	set_wifiled(1);
+#else
+	fprintf(fp2, "led_ctrl %d %d\n", LED_2G, led_onoff[0]);
+#endif
+#if defined(RTCONFIG_HAS_5G)
+	fprintf(fp2, "led_ctrl %d %d\n", LED_5G, led_onoff[1]);
+#endif
+	fprintf(fp2, "nvram set wlready=1\n");
+
 	fclose(fp);
 	fclose(fp2);
 	chmod("/tmp/prewifi.sh",0777);
 	chmod("/tmp/postwifi.sh",0777);
 
-	for (i = 0, unit = 0, sunit = 0, m = 0xFF; m > 0; ++i, ++sunit, m >>= 1) {
+	for (i = 0, unit = 0, sunit = 0, sidx = 0, m = 0xFF; m > 0; ++i, ++sunit, ++sidx, m >>= 1) {
 		if (i == 4) {
 			unit = 1;
-			sunit -= 4;
+			sunit = 0;
+			sidx = 0;
 		}
-		__get_wlifname(unit, sunit, wif);
+		__get_wlifname(unit, sidx, wif);
 		sprintf(path, "/sys/class/net/%s", wif);
 		if (d_exists(path))
 			ifconfig(wif, 0, NULL, NULL);
@@ -990,31 +1019,50 @@ gen_qca_wifi_cfgs(void)
 	if(nvram_get_int("sw_mode") == SW_MODE_REPEATER){
 		doSystem(cmd);
 #if 0 // ARPNAT is obsolete
-	   	sleep(1);
+		sleep(1);
 		doSystem(ebtable[2]);
 		for(i=0;i<2;i++)
 		{
 			if(nvram_get_int("wlc_band")==0)
-				sprintf(cmd,"ebtables -t nat -A %s sta0 -j arpnat --arpnat-target ACCEPT",ebtable[i]);
+				sprintf(cmd,"ebtables -t nat -A %s %s -j arpnat --arpnat-target ACCEPT",ebtable[i], STA_2G);
 			else
-				sprintf(cmd,"ebtables -t nat -A %s sta1 -j arpnat --arpnat-target ACCEPT",ebtable[i]);
+				sprintf(cmd,"ebtables -t nat -A %s %s -j arpnat --arpnat-target ACCEPT",ebtable[i], STA_5G);
 			doSystem(cmd);
 		}
 #else
-		doSystem("iwpriv sta%d extap 1",nvram_get_int("wlc_band")?1:0);
+		doSystem("iwpriv %s extap 1", get_staifname(nvram_get_int("wlc_band")));
 #endif
-		doSystem("ifconfig sta%d up",nvram_get_int("wlc_band")?1:0);
+		doSystem("ifconfig %s up", get_staifname(nvram_get_int("wlc_band")));
 	}
 #endif
 #ifdef RTCONFIG_PROXYSTA
 	if (nvram_get_int("wlc_psta") == 0) {
 #endif
 	m = wl_mask & 0xFF;
-	for (i = 0, unit = 0, sunit = 0; m > 0; ++i, ++sunit, m >>= 1) {
+	for (i = 0, unit = 0, sunit = 0, sidx = 0; m > 0; ++i, ++sunit, ++sidx, m >>= 1) {
+		char *str;
 		if (i == 4) {
 			unit = 1;
-			sunit -= 4;
+			sunit = 0;
+			sidx = 0;
 		}
+		if (!nvram_match(wl_nvname("bss_enabled", unit, sunit), "1"))
+		{
+			sidx--;
+			continue;
+		}
+
+		__get_wlifname(unit, sidx, wif);
+		tweak_wifi_ps(wif);
+
+#ifdef RTCONFIG_WIRELESSREPEATER
+		if(nvram_get_int("sw_mode") == SW_MODE_REPEATER)
+			doSystem("iwpriv %s athnewind 1", wif);
+#endif
+
+		sprintf(path2, "/etc/Wireless/sh/postwifi_%s.sh", wif);
+		if (!(fp = fopen(path2, "a")))
+			continue;
 
 		/* hostapd is not required if
 		 * 1. Open system and WPS is disabled.
@@ -1023,21 +1071,35 @@ gen_qca_wifi_cfgs(void)
 		 * 2. WEP
 		 */
 		if (!strcmp(nvram_safe_get(wl_nvname("auth_mode_x", unit, sunit)), "open") &&
-		    ((!sunit && !nvram_get_int("wps_enable")) || sunit))
+		    ((!sunit && !nvram_get_int("wps_enable")) || sunit)) {
+			fclose(fp);
 			continue;
-		else if (!strcmp(nvram_safe_get(wl_nvname("auth_mode_x", unit, sunit)), "shared"))
+		} else if (!strcmp(nvram_safe_get(wl_nvname("auth_mode_x", unit, sunit)), "shared")) {
+			fclose(fp);
 			continue;
+		}
 
-		__get_wlifname(unit, sunit, wif);
 		sprintf(conf_path, "/etc/Wireless/conf/hostapd_%s.conf", wif);
 		sprintf(pid_path, "/var/run/hostapd_%s.pid", wif);
 		sprintf(entropy_path, "/var/run/entropy_%s.bin", wif);
-		ifconfig(wif, IFUP, NULL, NULL);
-#ifdef RTCONFIG_WIRELESSREPEATER
-		if(nvram_get_int("sw_mode") == SW_MODE_REPEATER)
-			doSystem("iwpriv %s athnewind 1", wif);
-#endif
-		eval("hostapd", "-d", "-B", conf_path, "-P", pid_path, "-e", entropy_path);
+		fprintf(fp, "hostapd -d -B %s -P %s -e %s\n", conf_path, pid_path, entropy_path);
+
+		str = nvram_safe_get(wl_nvname("radio", unit, 0));
+		if (str && strlen(str)) {
+			char vphy[10];
+			char *updown = atoi(str)? "up" : "down";
+			strcpy(vphy, get_vphyifname(unit));
+			fprintf(fp, "ifconfig %s %s\n", vphy, updown);
+			fprintf(fp, "ifconfig %s %s\n", wif, updown);
+
+			/* Connect to peer WDS AP after VAP up */
+			sprintf(path1, NAWDS_SH_FMT, wif);
+			if (!sunit && atoi(str) && f_exists(path1)) {
+				fprintf(fp, "%s\n", path1);
+			}
+		}
+
+		fclose(fp);
 	}
 
 	argv[1]="4";
@@ -1047,22 +1109,6 @@ gen_qca_wifi_cfgs(void)
 #ifdef RTCONFIG_PROXYSTA
 	}
 #endif
-
-#if defined(PLN12)
-	//led_control(LED_2G_GREEN, led_onoff[0]);
-	//led_control(LED_2G_ORANGE, led_onoff[0]);
-	led_control(LED_2G_RED, led_onoff[0]);
-	set_wifiled(1);
-#elif defined(PLAC56)
-	led_control(LED_2G_GREEN, led_onoff[0]);
-	//led_control(LED_2G_RED, led_onoff[0]);
-	led_control(LED_5G_GREEN, led_onoff[0]);
-	//led_control(LED_5G_RED, led_onoff[0]);
-	set_wifiled(1);
-#else
-	led_control(LED_2G, led_onoff[0]);
-#endif
-	led_control(LED_5G, led_onoff[1]);
 }
 
 static void
@@ -1354,6 +1400,9 @@ ALL:
 		service = get_ipv6_service();
 		switch (service) {
 		case IPV6_NATIVE_DHCP:
+#ifdef RTCONFIG_6RELAYD
+		case IPV6_PASSTHROUGH:
+#endif
 			set_default_accept_ra(1);
 		case IPV6_6IN4:
 		case IPV6_6TO4:
@@ -1368,6 +1417,62 @@ ALL:
 	}
 	else set_default_accept_ra(0);
 }
+
+#ifdef RTCONFIG_DUALWAN
+void start_lan_ipv6(void)
+{
+	char *lan_ifname = strdup(nvram_safe_get("lan_ifname"));
+	char *dualwan_wans = nvram_safe_get("wans_dualwan");
+	char *dualwan_mode = nvram_safe_get("wans_mode");
+	int unit, ipv6_service = 0;
+
+	if (!(!strstr(dualwan_wans, "none") &&
+		(!strcmp(dualwan_mode, "fo") || !strcmp(dualwan_mode, "fb"))))
+		return;
+
+	for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit)
+		if (get_ipv6_service_by_unit(unit) != IPV6_DISABLED) {
+			ipv6_service = 1;
+			break;
+		}
+	if (!ipv6_service)
+		return;
+
+	set_intf_ipv6_dad(lan_ifname, 0, 1);
+	config_ipv6(ipv6_enabled() && is_routing_enabled(), 0);
+	start_ipv6();
+}
+
+void stop_lan_ipv6(void)
+{
+	char *lan_ifname = strdup(nvram_safe_get("lan_ifname"));
+	char *dualwan_wans = nvram_safe_get("wans_dualwan");
+	char *dualwan_mode = nvram_safe_get("wans_mode");
+
+	if (!(!strstr(dualwan_wans, "none") &&
+		(!strcmp(dualwan_mode, "fo") || !strcmp(dualwan_mode, "fb"))))
+		return;
+
+	stop_ipv6();
+	set_intf_ipv6_dad(lan_ifname, 0, 0);
+	config_ipv6(0, 1);
+}
+
+void restart_dnsmasq_ipv6(void)
+{
+	char *dualwan_wans = nvram_safe_get("wans_dualwan");
+	char *dualwan_mode = nvram_safe_get("wans_mode");
+
+	if (!(!strstr(dualwan_wans, "none") &&
+		(!strcmp(dualwan_mode, "fo") || !strcmp(dualwan_mode, "fb"))))
+		return;
+
+	if (!ipv6_enabled())
+		return;
+
+	start_dnsmasq();
+}
+#endif
 #endif
 
 #ifdef RTCONFIG_DPSTA
@@ -1422,9 +1527,11 @@ void start_lan(void)
 	int dpsta=0;
 	dpsta_enable_info_t info = { 0 };
 #endif
+#ifdef RTCONFIG_GMAC3
 	char name[80];
+#endif
 #ifdef __CONFIG_DHDAP__
-        int is_dhd;
+	int is_dhd;
 #endif /* __CONFIG_DHDAP__ */
 
 	update_lan_state(LAN_STATE_INITIALIZING, 0);
@@ -1463,13 +1570,12 @@ void start_lan(void)
 	    wps_band_radio_off(get_radio_band(nvram_get_int("wps_band"))) ||
 	    wps_band_ssid_broadcast_off(get_radio_band(nvram_get_int("wps_band"))))
 		nvram_set("wps_enable", "0");
+	/* recover wps enable option back to original state */
+	else if(!nvram_match("wps_enable", nvram_safe_get("wps_enable_old"))){
+		nvram_set("wps_enable", nvram_safe_get("wps_enable_old"));
+	}
 
 	if ((sfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) return;
-
-/*#ifdef RTCONFIG_WIRELESSREPEATER
-	if(nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_match("lan_proto", "dhcp"))
-		nvram_set("lan_ipaddr", nvram_default_get("lan_ipaddr"));
-#endif//*/
 
 #ifdef RTCONFIG_GMAC3
 	/* In 3GMAC mode, bring up the GMAC forwarding interfaces.
@@ -1592,21 +1698,33 @@ void start_lan(void)
 					}
 				}
 #endif
-				// bring up interface
-				if (ifconfig(ifname, IFUP, NULL, NULL) != 0) {
+#if defined(RTCONFIG_QCA)
+				if (!ifup_vap &&
+				    (!strncmp(ifname, WIF_2G, strlen(WIF_2G)) ||
+				     !strncmp(ifname, WIF_5G, strlen(WIF_5G))))
+				{
+					/* Don't up VAP interface here. */
+				} else {
+#endif
+					// bring up interface
+					if (ifconfig(ifname, IFUP | IFF_ALLMULTI, NULL, NULL) != 0) {
 #if defined(RTAC56U) || defined(RTAC56S)
-					if(strncmp(ifname, "eth2", 4)==0)
-						nvram_set("5g_fail", "1");	// gpio led
+						if(strncmp(ifname, "eth2", 4)==0)
+							nvram_set("5g_fail", "1");	// gpio led
 #endif
 #ifdef RTCONFIG_QTN
-					if (strcmp(ifname, "wifi0"))
+						if (strcmp(ifname, "wifi0"))
 #endif
-					continue;
-				}
+						continue;
+					}
 #if defined(RTAC56U) || defined(RTAC56S)
-				else if(strncmp(ifname, "eth2", 4)==0)
-					nvram_unset("5g_fail");			// gpio led
+					else if(strncmp(ifname, "eth2", 4)==0)
+						nvram_unset("5g_fail");			// gpio led
 #endif
+#if defined(RTCONFIG_QCA)
+				}
+#endif
+
 #ifdef RTCONFIG_RALINK
 				wlconf_ra(ifname);
 #elif defined(RTCONFIG_QCA)
@@ -1648,7 +1766,7 @@ void start_lan(void)
 
 					if (strcmp(mode, "wet") == 0) {
 						// Enable host DHCP relay
-						if (nvram_get_int("dhcp_relay")) {
+						if (nvram_match("lan_proto", "static")) {
 #ifdef __CONFIG_DHDAP__
 							is_dhd = !dhd_probe(ifname);
 							if(is_dhd) {
@@ -1657,15 +1775,7 @@ void start_lan(void)
 							}
 							else
 #endif /* __CONFIG_DHDAP__ */
-								wl_iovar_set(ifname, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
-#ifdef __CONFIG_DHDAP__
-							is_dhd = !dhd_probe(ifname);
-							if(is_dhd) {
-								dhd_iovar_setint(ifname, "wet_host_ipv4", ip);
-							}
-							else
-#endif /* __CONFIG_DHDAP__ */
-								wl_iovar_setint(ifname, "wet_host_ipv4", ip);
+							wl_iovar_set(ifname, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 						}
 					}
 
@@ -1730,8 +1840,8 @@ void start_lan(void)
 								return;
 							}
 						}
-						close(s);
 					}
+					close(s);
 				}
 #endif
 #ifdef RTCONFIG_GMAC3
@@ -1744,6 +1854,10 @@ void start_lan(void)
 				if (nvram_match("gmac3_enable", "1") &&
 					find_in_list(nvram_get("fwd_wlandevs"), ifname))
 						goto gmac3_no_swbr;
+#endif
+#ifdef RTCONFIG_PORT_BASED_VLAN
+				if (vlan_enable() && check_if_exist_vlan_ifnames(ifname))
+					match = 1;
 #endif
 				if (!match)
 				{
@@ -1764,7 +1878,7 @@ gmac3_no_swbr:
 	}
 	// --- this shouldn't happen ---
 	else if (*lan_ifname) {
-		ifconfig(lan_ifname, IFUP, NULL, NULL);
+		ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifdef CONFIG_BCMWL5
 		wlconf(lan_ifname, -1, -1);
 #endif
@@ -1808,20 +1922,14 @@ gmac3_no_swbr:
 #endif
 
 	// bring up and configure LAN interface
-/*#ifdef RTCONFIG_WIRELESSREPEATER
-	if(nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED)
-		ifconfig(lan_ifname, IFUP, nvram_default_get("lan_ipaddr"), nvram_default_get("lan_netmask"));
-	else
-#endif
-		ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));//*/
 #ifdef RTCONFIG_DHCP_OVERRIDE
 	if(nvram_match("lan_proto", "static") || nvram_get_int("sw_mode") == SW_MODE_AP)
 #else
 	if(nvram_match("lan_proto", "static"))
 #endif
-		ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+		ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	else
-		ifconfig(lan_ifname, IFUP, nvram_default_get("lan_ipaddr"), nvram_default_get("lan_netmask"));
+		ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, nvram_default_get("lan_ipaddr"), nvram_default_get("lan_netmask"));
 
 #ifdef RTCONFIG_QCA
 	gen_qca_wifi_cfgs();
@@ -1832,6 +1940,10 @@ gmac3_no_swbr:
 	//move to ate-broadcom.c
 #else
 	config_loopback();
+#endif
+
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	start_vlan_ifnames();
 #endif
 
 #ifdef RTCONFIG_IPV6
@@ -1845,7 +1957,7 @@ gmac3_no_swbr:
 #endif
 	start_snooper(lan_ifname);
 
-	if (nvram_match("lan_proto", "dhcp") 
+	if (nvram_match("lan_proto", "dhcp")
 #ifdef RTCONFIG_DEFAULT_AP_MODE
 			&& !nvram_match("ate_flag", "1")
 #endif
@@ -1880,6 +1992,8 @@ gmac3_no_swbr:
 		else lan_up(lan_ifname);
 	}
 
+	free(lan_ifname);
+
 #ifdef RTCONFIG_SHP
 	if(nvram_get_int("lfp_disable")==0) {
 		restart_lfp();
@@ -1899,6 +2013,7 @@ gmac3_no_swbr:
 
 	if(nvram_get_int("sw_mode") != SW_MODE_AP) {
 		redirect_setting();
+_dprintf("nat_rule: stop_nat_rules 1.\n");
 		stop_nat_rules();
 	}
 
@@ -1913,11 +2028,7 @@ gmac3_no_swbr:
 	if(nvram_get_int("sw_mode")==SW_MODE_REPEATER) {
 		start_wlcconnect();
 	}
-#endif
 
-	free(lan_ifname);
-
-#ifdef RTCONFIG_WIRELESSREPEATER
 	if(get_model() == MODEL_APN12HP &&
 		nvram_get_int("sw_mode") == SW_MODE_AP) {
 		// When CONNECTED, need to redirect 10.0.0.1
@@ -1932,8 +2043,19 @@ gmac3_no_swbr:
 	}
 #endif
 
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+	if ((is_psta(nvram_get_int("wlc_band")) || is_psr(nvram_get_int("wlc_band")))
+#if defined(RTCONFIG_BCM7) || defined(RTCONFIG_BCM_7114)
+#ifdef RTCONFIG_GMAC3
+		&& !nvram_match("gmac3_enable", "1")
+#endif
+		&& nvram_match("ctf_disable", "1")
+#endif
+	) setup_dnsmq(1);
+#endif
+
 #ifdef RTCONFIG_QTN
-	if(!nvram_match("QTN_RPC_CLIENT", ""))
+	if(*nvram_safe_get("QTN_RPC_CLIENT"))
 		eval("ifconfig", "br0:0", nvram_safe_get("QTN_RPC_CLIENT"), "netmask", "255.255.255.0");
 	else
 		eval("ifconfig", "br0:0", "169.254.39.1", "netmask", "255.255.255.0");
@@ -1997,7 +2119,7 @@ void stop_lan(void)
 #ifdef RTCONFIG_IPV6
 	stop_ipv6();
 	set_intf_ipv6_dad(lan_ifname, 0, 0);
-	config_ipv6(ipv6_enabled() && is_routing_enabled(), 1);
+	config_ipv6(0, 1);
 #endif
 
 	ifconfig("lo", 0, NULL, NULL);
@@ -2107,6 +2229,10 @@ gmac3_no_swbr:
 #endif
 	}
 
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	stop_vlan_ifnames();
+#endif
+
 #ifdef RTCONFIG_BCMWL6
 #if defined(RTAC66U) || defined(BCM4352)
 	nvram_set("led_5g", "0");
@@ -2126,12 +2252,6 @@ gmac3_no_swbr:
 	wl_defaults();	// init nvram wlx_ifnames & lan_ifnames
 
 	update_lan_state(LAN_STATE_STOPPED, 0);
-
-#if 0	/* fa_nvram_adjust only available on reboot */
-#ifdef RTCONFIG_BCMFA
-	fa_nvram_adjust();
-#endif
-#endif
 
 	killall("udhcpc", SIGUSR2);
 	killall("udhcpc", SIGTERM);
@@ -2865,6 +2985,7 @@ static void led_bh_prep(int post)
 			}
 			break;
 		case MODEL_RTAC5300:
+		case MODEL_RTAC5300R:
 		case MODEL_RTAC88U:
 		case MODEL_RTAC3100:
 
@@ -2875,11 +2996,11 @@ static void led_bh_prep(int post)
 				if(!mediabridge_mode()) {
 					eval("wl", "ledbh", "9", "7");
 					eval("wl", "-i", "eth2", "ledbh", "9", "7");
-#if defined(RTAC5300)
+#if defined(RTAC5300) || defined(RTAC5300R)
 					eval("wl", "-i", "eth3", "ledbh", "9", "7");
 #endif
 				} else { /* turn off other bands led */
-#if defined(RTAC5300)
+#if defined(RTAC5300) || defined(RTAC5300R)
 					maxi = 2;
 #endif
 					for(i=0; i<=maxi; ++i) {
@@ -2896,14 +3017,14 @@ static void led_bh_prep(int post)
 
 				eval("wl", "ledbh", "9", "1");
 				eval("wl", "-i", "eth2", "ledbh", "9", "1");
-#if defined(RTAC5300)
+#if defined(RTAC5300) || defined(RTAC5300R)
 				eval("wl", "-i", "eth3", "ledbh", "9", "1");
 #endif
 				eval("wlconf", "eth1", "up");
 				eval("wl", "maxassoc", "0");
 				eval("wlconf", "eth2", "up");
 				eval("wl", "-i", "eth2", "maxassoc", "0");
-#if defined(RTAC5300)
+#if defined(RTAC5300) || defined(RTAC5300R)
 				eval("wlconf", "eth3", "up");
 				eval("wl", "-i", "eth3", "maxassoc", "0");
 #endif
@@ -3216,11 +3337,37 @@ update_lan_resolvconf(void)
 void
 lan_up(char *lan_ifname)
 {
+#ifdef CONFIG_BCMWL5
+	int32 ip;
+	char tmp[100], prefix[]="wlXXXXXXX_";
+#ifdef __CONFIG_DHDAP__
+	int is_dhd;
+#endif
+#endif
 #ifdef RTCONFIG_WIRELESSREPEATER
 	char domain_mapping[64];
 #endif
 
 	_dprintf("%s(%s)\n", __FUNCTION__, lan_ifname);
+
+#ifdef CONFIG_BCMWL5
+#if defined(RTCONFIG_WIRELESSREPEATER) || defined(RTCONFIG_PROXYSTA)
+	if (nvram_match("lan_proto", "dhcp")) {
+		if (nvram_get_int("sw_mode") == SW_MODE_REPEATER
+		) {
+			snprintf(prefix, sizeof(prefix), "wl%d_", nvram_get_int("wlc_band"));
+			inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
+#ifdef __CONFIG_DHDAP__
+			is_dhd = !dhd_probe(nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
+			if (is_dhd) {
+				dhd_iovar_setint(nvram_safe_get(strcat_r(prefix, "ifname", tmp)), "wet_host_ipv4", ip);
+			} else
+#endif /* __CONFIG_DHDAP__ */
+			wl_iovar_setint(nvram_safe_get(strcat_r(prefix, "ifname", tmp)), "wet_host_ipv4", ip);
+		}
+	}
+#endif
+#endif /* CONFIG_BCMWL5 */
 
 	start_dnsmasq();
 
@@ -3263,9 +3410,7 @@ lan_up(char *lan_ifname)
 		// notify the change to wanduck.
 		kill_pidfile_s("/var/run/wanduck.pid", SIGUSR1);
 	}
-#endif
 
-#ifdef RTCONFIG_WIRELESSREPEATER
 	if(get_model() == MODEL_APN12HP &&
 		nvram_get_int("sw_mode") == SW_MODE_AP) {
 		repeater_nat_setting();
@@ -3276,6 +3421,17 @@ lan_up(char *lan_ifname)
 		f_write_string("/proc/net/dnsmqctrl", domain_mapping, 0, 0);
 		start_nat_rules();
 	}
+#endif
+
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+	if ((is_psta(nvram_get_int("wlc_band")) || is_psr(nvram_get_int("wlc_band")))
+#if defined(RTCONFIG_BCM7) || defined(RTCONFIG_BCM_7114)
+#ifdef RTCONFIG_GMAC3
+		&& !nvram_match("gmac3_enable", "1")
+#endif
+		&& nvram_match("ctf_disable", "1")
+#endif
+	) setup_dnsmq(1);
 #endif
 
 #ifdef RTCONFIG_USB
@@ -3392,6 +3548,10 @@ gmac3_no_swbr:
 #endif
 	stop_snooper();
 
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	stop_vlan_wl_ifnames();
+#endif
+
 #ifdef RTCONFIG_BCMWL6
 #if defined(RTAC66U) || defined(BCM4352)
 	nvram_set("led_5g", "0");
@@ -3440,7 +3600,7 @@ void start_lan_wl(void)
 	int unit, subunit, sta = 0;
 #endif
 #ifdef __CONFIG_DHDAP__
-        int is_dhd;
+	int is_dhd;
 #endif /* __CONFIG_DHDAP__ */
 
 #if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
@@ -3462,6 +3622,10 @@ void start_lan_wl(void)
 	    wps_band_radio_off(get_radio_band(nvram_get_int("wps_band"))) ||
 	    wps_band_ssid_broadcast_off(get_radio_band(nvram_get_int("wps_band"))))
 		nvram_set("wps_enable", "0");
+	/* recover wps enable option back to original state */
+	else if(!nvram_match("wps_enable", nvram_safe_get("wps_enable_old"))){
+		nvram_set("wps_enable", nvram_safe_get("wps_enable_old"));
+	}
 
 	lan_ifname = strdup(nvram_safe_get("lan_ifname"));
 #ifdef RTCONFIG_EMF
@@ -3560,13 +3724,24 @@ void start_lan_wl(void)
 					}
 				}
 #endif
-				// bring up interface
-				if (ifconfig(ifname, IFUP, NULL, NULL) != 0) {
-#ifdef RTCONFIG_QTN
-					if (strcmp(ifname, "wifi0"))
+#if defined(RTCONFIG_QCA)
+				if (!ifup_vap &&
+				    (!strncmp(ifname, WIF_2G, strlen(WIF_2G)) ||
+				     !strncmp(ifname, WIF_5G, strlen(WIF_5G))))
+				{
+					/* Don't up VAP interface here. */
+				} else {
 #endif
-						continue;
+					// bring up interface
+					if (ifconfig(ifname, IFUP | IFF_ALLMULTI, NULL, NULL) != 0) {
+#ifdef RTCONFIG_QTN
+						if (strcmp(ifname, "wifi0"))
+#endif
+							continue;
+					}
+#if defined(RTCONFIG_QCA)
 				}
+#endif
 
 #ifdef RTCONFIG_RALINK
 				wlconf_ra(ifname);
@@ -3578,7 +3753,7 @@ void start_lan_wl(void)
 
 					if (strcmp(mode, "wet") == 0) {
 						// Enable host DHCP relay
-						if (nvram_get_int("dhcp_relay")) {
+						if (nvram_match("lan_proto", "static")) {
 #ifdef __CONFIG_DHDAP__
 							is_dhd = !dhd_probe(ifname);
 							if(is_dhd) {
@@ -3588,14 +3763,6 @@ void start_lan_wl(void)
 							else
 #endif /* __CONFIG_DHDAP__ */
 							wl_iovar_set(ifname, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
-#ifdef __CONFIG_DHDAP__
-							is_dhd = !dhd_probe(ifname);
-							if(is_dhd) {
-								dhd_iovar_setint(ifname, "wet_host_ipv4", ip);
-							}
-							else
-#endif /* __CONFIG_DHDAP__ */
-							wl_iovar_setint(ifname, "wet_host_ipv4", ip);
 						}
 					}
 
@@ -3649,6 +3816,10 @@ void start_lan_wl(void)
 					find_in_list(nvram_get("fwd_wlandevs"), ifname))
 						goto gmac3_no_swbr;
 #endif
+#if defined(RTCONFIG_PORT_BASED_VLAN)
+				if (vlan_enable() && check_if_exist_vlan_ifnames(ifname))
+					match = 1;
+#endif
 				if (!match)
 				{
 					eval("brctl", "addif", lan_ifname, ifname);
@@ -3670,6 +3841,10 @@ gmac3_no_swbr:
 	start_emf(lan_ifname);
 #endif
 	start_snooper(lan_ifname);
+
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	start_vlan_wl_ifnames();
+#endif
 
 #ifdef RTCONFIG_BCMWL6
 	set_acs_ifnames();
@@ -3725,10 +3900,8 @@ void restart_wl(void)
 				}
 			}
 			else
-#ifdef RTCONFIG_BCMWL6
-#ifdef RTCONFIG_PROXYSTA
-			if (!psta_exist_except(unit) || !psr_exist_except(unit))
-#endif
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+			if (!psta_exist_except(unit)/* || !psr_exist_except(unit)*/)
 #endif
 			{
 #ifdef RTCONFIG_QTN
@@ -3749,6 +3922,10 @@ void restart_wl(void)
 
 	if (is_client)
 		xstart("radio", "join");
+
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	restart_vlan_wl();
+#endif
 
 #ifdef RTCONFIG_BCMWL6
 #if defined(RTAC66U) || defined(BCM4352)
@@ -3772,7 +3949,7 @@ void restart_wl(void)
 	}
 #ifdef RTCONFIG_TURBO
 	if ((nvram_match("wl0_radio", "1") || nvram_match("wl1_radio", "1")
-#if defined(RTAC3200) || defined(RTAC5300)
+#if defined(RTAC3200) || defined(RTAC5300) || defined(RTAC5300R)
 		|| nvram_match("wl2_radio", "1")
 #endif
 	)
@@ -3873,6 +4050,11 @@ void lanaccess_wl(void)
 				continue;
 #endif
 
+#if defined(CONFIG_BCMWL5) && defined(RTCONFIG_PORT_BASED_VLAN)
+			if (vlan_enable() && check_if_exist_vlan_ifnames(ifname))
+				continue;
+#endif
+
 			char nv[40];
 			snprintf(nv, sizeof(nv) - 1, "%s_lanaccess", wif_to_vif(ifname));
 			if (!strcmp(nvram_safe_get(nv), "off"))
@@ -3891,6 +4073,10 @@ void lanaccess_wl(void)
 		}
 		free(wl_ifnames);
 	}
+#endif
+
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	vlan_lanaccess_wl();
 #endif
 }
 
@@ -3934,15 +4120,13 @@ void restart_wireless(void)
 
 	init_nvram();	// init nvram lan_ifnames
 	wl_defaults();	// init nvram wlx_ifnames & lan_ifnames
-
+#ifndef CONFIG_BCMWL5
 	sleep(2);	// delay to avoid start interface on stoping.
-
-#if 0	/* fa_nvram_adjust only available on reboot */
-#ifdef RTCONFIG_BCMFA
-	fa_nvram_adjust();
-#endif
 #endif
 
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	set_port_based_vlan_config(NULL);
+#endif
 	start_lan_wl();
 
 	reinit_hwnat(-1);
@@ -4014,6 +4198,17 @@ void restart_wireless(void)
 		f_write_string("/proc/net/dnsmqctrl", domain_mapping, 0, 0);
 		start_nat_rules();
 	}
+#endif
+
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+	if ((is_psta(nvram_get_int("wlc_band")) || is_psr(nvram_get_int("wlc_band")))
+#if defined(RTCONFIG_BCM7) || defined(RTCONFIG_BCM_7114)
+#ifdef RTCONFIG_GMAC3
+		&& !nvram_match("gmac3_enable", "1")
+#endif
+		&& nvram_match("ctf_disable", "1")
+#endif
+	) setup_dnsmq(1);
 #endif
 
 #ifdef RTCONFIG_QCA
@@ -4067,7 +4262,9 @@ void restart_wireless_wps(void)
 #endif
 	stop_lan_wl();
 	wl_defaults_wps();
+#ifndef CONFIG_BCMWL5
 	sleep(2);	// delay to avoid start interface on stoping.
+#endif
 
 	start_lan_wl();
 
@@ -4142,10 +4339,60 @@ void restart_wireless_wps(void)
 	}
 #endif
 
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+	if ((is_psta(nvram_get_int("wlc_band")) || is_psr(nvram_get_int("wlc_band")))
+#if defined(RTCONFIG_BCM7) || defined(RTCONFIG_BCM_7114)
+#ifdef RTCONFIG_GMAC3
+		&& !nvram_match("gmac3_enable", "1")
+#endif
+		&& nvram_match("ctf_disable", "1")
+#endif
+	) setup_dnsmq(1);
+#endif
+
 	nvram_set_int("wlready", 1);
 
 	file_unlock(lock);
 }
+
+#ifdef RTCONFIG_BCM_7114
+void stop_wl_bcm(void)
+{
+#ifdef RTCONFIG_WIRELESSREPEATER
+	if (nvram_get_int("sw_mode") == SW_MODE_REPEATER)
+		stop_wlcconnect();
+#endif
+
+#ifdef RTCONFIG_BCMWL6
+#ifdef RTCONFIG_PROXYSTA
+	stop_psta_monitor();
+#endif
+	stop_acsd();
+#ifdef BCM_BSD
+	stop_bsd();
+#endif
+#ifdef BCM_SSD
+	stop_ssd();
+#endif
+	stop_igmp_proxy();
+#ifdef RTCONFIG_HSPOT
+	stop_hspotap();
+#endif
+#endif
+	stop_wps();
+#ifdef CONFIG_BCMWL5
+	stop_nas();
+	stop_eapd();
+#elif defined RTCONFIG_RALINK
+	stop_8021x();
+#endif
+
+#if ((defined(RTCONFIG_USER_LOW_RSSI) && defined(RTCONFIG_BCMARM)) || defined(RTCONFIG_NEW_USER_LOW_RSSI))
+	stop_roamast();
+#endif
+	stop_lan_wl();
+}
+#endif
 
 //FIXME: add sysdep wrapper
 
@@ -4292,14 +4539,10 @@ void start_lan_wlc(void)
 	update_lan_state(LAN_STATE_INITIALIZING, 0);
 
 	// bring up and configure LAN interface
-	/*if(nvram_get_int("wlc_state") != WLC_STATE_CONNECTED)
-		ifconfig(lan_ifname, IFUP, nvram_default_get("lan_ipaddr"), nvram_default_get("lan_netmask"));
-	else
-		ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));//*/
 	if(nvram_match("lan_proto", "static"))
-		ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+		ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	else
-		ifconfig(lan_ifname, IFUP, nvram_default_get("lan_ipaddr"), nvram_default_get("lan_netmask"));
+		ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, nvram_default_get("lan_ipaddr"), nvram_default_get("lan_netmask"));
 
 	if(nvram_match("lan_proto", "dhcp"))
 	{
@@ -4358,7 +4601,7 @@ int reset_qtn(int restart)
 	if( restart == 0){
 		lanport_ctrl(0);
 #if 1	/* replaced by raw Ethernet frame */
-		if(!nvram_match("QTN_RPC_CLIENT", ""))
+		if(*nvram_safe_get("QTN_RPC_CLIENT"))
 			eval("ifconfig", "br0:0", nvram_safe_get("QTN_RPC_CLIENT"), "netmask", "255.255.255.0");
 		else
 			eval("ifconfig", "br0:0", "169.254.39.1", "netmask", "255.255.255.0");

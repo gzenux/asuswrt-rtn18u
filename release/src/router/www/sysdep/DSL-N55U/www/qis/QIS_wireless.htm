@@ -11,6 +11,10 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script>
+var wl0_ssid_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl0_ssid"); %>');
+var wl1_ssid_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl1_ssid"); %>');
+var wl0_wpa_psk_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl0_wpa_psk"); %>');
+var wl1_wpa_psk_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl1_wpa_psk"); %>');
 
 var w_Setting = "<% nvram_get("w_Setting"); %>";
 var is_admin_pswd_set = "<% nvram_get("dsltmp_qis_admin_passwd_set"); %>";
@@ -59,6 +63,14 @@ function disable_dsl_pvc() {
 function QKWireless_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_wireless_webtitle#>";
 	parent.set_step("t3");
+
+	/*To Handle copy, paste for mobile device*/
+	if (document.getElementById("wl0_ssid").addEventListener){
+		document.getElementById("wl0_ssid").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
+		document.getElementById("wl0_wpa_psk").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
+		document.getElementById('wl1_ssid').addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(5);},100);});
+		document.getElementById('wl1_wpa_psk').addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(5);},100);});
+	}
 
 	if (is_admin_pswd_set == "1") {
 		document.form.http_username.value="<% nvram_get("dsltmp_qis_admin_username"); %>";
@@ -160,12 +172,12 @@ function show_prev_button(){
 function Sync_2ghz(band){
 	if(band == 2){
 		if(document.form.sync_with_2ghz.checked == true){
-			document.form.wl1_ssid.value = document.form.wl0_ssid.value;
 			document.form.wl1_wpa_psk.value = document.form.wl0_wpa_psk.value;
+			if(document.form.wl0_ssid.value != wl0_ssid_orig)
+				document.form.wl1_ssid.value = document.form.wl0_ssid.value.substring(0,29) + "_5G";
 		}
-	}
-	else
-		document.form.sync_with_2ghz.checked = false;
+	}else
+                document.form.sync_with_2ghz.checked = false;
 }
 
 function validate_wlpsk(psk_obj){
@@ -289,11 +301,6 @@ function gotoHome(){
 						<tr>
 							<td align="left">
 								<span class="description_down"><#QKSet_wireless_webtitle#></span>
-							</td>
-						</tr>
-						<tr id="home_button">
-							<td align="right">
-								<img onclick="gotoHome();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
 							</td>
 						</tr>
 					</table>

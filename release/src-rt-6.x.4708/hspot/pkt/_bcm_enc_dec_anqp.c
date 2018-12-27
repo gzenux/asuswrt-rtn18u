@@ -1,7 +1,7 @@
 /*
  * Test harness for encoding and decoding 802.11u ANQP packets.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -505,7 +505,7 @@ static void testEncodeDomainNameList(void)
 	bcm_encode_t name;
 
 	TEST(bcm_encode_init(&name, BUFFER_SIZE, nameBuf), "bcm_encode_init failed");
-	TEST(bcm_encode_anqp_domain_name(&name, 17, "my.helloworld.com"),
+	TEST(bcm_encode_anqp_domain_name(&name, 10, "helloworld"),
 		"bcm_encode_anqp_domain_name failed");
 
 #if NO_IE_APPEND
@@ -537,15 +537,13 @@ static void testDecodeDomainNameList(void)
 	TEST(bcm_decode_anqp_domain_name_list(&ie, &list),
 		"bcm_decode_anqp_domain_name_list failed");
 	TEST(list.numDomain == 1, "invalid data");
-	TEST(strcmp(list.domain[0].name, "my.helloworld.com") == 0, "invalid data");
+	TEST(strcmp(list.domain[0].name, "helloworld") == 0, "invalid data");
 
-	TEST(bcm_decode_anqp_is_domain_name(&list, "my.helloworld.com", FALSE),
+	TEST(bcm_decode_anqp_is_domain_name(&list, "helloworld", FALSE),
 		"bcm_decode_anqp_is_domain_name failed");
-	TEST(!bcm_decode_anqp_is_domain_name(&list, "world", TRUE),
+	TEST(bcm_decode_anqp_is_domain_name(&list, "world", TRUE),
 		"bcm_decode_anqp_is_domain_name failed");
 	TEST(!bcm_decode_anqp_is_domain_name(&list, "hello", TRUE),
-		"bcm_decode_anqp_is_domain_name failed");
-	TEST(bcm_decode_anqp_is_domain_name(&list, "helloworld.com", TRUE),
 		"bcm_decode_anqp_is_domain_name failed");
 	TEST(!bcm_decode_anqp_is_domain_name(&list, "nomatch", FALSE),
 		"bcm_decode_anqp_is_domain_name failed");
@@ -558,9 +556,9 @@ static void testEncodeQueryVendorSpecific(void)
 #if NO_IE_APPEND
 	TEST(bcm_encode_init(&enc, BUFFER_SIZE, buffer), "bcm_encode_init failed");
 #endif
-	TEST(bcm_encode_anqp_wfa_service_discovery(&enc, 3,
+	TEST(bcm_encode_anqp_query_vendor_specific(&enc, 3,
 		10, (uint8 *)"helloworld"),
-		"bcm_encode_anqp_wfa_service_discovery failed");
+		"bcm_encode_anqp_query_vendor_specific failed");
 
 	WL_PRPKT("testEncodeQueryVendorSpecific",
 		bcm_encode_buf(&enc), bcm_encode_length(&enc));
@@ -578,17 +576,14 @@ static void testDecodeQueryVendorSpecific(void)
 
 	TEST(bcm_decode_anqp(&dec, &anqp) == 10, "bcm_decode_anqp failed");
 
-	TEST(bcm_decode_init(&ie, anqp.wfaServiceDiscoveryLength,
-		anqp.wfaServiceDiscoveryBuffer), "bcm_decode_init failed");
+	TEST(bcm_decode_init(&ie, anqp.anqpVendorSpecificListLength,
+		anqp.anqpVendorSpecificListBuffer), "bcm_decode_init failed");
 
-	TEST(bcm_decode_anqp_wfa_service_discovery(&ie, &serviceUpdateIndicator),
-		"bcm_decode_anqp_wfa_service_discovery failed");
+	TEST(bcm_decode_anqp_query_vendor_specific(&ie, &serviceUpdateIndicator),
+		"bcm_decode_anqp_query_vendor_specific failed");
 	TEST(serviceUpdateIndicator == 3, "invalid data");
 	TEST(bcm_decode_remaining(&ie) == 10, "invalid data");
-	if (bcm_decode_current_ptr(&ie) != 0) {
-		TEST(memcmp(bcm_decode_current_ptr(&ie), "helloworld", 10) == 0,
-			"invalid data");
-	}
+	TEST(memcmp(bcm_decode_current_ptr(&ie), "helloworld", 10) == 0, "invalid data");
 }
 
 static void testEncodeQueryRequestVendorSpecific(void)
@@ -608,9 +603,9 @@ static void testEncodeQueryRequestVendorSpecific(void)
 	TEST(bcm_encode_init(&enc, BUFFER_SIZE, buffer), "bcm_encode_init failed");
 #endif
 
-	TEST(bcm_encode_anqp_wfa_service_discovery(&enc, 0,
+	TEST(bcm_encode_anqp_query_vendor_specific(&enc, 0,
 		bcm_encode_length(&query), bcm_encode_buf(&query)),
-		"bcm_encode_anqp_wfa_service_discovery failed");
+		"bcm_encode_anqp_query_vendor_specific failed");
 
 	WL_PRPKT("testEncodeQueryRequestVendorSpecific",
 		bcm_encode_buf(&enc), bcm_encode_length(&enc));
@@ -629,29 +624,26 @@ static void testDecodeQueryRequestVendorSpecific(void)
 
 	TEST(bcm_decode_anqp(&dec, &anqp) == 11, "bcm_decode_anqp failed");
 
-	TEST(bcm_decode_init(&ie, anqp.wfaServiceDiscoveryLength,
-		anqp.wfaServiceDiscoveryBuffer), "bcm_decode_init failed");
-	TEST(bcm_decode_anqp_wfa_service_discovery(&ie, &serviceUpdateIndicator),
-		"bcm_decode_anqp_wfa_service_discovery failed");
+	TEST(bcm_decode_init(&ie, anqp.anqpVendorSpecificListLength,
+		anqp.anqpVendorSpecificListBuffer), "bcm_decode_init failed");
+	TEST(bcm_decode_anqp_query_vendor_specific(&ie, &serviceUpdateIndicator),
+		"bcm_decode_anqp_query_vendor_specific failed");
 	TEST(serviceUpdateIndicator == 0, "invalid data");
 
 	TEST(bcm_decode_anqp_query_request_vendor_specific_tlv(&ie, &request),
 		"bcm_decode_anqp_query_request_vendor_specific_tlv failed");
 	TEST(request.serviceProtocolType == SVC_RPOTYPE_UPNP, "invalid data");
 	TEST(request.serviceTransactionId == 1, "invalid data");
-	TEST(request.dataLen == 12, "invalid data");
-	if (request.data != 0) {
-		TEST(memcmp(request.data, "queryrequest", 12) == 0, "invalid data");
-	}
+	TEST(request.queryLen == 12, "invalid data");
+	TEST(memcmp(request.queryData, "queryrequest", 12) == 0, "invalid data");
 
 	TEST(bcm_decode_anqp_query_request_vendor_specific_tlv(&ie, &request),
 		"bcm_decode_anqp_query_request_vendor_specific_tlv failed");
 	TEST(request.serviceProtocolType == SVC_RPOTYPE_BONJOUR, "invalid data");
 	TEST(request.serviceTransactionId == 2, "invalid data");
-	TEST(request.dataLen == 12, "invalid data");
-	if (request.data != 0) {
-		TEST(memcmp(request.data, "queryrequest", 12) == 0, "invalid data");
-	}
+	TEST(request.queryLen == 12, "invalid data");
+	TEST(memcmp(request.queryData, "queryrequest", 12) == 0, "invalid data");
+
 }
 
 static void testEncodeQueryResponseVendorSpecific(void)
@@ -661,19 +653,19 @@ static void testEncodeQueryResponseVendorSpecific(void)
 
 	TEST(bcm_encode_init(&query, BUFFER_SIZE, queryBuf), "bcm_encode_init failed");
 	TEST(bcm_encode_anqp_query_response_vendor_specific_tlv(&query,
-		SVC_RPOTYPE_UPNP, 1, 0, FALSE, 0, 13, (uint8 *)"queryresponse"),
+		SVC_RPOTYPE_UPNP, 1, 0, 13, (uint8 *)"queryresponse"),
 		"bcm_encode_anqp_query_response_vendor_specific_tlv failed");
 	TEST(bcm_encode_anqp_query_response_vendor_specific_tlv(&query,
-		SVC_RPOTYPE_BONJOUR, 2, 0, FALSE, 0, 13, (uint8 *)"queryresponse"),
+		SVC_RPOTYPE_BONJOUR, 2, 0, 13, (uint8 *)"queryresponse"),
 		"bcm_encode_anqp_query_response_vendor_specific_tlv failed");
 
 #if NO_IE_APPEND
 	TEST(bcm_encode_init(&enc, BUFFER_SIZE, buffer), "bcm_encode_init failed");
 #endif
 
-	TEST(bcm_encode_anqp_wfa_service_discovery(&enc, 0,
+	TEST(bcm_encode_anqp_query_vendor_specific(&enc, 0,
 		bcm_encode_length(&query), bcm_encode_buf(&query)),
-		"bcm_encode_anqp_wfa_service_discovery failed");
+		"bcm_encode_anqp_query_vendor_specific failed");
 
 	WL_PRPKT("testEncodeQueryResponseVendorSpecific",
 		bcm_encode_buf(&enc), bcm_encode_length(&enc));
@@ -692,32 +684,28 @@ static void testDecodeQueryResponseVendorSpecific(void)
 
 	TEST(bcm_decode_anqp(&dec, &anqp) == 12, "bcm_decode_anqp failed");
 
-	TEST(bcm_decode_init(&ie, anqp.wfaServiceDiscoveryLength,
-		anqp.wfaServiceDiscoveryBuffer), "bcm_decode_init failed");
+	TEST(bcm_decode_init(&ie, anqp.anqpVendorSpecificListLength,
+		anqp.anqpVendorSpecificListBuffer), "bcm_decode_init failed");
 
-	TEST(bcm_decode_anqp_wfa_service_discovery(&ie, &serviceUpdateIndicator),
-		"bcm_decode_anqp_wfa_service_discovery failed");
+	TEST(bcm_decode_anqp_query_vendor_specific(&ie, &serviceUpdateIndicator),
+		"bcm_decode_anqp_query_vendor_specific failed");
 	TEST(serviceUpdateIndicator == 0, "invalid data");
 
-	TEST(bcm_decode_anqp_query_response_vendor_specific_tlv(&ie, FALSE, &response),
+	TEST(bcm_decode_anqp_query_response_vendor_specific_tlv(&ie, &response),
 		"bcm_decode_anqp_query_response_vendor_specific_tlv failed");
 	TEST(response.serviceProtocolType == SVC_RPOTYPE_UPNP, "invalid data");
 	TEST(response.serviceTransactionId == 1, "invalid data");
 	TEST(response.statusCode == 0, "invalid data");
-	TEST(response.dataLen == 13, "invalid data");
-	if (response.data != 0) {
-		TEST(memcmp(response.data, "queryresponse", 13) == 0, "invalid data");
-	}
+	TEST(response.queryLen == 13, "invalid data");
+	TEST(memcmp(response.queryData, "queryresponse", 13) == 0, "invalid data");
 
-	TEST(bcm_decode_anqp_query_response_vendor_specific_tlv(&ie, FALSE, &response),
+	TEST(bcm_decode_anqp_query_response_vendor_specific_tlv(&ie, &response),
 		"bcm_decode_anqp_query_response_vendor_specific_tlv failed");
 	TEST(response.serviceProtocolType == SVC_RPOTYPE_BONJOUR, "invalid data");
 	TEST(response.serviceTransactionId == 2, "invalid data");
 	TEST(response.statusCode == 0, "invalid data");
-	TEST(response.dataLen == 13, "invalid data");
-	if (response.data != 0) {
-		TEST(memcmp(response.data, "queryresponse", 13) == 0, "invalid data");
-	}
+	TEST(response.queryLen == 13, "invalid data");
+	TEST(memcmp(response.queryData, "queryresponse", 13) == 0, "invalid data");
 }
 
 static void testEncodeHspotAnqp(void)
@@ -846,206 +834,6 @@ static void testEmpty3GppCellularNetwork(void)
 		"bcm_decode_anqp_3gpp_cellular_network failed");
 }
 
-static void testWfdsRequest(void)
-{
-	char *serviceName1 = "org.wi-fi.wfds.print";
-	char *serviceInfoReq1 = "dlna:local:all";
-	char *serviceName2 = "org.wi-fi.wfds.play";
-	char *serviceInfoReq2 = "dlna:local:players";
-	uint8 enc1Buf[BUFFER_SIZE];
-	bcm_encode_t enc1;
-	uint8 enc2Buf[BUFFER_SIZE];
-	bcm_encode_t enc2;
-	uint8 enc3Buf[BUFFER_SIZE];
-	bcm_encode_t enc3;
-	bcm_decode_t dec1;
-	bcm_decode_anqp_t anqp;
-	bcm_decode_t dec2;
-	uint16 serviceUpdateIndicator;
-	bcm_decode_anqp_query_request_vendor_specific_tlv_t request;
-	bcm_decode_t dec3;
-	int count;
-
-	/* encode multiple service request */
-	TEST(bcm_encode_init(&enc1, sizeof(enc1Buf), enc1Buf), "bcm_encode_init failed");
-	TEST(bcm_encode_anqp_wfds_request(&enc1, strlen(serviceName1), (uint8 *)serviceName1,
-		strlen(serviceInfoReq1), (uint8 *)serviceInfoReq1),
-		"bcm_encode_anqp_wfds_request failed");
-	TEST(bcm_encode_anqp_wfds_request(&enc1, strlen(serviceName2), (uint8 *)serviceName2,
-		strlen(serviceInfoReq2), (uint8 *)serviceInfoReq2),
-		"bcm_encode_anqp_wfds_request failed");
-
-	TEST(bcm_encode_init(&enc2, sizeof(enc2Buf), enc2Buf), "bcm_encode_init failed");
-	TEST(bcm_encode_anqp_query_request_vendor_specific_tlv(&enc2,
-		SVC_RPOTYPE_WFDS, 1, bcm_encode_length(&enc1), bcm_encode_buf(&enc1)),
-		"bcm_encode_anqp_query_request_vendor_specific_tlv failed");
-
-	TEST(bcm_encode_init(&enc3, sizeof(enc3Buf), enc3Buf), "bcm_encode_init failed");
-	TEST(bcm_encode_anqp_wfa_service_discovery(&enc3, 0x1234,
-		bcm_encode_length(&enc2), bcm_encode_buf(&enc2)),
-		"bcm_encode_anqp_wfa_service_discovery failed");
-
-	WL_PRPKT("WFDS request", bcm_encode_buf(&enc3), bcm_encode_length(&enc3));
-
-	/* decode request */
-	TEST(bcm_decode_init(&dec1, bcm_encode_length(&enc3), bcm_encode_buf(&enc3)),
-		"bcm_decode_init failed");
-	TEST(bcm_decode_anqp(&dec1, &anqp), "bcm_decode_anqp failed");
-	TEST(bcm_decode_init(&dec2, anqp.wfaServiceDiscoveryLength,
-		anqp.wfaServiceDiscoveryBuffer), "bcm_decode_init failed");
-	TEST(bcm_decode_anqp_wfa_service_discovery(&dec2, &serviceUpdateIndicator),
-		"bcm_decode_anqp_wfa_service_discovery failed");
-	TEST(serviceUpdateIndicator == 0x1234, "invalid data");
-	TEST(bcm_decode_anqp_query_request_vendor_specific_tlv(&dec2, &request),
-		"bcm_decode_anqp_query_request_vendor_specific_tlv failed");
-	TEST(request.serviceProtocolType == SVC_RPOTYPE_WFDS, "invalid data");
-	TEST(request.serviceTransactionId == 1, "invalid data");
-
-	TEST(bcm_decode_init(&dec3, request.dataLen, request.data),
-		"bcm_decode_init failed");
-
-	count = 0;
-	while (bcm_decode_remaining(&dec3) > 0) {
-		int ret;
-		bcm_decode_anqp_wfds_request_t wfds;
-		char *serviceName;
-		char *serviceInfoReq;
-
-		ret = bcm_decode_anqp_wfds_request(&dec3, &wfds);
-		TEST(ret, "bcm_decode_anqp_wfds_request failed");
-		if (!ret) {
-			break;
-		}
-		if (count == 0) {
-			serviceName = serviceName1;
-			serviceInfoReq = serviceInfoReq1;
-		}
-		else {
-			serviceName = serviceName2;
-			serviceInfoReq = serviceInfoReq2;
-		}
-		TEST(wfds.serviceNameLen == strlen(serviceName), "invalid data");
-		TEST(memcmp(wfds.serviceName, serviceName, wfds.serviceNameLen) == 0,
-			"invalid data");
-		TEST(wfds.serviceInfoReqLen == strlen(serviceInfoReq), "invalid data");
-		TEST(memcmp(wfds.serviceInfoReq, serviceInfoReq, wfds.serviceInfoReqLen) == 0,
-			"invalid data");
-		WL_PRPKT("WFDS service name", wfds.serviceName, wfds.serviceNameLen);
-		WL_PRPKT("WFDS service info request", wfds.serviceInfoReq, wfds.serviceInfoReqLen);
-		count++;
-	}
-}
-
-static void testWfdsResponse(void)
-{
-	char *serviceName1 = "org.wi-fi.wfds.print";
-	char *serviceInfo1 = "hello world";
-	char *serviceName2 = "org.wi-fi.wfds.play";
-	char *serviceInfo2 = "wonderful world";
-	uint8 enc1Buf[BUFFER_SIZE];
-	bcm_encode_t enc1;
-	uint8 enc2Buf[BUFFER_SIZE];
-	bcm_encode_t enc2;
-	uint8 enc3Buf[BUFFER_SIZE];
-	bcm_encode_t enc3;
-	bcm_decode_t dec1;
-	bcm_decode_anqp_t anqp;
-	bcm_decode_t dec2;
-	uint16 serviceUpdateIndicator;
-	bcm_decode_anqp_query_response_vendor_specific_tlv_t response;
-	bcm_decode_t dec3;
-	int count;
-
-	/* encode response */
-	TEST(bcm_encode_init(&enc1, sizeof(enc1Buf), enc1Buf), "bcm_encode_init failed");
-	count = 0;
-	TEST(bcm_encode_anqp_wfds_response(&enc1, 0x11223344, 0xaabb,
-		strlen(serviceName1), (uint8 *)serviceName1, 1,
-		strlen(serviceInfo1), (uint8 *)serviceInfo1),
-		"bcm_encode_anqp_wfds_response failed");
-	count++;
-	TEST(bcm_encode_anqp_wfds_response(&enc1, 0x55667788, 0xccdd,
-		strlen(serviceName2), (uint8 *)serviceName2, 1,
-		strlen(serviceInfo2), (uint8 *)serviceInfo2),
-		"bcm_encode_anqp_wfds_response failed");
-	count++;
-
-	TEST(bcm_encode_init(&enc2, sizeof(enc2Buf), enc2Buf), "bcm_encode_init failed");
-	TEST(bcm_encode_anqp_query_response_vendor_specific_tlv(&enc2,
-		SVC_RPOTYPE_WFDS, 2, 1, TRUE, count,
-		bcm_encode_length(&enc1), bcm_encode_buf(&enc1)),
-		"bcm_encode_anqp_query_request_vendor_specific_tlv failed");
-
-	TEST(bcm_encode_init(&enc3, sizeof(enc3Buf), enc3Buf), "bcm_encode_init failed");
-	TEST(bcm_encode_anqp_wfa_service_discovery(&enc3, 0x1234,
-		bcm_encode_length(&enc2), bcm_encode_buf(&enc2)),
-		"bcm_encode_anqp_wfa_service_discovery failed");
-
-	WL_PRPKT("WFDS request", bcm_encode_buf(&enc3), bcm_encode_length(&enc3));
-
-	/* decode response */
-	TEST(bcm_decode_init(&dec1, bcm_encode_length(&enc3), bcm_encode_buf(&enc3)),
-		"bcm_decode_init failed");
-	TEST(bcm_decode_anqp(&dec1, &anqp), "bcm_decode_anqp failed");
-	TEST(bcm_decode_init(&dec2, anqp.wfaServiceDiscoveryLength,
-		anqp.wfaServiceDiscoveryBuffer), "bcm_decode_init failed");
-	TEST(bcm_decode_anqp_wfa_service_discovery(&dec2, &serviceUpdateIndicator),
-		"bcm_decode_anqp_wfa_service_discovery failed");
-	TEST(serviceUpdateIndicator == 0x1234, "invalid data");
-	TEST(bcm_decode_anqp_query_response_vendor_specific_tlv(&dec2, TRUE, &response),
-		"bcm_decode_anqp_query_request_vendor_specific_tlv failed");
-	TEST(response.serviceProtocolType == SVC_RPOTYPE_WFDS, "invalid data");
-	TEST(response.serviceTransactionId == 2, "invalid data");
-	TEST(response.statusCode == 1, "invalid data");
-	TEST(response.numService == count, "invalid data");
-
-	TEST(bcm_decode_init(&dec3, response.dataLen, response.data),
-		"bcm_decode_init failed");
-
-	count = 0;
-	while (bcm_decode_remaining(&dec3) > 0) {
-		int ret;
-		bcm_decode_anqp_wfds_response_t wfds;
-		uint32 advertisementId;
-		uint16 configMethod;
-		char *serviceName;
-		uint8 serviceStatus;
-		char *serviceInfo;
-
-		ret = bcm_decode_anqp_wfds_response(&dec3, &wfds);
-		TEST(ret, "bcm_decode_anqp_wfds_response failed");
-		if (!ret) {
-			break;
-		}
-		if (count == 0) {
-			advertisementId = 0x11223344;
-			configMethod = 0xaabb;
-			serviceName = serviceName1;
-			serviceStatus = 1;
-			serviceInfo = serviceInfo1;
-		}
-		else {
-			advertisementId = 0x55667788;
-			configMethod = 0xccdd;
-			serviceName = serviceName2;
-			serviceStatus = 1;
-			serviceInfo = serviceInfo2;
-		}
-		TEST(wfds.advertisementId == advertisementId, "invalid data");
-		TEST(wfds.configMethod == configMethod, "invalid data");
-		TEST(wfds.serviceNameLen == strlen(serviceName), "invalid data");
-		TEST(memcmp(wfds.serviceName, serviceName, wfds.serviceNameLen) == 0,
-			"invalid data");
-		TEST(wfds.serviceStatus == serviceStatus, "invalid data");
-		TEST(wfds.serviceInfoLen == strlen(serviceInfo), "invalid data");
-		TEST(memcmp(wfds.serviceInfo, serviceInfo, wfds.serviceInfoLen) == 0,
-			"invalid data");
-		WL_PRPKT("WFDS service name", wfds.serviceName, wfds.serviceNameLen);
-		WL_PRPKT("WFDS service info", wfds.serviceInfo, wfds.serviceInfoLen);
-		count++;
-	}
-}
-
 int main(int argc, char **argv)
 {
 	(void) argc;
@@ -1093,9 +881,6 @@ int main(int argc, char **argv)
 	testEncodeHspotAnqp();
 
 	testEmpty3GppCellularNetwork();
-
-	testWfdsRequest();
-	testWfdsResponse();
 
 	TEST_FINALIZE();
 	return 0;

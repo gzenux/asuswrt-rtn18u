@@ -1,7 +1,7 @@
 /*
  * Tracing utility.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -63,8 +63,6 @@ extern traceLevelE gTraceLevel;
 
 #endif	/* BCMDBG */
 
-#define dbg(fmt, args...) do { FILE *fp = fopen("/dev/console", "w"); if (fp) { fprintf(fp, fmt, ## args); fclose(fp); } else fprintf(stderr, fmt, ## args); } while (0)
-
 void trace(const char *file, int line, const char *function,
 	traceLevelE level, const char *format, ...);
 
@@ -85,7 +83,7 @@ void traceHexDump(const char *file, int line, const char *function,
 #define WL_TRACE(args)		WL_TRACE_ args
 #define WL_TRACE_(args...)	TRACE(TRACE_VERBOSE, args)
 
-#define WL_PRINT(args)		dbg args
+#define WL_PRINT(args)		printf args
 
 #define TRACE_P2PO			(TRACE_PACKET)
 #define WL_P2PO(args)		WL_P2PO_ args

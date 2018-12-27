@@ -1,7 +1,7 @@
 /*
  * TCP socket for running sigma.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -56,25 +56,25 @@ int tcpSrvCreate(int port)
 	listenFd = gTcpSrv.listenFd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (listenFd < 0) {
-		dbg("TCP listen socket failed errno=%d\n", errno);
+		printf("TCP listen socket failed errno=%d\n", errno);
 		return -1;
 	}
 
 	optval = 1;
 	if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0) {
-		dbg("setsockopt failed: %s\n", strerror(errno));
+		printf("setsockopt failed: %s\n", strerror(errno));
 	}
 
 	optval = fcntl(listenFd, F_GETFL);
 	if (optval < 0) {
-		dbg("fcntl F_GETFL failed: %s\n", strerror(errno));
+		printf("fcntl F_GETFL failed: %s\n", strerror(errno));
 	}
 	optval = (optval | O_NONBLOCK);
 	if (fcntl(listenFd, F_SETFL, optval) < 0) {
-		dbg("fcntl set O_NONBLOCK failed: %s\n", strerror(errno));
+		printf("fcntl set O_NONBLOCK failed: %s\n", strerror(errno));
 	}
 
-	dbg("TCP listen socket %d created\n", listenFd);
+	printf("TCP listen socket %d created\n", listenFd);
 	server_created = 1;
 	/* Fill server's address family */
 	serv_addr->sin_family = AF_INET;
@@ -84,7 +84,7 @@ int tcpSrvCreate(int port)
 	serv_addr->sin_port = htons(port);
 
 	if (bind(listenFd, (struct sockaddr *)serv_addr, sizeof(struct sockaddr_in)) < 0) {
-		dbg("Failed to bind: %s\n", strerror(errno));
+		printf("Failed to bind: %s\n", strerror(errno));
 		close(listenFd);
 		return -1;
 	}
@@ -99,7 +99,7 @@ void tcpSrvDestroy(void)
 {
 	int i;
 
-	dbg("TCP destroy\n");
+	printf("TCP destroy\n");
 
 	shutdown(gTcpSrv.listenFd, SHUT_RDWR);
 	for (i = 0; i < gTcpSrv.numClients; i++) {
@@ -191,7 +191,7 @@ int tcpProcessSelect(fd_set *rfds)
 			int port;
 			ip = inet_ntoa(gTcpSrv.client_addr.sin_addr);
 			port = ntohs(gTcpSrv.client_addr.sin_port);
-			dbg("connected to TCP client %s %d\n", ip, port);
+			printf("connected to TCP client %s %d\n", ip, port);
 			gTcpSrv.last_fd = gTcpSrv.last_fd > clientFd ? gTcpSrv.last_fd:clientFd;
 			for (i = 0; i < MAX_TCP_CLIENT_NUM; i++) {
 				if (gTcpSrv.clientFds[i] == 0) {
@@ -203,11 +203,11 @@ int tcpProcessSelect(fd_set *rfds)
 				if (gTcpSrv.numClients <= i)
 					gTcpSrv.numClients = i + 1;
 			} else {
-				dbg("no room left for new client %d\n", clientFd);
+				printf("no room left for new client %d\n", clientFd);
 				close(clientFd);
 			}
 		} else {
-			dbg("accept wrong socket number %d\n", clientFd);
+			printf("accept wrong socket number %d\n", clientFd);
 		}
 	}
 
@@ -215,10 +215,10 @@ int tcpProcessSelect(fd_set *rfds)
 		if ((gTcpSrv.clientFds[i] > 0) && FD_ISSET(gTcpSrv.clientFds[i], rfds)) {
 			int count;
 			int *ptr_int = (int *)TcpKeyInput;
-			dbg("receiving from client socket %d\n", gTcpSrv.clientFds[i]);
+			printf("receiving from client socket %d\n", gTcpSrv.clientFds[i]);
 			count = read(gTcpSrv.clientFds[i], buffer, sizeof(buffer));
 			if (count == 0) {
-				dbg("read zero bytes: %d\n", i);
+				printf("read zero bytes: %d\n", i);
 				close(gTcpSrv.clientFds[i]);
 				gTcpSrv.clientFds[i] = 0;
 				continue;
@@ -231,13 +231,13 @@ int tcpProcessSelect(fd_set *rfds)
 			else {
 				/* remove CR and LF */
 				buffer[count-2] = 0;
-				dbg("read %d char : %s\n", strlen(buffer), buffer);
+				printf("read %d char : %s\n", strlen(buffer), buffer);
 			}
 
 
 			if (TcpReadLocked) {
 				/* ignore the new input */
-				dbg("TcpReadLocked - dropping TCP input\n");
+				printf("TcpReadLocked - dropping TCP input\n");
 				continue;
 			}
 			/* TcpReadLocked must be set before data_received else TcpSendBuffer
@@ -275,7 +275,7 @@ void TcpSendBuffer(char *input, char *buf)
 	/* retrieve socket */
 	sock = *((int *)(input - sizeof(int)));
 	sprintf(buf, "%s\n", buf);
-	dbg("sending %s on socket  %d\n", buf, sock);
+	printf("sending %s on socket  %d\n", buf, sock);
 	/*  for now,  unlock receiving */
 	/* the app could use a code to indicate that it would like to send
 	 * more before strating receiving again

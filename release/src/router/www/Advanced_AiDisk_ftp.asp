@@ -625,7 +625,7 @@ function applyRule(){
 }
 
 function validForm(){
-	if(!validator.range(document.form.st_max_user, 1, 5)){
+	if(!validator.range(document.form.st_max_user, 1, 10)){
 		document.form.st_max_user.focus();
 		document.form.st_max_user.select();
 		return false;

@@ -1,7 +1,7 @@
 /*
  * Test harness for encoding and decoding base functions.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -74,22 +74,6 @@ static void testDecode(void)
 	TEST(bcm_decode_le32(&dec, &data32) == 0, "bcm_decode_le32 failed");
 }
 
-static void testDecodeZeroLength(void)
-{
-	bcm_decode_t dec;
-
-	/* no decode */
-	TEST(bcm_decode_init(&dec, 0, 0), "bcm_decode_init failed");
-	TEST(bcm_decode_remaining(&dec) == 0, "bcm_decode_remaining failed");
-	TEST(bcm_decode_buf(&dec) == 0, "bcm_decode_buf failed");
-	TEST(!bcm_decode_is_zero_length(&dec), "bcm_decode_is_zero_length failed");
-
-	/* valid zero length decode */
-	TEST(bcm_decode_init(&dec, 0, bcm_encode_buf(&enc)), "bcm_decode_init failed");
-	TEST(bcm_decode_remaining(&dec) == 0, "bcm_decode_remaining failed");
-	TEST(bcm_decode_buf(&dec) != 0, "bcm_decode_buf failed");
-	TEST(bcm_decode_is_zero_length(&dec), "bcm_decode_is_zero_length failed");
-}
 
 int main(int argc, char **argv)
 {
@@ -101,7 +85,6 @@ int main(int argc, char **argv)
 
 	testEncode();
 	testDecode();
-	testDecodeZeroLength();
 
 	TEST_FINALIZE();
 	return 0;

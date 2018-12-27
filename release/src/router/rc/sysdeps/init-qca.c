@@ -44,19 +44,30 @@ static struct load_wifi_kmod_seq_s {
 	unsigned int load_sleep;
 	unsigned int remove_sleep;
 } load_wifi_kmod_seq[] = {
+	{ "asf", 0, 0 },
+	{ "adf", 0, 0 },
 	{ "ath_hal", 0, 0 },
+	{ "ath_rate_atheros", 0, 0 },
+	{ "ath_dfs", 0, 0 },
+	{ "ath_spectral", 0, 0 },
 	{ "hst_tx99", 0, 0 },
 	{ "ath_dev", 0, 0 },
 	{ "umac", 0, 2 },
+	{ "ath_pktlog", 0, 0 },
+	{ "smart_antenna", 0, 0 },
 };
 
-static struct load_sfe_kmod_seq_s {
+static struct load_nat_accel_kmod_seq_s {
 	char *kmod_name;
 	unsigned int load_sleep;
 	unsigned int remove_sleep;
-} load_sfe_kmod_seq[] = {
+} load_nat_accel_kmod_seq[] = {
+#if defined(RTCONFIG_SOC_IPQ8064)
+	{ "ecm", 0, 0 },
+#else
 	{ "shortcut_fe", 0, 0 },
 	{ "fast_classifier", 0, 0 },
+#endif
 };
 
 static void __mknod(char *name, mode_t mode, dev_t dev)
@@ -110,7 +121,28 @@ void generate_switch_para(void)
 
 static void init_switch_qca(void)
 {
+#if defined(RTCONFIG_SOC_IPQ8064)
+	char *qca_nss_list[] = {
+#if defined(RTCONFIG_SWITCH_QCA8337N)
+		"qca-ssdk",
+#endif
+		"qca-nss-gmac", "qca-nss-drv",
+		"qca-nss-qdisc",
+		NULL
+	}, **qmod;
+
+	for (qmod = &qca_nss_list[0]; *qmod != NULL; ++qmod) {
+		if (module_loaded(*qmod))
+			continue;
+
+		modprobe(*qmod);
+	}
+#endif
 	char *wan0_ifname = nvram_safe_get("wan0_ifname");
+
+#if (defined(PLN12) || defined(PLAC56) || defined(PLAC66U))
+	wan0_ifname = MII_IFNAME;
+#endif
 
 	generate_switch_para();
 
@@ -226,7 +258,10 @@ void config_switch(void)
 	int controlrate_multicast;
 	int controlrate_broadcast;
 	int merge_wan_port_into_lan_ports;
-
+#if defined(RTAC55U)
+	int i,j,bitmask,vid[4],pri[4];
+	char temp[30];
+#endif
 	dbG("link down all ports\n");
 	eval("rtkswitch", "17");	// link down all ports
 
@@ -255,7 +290,6 @@ void config_switch(void)
 	system("rtkswitch 8 0"); // init, rtkswitch 114,115,14,15 need it
 	if (is_routing_enabled()) {
 		char parm_buf[] = "XXX";
-
 		stbport = atoi(nvram_safe_get("switch_stb_x"));
 		if (stbport < 0 || stbport > 6) stbport = 0;
 		dbG("ISP Profile/STB: %s/%d\n", nvram_safe_get("switch_wantag"), stbport);
@@ -361,6 +395,33 @@ void config_switch(void)
 				__setup_vlan(14, 0, 0x00000012);
 			}
 			else {
+
+#if defined(RTAC55U)  
+				/*
+ 				 * switch_wan1tagid: LAN4 
+ 				 * switch_wan2tagid: LAN3
+ 				 * switch_wan3tagid: LAN2 
+ 				 * switch_wan4tagid: LAN1 
+ 				 *
+ 				 */
+				if (!strcmp(nvram_safe_get("switch_wantag"), "manual")) 
+				{
+					bitmask=0; //bit3:LAN1, bit2:LAN2, bit1:LAN3, bit0:LAN4
+					for(i=0;i<4;i++)
+					{
+						memset(temp,0,sizeof(temp));
+						sprintf(temp, "switch_wan%dtagid",i+1);
+						if(strcmp(nvram_safe_get(temp), ""))
+							bitmask+=(1<<i);
+					}
+					
+					memset(temp,0,sizeof(temp));
+					sprintf(temp, "rtkswitch 38 %d",bitmask);
+					system(temp);		
+				}
+				else
+#endif
+				{
 				/* Cherry Cho added in 2011/7/11. */
 				/* Initialize VLAN and set Port Isolation */
 				if(strcmp(nvram_safe_get("switch_wan1tagid"), "") && strcmp(nvram_safe_get("switch_wan2tagid"), ""))
@@ -371,6 +432,9 @@ void config_switch(void)
 					system("rtkswitch 38 2");		// 2 = 0x10 VoIP: P1
 				else
 					system("rtkswitch 38 0");		//No IPTV and VoIP ports
+				}
+
+
 
 				/*++ Get and set Vlan Information */
 				if(strcmp(nvram_safe_get("switch_wan0tagid"), "") != 0) {
@@ -387,6 +451,56 @@ void config_switch(void)
 					__setup_vlan(vlan_val, prio_val, 0x02000210);
 				}
 
+#if defined(RTAC55U)
+				if (!strcmp(nvram_safe_get("switch_wantag"), "manual")) 
+				{
+					for(i=0;i<4;i++)
+					{
+						vid[i]=-1; pri[i]=-1;
+						memset(temp,0,sizeof(temp));
+						sprintf(temp, "switch_wan%dtagid",i+1);
+						if(strcmp(nvram_safe_get(temp), "")!=0)
+						{
+							if ((p = nvram_get(temp)) != NULL) {
+								t = atoi(p);
+								if((t >= 2) && (t <= 4094))
+									vid[i] = t;
+							}
+
+							
+							memset(temp,0,sizeof(temp));
+							sprintf(temp, "switch_wan%dprio",i+1);
+							if((p = nvram_get(temp)) != NULL && *p != '\0')
+								pri[i] = atoi(p);
+
+						}
+					}
+					
+					/* LAN4: 0x00010011
+ 					*  LAN3: 0x00020012
+ 					*  LAN2: 0x00040014
+ 					*  LAN1: 0x00080018
+ 					*/				
+					for(i=0;i<4;i++)
+					{
+						if(vid[i]!=-1)
+						{	
+							mask=0x10;
+							for(j=0;j<4;j++)
+								if(vid[i]==vid[j])
+								{
+									mask|=(0x1<<i | 0x1<<j);
+									mask|=(0x1<<(i+16) | 0x1<<(j+16));
+								}
+							__setup_vlan(vid[i], pri[i], mask);
+						}
+					
+					}
+		
+				}
+				else
+#endif
+				{
 				if(strcmp(nvram_safe_get("switch_wan1tagid"), "") != 0) {
 					// IPTV on LAN4 (port 0)
 					if ((p = nvram_get("switch_wan1tagid")) != NULL) {
@@ -424,6 +538,9 @@ void config_switch(void)
 
 					__setup_vlan(vlan_val, prio_val, mask);
 				}
+				
+				}
+
 
 			}
 		}
@@ -533,63 +650,132 @@ int switch_exist(void)
 	return 0;
 }
 
-static const char * country_to_code(char *ctry, int band)
+/**
+ * Low level function to load QCA WiFi driver.
+ * @testmode:	if true, load WiFi driver as test mode which is required in ATE mode.
+ */
+static void __load_wifi_driver(int testmode)
 {
-	if (strcmp(ctry, "US") == 0)
-		return "841";
-	else if (strcmp(ctry, "CA") == 0)
-		return "124";
-	else if (strcmp(ctry, "TW") == 0)
-		return "158";
-	else if (strcmp(ctry, "CN") == 0)
-		return "156";
-	else if (strcmp(ctry, "GB") == 0)
-		return "826";
-	else if (strcmp(ctry, "DE") == 0)
-		return "276";
-	else if (strcmp(ctry, "SG") == 0)
-		return "702";
-	else if (strcmp(ctry, "HU") == 0)
-		return "348";
-	else if (strcmp(ctry, "AU") == 0)
-		return "37";
-	else { // "DB"
-		if (band == 2)
-			return "392"; // ch1-ch14
-		else
-			return "100"; // 5G_ALL
-	}
-}
-
-void load_wifi_driver(void)
-{
-	char country[FACTORY_COUNTRY_CODE_LEN+1];
-	const char *code;
-	int i;
+	char country[FACTORY_COUNTRY_CODE_LEN + 1], code_str[6];
+	const char *umac_params[] = {
+		"vow_config", "OL_ACBKMinfree", "OL_ACBEMinfree", "OL_ACVIMinfree",
+		"OL_ACVOMinfree", "ar900b_emu", "frac", "intval", "atf_mode",
+		"fw_dump_options", "enableuartprint", "ar900b_20_targ_clk",
+		"max_descs", "qwrap_enable", "otp_mod_param", "max_active_peers",
+		"enable_smart_antenna",
+#if defined(RTCONFIG_WIFI_QCA9990_QCA9990) || defined(RTCONFIG_WIFI_QCA9994_QCA9994)
+		"nss_wifi_olcfg",
+#endif
+		NULL
+	}, **up;
+	int i, code;
+	char param[512], *s = &param[0], umac_nv[64], *val;
+	char *argv[30] = {
+		"modprobe", "-s", NULL
+	}, **v;
 	struct load_wifi_kmod_seq_s *p = &load_wifi_kmod_seq[0];
 
 	for (i = 0, p = &load_wifi_kmod_seq[i]; i < ARRAY_SIZE(load_wifi_kmod_seq); ++i, ++p) {
 		if (module_loaded(p->kmod_name))
 			continue;
 
-		modprobe(p->kmod_name);
+		v = &argv[2];
+		*v++ = p->kmod_name;
+		*param = '\0';
+		s = &param[0];
+#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
+		if (!strcmp(p->kmod_name, "ath_hal")) {
+			int ce_level = nvram_get_int("ce_level");
+			if (ce_level <= 0)
+				ce_level = 0xce;
+
+			*v++ = s;
+			s += sprintf(s, "ce_level=%d", ce_level);
+			s++;
+		}
+#endif
+		if (!strcmp(p->kmod_name, "umac")) {
+			if (!testmode) {
+				*v++ = "msienable=0";	/* FIXME: Enable MSI interrupt in future. */
+				for (up = &umac_params[0]; *up != NULL; up++) {
+					snprintf(umac_nv, sizeof(umac_nv), "qca_%s", *up);
+					if (!(val = nvram_get(umac_nv)))
+						continue;
+					*v++ = s;
+					s += sprintf(s, "%s=%s", *up, val);
+					s++;
+				}
+			}
+#if defined(RTCONFIG_WIFI_QCA9990_QCA9990) || defined(RTCONFIG_WIFI_QCA9994_QCA9994)
+			else {
+				*v++ = "testmode=1";
+				*v++ = "ahbskip=1";
+			}
+#endif
+		}
+
+#if defined(RTCONFIG_WIFI_QCA9990_QCA9990) || defined(RTCONFIG_WIFI_QCA9994_QCA9994)
+		if (!strcmp(p->kmod_name, "adf")) {
+			if (nvram_get("qca_prealloc_disabled") != NULL) {
+				*v++ = s;
+				s += sprintf(s, "prealloc_disabled=%d", nvram_get_int("qca_prealloc_disabled"));
+				s++;
+			}
+		}
+#endif
+
+		*v++ = NULL;
+		_eval(argv, NULL, 0, NULL);
+
 		if (p->load_sleep)
 			sleep(p->load_sleep);
 	}
 
-	//sleep(2);
-	eval("iwpriv", "wifi0", "disablestats", "0");
-	eval("iwpriv", "wifi1", "enable_ol_stats", "0");
-	///////////
-	strncpy(country, nvram_safe_get("wl0_country_code"), FACTORY_COUNTRY_CODE_LEN);
-	country[FACTORY_COUNTRY_CODE_LEN] = '\0';
-	code=country_to_code(country, 2);
-	eval("iwpriv", "wifi0", "setCountryID", (char*)code);
-	///////////
-	strncpy(country, nvram_safe_get("wl1_country_code"), FACTORY_COUNTRY_CODE_LEN);
-	country[FACTORY_COUNTRY_CODE_LEN] = '\0';
-	code=country_to_code(country, 5);
-	eval("iwpriv", "wifi1", "setCountryID", (char*)code);
+	if (!testmode) {
+		//sleep(2);
+#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
+		eval("iwpriv", "wifi0", "disablestats", "0");
+		eval("iwpriv", "wifi1", "enable_ol_stats", "0");
+#elif defined(RTCONFIG_WIFI_QCA9990_QCA9990) || defined(RTCONFIG_WIFI_QCA9994_QCA9994)
+		eval("iwpriv", "wifi0", "enable_ol_stats", "0");
+		eval("iwpriv", "wifi1", "enable_ol_stats", "0");
+#endif
+
+		strncpy(country, nvram_safe_get("wl0_country_code"), FACTORY_COUNTRY_CODE_LEN);
+		country[FACTORY_COUNTRY_CODE_LEN] = '\0';
+		code = country_to_code(country, 2);
+		if (code < 0)
+			code = country_to_code("DB", 2);
+		sprintf(code_str, "%d", code);
+		eval("iwpriv", "wifi0", "setCountryID", code_str);
+
+		strncpy(country, nvram_safe_get("wl1_country_code"), FACTORY_COUNTRY_CODE_LEN);
+		country[FACTORY_COUNTRY_CODE_LEN] = '\0';
+		code = country_to_code(country, 5);
+		if (code < 0)
+			code = country_to_code("DB", 5);
+		sprintf(code_str, "%d", code);
+		eval("iwpriv", "wifi1", "setCountryID", code_str);
+
+#if defined(RTAC88Q)
+		set_irq_smp_affinity(68, 1);	/* wifi0 = 2G ==> CPU0 */
+		set_irq_smp_affinity(90, 2);	/* wifi1 = 5G ==> CPU1 */
+#endif
+#if defined(RTCONFIG_SOC_IPQ8064)
+		tweak_wifi_ps(VPHY_2G);
+		tweak_wifi_ps(VPHY_5G);
+#endif
+	}
+}
+
+void load_wifi_driver(void)
+{
+	__load_wifi_driver(0);
+}
+
+void load_testmode_wifi_driver(void)
+{
+	__load_wifi_driver(1);
 }
 
 void set_uuid(void)
@@ -622,13 +808,9 @@ void init_wl(void)
 	int wlc_band;
 	if(!create_node)
 	{ 
-#if defined(QCA_WIFI_INS_RM)
-	   	if(nvram_get_int("sw_mode")==2)
-		{   
-	  		load_wifi_driver();
-			sleep(2);
-		}	
-#endif	
+		load_wifi_driver();
+		sleep(2);
+
 		dbG("init_wl:create wi node\n");
 		if ((wl_ifnames = strdup(nvram_safe_get("lan_ifnames"))) != NULL) 
 		{
@@ -646,8 +828,8 @@ void init_wl(void)
 			   		unit=-99;	
 			         if(unit>=0)
 			   	 {	    
-					dbG("\ncreate a wifi node %s from wifi%d\n",ifname,unit);
-					doSystem("wlanconfig %s create wlandev wifi%d wlanmode ap",ifname,unit);
+					dbG("\ncreate a wifi node %s from %s\n", ifname, get_vphyifname(unit));
+					doSystem("wlanconfig %s create wlandev %s wlanmode ap", ifname, get_vphyifname(unit));
    					sleep(1);
 				 }	
 			}
@@ -658,7 +840,8 @@ void init_wl(void)
 		if(nvram_get_int("sw_mode")==SW_MODE_REPEATER)
 		{ 
 		  	wlc_band=nvram_get_int("wlc_band");
-			doSystem("wlanconfig sta%d create wlandev wifi%d wlanmode sta nosbeacon",wlc_band,wlc_band);
+			doSystem("wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+				get_staifname(wlc_band), get_vphyifname(wlc_band));
 		}      
 #endif		
 	}
@@ -672,10 +855,8 @@ void fini_wl(void)
 	unsigned int m;	/* bit0~3: 2G, bit4~7: 5G */
 	char pid_path[] = "/var/run/hostapd_athXXX.pidYYYYYY";
 	char path[] = "/sys/class/net/ath001XXXXXX";
-#if defined(QCA_WIFI_INS_RM)
 	int i;
 	struct load_wifi_kmod_seq_s *wp;
-#endif
 
 	dbG("fini_wl:destroy wi node\n");
 	for (i = 0, unit = 0, sunit = 0, m = 0xFF; m > 0; ++i, ++sunit, m >>= 1) {
@@ -703,19 +884,16 @@ void fini_wl(void)
 #endif
 	create_node=0;
 
-#if defined(QCA_WIFI_INS_RM)
-	if(nvram_get_int("sw_mode")==2)
-	{   
-		for (i = ARRAY_SIZE(load_wifi_kmod_seq)-1, wp = &load_wifi_kmod_seq[i]; i >= 0; --i, --wp) {
-			if (!module_loaded(wp->kmod_name))
-				continue;
+	eval("ifconfig", (char*) VPHY_2G, "down");
+	eval("ifconfig", (char*) VPHY_5G, "down");
+	for (i = ARRAY_SIZE(load_wifi_kmod_seq)-1, wp = &load_wifi_kmod_seq[i]; i >= 0; --i, --wp) {
+		if (!module_loaded(wp->kmod_name))
+			continue;
 
-			modprobe_r(wp->kmod_name);
-			if (wp->remove_sleep)
-				sleep(wp->remove_sleep);
-		}
-	}	
-#endif
+		modprobe_r(wp->kmod_name);
+		if (wp->remove_sleep)
+			sleep(wp->remove_sleep);
+	}
 }
 
 static void chk_valid_country_code(char *country_code)
@@ -785,7 +963,7 @@ void init_syspara(void)
 #else
 	//TODO: separate for different chipset solution
 	nvram_set("et0macaddr", macaddr);
-#if (defined(PLN12) || defined(PLAC56) || defined(PLAC66U))
+#if (defined(PLN12) || defined(PLAC56))
 	nvram_set("et1macaddr", macaddr);
 #else
 	nvram_set("et1macaddr", macaddr2);
@@ -955,6 +1133,25 @@ char *__get_wlifname(int band, int subunit, char *buf)
 	return buf;
 }
 
+int get_wlsubnet(int band, const char *ifname)
+{
+	int subnet, sidx;
+	char buf[32];
+
+	for (subnet = 0, sidx = 0; subnet < MAX_NO_MSSID; subnet++)
+	{
+		if(!nvram_match(wl_nvname("bss_enabled", band, subnet), "1"))
+			continue;
+
+		if(strcmp(ifname, __get_wlifname(band, sidx, buf)) == 0)
+			return subnet;
+
+		sidx++;
+	}
+	return -1;
+}
+
+#if defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
 // only qca solution can reload it dynamically
 // only happened when qca_sfe=1
 // only loaded when unloaded, and unloaded when loaded
@@ -965,7 +1162,7 @@ void reinit_sfe(int unit)
 {
 	int prim_unit = wan_primary_ifunit();
 	int act = 1,i;	/* -1/0/otherwise: ignore/remove sfe/load sfe */
-	struct load_sfe_kmod_seq_s *p = &load_sfe_kmod_seq[0];
+	struct load_nat_accel_kmod_seq_s *p = &load_nat_accel_kmod_seq[0];
 #if defined(RTCONFIG_DUALWAN)
 	int nat_x = -1, l, t, link_wan = 1, link_wans_lan = 1;
 	int wans_cap = get_wans_dualwan() & WANSCAP_WAN;
@@ -1072,7 +1269,7 @@ void reinit_sfe(int unit)
 	if (act < 0)
 		return;
 
-	for (i = 0, p = &load_sfe_kmod_seq[i]; i < ARRAY_SIZE(load_sfe_kmod_seq); ++i, ++p) {
+	for (i = 0, p = &load_nat_accel_kmod_seq[i]; i < ARRAY_SIZE(load_nat_accel_kmod_seq); ++i, ++p) {
 		if (!act) {
 			/* remove sfe */
 			if (!module_loaded(p->kmod_name))
@@ -1093,6 +1290,7 @@ void reinit_sfe(int unit)
 		}			
 	}
 }
+#endif	/* RTCONFIG_SOC_QCA9557 || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) */
 
 char *get_wlifname(int unit, int subunit, int subunit_x, char *buf)
 {

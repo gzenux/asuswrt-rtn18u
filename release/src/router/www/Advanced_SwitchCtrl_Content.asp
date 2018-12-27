@@ -43,6 +43,12 @@ function initial(){
 		document.form.lacp_enabled.disabled = true;
 	}
 
+	if(based_modelid == "RT-AC5300R"){
+		var new_str;
+		new_str = document.getElementById("lacp_note").innerHTML.replace("LAN1", "LAN4");
+		document.getElementById("lacp_note").innerHTML = new_str.replace("LAN2", "LAN8");
+	}
+
 }
 
 function applyRule(){
@@ -122,7 +128,7 @@ function applyRule(){
 											</tr>
 
 											<tr>
-		      									<th><#NAT_Acceleration#></th>
+		      									<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(29,2);"><#NAT_Acceleration#></a></th>
 												<td>
 													<select name="ctf_disable_force" class="input_option">
 														<option class="content_input_fd" value="1" <% nvram_match("ctf_disable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
@@ -149,7 +155,7 @@ function applyRule(){
 														<option class="content_input_fd" value="1" <% nvram_match("lacp_enabled", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
 													</select>
 													&nbsp
-													<div id="lacp_desc"><span >Please enable Bonding (802.3ad) support of your wired client and connect it to Router LAN1 and LAN2.</span><div><!--untranslated-->
+													<div id="lacp_desc"><span id="lacp_note">Please enable Bonding (802.3ad) support of your wired client and connect it to Router LAN1 and LAN2.</span><div><!--untranslated-->
 												</td>
 											</tr> 											  
 										</table>

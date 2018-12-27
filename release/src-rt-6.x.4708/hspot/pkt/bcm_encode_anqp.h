@@ -1,7 +1,7 @@
 /*
  * Encode functions which provides encoding of ANQP packets as defined in 802.11u.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -83,8 +83,8 @@ int bcm_encode_anqp_domain_name(bcm_encode_t *pkt, uint8 nameLen, char *name);
 /* encode domain name list */
 int bcm_encode_anqp_domain_name_list(bcm_encode_t *pkt, uint16 domainLen, uint8 *domain);
 
-/* encode WFA service discovery */
-int bcm_encode_anqp_wfa_service_discovery(bcm_encode_t *pkt,
+/* encode ANQP query vendor specific */
+int bcm_encode_anqp_query_vendor_specific(bcm_encode_t *pkt,
 	uint16 serviceUpdateIndicator, uint16 dataLen, uint8 *data);
 
 /* encode ANQP query request vendor specific TLV */
@@ -95,19 +95,6 @@ int bcm_encode_anqp_query_request_vendor_specific_tlv(bcm_encode_t *pkt,
 /* encode ANQP query response vendor specific TLV */
 int bcm_encode_anqp_query_response_vendor_specific_tlv(bcm_encode_t *pkt,
 	uint8 serviceProtocolType, uint8 serviceTransactionId, uint8 statusCode,
-	int isNumService, uint8 numService,
 	uint16 queryLen, uint8 *queryData);
-
-/* encode WFDS request */
-int bcm_encode_anqp_wfds_request(bcm_encode_t *pkt,
-	uint8 serviceNameLen, uint8 *serviceName,
-	uint8 serviceInfoReqLen, uint8 *serviceInfoReq);
-
-/* encode WFDS response */
-int bcm_encode_anqp_wfds_response(bcm_encode_t *pkt,
-	uint32 advertisementId, uint16 configMethod,
-	uint8 serviceNameLen, uint8 *serviceName,
-	uint8 serviceStatus,
-	uint16 serviceInfoLen, uint8 *serviceInfo);
 
 #endif /* _BCM_ENCODE_ANQP_H_ */

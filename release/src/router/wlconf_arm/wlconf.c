@@ -1,7 +1,7 @@
 /*
  * Wireless Network Adapter Configuration Utility
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: wlconf.c 483004 2014-06-05 20:09:33Z $
+ * $Id: wlconf.c 515105 2014-11-13 06:54:30Z $
  */
 
 #include <typedefs.h>
@@ -1600,6 +1600,8 @@ wlconf_process_sta_config_entry(char *ifname, char *param_list)
 
 #define VIFNAME_LEN 16
 
+#define AMPDU_DENSITY_8USEC 6
+
 /* configure the specified wireless interface */
 int
 wlconf(char *name)
@@ -2212,6 +2214,12 @@ wlconf(char *name)
 			pam_mode = -1;
 		WL_IOVAR_SETINT(name, "mimo_preamble", pam_mode);
 	}
+
+	/* Making default ampdu_density to 8usec in order to improve throughput
+	 * of very small packet sizes (64, 88, 128,..).
+	 */
+	if (rev.chipnum == BCM43217_CHIP_ID)
+		WL_IOVAR_SETINT(name, "ampdu_rx_density", AMPDU_DENSITY_8USEC);
 
 	if ((rev.chipnum == BCM5357_CHIP_ID) || (rev.chipnum == BCM53572_CHIP_ID)) {
 		val = atoi(nvram_safe_get("coma_sleep"));

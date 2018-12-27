@@ -1,7 +1,7 @@
 /*
  * Tracing utility.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -69,9 +69,9 @@ void trace(const char *file, int line, const char *function,
 		char *time = getTimestamp(level);
 
 		if (level & TRACE_ERROR)
-			dbg("%sERROR!!! %s:%d %s()\n", time, file, line, function);
+			printf("%sERROR!!! %s:%d %s()\n", time, file, line, function);
 
-		dbg("%s", time);
+		printf("%s", time);
 		va_start(argp, format);
 #if !defined(BCMDRIVER)
 		vprintf(format, argp);
@@ -79,7 +79,7 @@ void trace(const char *file, int line, const char *function,
 		{
 			char buffer[128] = {0};
 			vsprintf(buffer, format, argp);
-			dbg(buffer);
+			printf(buffer);
 		}
 #endif /* !BCMDRIVER */
 		va_end(argp);
@@ -92,9 +92,9 @@ void traceMacAddr(const char *file, int line, const char *function,
 	if (level & gTraceLevel || level == TRACE_PRINTF) {
 		char *time = getTimestamp(level);
 		if (level & TRACE_ERROR)
-			dbg("%sERROR!!! %s:%d %s()\n", time, file, line, function);
+			printf("%sERROR!!! %s:%d %s()\n", time, file, line, function);
 
-		dbg("%s%s[6] = %02X:%02X:%02X:%02X:%02X:%02X\n", time, str,
+		printf("%s%s[6] = %02X:%02X:%02X:%02X:%02X:%02X\n", time, str,
 			mac->octet[0], mac->octet[1], mac->octet[2],
 			mac->octet[3], mac->octet[4], mac->octet[5]);
 	}
@@ -109,9 +109,9 @@ void traceHexDump(const char *file, int line, const char *function,
 		int sol, eol;
 
 		if (level & TRACE_ERROR)
-			dbg("%sERROR!!! %s:%d %s()\n", time, file, line, function);
+			printf("%sERROR!!! %s:%d %s()\n", time, file, line, function);
 
-		dbg("%s%s[%d] = ", time, str, len);
+		printf("%s%s[%d] = ", time, str, len);
 
 		sol = eol = 0;
 		for (i = 0; i < (int)len; i++) {
@@ -119,35 +119,35 @@ void traceHexDump(const char *file, int line, const char *function,
 				eol = i;
 
 				/* print ascii */
-				dbg("   ");
+				printf("   ");
 				for (j = sol; j < eol; j++) {
 					if (isprint(buf[j]))
-						dbg("%c", (char)buf[j]);
+						printf("%c", (char)buf[j]);
 					else
-						dbg(".");
+						printf(".");
 				}
-				dbg("\n   ");
+				printf("\n   ");
 				sol = eol;
 			}
 
-			dbg("%02X ", buf[i]);
+			printf("%02X ", buf[i]);
 		}
 
 		if (len > 0) {
 			/* pad to EOL */
 			for (j = 0; j < 16 - (i - sol); j++)
-				dbg("   ");
+				printf("   ");
 
 			/* print ascii */
-			dbg("   ");
+			printf("   ");
 			for (j = sol; j < i; j++) {
 				if (isprint(buf[j]))
-					dbg("%c", (char)buf[j]);
+					printf("%c", (char)buf[j]);
 				else
-					dbg(".");
+					printf(".");
 			}
 		}
 
-		dbg("\n");
+		printf("\n");
 	}
 }

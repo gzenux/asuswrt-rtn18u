@@ -509,7 +509,7 @@ int start_vlan(void)
 	close(s);
 
 #if (defined(RTCONFIG_QCA) || (defined(RTCONFIG_RALINK) && (defined(RTCONFIG_RALINK_MT7620) || defined(RTCONFIG_RALINK_MT7621))))
-	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")&&!nvram_match("switch_wantag", "hinet"))
+	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", ""))
 	{
 #if defined(RTCONFIG_QCA)
 		char *wan_base_if = "eth0";
@@ -524,14 +524,19 @@ int start_vlan(void)
 	}
 #endif
 #ifdef CONFIG_BCMWL5
-	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")&&!nvram_match("switch_wantag", "hinet"))
+	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", ""))
 		set_wan_tag((char *) &ifr.ifr_name);
 #endif
-#ifdef RTCONFIG_RGMII_BRCM5301X
+#if defined(RTCONFIG_RGMII_BRCM5301X) || defined(RTAC3100) || defined(RTAC5300R)
 	switch (get_model()) {
 		case MODEL_RTAC88U:
 		case MODEL_RTAC3100:
 		case MODEL_RTAC5300:
+			break;
+		case MODEL_RTAC5300R:
+			logmessage("trunk", "enable BCM port1 and port2 trunking");
+			eval("et", "-i", "eth0", "robowr", "0x32", "0x00", "0x0A");
+			eval("et", "-i", "eth0", "robowr", "0x32", "0x12", "0x06");
 			break;
 		default:
 			// port 5 ??
@@ -539,6 +544,10 @@ int start_vlan(void)
 			// port 4 link down
 			eval("et", "robowr", "0x0", "0x5c", "0x4a", "1");
 	}
+#endif
+
+#ifdef RTCONFIG_PORT_BASED_VLAN
+	set_port_based_vlan_config(&ifr.ifr_name);
 #endif
 
 	return 0;

@@ -1,7 +1,7 @@
 /*
  * ACSD shared include file
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: acsd.h 455470 2014-02-14 02:41:07Z $
+ * $Id: acsd.h 535462 2015-02-18 10:11:13Z $
  */
 
 #ifndef _acsd_h_
@@ -140,6 +140,11 @@ typedef struct ch_score {
 	int score;
 	int weight;
 } ch_score_t;
+
+typedef struct cns_score {
+	int highest_score;
+	int lowest_score;
+} cns_score_t;
 
 #define CH_SCORE_BSS		0	/* number of bss */
 #define CH_SCORE_BUSY		1	/* channel occupancy */

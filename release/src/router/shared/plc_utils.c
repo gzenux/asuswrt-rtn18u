@@ -351,8 +351,10 @@ int set_plc_all_led_onoff(int on)
 typedef struct _plc_image_header {
 	unsigned int	magic;		/* PLC Image Header Magic Number */
 	unsigned int	hdr_crc;	/* PLC Image Header crc checksum */
+#if defined(PLN12)
 	unsigned int	nvm_size;	/* PLC .nvm size */
 	unsigned int	nvm_crc;	/* PLC .nvm crc checksum */
+#endif
 	unsigned int	pib_size;	/* PLC .pib size */
 	unsigned int	pib_crc;	/* PLC .pib crc checksum */
 } plc_image_header;
@@ -463,7 +465,11 @@ static int match_crc(char *fname, unsigned int crc)
 /*
  * read .nvm and .pib from flash
  */
+#if defined(PLN12)
 static int plc_read_from_flash(char *nvm_path, char *pib_path)
+#else
+static int plc_read_from_flash(char *pib_path)
+#endif
 {
 	int rfd, wfd, ret = -1;
 	unsigned int rlen, wlen;
@@ -480,11 +486,12 @@ static int plc_read_from_flash(char *nvm_path, char *pib_path)
 		goto open_fail;
 	}
 	rlen = read(rfd, hdr, sizeof(plc_image_header));
-	// check header crc
-	if (hdr_match_crc(hdr) == 0)
+	// check header crc and magic number
+	if (hdr_match_crc(hdr) == 0 || hdr->magic != PLC_MAGIC)
 		goto mismatch;
 
 	memset(buf, 0, sizeof(buf));
+#if defined(PLN12)
 	// .nvm
 	wlen = hdr->nvm_size;
 	if ((wfd = open(nvm_path, O_RDWR|O_CREAT, 0666)) < 0) {
@@ -503,6 +510,7 @@ static int plc_read_from_flash(char *nvm_path, char *pib_path)
 	// check .nvm crc
 	if (match_crc(nvm_path, hdr->nvm_crc) == 0)
 		goto mismatch;
+#endif
 
 	// .pib
 	wlen = hdr->pib_size;
@@ -537,20 +545,26 @@ open_fail:
 /*
  * write .nvm and .pib to flash
  */
+#if defined(PLN12)
 static int plc_write_to_flash(char *nvm_path, char *pib_path)
+#else
+static int plc_write_to_flash(char *pib_path)
+#endif
 {
-	int fd;
+	int fd, fl;
 	plc_image_header *hdr = &header;
 	char cmd[128];
 
 	memset(hdr, 0, sizeof(plc_image_header));
 	hdr->magic = PLC_MAGIC;
 
+#if defined(PLN12)
 	// get length and crc of .nvm
 	if (get_crc(nvm_path, &hdr->nvm_size, &hdr->nvm_crc)) {
 		fprintf(stderr, "%s: Can't check crc of %s\n", __func__, nvm_path);
 		return -1;
 	}
+#endif
 
 	// get length and crc of .pib
 	if (get_crc(pib_path, &hdr->pib_size, &hdr->pib_crc)) {
@@ -568,10 +582,25 @@ static int plc_write_to_flash(char *nvm_path, char *pib_path)
 	close(fd);
 
 	// write to plc partition
-	sprintf(cmd, "cat %s %s %s > %s", HDR_PATH, nvm_path, pib_path, IMAGE_PATH);
-	system(cmd);
-	sprintf(cmd, "mtd-write -i %s -d %s", IMAGE_PATH, PLC_MTD_NAME);
-	system(cmd);
+	while (1) {
+		if ((fl = open(PLC_LOCK_FILE, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC, 0600)) >= 0) {
+#if defined(PLN12)
+			sprintf(cmd, "cat %s %s %s > %s", HDR_PATH, nvm_path, pib_path, IMAGE_PATH);
+#else
+			sprintf(cmd, "cat %s %s > %s", HDR_PATH, pib_path, IMAGE_PATH);
+#endif
+			system(cmd);
+			sprintf(cmd, "mtd-write -i %s -d %s", IMAGE_PATH, PLC_MTD_NAME);
+			system(cmd);
+			close(PLC_LOCK_FILE);
+			unlink(PLC_LOCK_FILE);
+			break;
+		}
+		else {
+			dbg("%s: PLC file lock! Try again after waiting 1 sec\n", __func__);
+			sleep(1);
+		}
+	}
 
 	unlink(HDR_PATH);
 	unlink(IMAGE_PATH);
@@ -580,43 +609,69 @@ static int plc_write_to_flash(char *nvm_path, char *pib_path)
 }
 
 /*
- * check .nvm and .pib of plc partition
- *
- * return
- * 1: vaild
- * 0: invaild or fail
+ * write default .nvm and .pib to flash
  */
-int vaild_plc_partition(void)
+int default_plc_write_to_flash(void)
 {
-	int fd, ret = 0;
-	plc_image_header *hdr = &header;
-	char cmd[32];
+	FILE *fp;
+	int len, i;
+	char cmd[64], buf[64];
+	char mac[18], dak[48], nmk[48];
+	unsigned char emac[ETHER_ADDR_LEN], enmk[PLC_KEY_LEN];
 
-	sprintf(cmd, "cat /dev/%s > %s", PLC_MTD_DEV, IMAGE_PATH);
-	system(cmd);
+#if defined(PLN12)
+	doSystem("cp %s %s", DEFAULT_NVM_PATH, BOOT_NVM_PATH);
+#endif
+	doSystem("cp %s %s", DEFAULT_PIB_PATH, BOOT_PIB_PATH);
 
-	memset(hdr, 0, sizeof(plc_image_header));
-	// header
-	if ((fd = open(IMAGE_PATH, O_RDONLY)) < 0) {
-		fprintf(stderr, "%s: Can't open %s\n", __func__, IMAGE_PATH);
-		goto open_fail;
+	// modify .pib
+	// MAC
+	if (!__getPLC_para(emac, OFFSET_PLC_MAC)) {
+		_dprintf("READ PLC MAC: Out of scope\n");
 	}
-	read(fd, hdr, sizeof(plc_image_header));
+	else {
+		if (emac[0] != 0xff) {
+			if (ether_etoa(emac, mac))
+				doSystem("/usr/local/bin/modpib %s -M %s", BOOT_PIB_PATH, mac);
 
-	// check header crc
-	if (hdr_match_crc(hdr) == 0)
-		goto mismatch;
+			// DAK
+			if (__getPLC_PWD(emac, buf)) {
+				sprintf(cmd, "/usr/local/bin/hpavkey -D %s", buf);
+				fp = popen(cmd, "r");
+				if (fp) {
+					len = fread(buf, 1, sizeof(buf), fp);
+					pclose(fp);
+					if (len > 1) {
+						buf[len - 1] = '\0';
 
-	if (hdr->magic == PLC_MAGIC)
-		ret = 1;
+						for (i = 0; i < PLC_KEY_LEN; i++) {
+							if (i == 0)
+								sprintf(dak, "%c%c", buf[0], buf[1]);
+							else
+								sprintf(dak, "%s:%c%c", dak, buf[i*2], buf[i*2+1]);
+						}
+						doSystem("/usr/local/bin/modpib %s -D %s", BOOT_PIB_PATH, dak);
+					}
+				}
+			}
+		}
+	}
 
-mismatch:
-	close(fd);
+	// NMK
+	if (!__getPLC_para(enmk, OFFSET_PLC_NMK))
+		_dprintf("READ PLC NMK: Out of scope\n");
+	else {
+		if (enmk[0] != 0xff && enmk[1] != 0xff && enmk[2] != 0xff) {
+			if (key_etoa(enmk, nmk))
+				doSystem("/usr/local/bin/modpib %s -N %s", BOOT_PIB_PATH, nmk);
+		}
+	}
 
-open_fail:
-	unlink(IMAGE_PATH);
-
-	return ret;
+#if defined(PLN12)
+	return plc_write_to_flash(BOOT_NVM_PATH, BOOT_PIB_PATH);
+#else
+	return plc_write_to_flash(BOOT_PIB_PATH);
+#endif
 }
 
 /*
@@ -625,67 +680,12 @@ open_fail:
  */
 int load_plc_setting(void)
 {
-	if (vaild_plc_partition() == 0) {
-		FILE *fp;
-		int len, i;
-		char cmd[64], buf[64];
-		char mac[18], dak[48], nmk[48];
-		unsigned char emac[ETHER_ADDR_LEN], enmk[PLC_KEY_LEN];
-
-		doSystem("cp %s %s", DEFAULT_NVM_PATH, BOOT_NVM_PATH);
-		doSystem("cp %s %s", DEFAULT_PIB_PATH, BOOT_PIB_PATH);
-
-		// modify .pib
-		// MAC
-		if (!__getPLC_para(emac, OFFSET_PLC_MAC)) {
-			_dprintf("READ PLC MAC: Out of scope\n");
-		}
-		else {
-			if (emac[0] != 0xff) {
-				if (ether_etoa(emac, mac))
-					doSystem("/usr/local/bin/modpib %s -M %s", BOOT_PIB_PATH, mac);
-
-				// DAK
-				if (__getPLC_PWD(emac, buf)) {
-					sprintf(cmd, "/usr/local/bin/hpavkey -D %s", buf);
-					fp = popen(cmd, "r");
-					if (fp) {
-						len = fread(buf, 1, sizeof(buf), fp);
-						pclose(fp);
-						if (len > 1) {
-							buf[len - 1] = '\0';
-
-							for (i = 0; i < PLC_KEY_LEN; i++) {
-								if (i == 0)
-									sprintf(dak, "%c%c", buf[0], buf[1]);
-								else
-									sprintf(dak, "%s:%c%c", dak, buf[i*2], buf[i*2+1]);
-							}
-							doSystem("/usr/local/bin/modpib %s -D %s", BOOT_PIB_PATH, dak);
-						}
-					}
-				}
-			}
-		}
-
-		// NMK
-		if (!__getPLC_para(enmk, OFFSET_PLC_NMK))
-			_dprintf("READ PLC NMK: Out of scope\n");
-		else {
-			if (enmk[0] != 0xff && enmk[1] != 0xff && enmk[2] != 0xff) {
-				if (key_etoa(enmk, nmk))
-					doSystem("/usr/local/bin/modpib %s -N %s", BOOT_PIB_PATH, nmk);
-			}
-		}
-
-		if (plc_write_to_flash(BOOT_NVM_PATH, BOOT_PIB_PATH))
-			return -1;
-	}
-	else {
-		if (plc_read_from_flash(BOOT_NVM_PATH, BOOT_PIB_PATH))
-			return -1;
-	}
-
+#if defined(PLN12)
+	if (plc_read_from_flash(BOOT_NVM_PATH, BOOT_PIB_PATH))
+#else
+	if (plc_read_from_flash(BOOT_PIB_PATH))
+#endif
+		return default_plc_write_to_flash();
 	return 0;
 }
 
@@ -704,7 +704,6 @@ void set_plc_flag(int flag)
 
 /*
  * write user .nvm or .pib to flash
- * case0: reset to default
  * case1: backup .nvm
  * case2: backup .pib
  * case3: backup .nvm and .pib
@@ -712,20 +711,23 @@ void set_plc_flag(int flag)
 void save_plc_setting(void)
 {
 	switch (atoi(nvram_safe_get("plc_flag"))) {
-	case 0:
-		plc_write_to_flash(DEFAULT_NVM_PATH, DEFAULT_PIB_PATH);
-		break;
-	case 1:
-		plc_write_to_flash(USER_NVM_PATH, BOOT_PIB_PATH);
-		break;
 	case 2:
 		_dprintf("sleep 10 second for wait pairing done!\n");
 		sleep(10);
+#if defined(PLN12)
 		plc_write_to_flash(BOOT_NVM_PATH, USER_PIB_PATH);
+#else
+		plc_write_to_flash(USER_PIB_PATH);
+#endif
+		break;
+#if defined(PLN12)
+	case 1:
+		plc_write_to_flash(USER_NVM_PATH, BOOT_PIB_PATH);
 		break;
 	case 3:
 		plc_write_to_flash(USER_NVM_PATH, USER_PIB_PATH);
 		break;
+#endif
 	default:
 		fprintf(stderr, "%s: wrong flag!", __func__);
 	}

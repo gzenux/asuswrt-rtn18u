@@ -16,7 +16,7 @@
 <script type="text/javascript" src="/validator.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script>
-if(parent.location.pathname.search("index") === -1) top.location.href = "../index.asp";
+if(parent.location.pathname !== "/index.asp" && parent.location.pathname !== "/") top.location.href = "../index.asp";
 
 <% wl_get_parameter(); %>
 var flag = '<% get_parameter("flag"); %>';
@@ -711,7 +711,7 @@ function change_smart_connect(v){
   		<tr id="smartcon_enable_line" style="display:none"><td><img style="margin-top:-2px; *margin-top:-10px;"src="/images/New_ui/networkmap/linetwo2.png"></td></tr>
   		<tr>
     			<td style="padding:5px 10px 0px 10px; ">
-  	  			<p class="formfonttitle_nwm" ><#Wireless_name#>(SSID)</p>
+  	  			<p class="formfonttitle_nwm" ><#QIS_finish_wireless_item1#></p>
       			<input style="*margin-top:-7px; width:260px;" id="wl_ssid" type="text" name="wl_ssid" value="<% nvram_get("wl_ssid"); %>" maxlength="32" size="22" class="input_25_table" autocomplete="off" autocorrect="off" autocapitalize="off">
       			<img style="margin-top:5px; *margin-top:-10px;"src="/images/New_ui/networkmap/linetwo2.png">
     			</td>

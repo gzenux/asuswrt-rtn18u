@@ -1,7 +1,7 @@
 /*
  * P2P discovery state machine.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -633,7 +633,7 @@ void bcm_p2p_discovery_process_wlan_event(void * context, uint32 eventType,
 				if (!pr.isP2P) {
 					char ssidbuf[4*32+1];
 					wl_format_ssid(ssidbuf, bi->SSID, bi->SSID_len);
-					dbg(" AP   %-20.20s   %s   %d\n", ssidbuf,
+					printf(" AP   %-20.20s   %s   %d\n", ssidbuf,
 						wl_ether_etoa(addr), pr.channel);
 					return;
 				}
@@ -641,7 +641,7 @@ void bcm_p2p_discovery_process_wlan_event(void * context, uint32 eventType,
 				if (pr.isP2PDeviceInfoDecoded) {
 					/* use device address */
 					addr = &pr.p2pDeviceInfo.deviceAddress;
-					dbg("P2P   %-20.20s   %s   %d\n",
+					printf("P2P   %-20.20s   %s   %d\n",
 						pr.p2pDeviceInfo.deviceName,
 						wl_ether_etoa(addr), pr.channel);
 				}

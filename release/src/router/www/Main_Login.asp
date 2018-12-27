@@ -18,6 +18,7 @@ body{
 	background-size: 1280px 1076px;
 	background-position: center 0%;
 	margin: 0px; 
+	background:#283437\9;
 }
 .title_name {
 	font-size: 40pt;
@@ -41,31 +42,29 @@ body{
 	width:480px;
 }
 .button{
-	background-color:#007AFF;
-	/*background:rgba(255,255,255,0.1);
-	border: solid 1px #6e8385;*/
+	background-color:#279FD9;
 	border-radius: 4px ;
 	transition: visibility 0s linear 0.218s,opacity 0.218s,background-color 0.218s;
 	height: 68px;
 	width: 300px;
 	font-size: 28pt;
 	color:#fff;
-	color:#000\9; /* IE6 IE7 IE8 */
 	text-align: center;
 	float:right; 
 	margin:50px 0px 0px 78px;
 	line-height:68px;
+	cursor:pointer;
 }
 .form_input{
 	background-color:rgba(255,255,255,0.2);
+	background-color:#576D73\9;
 	border-radius: 4px;
-	padding:26px 22px;
+	padding:23px 22px;
 	width: 480px;
 	border: 0;
-	height:25px;
+	height:30px;
 	color:#fff;
-	color:#000\9; /* IE6 IE7 IE8 */
-	font-size:28px
+	font-size:28px;
 }
 .nologin{
 	margin:10px 0px 0px 78px;
@@ -75,8 +74,8 @@ body{
 	border-radius: 5px;
 	width: 480px;
 	border: 0;
-	color:#fff;
-	color:#000\9; /* IE6 IE7 IE8 */
+	color:#FFF;
+	color:#FFF\9; /* IE6 IE7 IE8 */
 	font-size:28px;
 }
 .div_table{
@@ -139,9 +138,9 @@ body{
 		background-size: 75%;
 	}
 	.form_input{	
-		padding:13px 11px;
+		padding:10px 11px;
 		width: 100%;
-		height:25px;
+		height:30px;
 		font-size:16px
 	}
 	.button{
@@ -163,6 +162,10 @@ body{
 	}
 	.error_hint{
 		margin-left:10px; 
+	}
+	.error_hint1{
+		width: 100%;
+		font-size:14px;
 	}
 	.main_field_gap{
 		width:80%;
@@ -186,6 +189,15 @@ body{
 }
 </style>
 <script>
+/* add Array.prototype.forEach() in IE8 */
+if(typeof Array.prototype.forEach != 'function'){
+	Array.prototype.forEach = function(callback){
+		for(var i = 0; i < this.length; i++){
+			callback.apply(this, [this[i], i, this]);
+		}
+	};
+}
+
 var lock_time = '<% get_parameter("lock_time"); %>';
 var remaining_time;
 remaining_time = 60 - lock_time;
@@ -379,7 +391,7 @@ function disable_button(val){
 <body class="wrapper" onload="initial();">
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
 
-<form method="post" name="form" action="login.cgi" target="hidden_frame">
+<form method="post" name="form" action="login.cgi" target="">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
@@ -402,10 +414,10 @@ function disable_button(val){
 		<div id="login_filed">
 			<div class="p1 title_gap"><#Sign_in_title#></div>
 			<div class="title_gap">
-				<input type="text" id="login_username" name="login_username" tabindex="1" class="form_input" maxlength="20" autocapitalization="off" autocomplete="off" placeholder="<#HSDPAConfig_Username_itemname#>">
+				<input type="text" id="login_username" name="login_username" tabindex="1" class="form_input" maxlength="20" autocapitalize="off" autocomplete="off" placeholder="<#HSDPAConfig_Username_itemname#>">
 			</div>
 			<div class="password_gap">
-				<input type="password" name="login_passwd" tabindex="2" class="form_input" maxlength="16" placeholder="<#HSDPAConfig_Password_itemname#>" autocapitalization="off" autocomplete="off">
+				<input type="password" name="login_passwd" tabindex="2" class="form_input" maxlength="16" placeholder="<#HSDPAConfig_Password_itemname#>" autocapitalize="off" autocomplete="off">
 			</div>
 			<div class="error_hint" style="display:none;" id="error_status_field"></div>
 				<div class="button" onclick="login();"><#CTL_signin#></div>

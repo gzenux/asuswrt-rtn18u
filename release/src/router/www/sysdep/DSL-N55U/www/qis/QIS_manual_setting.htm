@@ -131,7 +131,7 @@ function showNomoISPServiceByIdx(idx) {
 		}
 	}
 	code +="</select>";
-	code +="<span id='STBPortMsg'> Default IPTV STB Port - LAN Port 1</span>";
+	code +="<span id='STBPortMsg'> Please connect the IPTV STB to LAN Port 1</span>";	/* untranslated */
 
 	if(first_element != 0) {
 		document.getElementById("Service_tr").style.display="";
@@ -198,7 +198,7 @@ function showRussiaISPServiceByIdx(c, idx){
 			}
 		}
 		code +="</select>";
-		code +="<span id='STBPortMsg'> Default IPTV STB Port - LAN Port 1</span>";
+		code +="<span id='STBPortMsg'> Please connect the IPTV STB to LAN Port 1</span>";	/* untranslated */
 		document.getElementById("Service").innerHTML = code;
 		ChgSVC(sel_idx);
 	}
@@ -226,7 +226,7 @@ function showRussiaISPService(c, o){
 			}
 		}
 		code +="</select>";
-		code +="<span id='STBPortMsg'> Default IPTV STB Port - LAN Port 1</span>";
+		code +="<span id='STBPortMsg'> Please connect the IPTV STB to LAN Port 1</span>";	/* untranslated */
 		document.getElementById("Service").innerHTML = code;
 		ChgSVC(sel_idx);
 	}
@@ -336,6 +336,8 @@ function ShowPVC(idx) {
 
 function ChgSVC(idx) {
 	if(ISP_List[idx][13] != "") {	//iptv idx
+		if(ISP_List[idx][5] == "ADSL+MOD")
+			document.getElementById("STBPortMsg").innerHTML = "Please connect the MOD(STB) to LAN Port 1";
 		showhide("STBPortMsg", 1);
 	}
 	else {
@@ -367,11 +369,11 @@ function QKfinish_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";
 }
 
-function submit_page(){
-	setIptvNumPvc();
-	if(parent.based_modelid == "DSL-AC68U"){
-		update_dsl_info();
-	}
+function submit_detect(){
+	document.form.current_page.value = "/qis/QIS_detect.htm";
+	document.form.next_page.value = "/qis/QIS_detect.htm";
+	if(parent.based_modelid == "DSL-AC68U")
+		document.form.action_script.value = "restart_dsl_autodet";
 	document.form.submit();
 }
 
@@ -478,11 +480,21 @@ function btnNext() {
 		document.form.dsltmp_cfg_iptv_idx.value = ISP_List[isp_idx][13];
 	}
 
+	setIptvNumPvc();
+
+	//Specific setting
+	if( document.form.dsltmp_cfg_country.value=='Thailand'
+		&& document.form.dsltmp_cfg_ispname.value=='3BB 15M/1.5M'
+	){
+		document.form.dsltmp_cfg_th3bb.value = "1";	//flag
+		document.form.dsltmp_cfg_modulation.value = "4";
+		document.form.dsltmp_cfg_annex.value = "3";
+	}
+
 	if (connection_type==0 || connection_type==1)
 	{
 		//pppoe or pppoa
 		document.form.next_page.value = "/qis/QIS_ppp_cfg_tmp.htm";
-		setIptvNumPvc();
 		document.form.submit();
 
 	}
@@ -490,7 +502,6 @@ function btnNext() {
 	{
 		//mer
 		document.form.next_page.value = "/qis/QIS_mer_cfg_tmp.htm";
-		setIptvNumPvc();
 		document.form.submit();
 
 	}
@@ -498,7 +509,6 @@ function btnNext() {
 	{
 		//bridge
 		document.form.next_page.value = "/qis/QIS_bridge_cfg_tmp.htm";
-		setIptvNumPvc();
 		document.form.submit();
 
 	}
@@ -506,7 +516,6 @@ function btnNext() {
 	{
 		//ipoa
 		document.form.next_page.value = "/qis/QIS_ipoa_cfg_tmp.htm";
-		setIptvNumPvc();
 		document.form.submit();
 
 	}
@@ -517,18 +526,6 @@ function btnNext() {
 	}
 }
 
-function update_dsl_info(){
-	$.ajax({
-		url: '/start_dsl_autodet.asp',
-		dataType: 'script',
-		error: function(xhr){
-			update_dsl_info();		
-		},
-		success: function(response){
-				// trigger hook only
-		}
-	});	
-}
 </script>
 </head>
 
@@ -556,6 +553,9 @@ function update_dsl_info(){
 <input type="hidden" name="dsltmp_cfg_iptv_enable" value="0">
 <input type="hidden" name="dsltmp_transmode" value="atm">
 <input type="hidden" name="dsltmp_qis_dsl_pvc_set" value="1">
+<input type="hidden" name="dsltmp_cfg_th3bb" value="0">
+<input type="hidden" name="dsltmp_cfg_modulation" value="">
+<input type="hidden" name="dsltmp_cfg_annex" value="">
 
 <div class="QISmain">
 	<!--
@@ -570,11 +570,6 @@ function update_dsl_info(){
 							<span class="description_down"><#Manual_Setting_Title#></span>
 						</td>
 					</tr>
-					<!--tr id="home_button">
-						<td align="right">
-							<img onclick="gotoIndex();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
-						</td>
-					</tr-->
 				</table>
 			</div>
 			<div style="margin:5px;"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
@@ -665,7 +660,7 @@ function update_dsl_info(){
 	</div>
 
 	<div class="apply_gen" style="margin-top:10px">
-		<span id="bottom_btn1"><input type="button" value="<#CTL_Detect_Again#>" tabindex="11" onclick="submit_page();" class="button_gen" ></span>
+		<span id="bottom_btn1"><input type="button" value="<#CTL_Detect_Again#>" tabindex="11" onclick="submit_detect();" class="button_gen" ></span>
 		<input type="button" value="<#CTL_next#>" tabindex="10" onclick="btnNext();" class="button_gen">
 	</div>
 

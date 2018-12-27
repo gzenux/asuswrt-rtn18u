@@ -84,7 +84,7 @@ typedef struct {
 int g_wsc_configured = 0;
 int g_isEnrollee[MAX_NR_WL_IF] = { 0, };
 
-int getCountryRegion5G(const char *countryCode, int *warning);
+int getCountryRegion5G(const char *countryCode, int *warning, int IEEE80211H);
 
 static void 
 iwprivSet(const char *ifname, const char *name, const char *value)
@@ -303,8 +303,16 @@ int getChannelNumMax2G(int region)
 	return 14;
 }
 
-int getCountryRegion5G(const char *countryCode, int *warning)
+int getCountryRegion5G(const char *countryCode, int *warning, int IEEE80211H)
 {
+#ifdef RTCONFIG_RALINK_DFS
+	if (IEEE80211H)
+	{
+		if(	(!strcasecmp(countryCode, "GB")) )
+			return 18;
+	}
+#endif	/* RTCONFIG_RALINK_DFS */
+
 	if (		(!strcasecmp(countryCode, "AE")) ||
 			(!strcasecmp(countryCode, "AL")) ||
 #ifdef RTCONFIG_LOCALE2012
@@ -647,7 +655,7 @@ static inline void __choose_mrate(char *prefix, int *mcast_phy, int *mcast_mcs)
 	int phy = 3, mcs = 7;			/* HTMIX 65/150Mbps */
 	char tmp[128];
 
-	if (ipv6_enabled() && nvram_get_int("ipv6_radvd")) {
+	if (ipv6_enabled() && nvram_get_int(ipv6_nvname("ipv6_radvd"))) {
 		if (!strncmp(prefix, "wl0", 3)) {
 			phy = 2; mcs = 2;	/* 2G: OFDM 12Mbps */
 		} else {
@@ -693,6 +701,7 @@ int gen_ralink_config(int band, int is_iNIC)
 #endif
 	int sw_mode  = nvram_get_int("sw_mode");
 	int wlc_band = nvram_get_int("wlc_band");
+	int IEEE80211H = 0;
 
 	if (!is_iNIC)
 	{
@@ -729,12 +738,17 @@ int gen_ralink_config(int band, int is_iNIC)
 		fprintf(fp, "CountryRegion=%d\n", 5);
 	}
 
+#ifdef RTCONFIG_RALINK_DFS
+	if(band && nvram_match(strcat_r(prefix, "IEEE80211H", tmp), "1"))
+		IEEE80211H = 1;
+#endif	/* RTCONFIG_RALINK_DFS */
+
 	//CountryRegion for A band
 	str = nvram_safe_get(strcat_r(prefix, "country_code", tmp));
 	if (str && strlen(str))
 	{
 		int region;
-		region = getCountryRegion5G(str, &warning);
+		region = getCountryRegion5G(str, &warning, IEEE80211H);
 		fprintf(fp, "CountryRegionABand=%d\n", region);
 	}
 	else
@@ -752,7 +766,7 @@ int gen_ralink_config(int band, int is_iNIC)
 #define COUNTRY_IN
 #endif
 #ifdef COUNTRY_IN
-		if((nvram_match("wl0_country_code", "US"))) //IN using 2G ch 1~11
+		if((nvram_match("wl_reg_2g", "2G_CH11"))) //IN using 2G_CH11
 			fprintf(fp, "CountryCode=%s\n", "IN");
 		else
 		{ // regular CE with 2G ch 1~13
@@ -1250,6 +1264,11 @@ int gen_ralink_config(int band, int is_iNIC)
 		{
 			if (atoi(str) == 0)
 			{
+#ifdef RTCONFIG_RALINK_DFS
+				if(band && IEEE80211H)
+					fprintf(fp, "AutoChannelSelect=%d\n", 1);			//NEED rule 1 for DFS
+				else
+#endif	/* RTCONFIG_RALINK_DFS */
 				fprintf(fp, "AutoChannelSelect=%d\n", 2);
 				memset(tmpstr, 0x0, sizeof(tmpstr));
 				if (band && nvram_get_int(strcat_r(prefix, "bw", tmp)) > 0) {
@@ -1259,6 +1278,11 @@ int gen_ralink_config(int band, int is_iNIC)
 					else
 #endif
 					sprintf(tmpstr,"%d",165);// skip 165 in A band when bw setting to 20/40Mhz or 40Mhz.
+
+#ifdef RTCONFIG_RALINK_DFS
+					if(band && IEEE80211H)
+						sprintf(tmpstr,"%s;%d",tmpstr,116);	//skip 116 when BW > 20MHz
+#endif	/* RTCONFIG_RALINK_DFS */
 				}
 
 #ifdef RTCONFIG_MTK_TW_AUTO_BAND4 //NCC: for 5G BAND24 & BAND14
@@ -1266,11 +1290,26 @@ int gen_ralink_config(int band, int is_iNIC)
 				{	
 					if(strlen(tmpstr))
 						sprintf(tmpstr,"%s;",tmpstr);
+					//autochannel selection  but skip 5G band1 & band2, TW only
+					if(
+#if defined(RTCONFIG_TCODE)
+					  !strncmp(nvram_safe_get("territory_code"), "TW", 2) ||
 
-					if(nvram_match("reg_spec","NCC"))  //skip band2
-						sprintf(tmpstr,"%s%d;%d;%d;%d",tmpstr,52,56,60,64);
-					else if (nvram_match("reg_spec","NCC2")) //skip band1
-						sprintf(tmpstr,"%s%d;%d;%d;%d",tmpstr,36,40,44,48);
+#endif
+#ifdef RTCONFIG_HAS_5G
+					   nvram_match("wl_reg_5g","5G_BAND24") ||
+#endif
+#if defined(RTCONFIG_NEW_REGULATION_DOMAIN)
+					   (nvram_match("reg_spec","NCC")  || 
+                                            nvram_match("reg_spec","NCC2")) 
+#else
+					   
+					   (nvram_match(strcat_r(prefix, "country_code", tmp), "TW") ||
+					    nvram_match(strcat_r(prefix, "country_code", tmp), "Z3"))
+#endif
+					 )
+						sprintf(tmpstr,"%s%d;%d;%d;%d;%d;%d;%d;%d",tmpstr,36,40,44,48,52,56,60,64);
+
 				}	
 #endif				
 				
@@ -1316,12 +1355,7 @@ int gen_ralink_config(int band, int is_iNIC)
 	fprintf(fp, "IEEE8021X=%s\n", tmpstr);
 
 
-#ifdef RTCONFIG_RALINK_DFS
-	if(band)
-		fprintf(fp, "IEEE80211H=1\n");
-	else
-#endif
-		fprintf(fp, "IEEE80211H=0\n");
+	fprintf(fp, "IEEE80211H=%d\n", IEEE80211H);
 
 #ifdef RTCONFIG_AP_CARRIER_DETECTION
 #if defined(RTAC1200HP)

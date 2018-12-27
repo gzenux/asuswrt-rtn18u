@@ -25,9 +25,8 @@ else
 	var smart_connect_tmp = '<% nvram_get("smart_connect_x"); %>';
 
 var wifi_Psk_orig = '<% nvram_get("wifi_psk"); %>';
-var IsDefPsk = 0;
+var IsDefPsk = 1;
 if( ( parent.document.QKform.sw_mode.value == 2 ) &&  ( wifi_Psk_orig != '' ) ) {
-	IsDefPsk = 1;
 	if ( wifi_Psk_orig != wl0_wpa_psk_orig )
 		IsDefPsk = 0; 
 	else if( band5g_support && wifi_Psk_orig != wl1_wpa_psk_orig )
@@ -43,21 +42,36 @@ var wlc_state = '0';
 var wlc_sbstate = '0';
 var wlc_scan_state = '0';
 var systime = new Date();
-Date.prototype.stdTimezoneOffset_north = function() {
+
+Date.prototype.stdTimezoneOffset_if_dst = function() {
     var jan = new Date(this.getFullYear(), 0, 1);
     var jul = new Date(this.getFullYear(), 6, 1);
-    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+    if(jan != jul)
+    	return true;	// w/ DST
+    else
+    	return false;	// w/o DST
 }
 
-Date.prototype.stdTimezoneOffset_south = function() {
+Date.prototype.stdTimezoneOffset_withoutDST = function() {
     var jan = new Date(this.getFullYear(), 0, 1);
     var jul = new Date(this.getFullYear(), 6, 1);
-    return Math.min(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());	//DST w/o offset value
 }
 
 Date.prototype.dst = function() {
-		//alert(this.getTimezoneOffset()+" <= north:"+this.stdTimezoneOffset_north()+" ; "+this.getTimezoneOffset()+" => south:"+this.stdTimezoneOffset_south());
-    return (this.getTimezoneOffset() < this.stdTimezoneOffset_north() || this.getTimezoneOffset() > this.stdTimezoneOffset_south());
+	if(this.stdTimezoneOffset_if_dst()){	// w/ DST		
+		if(this.getTimezoneOffset() == this.stdTimezoneOffset_withoutDST()){
+			return 2; //is in not DST now
+		}	
+		else if(this.getTimezoneOffset() < this.stdTimezoneOffset_withoutDST()){
+			return 3; //is in DST now
+		}
+		else
+			return 2;
+	}
+	else{	// w/o DST
+		return 1;
+	}
 }
 
 var isDefault = false;
@@ -141,14 +155,17 @@ function QKWireless_load_body(){
 	parent.set_step("t3");	
 	
 	/*To Handle copy, paste for mobile device*/
-	document.getElementById("wl0_ssid").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
-	document.getElementById("wl0_wpa_psk").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
-	document.getElementById('wl1_ssid').addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(5);},100);});
-	document.getElementById('wl1_wpa_psk').addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(5);},100);});
-	if(wl_info.band5g_2_support){
-		document.getElementById('wl2_ssid').addEventListener("paste", function(e){setTimeout(function(){Sync_5ghz(5);},100);});
-		document.getElementById('wl2_wpa_psk').addEventListener("paste", function(e){setTimeout(function(){Sync_5ghz(5);},100);});
+	if (document.getElementById("wl0_ssid").addEventListener){
+		document.getElementById("wl0_ssid").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
+		document.getElementById("wl0_wpa_psk").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
+		document.getElementById('wl1_ssid').addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(5);},100);});
+		document.getElementById('wl1_wpa_psk').addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(5);},100);});
+		if(wl_info.band5g_2_support){
+			document.getElementById('wl2_ssid').addEventListener("paste", function(e){setTimeout(function(){Sync_5ghz(5);},100);});
+			document.getElementById('wl2_wpa_psk').addEventListener("paste", function(e){setTimeout(function(){Sync_5ghz(5);},100);});
+		}
 	}
+
 	if(parent.ISMOBILE){
 		hideObjs();
 		document.getElementById("field_general").style.display = "none";
@@ -739,12 +756,13 @@ function submitForm(){
 			document.getElementById("wl2_key4").name = "wl2.1_key4";
 		}
 
-		if(sdk_7_up){
+		if(sdk_7){
 			document.form.sw_mode.value = 3;
 			document.form.wlc_psta.value = 2;
 		}else{
 			document.form.sw_mode.value = 2;
 		}
+
 		document.form.flag.value = "wlcconnect";
 		document.form.action_script.value = "reboot";
 		parent.document.getElementById("stassid").innerHTML = document.form.wlc_ssid.value;
@@ -787,13 +805,19 @@ function submitForm(){
 			&& !parent.swisscom_support)
 	{
 				document.form.time_zone.disabled = false;				
-				if(systime.dst()){					
+				if(systime.dst() == 2){		// w/ DST and is not in DST now		
+					if(timezones_dst[systime.getTimezoneOffset()] != "")
+						document.form.time_zone.value = timezones_dst[systime.getTimezoneOffset()];
+					else if(document.form.time_zone.value == "")
+						document.form.time_zone.value = timezones_dst[0];
+				}
+				else if(systime.dst() == 3){		// w/ DST and is in DST now
 					if(timezones_dst[systime.getTimezoneOffset()+60] != "")
 						document.form.time_zone.value = timezones_dst[systime.getTimezoneOffset()+60];
 					else if(document.form.time_zone.value == "")
 						document.form.time_zone.value = timezones_dst[0];
 				}
-				else{
+				else{	// w/o DST
 					if(timezones[systime.getTimezoneOffset()] != "")
 						document.form.time_zone.value = timezones[systime.getTimezoneOffset()];	
 					else if(document.form.time_zone.value == "")
@@ -822,7 +846,8 @@ function submitForm(){
 			if(document.form.smart_connect_t[0].checked == true){
 				document.form.smart_connect_x.value = 1;
 				document.form.wl1_wpa_psk.value = document.form.wl0_wpa_psk.value;
-				document.form.wl2_wpa_psk.value = document.form.wl0_wpa_psk.value; 		
+				if(wl_info.band5g_2_support)
+					document.form.wl2_wpa_psk.value = document.form.wl0_wpa_psk.value; 		
 			}else if(document.form.smart_connect_t[1].checked == true)
 				document.form.smart_connect_x.value = 0;
 	}
@@ -842,9 +867,11 @@ function submitForm(){
 	}
 
 	document.form.submit();
-	setTimeout(function(){
-		location.href = "/qis/QIS_finish.htm";
-	}, 500)
+	if(document.form.sw_mode.value == "1" || document.form.sw_mode.value == "3"){
+		setTimeout(function(){
+			location.href = "/qis/QIS_finish.htm";
+		}, 500)
+	}
 }
 
 function timezone_by_preferred_lang(v){
@@ -1177,9 +1204,11 @@ function change_smart_con(v){
 		document.getElementById("wl_unit_field_1").style.display = "none";
 		document.getElementById("wl_unit_field_2").style.display = "none";
 		document.getElementById("wl_unit_field_3").style.display = "none";
-		document.getElementById("wl_unit_field_4").style.display = "none";
-		document.getElementById("wl_unit_field_5").style.display = "none";
-		document.getElementById("wl_unit_field_6").style.display = "none";
+		if(wl_info.band5g_2_support){
+			document.getElementById("wl_unit_field_4").style.display = "none";
+			document.getElementById("wl_unit_field_5").style.display = "none";
+			document.getElementById("wl_unit_field_6").style.display = "none";
+		}
 		document.getElementById("wl0_desc_name").innerHTML = "Tri-band Smart Connect Security";
 		document.getElementById("wl0_desc_name").style = "padding-bottom:10px";
 		parent.document.getElementById("contentM").height = contentM_height_orig;
@@ -1187,9 +1216,11 @@ function change_smart_con(v){
 		document.getElementById("wl_unit_field_1").style.display = "";
 		document.getElementById("wl_unit_field_2").style.display = "";
 		document.getElementById("wl_unit_field_3").style.display = "";
-		document.getElementById("wl_unit_field_4").style.display = "";
-		document.getElementById("wl_unit_field_5").style.display = "";
-		document.getElementById("wl_unit_field_6").style.display = "";
+		if(wl_info.band5g_2_support){
+			document.getElementById("wl_unit_field_4").style.display = "";
+			document.getElementById("wl_unit_field_5").style.display = "";
+			document.getElementById("wl_unit_field_6").style.display = "";
+		}
 		document.getElementById("wl0_desc_name").innerHTML = "2.4 GHz - <#Security#>";
 		parent.document.getElementById("contentM").height = document.body.scrollHeight + 20;
 	}
@@ -1212,7 +1243,7 @@ function submitenter(myfield,e)
 }
 
 function RP_useParentSetting(){
-	if(document.getElementById('RP_parentSetting').checked == true || IsDefPsk == 1){
+	if(document.getElementById('RP_parentSetting').checked == true){
 		if(parent.document.QKform.wlc_band.value == 0){
 				document.form.wl0_ssid.value = decodeURIComponent(show_str_ssid(parent.document.QKform.wlc_ssid.value+'_RPT'));
 
@@ -1283,36 +1314,20 @@ function RP_useParentSetting(){
 				document.form.wl2_wpa_psk.value = parent.document.QKform.wlc_wpa_psk.value;		
 			
 		}
-
-		if (document.getElementById('RP_parentSetting').checked == true ){
-			document.getElementById('sync_with_2ghz').checked = false;
-			inputCtrl(document.form.wl0_ssid,0);
-			inputCtrl(document.form.wl0_wpa_psk,0);
-			if(band5g_support){
-				inputCtrl(document.form.sync_with_2ghz,0);
-				inputCtrl(document.form.wl1_ssid,0);
-				inputCtrl(document.form.wl1_wpa_psk,0);
-			}
-			if(wl_info.band5g_2_support){
-				document.getElementById('sync_with_5ghz').checked = false;
-				inputCtrl(document.form.sync_with_5ghz,0);
-				inputCtrl(document.form.wl2_ssid,0);
-				inputCtrl(document.form.wl2_wpa_psk,0);
-			}
+		
+		document.getElementById('sync_with_2ghz').checked = false;
+		inputCtrl(document.form.wl0_ssid,0);
+		inputCtrl(document.form.wl0_wpa_psk,0);
+		if(band5g_support){				
+			inputCtrl(document.form.sync_with_2ghz,0);
+			inputCtrl(document.form.wl1_ssid,0);
+			inputCtrl(document.form.wl1_wpa_psk,0);
 		}
-		else {
-			inputCtrl(document.form.wl0_ssid,1);
-			inputCtrl(document.form.wl0_wpa_psk,1);
-			if(band5g_support){
-				inputCtrl(document.form.sync_with_2ghz,1);
-				inputCtrl(document.form.wl1_ssid,1);
-				inputCtrl(document.form.wl1_wpa_psk,1);
-			}
-			if(wl_info.band5g_2_support){
-				inputCtrl(document.form.sync_with_5ghz,1);
-				inputCtrl(document.form.wl2_ssid,1);
-				inputCtrl(document.form.wl2_wpa_psk,1);
-			}
+		if(wl_info.band5g_2_support){
+			document.getElementById('sync_with_5ghz').checked = false;
+			inputCtrl(document.form.sync_with_5ghz,0);
+			inputCtrl(document.form.wl2_ssid,0);
+			inputCtrl(document.form.wl2_wpa_psk,0);
 		}
 	}	
 	else{
@@ -1569,7 +1584,7 @@ function detect_LANStatus(_flag){
 				</div>
 				<div class="row_end">
 					<label>Key</label>
-					<input id="wl0_wpa_psk_m" name="wl0_wpa_psk_m" type="text" onBlur="switchType(this, false);" onFocus="switchType(this, true);" placeholder="<#Network_key#>" maxlength="64" autocapitalization="off" autocomplete="off">	
+					<input id="wl0_wpa_psk_m" name="wl0_wpa_psk_m" type="text" onBlur="switchType(this, false);" onFocus="switchType(this, true);" placeholder="<#Network_key#>" maxlength="64" autocapitalize="off" autocomplete="off">	
 				</div>
 	</fieldset>	
 	<br />

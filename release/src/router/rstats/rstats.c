@@ -499,6 +499,10 @@ static void load(int new)
 #else
 		ether_atoe(nvram_safe_get("et0macaddr"), mac);
 #endif
+#ifdef RTCONFIG_GMAC3
+        	if(nvram_match("gmac3_enable", "1"))
+			ether_atoe(nvram_safe_get("et2macaddr"), mac);
+#endif
 		sprintf(save_path + n, "tomato_rstats_%02x%02x%02x%02x%02x%02x.gz",
 			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	}
@@ -807,6 +811,13 @@ static void calc(void)
 
 		// <rx bytes, packets, errors, dropped, fifo errors, frame errors, compressed, multicast><tx ...>
 		if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &counter[0], &counter[1]) != 2) continue;
+
+//TODO: like httpd/web.c ej_netdev()
+#ifdef RTCONFIG_BCM5301X_TRAFFIC_MONITOR
+		if(strncmp(ifname, "vlan", 4)==0){
+			traffic_wanlan(ifname, &counter[0], &counter[1]);
+		}
+#endif
 
 		if (!netdev_calc(ifname, ifname_desc, (unsigned long*) &counter[0], (unsigned long*) &counter[1], ifname_desc2, (unsigned long*) &rx2, (unsigned long*) &tx2))
 			continue;

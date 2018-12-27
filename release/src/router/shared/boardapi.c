@@ -21,7 +21,7 @@
 #include "rtkswitch.h"
 #endif
 
-#ifdef RTCONFIG_EXT_RTL8365MB
+#if defined(RTCONFIG_EXT_RTL8365MB) || defined(RTCONFIG_EXT_RTL8370MB)
 #include <rtk_switch.h>
 #endif
 
@@ -32,7 +32,7 @@ static int gpio_values_loaded = 0;
 int btn_rst_gpio = 0x0ff;
 int btn_wps_gpio = 0xff;
 
-static int led_gpio_table[LED_ID_MAX];
+int led_gpio_table[LED_ID_MAX];
 
 int wan_port = 0xff;
 int fan_gpio = 0xff;
@@ -53,10 +53,14 @@ int btn_led_gpio = 0xff;
 int btn_lte_gpio = 0xff;
 #endif
 #ifdef RTCONFIG_SWMODE_SWITCH
+#if defined(PLAC66U)
+int btn_swmode_sw_router = 0xff;
+#else
 int btn_swmode_sw_router = 0xff;
 int btn_swmode_sw_repeater = 0xff;
 int btn_swmode_sw_ap = 0xff;
-#endif
+#endif	/* Model */
+#endif	/* RTCONFIG_SWMODE_SWITCH */
 #ifdef RTCONFIG_QTN
 int reset_qtn_gpio = 0xff;
 #endif
@@ -81,8 +85,12 @@ int init_gpio(void)
 		, "btn_wltog_gpio"
 #endif
 #ifdef RTCONFIG_SWMODE_SWITCH
+#if defined(PLAC66U)
+		, "btn_swmode1_gpio"
+#else
 		, "btn_swmode1_gpio", "btn_swmode2_gpio", "btn_swmode3_gpio"
-#endif
+#endif	/* Mode */
+#endif	/* RTCONFIG_SWMODE_SWITCH */
 #ifdef RTCONFIG_TURBO
 		, "btn_turbo_gpio"
 #endif
@@ -124,7 +132,7 @@ int init_gpio(void)
 #ifdef RTCONFIG_MMC_LED
 		, "led_mmc_gpio"
 #endif
-#ifdef RTCONFIG_RTAC5300
+#if defined(RTCONFIG_RTAC5300) || defined(RTCONFIG_RTAC5300R)
 		, "rpm_fan_gpio"
 #endif
 #ifdef RTCONFIG_RESET_SWITCH
@@ -136,8 +144,8 @@ int init_gpio(void)
 	int i;
 
 #ifdef RTCONFIG_INTERNAL_GOBI
-	void get_gpio_values_once(void);
-	get_gpio_values_once();		// for filling data to led_gpio_table[]
+	void get_gpio_values_once(int);
+	get_gpio_values_once(0);		// for filling data to led_gpio_table[]
 #endif	/* RTCONFIG_INTERNAL_GOBI */
 
 	/* btn input */
@@ -208,7 +216,7 @@ int init_gpio(void)
 		set_gpio(gpio_pin, enable);
 	}
 
-#ifdef RTAC5300
+#if defined(RTCONFIG_RTAC5300) || defined(RTCONFIG_RTAC5300R)
 	// RPM of FAN
 	if((gpio_pin = (use_gpio = nvram_get_int("rpm_fan_gpio")) & 0xff) != 0xff){
 	enable = (use_gpio&GPIO_ACTIVE_LOW)==0 ? 1 : 0;
@@ -232,9 +240,13 @@ int set_pwr_usb(int boolOn){
 
 	switch(get_model()) {
 		case MODEL_RTAC68U:
-			if((nvram_get_int("HW_ver") != 170) &&
-			   (atof(nvram_safe_get("HW_ver")) != 1.10) &&
-			   (atof(nvram_safe_get("HW_ver")) != 2.10))
+			if ((nvram_get_int("HW_ver") != 170) &&
+			    (nvram_get_double("HW_ver") != 1.10) &&
+			    (nvram_get_double("HW_ver") != 1.85) &&
+			    (nvram_get_double("HW_ver") != 1.90) &&
+			    (nvram_get_double("HW_ver") != 1.95) &&
+			    (nvram_get_double("HW_ver") != 2.10) &&
+			    (nvram_get_double("HW_ver") != 2.20))
 				return 0;
 			break;
 	}
@@ -269,11 +281,11 @@ static int __get_gpio(char *name)
 }
 
 // this is shared by every process, so, need to get nvram for first time it called per process
-void get_gpio_values_once(void)
+void get_gpio_values_once(int force)
 {
 	int i;
 	//int model;
-	if (gpio_values_loaded) return;
+	if (gpio_values_loaded && !force) return;
 
 	gpio_values_loaded = 1;
 	//model = get_model();
@@ -324,7 +336,7 @@ void get_gpio_values_once(void)
 	led_gpio_table[LED_SIG4] = __get_gpio("led_sig4_gpio");
 #endif
 
-#ifdef RTAC5300
+#if defined(RTCONFIG_RTAC5300) || defined(RTCONFIG_RTAC5300R)
 	led_gpio_table[RPM_FAN] = __get_gpio("rpm_fan_gpio");
 #endif
 
@@ -340,10 +352,14 @@ void get_gpio_values_once(void)
 #endif
 
 #ifdef RTCONFIG_SWMODE_SWITCH
+#if defined(PLAC66U)
+	btn_swmode_sw_router = __get_gpio("btn_swmode1_gpio");
+#else	
 	btn_swmode_sw_router = __get_gpio("btn_swmode1_gpio");
 	btn_swmode_sw_repeater = __get_gpio("btn_swmode2_gpio");
 	btn_swmode_sw_ap = __get_gpio("btn_swmode3_gpio");
-#endif
+#endif	/* Model */
+#endif	/* RTCONFIG_SWMODE_SWITCH */
 
 #ifdef RTCONFIG_WIRELESS_SWITCH
 	btn_wifi_sw = __get_gpio("btn_wifi_gpio");
@@ -370,7 +386,7 @@ int button_pressed(int which)
 	int use_gpio;
 	int gpio_value;
 
-	get_gpio_values_once();
+	get_gpio_values_once(0);
 	switch(which) {
 		case BTN_RESET:
 			use_gpio = btn_rst_gpio;
@@ -385,6 +401,11 @@ int button_pressed(int which)
 			use_gpio = have_fan_gpio;
 			break;
 #ifdef RTCONFIG_SWMODE_SWITCH
+#if defined(PLAC66U)
+		case BTN_SWMODE_SW_ROUTER:
+			use_gpio = btn_swmode_sw_router;
+			break;
+#else
 		case BTN_SWMODE_SW_ROUTER:
 			use_gpio = btn_swmode_sw_router;
 			break;
@@ -394,7 +415,8 @@ int button_pressed(int which)
 		case BTN_SWMODE_SW_AP:
 			use_gpio = btn_swmode_sw_ap;
 			break;
-#endif
+#endif	/* Model */
+#endif	/* RTCONFIG_SWMODE_SWITCH */
 #ifdef RTCONFIG_WIRELESS_SWITCH
 		case BTN_WIFI_SW:
 			use_gpio = btn_wifi_sw;
@@ -465,7 +487,7 @@ int do_led_control(int which, int mode)
 	if (which < 0 || which >= LED_ID_MAX || mode < 0 || mode >= LED_FAN_MODE_MAX)
 		return -1;
 
-	get_gpio_values_once();
+	get_gpio_values_once(0);
 	use_gpio = led_gpio_table[which];
 	gpio_nr = use_gpio & 0xFF;
 
@@ -704,7 +726,7 @@ int lanport_ctrl(int ctrl)
 	char word[100], *next;
 	int mask = 0;
 
-#ifdef RTCONFIG_EXT_RTL8365MB
+#if defined(RTCONFIG_EXT_RTL8365MB) || defined(RTCONFIG_EXT_RTL8370MB)
 	if(ctrl)
 		rtkswitch_ioctl(POWERUP_LANPORTS, -1, -1);
 	else

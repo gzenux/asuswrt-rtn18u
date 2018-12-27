@@ -531,12 +531,18 @@ config RTCONFIG_QCA
 	bool "Qualcomm Atheros Chip Support"
 	default n
 
-config RTCONFIG_QCA953X
-	bool "Qualcomm Atheros QCA953X Chip Support"
+config RTCONFIG_SOC_QCA9557
+	bool "Qualcomm Atheros QCA9557 SoC"
+	depends on RTCONFIG_QCA
 	default n
 
-config RTCONFIG_QCA955X
-	bool "Qualcomm Atheros QCA955X Chip Support"
+config RTCONFIG_WIFI_QCA9557_QCA9882
+	bool "Qualcomm Atheros QCA9557 and QCA9882 WiFi chip"
+	depends on RTCONFIG_QCA
+	default n
+
+config RTCONFIG_QCA953X
+	bool "Qualcomm Atheros QCA953X Chip Support"
 	default n
 
 config RTCONFIG_QCA956X
@@ -897,14 +903,10 @@ config RTCONFIG_ADBLOCK
 	bool "Streaming and Pop-Up window Ad Blocking "
 	default n
 
-config RTCONFIG_TRAFFIC_CONTROL
-	bool "Traffic control for alert limited traffic"
+config RTCONFIG_TRAFFIC_LIMITER
+	bool "Traffic Limiter (data limit) for Internet traffic"
 	default n
 
-config RTCONFIG_CTF_PPTP_L2TP
-	bool "Speedup NAT for PPTP and L2TP"
-	default n
-	
 config RTCONFIG_BCM5301X_TRAFFIC_MONITOR
 	bool "read BCM5301x register for traffic monitor"
 	default n
@@ -955,6 +957,9 @@ config RTCONFIG_JFFS2USERICON
 
 config RTCONFIG_EXT_RTL8365MB
 	bool "rtl8365mb driver flag"
+
+config RTCONFIG_EXT_RTL8370MB
+	bool "rtl8370mb driver flag"
 
 config RTCONFIG_TOR
 	bool "The orion router function"
@@ -1008,6 +1013,10 @@ config RTCONFIG_WTFAST
 	bool "WTFast support"
 	default n
 
+config RTCONFIG_IFTTT
+	bool "IFTTT support"
+	default n
+
 config RTCONFIG_ERP_TEST
 	bool "erp test"
 	default n
@@ -1024,14 +1033,51 @@ config RTCONFIG_UPNPC
 	bool "UPNP client support"
 	default y
 
+config RTCONFIG_MULTICAST_IPTV
+	bool "Multicsat IPTV"
+	default n
+
 config RTCONFIG_BONJOUR
 	bool "Apple device query support"
 	default y
 
-config RTCONFIG_MULTICAST_IPTV
-	bool "Multicsat IPTV"
+config RTCONFIG_FORCE_AUTO_UPGRADE
+	bool "Force auto update"
+	default n
+
+config RTCONFIG_TUXERA_SMBD
+	bool "tuxera smbd"
+	default n
+
+config RTCONFIG_BCMASPMD
+	bool "bcm aspmd"
+	default n
+
+config RTCONFIG_WLCLMLOAD
+	bool "bcm clm specefic-load"
+	default n
+
+config RTCONFIG_MUMIMO
+	bool "bcm mu-mimo support"
 	default n
 
 config RTCONFIG_DYN_MODEM
 	bool "Dynamic enable the USB Modem"
 	default n
+
+config RTCONFIG_NOTIFICATION_CENTER
+	bool "Notification Center"
+	default y
+
+config RTCONFIG_6RELAYD
+	bool "IPv6 Relay support"
+	depends on RTCONFIG_IPV6
+	default n
+
+config RTCONFIG_PORT_BASED_VLAN
+	bool "Port based vlan support"
+	default n
+
+config RTCONFIG_NOIPTV
+        bool "No IPTV support"
+        default n

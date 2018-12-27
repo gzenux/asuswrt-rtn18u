@@ -2,7 +2,7 @@
  * Encode base functions which provides encoding of basic data types
  * and provides bounds checking on the buffer to be encoded.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;

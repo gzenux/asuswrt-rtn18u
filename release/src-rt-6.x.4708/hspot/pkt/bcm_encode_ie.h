@@ -2,7 +2,7 @@
  * Encode functions which provides encoding of information elements
  * as defined in 802.11.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -25,9 +25,7 @@ int bcm_encode_ie_hotspot_indication(bcm_encode_t *pkt, uint8 hotspotConfig);
 
 /* encode hotspot 2.0 indication release2 */
 int bcm_encode_ie_hotspot_indication2(bcm_encode_t *pkt,
-	int isDgafDisabled, uint8 releaseNumber,
-	int isPpsMoIdPresent, uint16 ppsMoId,
-	int isAnqpDomainIdPresent, uint16 anqpDomainId);
+	int isDgafDisabled, uint8 releaseNumber);
 
 /* encode interworking */
 int bcm_encode_ie_interworking(bcm_encode_t *pkt, uint8 accessNetworkType,
@@ -52,9 +50,5 @@ int bcm_encode_ie_extended_capabilities(bcm_encode_t *pkt, uint32 cap);
 /* encode advertisement protocol */
 int bcm_encode_ie_advertisement_protocol(bcm_encode_t *pkt,
 	uint8 pamebi, uint8 qRspLimit, uint8 id);
-
-/* encode qbss load */
-int bcm_encode_ie_bss_load(bcm_encode_t *pkt, uint16 stationCount,
-	uint8 channelUtilization, uint16 availableAdmissionCapacity);
 
 #endif /* _BCM_ENCODE_IE_H_ */

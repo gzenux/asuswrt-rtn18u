@@ -157,12 +157,18 @@ static int add_qos_rules(char *pcWANIF)
 	int v4v6_ok;
 
 	if((fn = fopen(mangle_fn, "w")) == NULL) return -2;
+#ifdef RTCONFIG_IPV6
+	if(ipv6_enabled() && (fn_ipv6 = fopen(mangle_fn_ipv6, "w")) == NULL){
+		fclose(fn);
+		return -3;
+	}
+#endif
 
 	inuse = sticky_enable = 0;
 
 	if(get_model()==MODEL_RTAC56U || get_model()==MODEL_RTAC56S || get_model()==MODEL_RTAC68U ||
 		get_model()==MODEL_DSLAC68U || get_model()==MODEL_RTAC87U || get_model()==MODEL_RTAC3200 || 
-		get_model()==MODEL_RTAC88U || get_model()==MODEL_RTAC3100 || get_model()==MODEL_RTAC5300 ||
+		get_model()==MODEL_RTAC88U || get_model()==MODEL_RTAC3100 || get_model()==MODEL_RTAC5300 || get_model()==MODEL_RTAC5300R ||
 		get_model()==MODEL_RTAC1200G || get_model()==MODEL_RTAC1200GP)
 		manual_return = 1;
 

@@ -2,7 +2,7 @@
  * Decode functions which provides decoding of Hotspot2.0 ANQP packets
  * as defined in Hotspot2.0 specification.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -223,9 +223,6 @@ int bcm_decode_hspot_anqp_query_list(bcm_decode_t *pkt,
 
 	memset(queryList, 0, sizeof(*queryList));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	count =  bcm_decode_remaining(pkt);
 	for (i = 0; i < count; i++) {
 		if (i >= BCM_DECODE_ANQP_MAX_LIST_SIZE) {
@@ -236,7 +233,6 @@ int bcm_decode_hspot_anqp_query_list(bcm_decode_t *pkt,
 		(void)bcm_decode_byte(pkt, &queryList->queryId[queryList->queryLen++]);
 	}
 
-	queryList->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -291,9 +287,6 @@ void bcm_decode_hspot_anqp_query_list_print(bcm_decode_hspot_anqp_query_list_t *
 {
 	int i;
 
-	if (!queryList->isDecodeValid)
-		return;
-
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot ANQP query list:\n"));
 	WL_PRINT(("query count = %d\n", queryList->queryLen));
@@ -315,9 +308,6 @@ int bcm_decode_hspot_anqp_capability_list(bcm_decode_t *pkt,
 
 	memset(capList, 0, sizeof(*capList));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	count =  bcm_decode_remaining(pkt);
 	for (i = 0; i < count; i++) {
 		if (i >= BCM_DECODE_ANQP_MAX_LIST_SIZE) {
@@ -328,7 +318,6 @@ int bcm_decode_hspot_anqp_capability_list(bcm_decode_t *pkt,
 		(void)bcm_decode_byte(pkt, &capList->capId[capList->capLen++]);
 	}
 
-	capList->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -336,9 +325,6 @@ int bcm_decode_hspot_anqp_capability_list(bcm_decode_t *pkt,
 void bcm_decode_hspot_anqp_capability_list_print(bcm_decode_hspot_anqp_capability_list_t *capList)
 {
 	int i;
-
-	if (!capList->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot ANQP capability list:\n"));
@@ -348,24 +334,6 @@ void bcm_decode_hspot_anqp_capability_list_print(bcm_decode_hspot_anqp_capabilit
 		char *capStr = idToStr(capList->capId[i]);
 		WL_PRINT(("   %s (%d)\n", capStr, capList->capId[i]));
 	}
-}
-
-/* is capability supported */
-int bcm_decode_hspot_anqp_is_capability(
-	bcm_decode_hspot_anqp_capability_list_t *capList, uint8 capId)
-{
-	int i;
-
-	if (!capList->isDecodeValid)
-		return FALSE;
-
-	for (i = 0; i < capList->capLen; i++) {
-		if (capList->capId[i] == capId) {
-			return TRUE;
-		}
-	}
-
-	return FALSE;
 }
 
 /* decode operator name duple */
@@ -411,9 +379,6 @@ int bcm_decode_hspot_anqp_operator_friendly_name(bcm_decode_t *pkt,
 
 	memset(op, 0, sizeof(*op));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	while (bcm_decode_remaining(pkt) > 0 &&
 		op->numName < BCM_DECODE_HSPOT_ANQP_MAX_OPERATOR_NAME) {
 		if (!pktDecodeHspotAnqpOperatorNameDuple(pkt,
@@ -425,7 +390,6 @@ int bcm_decode_hspot_anqp_operator_friendly_name(bcm_decode_t *pkt,
 		}
 	}
 
-	op->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -434,9 +398,6 @@ void bcm_decode_hspot_anqp_operator_friendly_name_print(
 	bcm_decode_hspot_anqp_operator_friendly_name_t *op)
 {
 	int i;
-
-	if (!op->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot ANQP operator friendly name:\n"));
@@ -457,9 +418,6 @@ int bcm_decode_hspot_anqp_wan_metrics(bcm_decode_t *pkt,
 		bcm_decode_current_ptr(pkt), bcm_decode_remaining(pkt));
 
 	memset(wanMetrics, 0, sizeof(*wanMetrics));
-
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
 
 	if (!bcm_decode_byte(pkt, &wanInfo)) {
 		WL_ERROR(("decode error\n"));
@@ -498,33 +456,22 @@ int bcm_decode_hspot_anqp_wan_metrics(bcm_decode_t *pkt,
 		return FALSE;
 	}
 
-	wanMetrics->dlinkAvailable = wanMetrics->dlinkSpeed -
-		wanMetrics->dlinkSpeed * wanMetrics->dlinkLoad / 255;
-	wanMetrics->ulinkAvailable = wanMetrics->ulinkSpeed -
-		wanMetrics->ulinkSpeed * wanMetrics->ulinkLoad / 255;
-	wanMetrics->isDecodeValid = TRUE;
 	return TRUE;
 }
 
 /* print decoded WAN metrics */
 void bcm_decode_hspot_anqp_wan_metrics_print(bcm_decode_hspot_anqp_wan_metrics_t *wanMetrics)
 {
-	if (!wanMetrics->isDecodeValid)
-		return;
-
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot ANQP WAN metrics:\n"));
 	WL_PRINT(("   link status              : %d\n", wanMetrics->linkStatus));
 	WL_PRINT(("   symmetric link           : %d\n", wanMetrics->symmetricLink));
 	WL_PRINT(("   at capacity              : %d\n", wanMetrics->atCapacity));
 	WL_PRINT(("   downlink speed           : %d\n", wanMetrics->dlinkSpeed));
-	WL_PRINT(("   uplink speed             : %d\n", wanMetrics->ulinkSpeed));
+	WL_PRINT(("   up speed                 : %d\n", wanMetrics->ulinkSpeed));
 	WL_PRINT(("   downlink load            : %d\n", wanMetrics->dlinkLoad));
-	WL_PRINT(("   uplink load              : %d\n", wanMetrics->ulinkLoad));
+	WL_PRINT(("   up load                  : %d\n", wanMetrics->ulinkLoad));
 	WL_PRINT(("   load measurement duration: %d\n", wanMetrics->lmd));
-	WL_PRINT(("   downlink available       : %d\n", wanMetrics->dlinkAvailable));
-	WL_PRINT(("   uplink available         : %d\n", wanMetrics->ulinkAvailable));
-
 }
 
 /* decode protocol port tuple */
@@ -559,9 +506,6 @@ int bcm_decode_hspot_anqp_connection_capability(bcm_decode_t *pkt,
 
 	memset(cap, 0, sizeof(*cap));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	while (bcm_decode_remaining(pkt) > 0 &&
 		cap->numConnectCap < BCM_DECODE_HSPOT_ANQP_MAX_CONNECTION_CAPABILITY) {
 		if (!pktDecodeHspotAnqpProtoPortTuple(pkt,
@@ -573,7 +517,6 @@ int bcm_decode_hspot_anqp_connection_capability(bcm_decode_t *pkt,
 		}
 	}
 
-	cap->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -582,9 +525,6 @@ void bcm_decode_hspot_anqp_connection_capability_print(
 	bcm_decode_hspot_anqp_connection_capability_t *cap)
 {
 	int i;
-
-	if (!cap->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot ANQP connection capability:\n"));
@@ -597,25 +537,6 @@ void bcm_decode_hspot_anqp_connection_capability_print(
 			cap->tuple[i].status == 2 ? "unknown" :
 			"reserved"));
 	}
-}
-
-/* is connection capability supported */
-int bcm_decode_hspot_anqp_is_connection_capability(
-	bcm_decode_hspot_anqp_connection_capability_t *cap,
-	uint8 ipProtocol, uint16 portNumber)
-{
-	int i;
-
-	if (!cap->isDecodeValid)
-		return FALSE;
-
-	for (i = 0; i < cap->numConnectCap; i++) {
-		if (cap->tuple[i].ipProtocol == ipProtocol &&
-			cap->tuple[i].portNumber == portNumber &&
-			cap->tuple[i].status == 1)
-			return TRUE;
-	}
-	return FALSE;
 }
 
 static int pktDecodeHspotAnqpNaiHomeRealmQueryData(bcm_decode_t *pkt,
@@ -656,9 +577,6 @@ int bcm_decode_hspot_anqp_nai_home_realm_query(bcm_decode_t *pkt,
 
 	memset(realm, 0, sizeof(*realm));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	if (!bcm_decode_byte(pkt, &realm->count)) {
 		WL_ERROR(("decode error\n"));
 		return FALSE;
@@ -677,7 +595,6 @@ int bcm_decode_hspot_anqp_nai_home_realm_query(bcm_decode_t *pkt,
 		}
 	}
 
-	realm->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -686,9 +603,6 @@ void bcm_decode_hspot_anqp_nai_home_realm_query_print(
 	bcm_decode_hspot_anqp_nai_home_realm_query_t *realm)
 {
 	int i;
-
-	if (!realm->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot ANQP home realm query:\n"));
@@ -709,9 +623,6 @@ int bcm_decode_hspot_anqp_operating_class_indication(bcm_decode_t *pkt,
 
 	memset(opClassList, 0, sizeof(*opClassList));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	count = bcm_decode_remaining(pkt);
 	if (count > BCM_DECODE_HSPOT_ANQP_MAX_OPCLASS_LIST_SIZE) {
 		WL_ERROR(("operating class indication list size is too large %d\n",
@@ -725,7 +636,7 @@ int bcm_decode_hspot_anqp_operating_class_indication(bcm_decode_t *pkt,
 	}
 
 	opClassList->opClassLen = count;
-	opClassList->isDecodeValid = TRUE;
+
 	return TRUE;
 }
 
@@ -734,9 +645,6 @@ void bcm_decode_hspot_anqp_operating_class_indication_print(
 	bcm_decode_hspot_anqp_operating_class_indication_t *opClassList)
 {
 	int i;
-
-	if (!opClassList->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot operating class indication list:\n"));
@@ -819,9 +727,6 @@ int bcm_decode_hspot_anqp_osu_provider_list(bcm_decode_t *pkt,
 		bcm_decode_current_ptr(pkt), bcm_decode_remaining(pkt));
 
 	memset(list, 0, sizeof(*list));
-
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
 
 	/* decode OSU SSID */
 	if (!bcm_decode_byte(pkt, &list->osuSsidLength)) {
@@ -918,8 +823,7 @@ int bcm_decode_hspot_anqp_osu_provider_list(bcm_decode_t *pkt,
 				osu->uriLength, BCM_DECODE_HSPOT_ANQP_MAX_URI_LENGTH));
 			return FALSE;
 		}
-		if (osu->uriLength > 0 &&
-			!bcm_decode_bytes(pkt, osu->uriLength, (uint8 *)osu->uri)) {
+		if (!bcm_decode_bytes(pkt, osu->uriLength, (uint8 *)osu->uri)) {
 			WL_ERROR(("bcm_decode_bytes failed"));
 			return FALSE;
 		}
@@ -936,7 +840,7 @@ int bcm_decode_hspot_anqp_osu_provider_list(bcm_decode_t *pkt,
 			return FALSE;
 		}
 		if (!bcm_decode_bytes(pkt, osu->methodLength, (uint8 *)osu->method)) {
-			WL_ERROR(("bcm_decode_bytes failed\n"));
+			WL_ERROR(("bcm_decode_bytes failed"));
 			return FALSE;
 		}
 
@@ -1007,7 +911,6 @@ int bcm_decode_hspot_anqp_osu_provider_list(bcm_decode_t *pkt,
 		}
 	}
 
-	list->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -1016,9 +919,6 @@ void bcm_decode_hspot_anqp_osu_provider_list_print(
 	bcm_decode_hspot_anqp_osu_provider_list_t *list)
 {
 	int i, j;
-
-	if (!list->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot OSU provider list:\n"));
@@ -1060,39 +960,24 @@ void bcm_decode_hspot_anqp_osu_provider_list_print(
 /* search decoded OSU provider list for specified provider */
 bcm_decode_hspot_anqp_osu_provider_t *bcm_decode_hspot_anqp_find_osu_provider(
 	bcm_decode_hspot_anqp_osu_provider_list_t *list,
-	int langLength, char *lang,
-	int friendlyLength, char *friendly,
-	int isOsuMethod, uint8 osuMethod,
-	bcm_decode_hspot_anqp_name_duple_t **duple)
+	int providerLength, char *provider,	uint8 osuMethod)
 {
 	int i;
-
-	if (!list->isDecodeValid)
-		return 0;
 
 	for (i = 0; i < list->osuProviderCount; i++) {
 		bcm_decode_hspot_anqp_osu_provider_t *p = &list->osuProvider[i];
 		int j;
 
-		/* find matching friendly language and name */
-		/* pick any (i.e. first) if friendly not specified */
+		/* find matching provider name */
 		for (j = 0; j < p->name.numName; j++) {
 			bcm_decode_hspot_anqp_name_duple_t *d = &p->name.duple[j];
-			if (((langLength == 0 || lang == 0) ||
-				(d->langLen = langLength &&
-				memcmp(d->lang, lang, d->langLen) == 0)) &&
-				((friendlyLength == 0 || friendly == 0) ||
-				(d->nameLen == friendlyLength &&
-				memcmp(d->name, friendly, d->nameLen) == 0))) {
+			if (d->nameLen == providerLength &&
+				memcmp(d->name, provider, d->nameLen) == 0) {
 				int k;
 
 				/* find matching OSU method */
 				for (k = 0; k < p->methodLength; k++) {
-					if (!isOsuMethod ||
-						p->method[k] == osuMethod) {
-						/* return name duple */
-						if (duple != 0)
-							*duple = d;
+					if (p->method[k] == osuMethod) {
 						return p;
 					}
 				}
@@ -1106,33 +991,16 @@ bcm_decode_hspot_anqp_osu_provider_t *bcm_decode_hspot_anqp_find_osu_provider(
 /* search decoded OSU provider list for specified SSID and provider */
 bcm_decode_hspot_anqp_osu_provider_t *bcm_decode_hspot_anqp_find_osu_ssid_provider(
 	bcm_decode_hspot_anqp_osu_provider_list_t *list,
-	int osuSsidLength, char *osuSsid, int langLength, char *lang,
-	int friendlyLength, char *friendly,
-	int isOsuMethod, uint8 osuMethod,
-	bcm_decode_hspot_anqp_name_duple_t **duple)
+	int osuSsidLength, char *osuSsid, int providerLength, char *provider,
+	uint8 osuMethod)
 {
-	if (!list->isDecodeValid)
-		return 0;
-
 	if (list->osuSsidLength == osuSsidLength &&
 		memcmp(list->osuSsid, osuSsid, list->osuSsidLength) == 0) {
-		return bcm_decode_hspot_anqp_find_osu_provider(list,
-			langLength, lang, friendlyLength, friendly,
-			isOsuMethod, osuMethod, duple);
+		return bcm_decode_hspot_anqp_find_osu_provider(
+			list, providerLength, provider, osuMethod);
 	}
 
 	return 0;
-}
-
-/* get the providers OSU method */
-int bcm_decode_hspot_get_osu_method(bcm_decode_hspot_anqp_osu_provider_t *p)
-{
-	/* return first available */
-	if (p->methodLength > 0)
-		return p->method[0];
-
-	/* default SOAP */
-	return HSPOT_OSU_METHOD_SOAP_XML;
 }
 
 /* decode anonymous NAI */
@@ -1143,9 +1011,6 @@ int bcm_decode_hspot_anqp_anonymous_nai(bcm_decode_t *pkt,
 		bcm_decode_current_ptr(pkt), bcm_decode_remaining(pkt));
 
 	memset(anonymous, 0, sizeof(*anonymous));
-
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
 
 	if (!bcm_decode_le16(pkt, &anonymous->naiLen)) {
 		WL_ERROR(("decode error\n"));
@@ -1170,7 +1035,7 @@ int bcm_decode_hspot_anqp_anonymous_nai(bcm_decode_t *pkt,
 	}
 
 	anonymous->nai[anonymous->naiLen] = 0;
-	anonymous->isDecodeValid = TRUE;
+
 	return TRUE;
 }
 
@@ -1178,9 +1043,6 @@ int bcm_decode_hspot_anqp_anonymous_nai(bcm_decode_t *pkt,
 void bcm_decode_hspot_anqp_anonymous_nai_print(
 	bcm_decode_hspot_anqp_anonymous_nai_t *anonymous)
 {
-	if (!anonymous->isDecodeValid)
-		return;
-
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot anonymous NAI:\n"));
 	WL_PRINT(("   %s\n", anonymous->nai));
@@ -1195,9 +1057,6 @@ int bcm_decode_hspot_anqp_icon_request(bcm_decode_t *pkt,
 
 	memset(request, 0, sizeof(*request));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	request->filenameLength = bcm_decode_remaining(pkt);
 	if (request->filenameLength > BCM_DECODE_HSPOT_ANQP_MAX_ICON_FILENAME_LENGTH) {
 		WL_ERROR(("icon filename exceeds buffer %d > %d\n",
@@ -1209,7 +1068,7 @@ int bcm_decode_hspot_anqp_icon_request(bcm_decode_t *pkt,
 		return FALSE;
 	}
 	request->filename[request->filenameLength] = 0;
-	request->isDecodeValid = TRUE;
+
 	return TRUE;
 
 }
@@ -1218,9 +1077,6 @@ int bcm_decode_hspot_anqp_icon_request(bcm_decode_t *pkt,
 void bcm_decode_hspot_anqp_icon_request_print(
 	bcm_decode_hspot_anqp_icon_request_t *request)
 {
-	if (!request->isDecodeValid)
-		return;
-
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded icon request:\n"));
 	WL_PRINT(("   %s\n", request->filename));
@@ -1234,9 +1090,6 @@ int bcm_decode_hspot_anqp_icon_binary_file(bcm_decode_t *pkt,
 		bcm_decode_current_ptr(pkt), bcm_decode_remaining(pkt));
 
 	memset(icon, 0, sizeof(*icon));
-
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
 
 	if (!bcm_decode_byte(pkt, &icon->status)) {
 		WL_ERROR(("decode error\n"));
@@ -1279,16 +1132,12 @@ int bcm_decode_hspot_anqp_icon_binary_file(bcm_decode_t *pkt,
 		return FALSE;
 	}
 
-	icon->isDecodeValid = TRUE;
 	return TRUE;
 }
 
 /* print decoded icon binary file */
 void bcm_decode_hspot_anqp_icon_binary_file_print(bcm_decode_hspot_anqp_icon_binary_file_t *icon)
 {
-	if (!icon->isDecodeValid)
-		return;
-
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded hotspot icon binary file:\n"));
 	WL_PRINT(("   status: %s\n",

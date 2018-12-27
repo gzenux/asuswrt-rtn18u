@@ -19,6 +19,7 @@
 }
 </style>
 <script type="text/JavaScript">
+var based_modelid = '<% nvram_get("productid"); %>';
 function QKInternet_load_body(){
 	if(parent.document.QKform.sw_mode.value == 4) {
 		document.getElementById("nextButton").value = "<#CTL_apply#>";
@@ -159,7 +160,8 @@ function submitForm(){
 			if(Rawifi_support || Qcawifi_support) {
 				document.mbform.sw_mode.value = 2;
 			}
-			else {
+			else{
+				document.mbform.wlc_psta.value = 1;							
 				document.mbform.sw_mode.value = 3;
 			}
 			document.mbform.submit();
@@ -553,11 +555,11 @@ var retValHandler = {
 			</div>
 			<div class="row">
 				<label><#IPConnection_x_ExternalSubnetMask_itemname#></label>
-				<input name="lan_netmask_m" type="text" placeholder="" autocapitalization="off" maxlength="65" autocorrect="off" autocapitalize="off">
+				<input name="lan_netmask_m" type="text" placeholder="" autocapitalize="off" maxlength="65" autocorrect="off" autocapitalize="off">
 			</div>
 			<div class="row_end">
 				<label><#IPConnection_x_ExternalGateway_itemname#></label>
-				<input name="lan_gateway_m" type="text" placeholder="" autocapitalization="off" maxlength="65" autocorrect="off" autocapitalize="off">
+				<input name="lan_gateway_m" type="text" placeholder="" autocapitalize="off" maxlength="65" autocorrect="off" autocapitalize="off">
 			</div>
 		</div>
 	</fieldset>	
@@ -582,7 +584,7 @@ var retValHandler = {
 			</div>
 			<div class="row_end">
 				<label><#IPConnection_x_DNSServer2_itemname#></label>
-				<input name="lan_dns2_x_m" type="text" placeholder="" autocapitalization="off" maxlength="65" autocorrect="off" autocapitalize="off">
+				<input name="lan_dns2_x_m" type="text" placeholder="" autocapitalize="off" maxlength="65" autocorrect="off" autocapitalize="off">
 			</div>
 		</div>
 	</fieldset>

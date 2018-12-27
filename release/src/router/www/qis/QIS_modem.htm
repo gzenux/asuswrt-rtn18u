@@ -378,7 +378,6 @@ function show_3G_modem_list(){
 			, "ZTE-MU351"
 			, "ZTE-MF100"
 			, "ZTE-MF636"
-			, "ZTE-MF622"
 			, "ZTE-MF626"
 			, "ZTE-MF632"
 			, "ZTE-MF112"
@@ -503,7 +502,7 @@ function show_ISP_list(){
 			if(document.form.modem_isp.options.length > 0)
 				continue;
 			else{
-				alert('We currently do not support this location, please use "Manual"!');
+				alert("<#HSDPAConfig_Country_hint#>");
 				document.form.modem_country.focus();
 				document.form.modem_country.selectedIndex = countrylist.length-1;
 				break;

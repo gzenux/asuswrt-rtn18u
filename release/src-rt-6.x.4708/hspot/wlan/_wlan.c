@@ -1,7 +1,7 @@
 /*
  * Test harness for WLAN functions.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -151,7 +151,7 @@ static void testAssociationStatus(void)
 		dump_bss_info((wl_bss_info_t *)buffer);
 	}
 	else {
-		dbg("not associated\n");
+		printf("not associated\n");
 	}
 	TEST(wlanDestroy(wlan), "wlanDestroy failed");
 }

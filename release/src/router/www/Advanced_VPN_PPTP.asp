@@ -54,8 +54,8 @@ var pptpd_sr_rulelist_array = decodeURIComponent(pptpd_sr_rulelist_array_ori);
 var pptpd_sr_edit_username = "";
 
 var max_shift = "";	/*MODELDEP (include dict #PPTP_desc2# #vpn_max_clients# #vpn_maximum_clients#) : 
-				RT-AC5300/RT-AC3200/RT-AC3100/RT-AC88U/RT-AC87U/RT-AC68U/RT-AC66U/RT-AC56U/RT-N66U/RT-N18U */
-if(based_modelid == "RT-AC5300" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC3100" ||
+				RT-AC5300/RT-AC5300R/RT-AC3200/RT-AC3100/RT-AC88U/RT-AC87U/RT-AC68U/RT-AC66U/RT-AC56U/RT-N66U/RT-N18U */
+if(based_modelid == "RT-AC5300" || based_modelid == "RT-AC5300R" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC3100" ||
 		based_modelid == "RT-AC88U" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC68U" ||
 		based_modelid == "RT-AC66U" || based_modelid == "RT-AC56U" ||
 		based_modelid == "RT-N66U" || based_modelid == "RT-N18U"){
@@ -80,7 +80,7 @@ function initial(){
 		document.getElementById("divSwitchMenu").style.display = "";
 	}
 	
-	formShowAndHide(document.form.VPNServer_enable.value, document.form.VPNServer_mode.value);	
+	formShowAndHide(document.form.pptpd_enable.value, "pptpd");	
 	if(dualwan_mode == "lb"){
 		var wan0_ipaddr = wanlink_ipaddr();
 		var wan1_ipaddr = secondary_wanlink_ipaddr();
@@ -191,9 +191,9 @@ function formShowAndHide(server_enable, server_type) {
 		document.getElementById("pptp_samba").style.display = "none";
 		document.getElementById("PPTP_setting").style.display = "none";
 		document.getElementById("tbAdvanced").style.display = "none";
-		if(document.form.VPNServer_mode.value != "pptpd") {
-			document.getElementById("divApply").style.display = "none";
-		}
+		//if(document.form.VPNServer_mode.value != "pptpd") {
+		//	document.getElementById("divApply").style.display = "none";
+		//}
 	}
 }
 
@@ -223,11 +223,11 @@ function pptpd_connected_status(){
 
 function applyRule() {
 	var confirmFlag = true;
-	if(document.form.VPNServer_mode.value != "pptpd" && document.form.VPNServer_enable.value == '1') {
-		 confirmFlag = confirm("<#vpn_switch_confirm#>");
-	}
+	//if(document.form.VPNServer_mode.value != "pptpd" && document.form.VPNServer_enable.value == '1') {
+	//	 confirmFlag = confirm("<#vpn_switch_confirm#>");
+	//}
 
-	if(confirmFlag){
+	//if(confirmFlag){
 		var get_group_value = function () {
 			var rule_num = document.getElementById("pptpd_clientlist_table").rows.length;
 			var item_num = document.getElementById("pptpd_clientlist_table").rows[0].cells.length;
@@ -252,12 +252,12 @@ function applyRule() {
 			return tmp_value;
 		};
 
-		if(document.form.VPNServer_enable.value == "1") {
-			document.form.VPNServer_mode.value = 'pptpd';
+		if(document.form.pptpd_enable.value == "1") {
+			//document.form.VPNServer_mode.value = 'pptpd';
 			document.form.action_script.value = "restart_vpnd";
 			document.form.pptpd_clientlist.value = get_group_value();
 			document.form.pptpd_sr_rulelist.value = pptpd_sr_rulelist_array;
-			document.form.pptpd_enable.value = "1";
+			//document.form.pptpd_enable.value = "1";
 			if(!validator.isLegalIP(document.form._pptpd_clients_start, "")) {
 				document.form._pptpd_clients_start.focus();
 				document.form._pptpd_clients_start.select();
@@ -364,14 +364,14 @@ function applyRule() {
 		}
 		else {		//disable server
 			document.form.action_script.value = "stop_vpnd";
-			document.form.pptpd_enable.value = "0";
+			//document.form.pptpd_enable.value = "0";
 			document.form.pptpd_clientlist.value = get_group_value();
 			document.form.pptpd_sr_rulelist.value = pptpd_sr_rulelist_array;
 		}
 
 		showLoading();
 		document.form.submit();
-	}
+	//}
 }
 
 function addRow(obj, head){
@@ -466,14 +466,13 @@ function del_Row(rowdata){
 	var pptpd_clientlist_value = "";
 	var rowLength = document.getElementById("pptpd_clientlist_table").rows.length;
 	for(var k = 0; k < rowLength; k += 1) {
-		for(var j = 1; j < document.getElementById("pptpd_clientlist_table").rows[k].cells.length - 1; j += 1) {
+		for(var j = 1; j < document.getElementById("pptpd_clientlist_table").rows[k].cells.length - 2; j += 1) {	//cell 1 & 2
 			if(j == 1)
-				pptpd_clientlist_value += "<";
-			else {
-				pptpd_clientlist_value += document.getElementById("pptpd_clientlist_table").rows[k].cells[1].innerHTML;
+				pptpd_clientlist_value += "<";				
+			else
 				pptpd_clientlist_value += ">";
-				pptpd_clientlist_value += document.getElementById("pptpd_clientlist_table").rows[k].cells[2].innerHTML;
-			}
+				
+			pptpd_clientlist_value += document.getElementById("pptpd_clientlist_table").rows[k].cells[j].innerHTML;
 		}
 	}
 
@@ -839,21 +838,17 @@ function check_vpn_conflict() {		//if conflict with LAN ip & DHCP ip pool & stat
 										</tr>
 										</thead>
 										<tr>
-											<th><#vpn_enable#></th>
+											<th><#vpn_pptp_enable#></th>
 											<td>
 												<div align="center" class="left" style="width:94px; float:left; cursor:pointer;" id="radio_VPNServer_enable"></div>												
 												<script type="text/javascript">
-													var VPNServerEnable = document.form.VPNServer_enable.value;
-													if(document.form.VPNServer_mode.value != "pptpd") {
-														VPNServerEnable = 0;
-													}
-													$('#radio_VPNServer_enable').iphoneSwitch(VPNServerEnable,
+													$('#radio_VPNServer_enable').iphoneSwitch('<% nvram_get("pptpd_enable"); %>',
 													function(){
-														document.form.VPNServer_enable.value = "1";
+														document.form.pptpd_enable.value = "1";
 														formShowAndHide(1, "pptpd");						
 													},
 													function(){
-														document.form.VPNServer_enable.value = "0";
+														document.form.pptpd_enable.value = "0";
 														formShowAndHide(0, "pptpd");
 													}
 													);

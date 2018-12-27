@@ -58,7 +58,7 @@
 #endif /* CONFIG_IP_NF_TARGET_CONE */
 
 #ifdef CONFIG_IP_NF_LFP
-#define NFC_LFP_ENABLE          (1<<29)
+#define NFC_LFP_ENABLE		(1<<29)
 #endif
 
 enum nf_ip_hook_priorities {

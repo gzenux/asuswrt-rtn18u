@@ -26,7 +26,6 @@
 	text-shadow: 1px 1px 0px #000;
 }
 </style>
-<script src='svg.js' data-path="/svghtc/" data-debug="false"></script>	
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>

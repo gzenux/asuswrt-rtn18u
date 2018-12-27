@@ -6,6 +6,7 @@
 #include <linux/if_ether.h>
 #include <net/if.h>
 #include <string.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <bcmnvram.h>
@@ -20,6 +21,10 @@
 #include <asm/byteorder.h>
 #include "iboxcom.h"
 #include "../shared/shutils.h"
+#ifdef RTCONFIG_NOTIFICATION_CENTER
+#include <libnt.h>
+#endif
+
 
 extern int scan_count;//from networkmap;
 extern FILE *fp_upnp;
@@ -134,7 +139,7 @@ int SendHttpReq(unsigned char *des_ip)
 }
                                                                                                                                              
 /***** NBNS Name Query function *****/
-int Nbns_query(unsigned char *src_ip, unsigned char *dest_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab)
+int Nbns_query(unsigned char *src_ip, unsigned char *dest_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab, int i)
 {
     struct sockaddr_in my_addr, other_addr1, other_addr2;
     int sock_nbns, status, sendlen, recvlen, retry=1, exit=0;
@@ -214,12 +219,12 @@ int Nbns_query(unsigned char *src_ip, unsigned char *dest_ip, P_CLIENT_DETAIL_IN
 	    && (other_addr2.sin_addr.s_addr = other_addr1.sin_addr.s_addr))
             {
 		lock = file_lock("networkmap");
-            	memcpy(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num], nbns_response->device_name1, 16);
-		fixstr(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num]);
+            	memcpy(p_client_detail_info_tab->device_name[i], nbns_response->device_name1, 16);
+		fixstr(p_client_detail_info_tab->device_name[i]);
 		file_unlock(lock);
 	    	memcpy(NetBIOS_name, nbns_response->device_name1, 15);
 		NMP_DEBUG_F("Device name:%s~%s~\n", nbns_response->device_name1,
-		p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num]);
+		p_client_detail_info_tab->device_name[i]);
             	break;
 	    }
 	    else
@@ -240,7 +245,7 @@ int Nbns_query(unsigned char *src_ip, unsigned char *dest_ip, P_CLIENT_DETAIL_IN
                 break;
 	    }
         }
-	sleep(1); //2008.09.16 Yau add 
+	sleep(2); //2008.09.16 Yau add 
     }
     close(sock_nbns);
     NMP_DEBUG_F("NBNS close socket\n");
@@ -279,7 +284,7 @@ int lpd515(unsigned char *dest_ip)
 
         /*  Send data... */
         lpd.cmd_code = LPR;
-        strcpy(lpd.options, MODEL_NAME);   // Set the queue name  as you wish
+        strlcpy(lpd.options, MODEL_NAME, sizeof(lpd.options));   // Set the queue name  as you wish
         lpd.lf = 0x0a;
         sprintf(sendbuf1, "%c%s%c", lpd.cmd_code, lpd.options, lpd.lf);
         if ((sendlen1 = send(sockfd1, sendbuf1, strlen(sendbuf1), 0)) == -1)
@@ -644,7 +649,7 @@ int create_ssdp_socket_ctrlpt(char *ifname, ushort port)
         // get the src ip
         if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
                 goto error;
-        strcpy(ifreq.ifr_name, ifname);
+        strlcpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name));
         if(ioctl(sockfd, SIOCGIFADDR, &ifreq) < 0)
         {
                 close(sockfd);
@@ -655,7 +660,7 @@ int create_ssdp_socket_ctrlpt(char *ifname, ushort port)
                                                                                                                                              
         // make sure this interface is capable of MULTICAST ...
         memset(&ifreq, 0, sizeof(ifreq));
-        strcpy(ifreq.ifr_name, ifname);
+        strlcpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name));
         if(ioctl(fd, SIOCGIFFLAGS, (int) &ifreq))
                 goto error;
         if((ifreq.ifr_flags & IFF_MULTICAST) == 0)
@@ -673,7 +678,7 @@ int create_ssdp_socket_ctrlpt(char *ifname, ushort port)
                                                                                                                                              
         // join the multicast group
         memset(&ifreq, 0, sizeof(ifreq));
-        strcpy(ifreq.ifr_name, ifname);
+        strlcpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name));
         if(ioctl(fd, SIOCGIFINDEX, &ifreq))
                 goto error;
                                                                                                                                              
@@ -946,7 +951,7 @@ void store_description(char *msg)
                 switch(type)
                 {
                 case 0:
-                        strcpy(description.friendlyname, tmp);
+                        strlcpy(description.friendlyname, tmp, sizeof(description.friendlyname));
                         NMP_DEBUG_F("friendlyname = %s\n", tmp);
 #ifdef NMP_DEBUG_F
 	if(strstr(tmp, "WDTVLive")) {
@@ -959,23 +964,23 @@ void store_description(char *msg)
 #endif                         
                         break;
                 case 1:
-                        strcpy(description.manufacturer, tmp);
+                        strlcpy(description.manufacturer, tmp, sizeof(description.manufacturer));
                         NMP_DEBUG_F("manufacturer = %s\n", tmp);
                         break;
                 case 2:
-                        strcpy(description.presentation, tmp);
+                        strlcpy(description.presentation, tmp, sizeof(description.presentation));
                         NMP_DEBUG_F("presentation = %s\n", tmp);
                         break;
                 case 3:
-                        strcpy(description.description, tmp);
+                        strlcpy(description.description, tmp, sizeof(description.description));
                         NMP_DEBUG_F("description = %s\n", tmp);
                         break;
                 case 4:
-                        strcpy(description.modelname, tmp);
+                        strlcpy(description.modelname, tmp, sizeof(description.modelname));
                         NMP_DEBUG_F("modelname = %s\n", tmp);
                         break;
                 case 5:
-                        strcpy(description.modelnumber, tmp);
+                        strlcpy(description.modelnumber, tmp, sizeof(description.modelnumber));
                         NMP_DEBUG_F("modelnumber = %s\n", tmp);
                         break;
                 case 6: // tmp="urn:schemas-upnp-org:service:serviceType:v"
@@ -990,11 +995,11 @@ void store_description(char *msg)
                                 mxend++;
                         }
                         tmp[j-1] = '\0';
-                        strcpy(description.service[s_num].name, tmp);
+                        strlcpy(description.service[s_num].name, tmp, sizeof(description.service));
                         NMP_DEBUG_F("service %d name = %s\n", s_num, tmp);
                         break;
                 case 7:
-                        strcpy(description.service[s_num].url, tmp);
+                        strlcpy(description.service[s_num].url, tmp, sizeof(description.service[s_num].url));
                         NMP_DEBUG_F("service %d url = %s\n", s_num, tmp);
                         s_num++;
                         break;
@@ -1184,7 +1189,7 @@ SMBretry:
 								NMP_DEBUG_F("Called Name Error!\n");
 								smbretry_flag++;
                                                         	close(sockfd);
-                                                                sleep(1);
+                                                                sleep(2);
 								if(smbretry_flag == 5)
 								{
 									operate = 0;
@@ -1554,7 +1559,7 @@ int UnpackGetInfo(char *pdubuf, PKT_GET_INFO *Info)
 }
 
 int
-Asus_Device_Discovery(unsigned char *src_ip, unsigned char *dest_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab)
+Asus_Device_Discovery(unsigned char *src_ip, unsigned char *dest_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab, int i)
 {
     	struct sockaddr_in my_addr, other_addr1, other_addr2;
     	int sock_dd, status, other_addr_len1, other_addr_len2, sendlen, recvlen, retry=3;
@@ -1611,8 +1616,8 @@ Asus_Device_Discovery(unsigned char *src_ip, unsigned char *dest_ip, P_CLIENT_DE
 	        if( recvlen > 0 ) {
 			if(UnpackGetInfo(txPdubuf, &get_info)) {
 				NMP_DEBUG_F("DD: productID= %s~\n", get_info.ProductID);
-				memcpy(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num], get_info.ProductID, 16);
-				p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 3;
+				memcpy(p_client_detail_info_tab->device_name[i], get_info.ProductID, 16);
+				p_client_detail_info_tab->type[i] = 3;
 				break;
 			}
 			else 
@@ -1657,7 +1662,20 @@ get_name_from_dhcp_lease(unsigned char *mac, char *dev_name)
 
 		if(!strcmp(dev_mac, hwaddr)) {
 			NMP_DEBUG_F("Find the same MAC(%s)! copy device name\n", dev_mac);
-			strncpy(dev_name, name, 15);
+			strlcpy(dev_name, name, 16);
+			#ifdef RTCONFIG_NOTIFICATION_CENTER
+			extern int TRIGGER_FLAG;
+			if(!(TRIGGER_FLAG>>FLAG_UPNP_RENDERER & 1) && (strstr(dev_name, "Chromecast"))){
+				NOTIFY_EVENT_T *event_t = initial_nt_event();
+				event_t->event = HINT_UPNP_RENDERER_EVENT;
+				snprintf(event_t->msg, sizeof(event_t->msg), "%s", "HINT_UPNP_RENDERER_EVENT");
+				NMP_DEBUG("NT_CENTER: Send event UPnP renderer ID:%08x msg:%s!\n", event_t->event, event_t->msg);
+				send_trigger_event(event_t);
+				nt_event_free(event_t);
+				TRIGGER_FLAG |= (1<<FLAG_UPNP_RENDERER);
+				NMP_DEBUG("========check TRIGGER_FLAG %d\n", TRIGGER_FLAG);
+			}
+			#endif
 			break;
 		}
 	}
@@ -1673,9 +1691,9 @@ void toLowerCase(char *str) {
 
 }
 
-int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab)
+int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab, int i)
 {
- 	unsigned char *dest_ip = p_client_detail_info_tab->ip_addr[p_client_detail_info_tab->detail_info_num];
+ 	unsigned char *dest_ip = p_client_detail_info_tab->ip_addr[i];
 	int found_type = 0, ret = 0;
         UCHAR account[32];
         UCHAR primarydomain[32];
@@ -1683,17 +1701,17 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
         UCHAR nativeLanMan[32];
 	int lock;
 
-        NMP_DEBUG_F("*FindAllApp: %d -> %d.%d.%d.%d-%02X:%02X:%02X:%02X:%02X:%02X\n",p_client_detail_info_tab->detail_info_num,
-                p_client_detail_info_tab->ip_addr[p_client_detail_info_tab->detail_info_num][0],
-		p_client_detail_info_tab->ip_addr[p_client_detail_info_tab->detail_info_num][1],
-		p_client_detail_info_tab->ip_addr[p_client_detail_info_tab->detail_info_num][2],
-		p_client_detail_info_tab->ip_addr[p_client_detail_info_tab->detail_info_num][3],
- 	        p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->detail_info_num][0],
-                p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->detail_info_num][1],
-                p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->detail_info_num][2],
-                p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->detail_info_num][3],
-                p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->detail_info_num][4],
-                p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->detail_info_num][5]
+        NMP_DEBUG_F("*FindAllApp: %d -> %d.%d.%d.%d-%02X:%02X:%02X:%02X:%02X:%02X\n",i,
+                p_client_detail_info_tab->ip_addr[i][0],
+		p_client_detail_info_tab->ip_addr[i][1],
+		p_client_detail_info_tab->ip_addr[i][2],
+		p_client_detail_info_tab->ip_addr[i][3],
+ 	        p_client_detail_info_tab->mac_addr[i][0],
+                p_client_detail_info_tab->mac_addr[i][1],
+                p_client_detail_info_tab->mac_addr[i][2],
+                p_client_detail_info_tab->mac_addr[i][3],
+                p_client_detail_info_tab->mac_addr[i][4],
+                p_client_detail_info_tab->mac_addr[i][5]
 	);
 
 	//NBSS Called and Calling Name
@@ -1718,11 +1736,11 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
 	lock = file_lock("networkmap");
 	if(ret) {
 		NMP_DEBUG_F("Found HTTP\n");
-		p_client_detail_info_tab->http[p_client_detail_info_tab->detail_info_num] = 1;
+		p_client_detail_info_tab->http[i] = 1;
 	}
 	else {
 		NMP_DEBUG_F("HTTP Not Found\n");
-		p_client_detail_info_tab->http[p_client_detail_info_tab->detail_info_num] = 0;
+		p_client_detail_info_tab->http[i] = 0;
 	}
 	file_unlock(lock);
 	if(scan_count==0) //leave when click refresh
@@ -1733,7 +1751,7 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
 	if(!ret) {
 		lock = file_lock("networkmap");
                 NMP_DEBUG_F("LPR Printer Server found!\n");
-                p_client_detail_info_tab->printer[p_client_detail_info_tab->detail_info_num] = 1;
+                p_client_detail_info_tab->printer[i] = 1;
 		file_unlock(lock);
         }
         else {
@@ -1741,11 +1759,11 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
 		lock = file_lock("networkmap");
 		if(!ret) {
                 	NMP_DEBUG_F("RAW Printer Server found!\n");
-                	p_client_detail_info_tab->printer[p_client_detail_info_tab->detail_info_num] = 2;
+                	p_client_detail_info_tab->printer[i] = 2;
         	}
         	else {
                 	NMP_DEBUG_F("Printer Server not found!\n");
-                	p_client_detail_info_tab->printer[p_client_detail_info_tab->detail_info_num] = 0;
+                	p_client_detail_info_tab->printer[i] = 0;
         	}
 		file_unlock(lock);
 	}
@@ -1757,17 +1775,17 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
 	lock = file_lock("networkmap");
 	if(ret) {
 		NMP_DEBUG_F("Found iTune Server!\n");
-                p_client_detail_info_tab->itune[p_client_detail_info_tab->detail_info_num] = 1;
+                p_client_detail_info_tab->itune[i] = 1;
         }
         else {
                 NMP_DEBUG_F("No iTune Server!\n");
-                p_client_detail_info_tab->itune[p_client_detail_info_tab->detail_info_num] = 0;
+                p_client_detail_info_tab->itune[i] = 0;
         }
 	file_unlock(lock);
         if(scan_count==0) //leave when click refresh
                 return 0;
 
-	if(p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num]==0) {
+	if(p_client_detail_info_tab->type[i]==0) {
             if( ctrlpt(dest_ip) )//UPNP detect
             {
 		lock = file_lock("networkmap");
@@ -1776,32 +1794,44 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
 	        toLowerCase(description.description);
         	if( strstr(description.description, "router")!=NULL ) 
         	{
-                	p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 2;
+                	p_client_detail_info_tab->type[i] = 2;
         	}
 	        else if( (strstr(description.description, "ap")!=NULL) ||
         	         (strstr(description.description, "access pointer")!=NULL) ||
 			 (strstr(description.description, "wireless device")!=NULL) ) 
 	        {
-        	        p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 3;
+        	        p_client_detail_info_tab->type[i] = 3;
 	        }
         	else if( strstr(description.description, "nas") )
         	{
-                	p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 4;
+                	p_client_detail_info_tab->type[i] = 4;
         	}
 	        else if( strstr(description.description, "cam") )
 	        {	
-        	        p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 5;
+        	        p_client_detail_info_tab->type[i] = 5;
 	        }
                 else if( strstr(description.modelname, "Xbox") )
                 {
-                        p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 8;
+			p_client_detail_info_tab->type[i] = 8;
+			#ifdef RTCONFIG_NOTIFICATION_CENTER
+			extern int TRIGGER_FLAG;
+			if(!(TRIGGER_FLAG>>FLAG_XBOX_PS & 1)){
+				NOTIFY_EVENT_T *event_t = initial_nt_event();
+				event_t->event = HINT_XBOX_PS_EVENT;
+				snprintf(event_t->msg, sizeof(event_t->msg), "%s", "HINT_XBOX_PS_EVENT");
+				NMP_DEBUG("NT_CENTER: Send event xbox ID:%08x msg:%s!\n", event_t->event, event_t->msg);
+				send_trigger_event(event_t);
+				nt_event_free(event_t);
+				TRIGGER_FLAG |= (1<<FLAG_XBOX_PS);
+				NMP_DEBUG("========check TRIGGER_FLAG %d\n", TRIGGER_FLAG);
+			}
+			#endif
                 }
 
 		//Copy modelname to device name if exist.
 		if(strcmp("",description.modelname) &&
-		  !strcmp("",p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num])) {
-			strncpy(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num], description.modelname, 15);
-			p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num][15]='\0';
+		  !strcmp("",p_client_detail_info_tab->device_name[i])) {
+			strlcpy(p_client_detail_info_tab->device_name[i], description.modelname, 32);
 		}
 		file_unlock(lock);
 	    }
@@ -1813,11 +1843,11 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
 
         //nbns name query
 	NMP_DEBUG_F("NBNS Name Query...\n");
-       	Nbns_query(src_ip, dest_ip, p_client_detail_info_tab);
+       	Nbns_query(src_ip, dest_ip, p_client_detail_info_tab, i);
         if(scan_count==0) //leave when click refresh
                 return 0;
 
-	if(p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num]==0)
+	if(p_client_detail_info_tab->type[i]==0)
 	{
         	//Check SMB data
         	NMP_DEBUG_F("Check Samba... \n");
@@ -1837,31 +1867,46 @@ int FindAllApp(unsigned char *src_ip, P_CLIENT_DETAIL_INFO_TABLE p_client_detail
 	        my_dvinfo.nativeLanMan_len = 5;
 		bzero(SMB_OS, sizeof(SMB_OS));
 	        bzero(SMB_PriDomain, sizeof(SMB_PriDomain));
-		sleep(1);
+		sleep(2);
 
 		lock = file_lock("networkmap");
 		if(!SendSMBReq(dest_ip, &my_dvinfo))
         	{
 			if( strstr(SMB_OS, "Windows")!=NULL )
 			{
-				p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 1;
+				p_client_detail_info_tab->type[i] = 1;
 				NMP_DEBUG_F("Find: PC!\n");
 			}
                 	else if( strstr(SMB_PriDomain, "NAS")!=NULL )
 			{
-                        	p_client_detail_info_tab->type[p_client_detail_info_tab->detail_info_num] = 4;
+                        	p_client_detail_info_tab->type[i] = 4;
 				NMP_DEBUG_F("Find: NAS Server!\n");
 			}
+			#ifdef RTCONFIG_NOTIFICATION_CENTER
+			extern int TRIGGER_FLAG;
+			if(!(TRIGGER_FLAG>>FLAG_SAMBA_INLAN & 1)){
+				if( p_client_detail_info_tab->type[i] == 1 || p_client_detail_info_tab->type[i] == 4 ){ 
+					NOTIFY_EVENT_T *event_t = initial_nt_event();
+					event_t->event = HINT_SAMBA_INLAN_EVENT;
+					snprintf(event_t->msg, sizeof(event_t->msg), "%s", "HINT_SAMBA_INLAN_EVENT");
+					NMP_DEBUG("NT_CENTER: Send event lan with SAMBA ID:%08x msg:%s!\n", event_t->event, event_t->msg);
+					send_trigger_event(event_t);
+					nt_event_free(event_t);
+					TRIGGER_FLAG |= (1<<FLAG_SAMBA_INLAN);
+					NMP_DEBUG("========check TRIGGER_FLAG %d\n", TRIGGER_FLAG);
+				}
+			}
+			#endif
                 }
 		file_unlock(lock);
 	}
 
-	if(!strcmp("", p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num])) {
-		get_name_from_dhcp_lease(p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->detail_info_num],
-					 p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num]);
-		fixstr(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num]);
+	if(!strcmp("", p_client_detail_info_tab->device_name[i])) {
+		get_name_from_dhcp_lease(p_client_detail_info_tab->mac_addr[i],
+					 p_client_detail_info_tab->device_name[i]);
+		fixstr(p_client_detail_info_tab->device_name[i]);
 		NMP_DEBUG_F("Get device name from dhcp lease: %s\n", 
-		p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num]);
+		p_client_detail_info_tab->device_name[i]);
 	}
 
 	return 1;
@@ -1885,13 +1930,14 @@ int FindHostname(P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab)
 		return 0;
 
 	if ((fp = fopen("/var/lib/misc/dnsmasq.leases", "r"))) {
+		fcntl(fileno(fp), F_SETFL, fcntl(fileno(fp), F_GETFL) | O_NONBLOCK);
 		while ((next = fgets(line, sizeof(line), fp)) != NULL) {
 			if (vstrsep(next, " ", &expire, &mac, &ip, &name) == 4) {
 				if ((!strcmp(ipaddr, ip)) &&
 				    (strlen(name) > 0) &&
 				    (!strchr(name, '*')) &&	// Ensure it's not a clientid in
 				    (!strchr(name, ':')))	// case device didn't have a hostname
-						strncpy(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num], name, 15);
+						strlcpy(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num], name, 32);
 			}
 		}
 		fclose(fp);
@@ -1904,7 +1950,7 @@ int FindHostname(P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab)
 		while ((b = strsep(&nvp, "<")) != NULL) {
 			if ((vstrsep(b, ">", &mac, &ip, &name) == 3) && (strlen(ip) > 0) && (strlen(name) > 0)) {
 				if (!strcmp(ipaddr, ip))
-					strncpy(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num], name, 15);
+					strlcpy(p_client_detail_info_tab->device_name[p_client_detail_info_tab->detail_info_num], name, 32);
 			}
 		}
 		free(nv);

@@ -1,7 +1,7 @@
 /*
  * Test harness utility.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -38,7 +38,7 @@ typedef struct
 		}													\
 		else {												\
 			gTestLog.failed++;								\
-			dbg("\n*** FAIL *** - %s %s():%d - %s\n\n",	\
+			printf("\n*** FAIL *** - %s %s():%d - %s\n\n",	\
 				__FILE__, __FUNCTION__, __LINE__, error);	\
 		}													\
 	} while (0)
@@ -51,7 +51,7 @@ typedef struct
 		}													\
 		else {												\
 			gTestLog.failed++;								\
-			dbg("\n*** FAIL *** - %s():%d - %s\n\n",		\
+			printf("\n*** FAIL *** - %s():%d - %s\n\n",		\
 				__FUNCTION__, __LINE__, error);				\
 			exit(-1);										\
 		}													\
@@ -61,12 +61,12 @@ typedef struct
 {															\
 	int percent = gTestLog.count ?							\
 		gTestLog.passed * 100 / gTestLog.count : 0; 		\
-	dbg("\n");											\
-	dbg("Test Results (%s):\n\n", __FILE__);				\
-	dbg("Tests    %d\n", gTestLog.count);				\
-	dbg("Pass     %d\n", gTestLog.passed);				\
-	dbg("Fail     %d\n\n", gTestLog.failed);				\
-	dbg("%d%%\n\n", percent);							\
+	printf("\n");											\
+	printf("Test Results (%s):\n\n", __FILE__);				\
+	printf("Tests    %d\n", gTestLog.count);				\
+	printf("Pass     %d\n", gTestLog.passed);				\
+	printf("Fail     %d\n\n", gTestLog.failed);				\
+	printf("%d%%\n\n", percent);							\
 }
 
 #endif /* _TEST_H_ */

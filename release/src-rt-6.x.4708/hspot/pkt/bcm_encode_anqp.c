@@ -1,7 +1,7 @@
 /*
  * Encode functions which provides encoding of ANQP packets as defined in 802.11u.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -322,8 +322,8 @@ int bcm_encode_anqp_domain_name_list(bcm_encode_t *pkt, uint16 domainLen, uint8 
 	return bcm_encode_length(pkt) - initLen;
 }
 
-/* encode WFA service discovery */
-int bcm_encode_anqp_wfa_service_discovery(bcm_encode_t *pkt,
+/* encode ANQP query vendor specific */
+int bcm_encode_anqp_query_vendor_specific(bcm_encode_t *pkt,
 	uint16 serviceUpdateIndicator, uint16 dataLen, uint8 *data)
 {
 	int initLen = bcm_encode_length(pkt);
@@ -344,20 +344,15 @@ int bcm_encode_anqp_wfa_service_discovery(bcm_encode_t *pkt,
 static int bcm_encode_anqp_query_vendor_specific_tlv(bcm_encode_t *pkt,
 	uint8 serviceProtocolType, uint8 serviceTransactionId,
 	int isStatusCode, uint8 statusCode,
-	int isNumService, uint8 numService,
 	uint16 queryLen, uint8 *queryData)
 {
 	int initLen = bcm_encode_length(pkt);
 
-	bcm_encode_le16(pkt, 2 + (isStatusCode ? 1 : 0) +
-		(isNumService ? 1 : 0) + queryLen);
+	bcm_encode_le16(pkt, 2 + (isStatusCode ? 1 : 0) + queryLen);
 	bcm_encode_byte(pkt, serviceProtocolType);
 	bcm_encode_byte(pkt, serviceTransactionId);
 	if (isStatusCode) {
 		bcm_encode_byte(pkt, statusCode);
-	}
-	if (isNumService) {
-		bcm_encode_byte(pkt, numService);
 	}
 	if (queryLen > 0) {
 		bcm_encode_bytes(pkt, queryLen, queryData);
@@ -373,60 +368,15 @@ int bcm_encode_anqp_query_request_vendor_specific_tlv(bcm_encode_t *pkt,
 {
 	return bcm_encode_anqp_query_vendor_specific_tlv(pkt,
 		serviceProtocolType, serviceTransactionId,
-		FALSE, 0, FALSE, 0, queryLen, queryData);
+		FALSE, 0, queryLen, queryData);
 }
 
 /* encode ANQP query response vendor specific TLV */
 int bcm_encode_anqp_query_response_vendor_specific_tlv(bcm_encode_t *pkt,
 	uint8 serviceProtocolType, uint8 serviceTransactionId, uint8 statusCode,
-	int isNumService, uint8 numService,
 	uint16 queryLen, uint8 *queryData)
 {
 	return bcm_encode_anqp_query_vendor_specific_tlv(pkt,
 		serviceProtocolType, serviceTransactionId,
-		TRUE, statusCode, isNumService, numService,
-		queryLen, queryData);
-}
-
-/* encode WFDS request */
-int bcm_encode_anqp_wfds_request(bcm_encode_t *pkt,
-	uint8 serviceNameLen, uint8 *serviceName,
-	uint8 serviceInfoReqLen, uint8 *serviceInfoReq)
-{
-	int initLen = bcm_encode_length(pkt);
-
-	bcm_encode_byte(pkt, serviceNameLen);
-	if (serviceNameLen > 0) {
-		bcm_encode_bytes(pkt, serviceNameLen, serviceName);
-	}
-	bcm_encode_byte(pkt, serviceInfoReqLen);
-	if (serviceInfoReqLen > 0) {
-		bcm_encode_bytes(pkt, serviceInfoReqLen, serviceInfoReq);
-	}
-
-	return bcm_encode_length(pkt) - initLen;
-}
-
-/* encode WFDS response */
-int bcm_encode_anqp_wfds_response(bcm_encode_t *pkt,
-	uint32 advertisementId, uint16 configMethod,
-	uint8 serviceNameLen, uint8 *serviceName,
-	uint8 serviceStatus,
-	uint16 serviceInfoLen, uint8 *serviceInfo)
-{
-	int initLen = bcm_encode_length(pkt);
-
-	bcm_encode_le32(pkt, advertisementId);
-	bcm_encode_le16(pkt, configMethod);
-	bcm_encode_byte(pkt, serviceNameLen);
-	if (serviceNameLen > 0) {
-		bcm_encode_bytes(pkt, serviceNameLen, serviceName);
-	}
-	bcm_encode_byte(pkt, serviceStatus);
-	bcm_encode_le16(pkt, serviceInfoLen);
-	if (serviceInfoLen > 0) {
-		bcm_encode_bytes(pkt, serviceInfoLen, serviceInfo);
-	}
-
-	return bcm_encode_length(pkt) - initLen;
+		TRUE, statusCode, queryLen, queryData);
 }

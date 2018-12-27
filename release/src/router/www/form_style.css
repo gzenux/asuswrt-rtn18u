@@ -804,42 +804,6 @@ form{
 	cursor:text;
 }
 
-#ClientList_Block{
-	border:2px outset #999;
-	background-color:#576D73;
-	position:absolute;
-	margin-top:24px;
-	margin-left:2px;
-	*margin-left:-145px;
-	text-align:left;
-	width:200px;
-	height:auto;
-	overflow-y:auto;
-	z-index:200;
-	padding: 1px;
-	display:none;
-}
-#ClientList_Block div{
-	background-color:#576D73;
-	height:20px;
-	line-height:20px;
-	text-decoration:none;
-	padding-left:2px;
-}
-
-#ClientList_Block a{
-	background-color:#EFEFEF;
-	color:#FFF;
-	font-size:12px;
-	font-family:Arial, Helvetica, sans-serif;
-	text-decoration:none;	
-}
-#ClientList_Block div:hover, #ClientList_Block a:hover{
-	background-color:#3366FF;
-	color:#FFFFFF;
-	cursor:default;
-}
-
 #QoSList_Block{
 	border:1px outset #999;
 	background-color:#576D73;
@@ -869,7 +833,7 @@ form{
 	font-size:12px;
 	font-family:Arial, Helvetica, sans-serif;
 }
-#QoSList_Block div:hover, #ClientList_Block a:hover{
+#QoSList_Block div:hover {
 	background-color:#3366FF;
 	color:#FFFFFF;
 	cursor:default;
@@ -1683,7 +1647,7 @@ padding-top:1px;
 .simnone{
 	background-image:url(images/mobile/sim_state.png);
 	background-repeat:no-repeat;	
-	background-position:4px 2px;
+	background-position:4px 3px;
 	height:30px;
 	width:30px;
 	cursor: pointer;

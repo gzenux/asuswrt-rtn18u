@@ -106,6 +106,10 @@ ifeq ($(RTCONFIG_EXT_RTL8365MB),y)
 CFLAGS += -I$(LINUXDIR)/drivers/char/rtl8365mb
 OBJS += rtl_8365mb.o
 endif
+ifeq ($(RTCONFIG_EXT_RTL8370MB),y)
+CFLAGS += -I$(LINUXDIR)/drivers/char/rtl8365mb
+OBJS += rtl_8365mb.o
+endif
 endif
 
 ifeq ($(RTCONFIG_USB),y)
@@ -194,6 +198,13 @@ ifeq ($(RTCONFIG_TCODE),y)
 ifneq ($(wildcard ./prebuild/tcode.o),)
 tcode.o:
 	@-cp -f ./prebuild/tcode.o .
+endif
+endif
+
+ifeq ($(RTCONFIG_BCM5301X_TRAFFIC_MONITOR),y)
+ifneq ($(wildcard ./prebuild/private.o),)
+private.o:
+	@-cp -f ./prebuild/private.o .
 endif
 endif
 

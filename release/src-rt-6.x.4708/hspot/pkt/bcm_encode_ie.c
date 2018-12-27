@@ -2,7 +2,7 @@
  * Encode functions which provides encoding of information elements
  * as defined in 802.11.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -37,37 +37,19 @@ int bcm_encode_ie_hotspot_indication(bcm_encode_t *pkt, uint8 hotspotConfig)
 
 /* encode hotspot 2.0 indication release2 */
 int bcm_encode_ie_hotspot_indication2(bcm_encode_t *pkt,
-	int isDgafDisabled, uint8 releaseNumber,
-	int isPpsMoIdPresent, uint16 ppsMoId,
-	int isAnqpDomainIdPresent, uint16 anqpDomainId)
+	int isDgafDisabled, uint8 releaseNumber)
 {
 	int initLen = bcm_encode_length(pkt);
-	uint8 len;
 	uint8 config = 0;
 
 	bcm_encode_byte(pkt, DOT11_MNG_VS_ID);
-	len = 5;
-	if (isPpsMoIdPresent)
-		len += 2;
-	if (isAnqpDomainIdPresent)
-		len += 2;
-	bcm_encode_byte(pkt, len);
+	bcm_encode_byte(pkt, 5);
 	bcm_encode_bytes(pkt, WFA_OUI_LEN, (uint8 *)WFA_OUI);
 	bcm_encode_byte(pkt, HSPOT_IE_OUI_TYPE);
 	if (isDgafDisabled)
 		config |= HSPOT_DGAF_DISABLED_MASK;
 	config |= (releaseNumber << HSPOT_RELEASE_SHIFT) & HSPOT_RELEASE_MASK;
-	if (isPpsMoIdPresent)
-		config |= HSPOT_PPS_MO_ID_MASK;
-	if (isAnqpDomainIdPresent)
-		config |= HSPOT_ANQP_DOMAIN_ID_MASK;
 	bcm_encode_byte(pkt, config);
-	if (isPpsMoIdPresent) {
-		bcm_encode_le16(pkt, ppsMoId);
-	}
-	if (isAnqpDomainIdPresent) {
-		bcm_encode_le16(pkt, anqpDomainId);
-	}
 
 	return bcm_encode_length(pkt) - initLen;
 }
@@ -184,21 +166,6 @@ int bcm_encode_ie_advertisement_protocol(bcm_encode_t *pkt,
 	bcm_encode_byte(pkt, 2);
 	bcm_encode_byte(pkt, (pamebi << 7) | (qRspLimit & 0x7f));
 	bcm_encode_byte(pkt, id);
-
-	return bcm_encode_length(pkt) - initLen;
-}
-
-/* encode qbss load */
-int bcm_encode_ie_bss_load(bcm_encode_t *pkt, uint16 stationCount,
-	uint8 channelUtilization, uint16 availableAdmissionCapacity)
-{
-	int initLen = bcm_encode_length(pkt);
-
-	bcm_encode_byte(pkt, DOT11_MNG_QBSS_LOAD_ID);
-	bcm_encode_byte(pkt, 5);
-	bcm_encode_le16(pkt, stationCount);
-	bcm_encode_byte(pkt, channelUtilization);
-	bcm_encode_le16(pkt, availableAdmissionCapacity);
 
 	return bcm_encode_length(pkt) - initLen;
 }

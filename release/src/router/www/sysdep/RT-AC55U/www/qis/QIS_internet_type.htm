@@ -23,6 +23,21 @@
 	font-size:14px;
 	text-align:left;
 }
+
+.iptvTable{
+	width:360px;
+	margin-left:-7px;
+}
+
+.iptvTable th{
+	text-align:right;
+	width:160px;
+	color:#66CCFF;
+}
+
+.iptvTable td{
+	text-align:left;
+}
 </style>
 <script type="text/javascript" src="/qis/QISMobilePlugin.js"></script>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
@@ -37,23 +52,13 @@ var contentM_height_orig = parent.document.getElementById("contentM").height;
 function QKinternettype_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_type_head#>";
 
-	/*if('<% nvram_get("autodet_state"); %>' != "2" && '<% nvram_get("autodet_auxstate"); %>' != "6"){
-		document.getElementById("wd3").style.display = "";
-		document.getElementById("wd4").style.display = "";
-		document.getElementById("wd5").style.display = "";
-		document.getElementById("wd3_1").style.display = "";
-		document.getElementById("wd4_1").style.display = "";
-		document.getElementById("wd5_1").style.display = "";
-	}*/
-
 	if(parent.ISMOBILE){
 		parent.set_step("detect");
 		document.getElementById("field_general").style.display = "none";
 		document.getElementById("field_mobile").style.display = "";		
 		hideObjs();
 
-		//if(!parent.manualstb_support)
-			document.getElementById("unifyBtn").style.display = "none";
+		document.getElementById("unifyBtn").style.display = "none";
 	}
 	else{
 		parent.set_step("t2");
@@ -61,23 +66,12 @@ function QKinternettype_load_body(){
 			document.applyForm.wan_proto.value = "pppoe"
 		else			
 			document.applyForm.wan_proto.value = '<% nvram_get("wan_proto"); %>';
-	
-		/*if(document.applyForm.wan_proto.value == 'pppoe')
-			inputCCtrl4(document.applyForm.x_WANType, 1);
-		else if(document.applyForm.wan_proto.value == 'static')
-			inputCCtrl4(document.applyForm.x_WANType, 2);
-		else if(document.applyForm.wan_proto.value == 'pptp')
-			inputCCtrl4(document.applyForm.x_WANType, 3);
-		else if(document.applyForm.wan_proto.value == 'l2tp')
-			inputCCtrl4(document.applyForm.x_WANType, 4);
-		else
-			inputCCtrl4(document.applyForm.x_WANType, 0);*/
 		
 		if(parent.get_internet_type_reducedmode() == "enable")
 			blocking("dhcppppoe_sec", false);
 	
 		ISP_Profile_Selection(original_switch_wantag);
-		//hide_specialISP();
+
 		if( parent.based_modelid != "RT-AC3200" &&
                         parent.based_modelid != "RT-AC87U" &&
                         parent.based_modelid != "RT-AC68U" &&
@@ -86,13 +80,40 @@ function QKinternettype_load_body(){
                         parent.based_modelid != "RT-N66U" &&
                         parent.based_modelid != "RT-N18U"
                 ){      // MODELDEP: RT-AC3200, RT-AC87U@sysdep/RT-AC55U, RT-AC68U, RT-AC66U, RT-AC51U, RT-N66U, RT-N18U
-                        document.getElementById('meoOption').outerHTML = "";
-                }
+			document.getElementById('meoOption').outerHTML = "";
+			document.getElementById('vodafoneOption').outerHTML = "";
+		}
+
+		if( parent.based_modelid != "RT-AC5300" &&
+			parent.based_modelid != "RT-AC3200" &&
+			parent.based_modelid != "RT-AC3100" &&
+			parent.based_modelid != "RT-AC88U" &&
+			parent.based_modelid != "RT-AC87U" &&
+			parent.based_modelid != "RT-AC68U" &&
+			parent.based_modelid != "RT-AC66U" &&
+			parent.based_modelid != "RT-AC56U" &&
+			//based_modelid != "RT-AC51U" &&
+			parent.based_modelid != "RT-N66U" &&
+			parent.based_modelid != "RT-N18U"
+	        ){
+			document.getElementById('movistarOption').outerHTML = "";
+		}
+
+		if(parent.based_modelid == "RT-AC5300R"){ //MODELDEP: RT-AC5300R : TRUNK ports
+			document.getElementById("voip_lan").innerHTML = "LAN4";	//P3
+			document.getElementById("iptv_lan").innerHTML = "LAN8"; //P4
+			document.getElementById("voip_port3").innerHTML = "VoIP (LAN port 4):"; //P3
+			document.getElementById("iptv_port4").innerHTML = "IPTV (LAN port 8):"; //P4
+		}
+		else if(parent.based_modelid == "RT-AC53"){
+			document.getElementById("voip_lan").innerHTML = "LAN1";
+			document.getElementById("iptv_lan").innerHTML = "LAN2";
+			document.getElementById("voip_port3").innerHTML = "VoIP (LAN port 1):";
+			document.getElementById("iptv_port4").innerHTML = "IPTV (LAN port 2):";
+		}
 	
 		if(parent.ruisp_support)
 			document.getElementById("ruisp_btn").style.display = "";
-			
-		//document.getElementById("ff123").focus();
 	
 		if(!parent.manualstb_support) 
 			document.applyForm.switch_wantag.remove(8);
@@ -138,34 +159,7 @@ function submitForm(){
 		alert("<#QKSet_type_rechoice#>");
 		return false;
 	}
-/*	
-	if(document.applyForm.x_WANType[1].checked == true){
-		document.applyForm.wan_proto.value = "pppoe";
-		parent.document.QKform.wan_dhcpenable_x.value = 1;
-		parent.document.QKform.wan_dnsenable_x.value = 1;
-		document.applyForm.next_page.value = "QIS_internet_account.htm";
-	}
-	else if(document.applyForm.x_WANType[3].checked == true){
-		document.applyForm.wan_proto.value = "pptp";
-		document.applyForm.next_page.value = "QIS_internet_account.htm";
-	}
-	else if(document.applyForm.x_WANType[4].checked == true){
-		document.applyForm.wan_proto.value = "l2tp";
-		document.applyForm.next_page.value = "QIS_internet_account.htm";
-	}
-	else if(document.applyForm.x_WANType[2].checked == true){
-		document.applyForm.wan_proto.value = "static";
-		parent.document.QKform.wan_dhcpenable_x.value = 0;
-		parent.document.QKform.wan_dnsenable_x.value = 0;
-		document.applyForm.next_page.value = "QIS_internet_ip.htm";
-	}
-	else{
-		document.applyForm.wan_proto.value = "dhcp";
-		parent.document.QKform.wan_dhcpenable_x.value = 1;
-		parent.document.QKform.wan_dnsenable_x.value = 1;
-		document.applyForm.next_page.value = "QIS_internet_isp.htm";
-	}
-*/	
+
 	parent.document.QKform.wan_proto.value = document.applyForm.wan_proto.value;
 	
 	if(original_switch_wantag != document.applyForm.switch_wantag.value){
@@ -189,99 +183,112 @@ function gotoprev_type(){
 
 function ISP_Profile_Selection(isp){
 	if(isp == "none"){
-		document.getElementById("wan_iptv_x").style.display = "none";
-		document.getElementById("wan_voip_x").style.display = "none";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("port_settings").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";		
 		document.applyForm.switch_wantag.value = "none";
 	}
   	else if(isp == "unifi_home"){
+  		document.getElementById("port_settings").style.display = "";
+  		document.getElementById("wan_iptv_line").style.display = "";
 		document.getElementById("wan_iptv_x").style.display = "";
+		document.getElementById("wan_voip_line").style.display = "none";
 		document.getElementById("wan_voip_x").style.display = "none";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";		
 		document.applyForm.switch_wantag.value = "unifi_home";
 	}
 	else if(isp == "unifi_biz"){
-		document.getElementById("wan_iptv_x").style.display = "none";
-		document.getElementById("wan_voip_x").style.display = "none";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("port_settings").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";		
 		document.applyForm.switch_wantag.value = "unifi_biz";
 	}
 	else if(isp == "singtel_mio"){
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "";
 		document.getElementById("wan_iptv_x").style.display = "";
+		document.getElementById("wan_voip_line").style.display = "";
 		document.getElementById("wan_voip_x").style.display = "";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";	
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";		
 		document.applyForm.switch_wantag.value = "singtel_mio";
 	}
 	else if(isp == "singtel_others"){
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "";
 		document.getElementById("wan_iptv_x").style.display = "";
+		document.getElementById("wan_voip_line").style.display = "none";
 		document.getElementById("wan_voip_x").style.display = "none";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";			
 		document.applyForm.switch_wantag.value = "singtel_others";
 	}
 	else if(isp == "m1_fiber"){		
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "none";
 		document.getElementById("wan_iptv_x").style.display = "none";
+		document.getElementById("wan_voip_line").style.display = "";
 		document.getElementById("wan_voip_x").style.display = "";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";
 		document.applyForm.switch_wantag.value = "m1_fiber";
 	}
 	else if(isp == "maxis_fiber"){		
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "none";
 		document.getElementById("wan_iptv_x").style.display = "none";
+		document.getElementById("wan_voip_line").style.display = "";
 		document.getElementById("wan_voip_x").style.display = "";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
-		document.applyForm.switch_wantag.value = "maxis_fiber";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";
+		document.applyForm.switch_wantag.value = "maxis_fiber";		
 	}
 	else if(isp == "maxis_fiber_sp"){		
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "none";
 		document.getElementById("wan_iptv_x").style.display = "none";
+		document.getElementById("wan_voip_line").style.display = "";
 		document.getElementById("wan_voip_x").style.display = "";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";
 		document.applyForm.switch_wantag.value = "maxis_fiber_sp";
 	}
-        else if(isp == "hinet"){
-                document.getElementById("wan_iptv_x").style.display = "";
-                document.getElementById("wan_voip_x").style.display = "none";
-                document.getElementById("wan_internet_x").style.display = "none";
-                document.getElementById("wan_iptv_port4_x").style.display = "none";
-                document.getElementById("wan_voip_port3_x").style.display = "none";
-                document.applyForm.switch_wantag.value = "hinet";
-        }
 	else if(isp == "movistar"){
-		document.getElementById("wan_iptv_x").style.display = "";
-		document.getElementById("wan_voip_x").style.display = "";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("port_settings").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "";
+		change_auth(document.applyForm.wan10_auth_x.value);
 		document.applyForm.switch_wantag.value = "movistar";
 	}
 	else if(isp == "meo"){
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "";
 		document.getElementById("wan_iptv_x").style.display = "";
+		document.getElementById("wan_voip_line").style.display = "none";
 		document.getElementById("wan_voip_x").style.display = "none";
-		document.getElementById("wan_internet_x").style.display = "none";
-		document.getElementById("wan_iptv_port4_x").style.display = "none";
-		document.getElementById("wan_voip_port3_x").style.display = "none";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";
 		document.applyForm.switch_wantag.value = "meo";
 	}
-	else if(isp == "manual"){
+	else if(isp == "vodafone"){
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "";
 		document.getElementById("wan_iptv_x").style.display = "";
+		document.getElementById("wan_voip_line").style.display = "";
 		document.getElementById("wan_voip_x").style.display = "";
-		document.getElementById("wan_internet_x").style.display = "";
-		document.getElementById("wan_iptv_port4_x").style.display = "";
-		document.getElementById("wan_voip_port3_x").style.display = "";
+		document.getElementById("manual_settings").style.display = "none";
+		document.getElementById("iptv_configuration").style.display = "none";
+		document.applyForm.switch_wantag.value = "vodafone";
+	}	
+	else if(isp == "manual"){
+		document.getElementById("port_settings").style.display = "";
+		document.getElementById("wan_iptv_line").style.display = "";
+		document.getElementById("wan_iptv_x").style.display = "";
+		document.getElementById("wan_voip_line").style.display = "";
+		document.getElementById("wan_voip_x").style.display = "";
+		document.getElementById("manual_settings").style.display = "";
+		document.getElementById("iptv_configuration").style.display = "none";
 		document.applyForm.switch_wantag.value = "manual";
 	}
 }
@@ -350,23 +357,16 @@ function set_ISP_profile(){
         document.applyForm.switch_wan2tagid.value = "14";
         document.applyForm.switch_wan2prio.value = "0";
     }
-        if(document.applyForm.switch_wantag.value == "hinet") {
-                document.applyForm.switch_stb_x.value = "4";
-                document.applyForm.switch_wan0tagid.value = "";
-                document.applyForm.switch_wan0prio.value = "0";
-                document.applyForm.switch_wan1tagid.value = "";
-                document.applyForm.switch_wan1prio.value = "0";
-                document.applyForm.switch_wan2tagid.value = "0";
-                document.applyForm.switch_wan2prio.value = "0";
-        }
 	else if(document.applyForm.switch_wantag.value == "movistar") {
-		document.applyForm.switch_stb_x.value = "6";
-		document.applyForm.switch_wan0tagid.value = "6";
-		document.applyForm.switch_wan0prio.value = "0";
-		document.applyForm.switch_wan1tagid.value = "2";
-		document.applyForm.switch_wan1prio.value = "0";
-		document.applyForm.switch_wan2tagid.value = "3";
-		document.applyForm.switch_wan2prio.value = "0";
+        document.applyForm.switch_stb_x.value = "8";
+        document.applyForm.switch_wan0tagid.value = "6";
+        document.applyForm.switch_wan0prio.value = "0";
+        document.applyForm.switch_wan1tagid.value = "2";
+        document.applyForm.switch_wan1prio.value = "0";
+        document.applyForm.switch_wan2tagid.value = "3";
+        document.applyForm.switch_wan2prio.value = "0";
+        document.applyForm.wan10_proto.value = "static";
+        document.applyForm.wan11_proto.value = "dhcp";
 	}
 	else if(document.applyForm.switch_wantag.value == "meo") {
 		document.applyForm.switch_stb_x.value = "4";
@@ -377,6 +377,15 @@ function set_ISP_profile(){
 		document.applyForm.switch_wan2tagid.value = "";
 		document.applyForm.switch_wan2prio.value = "0";
 	}
+    else if(document.form.switch_wantag.value == "vodafone") {
+        document.applyForm.switch_stb_x.value = "3";
+        document.applyForm.switch_wan0tagid.value = "100";
+        document.applyForm.switch_wan0prio.value = "1";
+        document.applyForm.switch_wan1tagid.value = "";
+        document.applyForm.switch_wan1prio.value = "0";
+        document.applyForm.switch_wan2tagid.value = "105";
+        document.applyForm.switch_wan2prio.value = "1";
+    }
 
 	if(document.applyForm.switch_wantag.value == "maxis_fiber_sp_iptv" || 
 		document.applyForm.switch_wantag.value == "maxis_fiber_iptv" || 
@@ -384,46 +393,26 @@ function set_ISP_profile(){
         ){
 		document.applyForm.mr_enable_x.value = "1";
 		document.applyForm.emf_enable.value = "1";
-        }
+	}
+
 	if(document.applyForm.switch_wantag.value == "meo")
 		document.applyForm.ttl_inc_enable = "1";
 }
 
-function hide_specialISP(){
-	var isIE = navigator.userAgent.search("MSIE") > -1; 
-
-	if(!document.applyForm.specialisp.checked){
-		document.getElementById("special_ISP_img").style.display = "none";
-		document.getElementById("sparcial_ISP_field").style.display = "none";
-		document.getElementById("tblsetting").style.width = "600px";
-		if(isIE){
-			document.getElementById("tblsetting").style.marginLeft = "50px";
-		}
-		else{
-			document.getElementById("tblsetting").style.marginLeft = "70px";
-		}
+function change_auth(auth_mode){
+	if(auth_mode == "8021x-md5"){
+		document.getElementById("tr_pppoe_username").style.display = "";
+		document.getElementById("tr_pppoe_password").style.display = "";
 	}
 	else{
-		document.getElementById("special_ISP_img").style.display = "";
-		document.getElementById("sparcial_ISP_field").style.display = "";
-		document.getElementById("tblsetting").style.width = "400px";
-		document.getElementById("tblsetting").style.marginLeft = "50px";
-		if(isIE){
-			document.getElementById("tblsetting").style.marginLeft = "50px";
-		}
-		else{
-			document.getElementById("tblsetting").style.marginLeft = "70px";
-		}
+		document.getElementById("tr_pppoe_username").style.display = "none";
+		document.getElementById("tr_pppoe_password").style.display = "none";
 	}
+}
 
-	if(isIE){
-		if(contentM_height_orig < document.body.scrollHeight+30)
-		parent.document.getElementById("contentM").height = document.body.scrollHeight+30;
-	}
-	else{
-		if(contentM_height_orig < document.body.scrollHeight)
-			parent.document.getElementById("contentM").height = document.body.scrollHeight;
-	}
+/* password item show or not */
+function pass_checked_iptv(obj){
+	parent.switchType(obj, document.applyForm.show_pass_iptv.checked, true);
 }
 
 function submitenter(myfield,e)
@@ -471,6 +460,17 @@ function switch_dialUp_type(obj){
 
 
 function detect_if_wan_plug(flag){
+	String.prototype.strlenHandler = function(maxLen, handler){
+		var len = 0;
+		for(var i=0; i<str.length; i++){
+			var c = str.charCodeAt(i); 
+			if((c >= 0x0001 && c <= 0x007e) || (0xff60<=c && c<=0xff9f)){len++;} 
+			else{len+=2;} 
+		} 
+
+		if(len > maxLen) handler();
+	}
+
 	$.ajax({
 		url: '/result_of_get_changed_status_QIS.asp',
 		dataType: 'script',		
@@ -479,10 +479,10 @@ function detect_if_wan_plug(flag){
 		},
 		success: function(response){
 			if(autodet_state == 4){ // ethernet did not plug
-				if(parent.ISMOBILE)
-					document.getElementById("wan_unplug_mobile").style.display = "";
-				else
-					document.getElementById("wan_unplug").style.display = "";
+				document.getElementById("wan_unplug").innerHTML.strlenHandler(135, function(){
+					document.getElementById("unknownIsp").style.display = "none";
+				});
+				document.getElementById("wan_unplug").style.display = "";
 			}
 			else if(autodet_state == 0)
 				detect_if_wan_plug();
@@ -511,23 +511,21 @@ function next_step(flag){
 
 	if(flag == 0){
 		stage = 1;
-		document.getElementById('dialUp_tr').style.display = "none";
-		document.getElementById('dialUp_desc').style.display = "none";
-		document.getElementById('non_dialUp_tr').style.display = "none";
-		document.getElementById('non_dialUp_desc').style.display = "none";
-		document.getElementById('previous_button').style.display = "";
-		document.getElementById('title_desc').innerHTML = "<#QKSet_type_desc#>";
 		if(document.applyForm.wan_type[0].checked){	// dial-up 
-			document.applyForm.wan_proto.value = "pppoe";
 			parent.document.QKform.wan_dhcpenable_x.value = 1;
 			parent.document.QKform.wan_dnsenable_x.value = 1;
-			document.applyForm.next_page.value = "QIS_internet_account.htm";
 			parent.document.QKform.wan_proto.value = document.applyForm.wan_proto.value;
+
+			document.applyForm.wan_proto.value = "pppoe";
+			document.applyForm.next_page.value = "QIS_internet_account.htm";
 			location.href = document.applyForm.next_page.value;
-			return true;
-		
 		}
 		else if(document.applyForm.wan_type[1].checked){
+			document.getElementById('dialUp_tr').style.display = "none";
+			document.getElementById('dialUp_desc').style.display = "none";
+			document.getElementById('non_dialUp_tr').style.display = "none";
+			document.getElementById('non_dialUp_desc').style.display = "none";
+			document.getElementById('previous_button').style.display = "";
 			document.getElementById('dhcp_tr').style.display = "";
 			document.getElementById('dhcp_desc').style.display = "";
 			document.getElementById('static_tr').style.display = "";
@@ -541,12 +539,14 @@ function next_step(flag){
 		
 		if(document.applyForm.specialisp.checked){
 			if(document.applyForm.switch_wantag.value == "manual"){//Check VID
-				if(document.applyForm.switch_wan1tagid.value == "" && document.applyForm.switch_wan2tagid.value != "")
-					document.applyForm.switch_stb_x.value = "3";
-		        else if(document.applyForm.switch_wan1tagid.value != "" && document.applyForm.switch_wan2tagid.value == "")
-					document.applyForm.switch_stb_x.value = "4";
-		        else if(document.applyForm.switch_wan1tagid.value == "" && document.applyForm.switch_wan2tagid.value == "")
+				if(document.applyForm.switch_wan1tagid.value == "" && document.applyForm.switch_wan2tagid.value == "")
 					document.applyForm.switch_stb_x.value = "0";
+				else if(document.applyForm.switch_wan1tagid.value == "" && document.applyForm.switch_wan2tagid.value != "")
+					document.applyForm.switch_stb_x.value = "3";
+				else if(document.applyForm.switch_wan1tagid.value != "" && document.applyForm.switch_wan2tagid.value == "")
+					document.applyForm.switch_stb_x.value = "4";
+				else
+					document.applyForm.switch_stb_x.value = "6";
 
 		        if(document.applyForm.switch_wan0tagid.value.length > 0 && !validator.rangeNull(document.applyForm.switch_wan0tagid, 2, 4094, "")){
 		        	document.applyForm.switch_wan0tagid.focus();
@@ -633,17 +633,19 @@ function next_step(flag){
 }
 
 function switch_dhcp_type(obj){
-	if(obj.id == "non_dialUp_static"){
-		document.getElementById("image_field").className = "static_image";
-		document.getElementById("dhcp_scenario_1").style.display = "none";
-		document.getElementById("dhcp_scenario_2").style.display = "none";
-		document.getElementById("static_ip_desc").style.display = "";
-	}
-	else{
-		document.getElementById("image_field").className = "non_dialUp";
-		document.getElementById("dhcp_scenario_1").style.display = "";
-		document.getElementById("dhcp_scenario_2").style.display = "";
-		document.getElementById("static_ip_desc").style.display = "none";
+	if(!document.applyForm.specialisp.checked){
+		if(obj.id == "non_dialUp_static"){
+			document.getElementById("image_field").className = "static_image";
+			document.getElementById("dhcp_scenario_1").style.display = "none";
+			document.getElementById("dhcp_scenario_2").style.display = "none";
+			document.getElementById("static_ip_desc").style.display = "";
+		}
+		else{
+			document.getElementById("image_field").className = "non_dialUp";
+			document.getElementById("dhcp_scenario_1").style.display = "";
+			document.getElementById("dhcp_scenario_2").style.display = "";
+			document.getElementById("static_ip_desc").style.display = "none";
+		}
 	}
 
 }
@@ -666,8 +668,9 @@ function previous_step(flag){
 			document.getElementById("dhcp_scenario_1").style.display = "";
 			document.getElementById("dhcp_scenario_2").style.display = "";
 			document.getElementById("static_ip_desc").style.display = "none";
-		}	
-		
+		}
+		document.getElementById("special_ISP_field").style.display = "none";
+	
 		stage = 0; 
 	}
 }
@@ -676,40 +679,38 @@ function enable_ISP_special(){
 	if(document.applyForm.specialisp.checked){
 		ISP_Profile_Selection(original_switch_wantag);
 		document.getElementById('image_field').style.display = "none";
-		document.getElementById('sparcial_ISP_field').style.display = "";
+		document.getElementById('special_ISP_field').style.display = "";
 		if(document.getElementById('image_field').className == "static_image")
 			document.getElementById('static_ip_desc').style.display = "none";
+		document.getElementById("dhcp_scenario_2").style.display = "none";
 	}
 	else{
 		document.getElementById('image_field').style.display = "";
-		document.getElementById('sparcial_ISP_field').style.display = "none";
+		document.getElementById('special_ISP_field').style.display = "none";
 		if(document.getElementById('image_field').className == "static_image")
 			document.getElementById('static_ip_desc').style.display = "";	
+		document.getElementById("dhcp_scenario_2").style.display = "";
 	}
 }
 </script>      
 <style>
 .dialUp{
-	width:310px;
 	height:157px;
 	background:url('../images/New_ui/new_qis/PPPoE.png') no-repeat;
 	background-position:50% 0%;
 }
 .non_dialUp{
-	width:310px;
 	height:320px;
 	background:url('../images/New_ui/new_qis/WAN-connection-type.png') no-repeat;
 	background-position:50% 0%;
 }
 .static_image{
-	width:310px;
-	height:300px;
+	height:280px;
 	background:url('../images/New_ui/new_qis/staticIP.png') no-repeat;
 	background-position:50% 0%;
 
 }
 .image_field{
-	width:310px;
 	height:300px;
 	background:url('../images/New_ui/new_qis/WAN-connection-defaultPage.png') no-repeat;
 	background-position: center;
@@ -733,29 +734,32 @@ function enable_ISP_special(){
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="5">
 <input type="hidden" name="flag" value="">
+<input type="hidden" name="wan10_proto" value="<% nvram_get("wan10_proto"); %>">
+<input type="hidden" name="wan11_proto" value="<% nvram_get("wan11_proto"); %>">
+
 <div class="QISmain">
-
-<div id="descTltle">
-	<table width="100%">
-		<tr>
-			<td align="left">
-				<div class="description_down"><#QKSet_type_desc#></div>
-			</td>
-		</tr>
-	</table>
-</div>
-<div style="margin:5px;" id="splitLine"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
-
+	<div id="descTltle">
+		<table width="100%">
+			<tr>
+				<td align="left">
+					<div class="description_down"><#QKSet_type_desc#></div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div style="margin:5px;" id="splitLine"><img style="width: 720px; *width: 710px; height: 2px;" src="../images/New_ui/export/line_export.png"></div>
+</div>	
+<br/>
 <div id="field_general">
 
-<div id='dhcppppoe_sec' style="margin-top:15px; margin-left:-40px;">
-  <table id="tblsetting" class="QISform2" style="width:400px;margin-left:70px" border=0 align="left" cellpadding="2" cellspacing="0"> 
+<div id='dhcppppoe_sec'>
+  <table border="0" align="left" cellpadding="2" cellspacing="0"> 
 	<tr>
-		<td>
-			<table style="width:400px;margin-top:-50px;">
+		<td style="width:380px;">
+			<table class="QISform" style="width:98%;">
 				<tr>
 					<td colspan="2">
-						<div id="title_desc" style="font-size:14px;margin-bottom:30px;"><#QIS_SmartConn_title1#></div>
+						<div id="title_desc" style="font-size:14px; margin:0 0 10px 10px;"><#QIS_SmartConn_title1#></div>
 					</td>
 				</tr>
 				
@@ -822,132 +826,149 @@ function enable_ISP_special(){
 				</tr>
 			</table>
 		</td>
-		<td style="height:400px;background:#444F52;border-radius:10px;">
+		<td style="width:365px; height:400px;background:#444F52;border-radius:10px;">
 			<div id="image_field" class="image_field"></div>
 			<div id="isp_card_desc" style="padding:15px;display:none;line-height:15px;"><#QIS_SmartConn_ISPDesc#></div>
 			<div id="static_ip_desc" style="padding:15px;display:none;line-height:15px;"><#QIS_SmartConn_StaticDesc#></div>
-			<div id="dhcp_scenario_1" style="position:absolute;margin:-335px 0 0 20px;font-size:12px;display:none"><#QIS_SmartConn_Scen1#></div>
-			<div id="dhcp_scenario_2" style="position:absolute;margin:-165px 0 0 20px;font-size:12px;display:none"><#QIS_SmartConn_Scen2#></div>
-			<div id="sparcial_ISP_field" style="text-align:center;width:300px;display:none">
-			<!--p class="QISGeneralFont" style="font-style:normal;color:#66CCFF;font-size:12px;font-weight:bolder;"><#PPPConnection_x_HostNameForISP_sectionname#></p-->
-			<div style="line-height:25px;height:300px;">
-				<span>
-					<p style="color:#66CCFF;"><#Select_ISPfile#></p>
-					<select name="switch_wantag" class="input_option" onChange="ISP_Profile_Selection(this.value)">
-						<option value="none" <% nvram_match( "switch_wantag", "none", "selected"); %>><#wl_securitylevel_0#></option>
-						<option value="unifi_home" <% nvram_match( "switch_wantag", "unifi_home", "selected"); %>>Unifi-Home</option>
-						<option value="unifi_biz" <% nvram_match( "switch_wantag", "unifi_biz", "selected"); %>>Unifi-Business</option>
-						<option value="singtel_mio" <% nvram_match( "switch_wantag", "singtel_mio", "selected"); %>>Singtel-MIO</option>
-						<option value="singtel_others" <% nvram_match( "switch_wantag", "singtel_others", "selected"); %>>Singtel-Others</option>
-						<option value="m1_fiber" <% nvram_match("switch_wantag", "m1_fiber", "selected"); %>>M1-Fiber</option>
-						<option value="maxis_fiber" <% nvram_match("switch_wantag", "maxis_fiber", "selected"); %>>Maxis-Fiber</option>
-						<option value="maxis_fiber_sp" <% nvram_match("switch_wantag", "maxis_fiber_sp", "selected"); %>>Maxis-Fiber-Special</option>
-						<option value="hinet" <% nvram_match( "switch_wantag", "hinet", "selected"); %>>Hinet MOD</option>
-						<!--option value="movistar" <% nvram_match("switch_wantag", "movistar", "selected"); %>>Movistar</option-->
-						<option id="meoOption" value="meo" <% nvram_match("switch_wantag", "meo", "selected"); %>>Meo</option>
-						<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
-					</select>
-				</span>
+			<div id="dhcp_scenario_1" style="color:#5F9EA0;font-weight:bold;position:absolute;margin:-312px 0px 0px 112px;font-size:12px; display:none;"><#QIS_SmartConn_Scen1#></div>
+			<div id="dhcp_scenario_2" style="color:#5F9EA0;font-weight:bold;position:absolute;margin:-149px 0px 0px 112px;font-size:12px; display:none;"><#QIS_SmartConn_Scen2#></div>
+			<div id="special_ISP_field" style="margin-top:-100px;display:none">
+			<div style="line-height:25px;height:250px;">
+				<div id="select_profile">
+					<table class="iptvTable">
+					<tr>
+						<th><#Select_ISPfile#>: </th>
+						<td><select name="switch_wantag" class="input_option" onChange="ISP_Profile_Selection(this.value)">
+							<option value="none" <% nvram_match( "switch_wantag", "none", "selected"); %>><#wl_securitylevel_0#></option>
+							<option value="unifi_home" <% nvram_match( "switch_wantag", "unifi_home", "selected"); %>>Unifi-Home</option>
+							<option value="unifi_biz" <% nvram_match( "switch_wantag", "unifi_biz", "selected"); %>>Unifi-Business</option>
+							<option value="singtel_mio" <% nvram_match( "switch_wantag", "singtel_mio", "selected"); %>>Singtel-MIO</option>
+							<option value="singtel_others" <% nvram_match( "switch_wantag", "singtel_others", "selected"); %>>Singtel-Others</option>
+							<option value="m1_fiber" <% nvram_match("switch_wantag", "m1_fiber", "selected"); %>>M1-Fiber</option>
+							<option value="maxis_fiber" <% nvram_match("switch_wantag", "maxis_fiber", "selected"); %>>Maxis-Fiber</option>
+							<option value="maxis_fiber_sp" <% nvram_match("switch_wantag", "maxis_fiber_sp", "selected"); %>>Maxis-Fiber-Special</option>
+							<option id="movistarOption" value="movistar" <% nvram_match("switch_wantag", "movistar", "selected"); %>>Movistar Triple VLAN</option>
+							<option id="meoOption" value="meo" <% nvram_match("switch_wantag", "meo", "selected"); %>>Meo</option>
+							<option id="vodafoneOption" value="vodafone" <% nvram_match("switch_wantag", "vodafone", "selected"); %>>Vodafone</option>
+							<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
+						</select></td>
+					</tr>
+					</table>
+				</div>
 
-				<span id="wan_iptv_x">
-				<p style="margin-top:5px;"><span style="color:#66CCFF;">IPTV STB Port: </span><b>LAN4</b></p>
-				</span>
-				
-				<span id="wan_voip_x">
-				<p><span style="color:#66CCFF;">VoIP Port: </span><b>LAN3</b></p>
-				</span>
+				<div id="port_settings">
+				<table class="iptvTable">
+					<tr id="wan_voip_line"><td colspan="2"><div style="margin: 5px 5px 5px 10px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div></td></tr>
+					<tr id="wan_voip_x">
+						<th><span id="voip_title">VoIP Port: </span></th>
+						<td>LAN3</td>
+					</tr>
+					<tr id="wan_iptv_line"><td colspan="2"><div style="margin: 5px 5px 5px 10px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div></td></tr>
+					<tr id="wan_iptv_x">
+						<th><span id="iptv_title">IPTV STB Port: </span></th>
+						<td>LAN4</td>
+					</tr>
+				</table>
+				</div>
 
-				<span id="wan_internet_x">
-			<p style="margin-top:5px;color:#66CCFF;"><#Internet#>:</p>
-				<p style="font-size:10px;">
-					VID:<input type="text" name="switch_wan0tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan0tagid"); %>" autocorrect="off" autocapitalize="off">
-					PRIO:<input type="text" name="switch_wan0prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan0prio"); %>" autocorrect="off" autocapitalize="off">
-				</p>
-				</span>
+				<div id="manual_settings">
+					<table class="iptvTable">
+						<tr><td colspan="2"><div style="margin: 5px 5px 5px 10px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div></td></tr>
+						<tr>
+							<th><#Internet#>:</th>
+							<td>
+								VID:<input type="text" name="switch_wan0tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan0tagid"); %>" autocorrect="off" autocapitalize="off">
+								&nbsp;PRIO:<input type="text" name="switch_wan0prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan0prio"); %>" autocorrect="off" autocapitalize="off">
+							</td>
+						</tr>
+						<tr>
+							<th>IPTV (LAN port 4):</th>
+							<td>
+								VID:<input type="text" name="switch_wan1tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan1tagid"); %>" autocorrect="off" autocapitalize="off">
+								&nbsp;PRIO:<input type="text" name="switch_wan1prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan1prio"); %>" autocorrect="off" autocapitalize="off">
+							</td>
+						</tr>
+						<tr>
+							<th>VoIP (LAN port 3):</th>
+							<td>
+								VID:<input type="text" name="switch_wan2tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan2tagid"); %>" autocorrect="off" autocapitalize="off">
+								&nbsp;PRIO:<input type="text" name="switch_wan2prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan2prio"); %>" autocorrect="off" autocapitalize="off">
+							</td>
+						</tr>
+					</table>
+				</div>
 
-				<span id="wan_iptv_port4_x">
-			<p style="margin-top:5px;color:#66CCFF;">IPTV (LAN port 4):</p>
-				<p style="font-size:10px;">
-					VID:<input type="text" name="switch_wan1tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan1tagid"); %>" autocorrect="off" autocapitalize="off">
-					PRIO:<input type="text" name="switch_wan1prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan1prio"); %>" autocorrect="off" autocapitalize="off">
-				</p>
-				</span>
-
-				<span id="wan_voip_port3_x">
-			<p style="margin-top:5px;color:#66CCFF;">VoIP (LAN port 3):</p>
-				<p style="font-size:10px;">
-					VID:<input type="text" name="switch_wan2tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan2tagid"); %>" autocorrect="off" autocapitalize="off">
-					PRIO:<input type="text" name="switch_wan2prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan2prio"); %>" autocorrect="off" autocapitalize="off">
-				</p>
-				</span>
-
+				<div id="iptv_configuration">
+					<div style="margin: 5px 5px 5px 7px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div>
+					<table class="iptvTable">
+						<tr>
+							<th>VoIP Port: </th>
+							<td>LAN3</td>
+						</tr>
+						<tr><td colspan="2"><div style="margin: 5px 5px 5px 11px;" id="splitLine"><img style="width: 350px; *width: 340px; height: 2px;" src="../images/New_ui/export/line_export.png"></div></td></tr>
+						<tr>
+							<th>IPTV STB Port: </th>
+							<td>LAN4</td>
+						</tr>			
+						<tr>
+							<th><#Layer3Forwarding_x_ConnectionType_itemname#>: </th>
+							<td><#BOP_ctype_title5#></td>
+						</tr>
+						<tr>
+							<th><#IPConnection_ExternalIPAddress_itemname#>: </th>
+							<td><input type="text" name="wan10_ipaddr_x" maxlength="15" class="input_15_table" value="<% nvram_get("wan10_ipaddr_x"); %>" onKeyPress="return validator.isIPAddr(this, event);" autocorrect="off" autocapitalize="off"></td>
+						</tr>
+						<tr>
+							<th><#IPConnection_x_ExternalSubnetMask_itemname#>: </th>
+							<td><input type="text" name="wan10_netmask_x" maxlength="15" class="input_15_table" value="<% nvram_get("wan10_netmask_x"); %>" onKeyPress="return validator.isIPAddr(this, event);" autocorrect="off" autocapitalize="off"></td>
+						</tr>
+						<tr>
+							<th><#IPConnection_x_ExternalGateway_itemname#>: </th>
+							<td><input type="text" name="wan10_gateway_x" maxlength="15" class="input_15_table" value="<% nvram_get("wan10_gateway_x"); %>" onKeyPress="return validator.isIPAddr(this, event);" autocorrect="off" autocapitalize="off"></td>
+						</tr>
+						<tr>
+							<th><#IPConnection_x_DNSServer1_itemname#>: </th>
+							<td><input type="text" name="wan10_dns1_x" maxlength="15" class="input_15_table" value="<% nvram_get("wan10_dns1_x"); %>" onKeyPress="return validator.isIPAddr(this, event);" autocorrect="off" autocapitalize="off"></td>
+						</tr>
+						<tr>
+							<th><#IPConnection_x_DNSServer2_itemname#>: </th>
+							<td><input type="text" name="wan10_dns2_x" maxlength="15" class="input_15_table" value="<% nvram_get("wan10_dns2_x"); %>" onKeyPress="return validator.isIPAddr(this, event);" autocorrect="off" autocapitalize="off"></td>
+						</tr>
+		            	<tr>
+							<th><#PPPConnection_Authentication_itemname#>: </th>
+							<td>
+							    <select style="margin-left:2px;" class="input_option" name="wan10_auth_x" onChange="change_auth(this.value);">
+								    <option value="" <% nvram_match("wan10_auth_x", "", "selected"); %>><#wl_securitylevel_0#></option>
+								    <option value="8021x-md5" <% nvram_match("wan10_auth_x", "8021x-md5", "selected"); %>>802.1x MD5</option>
+								</select>
+							</td>
+						</tr>
+		            	<tr id="tr_pppoe_username" style="display:none;">
+		             	 	<th><#PPPConnection_UserName_itemname#>: </th>
+		              		<td><input type="text" maxlength="64" class="input_15_table" name="wan10_pppoe_username" value="<% nvram_get("wan10_pppoe_username"); %>" onkeypress="return validator.isString(this, event)"></td>
+		            	</tr>
+		            	<tr id="tr_pppoe_password" style="display:none;">
+		              		<th><div style="margin-top:-25px;"><#PPPConnection_Password_itemname#>: </div></th>
+		              		<td><input type="password" autocapitalization="off" maxlength="64" class="input_15_table" id="wan10_pppoe_passwd" name="wan10_pppoe_passwd" value="<% nvram_get("wan10_pppoe_passwd"); %>">
+							<div style="margin-top:1px;"><input type="checkbox" name="show_pass_iptv" onclick="pass_checked_iptv(document.applyForm.wan10_pppoe_passwd);"><#QIS_show_pass#></div>
+							</td>
+		            	</tr>
+					</table>
+				</div>
 			</div>
-		</div>
 		</td>
 	</tr>
 	<tr>
 		<td colspan="2">
-			<div style="color:#FC0;font-size:14px;margin-top:10px;"><#QIS_SmartConn_TypeNote#></div>
-			<div id="wan_unplug" style="color:#FC0;font-size:14px;margin-top:10px;display:none">* <#web_redirect_suggestion1#></div>
+			<div><img style="width: 100%; *width: 710px; margin-top: 15px;height: 2px;" src="/images/New_ui/export/line_export.png"></div>
+			<div id="unknownIsp" style="color:#FC0;font-size:14px;margin-left:10px;margin-top:10px;"><#QIS_SmartConn_TypeNote#></div>
+			<div id="wan_unplug" style="color:#FC0;font-size:14px;margin-left:10px;margin-top:5px;display:none">* <#web_redirect_suggestion1#></div>
 		</td>
 	</tr>
   </table> 
 </div>   
 
-<div id="special_ISP_img" style="margin-top:0px;margin-left:500px;display:none;"><img width="220px" height="300px" src="/images/qis/border.png"></div>
-
-<!--div id="sparcial_ISP_field" style="margin-top:-360px;margin-left:450px;display:none;">
-	<p class="QISGeneralFont" style="font-style:normal;color:#66CCFF;font-size:12px;font-weight:bolder;"><#PPPConnection_x_HostNameForISP_sectionname#></p>
-	<div style="margin-left:70px;margin-top:65px;line-height:25px;">
-		<span>
-			<p style="color:#66CCFF;"><#Select_ISPfile#></p>
-			<select name="switch_wantag" class="input_option" onChange="ISP_Profile_Selection(this.value)">
-				<option value="none" <% nvram_match( "switch_wantag", "none", "selected"); %>><#wl_securitylevel_0#></option>
-				<option value="unifi_home" <% nvram_match( "switch_wantag", "unifi_home", "selected"); %>>Unifi-Home</option>
-				<option value="unifi_biz" <% nvram_match( "switch_wantag", "unifi_biz", "selected"); %>>Unifi-Business</option>
-				<option value="singtel_mio" <% nvram_match( "switch_wantag", "singtel_mio", "selected"); %>>Singtel-MIO</option>
-				<option value="singtel_others" <% nvram_match( "switch_wantag", "singtel_others", "selected"); %>>Singtel-Others</option>
-				<option value="m1_fiber" <% nvram_match("switch_wantag", "m1_fiber", "selected"); %>>M1-Fiber</option>
-				<option value="maxis_fiber" <% nvram_match("switch_wantag", "maxis_fiber", "selected"); %>>Maxis-Fiber</option>
-				<option value="maxis_fiber_sp" <% nvram_match("switch_wantag", "maxis_fiber_sp", "selected"); %>>Maxis-Fiber-Special</option>
-				<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>>Manual</option>
-			</select>
-		</span>
-
-		<span id="wan_iptv_x">
-		<p style="margin-top:5px;"><span style="color:#66CCFF;">IPTV STB Port: </span><b>LAN4</b></p>
-		</span>
-		
-		<span id="wan_voip_x">
-		<p><span style="color:#66CCFF;">VoIP Port: </span><b>LAN3</b></p>
-		</span>
-
-		<span id="wan_internet_x">
-  	<p style="margin-top:5px;color:#66CCFF;">Internet:</p>
-		<p style="font-size:10px;">
-			VID:<input type="text" name="switch_wan0tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan0tagid"); %>" autocorrect="off" autocapitalize="off">
-			PRIO:<input type="text" name="switch_wan0prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan0prio"); %>" autocorrect="off" autocapitalize="off">
-		</p>
-		</span>
-
-		<span id="wan_iptv_port4_x">
-  	<p style="margin-top:5px;color:#66CCFF;">IPTV (LAN port 4):</p>
-		<p style="font-size:10px;">
-			VID:<input type="text" name="switch_wan1tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan1tagid"); %>" autocorrect="off" autocapitalize="off">
-			PRIO:<input type="text" name="switch_wan1prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan1prio"); %>" autocorrect="off" autocapitalize="off">
-		</p>
-		</span>
-
-		<span id="wan_voip_port3_x">
-  	<p style="margin-top:5px;color:#66CCFF;">VoIP (LAN port 3):</p>
-		<p style="font-size:10px;">
-			VID:<input type="text" name="switch_wan2tagid" class="input_6_table" maxlength="4" value="<% nvram_get( "switch_wan2tagid"); %>" autocorrect="off" autocapitalize="off">
-			PRIO:<input type="text" name="switch_wan2prio" class="input_6_table" maxlength="1" value="<% nvram_get( "switch_wan2prio"); %>" autocorrect="off" autocapitalize="off">
-		</p>
-		</span>
-
-	</div>
-</div-->
+<div id="special_ISP_img" style="margin-top:0px;margin-left:500px;display:none;"><img width="220px" height="300px" src="../images/qis/border.png"></div>
 </div>
 
 <div style="display:none;" id="field_mobile">
@@ -993,9 +1014,6 @@ function enable_ISP_special(){
 			<div class="row">
 				<a class="iuiA_unsel" onclick="document.applyForm.switch_wantag.value='m1_fiber';mySel(this, false);" myselected="false">M1-Fiber</a>
 			</div>
-                        <div class="row">
-                                <a class="iuiA_unsel" onclick="document.applyForm.switch_wantag.value='hinet';mySel(this, false);" myselected="false">Hinet MOD</a>
-                        </div>
 			<div class="row_end">
 				<a class="iuiA_unsel_check" onclick="document.applyForm.switch_wantag.value='manual';mySel(this, false);" myselected="false"><#Manual_Setting_btn#></a>
 				<span class="sel_check" onclick='showHidden_slide("unify_input", ["field_mobile_unify"]);'></span>
@@ -1042,7 +1060,6 @@ function enable_ISP_special(){
 			</div>
 		</fieldset>
 	</div>
-
 </div>
 </form>
 </body> 

@@ -516,6 +516,10 @@ add_option (char *p[], int line, int unit)
 			else
 #endif
 				nvram_set(buf, strstr(p[2], "-----BEGIN"));
+			//key-direction
+			sprintf(buf, "vpn_crt_client%d_hmac", unit);
+			if(nvram_match(buf, "-1"))	//default, disable
+				nvram_set(buf, "2");	//openvpn default value: KEY_DIRECTION_BIDIRECTIONAL
 		}
 		else
 		{
@@ -628,7 +632,7 @@ void reset_client_setting(int unit){
 	sprintf(nv, "vpn_client%d_custom", unit);
 	nvram_set(nv, "");
 	sprintf(nv, "vpn_client%d_comp", unit);
-	nvram_set(nv, "no");
+	nvram_set(nv, "-1");
 	sprintf(nv, "vpn_client%d_reneg", unit);
 	nvram_set(nv, "-1");
 	sprintf(nv, "vpn_client%d_hmac", unit);
@@ -647,8 +651,6 @@ void reset_client_setting(int unit){
 	nvram_set(nv, "");
 	sprintf(nv, "vpn_client%d_password", unit);
 	nvram_set(nv, "");
-	sprintf(nv, "vpn_client%d_comp", unit);
-	nvram_set(nv, "-1");
 	sprintf(nv, "vpn_crt_client%d_ca", unit);
 	nvram_set(nv, "");
 #if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)

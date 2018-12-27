@@ -2,7 +2,7 @@
  * Decode base functions which provides decoding of basic data types
  * and provides bounds checking on the buffer to be decoded.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -31,7 +31,7 @@ typedef struct
 	((pkt)->maxLength)
 
 /* get decode buffer */
-#define bcm_decode_buf(pkt)		\
+#define bcm_decode_buf(pkt)			\
 	((pkt)->buf)
 
 /* get decode offset */
@@ -49,14 +49,6 @@ typedef struct
 /* get decode current pointer */
 #define bcm_decode_current_ptr(pkt)	\
 	(&(pkt)->buf[(pkt)->offset])
-
-/* is zero length decode */
-#define bcm_decode_is_zero_length(pkt)	\
-	(bcm_decode_buf(pkt) != 0 && bcm_decode_buf_length(pkt) == 0)
-
-/* is packet valid to decode */
-#define bcm_decode_is_pkt_valid(pkt) 	\
-	(bcm_decode_buf(pkt) != 0)
 
 /* initialize pkt decode with decode buffer */
 int bcm_decode_init(bcm_decode_t *pkt, int maxLength, uint8 *data);

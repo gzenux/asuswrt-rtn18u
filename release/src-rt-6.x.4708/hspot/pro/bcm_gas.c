@@ -2,7 +2,7 @@
  * GAS state machine functions which implements the GAS protocol
  * as defined in 802.11u.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -680,7 +680,6 @@ int bcm_gas_initialize(void)
 	/* attach handler to dispatcher */
 	dspSubscribe(dsp(), 0, bcm_gas_process_wlan_event);
 
-	memset(&req, 0, sizeof(req));
 	req.handler = (request_handler_t)bcm_gas_init_handler;
 	return dspRequestSynch(dsp(), 0, sizeof(req), (uint8 *)&req, 0);
 }
@@ -797,7 +796,6 @@ bcm_gas_t *bcm_gas_create(struct bcm_gas_wl_drv_hdl *drv, int bsscfg_idx,
 
 	WL_TRACE(("bcm_gas_create\n"));
 
-	memset(&req, 0, sizeof(req));
 	req.handler = (request_handler_t)bcm_gas_create_handler;
 	req.create.isIncoming = FALSE;
 	req.create.drv = drv;
@@ -858,7 +856,6 @@ int bcm_gas_destroy(bcm_gas_t *gas)
 
 	WL_TRACE(("bcm_gas_destroy\n"));
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_destroy_handler;
 #ifdef BCM_GAS_NO_DISPATCHER
 	bcm_gas_destroy_handler(gas, sizeof(req), &req, 0);
@@ -894,7 +891,6 @@ int bcm_gas_reset(bcm_gas_t *gas)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_reset_handler;
 #ifdef BCM_GAS_NO_DISPATCHER
 	bcm_gas_reset_handler(gas, sizeof(req), &req, 0);
@@ -932,7 +928,6 @@ int bcm_gas_set_max_retransmit(bcm_gas_t *gas, uint16 count)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_set_max_retransmit_handler;
 	req.setParam.value = count;
 #ifdef BCM_GAS_NO_DISPATCHER
@@ -971,7 +966,6 @@ int bcm_gas_set_response_timeout(bcm_gas_t *gas, uint16 msec)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_set_response_timeout_handler;
 	req.setParam.value = msec;
 #ifdef BCM_GAS_NO_DISPATCHER
@@ -1010,7 +1004,6 @@ int bcm_gas_set_max_comeback_delay(bcm_gas_t *gas, uint16 msec)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_set_max_comeback_delay_handler;
 	req.setParam.value = msec;
 #ifdef BCM_GAS_NO_DISPATCHER
@@ -1047,7 +1040,6 @@ int bcm_gas_start(bcm_gas_t *gas)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_start_handler;
 #ifdef BCM_GAS_NO_DISPATCHER
 	bcm_gas_start_handler(gas, sizeof(req), &req, 0);
@@ -1117,7 +1109,6 @@ int bcm_gas_set_query_request(bcm_gas_t *gas, int len, uint8 *data)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_set_query_request_handler;
 	req.setQueryRequest.len = len;
 	req.setQueryRequest.data = malloc(req.setQueryRequest.len);
@@ -1179,7 +1170,6 @@ int bcm_gas_set_query_response(bcm_gas_t *gas, int len, uint8 *data)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_set_query_response_handler;
 	req.setQueryResponse.len = len;
 	req.setQueryResponse.data = malloc(req.setQueryResponse.len);
@@ -1235,12 +1225,11 @@ int bcm_gas_get_query_response_length(bcm_gas_t *gas)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
-	req.handler = (request_handler_t)bcm_gas_get_query_response_length_handler;
 #ifdef BCM_GAS_NO_DISPATCHER
 	bcm_gas_get_query_response_length_handler(gas, sizeof(req), &req, &rsp);
 	return rsp.len;
 #else
+	req.handler = (request_handler_t)bcm_gas_get_query_response_length_handler;
 	ret = dspRequestSynch(dsp(), gas,
 		sizeof(req), (uint8 *)&req, (uint8 *)&rsp);
 	if (ret == 0)
@@ -1288,7 +1277,6 @@ int bcm_gas_get_query_response(bcm_gas_t *gas, int dataLen, int *len, uint8 *dat
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = (request_handler_t)bcm_gas_get_query_response_handler;
 	rsp.maxLen = dataLen;
 	rsp.len = len;
@@ -1329,7 +1317,6 @@ int bcm_gas_set_bsscfg_index(bcm_gas_t *gas, int index)
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
 	req.handler = bcm_gas_set_bsscfg_index_handler;
 	req.setBsscfgIndex.index = index;
 #ifdef BCM_GAS_NO_DISPATCHER
@@ -1440,7 +1427,6 @@ void bcm_gas_process_wlan_event(void *context, uint32 eventType,
 
 					/* new incoming request - destroy previous instance */
 					/* new incoming request may have same dialog token */
-					memset(&req, 0, sizeof(req));
 					req.handler = (request_handler_t)0;
 					bcm_gas_destroy_handler(gas, sizeof(req), &req, 0);
 					gas = 0;
@@ -1472,7 +1458,6 @@ void bcm_gas_process_wlan_event(void *context, uint32 eventType,
 				}
 #endif /* BCMDRIVER */
 				WL_P2PO(("creating incoming instance\n"));
-				memset(&req, 0, sizeof(req));
 				req.handler = (request_handler_t)0;
 				req.create.isIncoming = TRUE;
 				req.create.drv = drv;
@@ -1531,7 +1516,6 @@ static void query_request_notification(bcm_gas_t *gas, uint16 reqLen, uint8 *req
 		bcm_gas_event_t event;
 
 		WL_PRPKT("query request notification", req, reqLen);
-		memset(&event, 0, sizeof(event));
 		event.gas = gas;
 		memcpy(&event.peer, &gas->peer, sizeof(event.peer));
 		event.dialogToken = gas->dialogToken;
@@ -1553,7 +1537,6 @@ static void tx_notification(bcm_gas_t *gas, int gasActionFrame)
 		bcm_gas_event_t event;
 
 		WL_TRACE(("tx notification = %d\n", gasActionFrame));
-		memset(&event, 0, sizeof(event));
 		event.gas = gas;
 		memcpy(&event.peer, &gas->peer, sizeof(event.peer));
 		event.dialogToken = gas->dialogToken;
@@ -1579,7 +1562,6 @@ static void rx_notification(bcm_gas_t *gas, bcm_decode_gas_t *gasDecode, int len
 		if (gasDecode->action == GAS_COMEBACK_RESPONSE_ACTION_FRAME)
 			fragmentId = gasDecode->comebackResponse.fragmentId;
 
-		memset(&event, 0, sizeof(event));
 		event.gas = gas;
 		memcpy(&event.peer, &gas->peer, sizeof(event.peer));
 		event.dialogToken = gasDecode->dialogToken;
@@ -1597,7 +1579,6 @@ static void response_fragment_notification(bcm_gas_t *gas, int length, uint8 fra
 		bcm_gas_event_t event;
 
 		WL_TRACE(("response fragment notification = %d\n", fragmentId));
-		memset(&event, 0, sizeof(event));
 		event.gas = gas;
 		memcpy(&event.peer, &gas->peer, sizeof(event.peer));
 		event.dialogToken = gas->dialogToken;
@@ -1614,7 +1595,6 @@ static void status_notification(bcm_gas_t *gas)
 		bcm_gas_event_t event;
 
 		WL_TRACE(("status notification = %d\n", gas->statusCode));
-		memset(&event, 0, sizeof(event));
 		event.gas = gas;
 		memcpy(&event.peer, &gas->peer, sizeof(event.peer));
 		event.dialogToken = gas->dialogToken;
@@ -2582,7 +2562,6 @@ static void fsm(bcm_gas_t *gas, eventT event,
 			bcm_gas_req_t req;
 
 			WL_P2PO(("destroying incoming instance\n"));
-			memset(&req, 0, sizeof(req));
 			req.handler = (request_handler_t)0;
 			bcm_gas_destroy_handler(gas, sizeof(req), &req, 0);
 		}

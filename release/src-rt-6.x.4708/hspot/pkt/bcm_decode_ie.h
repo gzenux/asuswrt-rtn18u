@@ -2,7 +2,7 @@
  * Decode functions which provides decoding of information elements
  * as defined in 802.11.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -21,8 +21,6 @@
 #include "bcm_decode.h"
 #include "bcm_decode_p2p.h"
 #include "bcm_hspot.h"
-
-#define BCM_DECODE_MAX_IE_FRAGMENTS	8
 
 typedef struct {
 	int dsLength;
@@ -55,25 +53,14 @@ typedef struct {
 	/* vendor specific */
 	int hotspotIndicationLength;
 	uint8 *hotspotIndication;
-	int osenIeLength;
-	uint8 *osenIe;
 	int wpsIeLength;
 	uint8 *wpsIe;
-	struct {
-		int p2pIeLength;
-		uint8 *p2pIe;
-	} p2p[BCM_DECODE_MAX_IE_FRAGMENTS];
+	int wfdIeLength;
+	uint8 *wfdIe;
 } bcm_decode_ie_t;
 
 /* decode vendor IE */
 int bcm_decode_ie(bcm_decode_t *pkt, bcm_decode_ie_t *ie);
-
-/* calculate length of all P2P IEs */
-int bcm_decode_ie_get_p2p_ie_length(bcm_decode_t *pkt, bcm_decode_ie_t *ie);
-
-/* copy concatenated P2P IEs into buf */
-/* buf must be of size returned by bcm_decode_ie_get_p2p_ie_length() */
-uint8 *bcm_decode_ie_get_p2p_ie(bcm_decode_t *pkt, bcm_decode_ie_t *ie, uint8 *buf);
 
 /* decode hotspot 2.0 indication */
 int bcm_decode_ie_hotspot_indication(bcm_decode_t *pkt, uint8 *hotspotConfig);
@@ -82,17 +69,10 @@ typedef struct
 {
 	int isDgafDisabled;
 	uint8 releaseNumber;
-	int isPpsMoIdPresent;
-	uint16 ppsMoId;
-	int isAnqpDomainIdPresent;
-	uint16 anqpDomainId;
 } bcm_decode_hotspot_indication_t;
 
 /* decode hotspot 2.0 indication release2 */
 int bcm_decode_ie_hotspot_indication2(bcm_decode_t *pkt, bcm_decode_hotspot_indication_t *hotspot);
-
-/* decode OSEN */
-int bcm_decode_ie_osen(bcm_decode_t *pkt);
 
 typedef struct
 {

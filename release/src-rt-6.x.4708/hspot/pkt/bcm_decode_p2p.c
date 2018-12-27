@@ -2,7 +2,7 @@
  * Decode functions which provides decoding of P2P attributes
  * as defined in P2P specification.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -250,44 +250,7 @@ int bcm_decode_p2p(bcm_decode_t *pkt, bcm_decode_p2p_t *wfd)
 			wfd->invitationFlagsLength = dataLength;
 			wfd->invitationFlagsBuffer = dataPtr;
 			break;
-#ifdef WLWFDS
-		case P2P_SEID_SERV_HASH:
-			wfd->serviceHashLength = dataLength;
-			wfd->serviceHashBuffer = dataPtr;
-			break;
-		case P2P_SEID_SSN_INST_DATA:
-			wfd->sessionLength = dataLength;
-			wfd->sessionBuffer = dataPtr;
-			break;
-		case P2P_SEID_CONN_CAP:
-			wfd->connectCapLength = dataLength;
-			wfd->connectCapBuffer = dataPtr;
-			break;
-		case P2P_SEID_ADV_ID:
-			wfd->advertiseIdLength = dataLength;
-			wfd->advertiseIdBuffer = dataPtr;
-			break;
-		case P2P_SEID_SSN_ID:
-			wfd->sessionIdLength = dataLength;
-			wfd->sessionIdBuffer = dataPtr;
-			break;
-		case P2P_SEID_FEATURE_CAP:
-			wfd->featureCapLength = dataLength;
-			wfd->featureCapBuffer = dataPtr;
-			break;
-		case P2P_SEID_PERSIST_GRP_INFO:
-			wfd->persistentGroupLength = dataLength;
-			wfd->persistentGroupBuffer = dataPtr;
-			break;
-#endif /* WLWFDS */
 #endif	/* BCMDRIVER */
-
-#ifdef WLWFDS
-		case P2P_SEID_ADV_SERV:
-			wfd->advertiseServiceLength = dataLength;
-			wfd->advertiseServiceBuffer = dataPtr;
-			break;
-#endif /* WLWFDS */
 		default:
 			WL_P2PO(("invalid ID %d\n", id));
 			continue;

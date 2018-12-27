@@ -5,15 +5,27 @@
 <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta name=viewport content="width=device-width, target-densitydpi=device-dpi, initial-scale=1, user-scalable=no">
 <title><#Web_Title#> - <#QIS_title#></title>
-<link rel="stylesheet" href="css/qis.css"></link>
-<link rel="stylesheet" href="css/icon.css"></link>
+<link rel="stylesheet" href="css/icon-qis.css"></link>
 <link rel="stylesheet" href="css/jquery.mobile.css"></link>
 <script src="js/jquery.js"></script>
 <script src="js/verge.min.js"></script>
 <script src="js/jquery.mobile.js"></script>
 <style>
 body{
-	background-color:#000;
+	margin-left: 0px;
+	background-color:#000 !important; /*#AAD1E0*/
+}
+.filter_effect{
+	-webkit-filter: blur(5px);
+}
+#nav_rp:hover, #nav_ap:hover, #nav_mb:hover, #nav_info:hover, #nav_express_2g:hover, #nav_express_5g:hover, #nav_back:hover{
+	background-color:#555;
+}
+#pap_manual_band_option-button, #pap_manual_auth_option-button, #pap_ip_advanced_option-button{
+	padding: 22px;
+}
+a.ui-btn{
+	height:30px;
 }
 .ui-panel-dismiss-open.ui-panel-dismiss-position-left{
 	left:30em;
@@ -316,7 +328,7 @@ function navigation_opmode_style(){
 		rescan();
 		if(document.form.wlc_express.value == "1"){		//Express: parent 2.4 GHz, client 5 GHz
 			document.getElementById("nav_rp").style.color = "#FFF";
-			document.getElementById("nav_express_2g").style.color = "#007AFF";
+			document.getElementById("nav_express_2g").style.color = "#279FD9";
 			document.getElementById("nav_express_5g").style.color = "#FFF";
 			document.getElementById("nav_ap").style.color = "#FFF";
 			document.getElementById("nav_mb").style.color = "#FFF";
@@ -326,14 +338,14 @@ function navigation_opmode_style(){
 		else if(document.form.wlc_express.value == "2"){		//Express: parent 5 GHz, client 2.4 GHz
 			document.getElementById("nav_rp").style.color = "#FFF";
 			document.getElementById("nav_express_2g").style.color = "#FFF";
-			document.getElementById("nav_express_5g").style.color = "#007AFF";
+			document.getElementById("nav_express_5g").style.color = "#279FD9";
 			document.getElementById("nav_ap").style.color = "#FFF";
 			document.getElementById("nav_mb").style.color = "#FFF";
 			wl0_checked = "1";
 			wl1_checked = "";
 		}
 		else{		//Repater
-			document.getElementById("nav_rp").style.color = "#007AFF";
+			document.getElementById("nav_rp").style.color = "#279FD9";
 			document.getElementById("nav_express_2g").style.color = "#FFF";
 			document.getElementById("nav_express_5g").style.color = "#FFF";
 			document.getElementById("nav_ap").style.color = "#FFF";
@@ -350,7 +362,7 @@ function navigation_opmode_style(){
 			document.getElementById("nav_express_2g").style.color = "#FFF";
 			document.getElementById("nav_express_5g").style.color = "#FFF";
 			document.getElementById("nav_ap").style.color = "#FFF";
-			document.getElementById("nav_mb").style.color = "#007AFF";
+			document.getElementById("nav_mb").style.color = "#279FD9";
 			$("#wifiPrevious").show();
 			$("#sync_pap_container").show();
 		}
@@ -358,7 +370,7 @@ function navigation_opmode_style(){
 			document.getElementById("nav_rp").style.color = "#FFF";
 			document.getElementById("nav_express_2g").style.color = "#FFF";
 			document.getElementById("nav_express_5g").style.color = "#FFF";
-			document.getElementById("nav_ap").style.color = "#007AFF";
+			document.getElementById("nav_ap").style.color = "#279FD9";
 			document.getElementById("nav_mb").style.color = "#FFF";
 
 			document.getElementById('wireless_2g_ssid').disabled = false;
@@ -1465,7 +1477,7 @@ function showLoading(){
 	<div id="scan_desc" style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;display:none">Search for available Wi-Fi networks around ASUS repeater.</div>
 	<div id="welcome_main_field">
 		<div style="font-family:Uni Sans Thin, Helvetica W01 Light, Arial;font-size:9em;color:#FFF;line-height:50px;margin:120px 46px 0 46px;text-align:center;">Welcome</div>
-		<div style="font-family:Uni Sans Thin, Helvetica W01 Light, Arial;font-size:2.875em;color:#007AFF;text-align:center;margin:36px 46px 0 46px;">ASUS Networking Family</div>
+		<div style="font-family:Uni Sans Thin, Helvetica W01 Light, Arial;font-size:2.875em;color:#279FD9;text-align:center;margin:36px 46px 0 46px;">ASUS Networking Family</div>
 		<div style="height:334px;width:auto;background:url('images/Model_product.png') no-repeat;background-size:145px;background-position:center;margin-top:36px;"></div>
 		<div id="model_welcome_field" style="text-align:center;color:#757575;font-size:30pt;font-family:HelveticaNeueW10-35Thin,Helvetica W01 Light,Arial;line-height:23px;margin:21px 0"></div>
 		<div style="text-align:center;margin:31px 0">
@@ -1847,16 +1859,16 @@ function showLoading(){
 			<div id="summary_2g_field" style="margin:15px 0 0 46px;" class="wireless_field">
 				<div style="font-family:Helvetica LT W10 Bold,Arial;font-size:1.5em;color:#B8D8FF;padding:21px 0 15px;border-bottom:1px solid #43474B">Wireless - 2.4 GHz</div>
 				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0">Network Name (SSID)</div>
-				<div id="summary_wl0_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
+				<div id="summary_wl0_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
 				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0;">Network Key</div>
-				<div id="summary_wl0_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
+				<div id="summary_wl0_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
 			</div>
 			<div id="summary_5g_field" style="margin:15px 0 0 46px;" class="wireless_field wireless_field_5g">
 				<div style="font-family:Helvetica LT W10 Bold,Arial;font-size:1.5em;color:#B8D8FF;padding:21px 0 15px;border-bottom:1px solid #43474B">Wireless - 5 GHz</div>
 				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0">Network Name (SSID)</div>
-				<div id="summary_wl1_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
+				<div id="summary_wl1_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
 				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0;">Network Key</div>
-				<div id="summary_wl1_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
+				<div id="summary_wl1_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
 			</div>
 		</div>
 	</div>

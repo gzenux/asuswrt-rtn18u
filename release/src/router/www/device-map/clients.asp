@@ -14,14 +14,6 @@
 p{
 	font-weight: bolder;
 }
-.type0:hover{
-	background-image:url('/images/New_ui/networkmap/client.png') !important;
-	background-position:52% 70% !important;
-}
-.type6:hover{
-	background-image:url('/images/New_ui/networkmap/client.png') !important;
-	background-position:52% 70% !important;
-}
 .circle {
 	position: absolute;
 	width: 23px;
@@ -79,12 +71,12 @@ p{
 .imgUserIcon{
 	cursor: pointer;
 	position: relative; 
-	left: 15px; 
+	left: 17px; 
 	width: 52px;
 	height: 52px;
-	-webkit-border-radius: 5px;
-	-moz-border-radius: 5px;
-	border-radius: 5px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
 }
 </style>
 <script type="text/javascript" src="/state.js"></script>
@@ -138,6 +130,7 @@ function initial(){
 	parent.hideEditBlock();
 	generate_wireless_band_list();
 	updateClientList();
+	updateClientListBackground();
 }
 
 function convRSSI(val){
@@ -161,7 +154,6 @@ function drawClientList(tab){
 		tab = pagesVar.curTab;
 	}
 	genClientList();
-	setClientListOUI();
 	pagesVar.endIndex = pagesVar.startIndex + pagesVar.CLIENTSPERPAGE;
 	while(i < pagesVar.endIndex){
 		var clientObj = clientList[clientList[i]];	
@@ -191,22 +183,22 @@ function drawClientList(tab){
 			}
 		}
 		
-		var deviceTitle = (clientObj.dpiDevice == "") ? clientObj.dpiVender : clientObj.dpiDevice;
+		var deviceTitle = (clientObj.dpiDevice == "") ? clientObj.vendor : clientObj.dpiDevice;
 		if(userIconBase64 != "NoIcon") {
 			clientHtmlTd += '<div title="'+ deviceTitle + '"">';
 			clientHtmlTd += '<img id="imgUserIcon_'+ i +'" class="imgUserIcon" src="' + userIconBase64 + '"';
 			clientHtmlTd += '</div>';
 		}
-		else if( (clientObj.type != "0" && clientObj.type != "6") || clientObj.dpiVender == "") {
+		else if(clientObj.type != "0" || clientObj.vendor == "") {
 			clientHtmlTd += '<div class="clientIcon type';
 			clientHtmlTd += clientObj.type;
 			clientHtmlTd += '" title="';
 			clientHtmlTd += deviceTitle;
 			clientHtmlTd += '"></div>';
 		}
-		else if(clientObj.dpiVender != "") {
-			var venderIconClassName = getVenderIconClassName(clientObj.dpiVender.toLowerCase());
-			if(venderIconClassName != "") {
+		else if(clientObj.vendor != "") {
+			var venderIconClassName = getVenderIconClassName(clientObj.vendor.toLowerCase());
+			if(venderIconClassName != "" && !downsize_4m_support) {
 				clientHtmlTd += '<div class="venderIcon ';
 				clientHtmlTd += venderIconClassName;
 				clientHtmlTd += '" title="';
@@ -296,6 +288,11 @@ function drawClientList(tab){
 			clientHtmlTd += '<div class="circle"><div>';
 			clientHtmlTd += clientObj.macRepeat;
 			clientHtmlTd += '</div></div>';
+		}
+
+		// display boost client.
+		if(clientObj.wtfast && wtfast_support) {
+			clientHtmlTd += '<div class="boost_tag">BOOST</div>';/*untranslated*/
 		}
 
 		i++;
@@ -400,11 +397,11 @@ function retOverLibStr(client){
 }
 
 function oui_query_full_vendor(mac){
-	if(clientList[mac].dpiVender != "") {
+	if(clientList[mac].vendor != "") {
 		setTimeout(function(){
 			var overlibStrTmp = retOverLibStr(clientList[mac]);
 			overlibStrTmp += "<p><span>.....................................</span></p><p style='margin-top:5px'><#Manufacturer#> :</p>";
-			overlibStrTmp += clientList[mac].dpiVender;
+			overlibStrTmp += clientList[mac].vendor;
 			return overlib(overlibStrTmp);
 		}, 1);
 	}
@@ -590,6 +587,9 @@ function updateClientList(e){
 <input type="button" id="refresh_list" class="button_gen" value="<#CTL_refresh#>" style="margin-left:70px;">
 	<script>
 		document.getElementById('refresh_list').onclick = function(){
+			var local_mac = '<% nvram_get("lan_hwaddr"); %>';
+			cookie.unset("wireless_list_" + local_mac + "_temp");
+			cookie.unset("wireless_list_" + local_mac);
 			parent.manualUpdate = true;
 			document.form.submit();
 		}

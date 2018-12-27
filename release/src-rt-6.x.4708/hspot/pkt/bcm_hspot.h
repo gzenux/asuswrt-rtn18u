@@ -1,7 +1,7 @@
 /*
  * Hotspot2.0 specific constants as defined in Hotspot2.0 specification.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -22,25 +22,17 @@
 #define HSPOT_ANQP_OUI_TYPE		0x11
 #define HSPOT_ANQP_OUI			"\x50\x6F\x9A\x11"
 
-/* WNM type */
-#define HSPOT_WNM_TYPE		1
+/* hotspot WNM OUI type */
+#define HSPOT_WNM_OUI_TYPE		0x00
 
-/* Passpoint WNM type */
-#define HSPOT_WNM_SUBSCRIPTION_REMEDIATION		0x00
-#define HSPOT_WNM_DEAUTHENTICATION_IMMINENT		0x01
 /* hostspot config */
 #define HSPOT_IE_DGAF_DISABLED	0x01	/* downstream group-addressed forward */
 
 /* hotspot config release2 */
 #define HSPOT_DGAF_DISABLED_SHIFT	0
 #define HSPOT_DGAF_DISABLED_MASK	(0x01 << HSPOT_DGAF_DISABLED_SHIFT)
-#define HSPOT_PPS_MO_ID_SHIFT		1
-#define HSPOT_PPS_MO_ID_MASK		(0x01 << HSPOT_PPS_MO_ID_SHIFT)
-#define HSPOT_ANQP_DOMAIN_ID_SHIFT	2
-#define HSPOT_ANQP_DOMAIN_ID_MASK	(0x01 << HSPOT_ANQP_DOMAIN_ID_SHIFT)
-
-#define HSPOT_RELEASE_SHIFT		4
-#define HSPOT_RELEASE_MASK		(0x0f << HSPOT_RELEASE_SHIFT)
+#define HSPOT_RELEASE_SHIFT			4
+#define HSPOT_RELEASE_MASK			(0x0f << HSPOT_RELEASE_SHIFT)
 
 /* hotspot release numbers */
 #define HSPOT_RELEASE_1		0
@@ -82,27 +74,7 @@
 #define HSPOT_WAN_AT_CAPACITY			0x01
 #define HSPOT_WAN_NOT_AT_CAPACITY		0x00
 
-/* IP Protocols for Connection Capability */
-#define HSPOT_CC_IPPROTO_NONE			-1
-#define HSPOT_CC_IPPROTO_ICMP			1
-#define HSPOT_CC_IPPROTO_TCP			6
-#define HSPOT_CC_IPPROTO_UDP			17
-#define HSPOT_CC_IPPROTO_ESP			50
-
-/* Port Numbers for Connection Capability */
-#define HSPOT_CC_PORT_NONE				-1
-#define HSPOT_CC_PORT_RESERVED			0
-#define HSPOT_CC_PORT_FTP				20
-#define HSPOT_CC_PORT_SSH				22
-#define HSPOT_CC_PORT_HTTP				80
-#define HSPOT_CC_PORT_HTTPS				443
-#define HSPOT_CC_PORT_ISAKMP			500
-#define HSPOT_CC_PORT_PPTP				1723
-#define HSPOT_CC_PORT_IPSEC				4500
-#define HSPOT_CC_PORT_SIP				5060
-
-/* Port Status for Connection Capability */
-#define HSPOT_CC_STATUS_NONE			-1
+/* connection capability */
 #define HSPOT_CC_STATUS_CLOSED			0
 #define HSPOT_CC_STATUS_OPEN			1
 #define HSPOT_CC_STATUS_UNKNOWN			2
@@ -116,8 +88,7 @@
 #define HSPOT_ICON_STATUS_FILE_NOT_FOUND			1
 #define HSPOT_ICON_STATUS_UNSPECIFIED_FILE_ERROR	2
 
-/* deauthentication reason */
-#define HSPOT_DEAUTH_RC_BSS_DISALLOW	0
-#define HSPOT_DEAUTH_RC_ESS_DISALLOW	1
+/* WNM type */
+#define HSPOT_WNM_TYPE		1
 
 #endif /* _BCM_HSPOT_H_ */

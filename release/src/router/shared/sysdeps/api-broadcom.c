@@ -484,6 +484,10 @@ int check_imagefile(char *fname)
 		uint8_t ver[4];			/* Firmware version */
 		uint8_t pid[MAX_PID_LEN];	/* Product Id */
 		uint8_t hw[MAX_HW_COUNT][4];	/* Compatible hw list lo maj.min, hi maj.min */
+#ifdef RTCONFIG_BCMWL6A
+		uint16_t sn;
+		uint16_t en;
+#endif
 		uint8_t	pad[0];			/* Padding up to MAX_VERSION_LEN */
 	} version;
 	int i, model;
@@ -511,6 +515,19 @@ int check_imagefile(char *fname)
 		_dprintf("check crc error!!!\n");
 		return 0;
 	}
+
+#if defined(RTCONFIG_BCMWL6A) && !(defined(RTCONFIG_BCM7) || defined(RTCONFIG_BCM_7114))
+	doSystem("nvram set cpurev=`cat /dev/mtd0 | grep cpurev | cut -d \"=\" -f 2`");
+	if (nvram_match("cpurev", "c0") &&
+	   (!version.sn ||
+	    !version.en ||
+	     version.sn < 380 ||
+	    (version.sn == 380 && version.en < 738)))
+	{
+		dbg("version check fail!\n");
+		return 0;
+	}
+#endif
 
 	model = get_model();
 

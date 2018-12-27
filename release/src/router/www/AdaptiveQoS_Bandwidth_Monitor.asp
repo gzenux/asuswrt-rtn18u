@@ -23,12 +23,24 @@
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/form.js"></script>
 <style type="text/css">
+.appIcons{
+	width:36px;
+	height:36px;
+	background-image:url('images/New_ui/app_icons/3-144-0.png');
+	background-repeat:no-repeat;
+	background-position:50% 45%;
+	background-size:100%;
+	border: 2px solid #282E30;
+	border-radius:7px;
+	margin-left:45px;
+}
 .splitLine{
 	background-image: url('/images/New_ui/export/line_export.png');
 	background-repeat: no-repeat;
 	height: 3px;
 	width: 100%;
-	margin-bottom: 7px;
+	margin-bottom: 2px;
+	margin-top: 2px;
 }
 #sortable div table tr:hover{
 	cursor: pointer;
@@ -41,64 +53,30 @@
 	width: 100%;
 	border-spacing: 0px;
 }
-.trafficIcons{
-	width:56px;
-	height:56px;
-	background-image:url('/images/New_ui/networkmap/client-list.png');
-	background-repeat:no-repeat;
-	border-radius:10px;
-	margin-left:10px;
-	background-position:50% 61.10%;
-}
-.trafficIcons:hover{
-	background-image:url('/images/New_ui/networkmap/client-listover.png');
-}
-.trafficIcons_clicked{
-	width:56px;
-	height:56px;
-	background-image:url('/images/New_ui/networkmap/client-listover.png');
-	background-repeat:no-repeat;
-	border-radius:10px;
-	margin-left:10px;
-	background-position:50% 64.40%;
-}
-.trafficVenderIcons{
-	width:56px;
-	height:56px;
-	background-image:url('/images/New_ui/networkmap/vender-list.png');
-	background-repeat:no-repeat;
-	border-radius:10px;
-	margin-left:10px;
-}
-.trafficVenderIcons:hover{
-	background-image:url('/images/New_ui/networkmap/vender-listover.png');
-}
-.trafficVenderIcons_clicked{
-	width:56px;
-	height:56px;
-	background-image:url('/images/New_ui/networkmap/vender-listover.png');
-	background-repeat:no-repeat;
-	border-radius:10px;
-	margin-left:10px;
-}
-
-.qosLevel{
-	background-color: inherit;
+.qosLevel, .qosLevel3{
+	border-style: double;
+	border-width: 2px;
+	border-color: #7A797A;
 }
 .qosLevel0{
-	background-color: #F01F09;
+	border-style: double;
+	border-width: 2px;
+	border-color: #F01F09;
 }
 .qosLevel1{
-	background-color: #F08C09;
+	border-style: double;
+	border-width: 2px;
+	border-color: #F08C09;
 }
 .qosLevel2{
-	background-color: #F3DD09;
-}
-.qosLevel3{
-	background-color: #59E920;
+	border-style: double;
+	border-width: 2px;
+	border-color: #F3DD09;
 }
 .qosLevel4{
-	background-color: #58CCED;
+	border-style: double;
+	border-width: 2px;
+	border-color: #58CCED;
 }
 
 #indicator_upload, #indicator_download{
@@ -108,21 +86,11 @@
     msTransform:rotate(-123deg);
     transform:rotate(-123deg);
 }
-
-.imgUserIcon{
-	margin-left: 2px;
-	margin-top: 2px;
-	width: 51px;
-	height: 52px;
-	-webkit-border-radius: 10px;
-	-moz-border-radius: 10px;
-	border-radius: 10px;
-}
 .divUserIcon{
 	cursor: pointer;
-	margin-left:10px;
-	width:56px;
-	height:56px;
+	margin: 0 auto;
+	width:52px;
+	height:52px;
 	-webkit-border-radius: 10px;
 	-moz-border-radius: 10px;
 	border-radius: 10px;
@@ -134,12 +102,36 @@
 	height: 8px;
 	border-radius:5px;
 }
+.traffic_bar_boost{
+	background-color: #B71010;
+}
 
 .transition_style{
-	-webkit-transition: all 0.5s ease-in-out;
-	-moz-transition: all 0.5s ease-in-out;
-	-o-transition: all 0.5s ease-in-out;
-	transition: all 0.5s ease-in-out;
+	-webkit-transition: all 2s ease-in-out;
+	-moz-transition: all 2s ease-in-out;
+	-o-transition: all 2s ease-in-out;
+	transition: all 2s ease-in-out;
+}
+.boost_tag_BM {
+	font-weight: normal;
+	text-align: center;
+	width: 55px;
+	height: 25px;
+	line-height: 25px;
+	border-radius: 15%;
+	margin-top: -21px;
+	margin-left: 25px;
+	color: #FFFFFF;
+	font-size: 9px;
+	-webkit-transform: scale(0.75);
+	background: #FF4848; /* Old browsers */
+	background: -moz-linear-gradient(top, #A21717 0%, #B71010 50%, #FF4848 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#A21717), color-stop(50%,#B71010), color-stop(100%,#FF4848)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top, #A21717 0%,#B71010 50%,#FF4848 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top, #A21717 0%,#B71010 50%,#FF4848 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top, #A21717 0%,#B71010 50%,#FF4848 100%); /* IE10+ */
+	background: linear-gradient(to bottom, #A21717 0%,#B71010 70%,#FF4848 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#A21717', endColorstr='#FF4848',GradientType=0 ); /* IE6-9 */
 }
 </style>
 <script>
@@ -155,7 +147,7 @@ var qos_rulelist = "<% nvram_get("qos_rulelist"); %>".replace(/&#62/g, ">").repl
 var curState = '<% nvram_get("apps_analysis"); %>';
 
 function register_event(){
-	var color_array = ["#F01F09", "#F08C09", "#F3DD09", "#59E920", "#58CCED", "inherit"];
+	var color_array = ["#F01F09", "#F08C09", "#F3DD09", "#7A797A", "#58CCED", "inherit"];
 	$(function() {
 		$("#sortable").sortable();
 		$("#sortable").disableSelection();
@@ -175,10 +167,9 @@ function register_event(){
 				this.style.color = "";
 				this.style.backgroundColor = "";
 				this.style.fontWeight = "";
-				this.children[0].children[0].style.backgroundColor = color_array[ui.draggable[0].id];
-				if(this.children[0].children[0].className.indexOf("trafficIcons") == -1 && this.children[0].children[0].className.indexOf("trafficVenderIcons") == -1) {
-					this.children[0].children[0].setAttribute("class", "closed qosLevel divUserIcon");
-				}
+				this.children[0].children[0].style.borderColor = color_array[ui.draggable[0].id];
+				this.children[0].children[0].style.borderStyle = "solid";
+				this.children[0].children[0].style.borderWidth = "2px";
 				regen_qos_rule(this.children[0].children[0], ui.draggable[0].id);				
 			}
 		});
@@ -271,9 +262,6 @@ function calculate_router_traffic(traffic){
 	else{
 		rx = router_traffic_new[1] - router_traffic_old[1];
 	}
-
-	
-	
 	
 	tx = tx*8/detect_interval;		// translate to bits
 	rx = rx*8/detect_interval;
@@ -412,7 +400,8 @@ function show_clients(priority_type){
 		if(clientObj.isGateway || !clientObj.isOnline)
 			continue;
 
-		if(typeof(priority_type) != "undefined"  && clientObj.qosLevel != priority_type){
+		var client_qosLevel = (clientObj.qosLevel == "") ? "3" : clientObj.qosLevel;
+		if(typeof(priority_type) != "undefined"  && client_qosLevel != priority_type){
 			code += '<div style="display:none">';	
 		}
 		else{		// initial or click priority block, show all
@@ -420,42 +409,46 @@ function show_clients(priority_type){
 		}
 
 		code += '<table><tr id="icon_tr_'+i+'">';
-		code += '<td style="width:70px;">';		
+		code += '<td style="width:70px;height:60px;">';		
 
 		if(usericon_support) {
 			var clientMac = clientObj.mac.replace(/\:/g, "");
 			userIconBase64 = getUploadIcon(clientMac);
 		}
 		if(userIconBase64 != "NoIcon") {
-			code += '<div id="icon_' + i + '" onclick="show_apps(this);" class="closed qosLevel' + clientObj.qosLevel + ' divUserIcon">';
-			code += '<img id="imgUserIcon_'+ i +'" class="imgUserIcon" src="' + userIconBase64 + '">';
+			code += '<div id="icon_' + i + '" onclick="show_apps(this);" class="closed qosLevel' + clientObj.qosLevel + ' divUserIcon" ';
+			code += 'style="background-image:url('+userIconBase64+');background-size:50px;">';
 			code += '</div>';
 		}
-		else if( (clientObj.type != "0" && clientObj.type != "6") || clientObj.dpiVender == "") {
-			code += '<div id="icon_' + i + '" onclick="show_apps(this);" class="closed trafficIcons type' + clientObj.type + ' qosLevel' + clientObj.qosLevel + '"></div>';
+		else if(clientObj.type != "0" || clientObj.vendor == "") {
+			code += '<div id="icon_' + i + '" onclick="show_apps(this);" class="closed clientIcon type' + clientObj.type + ' qosLevel' + clientObj.qosLevel + '"></div>';
 		}
-		else if(clientObj.dpiVender != "") {
+		else if(clientObj.vendor != "") {
 			var clientListCSS = "";
-			var venderIconClassName = getVenderIconClassName(clientObj.dpiVender.toLowerCase());
-			if(venderIconClassName != "") {
-				clientListCSS = "trafficVenderIcons " + venderIconClassName;
+			var venderIconClassName = getVenderIconClassName(clientObj.vendor.toLowerCase());
+			if(venderIconClassName != "" && !downsize_4m_support) {
+				clientListCSS = "venderIcon " + venderIconClassName;
 			}
 			else {
-				clientListCSS = "trafficIcons type" + clientObj.type;
+				clientListCSS = "clientIcon type" + clientObj.type;
 			}
 			code += '<div id="icon_' + i + '" onclick="show_apps(this);" class="closed ' + clientListCSS + ' qosLevel' + clientObj.qosLevel + '"></div>';
 		}
+		
+		if(clientObj.wtfast && wtfast_support) {
+			code += '<div class="boost_tag_BM">BOOST</div>';/*untranslated*/
+		}
+		
 		code += '</td>';
 		code += '<td style="width:180px;">';
 
 		var clientName = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
 		if(clientName.length > 23){
 			short_name = clientName.substr(0,20) + "...";	
-			//code += '<div style="font-family:Courier New,Courier,mono;" title="' + clientObj.mac + '&#10'+ clientObj.name +'">'+ short_name +'</div>';	
-			code += '<div style="font-family:Courier New,Courier,mono;" title="' + clientObj.mac + '">'+ short_name +'</div>';			
+			code += '<div style="font-family:monospace, Courier New, Courier;" title="' + clientObj.mac + '">'+ short_name +'</div>';			
 		}
 		else{
-			code += '<div style="font-family:Courier New,Courier,mono;" title="' + clientObj.mac + '">'+ clientName +'</div>';			
+			code += '<div style="font-family:monospace, Courier New, Courier;" title="' + clientObj.mac + '">'+ clientName +'</div>';			
 		}
 	
 		code += '</td>';		
@@ -463,7 +456,10 @@ function show_clients(priority_type){
 		code += '<tr>';
 		code += '<td style="width:385px">';
 		code += '<div style="height:8px;padding:3px;background-color:#000;border-radius:10px;">';	
-		code += '<div id="'+clientObj.mac+'_upload_bar" class="traffic_bar transition_style"></div>';
+		if(clientObj.wtfast && wtfast_support)
+			code += '<div id="'+clientObj.mac+'_upload_bar" class="traffic_bar transition_style traffic_bar_boost"></div>';
+		else
+			code += '<div id="'+clientObj.mac+'_upload_bar" class="traffic_bar transition_style"></div>';
 		code += '</div>';
 		code += '</td>';
 		code += '<td style="text-align:right;">';
@@ -479,7 +475,10 @@ function show_clients(priority_type){
 		code += '<tr>';
 		code += '<td>';
 		code +=	'<div style="height:8px;padding:3px;background-color:#000;border-radius:10px;">';
-		code += '<div id="'+clientObj.mac+'_download_bar" class="traffic_bar transition_style"></div>';
+		if(clientObj.wtfast && wtfast_support)
+			code += '<div id="'+clientObj.mac+'_download_bar" class="traffic_bar transition_style traffic_bar_boost"></div>';
+		else
+			code += '<div id="'+clientObj.mac+'_download_bar" class="traffic_bar transition_style"></div>';
 		code +=	'</div>';
 		code += '</td>';
 		code += '<td style="text-align:right;">';
@@ -539,17 +538,17 @@ function show_apps(obj){
 			obj.setAttribute("class", "closed qosLevel" + clientObj.qosLevel + " divUserIcon");
 		}
 		else {
-			if( (clientObj.type != "0" && clientObj.type != "6") || clientObj.dpiVender == "") {
-				obj.setAttribute("class", "closed trafficIcons type" + clientObj.type + " qosLevel" + clientObj.qosLevel + " divUserIcon");
+			if(clientObj.type != "0" || clientObj.vendor == "") {
+				obj.setAttribute("class", "closed clientIcon type" + clientObj.type + " qosLevel" + clientObj.qosLevel + " divUserIcon");
 			}
-			else if(clientObj.dpiVender != "") {
+			else if(clientObj.vendor != "") {
 				var clientListCSS = "";
-				var venderIconClassName = getVenderIconClassName(clientObj.dpiVender.toLowerCase());
-				if(venderIconClassName != "") {
-					clientListCSS = "trafficVenderIcons " + venderIconClassName;
+				var venderIconClassName = getVenderIconClassName(clientObj.vendor.toLowerCase());
+				if(venderIconClassName != "" && !downsize_4m_support) {
+					clientListCSS = "venderIcon " + venderIconClassName;
 				}
 				else {
-					clientListCSS = "trafficIcons type" + clientObj.type;
+					clientListCSS = "clientIcon type" + clientObj.type;
 				}
 				obj.setAttribute("class", "closed " + clientListCSS + " qosLevel" + clientObj.qosLevel + " divUserIcon");
 			}
@@ -579,17 +578,17 @@ function show_apps(obj){
 			obj.setAttribute("class", "opened clicked qosLevel" + clientObj.qosLevel + " divUserIcon");
 		}
 		else {
-			if( (clientObj.type != "0" && clientObj.type != "6") || clientObj.dpiVender == "") {
-				obj.setAttribute("class", "opened trafficIcons_clicked type" + clientObj.type + " clicked qosLevel" + clientObj.qosLevel + " divUserIcon");
+			if(clientObj.type != "0" || clientObj.vendor == "") {
+				obj.setAttribute("class", "opened clientIcon_clicked type" + clientObj.type + " clicked qosLevel" + clientObj.qosLevel + " divUserIcon");
 			}
-			else if(clientObj.dpiVender != "") {
+			else if(clientObj.vendor != "") {
 				var clientListCSS = "";
-				var venderIconClassName = getVenderIconClassName(clientObj.dpiVender.toLowerCase());
-				if(venderIconClassName != "") {
-					clientListCSS = "trafficVenderIcons_clicked " + venderIconClassName;
+				var venderIconClassName = getVenderIconClassName(clientObj.vendor.toLowerCase());
+				if(venderIconClassName != "" && !downsize_4m_support) {
+					clientListCSS = "venderIcon_clicked " + venderIconClassName;
 				}
 				else {
-					clientListCSS = "trafficIcons_clicked type" + clientObj.type;
+					clientListCSS = "clientIcon_clicked type" + clientObj.type;
 				}
 				obj.setAttribute("class", "opened " + clientListCSS + " clicked qosLevel" + clientObj.qosLevel + " divUserIcon");
 			}
@@ -627,17 +626,17 @@ function cancel_previous_device_apps(obj){
 		obj.setAttribute("class", "closed qosLevel" + clientObj.qosLevel + " divUserIcon");
 	}
 	else {
-		if( (clientObj.type != "0" && clientObj.type != "6") || clientObj.dpiVender == "") {
-			obj.setAttribute("class", "closed trafficIcons type" + clientObj.type + " qosLevel" + clientObj.qosLevel + " divUserIcon");
+		if(clientObj.type != "0" || clientObj.vendor == "") {
+			obj.setAttribute("class", "closed clientIcon type" + clientObj.type + " qosLevel" + clientObj.qosLevel + " divUserIcon");
 		}
-		else if(clientObj.dpiVender != "") {
+		else if(clientObj.vendor != "") {
 			var clientListCSS = "";
-			var venderIconClassName = getVenderIconClassName(clientObj.dpiVender.toLowerCase());
-			if(venderIconClassName != "") {
-				clientListCSS = "trafficVenderIcons " + venderIconClassName;
+			var venderIconClassName = getVenderIconClassName(clientObj.vendor.toLowerCase());
+			if(venderIconClassName != "" && !downsize_4m_support) {
+				clientListCSS = "venderIcon " + venderIconClassName;
 			}
 			else {
-				clientListCSS = "trafficIcons type" + clientObj.type;
+				clientListCSS = "clientIcon type" + clientObj.type;
 			}
 			obj.setAttribute("class", "closed " + clientListCSS + " qosLevel" + clientObj.qosLevel + " divUserIcon");
 		}
@@ -655,15 +654,15 @@ function render_apps(apps_array, obj_icon, apps_field){
 		img = new Image();
 		img.src = 'images/New_ui/app_icons/'+ apps_array[i][3] +'-'+ apps_array[i][4] +'-0.png';	// to check image file exist	
 		if(img.height == 0){	//default image, if image file doesn't exist
-			code +='<div style="width:40px;height:40px;background-image:url(\'images/New_ui/app_icons/3-144-0.png\');background-repeat:no-repeat;background-position:50% 45%;background-color:#282E30;border-radius:7px;margin-left:45px;"></div>';
+			code +='<div class="appIcons"></div>';
 		}
 		else{
-			code +='<div style="width:40px;height:40px;background-image:url(\'images/New_ui/app_icons/'+ apps_array[i][3] +'-'+ apps_array[i][4] +'-0.png\');background-repeat:no-repeat;background-position:50% 45%;background-color:#282E30;border-radius:7px;margin-left:45px;"></div>';
+			code +='<div class="appIcons" style="background-image:url(\'images/New_ui/app_icons/'+ apps_array[i][3] +'-'+ apps_array[i][4] +'-0.png\')"></div>';
 		}
 				
 		code +='</td>';
 		code +='<td style="width:230px;border-top:1px dotted #333;">';
-		code +='<div id="'+ apps_array[i][0] +'" style="font-family:Courier New,Courier,mono">'+apps_array[i][0]+'</div>';
+		code +='<div id="'+ apps_array[i][0] +'" style="font-family:monospace, Courier New, Courier">'+apps_array[i][0]+'</div>';
 		code +='</td>';
 
 		code +='<td style="border-top:1px dotted #333;">';
@@ -703,7 +702,7 @@ function render_apps(apps_array, obj_icon, apps_field){
 	}
 
 	if(code == ""){
-		code = "<tr><td colspan='3' style='text-align:center;color:#FFCC00'><div style='padding:5px 0px;border-top:solid 1px #333;'><#Bandwidth_monitor_noList#></div></td></tr>";	/*No Traffic in the list*/
+		code = "<tr><td colspan='3' style='text-align:center;color:#FFCC00'><div style='padding:5px 0px;border-top:solid 1px #333;'><#Bandwidth_monitor_noList#></div></td></tr>";
 	}
 
 	$(apps_field).empty();
@@ -1334,7 +1333,7 @@ function cancel(){
 													<table>
 														<tr>
 															<td>															
-																<div id="0" style="cursor:pointer;background-color:#444F53;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;" onclick="show_clients(this.id)">
+																<div id="0" style="cursor:pointer;background-color:#444F53;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#F01F09;margin-left:5px;"></div></td>
@@ -1344,7 +1343,7 @@ function cancel(){
 																</div>
 															</td>
 															<td>
-																<div id="1" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;" onclick="show_clients(this.id)">
+																<div id="1" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#F08C09;margin-left:5px;"></div></td>
@@ -1354,7 +1353,7 @@ function cancel(){
 																</div>	
 															</td>
 															<td>
-																<div id="2" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;" onclick="show_clients(this.id)">
+																<div id="2" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#F3DD09;margin-left:5px;"></div></td>
@@ -1364,17 +1363,17 @@ function cancel(){
 																</div>
 															</td>
 															<td>													             												
-																<div id="3" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;" onclick="show_clients(this.id)">
+																<div id="3" style="cursor:pointer;background-color:#444F53;width:90px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
-																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#59E920;margin-left:5px;"></div></td>
-																			<td><#Low#></td>
+																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#7A797A;margin-left:5px;"></div></td>
+																			<td><#Setting_factorydefault_value#></td>
 																		</tr>
 																	</table>						
 																</div>												
 															</td>
 															<td>												
-																<div id="4" style="cursor:pointer;background-color:#444F53;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;" onclick="show_clients(this.id)">
+																<div id="4" style="cursor:pointer;background-color:#444F53;width:100px;border-radius:10px;text-align:center;box-shadow:0px 2px black;z-index:100;" onclick="show_clients(this.id)">
 																	<table>
 																		<tr>
 																			<td style="width:25px;"><div style="width:12px;height:12px;border-radius:10px;background-color:#58CCED;margin-left:5px;"></div></td>

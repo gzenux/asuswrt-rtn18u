@@ -1,7 +1,7 @@
 /*
  * WLAN functions.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -19,12 +19,6 @@
 #include "wlioctl.h"
 
 typedef struct wlanStruct wlanT;
-
-typedef enum {
-	WLAN_PMF_MODE_DISABLED	= 0,
-	WLAN_PMF_MODE_CAPABLE	= 1,
-	WLAN_PMF_MODE_REQUIRED	= 2
-} wlanPmfModeT;
 
 /* initialize wlan */
 int wlanInitialize(void);
@@ -55,9 +49,6 @@ int wlanAddVendorIe(wlanT *wlan, uint32 pktflag, int len, uchar *data);
 
 /* delete vendor IEs */
 int wlanDeleteVendorIe(wlanT *wlan, uint32 pktflag, int len, uchar *data);
-
-/* delete all vendor IEs */
-int wlanDeleteAllVendorIe(wlanT *wlan);
 
 /* add/del IE */
 int wlanIe(wlanT *wlan, uint8 id, uint8 len, uchar *data);
@@ -108,26 +99,10 @@ int wlanWnm(wlanT *wlan, int mask);
 int wlanWnmGet(wlanT *wlan, int *mask);
 
 /* PMF mode (0=disable, 1=capable, 2=required) */
-int wlanPmf(wlanT *wlan, wlanPmfModeT mode);
+int wlanPmf(wlanT *wlan, int mode);
 
 /* set MAC mode and list */
 int wlanMac(wlanT *wlan, int mode, int count, struct ether_addr *addr);
-
-/* enable/disable interworking */
-int wlanInterworking(wlanT *wlan, int enable);
-
-/* enable/disable OSEN */
-int wlanOsen(wlanT *wlan, int enable);
-
-/* send frame */
-int wlanSendFrame(wlanT *wlan, uint16 len, uint8 *data);
-
-/* enable/disable BSS load */
-int wlanBssLoad(wlanT *wlan, int enable);
-
-/* configure static BSS load */
-int wlanBssLoadStatic(wlanT *wlan, bool isStatic, uint16 staCount,
-	uint8 utilization, uint16 aac);
 
 /* subscribe for event notification callback */
 int wlanSubscribeEvent(void *context, void (*fn)(void *context, uint32 eventType,

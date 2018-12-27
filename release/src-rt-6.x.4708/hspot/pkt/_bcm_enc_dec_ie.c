@@ -1,7 +1,7 @@
 /*
  * Test harness for encoding and decoding information elements.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -36,8 +36,7 @@ static void testEncode(void)
 
 	TEST(bcm_encode_init(&enc, sizeof(buffer), buffer), "bcm_encode_init failed");
 
-	TEST(bcm_encode_ie_hotspot_indication2(&enc, TRUE, HSPOT_RELEASE_2,
-		TRUE, 0x1234, TRUE, 0x5678),
+	TEST(bcm_encode_ie_hotspot_indication2(&enc, TRUE, HSPOT_RELEASE_2),
 		"bcm_encode_ie_hotspot_indication2 failed");
 
 	TEST(bcm_encode_ie_interworking(&enc,
@@ -51,7 +50,7 @@ static void testEncode(void)
 		ADVP_PAME_BI_DEPENDENT, 0xff, ADVP_ANQP_PROTOCOL_ID),
 		"bcm_encode_ie_advertisement_protocol_tuple failed");
 	TEST(bcm_encode_ie_advertisement_protocol_from_tuple(&enc,
-		bcm_encode_length(&ad), bcm_encode_buf(&ad)),
+		bcm_encode_length(&ad),	bcm_encode_buf(&ad)),
 		"bcm_encode_ie_advertisement_protocol_from_tuple failed");
 
 	TEST(bcm_encode_ie_roaming_consortium(&enc, 0xff, 3, (uint8 *)"\x00\x11\x22",
@@ -61,7 +60,7 @@ static void testEncode(void)
 	TEST(bcm_encode_ie_extended_capabilities(&enc, 0x80000000),
 		"bcm_encode_ie_extended_capabilities failed");
 
-	WL_PRPKT("encoded IEs", bcm_encode_buf(&enc), bcm_encode_length(&enc));
+	WL_PRPKT("encoded IEs",	bcm_encode_buf(&enc), bcm_encode_length(&enc));
 }
 
 static void testDecode(void)
@@ -87,10 +86,6 @@ static void testDecode(void)
 		"bcm_decode_ie_hotspot_indication2 failed");
 	TEST(hotspot.isDgafDisabled == TRUE, "invalid data");
 	TEST(hotspot.releaseNumber == HSPOT_RELEASE_2, "invalid data");
-	TEST(hotspot.isPpsMoIdPresent == TRUE, "invalid data");
-	TEST(hotspot.ppsMoId == 0x1234, "invalid data");
-	TEST(hotspot.isAnqpDomainIdPresent == TRUE, "invalid data");
-	TEST(hotspot.anqpDomainId == 0x5678, "invalid data");
 
 	TEST(bcm_decode_init(&dec1, ie.interworkingLength,
 		ie.interworking), "bcm_decode_init failed");

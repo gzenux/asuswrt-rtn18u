@@ -182,7 +182,11 @@ function genWANSoption(){
 	}
 	document.form.wan_unit.selectedIndex = '<% nvram_get("wan_unit"); %>';
 }
-/* end of DualWAN */ 
+/* end of DualWAN */
+
+var usb_modem_act_swver = '<% nvram_get("usb_modem_act_swver"); %>';
+var usb_lte_version = '<% chk_lte_fw(); %>';
+var lte_update_status = '';
 
 function initial(){
 	var data_usage = 0;
@@ -286,6 +290,13 @@ function initial(){
 	show_phone(document.form.modem_sms_limit.value);
 	check_sim_state();
 	check_connect_status();
+
+	if(usb_lte_version != ""){
+		document.getElementById("new_version_tr").style.display = "";
+		document.getElementById("new_version").innerHTML = usb_lte_version;
+		document.getElementById("lte_update_note").style.display = "";
+	}
+
 }
 
 function show_sim_settings(show_flag){
@@ -293,14 +304,14 @@ function show_sim_settings(show_flag){
 		document.getElementById("connection_table").style.display = '';
 		document.getElementById("traffic_table").style.display = '';
 		document.getElementById("apn_table").style.display = '';
-		inputHideCtrl(document.form.modem_mode, 1);
-		inputHideCtrl(document.form.modem_pdp, 1);
+		inputCtrl(document.form.modem_mode, 1);
+		inputCtrl(document.form.modem_pdp, 1);
 		document.form.modem_bytes_data_limit.disabled = false;
 		document.form.modem_bytes_data_warning.disabled = false;
 		document.form.modem_limit_unit.disabled = false;
 		document.form.modem_warning_unit.disabled = false;
 		document.getElementById("modem_roaming_tr").style.display = "";
-		inputHideCtrl(document.form.modem_roaming, 1);
+		inputCtrl(document.form.modem_roaming, 1);
 		ShowRoamingOpt(document.form.modem_roaming.value);
 		document.form.modem_roaming_isp.disabled = false;
 		inputCtrl(document.form.modem_country, 1);
@@ -1523,6 +1534,48 @@ function change_apn_mode(){
 		document.getElementById("modem_pass_div_tr").style.display = "none";
 	}
 }
+
+function check_update(){
+	$.ajax({
+		url: '/ajax_lte_info.asp',
+		dataType: 'script',
+		
+		error: function(xhr){
+			check_update();
+		},
+		success: function(response){
+			var lte_update_val = parseInt(lte_update_status);
+
+			if( lte_update_status == '')
+				setTimeout("check_update();", 10000);
+			else{
+				if(lte_update_val == 0)
+					setTimeout("check_update();", 1000);
+				else if(lte_update_val >= 1){
+					if(lte_update_val > 1)
+						document.getElementById("update_msg").innerHTML = "Fail to upgrade software of LTE module.";
+					else{
+						document.getElementById("usb_modem_act_swver").innerHTML = usb_modem_act_swver;
+						document.getElementById("update_msg").innerHTML = "Succeed to upgrade software of LTE module.";
+					}
+				}
+			}
+		}
+	});
+}
+
+function update_lte_fw(){
+	if(sim_state != "-1"){
+		alert("Please remove SIM card before starting update.");
+		return;
+	}
+	else{
+		document.simact_form.action_mode.value = "update_lte_fw";
+		document.simact_form.submit();
+		showLoadingBar(390);
+		setTimeout("check_update();", 390000);
+	}
+}
 </script>
 </head>
 
@@ -1541,6 +1594,22 @@ function change_apn_mode(){
 		</td>
 		</tr>
 	</table>
+<!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
+</div>
+
+<div id="LoadingBar" class="popup_bar_bg">
+<table cellpadding="5" cellspacing="0" id="loadingBarBlock" class="loadingBarBlock" align="center">
+	<tr>
+		<td height="80">
+		<div id="loading_block1" class="Bar_container">
+			<span id="proceeding_img_text"></span>
+			<div id="proceeding_img"></div>
+		</div>
+		<div id="loading_block2" style="margin:5px auto; width:85%;">LTE module software is upgrading. Please wait about 6 minutes. <#Main_alert_proceeding_desc5#></div>
+		<div id="loading_block3" style="margin:5px auto;width:85%; font-size:12pt;"></div>
+		</td>
+	</tr>
+</table>
 <!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
 </div>
 
@@ -1584,10 +1653,10 @@ function change_apn_mode(){
 						<td colspan="2"><#Product_information#></td>
 					</tr>
 					</thead>
-			 		<tr><th><#Modelname#></th><td><% nvram_get("productid"); %></td></tr>  
+			 		<tr><th><#Modelname#></th><td><% nvram_get("productid"); %></td></tr>
 		  			<!--tr><th><#Hardware_version#></th><td><div id="modem_act_hwver"><% nvram_get("usb_modem_act_hwver"); %></div></td></tr-->
-		  			<tr><th>LTE Modem Version</th><td><div id="usb_modem_act_swver"><% nvram_get("usb_modem_act_swver"); %></div></td></tr>
-		  			<tr><th>IMEI</th><td><div id="modem_act_imei"><% nvram_get("usb_modem_act_imei"); %></div></td></tr>
+		  			<!--tr><th>LTE Modem Version</th><td><div id="usb_modem_act_swver"><% nvram_get("usb_modem_act_swver"); %></div></td></tr-->
+		  			<!--tr><th>IMEI</th><td><div id="modem_act_imei"><% nvram_get("usb_modem_act_imei"); %></div></td></tr-->
 					<tr><th>IMSI</th><td><div id="modem_act_imsi"><% nvram_get("usb_modem_act_imsi"); %></div></td></tr>
 					<tr><th>ICCID</th><td><div id="modem_act_iccid"><% nvram_get("usb_modem_act_iccid"); %></div></td></tr>
 		 		</table>
@@ -1687,6 +1756,19 @@ function change_apn_mode(){
 						</tr>
 					</table>
 
+					<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable"  style="margin-top:8px">
+						<thead>
+						<tr>
+							<td colspan="2">Mobile Broadband Modem Information</td>
+						</tr>
+						</thead>
+			  			<!--tr><th>Modem hardware version</th><td><div id="modem_act_hwver"><% nvram_get("usb_modem_act_hwver"); %></div></td></tr-->
+			  			<tr><th>Modem software version</th><td><div id="usb_modem_act_swver"><% nvram_get("usb_modem_act_swver"); %></div></td></tr>
+			  			<tr id="new_version_tr" style="display:none;"><th>New software version</th><td><span id="new_version" style="color:#FFF;"></span><input id="lte_update_btn" name="lte_update_btn" class="button_gen" type="button" onclick="update_lte_fw();" style="margin-left:10px;" value="<#LANHostConfig_x_DDNSStatus_buttonname#>"/><div id="update_msg" style="color:#FC0;"></div></td></tr>
+			  			<tr><th>IMEI</th><td><div id="modem_act_imei"><% nvram_get("usb_modem_act_imei"); %></div></td></tr>
+			 		</table>
+					 <div id="lte_update_note" style="color:#FFCC00; font-size:10px; display:none;">* Please remove SIM card before starting update and do not remove or unmount USB drive before update process is finished. </div>
+
 					<div id="basic_setting_desc" class="formfontdesc" style="margin-bottom:0px; margin-top: 15px;"><#Mobile_desc1#></div>
 					<!--table id="simdetect_table" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable" style="margin-top:8px">
 						<thead>
@@ -1716,6 +1798,7 @@ function change_apn_mode(){
 							</td>
 						</tr>
 					</table-->
+
 				<table id="connection_table" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable" style="margin-top:8px">
 				  	<thead>
 				  	<tr>
@@ -1991,7 +2074,7 @@ function change_apn_mode(){
 								  	<tr id="sim_puk_tr" style="display:none;">
 										<th><#Mobile_puk#></th>
 										<td>
-					  						<input type="text" maxlength="8" class="input_20_table" name="sim_puk" autocapitalization="off" value="" onkeypress="return validator.isNumber(this,event)" autocorrect="off" autocapitalize="off"/>
+					  						<input type="text" maxlength="8" class="input_20_table" name="sim_puk" autocapitalize="off" value="" onkeypress="return validator.isNumber(this,event)" autocorrect="off" autocapitalize="off"/>
 					  						<br><span id="puk_status" style="display:none;"></span>
 										</td>
 				  					</tr>

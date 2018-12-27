@@ -2,7 +2,7 @@
  * Encode functions which provides encoding of Hotspot2.0 ANQP packets
  * as defined in Hotspot2.0 specification.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;

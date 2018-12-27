@@ -2,7 +2,7 @@
  * Decode functions which provides decoding of information elements
  * as defined in 802.11.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -29,7 +29,6 @@ static void printIes(bcm_decode_ie_t *ie)
 #if !defined(BCMDBG)
 	(void)ie;
 #endif
-	int i;
 	WL_TRACE(("decoded IEs:\n"));
 
 	WL_PRPKT("   DS",
@@ -56,16 +55,10 @@ static void printIes(bcm_decode_ie_t *ie)
 		ie->extendedCapability, ie->extendedCapabilityLength);
 	WL_PRPKT("   hotspot indication",
 		ie->hotspotIndication, ie->hotspotIndicationLength);
-	WL_PRPKT("   OSEN vendor specific",
-		ie->osenIe, ie->osenIeLength);
 	WL_PRPKT("   WPS vendor specific",
 		ie->wpsIe, ie->wpsIeLength);
-	for (i = 0; i < BCM_DECODE_MAX_IE_FRAGMENTS; i++) {
-		if (ie->p2p[i].p2pIe != 0) {
-			WL_PRPKT("   P2P vendor specific",
-				ie->p2p[i].p2pIe, ie->p2p[i].p2pIeLength);
-		}
-	}
+	WL_PRPKT("   WFD vendor specific",
+		ie->wfdIe, ie->wfdIeLength);
 }
 
 /* decode IE */
@@ -168,12 +161,6 @@ int bcm_decode_ie(bcm_decode_t *pkt, bcm_decode_ie_t *ie)
 				ie->hotspotIndicationLength = dataLength;
 				ie->hotspotIndication = dataPtr;
 			}
-			else if (dataLength >= WFA_OUI_LEN + 1 &&
-				memcmp(dataPtr, WFA_OUI, WFA_OUI_LEN) == 0 &&
-				dataPtr[WFA_OUI_LEN] == WFA_OUI_TYPE_OSEN) {
-				ie->osenIeLength = dataLength;
-				ie->osenIe = dataPtr;
-			}
 			else if (dataLength >= WPS_OUI_LEN + 1 &&
 				memcmp(dataPtr, WPS_OUI, WPS_OUI_LEN) == 0 &&
 				dataPtr[WPS_OUI_LEN] == WPS_OUI_TYPE) {
@@ -183,14 +170,8 @@ int bcm_decode_ie(bcm_decode_t *pkt, bcm_decode_ie_t *ie)
 			else if (dataLength >= WFA_OUI_LEN + 1 &&
 				memcmp(dataPtr, WFA_OUI, WFA_OUI_LEN) == 0 &&
 				dataPtr[WFA_OUI_LEN] == WFA_OUI_TYPE_P2P) {
-				int i;
-				for (i = 0; i < BCM_DECODE_MAX_IE_FRAGMENTS; i++) {
-					if (ie->p2p[i].p2pIe == 0) {
-						ie->p2p[i].p2pIeLength = dataLength;
-						ie->p2p[i].p2pIe = dataPtr;
-						break;
-					}
-				}
+				ie->wfdIeLength = dataLength;
+				ie->wfdIe = dataPtr;
 			}
 			break;
 		default:
@@ -206,52 +187,6 @@ int bcm_decode_ie(bcm_decode_t *pkt, bcm_decode_ie_t *ie)
 		printIes(ie);
 
 	return ieCount;
-}
-
-/* calculate length of all P2P IEs */
-int bcm_decode_ie_get_p2p_ie_length(bcm_decode_t *pkt, bcm_decode_ie_t *ie)
-{
-	(void)pkt;
-	uint16 length = 0;
-	int i;
-
-	for (i = 0; i < BCM_DECODE_MAX_IE_FRAGMENTS; i++) {
-		if (ie->p2p[i].p2pIe != 0) {
-			int ieLen = ie->p2p[i].p2pIeLength;
-			if (ieLen < WFA_OUI_LEN + 1)
-				continue;
-			if (i != 0)
-				ieLen -= WFA_OUI_LEN + 1;
-			length += ieLen;
-		}
-	}
-	return length;
-}
-
-/* copy concatenated P2P IEs into buf */
-/* buf must be of size returned by bcm_decode_ie_get_p2p_ie_length() */
-uint8 *bcm_decode_ie_get_p2p_ie(bcm_decode_t *pkt, bcm_decode_ie_t *ie, uint8 *buf)
-{
-	(void)pkt;
-	int i;
-	uint8 *dst = buf;
-
-	for (i = 0; i < BCM_DECODE_MAX_IE_FRAGMENTS; i++) {
-		if (ie->p2p[i].p2pIe != 0) {
-			uint8 *src = ie->p2p[i].p2pIe;
-			int srcLen = ie->p2p[i].p2pIeLength;
-			if (srcLen < WFA_OUI_LEN + 1)
-				continue;
-			if (i != 0) {
-				src += WFA_OUI_LEN + 1;
-				srcLen -= WFA_OUI_LEN + 1;
-			}
-			memcpy(dst, src, srcLen);
-			dst += srcLen;
-		}
-	}
-
-	return buf;
 }
 
 /* decode hotspot 2.0 indication */
@@ -300,116 +235,6 @@ int bcm_decode_ie_hotspot_indication2(bcm_decode_t *pkt, bcm_decode_hotspot_indi
 		hotspot->isDgafDisabled = TRUE;
 	hotspot->releaseNumber =
 		(config & HSPOT_RELEASE_MASK) >> HSPOT_RELEASE_SHIFT;
-
-	/* decode PPSMO id if available */
-	if (config & HSPOT_PPS_MO_ID_MASK) {
-		hotspot->isPpsMoIdPresent = TRUE;
-		if (!bcm_decode_le16(pkt, &hotspot->ppsMoId)) {
-			WL_ERROR(("decode error\n"));
-			return FALSE;
-		}
-	}
-	/* decode ANQP domain id if available */
-	if (config & HSPOT_ANQP_DOMAIN_ID_MASK) {
-		hotspot->isAnqpDomainIdPresent = TRUE;
-		if (!bcm_decode_le16(pkt, &hotspot->anqpDomainId)) {
-			WL_ERROR(("decode error\n"));
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
-/* decode OSEN */
-int bcm_decode_ie_osen(bcm_decode_t *pkt)
-{
-	uint8 oui[WFA_OUI_LEN];
-	uint8 type;
-	uint8 wpa2[WPA2_OUI_LEN];
-	uint16 count;
-	uint16 capability;
-	uint32 gmc;
-
-	if (!bcm_decode_is_pkt_valid(pkt))
-		return FALSE;
-
-	WL_PRPKT("packet for OSEN decoding",
-		bcm_decode_buf(pkt), bcm_decode_buf_length(pkt));
-
-	/* check OUI */
-	if (!bcm_decode_bytes(pkt, WFA_OUI_LEN, oui) ||
-		memcmp(oui, WFA_OUI, WFA_OUI_LEN) != 0) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	/* check type */
-	if (!bcm_decode_byte(pkt, &type) || type != WFA_OUI_TYPE_OSEN) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	/* group cipher suite */
-	if (!bcm_decode_bytes(pkt, WPA2_OUI_LEN, wpa2) ||
-		memcmp(wpa2, WPA2_OUI, WPA2_OUI_LEN) != 0) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (!bcm_decode_byte(pkt, &type) || type != 7) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	/* pairwaise cipher suite */
-	if (!bcm_decode_le16(pkt, &count) || count != 1) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (!bcm_decode_bytes(pkt, WPA2_OUI_LEN, wpa2) ||
-		memcmp(wpa2, WPA2_OUI, WPA2_OUI_LEN) != 0) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (!bcm_decode_byte(pkt, &type) || type != 4) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	/* AKM suite */
-	if (!bcm_decode_le16(pkt, &count) || count != 1) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (!bcm_decode_bytes(pkt, WFA_OUI_LEN, oui) ||
-		memcmp(oui, WFA_OUI, WFA_OUI_LEN) != 0) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (!bcm_decode_byte(pkt, &type) || type != 1) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	/* capability */
-	if (!bcm_decode_le16(pkt, &capability)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	/* PKMID suite */
-	if (bcm_decode_remaining(pkt) && !bcm_decode_le16(pkt, &count)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	/* group management cipher */
-	if (bcm_decode_remaining(pkt) &&
-		(!bcm_decode_le32(pkt, &gmc) || gmc != 0)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
 	return TRUE;
 }
 
@@ -796,8 +621,6 @@ int bcm_decode_ie_probe_response(wl_bss_info_t *bi, bcm_decode_probe_response_t 
 		uint8 *biData = (uint8 *)bi;
 		bcm_decode_t pkt;
 		bcm_decode_ie_t ies;
-		int p2pLength;
-		uint8 *p2pBuffer;
 
 		bcm_decode_init(&pkt, bi->ie_length, &biData[bi->ie_offset]);
 		bcm_decode_ie(&pkt, &ies);
@@ -806,38 +629,31 @@ int bcm_decode_ie_probe_response(wl_bss_info_t *bi, bcm_decode_probe_response_t 
 		pr->channel = ies.dsLength == 1 ? *ies.ds :
 			wf_chspec_ctlchan(bi->chanspec);
 
-		p2pLength = bcm_decode_ie_get_p2p_ie_length(&pkt, &ies);
-		if (p2pLength > 0 && (p2pBuffer = malloc(p2pLength)) != 0) {
+		if (ies.wfdIe != 0) {
 			bcm_decode_t dec1;
-			bcm_decode_p2p_t p2p;
+			bcm_decode_p2p_t wfd;
 
 			pr->isP2P = TRUE;
-			bcm_decode_ie_get_p2p_ie(&pkt, &ies, p2pBuffer);
-			bcm_decode_init(&dec1, p2pLength, p2pBuffer);
-			bcm_decode_p2p(&dec1, &p2p);
+			bcm_decode_init(&dec1, ies.wfdIeLength, ies.wfdIe);
+			bcm_decode_p2p(&dec1, &wfd);
 
-			if (p2p.deviceInfoBuffer) {
+			if (wfd.deviceInfoBuffer) {
 				bcm_decode_t dec2;
 
-				bcm_decode_init(&dec2, p2p.deviceInfoLength,
-					p2p.deviceInfoBuffer);
+				bcm_decode_init(&dec2, wfd.deviceInfoLength,
+					wfd.deviceInfoBuffer);
 				pr->isP2PDeviceInfoDecoded =
 					bcm_decode_p2p_device_info(&dec2, &pr->p2pDeviceInfo);
 			}
 
-			if (p2p.capabilityBuffer) {
+			if (wfd.capabilityBuffer) {
 				bcm_decode_t dec3;
 
-				bcm_decode_init(&dec3, p2p.capabilityLength,
-					p2p.capabilityBuffer);
+				bcm_decode_init(&dec3, wfd.capabilityLength,
+					wfd.capabilityBuffer);
 				pr->isP2PCapabilityDecoded =
 					bcm_decode_p2p_capability(&dec3, &pr->p2pCapability);
 			}
-
-			WL_PRPKT("advertised service",
-				p2p.advertiseServiceBuffer, p2p.advertiseServiceLength);
-
-			free(p2pBuffer);
 		}
 
 		if (ies.hotspotIndication != 0) {

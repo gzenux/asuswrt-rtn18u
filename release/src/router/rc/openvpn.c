@@ -314,7 +314,7 @@ void start_vpnclient(int clientNum)
 	}
 
 	fprintf(fp, "status-version 2\n");
-	fprintf(fp, "status status\n");
+	fprintf(fp, "status status 10\n");
 	fprintf(fp, "\n# Custom Configuration\n");
 	sprintf(&buffer[0], "vpn_client%d_custom", clientNum);
 	fprintf(fp, "%s", nvram_safe_get(&buffer[0]));
@@ -995,7 +995,7 @@ void start_vpnserver(int serverNum)
 	}
 
 	fprintf(fp, "status-version 2\n");
-	fprintf(fp, "status status\n");
+	fprintf(fp, "status status 10\n");
 	fprintf(fp, "\n# Custom Configuration\n");
 	sprintf(&buffer[0], "vpn_server%d_custom", serverNum);
 	fprintf(fp, "%s", nvram_safe_get(&buffer[0]));
@@ -1471,7 +1471,7 @@ void start_vpn_eas()
 	for( i = 0; nums[i] > 0 && i < 5; i++ )
 	{
 		if(!nvram_get_int("VPNServer_enable")) continue;
-		if(!nvram_match("VPNServer_mode", "openvpn")) continue;
+		//if(!nvram_match("VPNServer_mode", "openvpn")) continue;
 
 		sprintf(&buffer[0], "vpnserver%d", nums[i]);
 		if ( pidof(&buffer[0]) >= 0 )

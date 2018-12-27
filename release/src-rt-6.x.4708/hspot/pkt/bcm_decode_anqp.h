@@ -1,7 +1,7 @@
 /*
  * Decode functions which provides decoding of ANQP packets as defined in 802.11u.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -54,8 +54,7 @@ typedef struct {
 #endif	/* BCM_DECODE_NO_ANQP */
 	int anqpVendorSpecificListLength;
 	uint8 *anqpVendorSpecificListBuffer;
-	int wfaServiceDiscoveryLength;
-	uint8 *wfaServiceDiscoveryBuffer;
+
 #ifndef BCM_DECODE_NO_HOTSPOT_ANQP
 	/* hotspot specific */
 	bcm_decode_hspot_anqp_t hspot;
@@ -68,7 +67,6 @@ int bcm_decode_anqp(bcm_decode_t *pkt, bcm_decode_anqp_t *anqp);
 #define BCM_DECODE_ANQP_MAX_LIST_SIZE	16
 typedef struct
 {
-	int isDecodeValid;
 	uint16 queryLen;
 	uint16 queryId[BCM_DECODE_ANQP_MAX_LIST_SIZE];
 } bcm_decode_anqp_query_list_t;
@@ -81,7 +79,6 @@ void bcm_decode_anqp_query_list_print(bcm_decode_anqp_query_list_t *queryList);
 
 typedef struct
 {
-	int isDecodeValid;
 	uint16 vendorLen;
 	uint8 vendorData[BCM_DECODE_ANQP_MAX_LIST_SIZE];
 } bcm_decode_anqp_vendor_list_t;
@@ -92,7 +89,6 @@ int bcm_decode_anqp_vendor_specific_list(bcm_decode_t *pkt,
 
 typedef struct
 {
-	int isDecodeValid;
 	uint16 capLen;
 	uint16 capId[BCM_DECODE_ANQP_MAX_LIST_SIZE];
 	bcm_decode_hspot_anqp_capability_list_t hspotCapList;
@@ -116,7 +112,6 @@ typedef struct
 #define BCM_DECODE_ANQP_MAX_VENUE_NAME	4
 typedef struct
 {
-	int isDecodeValid;
 	uint8 group;
 	uint8 type;
 	int numVenueName;
@@ -140,7 +135,6 @@ typedef struct
 #define BCM_DECODE_ANQP_MAX_AUTHENTICATION_UNIT	8
 typedef struct
 {
-	int isDecodeValid;
 	int numAuthenticationType;
 	bcm_decode_anqp_network_authentication_unit_t unit[BCM_DECODE_ANQP_MAX_AUTHENTICATION_UNIT];
 } bcm_decode_anqp_network_authentication_type_t;
@@ -167,7 +161,6 @@ typedef struct
 #define BCM_DECODE_ANQP_MAX_OI	16
 typedef struct
 {
-	int isDecodeValid;
 	int numOi;
 	bcm_decode_anqp_oi_duple_t oi[BCM_DECODE_ANQP_MAX_OI];
 } bcm_decode_anqp_roaming_consortium_t;
@@ -185,7 +178,6 @@ int bcm_decode_anqp_is_roaming_consortium(bcm_decode_anqp_roaming_consortium_t *
 
 typedef struct
 {
-	int isDecodeValid;
 	uint8 ipv6;
 	uint8 ipv4;
 } bcm_decode_anqp_ip_type_t;
@@ -226,7 +218,6 @@ typedef struct
 #define BCM_DECODE_ANQP_MAX_REALM			16
 typedef struct
 {
-	int isDecodeValid;
 	uint16 realmCount;
 	bcm_decode_anqp_nai_realm_data_t realm[BCM_DECODE_ANQP_MAX_REALM];
 } bcm_decode_anqp_nai_realm_list_t;
@@ -252,7 +243,6 @@ typedef struct
 #define BCM_DECODE_ANQP_MAX_PLMN	16
 typedef struct
 {
-	int isDecodeValid;
 	uint8 plmnCount;
 	bcm_decode_anqp_plmn_t plmn[BCM_DECODE_ANQP_MAX_PLMN];
 } bcm_decode_anqp_3gpp_cellular_network_t;
@@ -278,7 +268,6 @@ typedef struct
 #define BCM_DECODE_ANQP_MAX_DOMAIN 	16
 typedef struct
 {
-	int isDecodeValid;
 	int numDomain;
 	bcm_decode_anqp_domain_name_t domain[BCM_DECODE_ANQP_MAX_DOMAIN];
 } bcm_decode_anqp_domain_name_list_t;
@@ -293,8 +282,8 @@ void bcm_decode_anqp_domain_name_list_print(bcm_decode_anqp_domain_name_list_t *
 int bcm_decode_anqp_is_domain_name(bcm_decode_anqp_domain_name_list_t *list,
 	char *domain, int isSubdomain);
 
-/* decode WFA service discovery */
-int bcm_decode_anqp_wfa_service_discovery(bcm_decode_t *pkt, uint16 *serviceUpdateIndicator);
+/* decode query vendor specific */
+int bcm_decode_anqp_query_vendor_specific(bcm_decode_t *pkt, uint16 *serviceUpdateIndicator);
 
 #define BCM_DECODE_ANQP_QUERY_REQUEST_TLV_MIN_LENGTH	4
 
@@ -302,8 +291,8 @@ typedef struct
 {
 	uint8 serviceProtocolType;
 	uint8 serviceTransactionId;
-	uint16 dataLen;
-	uint8 *data;
+	uint16 queryLen;
+	uint8 *queryData;
 } bcm_decode_anqp_query_request_vendor_specific_tlv_t;
 
 /* decode query request vendor specific TLV */
@@ -317,40 +306,12 @@ typedef struct
 	uint8 serviceProtocolType;
 	uint8 serviceTransactionId;
 	uint8 statusCode;
-	uint8 numService;
-	uint16 dataLen;
-	uint8 *data;
+	uint16 queryLen;
+	uint8 *queryData;
 } bcm_decode_anqp_query_response_vendor_specific_tlv_t;
 
 /* decode query response vendor specific TLV */
-int bcm_decode_anqp_query_response_vendor_specific_tlv(bcm_decode_t *pkt, int isNumService,
+int bcm_decode_anqp_query_response_vendor_specific_tlv(bcm_decode_t *pkt,
 	bcm_decode_anqp_query_response_vendor_specific_tlv_t *response);
-
-typedef struct
-{
-	uint8 serviceNameLen;
-	uint8 *serviceName;
-	uint8 serviceInfoReqLen;
-	uint8 *serviceInfoReq;
-} bcm_decode_anqp_wfds_request_t;
-
-/* decode WFDS request */
-int bcm_decode_anqp_wfds_request(bcm_decode_t *pkt,
-	bcm_decode_anqp_wfds_request_t *request);
-
-typedef struct
-{
-	uint32 advertisementId;
-	uint16 configMethod;
-	uint8 serviceNameLen;
-	uint8 *serviceName;
-	uint8 serviceStatus;
-	uint16 serviceInfoLen;
-	uint8 *serviceInfo;
-} bcm_decode_anqp_wfds_response_t;
-
-/* decode WFDS response */
-int bcm_decode_anqp_wfds_response(bcm_decode_t *pkt,
-	bcm_decode_anqp_wfds_response_t *response);
 
 #endif /* _BCM_DECODE_ANQP_H_ */

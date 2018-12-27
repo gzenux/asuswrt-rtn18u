@@ -1,7 +1,7 @@
 /*
  * Decode functions which provides decoding of ANQP packets as defined in 802.11u.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -95,12 +95,6 @@ static void printAnqpDecode(bcm_decode_anqp_t *anqp)
 			anqp->anqpVendorSpecificListBuffer,
 			anqp->anqpVendorSpecificListLength);
 	}
-	if (anqp->wfaServiceDiscoveryBuffer) {
-		WL_PRPKT("   WFA service discovery",
-			anqp->wfaServiceDiscoveryBuffer,
-			anqp->wfaServiceDiscoveryLength);
-	}
-
 #endif	/* BCM_DECODE_NO_ANQP */
 
 #ifndef BCM_DECODE_NO_HOTSPOT_ANQP
@@ -216,18 +210,10 @@ int bcm_decode_anqp(bcm_decode_t *pkt, bcm_decode_anqp_t *anqp)
 		case ANQP_ID_VENDOR_SPECIFIC_LIST:
 		{
 			bcm_decode_t vs;
-			uint16 sui;
 
-			bcm_decode_init(&vs, dataLength, dataPtr);
-			if (bcm_decode_anqp_wfa_service_discovery(&vs, &sui)) {
-				anqp->wfaServiceDiscoveryLength = dataLength;
-				anqp->wfaServiceDiscoveryBuffer = dataPtr;
-				break;
-			}
-
-#ifndef BCM_DECODE_NO_HOTSPOT_ANQP
 			/* include ID and length */
 			bcm_decode_init(&vs, dataLength + 4, dataPtr - 4);
+#ifndef BCM_DECODE_NO_HOTSPOT_ANQP
 			/* hotspot decode */
 			if (bcm_decode_hspot_anqp(&vs, FALSE, &anqp->hspot) == 0)
 #endif	/* BCM_DECODE_NO_HOTSPOT_ANQP */
@@ -325,9 +311,6 @@ int bcm_decode_anqp_query_list(bcm_decode_t *pkt, bcm_decode_anqp_query_list_t *
 
 	memset(queryList, 0, sizeof(*queryList));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	count =  bcm_decode_remaining(pkt) / 2;
 	for (i = 0; i < count; i++) {
 		if (i >= BCM_DECODE_ANQP_MAX_LIST_SIZE) {
@@ -338,7 +321,6 @@ int bcm_decode_anqp_query_list(bcm_decode_t *pkt, bcm_decode_anqp_query_list_t *
 		bcm_decode_le16(pkt, &queryList->queryId[queryList->queryLen++]);
 	}
 
-	queryList->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -346,9 +328,6 @@ int bcm_decode_anqp_query_list(bcm_decode_t *pkt, bcm_decode_anqp_query_list_t *
 void bcm_decode_anqp_query_list_print(bcm_decode_anqp_query_list_t *queryList)
 {
 	int i;
-
-	if (!queryList->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP query list:\n"));
@@ -369,9 +348,6 @@ int bcm_decode_anqp_vendor_specific_list(bcm_decode_t *pkt,
 
 	memset(vendorList, 0, sizeof(*vendorList));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	if (bcm_decode_remaining(pkt) > BCM_DECODE_ANQP_MAX_LIST_SIZE) {
 		WL_ERROR(("list size %d > %d\n",
 			bcm_decode_remaining(pkt), BCM_DECODE_ANQP_MAX_LIST_SIZE));
@@ -379,10 +355,8 @@ int bcm_decode_anqp_vendor_specific_list(bcm_decode_t *pkt,
 	}
 
 	vendorList->vendorLen = bcm_decode_remaining(pkt);
-
 	(void)bcm_decode_bytes(pkt, vendorList->vendorLen, vendorList->vendorData);
 
-	vendorList->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -393,9 +367,6 @@ int bcm_decode_anqp_capability_list(bcm_decode_t *pkt, bcm_decode_anqp_capabilit
 		bcm_decode_current_ptr(pkt), bcm_decode_remaining(pkt));
 
 	memset(capList, 0, sizeof(*capList));
-
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
 
 	while (bcm_decode_remaining(pkt) >= 2) {
 		uint16 id;
@@ -450,7 +421,6 @@ int bcm_decode_anqp_capability_list(bcm_decode_t *pkt, bcm_decode_anqp_capabilit
 		}
 	}
 
-	capList->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -458,9 +428,6 @@ int bcm_decode_anqp_capability_list(bcm_decode_t *pkt, bcm_decode_anqp_capabilit
 void bcm_decode_anqp_capability_list_print(bcm_decode_anqp_capability_list_t *capList)
 {
 	int i;
-
-	if (!capList->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP capability list:\n"));
@@ -513,9 +480,6 @@ int bcm_decode_anqp_venue_name(bcm_decode_t *pkt, bcm_decode_anqp_venue_name_t *
 
 	memset(venueName, 0, sizeof(*venueName));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	if (!bcm_decode_byte(pkt, &venueName->group)) {
 		WL_ERROR(("decode error\n"));
 		return FALSE;
@@ -537,7 +501,6 @@ int bcm_decode_anqp_venue_name(bcm_decode_t *pkt, bcm_decode_anqp_venue_name_t *
 		}
 	}
 
-	venueName->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -545,9 +508,6 @@ int bcm_decode_anqp_venue_name(bcm_decode_t *pkt, bcm_decode_anqp_venue_name_t *
 void bcm_decode_anqp_venue_name_print(bcm_decode_anqp_venue_name_t *venueName)
 {
 	int i;
-
-	if (!venueName->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP venue name:\n"));
@@ -598,9 +558,6 @@ int bcm_decode_anqp_network_authentication_type(bcm_decode_t *pkt,
 
 	memset(auth, 0, sizeof(*auth));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	while (bcm_decode_remaining(pkt) > 0 &&
 		auth->numAuthenticationType < BCM_DECODE_ANQP_MAX_AUTHENTICATION_UNIT) {
 		if (!pktDecodeAnqpNetworkAuthenticationUnit(pkt,
@@ -612,7 +569,6 @@ int bcm_decode_anqp_network_authentication_type(bcm_decode_t *pkt,
 		}
 	}
 
-	auth->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -621,9 +577,6 @@ void bcm_decode_anqp_network_authentication_type_print(
 	bcm_decode_anqp_network_authentication_type_t *auth)
 {
 	int i;
-
-	if (!auth->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP network authentication type:\n"));
@@ -639,9 +592,6 @@ int bcm_decode_anqp_is_online_enrollment_support(
 	bcm_decode_anqp_network_authentication_type_t *auth)
 {
 	int i;
-
-	if (!auth->isDecodeValid)
-		return FALSE;
 
 	for (i = 0; i < auth->numAuthenticationType; i++) {
 		if (auth->unit[i].type == NATI_ONLINE_ENROLLMENT_SUPPORTED) {
@@ -683,9 +633,6 @@ int bcm_decode_anqp_roaming_consortium(bcm_decode_t *pkt,
 
 	memset(roam, 0, sizeof(*roam));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	while (bcm_decode_remaining(pkt) > 0 &&
 		roam->numOi < BCM_DECODE_ANQP_MAX_OI) {
 		if (!pktDecodeAnqpOiDuple(pkt,
@@ -697,7 +644,6 @@ int bcm_decode_anqp_roaming_consortium(bcm_decode_t *pkt,
 		}
 	}
 
-	roam->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -705,9 +651,6 @@ int bcm_decode_anqp_roaming_consortium(bcm_decode_t *pkt,
 void bcm_decode_anqp_roaming_consortium_print(bcm_decode_anqp_roaming_consortium_t *roam)
 {
 	int i;
-
-	if (!roam->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP roaming consortium:\n"));
@@ -723,9 +666,6 @@ int bcm_decode_anqp_is_roaming_consortium(bcm_decode_anqp_roaming_consortium_t *
 	bcm_decode_anqp_oi_duple_t *oi)
 {
 	int i;
-
-	if (!roam->isDecodeValid)
-		return FALSE;
 
 	for (i = 0; i < roam->numOi; i++) {
 		bcm_decode_anqp_oi_duple_t *r = &roam->oi[i];
@@ -748,9 +688,6 @@ int bcm_decode_anqp_ip_type_availability(bcm_decode_t *pkt, bcm_decode_anqp_ip_t
 
 	memset(ip, 0, sizeof(*ip));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	if (!bcm_decode_byte(pkt, &type)) {
 		WL_ERROR(("decode error\n"));
 		return FALSE;
@@ -759,7 +696,6 @@ int bcm_decode_anqp_ip_type_availability(bcm_decode_t *pkt, bcm_decode_anqp_ip_t
 	ip->ipv6 = (type & IPA_IPV6_MASK) >> IPA_IPV6_SHIFT;
 	ip->ipv4 = (type & IPA_IPV4_MASK) >> IPA_IPV4_SHIFT;
 
-	ip->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -767,9 +703,6 @@ int bcm_decode_anqp_ip_type_availability(bcm_decode_t *pkt, bcm_decode_anqp_ip_t
 void bcm_decode_anqp_ip_type_availability_print(bcm_decode_anqp_ip_type_t *ip)
 {
 	char *str;
-
-	if (!ip->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP IP type availability:\n"));
@@ -960,7 +893,8 @@ int bcm_decode_anqp_nai_realm(bcm_decode_t *pkt, bcm_decode_anqp_nai_realm_list_
 
 	memset(realm, 0, sizeof(*realm));
 
-	if (bcm_decode_is_zero_length(pkt))
+	/* allow zero length */
+	if (bcm_decode_remaining(pkt) == 0)
 		return TRUE;
 
 	if (!bcm_decode_le16(pkt, &realm->realmCount)) {
@@ -979,7 +913,6 @@ int bcm_decode_anqp_nai_realm(bcm_decode_t *pkt, bcm_decode_anqp_nai_realm_list_
 			return FALSE;
 	}
 
-	realm->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -987,9 +920,6 @@ int bcm_decode_anqp_nai_realm(bcm_decode_t *pkt, bcm_decode_anqp_nai_realm_list_
 void bcm_decode_anqp_nai_realm_print(bcm_decode_anqp_nai_realm_list_t *realm)
 {
 	int i, j, k;
-
-	if (!realm->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP NAI realm list:\n"));
@@ -1141,9 +1071,6 @@ int bcm_decode_anqp_is_realm(bcm_decode_anqp_nai_realm_list_t *realmList,
 	bcm_decode_anqp_nai_realm_data_t *data;
 	bcm_decode_anqp_eap_method_t *eap;
 
-	if (!realmList->isDecodeValid)
-		return FALSE;
-
 	/* search for realm name */
 	for (i = 0; i < realmList->realmCount; i++) {
 		uint8 realm[BCM_DECODE_ANQP_MAX_REALM_LENGTH + 1];
@@ -1246,7 +1173,8 @@ int bcm_decode_anqp_3gpp_cellular_network(bcm_decode_t *pkt,
 
 	memset(g3pp, 0, sizeof(*g3pp));
 
-	if (bcm_decode_is_zero_length(pkt))
+	/* allow zero length */
+	if (bcm_decode_remaining(pkt) == 0)
 		return TRUE;
 
 	if (!bcm_decode_byte(pkt, &byte)) {
@@ -1309,7 +1237,7 @@ int bcm_decode_anqp_3gpp_cellular_network(bcm_decode_t *pkt,
 		pktDecodeAnqpPlmn(pkt, &g3pp->plmn[i]);
 
 	g3pp->plmnCount = count;
-	g3pp->isDecodeValid = TRUE;
+
 	return TRUE;
 }
 
@@ -1317,9 +1245,6 @@ int bcm_decode_anqp_3gpp_cellular_network(bcm_decode_t *pkt,
 void bcm_decode_anqp_3gpp_cellular_network_print(bcm_decode_anqp_3gpp_cellular_network_t *g3pp)
 {
 	int i;
-
-	if (!g3pp->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP 3GPP cellular network:\n"));
@@ -1333,9 +1258,6 @@ int bcm_decode_anqp_is_3gpp(bcm_decode_anqp_3gpp_cellular_network_t *g3pp,
 	bcm_decode_anqp_plmn_t *plmn)
 {
 	int i;
-
-	if (!g3pp->isDecodeValid)
-		return FALSE;
 
 	for (i = 0; i < g3pp->plmnCount; i++) {
 		if (strcmp(plmn->mcc, g3pp->plmn[i].mcc) == 0 &&
@@ -1385,9 +1307,6 @@ int bcm_decode_anqp_domain_name_list(bcm_decode_t *pkt,
 
 	memset(list, 0, sizeof(*list));
 
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
 	while (bcm_decode_remaining(pkt) > 0 &&
 		list->numDomain < BCM_DECODE_ANQP_MAX_DOMAIN) {
 		if (!pktDecodeAnqpDomainName(pkt,
@@ -1399,7 +1318,6 @@ int bcm_decode_anqp_domain_name_list(bcm_decode_t *pkt,
 		}
 	}
 
-	list->isDecodeValid = TRUE;
 	return TRUE;
 }
 
@@ -1407,9 +1325,6 @@ int bcm_decode_anqp_domain_name_list(bcm_decode_t *pkt,
 void bcm_decode_anqp_domain_name_list_print(bcm_decode_anqp_domain_name_list_t *list)
 {
 	int i;
-
-	if (!list->isDecodeValid)
-		return;
 
 	WL_PRINT(("----------------------------------------\n"));
 	WL_PRINT(("decoded ANQP domain name:\n"));
@@ -1424,29 +1339,13 @@ int bcm_decode_anqp_is_domain_name(bcm_decode_anqp_domain_name_list_t *list,
 {
 	int i;
 
-	if (!list->isDecodeValid)
-		return FALSE;
-
 	if (domain != 0) {
 		for (i = 0; i < list->numDomain; i++) {
 			if (isSubdomain) {
 				char *p;
-				if ((p = strstr(list->domain[i].name, domain)) != 0) {
-					if (p == list->domain[i].name) {
-						/* exact match */
-						return TRUE;
-					}
-					else {
-						char *q = p - 1;
-						/* previous char must be dot and
-						 * suffix match
-						 */
-						if (*q == '.' &&
-							strcmp(p, domain) == 0) {
-							return TRUE;
-						}
-					}
-				}
+				if ((p = strstr(list->domain[i].name, domain)) != 0	&&
+					strcmp(p, domain) == 0)
+					return TRUE;
 			}
 			else {
 				/* full domain (exact) match */
@@ -1459,8 +1358,8 @@ int bcm_decode_anqp_is_domain_name(bcm_decode_anqp_domain_name_list_t *list,
 	return FALSE;
 }
 
-/* decode WFA service discovery */
-int bcm_decode_anqp_wfa_service_discovery(bcm_decode_t *pkt, uint16 *serviceUpdateIndicator)
+/* decode query vendor specific */
+int bcm_decode_anqp_query_vendor_specific(bcm_decode_t *pkt, uint16 *serviceUpdateIndicator)
 {
 	uint8 oui[WFA_OUI_LEN];
 	uint8 ouiSubtype;
@@ -1471,21 +1370,23 @@ int bcm_decode_anqp_wfa_service_discovery(bcm_decode_t *pkt, uint16 *serviceUpda
 	/* check OUI */
 	if (!bcm_decode_bytes(pkt, WFA_OUI_LEN, oui) ||
 		memcmp(oui, WFA_OUI, WFA_OUI_LEN) != 0) {
+		WL_ERROR(("decode error\n"));
 		return FALSE;
 	}
 	if (!bcm_decode_byte(pkt, &ouiSubtype) || ouiSubtype != ANQP_OUI_SUBTYPE) {
+		WL_ERROR(("decode error\n"));
 		return FALSE;
 	}
 	if (!bcm_decode_le16(pkt, serviceUpdateIndicator)) {
+		WL_ERROR(("decode error\n"));
 		return FALSE;
 	}
 	return TRUE;
 }
 
 static int pktDecodeAnqpQueryVendorSpecificTlv(bcm_decode_t *pkt,
-	uint8 *serviceProtocolType, uint8 *serviceTransactionId,
-	uint8 *statusCode, uint8 *numService,
-	uint16 *dataLen, uint8 **data)
+	uint8 *serviceProtocolType,	uint8 *serviceTransactionId,
+	uint8 *statusCode, uint16 *queryLen, uint8 **queryData)
 {
 	uint16 length;
 
@@ -1512,16 +1413,9 @@ static int pktDecodeAnqpQueryVendorSpecificTlv(bcm_decode_t *pkt,
 			return FALSE;
 		}
 	}
-	if (numService != 0) {
-		if (!bcm_decode_byte(pkt, numService)) {
-			WL_ERROR(("decode error\n"));
-			return FALSE;
-		}
-	}
-	*dataLen = length - (2 + (statusCode != 0 ? 1 : 0) +
-		(numService != 0 ? 1 : 0));
-	*data = bcm_decode_current_ptr(pkt);
-	bcm_decode_offset_set(pkt, bcm_decode_offset(pkt) + *dataLen);
+	*queryLen = length - (2 + (statusCode != 0 ? 1 : 0));
+	*queryData = bcm_decode_current_ptr(pkt);
+	bcm_decode_offset_set(pkt, bcm_decode_offset(pkt) + *queryLen);
 	return TRUE;
 }
 
@@ -1535,12 +1429,12 @@ int bcm_decode_anqp_query_request_vendor_specific_tlv(bcm_decode_t *pkt,
 	memset(request, 0, sizeof(*request));
 	return pktDecodeAnqpQueryVendorSpecificTlv(pkt,
 		&request->serviceProtocolType,
-		&request->serviceTransactionId, 0, 0,
-		&request->dataLen, &request->data);
+		&request->serviceTransactionId, 0,
+		&request->queryLen, &request->queryData);
 }
 
 /* decode query response vendor specific TLV */
-int bcm_decode_anqp_query_response_vendor_specific_tlv(bcm_decode_t *pkt, int isNumService,
+int bcm_decode_anqp_query_response_vendor_specific_tlv(bcm_decode_t *pkt,
 	bcm_decode_anqp_query_response_vendor_specific_tlv_t *response)
 {
 	WL_PRPKT("packet for ANQP query response vendor specific TLV",
@@ -1550,98 +1444,5 @@ int bcm_decode_anqp_query_response_vendor_specific_tlv(bcm_decode_t *pkt, int is
 	return pktDecodeAnqpQueryVendorSpecificTlv(pkt,
 		&response->serviceProtocolType,
 		&response->serviceTransactionId, &response->statusCode,
-		isNumService ? &response->numService : 0,
-		&response->dataLen, &response->data);
-}
-
-/* decode WFDS request */
-int bcm_decode_anqp_wfds_request(bcm_decode_t *pkt,
-	bcm_decode_anqp_wfds_request_t *request)
-{
-	WL_PRPKT("packet for WFDS request",
-		bcm_decode_current_ptr(pkt), bcm_decode_remaining(pkt));
-
-	memset(request, 0, sizeof(*request));
-
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
-	if (!bcm_decode_byte(pkt, &request->serviceNameLen)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (request->serviceNameLen > bcm_decode_remaining(pkt)) {
-		WL_ERROR(("service name length exceeds packet %d > %d\n",
-			request->serviceNameLen, bcm_decode_remaining(pkt)));
-		return FALSE;
-	}
-	request->serviceName = bcm_decode_current_ptr(pkt);
-	bcm_decode_offset_set(pkt, bcm_decode_offset(pkt) + request->serviceNameLen);
-
-	if (!bcm_decode_byte(pkt, &request->serviceInfoReqLen)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (request->serviceInfoReqLen > bcm_decode_remaining(pkt)) {
-		WL_ERROR(("service request info length exceeds packet %d > %d\n",
-			request->serviceInfoReqLen, bcm_decode_remaining(pkt)));
-		return FALSE;
-	}
-	request->serviceInfoReq = bcm_decode_current_ptr(pkt);
-	bcm_decode_offset_set(pkt, bcm_decode_offset(pkt) + request->serviceInfoReqLen);
-
-	return TRUE;
-}
-
-/* decode WFDS response */
-int bcm_decode_anqp_wfds_response(bcm_decode_t *pkt,
-	bcm_decode_anqp_wfds_response_t *response)
-{
-	WL_PRPKT("packet for WFDS response",
-		bcm_decode_current_ptr(pkt), bcm_decode_remaining(pkt));
-
-	memset(response, 0, sizeof(*response));
-
-	if (bcm_decode_is_zero_length(pkt))
-		return TRUE;
-
-	if (!bcm_decode_le32(pkt, &response->advertisementId)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (!bcm_decode_le16(pkt, &response->configMethod)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	if (!bcm_decode_byte(pkt, &response->serviceNameLen)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (response->serviceNameLen > bcm_decode_remaining(pkt)) {
-		WL_ERROR(("service name length exceeds packet %d > %d\n",
-			response->serviceNameLen, bcm_decode_remaining(pkt)));
-		return FALSE;
-	}
-	response->serviceName = bcm_decode_current_ptr(pkt);
-	bcm_decode_offset_set(pkt, bcm_decode_offset(pkt) + response->serviceNameLen);
-
-	if (!bcm_decode_byte(pkt, &response->serviceStatus)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-
-	if (!bcm_decode_le16(pkt, &response->serviceInfoLen)) {
-		WL_ERROR(("decode error\n"));
-		return FALSE;
-	}
-	if (response->serviceInfoLen > bcm_decode_remaining(pkt)) {
-		WL_ERROR(("service info length exceeds packet %d > %d\n",
-			response->serviceInfoLen, bcm_decode_remaining(pkt)));
-		return FALSE;
-	}
-	response->serviceInfo = bcm_decode_current_ptr(pkt);
-	bcm_decode_offset_set(pkt, bcm_decode_offset(pkt) + response->serviceInfoLen);
-
-	return TRUE;
+		&response->queryLen, &response->queryData);
 }

@@ -1,0 +1,1 @@
+["0", "Switzerland", "Swisscom", "100008,0001,ASUS", "", ""]

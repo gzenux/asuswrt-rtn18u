@@ -2,7 +2,7 @@
  * Encode base functions which provides encoding of basic data types
  * and provides bounds checking on the buffer to be encoded.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -47,7 +47,6 @@ int bcm_encode_init(bcm_encode_t *pkt, int maxLength, uint8 *buf)
 	if (buf == 0)
 		return FALSE;
 
-	memset(buf, 0, maxLength);
 	pkt->maxLength = maxLength;
 	pkt->length = 0;
 	pkt->buf = buf;

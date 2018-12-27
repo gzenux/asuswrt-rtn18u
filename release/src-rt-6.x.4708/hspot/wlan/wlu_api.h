@@ -1,7 +1,7 @@
 /*
  * WLAN iovar functions.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -77,7 +77,6 @@ int wl_disable_event_msg(void *wl, int event);
 
 int wl_add_vndr_ie(void *wl, int bsscfg_idx, uint32 pktflag, int len, uchar *data);
 int wl_del_vndr_ie(void *wl, int bsscfg_idx, uint32 pktflag, int len, uchar *data);
-int wl_del_all_vndr_ie(void *wl, int bsscfg_idx);
 
 int wl_ie(void *wl, uchar id, uchar len, uchar *data);
 
@@ -101,7 +100,6 @@ int wl_dls(void *wl, int enable);
 int wl_wnm(void *wl, int mask);
 int wl_wnm_get(void *wl, int *mask);
 int wl_wnm_parp_discard(void *wl, int enable);
-int wl_wnm_parp_allnode(void *wl, int enable);
 int wl_interworking(void *wl, int enable);
 int wl_probresp_sw(void *wl, int enable);
 int wl_block_ping(void *wl, int enable);
@@ -117,10 +115,6 @@ int wl_wnm_url(void *wl, uchar datalen, uchar *url_data);
 int wl_pmf(void *wl, int mode);
 int wl_mac(void *wl, int count, struct ether_addr *bssid);
 int wl_macmode(void *wl, int mode);
-int wl_osen(void *wl, int enable);
-int wl_send_frame(void *wl, int len, uchar *frame);
-int wl_bssload_static(void *wl, bool is_static, uint16 sta_count,
-	uint8 chan_util, uint16 aac);
 
 int wl_p2p_disc(void *wl, int enable);
 int wl_p2p_state(void *wl, uint8 state, chanspec_t chspec, uint16 dwell);

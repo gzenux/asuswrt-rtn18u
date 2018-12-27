@@ -36,8 +36,8 @@ var iptv_atm_pvc_str = "";
 var iptv_ptm_pvc_str = "";
 var dsltmp_cfg_iptv_pvclist = decodeURIComponent('<%nvram_char_to_ascii("","dsltmp_cfg_iptv_pvclist");%>');
 
-var encap_str = ", LLC";
-if (encap_val == "1") encap_str = ", VC-Mux";
+var encap_str = "LLC";
+if (encap_val == "1") encap_str = "VC-Mux";
 
 var iptv_num_pvc_val = "<% nvram_get("dsltmp_cfg_iptv_num_pvc"); %>";
 
@@ -283,26 +283,21 @@ function gotoHome() {
 					<span class="description_down"><#Manual_Setting_Title#></span>
 			</td>
 		</tr>
-		<tr id="home_button">
-			<td align="right">
-				<img onclick="gotoHome();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
-			</td>
-		</tr>
 	</table>		
 	<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img style="width: 700px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
 	<br/>
 
 <table id="tblsetting_1" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
   <tr>
-  	<td class="test_css">	
+  	<td>	
 			<div id="atm_info" style="display:none;">
-			<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">ADSL WAN (ATM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">IPoA</span>, VPI/VCI: <span class="cfg_val"><% nvram_get("dsltmp_cfg_vpi"); %>/<% nvram_get("dsltmp_cfg_vci"); %><script>document.write(encap_str);</script></span><script>if(vlanid_val.length > 0){document.write(", <#WANVLANIDText#>: <span class=\"cfg_val\">" + vlanid_val + "</span>")}</script><br>
-				<b><script>document.write(iptv_atm_pvc_str);</script></b>
+			<#Transfer_Mode#>: <span class="cfg_val">ADSL WAN (ATM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">IPoA</span>, VPI/VCI: <span class="cfg_val"><% nvram_get("dsltmp_cfg_vpi"); %>/<% nvram_get("dsltmp_cfg_vci"); %>, <script>document.write(encap_str);</script></span><script>if(vlanid_val.length > 0){document.write(", <#WANVLANIDText#>: <span class=\"cfg_val\">" + vlanid_val + "</span>")}</script><br>
+				<b><script>document.write("<br>"+iptv_atm_pvc_str);</script></b>
 			</div>
   		
 			<div id="ptm_info" style="display:none;">
-				<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">VDSL WAN (PTM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val"><#BOP_ctype_title5#></span>, <#WANVLANIDText#>: <span class="cfg_val"><script>document.write(vlanid_val);</script></span><br>
-				<b><script>document.write(iptv_ptm_pvc_str);</script></b><br>
+				<#Transfer_Mode#>: <span class="cfg_val">VDSL WAN (PTM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val"><#BOP_ctype_title5#></span>, <#WANVLANIDText#>: <span class="cfg_val"><script>document.write(vlanid_val);</script></span><br>
+				<b><script>document.write("<br>"+iptv_ptm_pvc_str);</script></b><br>
 			</div>
   		   <br><br>
     </td> 

@@ -1,7 +1,7 @@
 /*
  * WLAN iovar functions.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -21,7 +21,6 @@
 #include "bcmendian.h"
 #include "wlu.h"
 #include "wlu_api.h"
-#include "trace.h"
 
 #define WL_SCAN_PARAMS_SSID_MAX 10
 
@@ -248,12 +247,12 @@ wl_vndr_ie(void *wl, int bsscfg_idx, const char *command, uint32 pktflag, int le
 	      VNDR_IE_AUTHRSP_FLAG |
 	      VNDR_IE_PRBREQ_FLAG |
 	      VNDR_IE_ASSOCREQ_FLAG))) {
-		dbg("Invalid packet flag 0x%x (%d)\n", pktflag, pktflag);
+		fprintf(stderr, "Invalid packet flag 0x%x (%d)\n", pktflag, pktflag);
 		return -1;
 	}
 
 	if (len < VNDR_IE_MIN_LEN || VNDR_IE_MAX_LEN < len) {
-		dbg("Invalid length %d\n", len);
+		fprintf(stderr, "Invalid length %d\n", len);
 		return -1;
 	}
 
@@ -263,7 +262,7 @@ wl_vndr_ie(void *wl, int bsscfg_idx, const char *command, uint32 pktflag, int le
 	ie_setbuf = (vndr_ie_setbuf_t *) malloc(buflen);
 
 	if (ie_setbuf == NULL) {
-		dbg("memory alloc failure\n");
+		fprintf(stderr, "memory alloc failure\n");
 		return -1;
 	}
 
@@ -320,52 +319,6 @@ wl_del_vndr_ie(void *wl, int bsscfg_idx, uint32 pktflag, int len, uchar *data)
 	return (wl_vndr_ie(wl, bsscfg_idx, "del", pktflag, len, data));
 }
 
-static void del_all_vndr_ie(void *wl, int bsscfg_idx, vndr_ie_buf_t *ie_getbuf)
-{
-	uchar *iebuf;
-	uchar *data;
-	int tot_ie, pktflag, iecount, datalen;
-	vndr_ie_info_t *ie_info;
-	vndr_ie_t *ie;
-
-	memcpy(&tot_ie, (void *)&ie_getbuf->iecount, sizeof(int));
-	tot_ie = dtoh32(tot_ie);
-
-	iebuf = (uchar *)&ie_getbuf->vndr_ie_list[0];
-
-	for (iecount = 0; iecount < tot_ie; iecount++) {
-		uchar buf[256];
-		ie_info = (vndr_ie_info_t *) iebuf;
-		memcpy(&pktflag, (void *)&ie_info->pktflag, sizeof(uint32));
-		pktflag = dtoh32(pktflag);
-		iebuf += sizeof(uint32);
-		ie = &ie_info->vndr_ie_data;
-		data = &ie->data[0];
-		datalen = ie->len - VNDR_IE_MIN_LEN;
-
-		memcpy(buf, ie->oui, VNDR_IE_MIN_LEN);
-		memcpy(&buf[VNDR_IE_MIN_LEN], data, datalen);
-		wl_del_vndr_ie(wl, bsscfg_idx, pktflag, ie->len, buf);
-
-		iebuf += ie->len + VNDR_IE_HDR_LEN;
-	}
-}
-
-int wl_del_all_vndr_ie(void *wl, int bsscfg_idx)
-{
-	int err;
-	void *ptr;
-	ie_getbuf_t param;
-
-	param.pktflag = (uint32) -1;
-	param.id = (uint8) DOT11_MNG_PROPR_ID;
-	err = wlu_var_getbuf(wl, "ie", &param, sizeof(param), &ptr);
-	if (err == 0) {
-		del_all_vndr_ie(wl, bsscfg_idx, (vndr_ie_buf_t *)ptr);
-	}
-	return err;
-}
-
 int wl_ie(void *wl, uchar id, uchar len, uchar *data)
 {
 	int err;
@@ -381,7 +334,7 @@ int wl_ie(void *wl, uchar id, uchar len, uchar *data)
 	count = sizeof(ie_setbuf_t) + len - 1;
 	buf = malloc(count);
 	if (buf == NULL) {
-		dbg("memory alloc failure\n");
+		fprintf(stderr, "memory alloc failure\n");
 		return -1;
 	}
 
@@ -491,7 +444,7 @@ int wl_wnm_bsstrans_req(void *wl, uint8 reqmode, uint16 tbtt, uint16 dur, uint8 
 	(void)tbtt;
 	(void)dur;
 	(void)unicast;
-	dbg("iovar not supported: %s\n", cmd);
+	printf("iovar not supported: %s\n", cmd);
 	return -1;
 #else
 	wl_bsstrans_req_t bsstrans_req;
@@ -535,8 +488,8 @@ int wl_tdls_endpoint(void *wl, char *cmd, struct ether_addr *ea)
 		info.mode = TDLS_MANUAL_EP_CHSW;
 	}
 	else {
-		dbg("error: invalid mode string\n");
-		return BCME_USAGE_ERROR;
+		printf("error: invalid mode string\n");
+		return USAGE_ERROR;
 	}
 
 	memcpy(&info.ea, ea, sizeof(info.ea));
@@ -568,12 +521,12 @@ int wl_status(void *wl, int *isAssociated, int biBufferSize, wl_bss_info_t *biBu
 				memcpy(biBuffer, bi, bi->length);
 			}
 		    else {
-				dbg("buffer too small %d > %d\n",
+				fprintf(stderr, "buffer too small %d > %d\n",
 					bi->length, biBufferSize);
 			}
 		}
 		else
-			dbg("Sorry, your driver has bss_info_version %d "
+			fprintf(stderr, "Sorry, your driver has bss_info_version %d "
 				"but this program supports only version %d.\n",
 				bi->version, WL_BSS_INFO_VERSION);
 	}
@@ -609,11 +562,6 @@ int wl_wnm_get(void *wl, int *mask)
 int wl_wnm_parp_discard(void *wl, int enable)
 {
 	return wlu_iovar_setint(wl, "wnm_parp_discard", enable);
-}
-
-int wl_wnm_parp_allnode(void *wl, int enable)
-{
-	return wlu_iovar_setint(wl, "wnm_parp_allnode", enable);
 }
 
 int wl_interworking(void *wl, int enable)
@@ -658,11 +606,6 @@ int wl_dls_reject(void *wl, int enable)
 
 int wl_dhcp_unicast(void *wl, int enable)
 {
-#ifdef __CONFIG_DHDAP__
-	if (!dhd_probe(wl))
-	    return dhd_iovar_setint(wl, "dhcp_unicast", enable);
-	else
-#endif
 	return wlu_iovar_setint(wl, "dhcp_unicast", enable);
 }
 
@@ -685,7 +628,7 @@ int wl_wnm_url(void *wl, uchar datalen, uchar *url_data)
 	count = sizeof(wnm_url_t) + datalen - 1;
 	data = malloc(count);
 	if (data == NULL) {
-		dbg("memory alloc failure\n");
+		fprintf(stderr, "memory alloc failure\n");
 		return -1;
 	}
 
@@ -714,7 +657,7 @@ int wl_mac(void *wl, int count, struct ether_addr *bssid)
 	len = OFFSETOF(struct maclist, ea) + count * sizeof(*bssid);
 	maclist = malloc(len);
 	if (maclist == 0) {
-		dbg("memory alloc failure\n");
+		fprintf(stderr, "memory alloc failure\n");
 		return -1;
 	}
 
@@ -728,45 +671,6 @@ int wl_mac(void *wl, int count, struct ether_addr *bssid)
 int wl_macmode(void *wl, int mode)
 {
 	return wlu_set(wl, WLC_SET_MACMODE, &mode, sizeof(mode));
-}
-
-int wl_osen(void *wl, int enable)
-{
-	return wlu_iovar_setint(wl, "osen", enable);
-}
-
-int wl_send_frame(void *wl, int len, uchar *frame)
-{
-	int err = -1;
-	char *cmd = "send_frame";
-	int buflen = strlen(cmd) + 1;
-
-	strcpy(buf, cmd);
-
-	if (frame != NULL) {
-		memcpy(&buf[buflen], frame, len);
-		buflen += len;
-		err = wlu_set(wl, WLC_SET_VAR, buf, buflen);
-	}
-
-	return err;
-}
-
-int wl_bssload_static(void *wl, bool is_static, uint16 sta_count,
-	uint8 chan_util, uint16 aac)
-{
-	int err = -1;
-	char *cmd = "bssload_static";
-	wl_bssload_static_t bssload;
-
-	memset(&bssload, 0, sizeof(bssload));
-	bssload.is_static = is_static;
-	bssload.sta_count = htod16(sta_count);
-	bssload.chan_util = chan_util;
-	bssload.aac = htod16(aac);
-
-	err = wlu_iovar_set(wl, cmd, &bssload, sizeof(bssload));
-	return err;
 }
 
 int wl_p2p_disc(void *wl, int enable)
@@ -802,7 +706,7 @@ int wl_p2p_scan(void *wl, uint16 sync_id, int isActive,
 	malloc_size += WL_SCAN_PARAMS_SSID_MAX * sizeof(wlc_ssid_t);
 	params = (wl_p2p_scan_t *)malloc(malloc_size);
 	if (params == NULL) {
-		dbg("Error allocating %d bytes for scan params\n", malloc_size);
+		fprintf(stderr, "Error allocating %d bytes for scan params\n", malloc_size);
 		return -1;
 	}
 	memset(params, 0, malloc_size);

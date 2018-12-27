@@ -44,18 +44,6 @@ function change_dla(enable){
 		document.getElementById("dslx_snrm_offset_read").innerHTML = get_snrm_offset();
 		document.getElementById("dslx_snrm_offset_read").title = "Auto configured by Dynamic Line Adjustment(DLA)";
 
-		document.form.dslx_adsl_rx_agc.style.display = "none";
-		document.form.dslx_adsl_rx_agc.disabled = true;
-		document.getElementById("dslx_adsl_rx_agc_read").style.display = "";
-		document.getElementById("dslx_adsl_rx_agc_read").innerHTML = "<%nvram_get("dslx_adsl_rx_agc");%>";
-		document.getElementById("dslx_adsl_rx_agc_read").title = "Auto configured by Dynamic Line Adjustment(DLA)";
-
-		document.form.dslx_vdsl_rx_agc.style.display = "none";
-		document.form.dslx_vdsl_rx_agc.disabled = true;
-		document.getElementById("dslx_vdsl_rx_agc_read").style.display = "";
-		document.getElementById("dslx_vdsl_rx_agc_read").innerHTML = get_vdsl_rx_agc();
-		document.getElementById("dslx_vdsl_rx_agc_read").title = "Auto configured by Dynamic Line Adjustment(DLA)";
-
 		document.form.dslx_vdsl_esnp.style.display = "none";
 		document.form.dslx_vdsl_esnp.disabled = true;
 		document.getElementById("dslx_vdsl_esnp_read").style.display = "";
@@ -66,14 +54,6 @@ function change_dla(enable){
 		document.form.dslx_snrm_offset.style.display = "";
 		document.form.dslx_snrm_offset.disabled = false;
 		document.getElementById("dslx_snrm_offset_read").style.display = "none";
-
-		document.form.dslx_adsl_rx_agc.style.display = "";
-		document.form.dslx_adsl_rx_agc.disabled = false;
-		document.getElementById("dslx_adsl_rx_agc_read").style.display = "none";
-
-		document.form.dslx_vdsl_rx_agc.style.display = "";
-		document.form.dslx_vdsl_rx_agc.disabled = false;
-		document.getElementById("dslx_vdsl_rx_agc_read").style.display = "none";
 
 		document.form.dslx_vdsl_esnp.style.display = "";
 		document.form.dslx_vdsl_esnp.disabled = false;
@@ -326,7 +306,6 @@ document.getElementById("nonstd_vectoring").style.display = (_value == "0") ? "n
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,13);">Rx AGC GAIN Adjustment (ADSL)</a>
 				</th>
 				<td>
-					<span id="dslx_adsl_rx_agc_read" name="adsl_rx_agc_read" style="display:none;color:#FFFFFF;"></span>
 					<select id="dslx_adsl_rx_agc" class="input_option" name="dslx_adsl_rx_agc">
 						<option value="Default" <% nvram_match("dslx_adsl_rx_agc", "Default", "selected"); %>>Default</option>
 						<option value="Stable" <% nvram_match("dslx_adsl_rx_agc", "Stable", "selected"); %>>Stable</option>
@@ -342,6 +321,7 @@ document.getElementById("nonstd_vectoring").style.display = (_value == "0") ? "n
 				<td>
 					<select id="" class="input_option" name="dslx_vdsl_target_snrm">
 						<option value="32767" <% nvram_match("dslx_vdsl_target_snrm", "32767", "selected"); %>><#btn_Disabled#></option>
+						<option value="2048" <% nvram_match("dslx_vdsl_target_snrm", "2048", "selected"); %>>4 dB</option>
 						<option value="2560" <% nvram_match("dslx_vdsl_target_snrm", "2560", "selected"); %>>5 dB</option>
 						<option value="3072" <% nvram_match("dslx_vdsl_target_snrm", "3072", "selected"); %>>6 dB</option>
 						<option value="3584" <% nvram_match("dslx_vdsl_target_snrm", "3584", "selected"); %>>7 dB</option>
@@ -373,6 +353,7 @@ document.getElementById("nonstd_vectoring").style.display = (_value == "0") ? "n
 			</tr>
 
 			<!--dslx_vdsl_tx_gain_off-->
+			<!--Ren:Remove Tx Power Control of VDSL.
 			<tr>
 				<th>
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,5);">Tx Power Control (VDSL)</a>
@@ -394,6 +375,7 @@ document.getElementById("nonstd_vectoring").style.display = (_value == "0") ? "n
 					</select>
 				</td>
 			</tr>
+			-->
 
 			<!--vdsl_rx_agc-->
 			<tr>
@@ -401,7 +383,6 @@ document.getElementById("nonstd_vectoring").style.display = (_value == "0") ? "n
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,6);">Rx AGC GAIN Adjustment (VDSL)</a>
 				</th>
 				<td>
-					<span id="dslx_vdsl_rx_agc_read" name="vdsl_rx_agc_read" style="display:none;color:#FFFFFF;"></span>
 					<select id="dslx_vdsl_rx_agc" class="input_option" name="dslx_vdsl_rx_agc">
 						<option value="65535" <% nvram_match("dslx_vdsl_rx_agc", "65535", "selected"); %>>Default</option>
 						<option value="394" <% nvram_match("dslx_vdsl_rx_agc", "394", "selected"); %>>Stable</option>

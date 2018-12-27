@@ -25,6 +25,32 @@ span{
 	font-weight:bolder;
 	color:#FFCC00;
 }
+#DE_ISP_note{
+	font-size:12px;
+	font-family:Arial, Helvetica, sans-serif;
+	text-align:left;
+	margin-left:75px;	
+	margin-top:-10px;
+}
+.isp_note_title{
+	color:#FFCC00;
+}
+.isp_note{	
+	margin-top:5px;
+	line-height:100%;
+}
+.account_format{
+	margin-top:5px;
+	margin-left:30px;
+}
+.num2{
+	color:#569AC7;
+	font-weight: bold;
+}
+.num1{
+	color:#CCFF00;
+	font-weight: bold;
+}
 </style>
 <script type="text/JavaScript" src="jstz.min.js"></script>
 <script>
@@ -56,8 +82,8 @@ else {
 	prctl_val = "1";
 }
 
-var encap_str = ", LLC";
-if (encap_val == "1") encap_str = ", VC-Mux";
+var encap_str = "LLC";
+if (encap_val == "1") encap_str = "VC-Mux";
 
 function QKfinish_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";
@@ -118,27 +144,61 @@ function QKfinish_load_body(){
 		showhide("iptv_manual_setting", 0);
 	}
 	showhide("STBPortMsg", 0);
+	
+	DE_ISP_note_detect();
+}
+
+function DE_ISP_note_detect(){
+	if(wan_type == "ATM" && vpi_val == "1" && vci_val == "32" && prctl_str == "PPPoE" && encap_str == "LLC"){
+		//ATM, VPI: 1/ VCI: 32/ Protocol: PPPoE/ Encap: LLC 
+		document.getElementById("DE_ISP_note").style.display="";
+		document.getElementById("DE_ISP_title1").style.display="";
+		document.getElementById("Deutsche_Telekom").style.display="";
+		document.getElementById("Deutsche_1n1_ATM").style.display="";
+		document.getElementById("DE_ISP_title2").style.display="none";
+		document.getElementById("Deutsche_NetCologne").style.display="none";
+			
+	}
+	else if(wan_type == "ATM" && vpi_val == "8" && vci_val == "35" && prctl_str == "PPPoE" && encap_str == "LLC"){
+		//ATM, VPI: 8/ VCI: 35/ Protocol: PPPoE/ Encap: LLC	
+		document.getElementById("DE_ISP_note").style.display="";
+		document.getElementById("DE_ISP_title1").style.display="none";
+		document.getElementById("Deutsche_Telekom").style.display="none";
+		document.getElementById("Deutsche_1n1_ATM").style.display="none";
+		document.getElementById("DE_ISP_title2").style.display="";
+		document.getElementById("Deutsche_NetCologne").style.display="";
+	}
+	else
+		document.getElementById("DE_ISP_note").style.display="none";
 }
 
 function validForm(){
+		if(document.form.dsltmp_qis_pppoe_username.value.length <= 0){
+			alert("<#WANJS9Text#>.");
+			document.form.dsltmp_qis_pppoe_username.focus();
+			return false;
+		}
+		if(document.form.dsltmp_qis_pppoe_passwd.value.length <= 0){
+			alert("<#WANJS9Text#>.");
+			document.form.dsltmp_qis_pppoe_passwd.focus();
+			return false;
+		}
 		if(!validator.string(document.form.dsltmp_qis_pppoe_username)
 		|| !validator.string(document.form.dsltmp_qis_pppoe_passwd)
 		) {
 			alert("return false: "+document.form.dsltmp_qis_pppoe_username.value+"/"+document.form.dsltmp_qis_pppoe_passwd.value);
 			return false;
 		}
+		if(document.form.dsltmp_qis_pppoe_passwd.value != document.form.confirm_cfg_pppoe_passwd.value){
+			alert("<#File_Pop_content_alert_desc7#>");
+			document.form.dsltmp_qis_pppoe_passwd.focus();
+			return false;
+		}
 	return true;
 }
 
 function submitForm(){
-	if(document.form.dsltmp_qis_pppoe_username.value == "" || document.form.dsltmp_qis_pppoe_passwd.value == "")
-	{
-		alert("<#QKSet_account_empty#>");
-		return false;
-	}
-	else
-	{
-		if(validForm()){
+	if(validForm()){
 			document.form.next_page.value = "/qis/QIS_wireless.htm";
 			if(document.form.dsltmp_cfg_iptv_enable.value == "1"){
 				if(valid_ISP())
@@ -149,7 +209,6 @@ function submitForm(){
 				}
 			}
 			document.form.submit();
-		}
 	}
 }
 
@@ -287,6 +346,11 @@ function showISPList(country){
 
 function ChgSVC(idx) {
 	if(ISP_List[idx][13] != "") {	//iptv idx
+		if(wan_type == "ATM" && ISP_List[idx][5] == "ADSL+MOD")
+			document.getElementById("STBPortMsg").innerHTML = "Please connect the MOD(STB) to LAN Port 1";
+		else if(wan_type == "PTM" && ISP_List[idx][5] == "VDSL+MOD")
+			document.getElementById("STBPortMsg").innerHTML = "Please connect the MOD(STB) to LAN Port 1";
+		
 		showhide("STBPortMsg", 1);
 	}
 	else {
@@ -383,41 +447,62 @@ function gotoHome() {
 				<span class="description_down">PPPoE / PPPoA</span>
 			</td>
 		</tr>
-		<tr id="home_button">
-			<td align="right">
-				<img onclick="gotoHome();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
-			</td>
-		</tr>
 	</table>
 	<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img style="width: 700px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
 	<br/>
 
 <table id="tblsetting_1" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
   <tr>
-  	<td class="test_css">	
-     <#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val"><script>document.write(prctl_str);</script></span>, VPI/VCI: <span class="cfg_val"><% nvram_get("dsltmp_autodet_vpi"); %>/<% nvram_get("dsltmp_autodet_vci"); %><script>document.write(encap_str);</script></span><br>
+  	<td>	
+     <#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val"><script>document.write(prctl_str);</script></span>, VPI/VCI: <span class="cfg_val"><% nvram_get("dsltmp_autodet_vpi"); %>/<% nvram_get("dsltmp_autodet_vci"); %>, <script>document.write(encap_str);</script></span><br>
+     <br>	
      <#PPP_cfg_usersel_desc#>
-     <div id=hint_msg></div>    
-     <br><br>
+     <div id="hint_msg"></div>
+     <br>
     </td> 
   </tr>
 </table>
-
-<table style="margin-left:50px;">  
+  
+<table id="tblsetting_2" class="QISform" width="400" border="0" align="center" cellpadding="3" cellspacing="0">
   <tr>
 	<th width="120"><#PPPConnection_UserName_itemname#></th>
 	<td>
-	  <input type="text" name="dsltmp_qis_pppoe_username" class="input_30_table" value="" maxlength="64" autocorrect="off" autocapitalize="off">
+	  <input type="text" name="dsltmp_qis_pppoe_username" class="input_32_table" value="" maxlength="64" tabindex="1" autocorrect="off" autocapitalize="off">
 	</td>
   </tr>
   <tr>
 	<th width="120"><#PPPConnection_Password_itemname#></th>
 	<td>
-	  <input type="password" name="dsltmp_qis_pppoe_passwd" class="input_30_table" value="" maxlength="32" autocorrect="off" autocapitalize="off">
+	  <input type="password" name="dsltmp_qis_pppoe_passwd" class="input_32_table" value="" maxlength="32" tabindex="2" autocorrect="off" autocapitalize="off">
 	</td>
   </tr>
+  <tr>
+		<th width="120"><#PASS_retype#></th>
+		<td>
+			<input type="password" name="confirm_cfg_pppoe_passwd" class="input_32_table" value="" maxlength="32" tabindex="3" autocorrect="off" autocapitalize="off" autocapitalize="off" autocomplete="off">
+		</td>
+	</tr>
 </table>
-<br/>
+<br>
+<div id="DE_ISP_note" style="display:none;">
+		<div id="DE_ISP_title1" style="display:none;"><span class="isp_note_title">Notice (specifically for Germany ISP Telekom / 1&1):</span><br> Bitte geben Sie diese Zugangsdaten in folgendem Format ein.</div>
+		<div class="isp_note" id="Deutsche_Telekom" style="display:none;">
+			Für Telekom ADSL und VDSL Anschlüsse<br>
+			Bei einer 12-stelligen Zugangsnummer (Neue Zugangsdaten):<br>
+			<div class="account_format">Anschlusskennung<span class="num1">Zugangsnummer</span><span class="num2">Mitbenutzernummer</span>@t-online.de</div><br>
+			Bei einer Zugangsnummer mit weniger als 12 Stellen (Alte Zugangsdaten):<br>
+			<div class="account_format">Anschlusskennung<span class="num1">Zugangsnummer</span>#<span class="num2">Mitbenutzernummer</span>@t-online.de</div><br>
+		</div>			
+		<div class="isp_note" id="Deutsche_1n1_ATM" style="display:none;">
+			Bei einem 1&1 ADSL Anschluss:<br>
+			<div class="account_format">1und1/<span class="num1">benutzername</span>@online.de (1&1 Internetzugangs-Kennung)</div>
+		</div>
+		<div id="DE_ISP_title2" style="display:none;"><span class="isp_note_title">Notice (specifically for Germany ISP NetCologne):</span><br> Bitte geben Sie diese Zugangsdaten in folgendem Format ein.</div>
+		<div class="isp_note" id="Deutsche_NetCologne" style="display:none;">
+			<div class="account_format">nc-<span class="num1">username</span>@netcologne.de</div>
+		</div>
+	</div>
+<br>	
 
 	<div>
 	<table id="iptv_manual_setting" width="92%" border="0" align="left" cellpadding="3" cellspacing="0" style="margin-left:8%;">
@@ -427,7 +512,7 @@ function gotoHome() {
 					<label for="specialisp">
 						<span class="QISGeneralFont" style="margin-left:0px;font-style:normal;color:#66CCFF;font-size:12px;font-weight:bolder;"><#PPPConnection_x_HostNameForISP_sectionname#> ( IPTV Service )</span>
 					</label>
-					<span class="stb_msg" id='STBPortMsg'> Default IPTV STB Port - LAN Port 1</span>
+					<span class="stb_msg" id="STBPortMsg"> Please connect the IPTV STB to LAN Port 1</span>	<!-- untranslated -->
 				</td>
 			</tr>
 	</table>
@@ -467,11 +552,11 @@ function gotoHome() {
 	</div>
 
 	<div class="apply_gen" style="margin-top:30px">
-		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" onclick="gotoprev(document.form);" class="button_gen" >
+		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" onclick="gotoprev(document.form);" class="button_gen" tabindex="5">
 <!--
 		<input type="button" id="nextButton" value="Ethernet WAN" onclick="redirect_page('internet_type');" class="button_gen" >
 -->
-		<input type="button" id="nextButton" value="<#CTL_next#>" onclick="submitForm();" class="button_gen">
+		<input type="button" id="nextButton" value="<#CTL_next#>" onclick="submitForm();" class="button_gen" tabindex="4">
 	</div>
 
 </div>

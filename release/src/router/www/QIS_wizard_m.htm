@@ -10,21 +10,34 @@
 <!--link rel="shortcut icon" href="images/favicon.png"-->
 <link rel="icon" href="images/favicon.png">
 <title><#Web_Title#> - Quickly Internet Setup</title>
-<link rel="stylesheet" type="text/css" href="css/qis.css">
-<link rel="stylesheet" type="text/css" href="css/icon.css">
+<link rel="stylesheet" type="text/css" href="css/icon-qis.css">
 <!--link rel="stylesheet" type="text/css" href="css/jquery.mobile.css"-->
 <!--link rel="stylesheet" type="text/css" href="/other.css">
 <link rel="stylesheet" type="text/css" href="/qis/qis_style.css">
 <link rel="stylesheet" type="text/css" href="index_style.css"> 
 <link rel="stylesheet" type="text/css" href="form_style.css"-->
 <style>
+body{
+	margin-left: 0px;
+	background-color:#000 !important; /*#AAD1E0*/
+	overflow-x: hidden; 
+	overflow-y: hidden;
+}
 .ios_iframe{
 	overflow: scroll !important;
 	-webkit-overflow-scrolling:touch !important;
 }
-body{
-    overflow-x: hidden; 
-    overflow-y: hidden;
+.filter_effect{
+	-webkit-filter: blur(5px);
+}
+#nav_rp:hover, #nav_ap:hover, #nav_mb:hover, #nav_info:hover, #nav_express_2g:hover, #nav_express_5g:hover, #nav_back:hover{
+	background-color:#555;
+}
+#pap_manual_band_option-button, #pap_manual_auth_option-button, #pap_ip_advanced_option-button{
+	padding: 22px;
+}
+a.ui-btn{
+	height:30px;
 }
 
 </style>
@@ -33,7 +46,7 @@ body{
 <script type="text/javascript" src="js/jquery.js"></script>
 <script>
 var sw_mode = '<% nvram_get("sw_mode"); %>';
-if((sw_mode == 2 || sw_mode == 3) && '<% nvram_get("wlc_psta"); %>' == 1)
+if(((sw_mode == 2 || sw_mode == 3) && '<% nvram_get("wlc_psta"); %>' == 1) || (sw_mode == 3 && '<% nvram_get("wlc_psta"); %>' == 3))
 	sw_mode = 4;
 if(sw_mode == 3 && '<% nvram_get("wlc_psta"); %>' == 2)
 	sw_mode = 2;
@@ -208,6 +221,7 @@ $.ajax({
 function QIS_load_body(){
 	if(navigator.appVersion.indexOf("iPhone") != -1 || navigator.appVersion.indexOf("iPad") != -1){		//let iframe works on ios
 		$("#contentM").addClass("ios_iframe");
+		$("#frame_field").css("position", "absolute");
 	}
 	
 	document.getElementById("menu").onclick = function(){
@@ -226,13 +240,13 @@ function QIS_load_body(){
 	}
 	
 	if(sw_mode == "1"){
-		document.getElementById("menu_rt").style.color = "#007AFF";
+		document.getElementById("menu_rt").style.color = "#279FD9";
 	}
 	else if(sw_mode == "3"){
-		document.getElementById("menu_ap").style.color = "#007AFF";
+		document.getElementById("menu_ap").style.color = "#279FD9";
 	}
 	else if(sw_mode == "4"){
-		document.getElementById("menu_mb").style.color = "#007AFF";
+		document.getElementById("menu_mb").style.color = "#279FD9";
 	}
 	
 	var showCase;
@@ -247,7 +261,8 @@ function QIS_load_body(){
 		
 	if(psta_support){
 		document.getElementById("menu_mb").style.display = "";
-		if((document.QKform.sw_mode.value == 2 || document.QKform.sw_mode.value == 3) && '<% nvram_get("wlc_psta"); %>' == 1)
+		if(((document.QKform.sw_mode.value == 2 || document.QKform.sw_mode.value == 3) && '<% nvram_get("wlc_psta"); %>' == 1) 
+		  || document.QKform.sw_mode.value == 3 && '<% nvram_get("wlc_psta"); %>' == 3)
 			document.QKform.sw_mode.value = 4;
 	}
 
@@ -459,7 +474,7 @@ function detect_httpd(){
     			document.getElementById('loading_block2').style.display = "none";
     			document.getElementById('loading_block3').style.display = "";
 				if(findasus_support){
-    				document.getElementById('loading_block3').innerHTML = "<div>You can also go to <a href=\"http://findasus.local\" style=\"font-family:Lucida Console;text-decoration:underline;color:#FC0;\">http://findasus.local</a> to search and enter device config page.</div>";
+    				document.getElementById('loading_block3').innerHTML = "<div><#OP_AP_hint#></div>";
 				}else{
 					document.getElementById('loading_block3').innerHTML = "<div><#Main_alert_proceeding_desc3#>.<#LANConfig_ChangedLANIP#></div>";
 				}						
@@ -479,7 +494,7 @@ function switch_operation_mode(mode){
 		document.getElementById("menu_mb").style.color = "#FFF";
 		
 	if(mode == "1"){		//Router
-		document.getElementById("menu_rt").style.color = "#007AFF";
+		document.getElementById("menu_rt").style.color = "#279FD9";
 		document.QKform.sw_mode.value = 1;
 		document.redirectForm.action = "/qis_m/QIS_internet_type.htm";
 		document.redirectForm.submit();
@@ -492,13 +507,13 @@ function switch_operation_mode(mode){
 		document.redirectForm.submit();
 	}
 	else if(mode == "3"){		//Access Point
-		document.getElementById("menu_ap").style.color = "#007AFF";
+		document.getElementById("menu_ap").style.color = "#279FD9";
 		parent.document.QKform.sw_mode.value = 3;
 		document.redirectForm.action = "/qis_m/QIS_lanip.htm";
 		document.redirectForm.submit();
 	}
 	else if(mode == "4"){		//Media Bridge
-		document.getElementById("menu_mb").style.color = "#007AFF";
+		document.getElementById("menu_mb").style.color = "#279FD9";
 		document.QKform.sw_mode.value = 4;
 		localAP_support = false;
 		isRepeater = false;
@@ -790,7 +805,7 @@ function uploadSetting(){
 		</div>
 	</div>
 	
-	<div style="height:100%;width:100%;position:fixed;">
+	<div id="frame_field" style="height:100%;width:100%;position:fixed;">
 		<iframe id="contentM" name="contentM" class="background_img background_position" style="width:100%;height:100%;border:none;"></iframe>
 	</div>
 </div>

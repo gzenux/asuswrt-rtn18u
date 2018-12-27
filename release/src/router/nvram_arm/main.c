@@ -44,6 +44,7 @@
 * RETURN:  0: success, -1:failed
 * NOTE: Andy Chiu, 2015/12/18. Add new tokens.
 *           Andy Chiu, 2015/12/24. Add new tokens.
+*	     Andy Chiu, 2016/02/18. Add new token, wtf_username.
 *******************************************************************/
 static int _secure_conf(char* buf)
 {
@@ -67,7 +68,7 @@ static int _secure_conf(char* buf)
 		"wl1_key1", "wl1_key2", "wl1_key3", "wl1_key4",
 		"wl0_phrase_x", "wl0.1_phrase_x", "wl0.2_phrase_x", "wl0.3_phrase_x", 
 		"wl1_phrase_x", "wl1.1_phrase_x", "wl1.2_phrase_x", "wl1.3_phrase_x", 
-		"wl_phrase_x", "vpnc_openvpn_pwd", "PM_SMTP_AUTH_USER", "PM_MY_EMAIL", "PM_SMTP_AUTH_PASS", ""};
+		"wl_phrase_x", "vpnc_openvpn_pwd", "PM_SMTP_AUTH_USER", "PM_MY_EMAIL", "PM_SMTP_AUTH_PASS", "wtf_username", ""};
 	
 	const char *token2[] = {"acc_list", "pptpd_clientlist", ""};
 	//admin>99999<Family>99999999<aaaaa>9999999<bbbbb>999999

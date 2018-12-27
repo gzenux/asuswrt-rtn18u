@@ -1,7 +1,7 @@
 #
 # Broadcom Linux Router Makefile
 #
-# Copyright 2005, Broadcom Corporation
+# Copyright 2016, Broadcom
 # All Rights Reserved.
 #
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -30,9 +30,9 @@ export CFLAGS += -DPROXYARP
 export CFLAGS += -DTRAFFIC_MGMT
 export CFLAGS += -DTRAFFIC_MGMT_RSSI_POLICY
 ifeq ($(RTCONFIG_BCMARM),y)
+export CONFIG_MFP=y
 export CFLAGS += -DMFP
 export CFLAGS += -D__CONFIG_MFP__
-export CLFAGS += -DWLWNM
 endif
 endif
 export CFLAGS += $(EXTRACFLAGS)
@@ -47,6 +47,7 @@ else
 MODEL = $(subst -,,$(subst +,P,$(BUILD_NAME)))
 endif
 export CFLAGS += -D$(MODEL)
+export $(MODEL)=y
 
 export OLD_SRC=$(SRCBASE)/../src
 ifeq ($(RTCONFIG_BCMARM),y)
@@ -181,6 +182,19 @@ ifeq ($(RTCONFIG_BCMSSD),y)
 export CFLAGS += -DBCM_SSD
 endif
 
+ifeq ($(RTCONFIG_WLCLMLOAD),y)
+export CFLAGS += -DWLCLMLOAD
+export WLCLMLOAD := 1
+endif
+
+ifeq ($(RTCONFIG_BCMASPMD),y)
+export CFLAGS += -DBCM_ASPMD
+endif
+
+ifeq ($(RTCONFIG_BCMEVENTD),y)
+export CFLAGS += -DBCM_EVENTD
+endif
+
 ifeq ($(RTCONFIG_BCMDCS),y)
 export CFLAGS += -DBCM_DCS
 endif
@@ -195,11 +209,17 @@ export CONFIG_EMF_ENABLED := $(RTCONFIG_EMF)
 endif
 
 ifeq ($(RTCONFIG_HSPOT),y)
-export CFLAGS += -D__CONFIG_HSPOT__
-export CFLAGS += -DNAS_GTK_PER_STA -DHSPOT_OSEN
+export CONFIG_HSPOT=y
+#export CFLAGS += -D__CONFIG_HSPOT__
+export CFLAGS += -DNAS_GTK_PER_STA
+ifeq ($(or $(RTCONFIG_BCM7),$(RTCONFIG_BCM_7114)),y)
+export CFLAGS += -DHSPOT_OSEN
+endif
 endif
 
 ifeq ($(RTCONFIG_WPS),y)
+ifeq ($(CONFIG_BCMWL5),y)
+endif
 export CFLAGS += -D__CONFIG_WPS__
 # WFA WPS 2.0 Testbed extra caps
 #export CFLAGS += -DWFA_WPS_20_TESTBED
@@ -225,6 +245,8 @@ SEP=echo "\033[41;1m   $@   \033[0m"
 #
 # standard packages
 #
+obj-$(RTCONFIG_NOTIFICATION_CENTER) += sqlite
+obj-$(RTCONFIG_NOTIFICATION_CENTER) += nt_center
 obj-$(RTCONFIG_QTN) += libqcsapi_client
 obj-$(RTCONFIG_QTN) += qtnimage
 obj-$(RTCONFIG_DMALLOC) += dmalloc
@@ -316,12 +338,14 @@ obj-y += iptables
 obj-y += iproute2
 endif
 
-obj-$(RTCONFIG_BWDPI) += bwdpi
 obj-$(RTCONFIG_BWDPI) += sqlite
+obj-$(RTCONFIG_BWDPI) += bwdpi
 obj-$(RTCONFIG_BWDPI) += bwdpi_sqlite
 obj-$(RTCONFIG_BWDPI) += bwdpi_bin
 obj-$(RTCONFIG_SPEEDTEST) += curl-7.21.7
-obj-$(RTCONFIG_TRAFFIC_CONTROL) += traffic_control
+
+obj-$(RTCONFIG_TRAFFIC_LIMITER) += sqlite
+obj-$(RTCONFIG_TRAFFIC_LIMITER) += traffic_limiter
 
 obj-y += rc
 obj-y += rom
@@ -366,6 +390,11 @@ endif
 obj-$(CONFIG_LIBBCM) += libbcm
 obj-$(CONFIG_LIBUPNP) += libupnp$(BCMEX)$(EX7)
 endif
+
+obj-$(RTCONFIG_BCMEVENTD) += eventd
+obj-$(RTCONFIG_BCMASPMD) += aspmd
+
+obj-$(RTCONFIG_WLCLMLOAD) += clm
 
 obj-y += libbcmcrypto
 #obj-y += cyassl
@@ -469,6 +498,7 @@ obj-$(RTCONFIG_KERNEL_HFSPLUS) += diskdev_cmds-332.14
 endif
 obj-$(RTCONFIG_EBTABLES) += ebtables
 obj-$(RTCONFIG_IPV6) += odhcp6c
+obj-$(RTCONFIG_6RELAYD) += 6relayd
 #obj-$(RTCONFIG_IPV6) += ecmh
 
 obj-$(RTCONFIG_MEDIA_SERVER) += zlib
@@ -522,9 +552,10 @@ obj-y += libdaemon
 obj-y += avahi-0.6.31
 obj-y += expat-2.0.1
 else
-obj-$(RTCONFIG_MEDIA_SERVER) += mDNSResponder
+ifeq ($(or $(RTCONFIG_MEDIA_SERVER),$(RTCONFIG_BWDPI)),y)
+obj-y += mDNSResponder
 endif
-obj-$(RTCONFIG_MEDIA_SERVER) += mDNSResponder
+endif
 
 #add for snmpd
 SNMPD_CFLAGS += -D$(BUILD_NAME)
@@ -549,6 +580,7 @@ obj-$(RTCONFIG_EAPOL) += wpa_supplicant
 obj-$(RTCONFIG_HTTPS) += openssl
 obj-$(RTCONFIG_HTTPS) += wget zlib
 obj-$(RTCONFIG_SSH) += dropbear
+obj-$(RTCONFIG_WTFAST) += wtfast
 #obj-$(RTCONFIG_ZEBRA) += zebra
 obj-$(RTCONFIG_QUAGGA) += quagga
 #	obj-$(RTCONFIG_IPP2P) += ipp2p
@@ -565,7 +597,7 @@ obj-$(RTCONFIG_PPTPD) += pptpd
 obj-$(RTCONFIG_WEBDAV) += sqlite
 obj-$(RTCONFIG_WEBDAV) += libxml2
 obj-$(RTCONFIG_WEBDAV) += pcre-8.31
-obj-$(RTCONFIG_WEBDAV) += lighttpd-1.4.29
+obj-$(RTCONFIG_WEBDAV) += lighttpd-1.4.39
 obj-$(RTCONFIG_WEBDAV) += libexif
 
 obj-$(RTCONFIG_IXIAEP) += ixia_endpoint$(BCMEX)
@@ -635,8 +667,10 @@ ifeq ($(RTCONFIG_RALINK),y)
 obj-$(RA_SKU) += ra_SingleSKU
 endif
 obj-$(RTCONFIG_BCMARM) += wl$(BCMEX)$(EX7)
+obj-$(RTCONFIG_BCMARM) += et_arm$(EX7)
 
-obj-$(RTCONFIG_RTL8365MB) += rtl_bin
+obj-$(RTCONFIG_EXT_RTL8365MB) += rtl_bin
+obj-$(RTCONFIG_EXT_RTL8370MB) += rtl_bin
 obj-$(RTCONFIG_LACP) += lacp
 
 #obj-y += bonnie
@@ -680,7 +714,7 @@ obj-$(RTCONFIG_CLOUDCHECK) += cloudcheck
 obj-$(RTCONFIG_GETREALIP) += ministun
 
 
-ifneq ($(find lighttpd-1.4.29, $(obj-y)),"")
+ifneq ($(find lighttpd-1.4.39, $(obj-y)),"")
 released_dir += APP-IPK
 endif
 
@@ -807,7 +841,10 @@ else	# RTCONFIG_BCMARM
 	$(call STRIP_DEBUG_SYMBOLS,$(LINUXDIR)/lib/libcrc32c.ko)
 	$(call STRIP_DEBUG_SYMBOLS,$(LINUXDIR)/net/sched/sch_tbf.ko)
 	$(call STRIP_DEBUG_SYMBOLS,$(LINUXDIR)/net/sched/sch_hfsc.ko)
-ifeq ($(RTCONFIG_RTL8365MB),y)
+ifeq ($(RTCONFIG_EXT_RTL8365MB),y)
+	$(call STRIP_DEBUG_SYMBOLS,$(LINUXDIR)/drivers/char/rtl8365mb/rtl8365mb.ko)
+endif
+ifeq ($(RTCONFIG_RTL8370MB),y)
 	$(call STRIP_DEBUG_SYMBOLS,$(LINUXDIR)/drivers/char/rtl8365mb/rtl8365mb.ko)
 endif
 endif   # RTCONFIG_BCMARM
@@ -920,7 +957,10 @@ ifeq ($(RTAC53U),y)
 else
 	cd $(TARGETDIR)/lib/modules/*/kernel/drivers/net && mv ctf/* . && rm -rf ctf || true
 endif
-ifeq ($(RTCONFIG_RTL8365MB),y)
+ifeq ($(RTCONFIG_EXT_RTL8365MB),y)
+	cd $(TARGETDIR)/lib/modules/*/kernel/drivers/char && mv rtl8365mb/* . && rm -rf rtl8365mb || true
+endif
+ifeq ($(RTCONFIG_RTL8370MB),y)
 	cd $(TARGETDIR)/lib/modules/*/kernel/drivers/char && mv rtl8365mb/* . && rm -rf rtl8365mb || true
 endif
 	cd $(TARGETDIR)/lib/modules && rm -f */source || true
@@ -1124,6 +1164,7 @@ endif
 ifeq ($(RTCONFIG_SPEEDTEST),y)
 	# for speedtest
 	install -D curl-7.21.7/src/.libs/curl $(TARGETDIR)/usr/sbin/curl
+	install -D curl-7.21.7/ddns-start.sh $(TARGETDIR)/usr/sbin/ddns-start.sh
 	$(STRIP) $(TARGETDIR)/usr/sbin/curl
 endif
 
@@ -1717,7 +1758,7 @@ iptables-1.4.x-clean:
 upnp: nvram$(BCMEX) shared $(IPTABLES)
 
 miniupnpd/config.h: shared/version.h
-	cd miniupnpd && ./genconfig.sh --vendorcfg
+	cd miniupnpd && ./genconfig.sh --vendorcfg --leasefile
 
 miniupnpd: $(IPTABLES) miniupnpd/config.h
 	@$(SEP)
@@ -2074,6 +2115,19 @@ odhcp6c-install: odhcp6c
 odhcp6c-clean:
 	-@$(MAKE) -C odhcp6c clean
 
+6relayd: 6relayd/Makefile
+	@EXT_CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC" \
+	EXT_LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	PREFIX="/usr" \
+	$(MAKE) -C 6relayd
+
+6relayd-install: 6relayd
+	install -D 6relayd/src/6relayd $(INSTALLDIR)/6relayd/usr/sbin/6relayd
+	$(STRIP) $(INSTALLDIR)/6relayd/usr/sbin/6relayd
+
+6relayd-clean:
+	-@$(MAKE) -C 6relayd clean
+
 e2fsprogs: e2fsprogs/Makefile
 	$(MAKE) -C e2fsprogs
 
@@ -2399,6 +2453,35 @@ else
 endif
 endif
 
+nt_center/stamp-h1: 
+	touch $@
+
+nt_center: nt_center/stamp-h1
+	$(MAKE) -C nt_center
+
+
+nt_center-install: nt_center
+	install -d $(INSTALLDIR)/nt_center/usr/lib/
+	install -d $(INSTALLDIR)/nt_center/usr/sbin/
+	install -D nt_center/lib/libnt.so $(INSTALLDIR)/nt_center/usr/lib/libnt.so
+	install -D nt_center/nt_center $(INSTALLDIR)/nt_center/usr/sbin/nt_center
+	install -D nt_center/nt_monitor $(INSTALLDIR)/nt_center/usr/sbin/nt_monitor
+	install -D nt_center/actMail/nt_actMail $(INSTALLDIR)/nt_center/usr/sbin/nt_actMail
+	install -D nt_center/Notify_Event2NC $(INSTALLDIR)/nt_center/usr/sbin/Notify_Event2NC
+	install -D nt_center/lib/nt_db $(INSTALLDIR)/nt_center/usr/sbin/nt_db
+	#install -D nt_center/lib/db_test $(INSTALLDIR)/nt_center/usr/sbin/db_test
+	$(STRIP) $(INSTALLDIR)/nt_center/usr/lib/libnt.so
+	$(STRIP) $(INSTALLDIR)/nt_center/usr/sbin/nt_center
+	$(STRIP) $(INSTALLDIR)/nt_center/usr/sbin/nt_monitor
+	$(STRIP) $(INSTALLDIR)/nt_center/usr/sbin/nt_actMail
+	$(STRIP) $(INSTALLDIR)/nt_center/usr/sbin/Notify_Event2NC
+	$(STRIP) $(INSTALLDIR)/nt_center/usr/sbin/nt_db
+	#$(STRIP) $(INSTALLDIR)/nt_center/usr/sbin/db_test
+
+nt_center-clean:
+	-$(MAKE) -C nt_center clean
+	@rm -f nt_center/stamp-h1
+
 #	$(STRIP) $(INSTALLDIR)/tr/sbin/*
 
 #	libnet:
@@ -2594,6 +2677,12 @@ dropbear/config.h:
 		--disable-pututxline --disable-loginfunc --disable-pam --enable-openpty
 	-@$(MAKE) -C dropbear clean
 
+wtfast-configure:
+	@true
+
+wtfast-install:
+	install -D wtfast/wtfslhd/wtfslhd $(INSTALLDIR)/wtfast/usr/sbin/wtfslhd
+
 # Media libraries
 
 sqlite/stamp-h1:
@@ -2718,7 +2807,7 @@ endif
 
 jpeg/stamp-h1:
 	cd jpeg && \
-	CFLAGS="-Os $(EXTRACFLAGS) -fPIC" CC=$(CC) AR2="touch" $(CONFIGURE) --enable-shared --enable-static --prefix=''
+	CFLAGS="-Os $(EXTRACFLAGS) -fPIC" CC=$(CC) AR2="touch" $(CONFIGURE) --enable-maxmem=1 --enable-shared --enable-static --prefix=''
 	touch $@
 
 jpeg: jpeg/stamp-h1
@@ -2939,6 +3028,15 @@ endif
 snooper-clean:
 	$(MAKE) -C snooper clean
 
+udpxy:
+	$(MAKE) -C $@ release NO_UDPXREC=yes \
+	CDEFS="-O2 -ffunction-sections -fdata-sections $(EXTRACFLAGS)" \
+	LDFLAGS="-Wl,--gc-sections"
+
+udpxy-install:
+	install -D udpxy/udpxy $(INSTALLDIR)/udpxy/usr/sbin/udpxy
+	$(STRIP) $(INSTALLDIR)/udpxy/usr/sbin/udpxy
+
 netconf: $(IPTABLES)
 	+$(MAKE) LINUXDIR=$(LINUXDIR) -C netconf
 
@@ -2978,29 +3076,103 @@ else
 	@true
 endif
 
-.PHONY: wlexe
-wlexe:
-ifeq ($(RTCONFIG_WLEXE),y)
-ifneq ($(wildcard $(SRCBASE_SYS)/wl/exe/GNUmakefile),)
-ifeq ($(ARCH),arm)
-	$(MAKE) TARGETARCH=arm_le ARCH_SFX="" TARGET_PREFIX=$(CROSS_COMPILE) -C $(SRCBASE_SYS)/wl/exe
+CHIP=0
+CLM_BLOBS=router
+CLM_BLOB_IMAGES := $(CLM_BLOBS:=.clm_bin)
+OBJCOPY         := $(CROSS_COMPILE)objcopy
+OBJCOPYFLAGS    := -R .reginfo -R .note -R .comment -R .mdebug -R .logstrs -R .lognums -S
+OBJCOPYBIN      := $(OBJCOPY) -O binary $(OBJCOPYFLAGS)
+CLMBASE=$(SRCBASE)/wl/clm
+ifeq ($(wildcard $(CLMBASE)/private),)
+%.clm_bin: $(info "CLM In $(CLMBASE)/src/ NOT CREATING new clm_blob ...");
+	echo $(CLM_BLOB_IMAGES)
 else
-	$(MAKE) TARGETARCH=mips ARCH_SFX="" TARGET_PREFIX=$(CROSS_COMPILE) -C $(SRCBASE_SYS)/wl/exe
+%.clm_bin: CHIPID := $(shell if [[ $(CHIP) -gt 5999 ]] ; then echo $(CHIP); else echo $$((0x$(CHIP)));  fi)
+%.clm_bin: $(CLMBASE)/types/%.clm $(CLMBASE)/private/wlc_clm_data.xml
+	@echo ClmCompiling config file $*.clm to $*.clm_bin and $*.clm_bin.  Config file content:
+	cat $(CLMBASE)/types/$*.clm
+	$(SRCBASE)/tools/build/ClmCompiler --clmapi_include_dir $(CLMBASE)/include --bcmwifi_include_dir $(SRCBASE)/shared/bcmwifi/include --config_file $(CLMBASE)/types/$*.clm $(CLMBASE)/private/wlc_clm_data.xml $(CLMBASE)/src/$*.c
+	#@echo C compile $*.c to $*.o
+	##$(LOUD)$(CC) $(call file_cflags,$*.c) -D_FILENAME_=\"$*.c\" -c -o $*.o $*.c
+	$(LOUD)$(CC) $(call file_cflags,$*.c) -D_FILENAME_=\"$*.c\" -I$(CLMBASE)/include -I$(SRCBASE)/shared/bcmwifi/include -c -o $(CLMBASE)/src/$*.o $(CLMBASE)/src/$*.c
+	#@echo Linking $*.o to $*.exe
+	( \
+		echo 'SECTIONS {'; \
+		echo '  . = 0;'; \
+		echo '  .clmdata : {'; \
+		echo '      *(.*.clm_header)'; \
+		echo '      *(.rodata.*)'; \
+		echo '   }'; \
+		echo '}'; \
+	) >$(CLMBASE)/src/$*.lds
+	@echo Done $*.lds .....
+	##$(LD) -S -Map=$*.map -T $*.lds -o $*.exe $*.o
+	$(LD) -S -Map=$(CLMBASE)/src/$*.map -T $(CLMBASE)/src/$*.lds -o $(CLMBASE)/src/$*.exe $(CLMBASE)/src/$*.o
+	#$(SIZE) $(CLMBASE)/src/$*.exe
+	@echo Done $*.exe .....
+	#@echo objcopy $*.exe to $*.clm_bin
+	$(OBJCOPYBIN) $(CLMBASE)/src/$*.exe $(CLMBASE)/src/$*.clm_bin
+	@echo Done $*.clm_bin
+	@echo Create clm_blob .....
+	python $(SRCBASE)/tools/build/blob.py $(CLMBASE)/src/$*.clm_bin $(CLMBASE)/src/$*.clm_blob '$(CHIPID)'
+	$(RM) $(CLMBASE)/src/$*.o $(CLMBASE)/src/$*.lds $(CLMBASE)/src/$*.map $(CLMBASE)/src/$*.exe
+endif
+
+clm: $(CLM_BLOB_IMAGES)
+
+clm-install:
+	@echo clm-install INSTALLDIR = $(INSTALLDIR) ....
+	@echo clm-install TARGETDIR = $(TARGETDIR) ....
+	install -d $(TARGETDIR)/etc/brcm/clm
+	install -D $(BASEDIR)/src/wl/clm/src/*.clm_blob $(TARGETDIR)/etc/brcm/clm
+
+clm-clean:
+	$(foreach clmb,$(CLM_BLOBS), \
+		@echo Removing from $(CLMBASE)/src $(clmb).c $(clmb).clm_bin $(clmb).clm_blob; \
+		$(RM) $(CLMBASE)/src/$(clmb).c; \
+		$(RM) $(CLMBASE)/src/$(clmb).clm_bin; \
+		$(RM) $(TARGETDIR)/etc/brcm/clm/$(clmb).clm_blob )
+
+SRC_WLEXE = $(SRCBASE_SYS)/wl/exe
+
+.PHONY: wlexe
+
+$(SRC_WLEXE)/../../include/epivers.h :
+ifneq ($(wildcard $(SRC_WLEXE)/GNUmakefile),)
+	$(MAKE) -C $(SRC_WLEXE)/../../include
+endif
+
+wlexe: $(SRC_WLEXE)/../../include/epivers.h
+ifeq ($(RTCONFIG_WLEXE),y)
+ifneq ($(wildcard $(SRC_WLEXE)/*.c),)
+
+ifneq ($(wildcard $(SRC_WLEXE)/GNUmakefile),)
+ifeq ($(ARCH),arm)
+	$(MAKE) TARGETARCH=arm_le ARCH_SFX="" TARGET_PREFIX=$(CROSS_COMPILE) -C $(SRC_WLEXE)
+else
+	$(MAKE) TARGETARCH=mips ARCH_SFX="" TARGET_PREFIX=$(CROSS_COMPILE) -C $(SRC_WLEXE)
 endif
 	[ -d wlexe ] || install -d wlexe
-	install $(SRCBASE_SYS)/wl/exe/wl wlexe
+	install $(SRC_WLEXE)/wl wlexe
+
 ifeq ($(ARCH),arm)
-	install $(SRCBASE_SYS)/wl/exe/socket_noasd/arm_le/wl_server_socket wlexe
+	install $(SRC_WLEXE)/socket_noasd/arm_le/wl_server_socket wlexe
 else
-	install $(SRCBASE_SYS)/wl/exe/socket_noasd/mips/wl_server_socket wlexe
+	install $(SRC_WLEXE)/socket_noasd/mips/wl_server_socket wlexe
 endif
+endif
+
+else
+	[ -d wlexe ] || install -d wlexe
+	install $(SRC_WLEXE)/prebuilt/wl wlexe
+
 endif
 endif
 
 .PHONY: wlexe-clean
 wlexe-clean:
-ifneq ($(wildcard $(SRCBASE_SYS)/wl/exe/GNUmakefile),)
-	$(MAKE) TARGET_PREFIX=$(CROSS_COMPILE) -C $(SRCBASE_SYS)/wl/exe clean
+ifneq ($(wildcard $(SRC_WLEXE)/GNUmakefile),)
+	$(MAKE) TARGET_PREFIX=$(CROSS_COMPILE) -C $(SRC_WLEXE) clean
 	$(RM) wlexe/wl	
 	$(RM) wlexe/wl_server_socket
 endif
@@ -3008,7 +3180,7 @@ endif
 .PHONY: wlexe-install
 wlexe-install:
 ifeq ($(RTCONFIG_WLEXE),y)
-ifneq ($(wildcard $(SRCBASE_SYS)/wl/exe/GNUmakefile),)
+ifneq ($(wildcard $(SRC_WLEXE)/GNUmakefile),)
 	[ ! -d wlexe ] || install -D -m 755 wlexe/wl $(INSTALLDIR)/wlexe/usr/sbin/wl
 	[ ! -d wlexe ] || install -D -m 755 wlexe/wl_server_socket $(INSTALLDIR)/wlexe/usr/sbin/wl_server_socket
 	[ ! -d wlexe ] || $(STRIP) $(INSTALLDIR)/wlexe/usr/sbin/wl
@@ -3139,7 +3311,7 @@ openvpn-configure:
 		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections $(if $(RTCONFIG_HTTPS),-I$(TOP)/openssl/include/openssl)" \
 		LDFLAGS="$(EXTRALDFLAGS) -L$(TOP)/nvram$(BCMEX) -lnvram -L$(TOP)/shared -lshared $(if $(RTCONFIG_QTN),-L$(TOP)/libqcsapi_client -lqcsapi_client) $(if $(RTCONFIG_HTTPS),-L$(TOP)/openssl -lcrypto -lssl) -L$(TOP)/zlib -lz -lpthread -ldl -L$(TOP)/lzo/src/.libs -L$(TOP)/openpam/lib/libpam/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CPPFLAGS="-I$(TOP)/lzo/include -I$(TOP)/openssl/include -I$(TOP)/openpam/include -I$(TOP)/shared -I$(SRCBASE)/include" \
-		IPROUTE="/usr/sbin/ip" \
+		IPROUTE="/usr/sbin/ip" IFCONFIG="/sbin/ifconfig" \
 		$(CONFIGURE) --prefix=/usr --bindir=/usr/sbin --libdir=/usr/lib \
 			--disable-debug --enable-management --disable-small \
 			--disable-selinux --disable-socks --enable-password-save \
@@ -3263,46 +3435,50 @@ openlldp-clean:
 
 nas$(BCMEX)$(EX7): nvram$(BCMEX)
 
+hspot_ap$(BCMEX)$(EX7): shared nvram$(BCMEX)
+	@echo "do nothing"
+
+hspot_ap$(BCMEX)$(EX7)-install:
+	@echo "do nothing"
 
 eapd$(BCMEX)$(EX7)-clean:
 	-@cd eapd$(BCMEX)$(EX7)/linux && make clean
 
-lighttpd-1.4.29/stamp-h1:
+lighttpd-1.4.39/stamp-h1:
 ifneq ($(RTCONFIG_QTN),y)
-	cd lighttpd-1.4.29 && ./preconfigure-script touch $@
+	cd lighttpd-1.4.39 && ./preconfigure-script touch $@
 else
-	cd lighttpd-1.4.29 && ./preconfigure-script-qtn touch $@
+	cd lighttpd-1.4.39 && ./preconfigure-script-qtn touch $@
 endif
 
-lighttpd-1.4.29: shared nvram$(BCMEX) libdisk samba-3.5.8 pcre-8.31 libxml2 sqlite libexif openssl lighttpd-1.4.29/stamp-h1
+lighttpd-1.4.39: shared nvram$(BCMEX) libdisk samba-3.5.8 pcre-8.31 libxml2 sqlite libexif openssl lighttpd-1.4.39/stamp-h1
 
-lighttpd-1.4.29-install: lighttpd-1.4.29
-	install -D lighttpd-1.4.29/src/.libs/lighttpd $(INSTALLDIR)/lighttpd-1.4.29/usr/sbin/lighttpd
-	install -D lighttpd-1.4.29/src/.libs/lighttpd-monitor $(INSTALLDIR)/lighttpd-1.4.29/usr/sbin/lighttpd-monitor
-	install -D lighttpd-1.4.29/src/.libs/lighttpd-arpping $(INSTALLDIR)/lighttpd-1.4.29/usr/sbin/lighttpd-arpping
-	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.29/usr/sbin/lighttpd
-	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.29/usr/sbin/lighttpd-monitor
-	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.29/usr/sbin/lighttpd-arpping
+lighttpd-1.4.39-install: lighttpd-1.4.39
+	install -D lighttpd-1.4.39/src/.libs/lighttpd $(INSTALLDIR)/lighttpd-1.4.39/usr/sbin/lighttpd
+	install -D lighttpd-1.4.39/src/.libs/lighttpd-monitor $(INSTALLDIR)/lighttpd-1.4.39/usr/sbin/lighttpd-monitor
+	install -D lighttpd-1.4.39/src/.libs/lighttpd-arpping $(INSTALLDIR)/lighttpd-1.4.39/usr/sbin/lighttpd-arpping
+	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.39/usr/sbin/lighttpd
+	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.39/usr/sbin/lighttpd-monitor
+	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.39/usr/sbin/lighttpd-arpping
 
-	install -d $(INSTALLDIR)/lighttpd-1.4.29/usr/lib/
-	install -D lighttpd-1.4.29/src/.libs/*.so $(INSTALLDIR)/lighttpd-1.4.29/usr/lib/
-	install -D samba-3.5.8/source3/bin/libsmbclient.so.0 $(INSTALLDIR)/lighttpd-1.4.29/usr/lib/libsmbclient.so.0
-	install -D sqlite/.libs/libsqlite3.so.0 $(INSTALLDIR)/lighttpd-1.4.29/usr/lib/libsqlite3.so.0
-	install -D libexif/libexif/.libs/libexif.so.12 $(INSTALLDIR)/lighttpd-1.4.29/usr/lib/libexif.so.12
+	install -d $(INSTALLDIR)/lighttpd-1.4.39/usr/lib/
+	install -D lighttpd-1.4.39/src/.libs/*.so $(INSTALLDIR)/lighttpd-1.4.39/usr/lib/
+	install -D samba-3.5.8/source3/bin/libsmbclient.so.0 $(INSTALLDIR)/lighttpd-1.4.39/usr/lib/libsmbclient.so.0
+	install -D sqlite/.libs/libsqlite3.so.0 $(INSTALLDIR)/lighttpd-1.4.39/usr/lib/libsqlite3.so.0
+	install -D libexif/libexif/.libs/libexif.so.12 $(INSTALLDIR)/lighttpd-1.4.39/usr/lib/libexif.so.12
 
-	mkdir -p $(INSTALLDIR)/lighttpd-1.4.29/usr/lighttpd
-	mkdir -p $(INSTALLDIR)/lighttpd-1.4.29/usr/lighttpd/css & mkdir -p $(INSTALLDIR)/lighttpd-1.4.29/usr/lighttpd/js
-	cp -rf  lighttpd-1.4.29/external_file/css/ $(INSTALLDIR)/lighttpd-1.4.29/usr/lighttpd
-	cp -rf  lighttpd-1.4.29/external_file/js/ $(INSTALLDIR)/lighttpd-1.4.29/usr/lighttpd
-	cp -f APP-IPK/AiCloud-ipk/CONTROL/control $(INSTALLDIR)/lighttpd-1.4.29/usr/lighttpd
-	cp -f APP-IPK/SmartSync-ipk/CONTROL/control $(INSTALLDIR)/lighttpd-1.4.29/usr/lighttpd/smartsync_control
+	mkdir -p $(INSTALLDIR)/lighttpd-1.4.39/usr/lighttpd/css && mkdir -p $(INSTALLDIR)/lighttpd-1.4.39/usr/lighttpd/js
+	cp -rf  lighttpd-1.4.39/external_file/css/ $(INSTALLDIR)/lighttpd-1.4.39/usr/lighttpd
+	cp -rf  lighttpd-1.4.39/external_file/js/ $(INSTALLDIR)/lighttpd-1.4.39/usr/lighttpd
+	cp -f APP-IPK/AiCloud-ipk/CONTROL/control $(INSTALLDIR)/lighttpd-1.4.39/usr/lighttpd
+	cp -f APP-IPK/SmartSync-ipk/CONTROL/control $(INSTALLDIR)/lighttpd-1.4.39/usr/lighttpd/smartsync_control
 
-	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.29/usr/lib/*.so
-	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.29/usr/lib/*.so.0
+	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.39/usr/lib/*.so
+	$(STRIP) -s $(INSTALLDIR)/lighttpd-1.4.39/usr/lib/*.so.0
 
-lighttpd-1.4.29-clean:
-	-@$(MAKE) -C lighttpd-1.4.29 clean
-	@rm -f lighttpd-1.4.29/stamp-h1
+lighttpd-1.4.39-clean:
+	-@$(MAKE) -C lighttpd-1.4.39 clean
+	@rm -f lighttpd-1.4.39/stamp-h1
 
 pcre-8.12/stamp-h1:
 	cd pcre-8.12 && \
@@ -3852,13 +4028,13 @@ bwdpi_sqlite-clean:
 
 bwdpi_sqlite-install: bwdpi_sqlite
 
-traffic_control: sqlite
-	cd traffic_control && CC=$(CC) && $(MAKE)
+traffic_limiter: sqlite
+	cd traffic_limiter && CC=$(CC) && $(MAKE)
 
-traffic_control-clean:
-	cd traffic_control && $(MAKE) clean
+traffic_limiter-clean:
+	cd traffic_limiter && $(MAKE) clean
 
-traffic_control-install: traffic_control
+traffic_limiter-install: traffic_limiter
 
 NORTON_DIR := $(SRCBASE)/router/norton${BCMEX}
 
@@ -3876,6 +4052,15 @@ norton${BCMEX}-clean:
 
 .PHONY : email-3.1.3 email-3.1.3-clean
 
+ifeq ($(RTCONFIG_NOTIFICATION_CENTER),y)
+email-3.1.3/stamp-h1: openssl
+	cd $(TOP)/email-3.1.3 && \
+	$(CONFIGURE) --with-ssl --sysconfdir=/etc \
+		CFLAGS="-I$(SRCBASE)/router/openssl/include -I$(TOP)/nt_center/lib -I$(TOP)/sqlite -DRTCONFIG_NOTIFICATION_CENTER" \
+		LDFLAGS="-L$(SRCBASE)/router/openssl -L$(TOP)/nt_center/lib -L$(TOP)/sqlite/.libs" \
+		LIBS="-lnt -lsqlite3 -lpthread -lcrypto -lssl $(if $(RTCONFIG_QCA), -ldl)"
+	touch $@
+else
 email-3.1.3/stamp-h1: openssl
 	cd $(TOP)/email-3.1.3 && \
 	$(CONFIGURE) --with-ssl --sysconfdir=/etc \
@@ -3883,6 +4068,7 @@ email-3.1.3/stamp-h1: openssl
 		LDFLAGS="-L$(SRCBASE)/router/openssl" \
 		LIBS="-lcrypto -lssl $(if $(RTCONFIG_QCA), -ldl)"
 	touch $@
+endif
 
 email-3.1.3: email-3.1.3/stamp-h1
 	$(MAKE) -C email-3.1.3
@@ -3907,6 +4093,8 @@ diskdev_cmds-332.14-install: diskdev_cmds-332.14
 	$(STRIP) $(INSTALLDIR)/diskdev_cmds-332.14/usr/sbin/mkfs.hfsplus
 	$(STRIP) $(INSTALLDIR)/diskdev_cmds-332.14/usr/sbin/fsck.hfsplus
 	cd $(INSTALLDIR)/diskdev_cmds-332.14/usr/sbin && \
+	rm -f mkfs.hfs && \
+	rm -f fsck.hfs && \
 	ln -s mkfs.hfsplus mkfs.hfs && \
 	ln -s fsck.hfsplus fsck.hfs
 
@@ -3995,23 +4183,7 @@ qca-wifi-clean:
 qca-wifi-stage:
 	$(MAKE) -C qca-wifi stage
 
-qca-wifi-PLC:
-	$(MAKE) -C $@ TARGET_CROSS=$(CROSS_COMPILE) LINUX_KARCH=$(ARCH) LINUX_VERSION=$(LINUX_KERNEL) LINUX_DIR=$(LINUXDIR) && $(MAKE) $@-stage
-
-qca-wifi-PLC-install: qca-wifi-PLC
-	$(MAKE) -C $< INSTALLDIR=$(INSTALLDIR)/$< LINUX_VERSION=$(LINUX_KERNEL) install
-
-qca-wifi-PLC-clean:
-	$(MAKE) -C qca-wifi-PLC clean KERNELPATH=$(LINUXDIR)
-	$(RM) -f qca-wifi-PLC/lsdk_flags
-
-qca-wifi-PLC-stage:
-	$(MAKE) -C qca-wifi-PLC stage
-
 qca-hostap: qca-wifi
-	$(MAKE) -C $@
-
-qca-hostap-PLC: qca-wifi-PLC
 	$(MAKE) -C $@
 
 LinuxART2-install: LinuxART2

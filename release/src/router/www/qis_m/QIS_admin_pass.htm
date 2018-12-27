@@ -8,14 +8,16 @@
 <link rel="apple-touch-icon" href="../images/map-iconRouter_iphone.png" />
 <link rel="icon" href="../images/favicon.png">
 <link rel="stylesheet" type="text/css" href="../pwdmeter.css">
-<link rel="stylesheet" type="text/css" href="../css/icon.css">
+<link rel="stylesheet" type="text/css" href="../css/icon-qis.css">
 <script type="text/javascript" language="JavaScript" src="../state.js"></script>
 <script type="text/javascript" language="JavaScript" src="../help.js"></script>
 <script type="text/JavaScript" language="JavaScript" src="../js/jquery.js"></script>
 <script type="text/JavaScript" language="JavaScript" src="../validator.js"></script>
 <script type="text/javascript">
 var accounts = [<% get_all_accounts(); %>];
-
+<% wanstate(); %>
+var autodet_state = '<% nvram_get("autodet_state"); %>';
+var autodet_auxstate = '<% nvram_get("autodet_auxstate"); %>';
 if(accounts.length == 0)
 	accounts = ['<% nvram_get("http_username"); %>'];
 
@@ -192,8 +194,18 @@ function submitForm(){
 		document.form.action = "QIS_manual.htm";
 	else if(parent.flag_manual == "modem")
 		document.form.action = "QIS_modem.htm";
-	else if(parent.document.QKform.sw_mode.value == "1")
-		document.form.action = "QIS_detect.htm";
+	else if(parent.document.QKform.sw_mode.value == "1"){
+		//document.form.action = "/qis/QIS_detect.htm";
+		if(autodet_state == "2" && autodet_auxstate == "6"){
+			document.form.action = "/qis_m/QIS_internet_type.htm";
+		}
+		else if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
+			document.form.action = "/qis_m/QIS_wireless.htm";
+		}
+		else{
+			document.form.action = "/qis_m/QIS_detect.htm";
+		}
+	}	
 	else
 		document.form.action = "QIS_lanip.htm";
 		
@@ -283,7 +295,7 @@ body{
 			<div id="prev_btn" style="display:table-cell;width:50%;vertical-align:middle;text-align:center;" onclick="gotoPrev();">
 				<div style="font-size:1em;color:#7E8593"><#CTL_prev#></div>
 			</div>
-			<div style="display:table-cell;width:50%;vertical-align:middle;text-align:center;background-color:#007AFF" onclick="submitForm();">
+			<div style="display:table-cell;width:50%;vertical-align:middle;text-align:center;background-color:#279FD9" onclick="submitForm();">
 				<div style="font-size:1em;color:#FFF;"><#CTL_next#></div>
 			</div>
 		</div>

@@ -66,14 +66,21 @@ endif
 
 	mkdir -p $(INSTALLDIR)/usr/sbin
 ifeq ($(RTCONFIG_USB),y)
+ifneq ($(APP),none)
 	install -m 0755 apps_scripts/asusrouter $(INSTALLDIR)/rom/.asusrouter
 	install -m 0755 apps_scripts/app_*.sh $(INSTALLDIR)/usr/sbin
 	install -m 0755 apps_scripts/check_spectrum.sh $(INSTALLDIR)/usr/sbin
+endif
 ifeq ($(RTCONFIG_USB_MODEM),y)
 	install -m 0644 spn_*.dat $(INSTALLDIR)/rom
 	install -m 0755 apps_scripts/find_modem_*.sh $(INSTALLDIR)/usr/sbin
 	install -m 0755 apps_scripts/modem_*.sh $(INSTALLDIR)/usr/sbin
 	install -m 0755 apps_scripts/3ginfo.sh $(INSTALLDIR)/usr/sbin
+ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
+ifeq ($(RT4GAC55U),y)
+	install -m 0755 apps_scripts/gobi_update.sh $(INSTALLDIR)/usr/sbin
+endif
+endif
 endif
 endif
 
@@ -98,11 +105,7 @@ else
 	cp -f webs_scripts/nozip_webs_upgrade.sh $(INSTALLDIR)/usr/sbin/webs_upgrade.sh
 endif
 
-ifeq ($(RTCONFIG_HTTPS),y)
 	cp -f webs_scripts/ssl_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
-else
-	cp -f webs_scripts/nozip_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
-endif
 
 ifeq ($(RTCONFIG_BWDPI),y)
 	cp -f webs_scripts/sig_upgrade.sh $(INSTALLDIR)/usr/sbin/sig_upgrade.sh
@@ -140,7 +143,7 @@ endif
 
 ifeq ($(RTCONFIG_MEDIA_SERVER),y)
 	mkdir -p $(INSTALLDIR)/rom/dlna
-ifeq ($(or $(DSLAC68U),$(RTCONFIG_INTERNAL_GOBI)),y)
+ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
 	cp -rf dlna/icon_sm.rt-ac68u.jpg $(INSTALLDIR)/rom/dlna/icon_sm.jpg
 	cp -rf dlna/icon_sm.rt-ac68u.png $(INSTALLDIR)/rom/dlna/icon_sm.png
 	cp -rf dlna/icon_lrg.rt-ac68u.jpg $(INSTALLDIR)/rom/dlna/icon_lrg.jpg

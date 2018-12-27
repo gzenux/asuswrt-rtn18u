@@ -2,7 +2,7 @@
  * Decode functions which provides decoding of P2P attributes
  * as defined in P2P specification.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -63,24 +63,6 @@ typedef struct {
 	uint8 *operatingChannelBuffer;
 	int invitationFlagsLength;
 	uint8 *invitationFlagsBuffer;
-	int serviceHashLength;
-	uint8 *serviceHashBuffer;
-	int sessionLength;
-	uint8 *sessionBuffer;
-	int connectCapLength;
-	uint8 *connectCapBuffer;
-	int advertiseIdLength;
-	uint8 *advertiseIdBuffer;
-#endif	/* BCMDRIVER */
-	int advertiseServiceLength;
-	uint8 *advertiseServiceBuffer;
-#ifndef BCMDRIVER	/* not used in dongle */
-	int sessionIdLength;
-	uint8 *sessionIdBuffer;
-	int featureCapLength;
-	uint8 *featureCapBuffer;
-	int persistentGroupLength;
-	uint8 *persistentGroupBuffer;
 #endif	/* BCMDRIVER */
 } bcm_decode_p2p_t;
 
@@ -89,7 +71,7 @@ int bcm_decode_p2p(bcm_decode_t *pkt, bcm_decode_p2p_t *wfd);
 
 typedef uint8 bcm_decode_p2p_device_type_t[8];
 #define BCM_DECODE_P2P_MAX_SECONDARY_DEVICE_TYPE	4
-#define BCM_DECODE_P2P_MAX_DEVICE_NAME			32
+#define BCM_DECODE_P2P_MAX_DEVICE_NAME	32
 
 typedef struct
 {

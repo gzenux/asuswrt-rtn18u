@@ -42,6 +42,11 @@ var wpa_mode = '<% nvram_get("wl1_wpa_mode"); %>';
 var reIP = '<% nvram_get("lan_ipaddr"); %>';
 var band5g_support = ("<% nvram_get("rc_support"); %>".search("5G") == -1) ? false : true;
 var transfer_mode = "<% nvram_get("dsltmp_transmode"); %>";
+var dsltmp_cfg_th3bb = "<% nvram_get("dsltmp_cfg_th3bb"); %>";
+var dsltmp_cfg_modulation = "<% nvram_get("dsltmp_cfg_modulation"); %>";
+var dsltmp_cfg_annex = "<% nvram_get("dsltmp_cfg_annex"); %>";
+var dsltmp_cfg_de17a = "<% nvram_get("dsltmp_cfg_de17a"); %>";
+var dsltmp_cfg_vdslprofile = "<% nvram_get("dsltmp_cfg_vdslprofile"); %>";
 var cfg_iptv_enable = "<%nvram_get("dsltmp_cfg_iptv_enable");%>";
 
 var iptv_atm_pvc_str_title = "";
@@ -110,6 +115,7 @@ function QKfinish_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";
 	parent.set_step("t3");
 	parent.document.getElementById("LoadingBar").style.visibility = 'hidden';
+	parent.document.getElementById("btn_gotoindex").style.visibility = "hidden";
 
 	if(sw_mode == "2"){
 		if('<% nvram_get("wlc_band"); %>' == 0){
@@ -347,6 +353,10 @@ function gotoASUS(){
 }
 
 function goto_index(){
+	parent.document.getElementById("btn_gotoindex").onclick = "";
+	parent.document.getElementById("btn_gotoindex").style.cursor = "";
+	parent.document.getElementById("btn_gotoindex").className = "m_qis_r_blocked";
+	
 	var wait_time = 40;
 	if(parent.sysReboot) {
 		wait_time = parent.rebootTime;
@@ -355,12 +365,25 @@ function goto_index(){
 		document.restartForm.action_script.value = "restart_dsl_wireless 0;";
 		if(document.restartForm.dslx_transmode.value != transfer_mode) {
 			document.restartForm.dslx_transmode.value = transfer_mode;
+			parent.restartDSLSetting = true;
+		}
+		if(dsltmp_cfg_th3bb == 1) {
+			document.restartForm.dslx_modulation.value = dsltmp_cfg_modulation;
+			document.restartForm.dslx_annex.value = dsltmp_cfg_annex;
+			parent.restartDSLSetting = true;
+		}
+		if(dsltmp_cfg_de17a == 1) {
+			document.restartForm.dslx_vdsl_profile.value = dsltmp_cfg_vdslprofile;
+			parent.restartDSLSetting = true;
+		}
+		if(parent.restartDSLSetting) {
 			document.restartForm.action_script.value = "restart_dsl_setting;".concat(document.restartForm.action_script.value);
-			wait_time += 30;
+			wait_time += 45;
 		}
 	}
 	parent.showLoading(wait_time);
 	document.restartForm.action_wait.value = wait_time;
+	document.restartForm.flag.value = "";
 	document.restartForm.submit();
 }
 
@@ -557,6 +580,10 @@ function redirect_page(redirect_flag){
 	<input type="hidden" name="action_wait" value="0">
 	<input type="hidden" name="x_Setting" value="1">
 	<input type="hidden" name="dslx_transmode" value="<% nvram_get("dslx_transmode"); %>">
+	<input type="hidden" name="dslx_ginp" value="<% nvram_get("dsltmp_cfg_ginp"); %>">
+	<input type="hidden" name="dslx_modulation" value="<% nvram_get("dslx_modulation"); %>">
+	<input type="hidden" name="dslx_annex" value="<% nvram_get("dslx_annex"); %>">
+	<input type="hidden" name="dslx_vdsl_profile" value="<% nvram_get("dslx_vdsl_profile"); %>">
 </form>
 
 </body>

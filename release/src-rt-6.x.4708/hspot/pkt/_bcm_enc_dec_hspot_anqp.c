@@ -1,7 +1,7 @@
 /*
  * Test harness for encoding and decoding Hotspot2.0 ANQP packets.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -26,10 +26,6 @@ TEST_DECLARE();
 static uint8 buffer[BUFFER_SIZE * 4];
 static bcm_encode_t enc;
 
-#define LANG_ENG	"eng"
-#define LANG_CHI	"chi"
-#define LANG_JPN	"jpn"
-
 /* --------------------------------------------------------------- */
 
 static void testOsuProviderList()
@@ -52,34 +48,28 @@ static void testOsuProviderList()
 
 		TEST(bcm_encode_init(&name, BUFFER_SIZE, nameBuf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name,
-			strlen(LANG_ENG), LANG_ENG, 6, "myname"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name, 2, "EN", 6, "myname"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name,
-			strlen(LANG_CHI), LANG_CHI, 6, "yrname"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name, 2, "CH", 6, "yrname"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
 
 		TEST(bcm_encode_init(&icon, BUFFER_SIZE, iconBuf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon,
-			1, 2, LANG_ENG,
+		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon, 1, 2, "EN",
 			4, (uint8 *)"text", 13, (uint8 *)"iconfile1.txt"),
 			"bcm_encode_hspot_anqp_icon_metadata failed");
-		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon,
-			3, 4, LANG_CHI,
+		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon, 3, 4, "CH",
 			4, (uint8 *)"text", 13, (uint8 *)"iconfile2.txt"),
 			"bcm_encode_hspot_anqp_icon_metadata failed");
 
 		TEST(bcm_encode_init(&desc1, BUFFER_SIZE, desc1Buf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc1,
-			strlen(LANG_ENG), LANG_ENG, 12, "SOAP-XML OSU"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc1, 2, "EN", 12, "SOAP-XML OSU"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
 
 		TEST(bcm_encode_init(&desc2, BUFFER_SIZE, desc2Buf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc2,
-			strlen(LANG_ENG), LANG_ENG, 10, "OMA-DM OSU"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc2, 2, "EN", 10, "OMA-DM OSU"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
 
 		TEST(bcm_encode_init(&osu, BUFFER_SIZE, osuBuf),
@@ -113,8 +103,6 @@ static void testOsuProviderList()
 		bcm_decode_hspot_anqp_t hspot;
 		bcm_decode_t ie;
 		bcm_decode_hspot_anqp_osu_provider_list_t list;
-		bcm_decode_hspot_anqp_osu_provider_t *p;
-		bcm_decode_hspot_anqp_name_duple_t *duple;
 
 		TEST(bcm_decode_init(&dec, bcm_encode_length(&enc),
 			bcm_encode_buf(&enc)), "bcm_decode_init failed");
@@ -131,9 +119,9 @@ static void testOsuProviderList()
 		TEST(list.osuProviderCount == 2, "invalid data");
 
 		TEST(list.osuProvider[0].name.numName == 2, "invalid data");
-		TEST(strcmp(list.osuProvider[0].name.duple[0].lang, LANG_ENG) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[0].name.duple[0].lang, "EN") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[0].name.duple[0].name, "myname") == 0, "invalid data");
-		TEST(strcmp(list.osuProvider[0].name.duple[1].lang, LANG_CHI) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[0].name.duple[1].lang, "CH") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[0].name.duple[1].name, "yrname") == 0, "invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].nai, "myprovider1.com") == 0,
 			"invalid data");
@@ -143,7 +131,7 @@ static void testOsuProviderList()
 		TEST(list.osuProvider[0].iconMetadataCount == 2, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[0].width == 1, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[0].height == 2, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[0].lang, LANG_ENG) == 0,
+		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[0].type, "text") == 0,
 			"invalid data");
@@ -151,22 +139,22 @@ static void testOsuProviderList()
 			"iconfile1.txt") == 0, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[1].width == 3, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[1].height == 4, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].lang, LANG_CHI) == 0,
+		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].lang, "CH") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].type, "text") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].filename,
 			"iconfile2.txt") == 0, "invalid data");
 		TEST(list.osuProvider[0].desc.numName == 1, "invalid data");
-		TEST(strcmp(list.osuProvider[0].desc.duple[0].lang, LANG_ENG) == 0,
+		TEST(strcmp(list.osuProvider[0].desc.duple[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp(list.osuProvider[0].desc.duple[0].name, "SOAP-XML OSU") == 0,
 			"invalid data");
 
 		TEST(list.osuProvider[1].name.numName == 2, "invalid data");
-		TEST(strcmp(list.osuProvider[1].name.duple[0].lang, LANG_ENG) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[1].name.duple[0].lang, "EN") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[1].name.duple[0].name, "myname") == 0, "invalid data");
-		TEST(strcmp(list.osuProvider[1].name.duple[1].lang, LANG_CHI) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[1].name.duple[1].lang, "CH") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[1].name.duple[1].name, "yrname") == 0, "invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].nai, "") == 0,
 			"invalid data");
@@ -176,7 +164,7 @@ static void testOsuProviderList()
 		TEST(list.osuProvider[1].iconMetadataCount == 2, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[0].width == 1, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[0].height == 2, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[0].lang, LANG_ENG) == 0,
+		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[0].type, "text") == 0,
 			"invalid data");
@@ -184,74 +172,24 @@ static void testOsuProviderList()
 			"iconfile1.txt") == 0, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[1].width == 3, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[1].height == 4, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].lang, LANG_CHI) == 0,
+		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].lang, "CH") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].type, "text") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].filename,
 			"iconfile2.txt") == 0, "invalid data");
 		TEST(list.osuProvider[1].desc.numName == 1, "invalid data");
-		TEST(strcmp(list.osuProvider[1].desc.duple[0].lang, LANG_ENG) == 0,
+		TEST(strcmp(list.osuProvider[1].desc.duple[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp(list.osuProvider[1].desc.duple[0].name, "OMA-DM OSU") == 0,
 			"invalid data");
 
 		TEST(bcm_decode_hspot_anqp_find_osu_ssid_provider(&list, 8, "OSU SSID",
-			strlen(LANG_ENG), LANG_ENG, 6, "myname",
-			TRUE, HSPOT_OSU_METHOD_SOAP_XML, &duple),
-			"bcm_decode_hspot_anqp_find_osu_ssid_provider failed");
-		TEST(strcmp(duple->lang, LANG_ENG) == 0, "invalid data");
-		TEST(strcmp(duple->name, "myname") == 0, "invalid data");
-		TEST(!bcm_decode_hspot_anqp_find_osu_ssid_provider(&list, 8, "OSU SSID",
-			strlen(LANG_JPN), LANG_JPN, 6, "myname",
-			TRUE, HSPOT_OSU_METHOD_SOAP_XML, &duple),
+			6, "myname", HSPOT_OSU_METHOD_SOAP_XML),
 			"bcm_decode_hspot_anqp_find_osu_ssid_provider failed");
 		TEST(bcm_decode_hspot_anqp_find_osu_ssid_provider(&list, 12, "missing SSID",
-			strlen(LANG_ENG), LANG_ENG, 6, "myname",
-			TRUE, HSPOT_OSU_METHOD_SOAP_XML, &duple) == 0,
+			6, "myname", HSPOT_OSU_METHOD_SOAP_XML) == 0,
 			"bcm_decode_hspot_anqp_find_osu_ssid_provider failed");
-		TEST(strcmp(duple->lang, LANG_ENG) == 0, "invalid data");
-		TEST(strcmp(duple->name, "myname") == 0, "invalid data");
-
-		/* find any provider */
-		TEST((p = bcm_decode_hspot_anqp_find_osu_provider(&list,
-			0, 0, 0, 0, FALSE, 0, &duple)) != 0,
-			"bcm_decode_hspot_anqp_find_osu_provider failed");
-		if (p != 0) {
-		TEST(strcmp(duple->lang, LANG_ENG) == 0, "invalid data");
-		TEST(strcmp(duple->name, "myname") == 0, "invalid data");
-		TEST(strcmp(p->name.duple[0].lang, LANG_ENG) == 0, "invalid data");
-		TEST(strcmp(p->name.duple[0].name, "myname") == 0, "invalid data");
-		TEST(strcmp(p->name.duple[1].lang, LANG_CHI) == 0, "invalid data");
-		TEST(strcmp(p->name.duple[1].name, "yrname") == 0, "invalid data");
-		TEST(strcmp((const char *)p->nai, "myprovider1.com") == 0,
-			"invalid data");
-		TEST(strcmp((const char *)p->uri, "myuri1") == 0, "invalid data");
-		TEST(p->methodLength == 1, "invalid data");
-		TEST(p->method[0] == HSPOT_OSU_METHOD_SOAP_XML, "invalid data");
-		TEST(p->iconMetadataCount == 2, "invalid data");
-		TEST(p->iconMetadata[0].width == 1, "invalid data");
-		TEST(p->iconMetadata[0].height == 2, "invalid data");
-		TEST(strcmp((const char *)p->iconMetadata[0].lang, LANG_ENG) == 0,
-			"invalid data");
-		TEST(strcmp((const char *)p->iconMetadata[0].type, "text") == 0,
-			"invalid data");
-		TEST(strcmp((const char *)p->iconMetadata[0].filename,
-			"iconfile1.txt") == 0, "invalid data");
-		TEST(p->iconMetadata[1].width == 3, "invalid data");
-		TEST(p->iconMetadata[1].height == 4, "invalid data");
-		TEST(strcmp((const char *)p->iconMetadata[1].lang, LANG_CHI) == 0,
-			"invalid data");
-		TEST(strcmp((const char *)p->iconMetadata[1].type, "text") == 0,
-			"invalid data");
-		TEST(strcmp((const char *)p->iconMetadata[1].filename,
-			"iconfile2.txt") == 0, "invalid data");
-		TEST(p->desc.numName == 1, "invalid data");
-		TEST(strcmp(p->desc.duple[0].lang, LANG_ENG) == 0,
-			"invalid data");
-		TEST(strcmp(p->desc.duple[0].name, "SOAP-XML OSU") == 0,
-			"invalid data");
-		}
 	}
 }
 
@@ -282,14 +220,11 @@ static void testEncode(void)
 		TEST(bcm_encode_init(&name, BUFFER_SIZE, nameBuf),
 			"bcm_encode_init failed");
 
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name,
-			strlen(LANG_ENG), LANG_ENG, 6, "myname"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name, 2, "EN", 6, "myname"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name,
-			strlen(LANG_ENG), LANG_ENG, 10, "helloworld"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name, 2, "FR", 10, "helloworld"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name,
-			strlen(LANG_JPN), LANG_JPN, 6, "yrname"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name, 5, "JAPAN", 6, "yrname"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
 
 		TEST(bcm_encode_hspot_anqp_operator_friendly_name(&enc,
@@ -387,34 +322,28 @@ static void testEncode(void)
 
 		TEST(bcm_encode_init(&name, BUFFER_SIZE, nameBuf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name,
-			strlen(LANG_ENG), LANG_ENG, 6, "myname"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name, 2, "EN", 6, "myname"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name,
-			strlen(LANG_CHI), LANG_CHI, 6, "yrname"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&name, 2, "CH", 6, "yrname"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
 
 		TEST(bcm_encode_init(&icon, BUFFER_SIZE, iconBuf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon,
-			1, 2, LANG_ENG,
+		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon, 1, 2, "EN",
 			4, (uint8 *)"text", 13, (uint8 *)"iconfile1.txt"),
 			"bcm_encode_hspot_anqp_icon_metadata failed");
-		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon,
-			3, 4, LANG_CHI,
+		TEST(bcm_encode_hspot_anqp_icon_metadata(&icon, 3, 4, "CH",
 			4, (uint8 *)"text", 13, (uint8 *)"iconfile2.txt"),
 			"bcm_encode_hspot_anqp_icon_metadata failed");
 
 		TEST(bcm_encode_init(&desc1, BUFFER_SIZE, desc1Buf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc1,
-			strlen(LANG_ENG), LANG_ENG, 12, "SOAP-XML OSU"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc1, 2, "EN", 12, "SOAP-XML OSU"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
 
 		TEST(bcm_encode_init(&desc2, BUFFER_SIZE, desc2Buf),
 			"bcm_encode_init failed");
-		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc2,
-			strlen(LANG_ENG), LANG_ENG, 10, "OMA-DM OSU"),
+		TEST(bcm_encode_hspot_anqp_operator_name_duple(&desc2, 2, "EN", 10, "OMA-DM OSU"),
 			"bcm_encode_hspot_anqp_operator_name_duple failed");
 
 		TEST(bcm_encode_init(&osu, BUFFER_SIZE, osuBuf),
@@ -460,7 +389,7 @@ static void testEncode(void)
 
 	{
 		TEST(bcm_encode_hspot_anqp_icon_binary_file(&enc, HSPOT_ICON_STATUS_SUCCESS,
-			4, (uint8 *)"text", 14, (uint8 *)"iconbinarydata"),
+			4, (uint8 *)"text",	14, (uint8 *)"iconbinarydata"),
 			"bcm_encode_hspot_anqp_icon_binary_file failed");
 		WL_PRPKT("hotspot icon binary file",
 			bcm_encode_buf(&enc), bcm_encode_length(&enc));
@@ -529,18 +458,18 @@ static void testDecode(void)
 			"bcm_decode_hspot_anqp_operator_friendly_name failed");
 		TEST(op.numName == 3, "invalid data");
 
-		TEST(op.duple[0].langLen == strlen(LANG_ENG), "invalid data");
-		TEST(strcmp(op.duple[0].lang, LANG_ENG) == 0, "invalid data");
+		TEST(op.duple[0].langLen == 2, "invalid data");
+		TEST(strcmp(op.duple[0].lang, "EN") == 0, "invalid data");
 		TEST(op.duple[0].nameLen == 6, "invalid data");
 		TEST(strcmp(op.duple[0].name, "myname") == 0, "invalid data");
 
-		TEST(op.duple[1].langLen == strlen(LANG_ENG), "invalid data");
-		TEST(strcmp(op.duple[1].lang, LANG_ENG) == 0, "invalid data");
+		TEST(op.duple[1].langLen == 2, "invalid data");
+		TEST(strcmp(op.duple[1].lang, "FR") == 0, "invalid data");
 		TEST(op.duple[1].nameLen == 10, "invalid data");
 		TEST(strcmp(op.duple[1].name, "helloworld") == 0, "invalid data");
 
-		TEST(op.duple[2].langLen == strlen(LANG_JPN), "invalid data");
-		TEST(strcmp(op.duple[2].lang, LANG_JPN) == 0, "invalid data");
+		TEST(op.duple[2].langLen == 3, "invalid data");
+		TEST(strcmp(op.duple[2].lang, "JAP") == 0, "invalid data");
 		TEST(op.duple[2].nameLen == 6, "invalid data");
 		TEST(strcmp(op.duple[2].name, "yrname") == 0, "invalid data");
 	}
@@ -556,28 +485,45 @@ static void testDecode(void)
 			"pktDecodeHspotAnqpAnqpConnectionCapability failed");
 		TEST(cap.numConnectCap == 10, "invalid data");
 
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 1, 0),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 6, 20),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 6, 22),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 6, 80),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 6, 443),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 6, 1723),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 6, 5060),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 17, 500),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 17, 5060),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(bcm_decode_hspot_anqp_is_connection_capability(&cap, 17, 4500),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
-		TEST(!bcm_decode_hspot_anqp_is_connection_capability(&cap, 100, 100),
-			"bcm_decode_hspot_anqp_is_connection_capability failed");
+		TEST(cap.tuple[0].ipProtocol == 1, "invalid data");
+		TEST(cap.tuple[0].portNumber == 0, "invalid data");
+		TEST(cap.tuple[0].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[1].ipProtocol == 6, "invalid data");
+		TEST(cap.tuple[1].portNumber == 20, "invalid data");
+		TEST(cap.tuple[1].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[2].ipProtocol == 6, "invalid data");
+		TEST(cap.tuple[2].portNumber == 22, "invalid data");
+		TEST(cap.tuple[2].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[3].ipProtocol == 6, "invalid data");
+		TEST(cap.tuple[3].portNumber == 80, "invalid data");
+		TEST(cap.tuple[3].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[4].ipProtocol == 6, "invalid data");
+		TEST(cap.tuple[4].portNumber == 443, "invalid data");
+		TEST(cap.tuple[4].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[5].ipProtocol == 6, "invalid data");
+		TEST(cap.tuple[5].portNumber == 1723, "invalid data");
+		TEST(cap.tuple[5].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[6].ipProtocol == 6, "invalid data");
+		TEST(cap.tuple[6].portNumber == 5060, "invalid data");
+		TEST(cap.tuple[6].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[7].ipProtocol == 17, "invalid data");
+		TEST(cap.tuple[7].portNumber == 500, "invalid data");
+		TEST(cap.tuple[7].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[8].ipProtocol == 17, "invalid data");
+		TEST(cap.tuple[8].portNumber == 5060, "invalid data");
+		TEST(cap.tuple[8].status == HSPOT_CC_STATUS_OPEN, "invalid data");
+
+		TEST(cap.tuple[9].ipProtocol == 17, "invalid data");
+		TEST(cap.tuple[9].portNumber == 4500, "invalid data");
+		TEST(cap.tuple[9].status == HSPOT_CC_STATUS_OPEN, "invalid data");
 	}
 
 	{
@@ -623,9 +569,9 @@ static void testDecode(void)
 		TEST(list.osuProviderCount == 2, "invalid data");
 
 		TEST(list.osuProvider[0].name.numName == 2, "invalid data");
-		TEST(strcmp(list.osuProvider[0].name.duple[0].lang, LANG_ENG) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[0].name.duple[0].lang, "EN") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[0].name.duple[0].name, "myname") == 0, "invalid data");
-		TEST(strcmp(list.osuProvider[0].name.duple[1].lang, LANG_CHI) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[0].name.duple[1].lang, "CH") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[0].name.duple[1].name, "yrname") == 0, "invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].nai, "myprovider1.com") == 0,
 			"invalid data");
@@ -635,7 +581,7 @@ static void testDecode(void)
 		TEST(list.osuProvider[0].iconMetadataCount == 2, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[0].width == 1, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[0].height == 2, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[0].lang, LANG_ENG) == 0,
+		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[0].type, "text") == 0,
 			"invalid data");
@@ -643,22 +589,22 @@ static void testDecode(void)
 			"iconfile1.txt") == 0, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[1].width == 3, "invalid data");
 		TEST(list.osuProvider[0].iconMetadata[1].height == 4, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].lang, LANG_CHI) == 0,
+		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].lang, "CH") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].type, "text") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[0].iconMetadata[1].filename,
 			"iconfile2.txt") == 0, "invalid data");
 		TEST(list.osuProvider[0].desc.numName == 1, "invalid data");
-		TEST(strcmp(list.osuProvider[0].desc.duple[0].lang, LANG_ENG) == 0,
+		TEST(strcmp(list.osuProvider[0].desc.duple[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp(list.osuProvider[0].desc.duple[0].name, "SOAP-XML OSU") == 0,
 			"invalid data");
 
 		TEST(list.osuProvider[1].name.numName == 2, "invalid data");
-		TEST(strcmp(list.osuProvider[1].name.duple[0].lang, LANG_ENG) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[1].name.duple[0].lang, "EN") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[1].name.duple[0].name, "myname") == 0, "invalid data");
-		TEST(strcmp(list.osuProvider[1].name.duple[1].lang, LANG_CHI) == 0, "invalid data");
+		TEST(strcmp(list.osuProvider[1].name.duple[1].lang, "CH") == 0, "invalid data");
 		TEST(strcmp(list.osuProvider[1].name.duple[1].name, "yrname") == 0, "invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].nai, "") == 0,
 			"invalid data");
@@ -668,7 +614,7 @@ static void testDecode(void)
 		TEST(list.osuProvider[1].iconMetadataCount == 2, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[0].width == 1, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[0].height == 2, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[0].lang, LANG_ENG) == 0,
+		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[0].type, "text") == 0,
 			"invalid data");
@@ -676,14 +622,14 @@ static void testDecode(void)
 			"iconfile1.txt") == 0, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[1].width == 3, "invalid data");
 		TEST(list.osuProvider[1].iconMetadata[1].height == 4, "invalid data");
-		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].lang, LANG_CHI) == 0,
+		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].lang, "CH") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].type, "text") == 0,
 			"invalid data");
 		TEST(strcmp((const char *)list.osuProvider[1].iconMetadata[1].filename,
 			"iconfile2.txt") == 0, "invalid data");
 		TEST(list.osuProvider[1].desc.numName == 1, "invalid data");
-		TEST(strcmp(list.osuProvider[1].desc.duple[0].lang, LANG_ENG) == 0,
+		TEST(strcmp(list.osuProvider[1].desc.duple[0].lang, "EN") == 0,
 			"invalid data");
 		TEST(strcmp(list.osuProvider[1].desc.duple[0].name, "OMA-DM OSU") == 0,
 			"invalid data");

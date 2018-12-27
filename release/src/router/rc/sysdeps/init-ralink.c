@@ -413,11 +413,32 @@ void config_switch()
 				//VoIP Port: P1 tag
 				__setup_vlan(14, 0, 0x00000012);
 			}
+#ifdef RTCONFIG_MULTICAST_IPTV
+			else if (!strcmp(nvram_safe_get("switch_wantag"), "movistar")) {
+#if 0	//set in set_wan_tag() since (switch_stb_x > 6) and need vlan interface by vconfig.
+				system("rtkswitch 40 1");			/* admin all frames on all ports */
+				/* Internet/STB/VoIP:	untag: N/A;   port: P4, P9 */
+				__setup_vlan(6, 0, 0x00000210);
+				__setup_vlan(2, 0, 0x00000210);
+				__setup_vlan(3, 0, 0x00000210);
+#endif
+			}
+#endif
 			else if (!strcmp(nvram_safe_get("switch_wantag"), "meo")) {
 				system("rtkswitch 40 1");			/* admin all frames on all ports */
 				system("rtkswitch 38 1");			/* VoIP: P0 */
 				/* Internet/VoIP:	untag: P9;   port: P0, P4, P9 */
 				__setup_vlan(12, 0, 0x02000211);
+			}
+			else if (!strcmp(nvram_safe_get("switch_wantag"), "vodafone")) {
+				system("rtkswitch 40 1");			/* admin all frames on all ports */
+				system("rtkswitch 38 3");			/* Vodafone: P0  IPTV: P1 */
+				/* Internet:	untag: P9;   port: P4, P9 */
+				__setup_vlan(100, 1, 0x02000210);
+				/* IPTV:	untag: N/A;  port: P0, P4 */
+				__setup_vlan(101, 0, 0x00000011);
+				/* Vodafone:	untag: P1;   port: P0, P1, P4 */
+				__setup_vlan(105, 1, 0x00020013);
 			}
 			else {
 				/* Cherry Cho added in 2011/7/11. */
@@ -544,6 +565,11 @@ void config_switch()
 			sprintf(parm_buf, "%d", controlrate_broadcast);
 			eval("rtkswitch", "25", parm_buf);
 		}
+
+#ifdef RTN56U
+		if (nvram_match("switch_wanport_force_1g", "1"))
+			eval("rtkswitch", "26");
+#endif
 	}
 	else if (is_apmode_enabled())
 	{
@@ -850,9 +876,9 @@ void init_syspara(void)
 	}
 
 #ifdef RA_SINGLE_SKU
-#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2)
 	gen_ra_sku(nvram_safe_get("reg_spec"));
-#endif	/* RTAC52U && RTAC51U && RTN54U && RTAC54U && RTAC1200HP && RTN56UB1 */
+#endif	/* RTAC52U && RTAC51U && RTN54U && RTAC54U && RTAC1200HP && RTN56UB1 && RTN56UB1 && RTN11P && RTN300 */
 #endif	/* RA_SINGLE_SKU */
 
 	{
@@ -962,10 +988,16 @@ void init_syspara(void)
 
 		dst[i] = 0;
 		nvram_set("wl_reg_5g", dst);
+		nvram_set("wl1_IEEE80211H", "0");
 		if      (strcmp(dst, "5G_BAND1") == 0)
 			nvram_set("wl1_country_code", "GB");
 		else if (strcmp(dst, "5G_BAND123") == 0)
+		{
 			nvram_set("wl1_country_code", "GB");
+#ifdef RTCONFIG_RALINK_DFS
+			nvram_set("wl1_IEEE80211H", "1");
+#endif	/* RTCONFIG_RALINK_DFS */
+		}
 		else if (strcmp(dst, "5G_BAND14") == 0)
 			nvram_set("wl1_country_code", "US");
 		else if (strcmp(dst, "5G_BAND24") == 0)
@@ -1043,6 +1075,15 @@ void init_syspara(void)
 		}
 	}
 
+#if defined(RTN56UB1)  
+	if((nvram_match("territory_code","EU/01")|| nvram_match("territory_code","UK/01"))&& !nvram_match("wl1_IEEE80211H","1"))
+	{
+#ifdef RTCONFIG_RALINK_DFS
+			nvram_set("wl1_IEEE80211H", "1");
+#endif	/* RTCONFIG_RALINK_DFS */
+	}
+#endif	
+
 #if defined(RTN11P)
 	if (nvram_match("odmpid", "RT-N12+") && nvram_match("reg_spec", "CN"))
 	{
@@ -1058,14 +1099,7 @@ void init_syspara(void)
 		nvram_set("wl0_country_code", "US");
 	}
 #endif	/* RTN11P */
-#if defined(RTN56UB1)  
-	if((nvram_match("territory_code","EU/01")|| nvram_match("territory_code","UK/01"))&& !nvram_match("wl1_IEEE80211H","1"))
-	{
-#ifdef RTCONFIG_RALINK_DFS
-			nvram_set("wl1_IEEE80211H", "1");
-#endif	/* RTCONFIG_RALINK_DFS */
-	}
-#endif	
+	
 	/* PSK */
         memset(buffer, 0, sizeof(buffer));
 	if (FRead(buffer, OFFSET_PSK, 14) < 0) {
@@ -1149,41 +1183,6 @@ void init_syspara(void)
 		}
 	}
 #endif
-
-#ifdef RA_SINGLE_SKU
-#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2)
-	gen_ra_sku(nvram_safe_get("reg_spec"));
-#endif	/* RTAC52U && RTAC51U && RTN54U && RTAC54U && RTAC1200HP && RTN56UB1 && RTN56UB2 */
-#endif	/* RA_SINGLE_SKU */
-
-	{
-#ifdef RTCONFIG_ODMPID
-		char modelname[16];
-		FRead(modelname, OFFSET_ODMPID, sizeof(modelname));
-		modelname[sizeof(modelname)-1] = '\0';
-		if(modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff && is_valid_hostname(modelname) && strcmp(modelname, "ASUS"))
-		{
-#if defined(RTN11P) || defined(RTN300)
-			if(strcmp(modelname, "RT-N12E_B")==0)
-				nvram_set("odmpid", "RT-N12E_B1");
-			else
-#endif	/* RTN11P */
-			nvram_set("odmpid", modelname);
-		}
-		else
-#endif
-			nvram_unset("odmpid");
-	}
-#if defined(RTCONFIG_TCODE) && defined(RTN11P)
-	if (nvram_match("odmpid", "RT-N12+") && nvram_match("reg_spec", "CN"))
-	{
-		char *str;
-		str = nvram_get("territory_code");
-		if(str == NULL || str[0] == '\0') {
-			nvram_set("territory_code", "CN/01");
-		}
-	}
-#endif	/* RTCONFIG_TCODE && RTN11P */
 
 	nvram_set("firmver", rt_version);
 	nvram_set("productid", rt_buildname);
@@ -1433,6 +1432,69 @@ set_wan_tag(char *interface) {
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
 		break;
 	}
+
+#ifdef RTCONFIG_MULTICAST_IPTV
+	{
+		int iptv_vid, voip_vid, iptv_prio, voip_prio, switch_stb;
+		int mang_vid, mang_prio;
+
+		iptv_vid  = nvram_get_int("switch_wan1tagid") & 0x0fff;
+		voip_vid  = nvram_get_int("switch_wan2tagid") & 0x0fff;
+		iptv_prio = nvram_get_int("switch_wan1prio") & 0x7;
+		voip_prio = nvram_get_int("switch_wan2prio") & 0x7;
+		mang_vid  = nvram_get_int("switch_wan3tagid") & 0x0fff;
+		mang_prio = nvram_get_int("switch_wan3prio") & 0x7;
+
+		switch_stb = nvram_get_int("switch_stb_x");
+		if (switch_stb >= 7) {
+			system("rtkswitch 40 1");			/* admin all frames on all ports */
+			if(wan_vid) { /* config wan port */
+				__setup_vlan(wan_vid, 0, 0x00000210);	/* config WAN & WAN_MAC port */
+			}
+
+			if (iptv_vid) { /* config IPTV on wan port */
+				sprintf(wan_dev, "vlan%d", iptv_vid);
+				nvram_set("wan10_ifname", wan_dev);
+				sprintf(port_id, "%d", iptv_vid);
+				eval("vconfig", "add", interface, port_id);
+
+				__setup_vlan(iptv_vid, iptv_prio, 0x00000210);	/* config WAN & WAN_MAC port */
+
+				if (iptv_prio) { /* config priority */
+					eval("vconfig", "set_egress_map", wan_dev, "0", (char *)iptv_prio);
+				}
+			}
+		}
+		if (switch_stb >= 8) {
+			if (voip_vid) { /* config voip on wan port */
+				sprintf(wan_dev, "vlan%d", voip_vid);
+				nvram_set("wan11_ifname", wan_dev);
+				sprintf(port_id, "%d", voip_vid);
+				eval("vconfig", "add", interface, port_id);
+
+				__setup_vlan(voip_vid, voip_prio, 0x00000210);	/* config WAN & WAN_MAC port */
+
+				if (voip_prio) { /* config priority */
+					eval("vconfig", "set_egress_map", wan_dev, "0", (char *)voip_prio);
+				}
+			}
+		}
+		if (switch_stb >=9 ) {
+			if (mang_vid) { /* config tr069 on wan port */
+				sprintf(wan_dev, "vlan%d", mang_vid);
+				nvram_set("wan12_ifname", wan_dev);
+				sprintf(port_id, "%d", mang_vid);
+				eval("vconfig", "add", interface, port_id);
+
+				__setup_vlan(mang_vid, mang_prio, 0x00000210);	/* config WAN & WAN_MAC port */
+
+				if (mang_prio) { /* config priority */
+					eval("vconfig", "set_egress_map", wan_dev, "0", (char *)iptv_prio);
+				}
+			}
+		}
+	}
+#endif
 }
 
 #ifdef RA_SINGLE_SKU
