@@ -1,0 +1,19 @@
+Checking uname sysname type: UNKNOWN
+Checking uname machine type: UNKNOWN
+Checking uname release type: UNKNOWN
+Checking uname version type: UNKNOWN
+Checking simple C program: OK
+rpath library support: UNKNOWN
+-Wl,--version-script support: UNKNOWN
+Checking getconf LFS_CFLAGS: UNKNOWN
+Checking for large file support without additional flags: UNKNOWN
+Checking for -D_FILE_OFFSET_BITS=64: UNKNOWN
+Checking for -D_LARGE_FILES: OK
+Checking correct behavior of strtoll: UNKNOWN
+Checking for working strptime: UNKNOWN
+Checking for C99 vsnprintf: UNKNOWN
+Checking for HAVE_SHARED_MMAP: UNKNOWN
+Checking for HAVE_MREMAP: UNKNOWN
+Checking for HAVE_INCOHERENT_MMAP: UNKNOWN
+Checking for HAVE_SECURE_MKSTEMP: OK
+Checking for HAVE_IFACE_IFCONF: OK

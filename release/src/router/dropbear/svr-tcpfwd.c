@@ -33,29 +33,28 @@
 #include "listener.h"
 #include "runopts.h"
 #include "auth.h"
+#include "netio.h"
 
-#ifdef ENABLE_SVR_REMOTETCPFWD
+#ifndef DROPBEAR_SVR_REMOTETCPFWD
 
-static void send_msg_request_success();
-static void send_msg_request_failure();
-static int svr_cancelremotetcp();
-static int svr_remotetcpreq();
+/* This is better than SSH_MSG_UNIMPLEMENTED */
+void recv_msg_global_request_remotetcp() {
+		TRACE(("recv_msg_global_request_remotetcp: remote tcp forwarding not compiled in"))
+		send_msg_request_failure();
+}
+
+/* */
+#endif /* !DROPBEAR_SVR_REMOTETCPFWD */
+
+static int svr_cancelremotetcp(void);
+static int svr_remotetcpreq(void);
 static int newtcpdirect(struct Channel * channel);
 
-
-const struct ChanType svr_chan_tcpdirect = {
-	1, /* sepfds */
-	"direct-tcpip",
-	newtcpdirect, /* init */
-	NULL, /* checkclose */
-	NULL, /* reqhandler */
-	NULL /* closehandler */
-};
-
+#if DROPBEAR_SVR_REMOTETCPFWD
 static const struct ChanType svr_chan_tcpremote = {
 	1, /* sepfds */
 	"forwarded-tcpip",
-	NULL,
+	tcp_prio_inithandler,
 	NULL,
 	NULL,
 	NULL
@@ -66,7 +65,7 @@ static const struct ChanType svr_chan_tcpremote = {
  * similar to the request-switching in chansession.c */
 void recv_msg_global_request_remotetcp() {
 
-	unsigned char* reqname = NULL;
+	char* reqname = NULL;
 	unsigned int namelen;
 	unsigned int wantreply = 0;
 	int ret = DROPBEAR_FAILURE;
@@ -108,23 +107,6 @@ out:
 	TRACE(("leave recv_msg_global_request"))
 }
 
-
-static void send_msg_request_success() {
-
-	CHECKCLEARTOWRITE();
-	buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_SUCCESS);
-	encrypt_packet();
-
-}
-
-static void send_msg_request_failure() {
-
-	CHECKCLEARTOWRITE();
-	buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_FAILURE);
-	encrypt_packet();
-
-}
-
 static int matchtcp(void* typedata1, void* typedata2) {
 
 	const struct TCPListener *info1 = (struct TCPListener*)typedata1;
@@ -138,7 +120,7 @@ static int matchtcp(void* typedata1, void* typedata2) {
 static int svr_cancelremotetcp() {
 
 	int ret = DROPBEAR_FAILURE;
-	unsigned char * bindaddr = NULL;
+	char * bindaddr = NULL;
 	unsigned int addrlen;
 	unsigned int port;
 	struct Listener * listener = NULL;
@@ -173,14 +155,14 @@ out:
 static int svr_remotetcpreq() {
 
 	int ret = DROPBEAR_FAILURE;
-	unsigned char * bindaddr = NULL;
+	char * request_addr = NULL;
 	unsigned int addrlen;
 	struct TCPListener *tcpinfo = NULL;
 	unsigned int port;
 
 	TRACE(("enter remotetcpreq"))
 
-	bindaddr = buf_getstring(ses.payload, &addrlen);
+	request_addr = buf_getstring(ses.payload, &addrlen);
 	if (addrlen > MAX_IP_LEN) {
 		TRACE(("addr len too long: %d", addrlen))
 		goto out;
@@ -206,10 +188,19 @@ static int svr_remotetcpreq() {
 	tcpinfo = (struct TCPListener*)m_malloc(sizeof(struct TCPListener));
 	tcpinfo->sendaddr = NULL;
 	tcpinfo->sendport = 0;
-	tcpinfo->listenaddr = bindaddr;
 	tcpinfo->listenport = port;
 	tcpinfo->chantype = &svr_chan_tcpremote;
 	tcpinfo->tcp_type = forwarded;
+
+	tcpinfo->request_listenaddr = request_addr;
+	if (!opts.listen_fwd_all || (strcmp(request_addr, "localhost") == 0) ) {
+		/* NULL means "localhost only" */
+		tcpinfo->listenaddr = NULL;
+	}
+	else
+	{
+		tcpinfo->listenaddr = request_addr;
+	}
 
 	ret = listen_tcpfwd(tcpinfo);
 
@@ -217,25 +208,39 @@ out:
 	if (ret == DROPBEAR_FAILURE) {
 		/* we only free it if a listener wasn't created, since the listener
 		 * has to remember it if it's to be cancelled */
-		m_free(bindaddr);
+		m_free(request_addr);
 		m_free(tcpinfo);
 	}
 	TRACE(("leave remotetcpreq"))
 	return ret;
 }
 
+#endif /* DROPBEAR_SVR_REMOTETCPFWD */
+
+#if DROPBEAR_SVR_LOCALTCPFWD
+
+const struct ChanType svr_chan_tcpdirect = {
+	1, /* sepfds */
+	"direct-tcpip",
+	newtcpdirect, /* init */
+	NULL, /* checkclose */
+	NULL, /* reqhandler */
+	NULL /* closehandler */
+};
+
 /* Called upon creating a new direct tcp channel (ie we connect out to an
  * address */
 static int newtcpdirect(struct Channel * channel) {
 
-	unsigned char* desthost = NULL;
+	char* desthost = NULL;
 	unsigned int destport;
-	unsigned char* orighost = NULL;
+	char* orighost = NULL;
 	unsigned int origport;
 	char portstring[NI_MAXSERV];
-	int sock;
-	int len;
+	unsigned int len;
 	int err = SSH_OPEN_ADMINISTRATIVELY_PROHIBITED;
+
+	TRACE(("newtcpdirect channel %d", channel->index))
 
 	if (svr_opts.nolocaltcp || !svr_pubkey_allows_tcpfwd()) {
 		TRACE(("leave newtcpdirect: local tcp forwarding disabled"))
@@ -264,20 +269,10 @@ static int newtcpdirect(struct Channel * channel) {
 		goto out;
 	}
 
-	snprintf(portstring, sizeof(portstring), "%d", destport);
-	sock = connect_remote(desthost, portstring, 1, NULL);
-	if (sock < 0) {
-		err = SSH_OPEN_CONNECT_FAILED;
-		TRACE(("leave newtcpdirect: sock failed"))
-		goto out;
-	}
+	snprintf(portstring, sizeof(portstring), "%u", destport);
+	channel->conn_pending = connect_remote(desthost, portstring, channel_connect_done, channel);
 
-	ses.maxfd = MAX(ses.maxfd, sock);
-
-	 /* We don't set readfd, that will get set after the connection's
-	 * progress succeeds */
-	channel->writefd = sock;
-	channel->initconn = 1;
+	channel->prio = DROPBEAR_CHANNEL_PRIO_UNKNOWABLE;
 	
 	err = SSH_OPEN_IN_PROGRESS;
 
@@ -288,4 +283,4 @@ out:
 	return err;
 }
 
-#endif
+#endif /* DROPBEAR_SVR_LOCALTCPFWD */

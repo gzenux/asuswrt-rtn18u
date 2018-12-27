@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <policy>
+
+    <!-- Pass rule, that performs destination NAT operation 
+         for packets coming from src address to dst address.
+         After the NAT operation the packet is forwarded to
+         the nat-dst address. -->
+    <rule nat-dst="192.168.2.2">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <!-- Optionally one can force the packets to be forwarded
+         to a specific port. Below SSH traffic received from
+         2001::2 to tcp:22,2001::1 is NATed to nat-dst and
+         nat-dst-port and then sent to the new destination
+         address. -->
+    <rule nat-dst="3001::1" nat-dst-port="222">
+      <src>ipv6(tcp,2001::2)</src>
+      <dst>ipv6(tcp:22,2001::1)</dst>
+    </rule>
+
+
+  </policy>
+</quicksec>

@@ -123,7 +123,7 @@ main(argc, argv)
 	int ngroups; 
 	gid_t gidset[NGROUPS];
 	int i, gflag = 0, uflag = 0;
-	char ch;
+	int ch;
 	extern char *optarg;
 	extern int optind, errno;
 

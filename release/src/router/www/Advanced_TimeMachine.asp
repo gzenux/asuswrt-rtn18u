@@ -17,13 +17,12 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
+<script type="text/javascript" src="/disk_functions.js"></script>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/form.js"></script>
 <script>
-
 window.onresize = function() {
 	if(document.getElementById("folderTree_panel").style.display == "block") {
 		cal_panel_block("folderTree_panel", 0.25);
@@ -52,7 +51,23 @@ function initial(){
 	if(document.form.tm_vol_size.value != "")	
 		document.form.tm_vol_size.value = document.form.tm_vol_size.value/1024;
 
-	detectUSBStatusApp();
+	setInterval(show_partition, 2000);
+
+	if('<% nvram_get("tm_device_name"); %>' != ''){
+		for(var x=0; x<usbDevicesList.length;x++){
+			for(var y=0; y<usbDevicesList[x].partition.length;y++){
+				if(usbDevicesList[x].partition[y].partName == '<% nvram_get("tm_device_name"); %>'){
+					//alert(usbDevicesList[x].partition[y].partName +" : "+usbDevicesList[x].partition[y].size +" / "+ usbDevicesList[x].partition[y].used);
+					var selected_accessable_size = simpleNum(usbDevicesList[x].partition[y].size-usbDevicesList[x].partition[y].used);
+					var selected_total_size = simpleNum(usbDevicesList[x].partition[y].size);
+
+					setPart(usbDevicesList[x].partition[y].partName, selected_accessable_size, selected_total_size, true);
+					return;
+				}
+			}
+
+		}
+	}	
 }
 
 function selPartition(){
@@ -66,7 +81,7 @@ function cancel_folderTree(){
 }
 
 function show_partition(){
- 	require(['/require/modules/diskList.js'], function(diskList){
+ 	require(['/require/modules/diskList.js?hash=' + Math.random().toString()], function(diskList){
 		var htmlcode = "";
 		var mounted_partition = 0;
 		
@@ -116,22 +131,15 @@ function show_partition(){
 
 var totalSpace;
 var availSpace;
-function setPart(_part, _avail, _total){
+function setPart(_part, _avail, _total, _get){
 	document.getElementById("tmPath").innerHTML = "/mnt/" + _part;
 	document.form.tm_device_name.value = _part;
 	cancel_folderTree();
 	totalSpace = _total;
 	availSpace = _avail;
 	document.getElementById("maxVolSize").innerHTML = "<#Availablespace#>: " + _avail + " GB";
-	document.form.tm_vol_size.value = "";
-}
-
-function detectUSBStatusApp(){
- 	require(['/require/modules/diskList.js'], function(diskList){
-		setInterval(function(){
-			diskList.update(show_partition); 
-		}, 2000);
-	});
+	if(!_get)	//true: Just read from nvram.	false: Want to setup new partition
+		document.form.tm_vol_size.value = "";
 }
 
 function applyRule(){

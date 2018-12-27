@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup with IPv6. -->
+<!-- Related: hostb-ipv6.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="a@ipsec.com">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         packet matching to these selectors triggers IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv6(protocol:port,a:b:c:d:e:f:g:h) -->
+    <rule to-tunnel="host-to-host">
+      <src>ipv6(5001::1)</src>
+      <dst>ipv6(5001::2)</dst>
+    </rule>
+
+    <!-- Allows src address to initiate traffic to the dst address, 
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv6(protocol:port,a:b:c:d:e:f:g:h) -->
+    <rule from-tunnel="host-to-host">
+      <src>ipv6(5001::2)</src>
+      <dst>ipv6(5001::1)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv6(::/0)</src>
+      <dst>ipv6(::/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

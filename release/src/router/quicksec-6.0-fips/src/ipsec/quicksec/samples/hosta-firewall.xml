@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <policy>
+
+    <!-- Pass rule, that allows telnet traffic to be initiated
+         from src address to dst address. The traffic direction 
+         is from local host to remote host. -->
+    <rule log="connections">
+      <src>ipv4(tcp,172.30.4.189)</src>
+      <dst>ipv4(tcp:23,172.30.4.167)</dst>
+    </rule>
+
+    <!-- Pass rule, that allows SSH traffic to be initiated
+         from src address to dst address. The traffic direction
+         is from remote host to local host. -->
+    <rule log="connections">
+      <src>ipv4(tcp,172.30.4.167)</src>
+      <dst>ipv4(tcp:22,172.30.4.189)</dst>
+    </rule>
+
+
+    <!-- Reject rule, that rejects (with a TCP RST) SMTP traffic  
+         initiated from src address to dst address. The traffic 
+         direction is from remote host to local host. -->
+    <rule log="connections" type="reject">
+      <src>ipv4(tcp,172.30.4.167)</src>
+      <dst>ipv4(tcp:25,172.30.4.189)</dst>
+    </rule>
+
+    <!-- Drop rule, that silently drops TCP traffic to ports 100 to 120 
+         initiated from src address to dst address. The traffic direction 
+         is from remote host to local host. -->
+    <rule log="connections" type="drop">
+      <src>ipv4(tcp,172.30.4.167)</src>
+      <dst>ipv4(tcp:100-120,172.30.4.189)</dst>
+    </rule>
+
+    <!-- Pass rule, that allows icmp echo request/reply traffic
+         from src address to dst address. The traffic direction
+         is from remote host to local host.
+         
+         the format of the ICMP selectors is icmp:type(type,code), 
+         or ipv6icmp:type(type,code). Below some samples of the
+         usage, the keywords used in the samples can be found in
+         lib/sshutil/sshnet/sshicmp-util.c module.
+         
+         ipv4(icmp:type(3),10.0.0.0/24),
+         ipv4(icmp:type(echo),10.0.0.0/24),
+         ipv4(icmp:type(time-exceeded,0),10.0.0.0/24),
+         ipv4(icmp:type(redirect,net-redirect-host-redirect),10.0.0.0/24), or
+         ipv6(ipv6icmp:type(parameter-problem,invalid-header),ff02::0/64)
+    -->
+    <rule log="connections">
+      <src>ipv4(icmp:type(echo),172.30.4.167)</src>
+      <dst>ipv4(icmp:type(echo),172.30.4.189)</dst>
+    </rule>
+
+    
+
+  </policy>
+</quicksec>

@@ -1,0 +1,15 @@
+﻿sim_state = '<% nvram_get("usb_modem_act_sim"); %>';
+g3err_pin = '<% nvram_get("g3err_pin"); %>';
+modem_act_hwver = '<% nvram_get("usb_modem_act_hwver"); %>';
+modem_act_imei = '<% nvram_get("usb_modem_act_imei"); %>';
+modem_act_imsi = '<% nvram_get("usb_modem_act_imsi"); %>';
+modem_act_iccid = '<% nvram_get("usb_modem_act_iccid"); %>';
+modem_operation = '<% nvram_get("usb_modem_act_operation"); %>';
+modem_isp = '<% nvram_get("modem_isp"); %>';
+modem_spn = '<% nvram_get("modem_spn"); %>';
+rx_bytes = parseFloat('<% nvram_get("modem_bytes_rx"); %>');
+tx_bytes = parseFloat('<% nvram_get("modem_bytes_tx"); %>');
+tx_rate = parseFloat('<% nvram_get("usb_modem_act_tx"); %>');
+rx_rate = parseFloat('<% nvram_get("usb_modem_act_rx"); %>');
+modemuptime = parseInt('<% get_modemuptime(); %>');
+modem_autoapn_imsi = '<% nvram_get("modem_autoapn_imsi"); %>';

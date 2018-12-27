@@ -66,6 +66,7 @@ struct relayd_interface {
 	char ifname[IF_NAMESIZE];
 	uint8_t mac[6];
 	bool external;
+	bool nondp;
 
 	struct relayd_event timer_rs;
 
@@ -114,6 +115,7 @@ struct relayd_config {
 // Exported main functions
 int relayd_open_rtnl_socket(void);
 int relayd_register_event(struct relayd_event *event);
+void relayd_receive_packets(struct relayd_event *event);
 ssize_t relayd_forward_packet(int socket, struct sockaddr_in6 *dest,
 		struct iovec *iov, size_t iov_len,
 		const struct relayd_interface *iface);
@@ -125,7 +127,9 @@ int relayd_get_interface_mac(const char *ifname, uint8_t mac[6]);
 struct relayd_interface* relayd_get_interface_by_index(int ifindex);
 void relayd_urandom(void *data, size_t len);
 void relayd_setup_route(const struct in6_addr *addr, int prefixlen,
-		const struct relayd_interface *iface, const struct in6_addr *gw, bool add);
+		const struct relayd_interface *iface, const struct in6_addr *gw,
+		int metric, bool add);
+time_t relayd_monotonic_time(void);
 
 
 // Exported module initializers

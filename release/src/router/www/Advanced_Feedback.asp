@@ -48,7 +48,7 @@ function initial(){
 		Reload_pdesc(document.form.fb_ptype,orig_page);
 	}		
 
-	if(modem_support == -1){
+	if(modem_support == -1 || nomodem_support){
 		document.form.attach_modemlog.checked = false;
 		document.getElementById("attach_modem_span").style.display = "none";
 	}
@@ -208,7 +208,7 @@ function Reload_pdesc(obj, url){
 		desclist.push(["Rescue Mode","Rescue"]);
 		url_group.push(["Rescue"]);//false value
 
-		desclist.push(["With other network devices","Other Devices"]);	//25
+		desclist.push(["<#feedback_compat_wond#>","Other Devices"]);	//25
 		url_group.push(["Other_Device"]);//false value
 
 		desclist.push(["Cannot access firmware page","Fail to access"]);
@@ -220,27 +220,27 @@ function Reload_pdesc(obj, url){
 	}
 	else if(ptype == "Connection_or_Speed_Problem"){
 		
-		desclist.push(["Slow wireless speed","Wireless speed"]);
-		desclist.push(["Slow wired speed","Wired speed"]);
-		desclist.push(["Unstable connection problem","Unstable connection"]);
-		desclist.push(["Router reboot automatically","Router reboot"]);
+		desclist.push(["<#feedback_conn_swls#>","Wireless speed"]);
+		desclist.push(["<#feedback_conn_sws#>","Wired speed"]);
+		desclist.push(["<#feedback_conn_ucp#>","Unstable connection"]);
+		desclist.push(["<#feedback_conn_rra#>","Router reboot"]);
 		
 	}
 	else if(ptype == "Compatibility_Problem"){
 		
-		desclist.push(["with modem","Compatible Problem"]);
-		desclist.push(["with other router","Compatible Problem"]);
-		desclist.push(["On OS or Application","Compatible Problem"]);
-		desclist.push(["with printer","Compatible Problem"]);
-		desclist.push(["with USB modem","Compatible Problem"]);
-		desclist.push(["with external hardware disk","Compatible Problem"]);
-		desclist.push(["with other network devices","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_wm#>","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_wor#>","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_oooa#>","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_wp#>","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_wum#>","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_wehd#>","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_wond#>","Compatible Problem"]);
 
 	}
 	else if(ptype == "Translated_Suggestion"){
 		
 		desclist.splice(0,1);
-		desclist.push(["Translated Suggestion","Translation"]);		
+		desclist.push(["<#feedback_translation_ts#>","Translation"]);		
 	}
 	else{	//Other_Problem
 		
@@ -427,7 +427,7 @@ function change_dsl_diag_enable(value) {
 <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 <div id="fb_desc0" class="formfontdesc" style="display:none;"><#Feedback_desc0#></div>
 <div id="fb_desc1" class="formfontdesc" style="display:none;"><#Feedback_desc1#></div>
-<div id="fb_desc_disconnect" class="formfontdesc" style="display:none;color:#FC0;">Now this function can't work, because your ASUS Router isn't connected to the Internet. Please send your Feedback to this email address : <a href="mailto:router_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">router_feedback@asus.com </a></div><!-- untranslated -->
+<div id="fb_desc_disconnect" class="formfontdesc" style="display:none;color:#FC0;"><#Feedback_desc_disconnect#> <a href="mailto:router_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">router_feedback@asus.com</a></div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 <tr>
 <th width="30%"><#feedback_country#> *</th>
@@ -460,7 +460,7 @@ function change_dsl_diag_enable(value) {
 	<input type="checkbox" class="input" name="attach_syslog" id="attach_syslog_id"><label for="attach_syslog_id"><#System_Log#></label>&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" class="input" name="attach_cfgfile" id="attach_cfgfile_id"><label for="attach_cfgfile_id"><#feedback_setting_file#></label>&nbsp;&nbsp;&nbsp;
 	<span id="attach_iptables_span" style="color:#FFFFFF;"><input type="checkbox" class="input" name="attach_iptables" id="attach_iptables_id"><label for="attach_iptables_id"><#feedback_iptable_setting#></label></span>
-	<span id="attach_modem_span" style="color:#FFFFFF;"><input type="checkbox" class="input" name="attach_modemlog" id="attach_modemlog_id"><label for="attach_modemlog_id">3G/4G log</label></span>
+	<span id="attach_modem_span" style="color:#FFFFFF;"><input type="checkbox" class="input" name="attach_modemlog" id="attach_modemlog_id"><label for="attach_modemlog_id"><#feedback_3G_log#></label></span>
 </td>
 </tr>
 
@@ -533,7 +533,7 @@ function change_dsl_diag_enable(value) {
 <tr>
 	<td colspan="2">
 		<div><#feedback_optional#></div>
-		<input class="button_gen" style="margin-left: 305px;" name="btn_send" onclick="applyRule()" type="button" value="Send"/>
+		<input class="button_gen" style="margin-left: 305px;" name="btn_send" onclick="applyRule()" type="button" value="<#btn_send#>"/>
 	</td>
 </tr>
 

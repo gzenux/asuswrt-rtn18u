@@ -1,0 +1,173 @@
+- Isakmp SA allocation
+
+The ike_sa_allocate function will always allocate the basic SshIkeSA
+structure. It will set cookies, server_context, and last_use_time. The
+lock_flags have SSH_IKE_ISAKMP_LOCK_FLAG_UNINITIALIZED bit set. The
+ike_udp_callback will then call ike_init_isakmp_sa to initialize the
+negotiation.
+
+- Isakmp SA freeing
+
+The isakmp SA ends either when it has received the last packet of the
+negotiation from the network, or it has sent the last packet of the
+negotiation to network and retry_limit * retry_timer seconds have
+elapsed (having waiting for done flag set), or after it has sent the
+last packet of the negotiation to network and the other end starts
+phase II negotiation after that. When the negotiation is finished the
+exchange data is freed, but the pm_info is still left allocated.
+
+When the isakmp sa is deleted (either by kilobyte or second lifetime
+is reaced or because of remote or local end request a delete) the
+IkeSA is marked as deleted using ssh_ike_remove_isakmp_sa, and it
+will not be selected any more and no new negotations can be started
+using it.
+
+When IkeSA is marked deleted the expire timer is set to call
+ike_delete_negotiation after wait time have elapsed and all
+negotations using that sa should be finished.
+
+The ike_delete_negotiation function will free IkeSA completely, and
+all negotiation in it are also aborted and freed. If there is
+negotiation that is in the middle of doing policy manager call it is
+moved to SSH_IKE_ST_DELETED state, and its IkeSA pointer is set to
+NULL. That will cause the reply functions to call
+ike_delete_negotiation immediately for that negotiation. The reply
+function is responsible to store the information received from the
+policy manager to negotiation (but it cannot touch IkeSA) or free it
+itself. When negotiation is moved to SSH_IKE_ST_DELETED state then all
+timers are cleared from it.
+
+The ike_remove_callback will remove the negotiation without sending
+delete message to remote end. Ike_expire_callback will send the delete
+notification to other end and delete the negotiation after that. Both
+of them take care that the notify callback is called if such is set. 
+
+- Info negotiation allocation
+
+Informational negotiations are special in a way that they may come in
+the middle of the phase I negotiation with the identical message id
+(== 0). So the ike_udp_callback will first check that if the exchange
+is INFO then it will allocate new negotiation with
+ike_alloc_negotiation and initialize with it
+ike_init_info_negotiation. The informational negotiation contains only
+one packet so there is no need to add expire timers etc, nor there is
+possibility that we receive packet to already existing informational
+negotiation. 
+
+- Quick mode and ngm allocation
+
+If negotation is new NGM or QM negotiation then the ike_udp_callback
+will first check that we have phase i negotation done, before it can
+start new negotations. If so it will allocate new negotation with
+ike_alloc_negotiation, and fill the negotation with
+ike_init_ngm_negotiation or with ike_init_qm_negotiation. The init
+functions will add ike_remove_callback to be called after expire timer
+expires. 
+
+- Packet retransmits
+
+When we have send packet out we set timer to call
+ike_retransmit_callback after retransmit timer expires. When it
+expires we just send our previous packet out. 
+
+When negotiation is waiting for done it just timer to call
+ike_wait_done function when retransmit timer * retry limit timer
+expires. At that time it never calls ike_retransmit_callback. If it
+receives duplicate packet from the network it simple sends back its
+last packet. Negotiation expire timer is disabled at this time.
+
+When negotiation is waiting for remove it acts exactly as in when it
+is waiting for done. 
+
+
+- Negotiation expiring
+
+When negotiation is started the expire timer is started and when it
+expires the library will call ike_remove_negotiation. This timer is
+cancelled when the negotiation is finished. If the negotiation is
+deleted during the policy manager call the state is set to the
+SSH_IKE_ST_DELETED, but the SA will still point to the correct IkeSA,
+so when ike_delete_negotiation is called it knows that it must remove
+the negotiation from the isakmp sa list. 
+
+- Isakmp SA expiring
+
+When the isakmp SA is created the life duration timer is started and
+when it expires the isakmp SA is marked to be deleted (so it will not
+be selected by any new processes, but it current negotiations still
+continue normally). After the default expire_timer time expires after
+that the Isakmp SA is really deleted and all negotiations still in
+progess are just aborted. The ike_mark_isakmp_sa_deleted function will
+mark the sa to be deleted, and restart the expire timer. 
+
+- Memory (On 32 bit i386).
+
+SshIkeSA size in total is 1144 bytes
+	SshIkeSA		260 bytes
+	10 * SshIkeNegotiation	 40 bytes
+	cipher_key		 24 bytes (3des)
+	cipher_iv		  8 bytes (3des)
+	skeyid.dh		128 bytes (1024 bit Diffie-Hellman group 2)
+	skeyid.skeyid		 20 bytes (sha1)
+	skeyid.skeyid_a		 20 bytes (sha1) 
+	skeyid.skeyid_e		 20 bytes (sha1)
+	skeyid.skeyid_a_mac	 64+64+64+16 bytes (sha1)
+	skeyid.skeyid_e_mac	 64+64+64+16 bytes (sha1)
+	skeyid.skeyid_d_mac	 64+64+64+16 bytes (sha1)
+
+SshIkePMPhaseIRec size in total is 816 bytes (policy manager can also
+					      store some data here))
+	SshIkePMPhaseIRec	132 bytes
+	local_id 		 52 bytes
+	local_id_txt 		 16 bytes (ip4 address)
+	remote_id 		 52 bytes
+	remote_id_txt 		 16 bytes (ip4 address)
+	local_ip		 16 bytes
+	local_port		  4 bytes
+	remote_ip		 16 bytes
+	remote_port		  4 bytes
+	certificates		  8 bytes
+		[0]		500 bytes (normal end user certificate)
+
+Exchange data size in total is about 4300 bytes
+	ed			216 bytes
+	packets_in		300 + 150 + 600 bytes (normal main mode)
+	packets_out		300 + 150 + 600 bytes (normal main mode)
+	encryption_cipher	388 bytes (3des)
+	decryption_cipher	388 bytes (3des)
+	cipher_iv		  8 bytes (3des)
+	last_sent_packet	600 bytes (max normal packet)
+	last_recv_packet	600 bytes (max normal packet)
+
+IKE exchange data size in total is about 1800 bytes
+	ike_ed			188 bytes
+	secret			128 bytes (1024 bit Diffie-Hellman group 2)
+	public_key		200 bytes (1024 bit RSA)
+	private_key		672 bytes (1024 bit RSA)
+	certificates		~500 bytes (normal end user certificate)
+	cert_auth		 ~50 bytes (one CA distinguished name)
+	own_cert_auth		 ~50 bytes (one CA distinguished name)
+
+SshPublicKey size in total is 200 bytes
+	SshPublicKey	20 bytes
+	SshRSAPublicKey	36 bytes
+	SshMPIntStruct n, e	136 + 8 bytes (1024 bit RSA key)
+
+SshPrivateKey size in total is 672 bytes
+	SshPrivateKey			20 bytes
+	SshRRSAPrivateKey		100 bytes
+	SshMPIntStruct p, q, e, d, n, u		4 * 136 bytes + 8 = 552 bytes
+
+ISAKMP SA memory consumption when just finished ISAKMP SA creation
+before freeing any data is about ~8K bytes.
+	SshIkeSA		1144 bytes
+	SshIkeNegotiation	  52 bytes
+	SshIkePMPhaseIRec	 816 bytes
+	Exchange data		4300 bytes
+	IKE exchange data	1800 bytes
+
+After the ISAKMP SA frees all data associated to the ISAKMP SA
+creation it uses about 2K bytes
+	SshIkeSA		1144 bytes
+	SshIkeNegotiation	  52 bytes
+	SshIkePMPhaseIRec	 816 bytes

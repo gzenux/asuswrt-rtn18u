@@ -1,6 +1,6 @@
 
 SKU_2G_IC   = "20150813_SingleSKU_IC_2.4G_Final.dat"
-SKU_2G_FCC  = "20150813_SingleSKU_FCC_2.4G_Final.dat"
+SKU_2G_FCC  = "20160607_SingleSKU_FCC_2.4G_Final.dat"
 SKU_2G_CE   = "20141231_SingleSKU_CE_2.4G_Final.dat"
 SKU_2G_SG   = 
 SKU_2G_NCC  = "20141112_SingleSKU_NCC_2.4G_Final.dat"

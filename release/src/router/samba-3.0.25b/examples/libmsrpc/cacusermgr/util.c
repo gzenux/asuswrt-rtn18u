@@ -35,7 +35,7 @@ void usage() {
 
 /*initializes values in the server handle from the command line returns 0 if there is a problem, non-zero if everything is ok*/
 int process_cmd_line(CacServerHandle *hnd, TALLOC_CTX *mem_ctx, int argc, char **argv) {
-   char op;
+   int op;
 
    if(!hnd || !mem_ctx || !argc)
       return 0;

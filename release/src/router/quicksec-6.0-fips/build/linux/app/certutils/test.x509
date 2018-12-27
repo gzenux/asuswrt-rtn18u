@@ -1,0 +1,292 @@
+%
+%  Test file for X.509 v3 certificate and v2 crl generation
+%
+%  Run this with 'ssh-certmake -e latin1 test.x509'
+%
+
+% CA certificate of our little certificate hierarchy.
+
+Certificate ::= {
+  OutputFile   ::= "test-ca-1.ca"
+
+  SerialNumber ::= 0
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  Validity     ::= {
+    NotBefore  ::= "2003/06/30/19:30:00"
+    NotAfter   ::= "2023/01/01/12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Size ::= 1024
+    Type ::= rsaEncryption
+    %Type ::= dsaEncryption
+    PrivateKeyFile ::= "test-ca-1.prv"
+    % InputPrivateKeyFile ::= "test-ca-1.prv"
+  }
+  Signature ::= {
+    SelfSigned
+    %SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      IP    ::= 1.2.3.4
+      EMAIL ::= test-ca@ipsec.com
+    }
+    ExtendedKeyUsage ::= {
+      ServerAuth
+      ClientAuth
+      CodeSigning
+      EmailProtection
+      TimeStamping
+      IkeIntermediate
+    }
+    BasicConstraints ::= {
+      CA
+      PathLength ::= 0
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyCertSign
+      CRLSign
+    }
+
+    AuthKeyIdentifier ::= {
+      KeyIdentifier ::= "MyIdentifier/100"
+    }
+    SubjectKeyIdentifier ::= {
+       KeyIdentifier ::= "MyIdentifier/100"
+    }
+    PolicyConstraints ::= {
+      Require ::= 10
+      Inhibit ::= 10
+    }
+    CRLDistributionPoints ::= [
+      {
+        FullName ::= {
+	  DN ::= <C=FI,O=INSIDE Secure,CN=CRL1>
+          URI ::= ldap://ldap.ipsec.com
+        }
+        CRLIssuer ::= {
+	  DN ::= <C=FI,O=INSIDE Secure,CN=Test CA CRL2>
+        }
+        KeyCompromise
+      }
+      {
+        IssuerRelativeDN ::= <C=FI,O=INSIDE Secure,CN=Test CA,CN=CRL1>
+        CRLIssuer ::= {
+          DN ::= <C=FI,O=INSIDE Secure,CN=Test CA>
+        }
+        CaCompromise
+        AffiliationChanged
+        Superseded
+        CessationOfOperation
+        CertificateHold
+      }
+    ]
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "test-user-1.crt"
+
+  SerialNumber ::= 1
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=test user 1>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2023 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Size ::= 1024
+    Type ::= rsaEncryption
+%    Type ::= dsaEncryption
+    PrivateKeyFile ::= "test-user-1.prv"
+  }
+  Signature ::= {
+ %   SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile ::= "test-ca-1.prv"
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      IP ::= 192.168.2.4
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyEncipherment
+    }
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "test-user-1b.crt"
+
+  SerialNumber ::= 1
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test User 1 + OU = Development Team X.509>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2023 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+%    Size ::= 1024
+%    Type ::= rsaEncryption
+%    PrivateKeyFile ::= "test-user-1.prv"
+    InputPrivateKeyFile ::= "test-user-1.prv"
+  }
+  Signature ::= {
+    % SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile ::= "test-ca-1.prv"
+  }
+}
+
+CertificateRequest ::= {
+  OutputFile   ::= "test-user-1.req"
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test User 1>
+  PublicKeyInfo ::= {
+    InputPrivateKeyFile ::= "test-user-1.prv"
+  }
+  Signature ::= {
+  %    SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      IP ::= 192.168.2.4
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyEncipherment
+    }
+  }
+}
+
+
+CertificateRequestCrmf ::= {
+  OutputFile   ::= "test-user-2.req"
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test User 1>
+  PublicKeyInfo ::= {
+    InputPrivateKeyFile ::= "test-user-1.prv"
+  }
+  Signature ::= {
+  %    SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      IP ::= 192.168.2.4
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyEncipherment
+    }
+  }
+}
+
+
+Certificate ::= {
+  OutputFile   ::= "test-user-1c.crt"
+  InputCertificateRequestFile ::= "test-user-1.req"
+  CopySubjectNameFromRequest
+  CopySubjectAltNameIPExtFromRequest
+  CopySubjectAltNameEMAILExtFromRequest
+  CopySubjectAltNameDNSExtFromRequest
+  CopySubjectAltNameURIExtFromRequest
+  CopySubjectAltNameRIDExtFromRequest
+  CopySubjectAltNameDNExtFromRequest
+  CopyKeyUsageExtFromRequest
+  CopyBasicConstraintsExtFromRequest
+  CopyCRLDistributionPointExtFromRequest
+
+  SerialNumber ::= 1
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2023 Dec 1st,  12:00:00"
+  }
+  Signature ::= {
+  %    SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile ::= "test-ca-1.prv"
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "test-user-2.crt"
+
+  SerialNumber ::= 2
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test User 2>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2023 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Size ::= 1024
+    Type ::= rsaEncryption
+    PrivateKeyFile ::= "test-user-2.prv"
+  }
+  Signature ::= {
+    % SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile ::= "test-ca-1.prv"
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "test-user-3.crt"
+
+  SerialNumber ::= 3
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test User 3>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2023 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Size ::= 1024
+    Type ::= rsaEncryption
+    PrivateKeyFile ::= "test-user-3.prv"
+  }
+  Signature ::= {
+  %    SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile ::= "test-ca-1.prv"
+  }
+}
+
+CRL ::= {
+  OutputFile ::= "test-ca-1.crl"
+
+  Signature ::= {
+  %    SignatureAlgorithm ::= dsaWithSHA-1
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile     ::= "test-ca-1.prv"
+  }
+
+  IssuerName ::= <C=FI,O=INSIDE Secure, CN=Test CA>
+  ThisUpdate ::= "2003 Oct 8th, 20:00:00"
+  NextUpdate ::= "2023 Nov 1st, 21:00:00"
+
+  % Few notes are in order. This CRL indeed is a bit vague, because
+  % we revoke certificates in "future" this is not a standard practice
+  % although I don't know any reason why this wouldn't be perfectly
+  % legal. (Today that is.)
+
+  RevokedCertificates ::= [
+%    { SerialNumber ::= 1
+%      RevocationDate ::= "2003 Oct 9th, 17:00:00" }
+%    { SerialNumber ::= 2
+%      RevocationDate ::= "2003 Aug 30th, 17:01:00" }
+%    { SerialNumber ::= 3
+%      RevocationDate ::= "2003 Nov 1st, 17:01:00" }
+  ] % end revoked certificates list
+}
+
+
+
+
+
+

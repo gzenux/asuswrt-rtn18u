@@ -49,6 +49,29 @@ if(dualWAN_support){
 	}
 }
 
+function Check_IE_Version(){ //Edge: return 12
+    var rv = -1; // Return value assumes failure.
+
+    if (navigator.appName == 'Microsoft Internet Explorer'){
+
+       var ua = navigator.userAgent,
+           re  = new RegExp("MSIE ([0-9]{1,}[\\.0-9]{0,})");
+
+       if (re.exec(ua) !== null){
+         rv = parseFloat( RegExp.$1 );
+       }
+    }
+    else if(navigator.appName == "Netscape"){                       
+       /// in IE 11 the navigator.appVersion says 'trident'
+       /// in Edge the navigator.appVersion does not say trident
+       if(navigator.appVersion.indexOf('Trident') === -1 && navigator.appVersion.indexOf('Edge') >= 0) rv = 12;
+       else rv = 11;
+    }       
+
+    return rv;          
+}
+var IE_Version = Check_IE_Version();
+
 // get WAN setting list from hook.
 // Index, VPI, VCI, Protocol
 var DSLWANList = [ <% get_DSL_WAN_list(); %> ];
@@ -67,9 +90,8 @@ function chg_pvc(pvc_to_chg) {
 		remove_item_from_select_bridge();
 	}
 	else
-	{
-		if (DSLWANList[0][3] == "bridge")
-			remove_item_from_select_bridge();
+	{	//pvc_to_chg==0 : Internet PVC
+		document.form.dsl_proto.options[4] = null;	//remove beidge while edit Internet PVC		
 	}
 	disable_pvc_summary();
 	enable_all_ctrl();
@@ -107,13 +129,14 @@ function remove_item_from_select_bridge() {
 }
 
 function add_pvc() {
+
 	var iptv_row = 0;
 	for(var i = 1; i < DSLWANList.length; i++){
 		if (DSLWANList[i][0] != "0") {
 			iptv_row++;
 		}
 	}
-	disable_pvc_summary();
+	
 	enable_all_ctrl();
 // find a available VCI
 	var avail_vci = 33;
@@ -142,6 +165,7 @@ function add_pvc() {
 			break;
 		}
 	}
+	
 	if (found_pvc == false) {
 // no empty pvc , return
 		return;
@@ -181,6 +205,8 @@ function add_pvc() {
 		document.form.dslx_pppoe_options.value="";
 		document.form.dslx_hwaddr.value="";
 		document.getElementById("pvc_sel").innerHTML = "Internet PVC";
+		
+		document.form.dsl_proto.options[4] = null;	//remove beidge while edit Internet PVC
 	}
 	else {
 		document.form.dsl_proto.value="bridge";
@@ -208,6 +234,13 @@ function add_pvc() {
 		document.getElementById("DNSsetting").style.display = "none";
 		document.getElementById("PPPsetting").style.display = "none";
 		document.getElementById("vpn_server").style.display = "none";
+	}
+		
+	if(IE_Version == 12){	//for IE/Edge only
+		setTimeout("disable_pvc_summary();",500);
+	}
+	else{
+		disable_pvc_summary();
 	}
 
 	change_dsl_type(document.form.dsl_proto.value);
@@ -680,19 +713,16 @@ function done_validating(action){
 }
 
 function disable_pvc_summary() {
-	//document.getElementById("dsl_pvc_summary").style.display = "none";
 	document.getElementById("DSL_WAN_table").style.display = "none";
 }
 
 function enable_pvc_summary() {
-	//document.getElementById("dsl_pvc_summary").style.display = "";
 	document.getElementById("DSL_WAN_table").style.display = "";
 }
 
 function disable_all_ctrl() {
 	document.getElementById("desc_default").style.display = "";
 	document.getElementById("desc_edit").style.display = "none";
-	//document.getElementById("dslpvc").style.display = "none";
 	document.getElementById("dslSettings").style.display = "none";
 	document.getElementById("PPPsetting").style.display = "none";
 	document.getElementById("DNSsetting").style.display = "none";
@@ -706,7 +736,6 @@ function disable_all_ctrl() {
 function enable_all_ctrl() {
 	document.getElementById("desc_default").style.display = "none";
 	document.getElementById("desc_edit").style.display = "";
-	//document.getElementById("dslpvc").style.display = "";
 	document.getElementById("dslSettings").style.display = "";
 	document.getElementById("PPPsetting").style.display = "";
 	document.getElementById("DNSsetting").style.display = "";

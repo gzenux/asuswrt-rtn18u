@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Client-server setup using EAP. -->
+<!-- Related: hostb-eap-client.xml -->
+<quicksec>
+  <!-- to generate the CA and end entity certificates used in this
+       sample, please execute 'ssh-certmake cert_template.rsa'
+       (found from the src/ipsec/quicksec/samples directory).
+       This will generate the necessary files needed by this policy.
+       This operation must be done only on one of the test hosts!
+       Copy the generated rsa* files to local and to remote IKE
+       peer's directory (where policy manager is located). -->
+  <params>
+    <!-- local certificate and private key -->
+    <externalkey type="software" init-info="key_files(rsauser1.crt,
+                                            rsauser1.prv"/>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Trusted CA -->
+      <ca file="rsaca.ca"/>
+
+      <!-- static CRL from a file-->
+      <crl file="rsaca.crl"/>
+
+      <!-- RADIUS identifier -->
+      <radius-client address="172.30.4.189" nas-ip-address="172.30.4.189"/>
+
+      <!-- RADIUS server address and shared secret for it -->
+      <radius server="172.30.4.78" secret="foobar"/>
+
+      <!-- EAP type  -->
+      <eap type="md5-challenge"/>
+      <!-- <eap type="sim"/> -->
+      <!-- <eap type="aka"/> -->
+      <!-- <eap type="mschapv2"/> -->
+      <!-- <eap type="tls"/> -->
+    </auth-domain>
+
+  </params>
+  <policy>
+
+    <!-- When performing EAP authentication, by default the gateway will
+         not request the client's identity, because the client has already
+         specified this in the first IKE_AUTH message. However, if the
+         gateway insists on requesting the client's identity as part of the
+         EAP exchange it should add "eap-request-id" to the 'flags' attribute
+         list in the tunnel below (this is not encouraged as it may cause
+         interoperability problems with some client implementations). -->
+    <tunnel name="host-to-host" ike-life="120" flags="tunnel dont-initiate">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="rsauser1@ipsec.com"/>
+    </tunnel>
+
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

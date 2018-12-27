@@ -18,11 +18,21 @@
 #define IFNAME_MAX		48		// ifname buffer
 #define TL_PATH			"/jffs/tld/"	// traffic limiter database
 
+/* debug log */
+#define TLD_DEBUG_LOG		"/tmp/TLD_LOG"
+#define TL_LOG(fmt,args...) \
+	if(f_exists(TLD_DEBUG_LOG) > 0) { \
+		char info[200]; \
+		sprintf(info, "echo \"[TRAFFIC LIMITER]"fmt"\" >> /tmp/TLD.log", ##args); \
+		system(info); \
+	}
+
 // traffic_limiter.c
 extern int traffic_limiter_main(char *type, char *q_if, char *q_te, char *q_ts);
 
 // traffic_limiter_hook.c
 extern int sql_get_table(sqlite3 *db, const char *sql, char ***pazResult, int *pnRow, int *pnColumn);
+extern void sqlite_result_check(int ret, char *zErr, const char *msg);
 extern void traffic_limiter_hook(char *ifname, char *start, char *end, char *unit, int *retval, webs_t wp);
 extern void traffic_limiter_WanStat(char *buf, char *ifname, char *start, char *end, int unit);
 extern void ifname_mapping(char *word, char *ifname);

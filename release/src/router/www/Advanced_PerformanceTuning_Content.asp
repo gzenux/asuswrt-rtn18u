@@ -83,7 +83,7 @@ function initial(){
 		inputHideCtrl(document.form.wl1_TxPower, 0);
 	}
 
-	if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U"){
+	if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68A" || based_modelid == "DSL-AC68U" || based_modelid == "4G-AC68U"){
 		document.form.selLED.onchange = function(){
 			document.form.btn_led_mode.value = 0;
 			document.form.selCLK.checked = false;

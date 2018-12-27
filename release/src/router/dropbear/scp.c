@@ -1,3 +1,6 @@
+/* Dropbear Note: This file is based on OpenSSH 4.3p2. Avoid unnecessary 
+   changes to simplify future updates */
+
 /*
  * scp - secure remote copy.  This is basically patched BSD rcp which
  * uses ssh to do the data transfer (instead of using rcmd).
@@ -96,7 +99,7 @@ int verbose_mode = 0;
 int showprogress = 1;
 
 /* This is the program to execute for the secured connection. ("ssh" or -S) */
-char *ssh_program = _PATH_SSH_PROGRAM;
+char *ssh_program = DROPBEAR_PATH_SSH_PROGRAM;
 
 /* This is used to store the pid of ssh_program */
 pid_t do_cmd_pid = -1;
@@ -130,22 +133,22 @@ do_local_cmd(arglist *a)
 			fprintf(stderr, " %s", a->list[i]);
 		fprintf(stderr, "\n");
 	}
-#ifdef __uClinux__
+#if DROPBEAR_VFORK
 	pid = vfork();
 #else
 	pid = fork();
-#endif /* __uClinux__ */
+#endif
 	if (pid == -1)
 		fatal("do_local_cmd: fork: %s", strerror(errno));
 
 	if (pid == 0) {
 		execvp(a->list[0], a->list);
 		perror(a->list[0]);
-#ifdef __uClinux__
+#if DROPBEAR_VFORK
 		_exit(1);
 #else
 		exit(1);
-#endif /* __uClinux__ */
+#endif
 	}
 
 	do_cmd_pid = pid;
@@ -170,6 +173,16 @@ do_local_cmd(arglist *a)
  * given host.  This returns < 0 if execution fails, and >= 0 otherwise. This
  * assigns the input and output file descriptors on success.
  */
+
+static void
+arg_setup(char *host, char *remuser, char *cmd)
+{
+	replacearg(&args, 0, "%s", ssh_program);
+	if (remuser != NULL)
+		addargs(&args, "-l%s", remuser);
+	addargs(&args, "%s", host);
+	addargs(&args, "%s", cmd);
+}
 
 int
 do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout, int argc)
@@ -198,22 +211,18 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout, int argc)
 	close(reserved[0]);
 	close(reserved[1]);
 
-    /* uClinux needs to build the args here before vforking,
-       otherwise we do it later on. */
-#ifdef __uClinux__
-		replacearg(&args, 0, "%s", ssh_program);
-		if (remuser != NULL)
-			addargs(&args, "-l%s", remuser);
-		addargs(&args, "%s", host);
-		addargs(&args, "%s", cmd);
-#endif /* __uClinux__ */
+	/* uClinux needs to build the args here before vforking,
+	   otherwise we do it later on. */
+#if DROPBEAR_VFORK
+	arg_setup(host, remuser, cmd);
+#endif
 
 	/* Fork a child to execute the command on the remote host using ssh. */
-#ifdef __uClinux__
+#if DROPBEAR_VFORK
 	do_cmd_pid = vfork();
 #else
 	do_cmd_pid = fork();
-#endif /* __uClinux__ */
+#endif
 
 	if (do_cmd_pid == 0) {
 		/* Child. */
@@ -224,27 +233,22 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout, int argc)
 		close(pin[0]);
 		close(pout[1]);
 
-#ifndef __uClinux__
-		replacearg(&args, 0, "%s", ssh_program);
-		if (remuser != NULL)
-			addargs(&args, "-l%s", remuser);
-		addargs(&args, "%s", host);
-		addargs(&args, "%s", cmd);
-#endif /* __uClinux__ */
+#if !DROPBEAR_VFORK
+		arg_setup(host, remuser, cmd);
+#endif
 
 		execvp(ssh_program, args.list);
 		perror(ssh_program);
-#ifndef __uClinux__
-		exit(1);
-#else
+#if DROPBEAR_VFORK
 		_exit(1);
-#endif /* __uClinux__ */
+#else
+		exit(1);
+#endif
 	} else if (do_cmd_pid == -1) {
 		fatal("fork: %s", strerror(errno));
 	}
 
-
-#ifdef __uClinux__
+#if DROPBEAR_VFORK
 	/* clean up command */
 	/* pop cmd */
 	xfree(args.list[args.num-1]);
@@ -260,7 +264,7 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout, int argc)
 		args.list[args.num-1]=NULL;
 		args.num--;
 	}
-#endif /* __uClinux__ */
+#endif
 
 	/* Parent.  Close the other side, and return the local side. */
 	close(pin[0]);
@@ -285,7 +289,6 @@ int okname(char *);
 void run_err(const char *,...);
 void verifydir(char *);
 
-struct passwd *pwd;
 uid_t userid;
 int errs, remin, remout;
 int pflag, iamremote, iamrecursive, targetshouldbedirectory;
@@ -301,8 +304,8 @@ void tolocal(int, char *[]);
 void toremote(char *, int, char *[]);
 void usage(void);
 
-#if defined(DBMULTI_scp) || !defined(DROPBEAR_MULTI)
-#if defined(DBMULTI_scp) && defined(DROPBEAR_MULTI)
+#if defined(DBMULTI_scp) || !DROPBEAR_MULTI
+#if defined(DBMULTI_scp) && DROPBEAR_MULTI
 int scp_main(int argc, char **argv)
 #else
 int
@@ -343,7 +346,7 @@ main(int argc, char **argv)
 			addargs(&args, "-p%s", optarg);
 			break;
 		case 'B':
-			addargs(&args, "-oBatchmode yes");
+			fprintf(stderr, "Note: -B option is disabled in this version of scp");
 			break;
 		case 'l':
 			speed = strtod(optarg, &endp);
@@ -364,12 +367,12 @@ main(int argc, char **argv)
 			addargs(&args, "-v");
 			verbose_mode = 1;
 			break;
-#ifdef PROGRESS_METER
 		case 'q':
+#ifdef PROGRESS_METER
 			addargs(&args, "-q");
 			showprogress = 0;
-			break;
 #endif
+			break;
 
 		/* Server options. */
 		case 'd':
@@ -391,9 +394,6 @@ main(int argc, char **argv)
 		}
 	argc -= optind;
 	argv += optind;
-
-	if ((pwd = getpwuid(userid = getuid())) == NULL)
-		fatal("unknown user %u", (u_int) userid);
 
 	if (!isatty(STDERR_FILENO))
 		showprogress = 0;
@@ -436,13 +436,13 @@ main(int argc, char **argv)
 	}
 	/*
 	 * Finally check the exit status of the ssh process, if one was forked
-	 * and no error has occured yet
+	 * and no error has occurred yet
 	 */
 	if (do_cmd_pid != -1 && errs == 0) {
 		if (remin != -1)
-		    (void) close(remin);
+			(void) close(remin);
 		if (remout != -1)
-		    (void) close(remout);
+			(void) close(remout);
 		if (waitpid(do_cmd_pid, &status, 0) == -1)
 			errs = 1;
 		else {
@@ -492,7 +492,9 @@ toremote(char *targ, int argc, char **argv)
 			addargs(&alist, "%s", ssh_program);
 			if (verbose_mode)
 				addargs(&alist, "-v");
-#ifndef DROPBEAR_CLIENT
+#if 0
+			/* Disabled since dbclient won't understand them
+			   and scp works fine without them. */
 			addargs(&alist, "-x");
 			addargs(&alist, "-oClearAllForwardings yes");
 			addargs(&alist, "-n");
@@ -508,7 +510,7 @@ toremote(char *targ, int argc, char **argv)
 				host = cleanhostname(host);
 				suser = argv[i];
 				if (*suser == '\0')
-					suser = pwd->pw_name;
+					continue; /* pretend there wasn't any @ at all */
 				else if (!okname(suser))
 					continue;
 				addargs(&alist, "-l");
@@ -576,7 +578,7 @@ tolocal(int argc, char **argv)
 			*host++ = 0;
 			suser = argv[i];
 			if (*suser == '\0')
-				suser = pwd->pw_name;
+				suser = NULL;
 		}
 		host = cleanhostname(host);
 		len = strlen(src) + CMDNEEDS + 20;
@@ -670,7 +672,7 @@ next:			if (fd != -1) {
 			}
 			continue;
 		}
-#if PROGRESS_METER
+#ifdef PROGRESS_METER
 		if (showprogress)
 			start_progress_meter(curfile, stb.st_size, &statbytes);
 #endif
@@ -770,8 +772,8 @@ void
 bwlimit(int amount)
 {
 	static struct timeval bwstart, bwend;
-	static int lamt, thresh = 16384;
-	u_int64_t waitlen;
+	static int lamt = 0, thresh = 16384;
+	uint64_t waitlen;
 	struct timespec ts, rm;
 
 	if (!timerisset(&bwstart)) {
@@ -839,7 +841,7 @@ sink(int argc, char **argv)
 
 #define	atime	tv[0]
 #define	mtime	tv[1]
-#define	SCREWUP(str)	{ why = str; goto screwup; }
+#define	SCREWUP(str)	do { why = str; goto screwup; } while (0)
 
 	setimes = targisdir = 0;
 	mask = umask(0);
@@ -938,8 +940,8 @@ sink(int argc, char **argv)
 			exit(1);
 		}
 		if (targisdir) {
-			static char *namebuf;
-			static size_t cursize;
+			static char *namebuf = NULL;
+			static size_t cursize = 0;
 			size_t need;
 
 			need = strlen(targ) + strlen(cp) + 250;
@@ -989,7 +991,7 @@ sink(int argc, char **argv)
 			continue;
 		}
 		omode = mode;
-		mode |= S_IWRITE;
+		mode |= S_IWUSR;
 		if ((ofd = open(np, O_WRONLY|O_CREAT, mode)) < 0) {
 bad:			run_err("%s: %s", np, strerror(errno));
 			continue;
@@ -1143,7 +1145,7 @@ usage(void)
 {
 	(void) fprintf(stderr,
 	    "usage: scp [-1246BCpqrv] [-c cipher] [-F ssh_config] [-i identity_file]\n"
-	    "           [-l limit] [-o ssh_option] [-P port] [-S program]\n"
+	    "           [-l limit] [-P port] [-S program]\n"
 	    "           [[user@]host1:]file1 [...] [[user@]host2:]file2\n");
 	exit(1);
 }
@@ -1151,7 +1153,7 @@ usage(void)
 void
 run_err(const char *fmt,...)
 {
-	static FILE *fp;
+	static FILE *fp = NULL;
 	va_list ap;
 
 	++errs;

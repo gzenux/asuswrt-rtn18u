@@ -12,6 +12,8 @@
  * $Id: interface.c,v 1.13 2005/03/07 08:35:32 kanki Exp $
  */
 
+#include <rc.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -39,7 +41,6 @@
 #include <linux/sockios.h>
 #endif
 
-#include "rc.h"
 #include "interface.h"
 
 /* Default switch configs */
@@ -179,7 +180,7 @@ void gen_lan_ports(char *buf, const int sample[SWPORT_COUNT], int index, int ind
 
 int _ifconfig(const char *name, int flags, const char *addr, const char *netmask, const char *dstaddr, int mtu)
 {
-	int s;
+	int s, err;
 	struct ifreq ifr;
 	struct in_addr in_addr, in_netmask, in_broadaddr;
 
@@ -241,17 +242,16 @@ int _ifconfig(const char *name, int flags, const char *addr, const char *netmask
 	return 0;
 
  ERROR:
-	close(s);
+	err = errno; 
 	perror(name);
-	return errno;
+	close(s);
+	return err;
 }
 
 int _ifconfig_get(const char *name, int *flags, char *addr, char *netmask, char *dstaddr, int *mtu)
 {
-	int s;
+	int s, err;
 	struct ifreq ifr;
-
-	_dprintf("%s: name=%s\n", __FUNCTION__, name);
 
 	/* Open a raw socket to the kernel */
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
@@ -302,9 +302,10 @@ int _ifconfig_get(const char *name, int *flags, char *addr, char *netmask, char 
 	return 0;
 
  ERROR:
-	close(s);
+	err = errno;
 	perror(name);
-	return errno;
+	close(s);
+	return err;
 }
 
 int ifconfig_mtu(const char *name, int mtu)
@@ -320,14 +321,15 @@ int ifconfig_mtu(const char *name, int mtu)
 
 static int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask)
 {
-	int s;
+	int s, err = 0;
 	struct rtentry rt;
 	
 	_dprintf("%s: cmd=%s name=%s addr=%s netmask=%s gateway=%s metric=%d\n",
 		__FUNCTION__, cmd == SIOCADDRT ? "ADD" : "DEL", name, dst, genmask, gateway, metric);
 
 	/* Open a raw socket to the kernel */
-	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) return errno;
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+		return errno;
 
 	/* Fill in rtentry */
 	memset(&rt, 0, sizeof(rt));
@@ -351,13 +353,12 @@ static int route_manip(int cmd, char *name, int metric, char *dst, char *gateway
 	rt.rt_genmask.sa_family = AF_INET;
 		
 	if (ioctl(s, cmd, &rt) < 0) {
+		err = errno;
 		perror(name);
-		close(s);
-		return errno;
 	}
 
 	close(s);
-	return 0;
+	return err;
 
 }
 
@@ -509,7 +510,7 @@ int start_vlan(void)
 	close(s);
 
 #if (defined(RTCONFIG_QCA) || (defined(RTCONFIG_RALINK) && (defined(RTCONFIG_RALINK_MT7620) || defined(RTCONFIG_RALINK_MT7621))))
-	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", ""))
+	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")&&!nvram_match("switch_wantag", "hinet"))
 	{
 #if defined(RTCONFIG_QCA)
 		char *wan_base_if = "eth0";
@@ -524,7 +525,7 @@ int start_vlan(void)
 	}
 #endif
 #ifdef CONFIG_BCMWL5
-	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", ""))
+	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", "")&&!nvram_match("switch_wantag", "hinet"))
 		set_wan_tag((char *) &ifr.ifr_name);
 #endif
 #if defined(RTCONFIG_RGMII_BRCM5301X) || defined(RTAC3100) || defined(RTAC5300R)

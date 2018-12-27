@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+<!-- Remote access setup, iras acting as server and irac as client. -->
+<!-- iras utilizes a backend DHCP server for obtaining addresses. -->
+<!-- Related: hostb-cp-irac.xml -->
+<quicksec>
+  <params>
+    <!-- IRAS simply distributes the DHCP addresses (received from
+	 the DHCP server) to the client. -->
+    <address-pool name="pool1"
+                  dhcp="192.168.1.254,67"
+	          own-ip="192.168.1.100,68,67"
+		  flags="dhcp-ras"/>
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secrets and identities of remote IKE peers -->
+      <remote-secret id-type="email"
+                     id="b@ipsec.com">foo</remote-secret>
+      <remote-secret id-type="email"
+                     id="c@ipsec.com">foobar</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="remote-access" flags="require-cfgmode
+                                        allow-cfgmode
+                                        proxy-arp
+                                        dont-initiate">
+      <!-- local identity sent to the remote IKE peer.
+           local shared secret is taken from the remote secret
+           based on the remote identity, if local-secret has
+           not been specified as in this example. -->
+      <tunnel-address-pool name="pool1"/>
+      <identity id-type="email" id="a@ipsec.com"/>
+      <ike-versions>2</ike-versions>
+    </tunnel>
+
+    <!-- Allow traffic from the remote access clients. -->
+    <rule from-tunnel="remote-access"/>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

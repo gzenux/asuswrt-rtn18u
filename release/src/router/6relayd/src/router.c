@@ -107,14 +107,14 @@ int init_router_discovery_relay(const struct relayd_config *relayd_config)
 				IPV6_ADD_MEMBERSHIP, &an, sizeof(an));
 	}
 
-	if (config->send_router_solicitation)
-		forward_router_solicitation(&config->master);
-
 	if (config->slavecount > 0 && (config->enable_router_discovery_relay ||
 			config->enable_router_discovery_server))
 		relayd_register_event(&router_discovery_event);
 	else
 		close(router_discovery_event.socket);
+
+	if (config->send_router_solicitation)
+		forward_router_solicitation(&config->master);
 
 	return 0;
 }
@@ -165,6 +165,7 @@ static int open_icmpv6_socket(struct icmp6_filter *filt,
 	// We need to know the source interface
 	val = 1;
 	setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, &val, sizeof(val));
+	setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &val, sizeof(val));
 
 	val = 0;
 	setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &val, sizeof(val));
@@ -490,6 +491,8 @@ static void forward_router_advertisement(uint8_t *data, size_t len)
 	uint8_t *mac_ptr = NULL;
 	struct in6_addr *dns_ptr = NULL;
 	size_t dns_count = 0;
+	uint8_t *domain_ptr = NULL;
+	size_t domain_len = 0;
 
 	struct icmpv6_opt *opt;
 	icmpv6_for_each_option(opt, &adv[1], end) {
@@ -500,6 +503,9 @@ static void forward_router_advertisement(uint8_t *data, size_t len)
 			// Check if we have to rewrite DNS
 			dns_ptr = (struct in6_addr*)&opt->data[6];
 			dns_count = (opt->len - 1) / 2;
+		} else if (opt->type == ND_OPT_DNS_SEARCH && opt->len > 1) {
+			domain_ptr = &opt->data[6];
+			domain_len = (opt->len - 1) * 8;
 		}
 	}
 
@@ -538,6 +544,9 @@ static void forward_router_advertisement(uint8_t *data, size_t len)
 			for (size_t i = 0; i < dns_count; ++i)
 				dns_ptr[i] = *rewrite;
 		}
+
+		if (config->always_rewrite_dns && domain_ptr && domain_len > 0)
+			memset(domain_ptr - 4, 0, domain_len + 4);
 
 		relayd_forward_packet(router_discovery_event.socket,
 			&all_nodes, &iov, 1, &config->slaves[i]);

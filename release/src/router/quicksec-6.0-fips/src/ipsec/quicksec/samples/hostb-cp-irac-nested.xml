@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+<!-- Network topology for nested tunnel remote access scenario
+
+     HostB                     HostA                   HostC    NetC
+               outer tunnel              5001::/64              6001::/64
+     172.30  ________________  172.30                  
+     .4.167  ________________  .4.189                  
+                                                                
+     5002     inner tunnel                             5001    
+     ::f001  ========================================= ::254          -->
+
+
+
+<!-- Remote access setup with nested tunnels and config mode.
+     Hosta is the endserver, hostb the middleserver and hostc client.
+     hostb the midway GW and hostc the peer. 
+     hosta = hostb - hostc -->
+<!-- Related: hosta-cp-iras-nested.xml, hostc-cp-nested.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Shared secret and the identity of the remote IKE peers. -->
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain name="auth2">
+      <remote-secret id-type="email" 
+                     id="c@ipsec.com">car</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- The cfgmode flag enables the configuration payload
+         client side support. The interface-trigger flag establishes 
+         the IKEv2 and IPsec SAs automatically when the virtual
+         adapter is configured up. -->
+    <tunnel name="outer-remote-access" flags="cfgmode interface-trigger">
+      <!-- Local identity sent to the remote IKE peer. -->
+      <identity id-type="email" id="b@ipsec.com">
+        <!-- Local shared secret. -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- The IP address of the IRAS, from where we
+           get the virtual IP. -->
+      <peer>172.30.4.189</peer>
+      <!-- Bind tunnel to a virtual adapter. If set then this tunnel 
+           receives interface triggers from this virtual adapter and
+           configures this virtual adapter. If there is only one virtual 
+           adapter in the system, then this option may be omitted. -->
+      <!-- <virtual-ifname>vip0</virtual-ifname> -->
+      <!-- You can request a specific address to be assigned to you 
+           by the IRAS. --> 
+      <!-- <cfgmode-address>5002::f001</cfgmode-address> -->      
+    </tunnel>
+
+    <!-- The inner rule configuration is added to the configuration after
+         the outer tunnel is negotiated, and the user application has
+         resolved the inner tunnel IKE peer and protected network addresses
+         and has setup routing to the protected subnet. In this sample the 
+         addresses are preknown (peer 5001::254, subnet 6001::/64). The route
+         to subnet 6001::/64 via virtual adapter has to be added manually 
+         after outer tunnel has been negotiated. -->
+    <tunnel name="inner">
+      <outer-tunnel name="outer-remote-access"/>
+      <identity id-type="email" id="b@ipsec.com">
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- Authentication domain used in IKE authentication -->
+      <authentication auth-domain-name="auth2"/>
+      <peer>5001::254</peer>
+    </tunnel>
+
+    <!-- Allows packets from local stack to be tunneled to netc. -->
+    <rule to-tunnel="inner">
+      <dst>ipv6(tcp,6001::0/64),ipv6(udp,6001::0/64),ipv6(ipv6icmp,6001::0/64)</dst>
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- Allows tunneled packets from netc to local stack. -->
+    <rule from-tunnel="inner">
+      <src>ipv6(tcp,6001::0/64),ipv6(udp,6001::0/64),ipv6(ipv6icmp,6001::0/64)</src>
+      <local-stack direction="to"/>
+    </rule>
+
+    <!-- As we do not know which virtual IP address the IRAS
+         is going to assign to us, we don't need the src 
+         element. The IRAS will also narrow the destination selector. 
+         `match-local-ike' specifies that this rule overrides the system 
+         default IKE pass rules. -->
+    <rule to-tunnel="outer-remote-access" flags="match-local-ike">
+      <dst>ipv6(::/0)</dst>
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- Allow connections from protected network through
+         the outer tunnel. -->
+    <rule from-tunnel="outer-remote-access" flags="match-local-ike">
+      <src>ipv6(::/0)</src>
+      <local-stack direction="to"/>
+    </rule>
+
+    <!-- This drop rule is needed for inner tunnel packets that 
+         should be dropped whenever the outer tunnel is not up. -->
+    <rule type="drop">
+      <dst>ipv6(::/0)</dst>
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- A pass rule that handles all the traffic not matching
+         the traffic selectors of any higher precedence rules.
+         Remove this rule if plaintext traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

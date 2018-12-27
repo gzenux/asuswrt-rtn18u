@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <params>
+    <!-- Address pool named by 'ap1' -->
+    <address-pool name="ap1">
+      <subnet>192.168.200.0/24</subnet>
+      <subnet>192.168.100.0/24</subnet>
+      <address netmask="255.255.255.0">192.168.200.3-192.168.200.254</address>
+    </address-pool> 
+
+    <!-- Address pool named by 'ap2' -->
+    <address-pool name="ap2">
+      <subnet>192.168.201.0/24</subnet>
+      <subnet>192.168.101.0/24</subnet>
+      <address netmask="255.255.255.0">192.168.201.3-192.168.201.254</address>
+    </address-pool> 
+
+    <!-- End entity certificate and private key -->
+    <externalkey type="software" init-info="key_files(rsauser1.crt, 
+                                            rsauser1.prv)"/>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Trusted CA and CRL -->
+      <ca file="rsaca.ca"/>
+      <crl file="rsaca.crl"/>
+    </auth-domain>
+
+    <!-- Access groups that limit access based on the information -->
+    <!-- extracted from the remote credentials (certificate).    -->
+    <!-- The pattern can be a regular expression for example     --> 
+    <!-- pattern="*@ipsec.com".                            -->
+    <group name="trusted-user1">
+      <constraint type="cert-subject" field="email"
+                  pattern="rsauser2@ipsec.com"/>
+    </group>
+
+    <group name="trusted-user2">
+      <constraint type="cert-issuer" field="dn"
+                  pattern="*CN=Test RSA CA"/>
+    </group>
+
+  </params>
+  <policy>
+
+    <!-- Clients connected thru this tunnel will get virtual ip -->
+    <!-- from address pool "ap1" -->
+    <tunnel name="remote-access-1" flags="allow-cfgmode 
+                                          proxy-arp
+                                          dont-initiate">
+      <identity id-type="email" id="rsauser1@ipsec.com"/>
+      <tunnel-address-pool name="ap1"/>
+    </tunnel>
+
+    <!-- Clients connected thru this tunnel will get virtual ip -->
+    <!-- from address pool "ap2" -->
+    <tunnel name="remote-access-2" flags="allow-cfgmode
+                                          proxy-arp
+                                          dont-initiate">
+      <identity id-type="email" id="rsauser1@ipsec.com"/>
+      <tunnel-address-pool name="ap2"/>
+    </tunnel>
+
+    <!-- Allow traffic from the remote access clients. -->
+    <!-- Clients whose authentication credentials match the access group -->
+    <!-- trusted-user1 get connected via tunnel remote-access-1 -->
+    <!-- and thus will get assigned addreses from address pool ap1 -->
+    <rule from-tunnel="remote-access-1">
+      <access-group>trusted-user1</access-group>
+    </rule>
+
+    <!-- Clients whose authentication credentials match the access group -->
+    <!-- trusted-user2 get connected via tunnel remote-access-2 -->
+    <!-- and thus will get assigned addreses from address pool ap1 -->
+    <rule from-tunnel="remote-access-2">
+      <access-group>trusted-user2</access-group>
+    </rule>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

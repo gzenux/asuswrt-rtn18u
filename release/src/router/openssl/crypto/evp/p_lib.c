@@ -130,6 +130,14 @@ int EVP_PKEY_copy_parameters(EVP_PKEY *to, const EVP_PKEY *from)
         EVPerr(EVP_F_EVP_PKEY_COPY_PARAMETERS, EVP_R_MISSING_PARAMETERS);
         goto err;
     }
+
+    if (!EVP_PKEY_missing_parameters(to)) {
+        if (EVP_PKEY_cmp_parameters(to, from) == 1)
+            return 1;
+        EVPerr(EVP_F_EVP_PKEY_COPY_PARAMETERS, EVP_R_DIFFERENT_PARAMETERS);
+        return 0;
+    }
+
     if (from->ameth && from->ameth->param_copy)
         return from->ameth->param_copy(to, from);
  err:
@@ -253,7 +261,7 @@ int EVP_PKEY_set_type_str(EVP_PKEY *pkey, const char *str, int len)
 
 int EVP_PKEY_assign(EVP_PKEY *pkey, int type, void *key)
 {
-    if (!EVP_PKEY_set_type(pkey, type))
+    if (pkey == NULL || !EVP_PKEY_set_type(pkey, type))
         return 0;
     pkey->pkey.ptr = key;
     return (key != NULL);

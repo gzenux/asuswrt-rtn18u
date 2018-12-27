@@ -43,6 +43,7 @@ apps: .conf
 	 export samba_cv_HAVE_KERNEL_SHARE_MODES=yes ; \
 	 export samba_cv_HAVE_IFACE_IFCONF=yes ; \
 	 export samba_cv_USE_SETRESUID=yes ; \
+	 $(if $(QCA),CFLAGS="$(EXTRACFLAGS) -DHAVE_ARCH_STRUCT_FLOCK -DHAVE_ARCH_STRUCT_FLOCK64") \
 	$(CONFIGURE) \
 		--prefix=/usr \
 		--bindir=/usr/bin \
@@ -100,11 +101,7 @@ install: all
 	@install -D $(srcdir)/bin/smbpasswd $(INSTALLDIR)/usr/bin/smbpasswd
 	# @install -D $(srcdir)/bin/libsmbclient.so $(INSTALLDIR)/usr/lib/libsmbclient.so
 	@install -D $(srcdir)/bin/libbigballofmud.so.0 $(INSTALLDIR)/usr/lib/libbigballofmud.so.0
-ifeq ($(RTCONFIG_BCMARM),y)
-	@cp prebuilt.arm/lib/libresolv.so.0 $(INSTALLDIR)/usr/lib/libresolv.so.0
-else
-	@cp prebuilt/lib/libresolv.so.0 $(INSTALLDIR)/usr/lib/libresolv.so.0
-endif
+	@install -D $(shell dirname $(shell which $(CXX)))/../lib/libresolv.so.0 $(INSTALLDIR)/usr/lib/libresolv.so.0
 ###############################Charles Modify##########	
 
 	$(STRIP) -s $(INSTALLDIR)/usr/sbin/smbd

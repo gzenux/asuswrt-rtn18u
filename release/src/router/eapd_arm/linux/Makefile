@@ -32,10 +32,10 @@ OBJS += nas_eap.o wps_eap.o ses_eap.o
 
 
 #ifdef BCM_DCS
-#ifeq ($(CONFIG_BCMDCS),y)
+ifeq ($(RTCONFIG_BCMDCS),y)
 OBJS += dcs_eap.o
 CFLAGS += -DBCM_DCS
-#endif
+endif
 #endif
 
 #ifdef BCM_MEVENT
@@ -51,6 +51,9 @@ OBJS += bsd_eap.o
 CFLAGS += -DBCM_BSD
 endif
 #endif
+
+OBJS += wlceventd_eap.o
+CFLAGS += -DBCM_WLCEVENTD
 
 ifeq ($(wildcard $(SRCBASE)/router/eapd${BCMEX}/*.c),)
 all:

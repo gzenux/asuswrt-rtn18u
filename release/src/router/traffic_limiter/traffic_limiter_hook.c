@@ -21,6 +21,16 @@ int sql_get_table(sqlite3 *db, const char *sql, char ***pazResult, int *pnRow, i
 	return ret;
 }
 
+void sqlite_result_check(int ret, char *zErr, const char *msg)
+{
+	if(ret != SQLITE_OK){
+		if(zErr != NULL){
+			TL_DBG("%s - SQL error: %s\n", msg, zErr);
+			sqlite3_free(zErr);
+		}
+	}
+}
+
 static
 long long int traffic_limiter_realtime_traffic(char *interface, int unit)
 {
@@ -37,12 +47,10 @@ long long int traffic_limiter_realtime_traffic(char *interface, int unit)
 	char *p = NULL;
  	char *ifname = NULL;
 
-	int debug = nvram_get_int("tl_debug");
-
 	memset(buf, 0, sizeof(buf));
 	memset(ifmap, 0, sizeof(ifmap));
 	ifname_mapping(interface, ifmap); // database interface mapping
-	if (debug) dbg("%s: interface=%s, ifmap=%s\n", __FUNCTION__, interface, ifmap);
+	TL_DBG("interface=%s, ifmap=%s\n", interface, ifmap);
 
 	snprintf(tx_path, sizeof(tx_path), TL_PATH"%s/tx_t", ifmap);
 	snprintf(rx_path, sizeof(rx_path), TL_PATH"%s/rx_t", ifmap);
@@ -65,7 +73,6 @@ long long int traffic_limiter_realtime_traffic(char *interface, int unit)
 			else
 				++ifname;
 
-			memset(wanif, 0, sizeof(wanif));
 			snprintf(wanif, sizeof(wanif), "wan%d_ifname", unit);
 			if (strcmp(ifname, nvram_safe_get(wanif)))
 				continue;
@@ -103,8 +110,9 @@ long long int traffic_limiter_realtime_traffic(char *interface, int unit)
 
 			result = tx_n + rx_n;
 
-			if(debug) dbg("%s : tx/tx_t/tx_n = %16llu/%16lld/%16lld\n", __FUNCTION__, tx, tx_t, tx_n);
-			if(debug) dbg("%s : rx/rx_t/rx_n = %16llu/%16lld/%16lld\n", __FUNCTION__, rx, rx_t, rx_n);
+			// debug message
+			TL_DBG("tx/tx_t/tx_n = %16llu/%16lld/%16lld\n", tx, tx_t, tx_n);
+			TL_DBG("rx/rx_t/rx_n = %16llu/%16lld/%16lld\n", rx, rx_t, rx_n);
 
 			if(match) break;
 		}
@@ -137,30 +145,34 @@ void traffic_limiter_WanStat(char *buf, char *ifname, char *start, char *end, in
 	time_t ts, te;
 	long long int tx = 0, rx = 0, current = 0;
 	time_t now;
+	int divide = 1; // if BRCM && eth0 only, need to divide by 2
 
-	int debug = nvram_get_int("tl_debug");
 	lock = file_lock("traffic_limiter");
 
-	// make debug message to show clearly
-	if (debug) usleep(500000);
-
 	// word and ifmap mapping
-	memset(ifmap, 0, sizeof(ifmap));
 	ifname_mapping(ifname, ifmap); // database interface mapping
-	if (debug) dbg("%s: ifname=%s, ifmap=%s\n", __FUNCTION__, ifname, ifmap);
+	TL_DBG("ifname=%s, ifmap=%s, start=%s, end=%s, unit=%d\n", ifname, ifmap, start, end, unit);
 
 	snprintf(path, sizeof(path), TL_PATH"%s/traffic.db", ifmap);
 
+#if !defined(RTCONFIG_QCA) && !defined(RTCONFIG_RALINK)
+	// check eth0 only
+	char *wan_if = nvram_safe_get("wans_dualwan");
+	if ( ((strstr(wan_if, "none") && strstr(wan_if, "wan")) || (strstr(wan_if, "usb") && strstr(wan_if, "wan")))
+		&& !strcmp(ifmap, "wan") )
+		divide = 2;
+	TL_DBG("wan_if=%s, ifmap=%s, divide=%d\n", wan_if, ifmap, divide);
+#endif
+
 	ret = sqlite3_open(path, &db);
 	if (ret) {
-		printf("%s : Can't open database %s\n", __FUNCTION__, sqlite3_errmsg(db));
+		TL_DBG("CAN'T open database %s\n", sqlite3_errmsg(db));
+		sprintf(buf, "[0]");
 		sqlite3_close(db);
 		file_unlock(lock);
-		sprintf(buf, "[0]");
 		return;
 	}
 	
-	memset(sql, 0, sizeof(sql));
 	ts = atoll(start);
 	te = atoll(end);
 	sprintf(sql, "SELECT ifname, SUM(tx), SUM(rx) FROM (SELECT timestamp, ifname, tx, rx FROM traffic WHERE timestamp BETWEEN %ld AND %ld) WHERE ifname = \"%s\"",
@@ -170,8 +182,8 @@ void traffic_limiter_WanStat(char *buf, char *ifname, char *start, char *end, in
 	time(&now);
 	
 	// real-time traffic (not data in database)
-	if (debug) dbg("%s : te=%ld, now=%ld, diff=%ld, DAY=%ld\n", __FUNCTION__, te, now, (te - now), DAY);
 	if ((te - now) < DAY && (te - now) > 0) {
+		TL_DBG("Real-Time UPDATE /jffs/tld/%s/tmp\n", ifmap);
 		current = traffic_limiter_realtime_traffic(ifname, unit);
 		sprintf(cmd, TL_PATH"%s/tmp", ifmap);
 		sprintf(tmp, "%lld", current);
@@ -187,20 +199,18 @@ void traffic_limiter_WanStat(char *buf, char *ifname, char *start, char *end, in
 			for (j = 0; j < cols; j++) {
 				if (j == 1) tx = (result[index] == NULL) ? 0 : atoll(result[index]);
 				if (j == 2) rx = (result[index] == NULL) ? 0 : atoll(result[index]);
-#if defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK)
-				sprintf(buf, "[%llu]", (tx + rx + current));
-#else
-				sprintf(buf, "[%llu]", (tx + rx + current)/2);
-#endif
+				sprintf(buf, "[%llu]", (tx + rx + current)/divide);
 				++index;
 			}
-			if (debug) dbg("%s : ifname=%s, start=%s, end=%s, current=%lld, buf=%s\n", __FUNCTION__, ifname, start, end, current, buf);
+			// debug usage
+			TL_LOG("ifname=%s, start=%s, end=%s, current=%lld, divide=%d, buf=%s", ifname, start, end, current, divide, buf); // /tmp/TLD.log
 		}
 		sqlite3_free_table(result);
 	}
-	if (debug) dbg("%s : buf=%s, current=%lld\n", __FUNCTION__, buf, current);
-	if (!strcmp(buf, "")){
-		if (current != 0)
+
+	TL_DBG("ifname=%s, start=%s, end=%s, current=%lld, divide=%d, buf=%s\n", ifname, start, end, current, divide, buf);
+	if (!strcmp(buf, "")) {
+		if(current != 0) 
 			sprintf(buf, "[%lld]", current);
 		else
 			sprintf(buf, "[0]");
@@ -215,8 +225,6 @@ void traffic_limiter_hook(char *ifname, char *start, char *end, char *unit, int 
 	char buf[64];
 	int unit_t = atoi(unit);
 	memset(buf, 0, sizeof(buf));
-	int debug = nvram_get_int("tl_debug");
-	if (debug) dbg("%s : ifname=%s, start=%s, end=%s, unit_t=%d\n", __FUNCTION__, ifname, start, end, unit_t);
 
 	traffic_limiter_WanStat(buf, ifname, start, end, unit_t);
 	

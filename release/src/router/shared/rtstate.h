@@ -36,7 +36,7 @@ enum {
 
 enum {
 	WAN_STOPPED_REASON_NONE=0,
-	WAN_STOPPED_REASON_PPP_NO_ACTIVITY,
+	WAN_STOPPED_REASON_PPP_NO_RESPONSE,
 	WAN_STOPPED_REASON_PPP_AUTH_FAIL,
 	WAN_STOPPED_REASON_DHCP_DECONFIG,
 	WAN_STOPPED_REASON_INVALID_IPADDR,
@@ -144,7 +144,8 @@ enum {
 	FW_UPLOADING_ERROR,
 	FW_WRITING,
 	FW_WRITING_ERROR,
-	FW_WRITE_SUCCESS
+	FW_WRITE_SUCCESS,
+	FW_TRX_CHECK_ERROR
 };
 
 #ifdef RTCONFIG_USB
@@ -235,7 +236,8 @@ enum {
 	DISKMON_SCAN,
 	DISKMON_REMOUNT,
 	DISKMON_FINISH,
-	DISKMON_FORCE_STOP
+	DISKMON_FORCE_STOP,
+	DISKMON_FORMAT
 };
 
 #define DISKMON_FREQ_DISABLE 0
@@ -262,15 +264,17 @@ enum {
 #define WANSCAP_2G	0x08
 #define WANSCAP_5G	0x10
 #define WANSCAP_USB	0x20
+#define WANSCAP_WAN2	0x40
 
 // the following definition is for wans_dualwan
-#define WANS_DUALWAN_IF_NONE 	0
-#define WANS_DUALWAN_IF_DSL	1
-#define WANS_DUALWAN_IF_WAN	2
-#define WANS_DUALWAN_IF_LAN	3
-#define WANS_DUALWAN_IF_USB	4
-#define WANS_DUALWAN_IF_2G	5
-#define WANS_DUALWAN_IF_5G	6
+#define WANS_DUALWAN_IF_NONE  0
+#define WANS_DUALWAN_IF_DSL   1
+#define WANS_DUALWAN_IF_WAN   2
+#define WANS_DUALWAN_IF_LAN   3
+#define WANS_DUALWAN_IF_USB   4
+#define WANS_DUALWAN_IF_2G    5
+#define WANS_DUALWAN_IF_5G    6
+#define WANS_DUALWAN_IF_WAN2  7
 
 // the following definition is for free_caches()
 #define FREE_MEM_NONE  "0"
@@ -284,15 +288,21 @@ enum {
 #ifdef RTCONFIG_WIRELESSWAN
 #define is_wirelesswan_enabled() (nvram_get_int("sw_mode")==SW_MODE_HOTSPOT)
 #endif
-#define is_apmode_enabled() (nvram_get_int("sw_mode")==SW_MODE_AP)
 // todo: multiple wan
 
-int wan_primary_ifunit(void);
+extern int wan_primary_ifunit(void);
+extern int wan_primary_ifunit_ipv6(void);
+extern int get_wan_state(int unit);
+extern int get_wan_sbstate(int unit);
+extern int get_wan_auxstate(int unit);
 extern int is_wan_connect(int unit);
 extern int is_phy_connect(int unit);
-extern int get_wan_state(int unit);
+extern int is_ip_conflict(int unit);
 extern int get_wan_unit(char *ifname);
 extern char *get_wan_ifname(int unit);
+#ifdef RTCONFIG_IPV6
+extern char *get_wan6_ifname(int unit);
+#endif
 extern int get_wanports_status(int wan_unit);
 extern char *get_usb_ehci_port(int port);
 extern char *get_usb_ohci_port(int port);

@@ -5,6 +5,8 @@
 
 */
 
+#define _BSD_SOURCE
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +17,7 @@
 #include <dirent.h>
 #include <bcmnvram.h>
 #include <syslog.h>
+#include <sys/types.h>
 #include <sys/file.h>
 #include "shutils.h"
 #include "shared.h"
@@ -90,25 +93,58 @@ int f_write_excl(const char *path, const void *buffer, int len, unsigned flags, 
 	return r;
 }
 
+/**
+ * Write @buffer, length len, to file specified by @path.
+ * @path:
+ * @buffer:
+ * @len:
+ * @flags:	Combination of FW_APPEND, FW_NEWLINE, FW_SILENT, etc.
+ * @cmode:
+ * @return:
+ * 	>0:	writted length
+ * 	-1:	open file error or -EINVAL
+ *  -errno:	errno of write file error
+ */
 int f_write(const char *path, const void *buffer, int len, unsigned flags, unsigned cmode)
 {
 	static const char nl = '\n';
-	int f;
-	int r = -1;
+	const void *b;
+	int f, ret = 0;
+	size_t wlen;
+	ssize_t r;
 	mode_t m;
 
 	m = umask(0);
 	if (cmode == 0) cmode = 0666;
 	if ((f = open(path, (flags & FW_APPEND) ? (O_WRONLY|O_CREAT|O_APPEND) : (O_WRONLY|O_CREAT|O_TRUNC), cmode)) >= 0) {
-		if ((buffer == NULL) || ((r = write(f, buffer, len)) == len)) {
+		if ((buffer == NULL)) {
 			if (flags & FW_NEWLINE) {
-				if (write(f, &nl, 1) == 1) ++r;
+				if (write(f, &nl, 1) == 1)
+					ret = 1;
+			}
+		} else {
+			for (b = buffer, wlen = len; wlen > 0;) {
+				r = write(f, b, wlen);
+				if (r < 0) {
+					ret = -errno;
+					if (!(flags & FW_SILENT)) {
+						_dprintf("%s: Write [%s] to [%s] failed! errno %d (%s)\n",
+							__func__, b, path, errno, strerror(errno));
+					}
+					break;
+				} else {
+					ret += r;
+					b += r;
+					wlen -= r;
+				}
 			}
 		}
 		close(f);
+	} else {
+		ret = -1;
 	}
 	umask(m);
-	return r;
+	return ret;
 }
 
 int f_read_string(const char *path, char *buffer, int max)
@@ -239,49 +275,109 @@ int check_if_dir_writable(const char *dir)
 /* Serialize using fcntl() calls 
  */
 
-int file_lock(char *tag)
+/* when lock file has been re-opened by the same process,
+ * it can't be closed, because it release original lock,
+ * that have been set earlier. this results in file
+ * descriptors leak.
+ * one way to avoid it - check if the process has set the
+ * lock already via /proc/locks, but it seems overkill
+ * with al of related file ops and text searching. there's
+ * no kernel API for that.
+ * maybe need different lock kind? */
+#define LET_FD_LEAK
+
+int file_lock(const char *tag)
 {
-        char fn[64];
-        struct flock lock;
-        int lockfd = -1;
-        pid_t lockpid;
+	struct flock lock;
+	char path[64];
+	int lockfd;
+	pid_t pid, err;
+#ifdef LET_FD_LEAK
+	pid_t lockpid;
+#else
+	struct stat st;
+#endif
 
-        sprintf(fn, "/var/lock/%s.lock", tag);
-        if ((lockfd = open(fn, O_CREAT | O_RDWR, 0666)) < 0)
-                goto lock_error;
+	snprintf(path, sizeof(path), "/var/lock/%s.lock", tag);
 
-        pid_t pid = getpid();
-        if (read(lockfd, &lockpid, sizeof(pid_t))) {
-                // check if we already hold a lock
-                if (pid == lockpid) {
-                        // don't close the file here as that will release all locks
-                        return -1;
-                }
-        }
+#ifndef LET_FD_LEAK
+	pid = getpid();
 
-        memset(&lock, 0, sizeof(lock));
-        lock.l_type = F_WRLCK;
-        lock.l_pid = pid;
+	/* check if we already hold a lock */
+	if (stat(path, &st) == 0 && !S_ISDIR(st.st_mode) && st.st_size > 0) {
+		FILE *fp;
+		char line[100], *ptr, *value;
+		char id[sizeof("XX:XX:4294967295")];
 
-        if (fcntl(lockfd, F_SETLKW, &lock) < 0) {
-                close(lockfd);
-                goto lock_error;
-        }
+		if ((fp = fopen("/proc/locks", "r")) == NULL)
+			goto error;
 
-        lseek(lockfd, 0, SEEK_SET);
-        write(lockfd, &pid, sizeof(pid_t));
-        return lockfd;
-lock_error:
-        // No proper error processing
-        syslog(LOG_DEBUG, "Error %d locking %s, proceeding anyway", errno, fn);
-        return -1;
+		snprintf(id, sizeof(id), "%02x:%02x:%ld",
+			 major(st.st_dev), minor(st.st_dev), st.st_ino);
+		while ((value = fgets(line, sizeof(line), fp)) != NULL) {
+			strtok_r(line, " ", &ptr);
+			if ((value = strtok_r(NULL, " ", &ptr)) && strcmp(value, "POSIX") == 0 &&
+			    (value = strtok_r(NULL, " ", &ptr)) && /* strcmp(value, "ADVISORY") == 0 && */
+			    (value = strtok_r(NULL, " ", &ptr)) && strcmp(value, "WRITE") == 0 &&
+			    (value = strtok_r(NULL, " ", &ptr)) && atoi(value) == pid &&
+			    (value = strtok_r(NULL, " ", &ptr)) && strcmp(value, id) == 0)
+				break;
+		}
+		fclose(fp);
+
+		if (value != NULL) {
+			syslog(LOG_DEBUG, "Error locking %s: %d %s", path, 0, "Already locked");
+			return -1;
+		}
+	}
+#endif
+
+	if ((lockfd = open(path, O_CREAT | O_RDWR, 0666)) < 0)
+		goto error;
+
+#ifdef LET_FD_LEAK
+	pid = getpid();
+
+	/* check if we already hold a lock */
+	if (read(lockfd, &lockpid, sizeof(pid_t)) == sizeof(pid_t) &&
+	    lockpid == pid) {
+		/* don't close the file here as that will release all locks */
+		syslog(LOG_DEBUG, "Error locking %s: %d %s", path, 0, "Already locked");
+		return -1;
+	}
+#endif
+
+	memset(&lock, 0, sizeof(lock));
+	lock.l_type = F_WRLCK;
+	lock.l_pid = pid;
+	while (fcntl(lockfd, F_SETLKW, &lock) < 0) {
+		if (errno != EINTR)
+			goto close;
+	}
+
+	if (lseek(lockfd, 0, SEEK_SET) < 0 ||
+	    write(lockfd, &pid, sizeof(pid_t)) < 0)
+		goto close;
+
+	return lockfd;
+
+close:
+	err = errno;
+	close(lockfd);
+	errno = err;
+error:
+	syslog(LOG_DEBUG, "Error locking %s: %d %s", path, errno, strerror(errno));
+	return -1;
 }
 
 void file_unlock(int lockfd)
 {
-        if (lockfd >= 0) {
-                ftruncate(lockfd, 0);
-                close(lockfd);
-        } else
-        	syslog(LOG_DEBUG, "Error %d un-locking, proceeding anyway", errno);
+	if (lockfd < 0) {
+		errno = EBADF;
+		syslog(LOG_DEBUG, "Error unlocking %d: %d %s", lockfd, errno, strerror(errno));
+		return;
+	}
+
+	ftruncate(lockfd, 0);
+	close(lockfd);
 }

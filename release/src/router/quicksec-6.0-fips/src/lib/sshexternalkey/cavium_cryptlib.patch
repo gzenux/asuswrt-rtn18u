@@ -1,0 +1,134 @@
+diff -urN crypto-orig/cryptlib.c crypto/cryptlib.c
+--- crypto-orig/cryptlib.c	2007-08-03 12:55:16.000000000 +0300
++++ crypto/cryptlib.c	2007-08-03 12:05:35.000000000 +0300
+@@ -115,12 +115,12 @@
+ #include "cvmx-spinlock.h"
+ #include <fcntl.h>
+ int cryptfd = 0;
+-uint64_t *lockptr = NULL;
++//uint64_t *lockptr = NULL;
+ int
+ crypto_init (void)
+ {
+-  cvmx_spinlock_t *lock;
+-  int i;
++  //  cvmx_spinlock_t *lock;
++  //  int i;
+   if (cryptfd)
+     return cryptfd;
+   if ((cryptfd = open ("/dev/octcrypto", O_RDONLY)) < 0) {
+@@ -138,12 +138,14 @@
+ {
+   if (cryptfd)
+     ioctl (cryptfd, 0xD);
++  return 0;
+ }
+ int
+ crypto_enable_p (void)
+ {
+   if (cryptfd)
+     ioctl (cryptfd, 0xE);
++  return 0;
+ }
+ int
+ crypto_mult (uint64_t montmul, uint64_t arg)
+@@ -153,10 +155,12 @@
+       return ioctl (cryptfd, CRYPT_MODEXP, arg);        //ModExp
+     else if (montmul == CRYPT_MODEXPCRT)
+       return ioctl (cryptfd, CRYPT_MODEXPCRT, arg);     //ModExpCrt
++  return -1;
+ }
+ #endif
+ #endif
+ 
++#if 0
+ DECLARE_STACK_OF (CRYPTO_dynlock)
+   IMPLEMENT_STACK_OF (CRYPTO_dynlock)
+ 
+@@ -588,3 +592,5 @@
+ #endif	 
+  /*   abort ();  */
+ }
++#endif
++
+diff -urN crypto-orig/cryptlib.h crypto/cryptlib.h
+--- crypto-orig/cryptlib.h	2007-08-03 12:55:16.000000000 +0300
++++ crypto/cryptlib.h	2007-08-03 12:07:12.000000000 +0300
+@@ -110,12 +110,25 @@
+ extern "C" {
+ #endif
+ 
++#ifndef OCTEON_OPENSSL
++#define OCTEON_OPENSSL
++#endif
++
++#ifndef TARGET_LINUX
++#define TARGET_LINUX
++#endif
++
++
+ #ifdef OCTEON_OPENSSL
+ #include <openssl/rsa.h>
+ #define ROUNDUP8(val) (((val) + 7)&0xfffffff8)
+ #define MINIMUM(a,b) ( (a<b)? a :b)
+ #define MAXIMUM(a,b) ( (a>b)? a :b)
+ 
++int crypto_init (void);
++void crypto_close(void);
++
++
+ /**
+  * Modular Exponentiation  
+  * ME = b ^ e mod m 
+diff -urN crypto-orig/modexp/modexp.c crypto/modexp/modexp.c
+--- crypto-orig/modexp/modexp.c	2007-08-03 12:55:16.000000000 +0300
++++ crypto/modexp/modexp.c	2007-08-03 12:12:20.000000000 +0300
+@@ -66,13 +66,15 @@
+   int nonwalign;
+ } crtparams;
+ 
+-
++#ifndef TARGET_LINUX
+ int MontMul576 (uint64_t * product, uint64_t * mpcand, uint64_t * mplier,
+   uint64_t * mod, uint64_t * recip);
+ int MontMul (uint64_t * product, uint64_t * mpcand, uint64_t * mplier,
+   uint64_t * mod, uint64_t * recip, int len);
+ extern int Vadd (uint64_t * accum, uint64_t * addend, int len);
+ extern int Vsub (uint64_t * accum, uint64_t * addend, int len);
++#endif
++
+ 
+ #if defined(__linux__)
+ #include "cryptolinux.h"
+@@ -146,6 +148,7 @@
+ #define FATAL_ERROR
+ #endif
+ 
++#ifndef TARGET_LINUX
+ void
+ VMulWord (uint64_t * product, const uint64_t * mpcand,
+   const uint64_t mplier, int len)
+@@ -252,6 +255,7 @@
+   if (temp)
+     OPENSSL_free (temp);
+ }
++#endif
+ 
+ // len is in multiple of 192 bits
+ static int
+@@ -499,6 +503,7 @@
+     len, elen, mlen, blen, 0);
+ }
+ 
++#ifndef TARGET_LINUX
+ int
+ cav_mod_exp (BIGNUM * res, const BIGNUM * base, const BIGNUM * exp,
+   const BIGNUM * mod, BN_CTX * ctx)
+@@ -704,6 +709,7 @@
+   if (negmod)
+     OPENSSL_free (negmod);
+ }
++#endif
+ 
+ /*
+    CRT Algorithm:

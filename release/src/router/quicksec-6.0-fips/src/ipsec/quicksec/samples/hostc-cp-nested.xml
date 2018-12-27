@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<!-- Network topology for nested tunnel remote access scenario
+
+     HostB                     HostA                   HostC    NetC
+               outer tunnel              5001::/64              6001::/64
+     172.30  ________________  172.30                  
+     .4.167  ________________  .4.189                  
+                                                                
+     5002     inner tunnel                             5001    
+     ::f001  ========================================= ::254                -->
+
+
+
+<!-- Remote access setup with nested tunnels and config mode.
+     Hosta is the endserver, hostb the middleserver and hostc client.
+     hostb the midway GW and hostc the peer.
+     hosta = hostb - hostc -->
+<!-- Related: hosta-cp-iras-nested.xml, hostb-cp-irac-nested.xml -->
+<quicksec>
+  <params>
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- Inner ESP transportmode tunnel -->
+    <!-- Flag `enable-outbound-sa-selectors' allows a hostc to initiate
+         traffic to remote hosta once the inner tunnel is negotiated. -->
+    <tunnel name="inner" transform="esp aes sha1" 
+            flags="enable-outbound-sa-selectors">
+      <identity id-type="email" id="c@ipsec.com">
+        <local-secret>car</local-secret>
+      </identity>
+    </tunnel>
+
+    <!-- Allows traffic from inner tunnel to netc. -->
+    <rule from-tunnel="inner">
+      <dst>ipv6(6001::0/64)</dst>
+    </rule>
+
+    <!-- Default passby rules for IPv4 and IPv6. -->
+    <rule>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+    <rule>
+      <dst>ipv6(::/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

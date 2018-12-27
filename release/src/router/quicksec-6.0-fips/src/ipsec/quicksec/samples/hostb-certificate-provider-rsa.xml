@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup where policymanager is enabled to send the 
+     certificate chain using HTTP as the transport protocol. -->
+<!-- Related: hosta-certificate-provider-rsa.xml -->
+<quicksec>
+  <!-- to generate the CA and end entity certificates used in this
+       sample, please execute 'ssh-certmake cert_template.rsa'
+       (found from the src/ipsec/quicksec/samples directory).
+       This will generate the necessary files needed by this policy.
+       This operation must be done only on one of the test hosts!
+       Copy the generated rsa* files to local and to remote IKE
+       peer's directory (where policy manager is located). -->
+
+  <!-- certificate-provider flag enables the policymanager to
+       send the certificate chain using HTTP as the transport protocol.
+       This should prevent fragmentation of IKE packets. By default the
+       HTTP server listens on port 7369, this can be overridden using 
+       the certificate-provider-port attribute on params element. -->
+  <params>
+    <!-- local certificate and private key -->
+    <externalkey type="software" init-info="key_files(rsauser2.crt, 
+                                            rsauser2.prv"/>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Trusted CA -->
+      <ca file="rsaca.ca"/>
+
+      <!-- static CRL from a file-->
+      <crl file="rsaca.crl"/>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- Allow traffic for hash-and-url clients. The TCP port number
+         must match to the value given in certificate-provider-port
+         attribute or if this is not given the default value of 7369.
+    -->
+    <rule>
+      <dst>ipv4(tcp:7369,172.30.4.167)</dst>
+      <local-stack direction="to"/>
+    </rule>
+
+    <tunnel name="host-to-host">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="rsauser2@ipsec.com"/>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         packet matching to these selectors triggers IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <!-- Allows src address to initiate traffic to the dst address, 
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.189)</src>
+      <dst>ipv4(172.30.4.167)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

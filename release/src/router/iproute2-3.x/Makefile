@@ -42,6 +42,9 @@ IPTABLES_LIBS = $(IPTABLES_DIR)/iptables/.libs
 export IPTL = -L$(IPTABLES_LIBS)
 export CFLAGS += -I$(IPTABLES_INCLUDE)
 
+IPROUTE2_HDRS= \
+	include/libnetlink.h
+
 all: Config
 	@set -e; \
 	for i in $(SUBDIRS); \
@@ -90,5 +93,10 @@ distclean: clobber
 
 cscope:
 	cscope -b -q -R -Iinclude -sip -slib -smisc -snetem -stc
+
+stage: $(IPROUTE2_HDRS)
+	@mkdir -p $(STAGEDIR)/usr/include
+	install -m 644 $(foreach h,$^,$(h)) $(STAGEDIR)/usr/include
+	@touch $@
 
 .EXPORT_ALL_VARIABLES:

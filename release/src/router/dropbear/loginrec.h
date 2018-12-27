@@ -1,5 +1,5 @@
-#ifndef _HAVE_LOGINREC_H_
-#define _HAVE_LOGINREC_H_
+#ifndef DROPBEAR_HAVE_LOGINREC_H_
+#define DROPBEAR_HAVE_LOGINREC_H_
 
 /*
  * Copyright (c) 2000 Andre Lucas.  All rights reserved.
@@ -73,10 +73,10 @@
 #else
 /* Simply select your favourite login types. */
 /* Can't do if-else because some systems use several... <sigh> */
-#  if defined(UTMPX_FILE) && !defined(DISABLE_UTMPX)
+#  if defined(HAVE_UTMPX_H) && defined(UTMPX_FILE) && !defined(DISABLE_UTMPX)
 #    define USE_UTMPX
 #  endif
-#  if defined(UTMP_FILE) && !defined(DISABLE_UTMP)
+#  if defined(HAVE_UTMP_H) && defined(UTMP_FILE) && !defined(DISABLE_UTMP)
 #    define USE_UTMP
 #  endif
 #  if defined(WTMPX_FILE) && !defined(DISABLE_WTMPX)
@@ -173,13 +173,9 @@ int login_utmp_only(struct logininfo *li);
 int login_write (struct logininfo *li);
 int login_log_entry(struct logininfo *li);
 
-/* set the network address based on network address type */
-void login_set_addr(struct logininfo *li, const struct sockaddr *sa,
-		    const unsigned int sa_size);
-
 /* produce various forms of the line filename */
 char *line_fullname(char *dst, const char *src, size_t dstsize);
 char *line_stripname(char *dst, const char *src, size_t dstsize);
 char *line_abbrevname(char *dst, const char *src, size_t dstsize);
 
-#endif /* _HAVE_LOGINREC_H_ */
+#endif /* DROPBEAR_HAVE_LOGINREC_H_ */

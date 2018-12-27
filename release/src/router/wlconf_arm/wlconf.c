@@ -2972,11 +2972,16 @@ wlconf(char *name)
 
 		snprintf(tmp, sizeof(tmp), "acs_ifnames");
 		ptr = nvram_get(tmp);
-		if (ptr)
-			snprintf(buf, sizeof(buf), "%s %s", ptr, name);
-		else
+		if (ptr) {
+			if (!find_in_list(ptr, name)) {
+				snprintf(buf, sizeof(buf), "%s %s", ptr, name);
+				nvram_set(tmp, buf);
+			}
+		} else {
 			strncpy(buf, name, sizeof(buf));
-		nvram_set(tmp, buf);
+			nvram_set(tmp, buf);
+		}
+
 		WL_IOVAR_SETINT(name, "chanim_mode", CHANIM_EXT);
 		goto legacy_end;
 

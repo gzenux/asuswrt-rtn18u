@@ -47,49 +47,12 @@
 
 int vpnc_unit = 5;
 
-static int
-handle_special_char_for_vpnclient(char *buf, size_t buf_size, char *src)
-{
-	const char special_chars[] = "'\\";
-	char *p, *q;
-	size_t len;
-
-	if (!buf || !src || buf_size <= 1)
-		return -1;
-
-	for (p = src, q = buf, len = buf_size; *p != '\0' && len > 1; ++p, --len) {
-		if (strchr(special_chars, *p))
-			*q++ = '\\';
-
-		*q++ = *p;
-	}
-
-	*q++ = '\0';
-
-	return 0;
-}
-
 int vpnc_pppstatus(void)
 {
-	FILE *fp;
-	char sline[128], buf[128], *p;
+	char statusfile[sizeof("/var/run/ppp-vpnXXXXXXXXXX.status")];
 
-	if ((fp=fopen("/tmp/vpncstatus.log", "r")) && fgets(sline, sizeof(sline), fp))
-	{
-		p = strstr(sline, ",");
-		strcpy(buf, p+1);
-	}
-	else
-	{
-		strcpy(buf, "unknown reason");
-	}
-
-	if(fp) fclose(fp);
-
-	if(strstr(buf, "No response from ISP.")) return WAN_STOPPED_REASON_PPP_NO_ACTIVITY;
-	else if(strstr(buf, "Failed to authenticate ourselves to peer")) return WAN_STOPPED_REASON_PPP_AUTH_FAIL;
-	else if(strstr(buf, "Terminating connection due to lack of activity")) return WAN_STOPPED_REASON_PPP_LACK_ACTIVITY;
-	else return WAN_STOPPED_REASON_NONE;
+	snprintf(statusfile, sizeof(statusfile), "/var/run/ppp-vpn%d.status", vpnc_unit);
+	return _pppstatus(statusfile);
 }
 
 int
@@ -143,10 +106,10 @@ start_vpnc(void)
 	/* do not authenticate peer and do not use eap */
 	fprintf(fp, "noauth\n");
 	fprintf(fp, "refuse-eap\n");
-	handle_special_char_for_vpnclient(buf, sizeof(buf), nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)));
-	fprintf(fp, "user '%s'\n", buf);
-	handle_special_char_for_vpnclient(buf, sizeof(buf), nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)));
-	fprintf(fp, "password '%s'\n", buf);
+	fprintf(fp, "user '%s'\n",
+		ppp_safe_escape(nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)), buf, sizeof(buf)));
+	fprintf(fp, "password '%s'\n",
+		ppp_safe_escape(nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)), buf, sizeof(buf)));
 
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "pptp")) {
 		fprintf(fp, "plugin pptp.so\n");
@@ -369,8 +332,9 @@ void update_vpnc_state(char *prefix, int state, int reason)
 		// keep ip info if it is stopped from connected
 		nvram_set_int(strcat_r(prefix, "sbstate_t", tmp), reason);
 	}
-	else if(state == WAN_STATE_STOPPING){
-		unlink("/tmp/vpncstatus.log");
+	else if(state == WAN_STATE_STOPPING) {
+		snprintf(tmp, sizeof(tmp), "/var/run/ppp-vpn%d.status", vpnc_unit);
+		unlink(tmp);
 	}
 }
 
@@ -599,29 +563,58 @@ vpnc_down(char *vpnc_ifname)
 	else
 		wan_ifname = nvram_safe_get(strcat_r(wan_prefix, "pppoe_ifname", tmp));
 
-	/* Reset default gateway route */
-	if (!strcmp(wan_proto, "dhcp") || !strcmp(wan_proto, "static")) {
-		route_del(wan_ifname, 2, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
-		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
-	}
-	else if (!strcmp(wan_proto, "pppoe") || !strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp"))
-	{
-		char *wan_xgateway = nvram_safe_get(strcat_r(wan_prefix, "xgateway", tmp));
+#if !defined(CONFIG_BCMWL5) && defined(RTCONFIG_DUALWAN)
+	if (get_nr_wan_unit() > 1 && nvram_match("wans_mode", "lb")) {
+		/* Reset default gateway route */
+		if (!strcmp(wan_proto, "dhcp") || !strcmp(wan_proto, "static")) {
+			route_del(wan_ifname, 2, "0.0.0.0", nvram_pf_safe_get(wan_prefix, "gateway"), "0.0.0.0");
+		}
+		else if (!strcmp(wan_proto, "pppoe") || !strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp"))
+		{
+			char *wan_xgateway = nvram_pf_safe_get(wan_prefix, "xgateway");
 
-		route_del(wan_ifname, 2, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
-		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
+			route_del(wan_ifname, 2, "0.0.0.0", nvram_pf_safe_get(wan_prefix, "gateway"), "0.0.0.0");
+			if (strlen(wan_xgateway) > 0 && strcmp(wan_xgateway, "0.0.0.0")) {
+				char *wan_xifname = nvram_pf_safe_get(wan_prefix, "ifname");
 
-		if (strlen(wan_xgateway) > 0 && strcmp(wan_xgateway, "0.0.0.0")) {
-			char *wan_xifname = nvram_safe_get(strcat_r(wan_prefix, "ifname", tmp));
+				route_del(wan_xifname, 3, "0.0.0.0", nvram_pf_safe_get(wan_prefix, "xgateway"), "0.0.0.0");
+			}
 
-			route_del(wan_xifname, 3, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "xgateway", tmp)), "0.0.0.0");
-			route_add(wan_xifname, 2, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "xgateway", tmp)), "0.0.0.0");	
+			/* Delete route to pptp/l2tp's server */
+			if (nvram_pf_get_int(prefix, "dut_disc") && strcmp(wan_proto, "pppoe"))
+				route_del(wan_ifname, 0, nvram_pf_safe_get(wan_prefix, "gateway"), "0.0.0.0", "255.255.255.255");
 		}
 
-		/* Delete route to pptp/l2tp's server */
-		if (nvram_get_int(strcat_r(prefix, "dut_disc", tmp)) && strcmp(wan_proto, "pppoe"))
-			route_del(wan_ifname, 0, nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0", "255.255.255.255");
+		/* default route via default gateway */
+		add_multi_routes();
+	} else {
+#endif
+		/* Reset default gateway route */
+		if (!strcmp(wan_proto, "dhcp") || !strcmp(wan_proto, "static")) {
+			route_del(wan_ifname, 2, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
+			route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
+		}
+		else if (!strcmp(wan_proto, "pppoe") || !strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp"))
+		{
+			char *wan_xgateway = nvram_safe_get(strcat_r(wan_prefix, "xgateway", tmp));
+
+			route_del(wan_ifname, 2, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
+			route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0");
+
+			if (strlen(wan_xgateway) > 0 && strcmp(wan_xgateway, "0.0.0.0")) {
+				char *wan_xifname = nvram_safe_get(strcat_r(wan_prefix, "ifname", tmp));
+
+				route_del(wan_xifname, 3, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "xgateway", tmp)), "0.0.0.0");
+				route_add(wan_xifname, 2, "0.0.0.0", nvram_safe_get(strcat_r(wan_prefix, "xgateway", tmp)), "0.0.0.0");
+			}
+
+			/* Delete route to pptp/l2tp's server */
+			if (nvram_get_int(strcat_r(prefix, "dut_disc", tmp)) && strcmp(wan_proto, "pppoe"))
+				route_del(wan_ifname, 0, nvram_safe_get(strcat_r(wan_prefix, "gateway", tmp)), "0.0.0.0", "255.255.255.255");
+		}
+#if !defined(CONFIG_BCMWL5) && defined(RTCONFIG_DUALWAN)
 	}
+#endif
 
 	/* Delete firewall rules for VPN client */
 	vpnc_del_firewall_rule();

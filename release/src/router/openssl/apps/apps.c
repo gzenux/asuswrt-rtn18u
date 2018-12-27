@@ -119,9 +119,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if !defined(OPENSSL_SYSNAME_WIN32) && !defined(OPENSSL_SYSNAME_WINCE) && !defined(NETWARE_CLIB)
-# include <strings.h>
-#endif
 #include <sys/types.h>
 #include <ctype.h>
 #include <errno.h>
@@ -218,7 +215,8 @@ int args_from_file(char *file, int *argc, char **argv[])
     if (arg != NULL)
         OPENSSL_free(arg);
     arg = (char **)OPENSSL_malloc(sizeof(char *) * (i * 2));
-
+    if (arg == NULL)
+        return 0;
     *argv = arg;
     num = 0;
     p = buf;
@@ -1352,7 +1350,11 @@ int set_name_ex(unsigned long *flags, const char *arg)
         {"ca_default", XN_FLAG_MULTILINE, 0xffffffffL},
         {NULL, 0, 0}
     };
-    return set_multi_opts(flags, arg, ex_tbl);
+    if (set_multi_opts(flags, arg, ex_tbl) == 0)
+        return 0;
+    if ((*flags & XN_FLAG_SEP_MASK) == 0)
+        *flags |= XN_FLAG_SEP_CPLUS_SPC;
+    return 1;
 }
 
 int set_ext_copy(int *copy_type, const char *arg)
@@ -2373,6 +2375,8 @@ int args_verify(char ***pargs, int *pargc,
         flags |= X509_V_FLAG_PARTIAL_CHAIN;
     else if (!strcmp(arg, "-no_alt_chains"))
         flags |= X509_V_FLAG_NO_ALT_CHAINS;
+    else if (!strcmp(arg, "-allow_proxy_certs"))
+        flags |= X509_V_FLAG_ALLOW_PROXY_CERTS;
     else
         return 0;
 
@@ -2441,7 +2445,11 @@ int bio_to_mem(unsigned char **out, int maxlen, BIO *in)
         else
             len = 1024;
         len = BIO_read(in, tbuf, len);
-        if (len <= 0)
+        if (len < 0) {
+            BIO_free(mem);
+            return -1;
+        }
+        if (len == 0)
             break;
         if (BIO_write(mem, tbuf, len) != len) {
             BIO_free(mem);
@@ -2458,7 +2466,7 @@ int bio_to_mem(unsigned char **out, int maxlen, BIO *in)
     return ret;
 }
 
-int pkey_ctrl_string(EVP_PKEY_CTX *ctx, char *value)
+int pkey_ctrl_string(EVP_PKEY_CTX *ctx, const char *value)
 {
     int rv;
     char *stmp, *vtmp = NULL;
@@ -3190,6 +3198,36 @@ int app_isdir(const char *name)
 #endif
 
 /* raw_read|write section */
+#if defined(__VMS)
+# include "vms_term_sock.h"
+static int stdin_sock = -1;
+
+static void close_stdin_sock(void)
+{
+    TerminalSocket (TERM_SOCK_DELETE, &stdin_sock);
+}
+
+int fileno_stdin(void)
+{
+    if (stdin_sock == -1) {
+        TerminalSocket(TERM_SOCK_CREATE, &stdin_sock);
+        atexit(close_stdin_sock);
+    }
+
+    return stdin_sock;
+}
+#else
+int fileno_stdin(void)
+{
+    return fileno(stdin);
+}
+#endif
+
+int fileno_stdout(void)
+{
+    return fileno(stdout);
+}
+
 #if defined(_WIN32) && defined(STD_INPUT_HANDLE)
 int raw_read_stdin(void *buf, int siz)
 {
@@ -3199,10 +3237,17 @@ int raw_read_stdin(void *buf, int siz)
     else
         return (-1);
 }
+#elif defined(__VMS)
+#include <sys/socket.h>
+
+int raw_read_stdin(void *buf, int siz)
+{
+    return recv(fileno_stdin(), buf, siz, 0);
+}
 #else
 int raw_read_stdin(void *buf, int siz)
 {
-    return read(fileno(stdin), buf, siz);
+    return read(fileno_stdin(), buf, siz);
 }
 #endif
 
@@ -3218,6 +3263,6 @@ int raw_write_stdout(const void *buf, int siz)
 #else
 int raw_write_stdout(const void *buf, int siz)
 {
-    return write(fileno(stdout), buf, siz);
+    return write(fileno_stdout(), buf, siz);
 }
 #endif

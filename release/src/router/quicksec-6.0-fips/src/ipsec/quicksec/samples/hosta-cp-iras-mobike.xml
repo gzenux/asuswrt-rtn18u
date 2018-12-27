@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup using mobike. Iras acting as server, 
+     irac as client. -->
+<!-- Related: hostb-cp-irac-mobike.xml -->
+<quicksec>
+  <params>
+    <!-- return routability policy for responder: 
+         before-sa-update (default), after-sa-update, no-rrc -->
+    <mobike rrc-policy="before-sa-update"/>
+
+    <!-- IRAS gives virtual IP address from range defined 
+         in address element. Subnet element defines which subnet
+         is accessible through the gateway. More than one subnet
+         element can be defined. -->
+    <address-pool>
+      <subnet>192.168.200.0/24</subnet>
+      <subnet>192.168.100.0/24</subnet>
+      <address netmask="255.255.255.0">192.168.200.3-192.168.200.254</address>
+    </address-pool> 
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- The flag mobike enables mobike suports for IKE SAs negotiated
+         using this tunnel. The flag allow-cfgmode allows initiators to
+         request remote access attributes using IKEv2 configuration 
+         payloads. --> 
+    <tunnel name="remote-access" flags="mobike
+                                        allow-cfgmode
+                                        proxy-arp
+                                        dont-initiate
+                                        ">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="a@ipsec.com">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- Precedence is used on responder when selecting a new 
+           local IP address, if the current address has disappeared. -->
+      <local-ip precedence="0xffffffff">172.30.4.189</local-ip>
+      <!-- IPv4 and IPv6 (except link-local) addresses from local 
+           interface are added to the local IP address list with 
+           the specified precedence. -->
+      <local-interface precedence="1">eth1</local-interface>
+    </tunnel>
+
+    <!-- Allow traffic from the remote access clients. -->
+    <rule from-tunnel="remote-access"/>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

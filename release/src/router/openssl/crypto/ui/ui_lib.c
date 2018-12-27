@@ -1,4 +1,4 @@
-/* crypto/ui/ui_lib.c -*- mode:C; c-file-style: "eay" -*- */
+/* crypto/ui/ui_lib.c */
 /*
  * Written by Richard Levitte (richard@levitte.org) for the OpenSSL project
  * 2001.
@@ -413,6 +413,8 @@ char *UI_construct_prompt(UI *ui, const char *object_desc,
         len += sizeof(prompt3) - 1;
 
         prompt = (char *)OPENSSL_malloc(len + 1);
+        if (prompt == NULL)
+            return NULL;
         BUF_strlcpy(prompt, prompt1, len + 1);
         BUF_strlcat(prompt, object_desc, len + 1);
         if (object_name) {

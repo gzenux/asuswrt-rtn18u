@@ -12,6 +12,8 @@
 # $Id: Makefile 382679 2013-02-03 04:43:50Z $
 #
 
+include ../../common.mak
+
 CFLAGS	+= -I.. -I$(SRCBASE)/include -I$(SRCBASE)/common/include -I$(SRCBASE)/router/shared -Wall -Werror
 CFLAGS	+= $(WLAN_ComponentIncPath)
 
@@ -22,7 +24,9 @@ CFLAGS  += -DNAS_WKSP_BUILD_NAS_SUPPL
 #CFLAGS  += -DNAS_GTK_PER_STA
 CFLAGS  += -DNAS_RADIUS
 CFLAGS  += -DNAS_WKSP_ON_DEMAND
-
+ifeq ($(RTCONFIG_IPV6),y)
+CFLAGS += -DNAS_IPV6
+endif
 
 CFLAGS	+= -DBCMSUPPL
 
@@ -34,7 +38,6 @@ LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += -L$(TOP)/libbcmcrypto -L$(INSTALLDIR)/libbcmcrypto/usr/lib -lbcmcrypto
 LDFLAGS += -lgcc_s
 
-include ../../common.mak
 ifeq ($(RTCONFIG_QTN),y)
 LDFLAGS += -L$(TOP)/libqcsapi_client -lqcsapi_client
 endif

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <params>
+    <http-interface/>
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="sctp-host" ike-life="3600" flags="transport">
+      <identity id-type="email" id="a@ipsec.com"> 
+        <local-secret>foo</local-secret>
+      </identity>
+      <ike-versions>2 1</ike-versions>
+    </tunnel>
+
+    <rule to-tunnel="sctp-host" flags="multi-homed"> 
+      <src>ipv4(sctp,172.30.4.189),ipv4(sctp,10.0.0.2)</src>
+      <dst>ipv4(sctp,172.30.4.167),ipv4(sctp,10.0.0.1)</dst>
+    </rule>
+
+    <rule from-tunnel="sctp-host" flags="multi-homed">
+      <src>ipv4(sctp,172.30.4.167),ipv4(sctp,10.0.0.1)</src>
+      <dst>ipv4(sctp,172.30.4.189),ipv4(sctp,10.0.0.2)</dst>
+    </rule>
+
+    <!-- Pass everything else in plain-text. -->
+    <rule/>
+  </policy>
+</quicksec>

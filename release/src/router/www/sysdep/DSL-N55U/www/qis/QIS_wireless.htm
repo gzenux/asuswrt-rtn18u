@@ -113,8 +113,6 @@ function submitForm(){
 
 	if(document.form.wl1_wpa_psk.value.length > 0){
 		document.form.wl1_auth_mode_x.value = "psk2";
-		/*if(!validate_wlpsk(document.form.wl1_wpa_psk))
-			return false;*/
 		if(!validator.psk(document.form.wl1_wpa_psk))
 			return false;
 	}
@@ -123,8 +121,6 @@ function submitForm(){
 
 	if(document.form.wl0_wpa_psk.value.length > 0){
 		document.form.wl0_auth_mode_x.value = "psk2";
-		/*if(!validate_wlpsk(document.form.wl0_wpa_psk))
-			return false;*/
 		if(!validator.psk(document.form.wl0_wpa_psk))
 			return false;
 	}
@@ -178,28 +174,6 @@ function Sync_2ghz(band){
 		}
 	}else
                 document.form.sync_with_2ghz.checked = false;
-}
-
-function validate_wlpsk(psk_obj){
-	var psk_length = psk_obj.value.length;
-
-	if(psk_length < 8 || psk_length > 64){
-		alert("<#qis_wireless_sk_warning#>");
-		psk_obj.focus();
-		psk_obj.select();
-
-		return false;
-	}
-
-	if(psk_length >= 8 && psk_length <= 63 && !validator.string(psk_obj)){
-		alert("<#JS_PSK64Hex#>");
-		psk_obj.focus();
-		psk_obj.select();
-
-		return false;
-	}
-
-	return true;
 }
 
 function gotoHome(){

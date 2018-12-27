@@ -1040,34 +1040,39 @@ unlock()
 }
 
 /* JYWeng 20031216: add to wanstatus.log */
-
-void saveWANStatus(char *currentstatus, int statusindex)
+static void
+create_status(statusname, status)
+    char *statusname;
+    char *status;
 {
-	FILE *STATUSFILE;
+    FILE *fp;
 
-	/* only save with status description */
-	if (strlen(currentstatus) == 0)
-		return;
+    if ((fp = fopen(statusname, "w")) != NULL) {
+	fprintf(fp, "%s\n", status ? : "");
+	(void) fclose(fp);
+    } else
+	error("Failed to create status file %s: %m", statusname);
+}
 
-#ifdef ONWL500G_SHELL
-	if ((req_unit == 0) && (STATUSFILE = fopen("/etc/linuxigd/wanstatus.log", "w"))!=NULL)
-	{
-		fprintf(STATUSFILE, "StatusCode=\"%d\"\n", statusindex);
-		fprintf(STATUSFILE, "StatusReason=\"%s\"\n", currentstatus);
-		fclose(STATUSFILE);
-	}
-#else
-	if ((req_unit == 0) && (STATUSFILE = fopen("/tmp/wanstatus.log", "w"))!=NULL)
-	{
-		fprintf(STATUSFILE, "%d,%s\n", statusindex, currentstatus);
-		fclose(STATUSFILE);
-	}
+void
+save_wanstatus(status)
+    char *status;
+{
+    char statusname[MAXPATHLEN];
 
-	/* For VPNC */
-	if ((req_unit == 5) && (STATUSFILE = fopen("/tmp/vpncstatus.log", "w"))!=NULL)
-	{
-		fprintf(STATUSFILE, "%d,%s\n", statusindex, currentstatus);
-		fclose(STATUSFILE);
-	}
-#endif
+    /* only save with status description */
+    if (!status || status[0] == 0)
+	return;
+
+    /* ifname.status is unused
+    slprintf(statusname, sizeof(statusname), "%s%s.status",
+	     _PATH_VARRUN, ifname);
+    create_status(statusname, status);
+    */
+
+    if (linkname[0]) {
+	slprintf(statusname, sizeof(statusname), "%sppp-%s.status",
+		 _PATH_VARRUN, linkname);
+	create_status(statusname, status);
+    }
 }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+<!-- Client/Initiator configuration indicating support for IKE redirection -->
+
+<quicksec>
+  <params>
+    <auth-domain>
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+
+    <!-- Initiator supports/accepts redirection. This is the only option needed
+         for initiator. -->
+    <ike-redirect/>
+
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host" flags="auto cfgmode">
+      <identity id-type="email" id="a@ipsec.com">
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- IP address of gateway -->
+      <peer>172.30.4.10</peer>
+    </tunnel>
+
+    <rule to-tunnel="host-to-host">
+      <local-stack direction="from"/>
+    </rule>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

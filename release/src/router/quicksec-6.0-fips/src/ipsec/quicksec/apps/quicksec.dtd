@@ -1,0 +1,630 @@
+<!-- 									-->
+<!-- quicksec.dtd							-->
+<!--  									-->
+<!-- @copyright                                                   	-->
+<!-- Copyright (c) 2002 - 2014, INSIDE Secure Oy.  All rights reserved.	-->
+<!--  									-->
+<!-- Document type description for QuickSec XML policy files.		-->
+<!--									-->
+<!--									-->
+
+<!-- Built-in entities: 						-->
+<!--									-->
+<!--   quicksec:hostname  						-->
+<!--   quicksec:version   						-->
+<!--   quicksec:ifname(IFINDEX[,TYPE]) 					-->
+<!--     where:  							-->
+<!--       IFINDEX	is the interface number 			-->
+<!--       TYPE		is `any', `loopback' or `physical'	  	-->
+<!--									-->
+
+
+<!-- Tunable parameters used in the policy. -->
+
+<!ENTITY vpn-a-transform 	'esp 3des sha1'>
+
+<!ENTITY vpn-a-group 	'2'>
+
+<!ENTITY vpn-a-ike-life 	'86400'>
+
+<!ENTITY vpn-a-ipsec-life 	'28800'>
+
+<!ENTITY vpn-b-transform 	'esp aes xcbc-aes'>
+
+<!ENTITY vpn-b-group 	'14'>
+
+<!ENTITY vpn-b-ike-life 	'86400'>
+
+<!ENTITY vpn-b-ipsec-life 	'28800'>
+
+<!-- Default lifetime type. -->
+<!ENTITY % default-life-type	'"kbytes"'>
+
+<!-- Default rule type. -->
+<!ENTITY % default-rule-type	'"pass"'>
+
+<!-- Policy elements and their attributes. -->
+
+<!-- The top-level element. -->
+<!ELEMENT quicksec	(params?,policy+)>
+
+<!-- Parameter element. -->
+<!ELEMENT params (internal-nat?,engine-params?,engine-flows?
+                  ,audit?,http-interface?
+                  ,dns?
+                  ,xauth-tester?
+		  ,mobike?
+                  ,(address-pool|externalkey|ldap|client-auth|
+                    nat|group|route|media|tcpencap|auth-domain)*
+                  ,xauth-method?
+                  ,radius-accounting?
+                  ,ike-redirect?)>
+
+<!-- IKE Redirect -->
+<!--  phase: ike-init -->
+<!ELEMENT ike-redirect (redirect-address*)>
+<!ATTLIST ike-redirect
+	      phase     CDATA    #IMPLIED>
+
+
+<!-- cookie-required : with ikev2 always do cookie exchange -->
+<!-- certificate-provider : enable hash-and-url certificate provider -->
+<!-- certificate-bundles : send hash-and-url certificates as bundles -->
+<!ATTLIST params
+          flags                         NMTOKENS   	#IMPLIED
+          debug				CDATA           #IMPLIED
+          kernel-debug			CDATA           #IMPLIED
+          certificate-provider-port     CDATA		"7369">
+
+<!-- Engine Parameters. -->
+<!ELEMENT engine-params 		EMPTY>
+<!ATTLIST engine-params
+          decrement-ttl 		CDATA	#IMPLIED
+          audit-corrupt                 CDATA   #IMPLIED
+          drop-if-cannot-audit          CDATA   #IMPLIED
+          min-ttl                      	CDATA	#IMPLIED
+          audit-total-rate-limit       	CDATA	#IMPLIED
+          flow-rate-always-allow       	CDATA	#IMPLIED
+          flow-rate-usage-threshold     CDATA	#IMPLIED
+          flow-rate-max-share          	CDATA	#IMPLIED
+          dpd-timeout          	        CDATA	#IMPLIED
+          natt-keepalive-interval       CDATA	#IMPLIED
+          routing                      (host|optimized) #IMPLIED
+          fragment-policy              (loose|strict|none|nofrags) #IMPLIED
+          broadcast-icmp               (drop|allow) #IMPLIED>
+
+<!-- Handling of ssh_pme_redo_flows() callback from the policymanager -->
+<!--     and associated things. -->
+<!ELEMENT engine-flows                  EMPTY>
+<!ATTLIST engine-flows
+          refresh                       CDATA   "0">
+
+<!-- An address pool for NAT-T to make clients unique at server. -->
+<!ELEMENT internal-nat	EMPTY>
+<!ATTLIST internal-nat
+          first-ip	CDATA	#REQUIRED
+	  last-ip	CDATA	#REQUIRED>
+
+<!-- Audit Configuration. -->
+<!ELEMENT audit	(module*)>
+<!ATTLIST audit
+          snap-length	CDATA	      "0">
+
+<!ELEMENT module	EMPTY>
+<!ATTLIST module
+	  log-to        CDATA	      "syslog"
+	  format	NMTOKENS      "default">
+<!-- all ike pm engine -->
+<!ATTLIST module
+          subsystem     NMTOKENS      "all">
+
+<!-- HTTP statistics interface. -->
+<!ELEMENT http-interface	EMPTY>
+<!ATTLIST http-interface
+	  address		CDATA		#IMPLIED
+	  port			CDATA		"7368"
+	  frames		(yes|no)	"no"
+	  refresh		CDATA		"0">
+
+<!-- DNS name resolver utilization. -->
+<!ELEMENT dns                   EMPTY>
+
+<!-- XAUTH tester. -->
+<!ELEMENT xauth-tester	ANY>
+
+<!-- Mobike. rrc-policy: before-sa-update after-sa-update no-rrc -->
+<!ELEMENT mobike                EMPTY>
+<!ATTLIST mobike
+          rrc-policy            CDATA           #IMPLIED>
+
+<!-- Address pool for allocating IP addresses for remote access -->
+<!-- clients. -->
+<!ELEMENT address-pool	(subnet*,address*,ipv6-prefix?)>
+<!ATTLIST address-pool
+	  name    	ID	#IMPLIED
+	  own-ip	CDATA	#IMPLIED
+	  dns		CDATA	#IMPLIED
+	  wins		CDATA	#IMPLIED
+	  dhcp		CDATA	#IMPLIED
+	  flags		CDATA	#IMPLIED>
+
+<!-- Additional sub-networks, protected by the gateway -->
+<!-- (SUBNET/MASKLEN). -->
+<!ELEMENT subnet	(#PCDATA)>
+
+<!-- IPv6 prefix, used when clients specify the low-order address bits -->
+<!ELEMENT ipv6-prefix	(#PCDATA)>
+
+<!-- An IP address specification.  Possible formats are: 		-->
+<!--   IPADDR	 	a single IP address 				-->
+<!--   IPADDR-IPADDR	an IP address range 				-->
+<!--   IPADDR/MASKLEN	all addresses of the subnet.  If the netmask	-->
+<!--   			attribute is unspecified, use the netmask	-->
+<!--   			MASKLEN. 					-->
+<!ELEMENT address	(#PCDATA)>
+<!ATTLIST address
+          netmask	CDATA	#IMPLIED>
+
+<!-- Externalkey provider. -->
+<!ELEMENT externalkey	EMPTY>
+<!ATTLIST externalkey
+	  type		CDATA		#REQUIRED
+	  init-info	CDATA		#IMPLIED>
+
+<!-- trust-cas -->
+<!ATTLIST externalkey
+	  flags		NMTOKENS	#IMPLIED>
+
+<!-- An LDAP server. -->
+<!ELEMENT ldap EMPTY>
+<!ATTLIST ldap
+	  server	CDATA	#REQUIRED
+	  port		CDATA	"389">
+
+<!-- Remote access client authentication. -->
+<!ELEMENT client-auth	EMPTY>
+<!ATTLIST client-auth
+          type		(l2tp|xauth|eap)            #IMPLIED
+	  gateway	CDATA		            #IMPLIED
+          order         (1|2)                       #IMPLIED
+	  user-name	CDATA		            #REQUIRED
+	  password	CDATA		            #REQUIRED>
+
+<!-- Authentication domains -->
+<!ELEMENT auth-domain ((remote-secret
+                       |certificate
+		       |ca
+                       |crl
+                       |eap
+                       |radius-client|radius
+                       |password)*)>
+<!ATTLIST auth-domain
+          name          CDATA    #IMPLIED>
+
+<!-- User-name - password based authentication at the remote access -->
+<!-- gateway. -->
+<!ELEMENT password	EMPTY>
+<!ATTLIST password
+	  user-name	CDATA	#REQUIRED
+	  password	CDATA	#REQUIRED
+	  user-name-encoding	(binary|hex)		"binary"
+	  password-encoding	(binary|hex)		"binary">
+
+<!-- Additional manually configured certificates and CRLs. -->
+
+<!ELEMENT certificate	(#PCDATA)>
+<!ATTLIST certificate
+          file		CDATA	#IMPLIED>
+
+<!ELEMENT crl		(#PCDATA)>
+<!ATTLIST crl
+          file		CDATA	#IMPLIED>
+
+<!-- A pre-shared key for a remote IKE peer. -->
+<!ELEMENT remote-secret		(#PCDATA)>
+<!ATTLIST remote-secret
+	  id-type	(dn|ip|fqdn|email|key-id|idlist)	#IMPLIED
+	  id		CDATA			    		#IMPLIED
+	  id-encoding	(binary|hex)		    		"binary"
+	  encoding	(binary|hex)		    		"binary">
+
+<!-- EAP configuration -->
+<!ELEMENT eap           EMPTY>
+<!ATTLIST eap
+          type          (md5-challenge
+                         |sim
+                         |aka
+                         |srp
+                         |tls
+                         |aka-dash
+                         |mschapv2)                             #IMPLIED
+          radius-url    CDATA                                   #IMPLIED
+	  preference    CDATA                                   #IMPLIED>
+
+<!-- NAT configuration. -->
+<!ELEMENT nat 		EMPTY>
+<!ATTLIST nat
+	  type		(port|host)	"port"
+	  ifname	CDATA		#REQUIRED
+          src-port-preservation (loose|strict|overload|off) #IMPLIED>
+
+<!-- ipv6  -->
+<!ATTLIST nat
+	  flags		NMTOKENS	#IMPLIED>
+
+
+<!-- RADIUS client information. -->
+<!ELEMENT radius-client		EMPTY>
+<!ATTLIST radius-client
+          address		CDATA	#REQUIRED
+	  port			CDATA	#IMPLIED
+	  nas-ip-address	CDATA	#IMPLIED
+	  nas-identifier	CDATA	#IMPLIED
+	  max-retransmit-timer	CDATA	#IMPLIED
+	  max-retransmissions	CDATA	#IMPLIED>
+
+<!-- RADIUS server information. -->
+<!ELEMENT radius	EMPTY>
+<!ATTLIST radius
+	  server	CDATA	#REQUIRED
+	  port		CDATA	"1812"
+	  acct-port	CDATA	"1813"
+	  secret	CDATA	#REQUIRED>
+
+<!-- Access control group. -->
+<!ELEMENT group	(constraint+)>
+<!ATTLIST group
+	  name	CDATA	#REQUIRED>
+
+<!-- Constraint for members of an access control group. -->
+<!ELEMENT constraint	EMPTY>
+<!ATTLIST constraint
+	  type		(xauth
+	                 |eap
+                         |key-subject
+                         |eap-subject
+	  		 |cert-subject
+			 |cert-issuer
+			 |ca-subject)			#REQUIRED>
+<!-- Type			Field	Pattern 			-->
+<!-- ================================================================== -->
+<!-- xauth	  		radius 	AVP=PATTERN			-->
+<!-- For `{cert,ca}-subject'	dn	PATTERN for subjectName		-->
+<!-- and `cert-issuer'	  	ip	PATTERN for IP subjectAltName 	-->
+<!-- types			fqdn	PATTERN for fqdn subjectAltName -->
+<!--   				email	PATTERN for emailsubjectAltName -->
+<!-- key-subject may use ip, fqdn, email and key-id types -->
+
+
+<!-- eap   auth-method  PATTERN sim|aka|tls|md5-challenge|aka-dash      -->
+<!-- eap-subject Field may be ip, fqdn, email or key-id                 -->
+<!-- eap-subject Pattern  should match the EAP identity                 -->
+
+<!ATTLIST constraint
+	  field		CDATA				#IMPLIED
+	  pattern	CDATA				#IMPLIED>
+
+
+<!-- Type of External authentication method used for authentication. -->
+<!-- The method type and flag values should have the following values-->
+<!--  Type                              FLAG                         -->
+<!-- =============================================================== -->
+<!-- generic                           simple                        -->
+<!--                                   securid                       -->
+<!-- radius-chap                                                     -->
+<!-- otp                                                             -->
+<!-- s-key                                                           -->
+<!ELEMENT xauth-method EMPTY>
+<!ATTLIST xauth-method
+          type     CDATA #IMPLIED
+          flag     CDATA #IMPLIED>
+
+
+<!ELEMENT radius-accounting (radius-client, radius+)>
+<!ATTLIST radius-accounting>
+
+<!-- Standalone configuration for routes. Either ifname or ifnum for	-->
+<!-- compatibility 							-->
+<!ELEMENT route	EMPTY>
+<!ATTLIST route
+	  dst	 CDATA	#REQUIRED
+	  gw 	 CDATA	#REQUIRED
+	  ifnum	 CDATA	#IMPLIED
+          ifname CDATA  #IMPLIED>
+
+<!-- Standalone configuration for media address configuration. Either  -->
+<!-- ifname or ifnum for compatibility.                                -->
+<!ELEMENT media EMPTY>
+<!ATTLIST media
+	  ip	 CDATA	        #REQUIRED
+	  mac	 CDATA		#REQUIRED
+	  ifnum	 CDATA		#IMPLIED
+          ifname CDATA		#IMPLIED
+	  flags	 NMTOKENS	#IMPLIED>
+
+
+<!-- IPSec over TCP encapsulation configuration -->
+<!ELEMENT tcpencap       (local-ip?,peer?)>
+<!ATTLIST tcpencap
+          local-port     CDATA   "0"
+          peer-port      CDATA   "0"
+	  ike-port       CDATA   "0">
+
+
+<!-- Policy element. -->
+<!ELEMENT policy ((ldap|password|ike-defaults|certificate|crl|nat
+                   |group)*
+                  ,(service|tunnel|rule)+)>
+<!ATTLIST policy
+	  id		ID	#IMPLIED
+	  precedence	CDATA	#IMPLIED
+	  size		CDATA	#IMPLIED
+	  refresh	CDATA	"0">
+
+<!-- Default IKE parameters and algorithms. -->
+<!ELEMENT ike-defaults	EMPTY>
+<!-- cipher1 cipher2 null des 3des aes aes-ctr aes-gcm aes-gcm-64 -->
+<!-- aes-gcm-96 aes-ccm aes-ccm-64 aes-ccm-96 -->
+<!-- mac1 mac2 md5 sha1 -->
+<!ATTLIST ike-defaults
+	  algorithms	NMTOKENS	#IMPLIED>
+
+<!-- A service object. -->
+<!ELEMENT service	EMPTY>
+<!ATTLIST service
+	  name		ID	#REQUIRED>
+
+<!-- A tunnel specification. -->
+<!ELEMENT tunnel	((ike-versions
+			 |ike-groups
+			 |pfs-groups
+                         |life
+                         |certificate
+			 |identity
+                         |authentication
+			 |cfgmode-address
+			 |virtual-ifname
+			 |ike-algorithms
+			 |ike-window-size
+			 |local-ip
+			 |local-interface
+			 |local-port
+			 |peer
+			 |algorithm-properties
+			 |manual-key
+			 |inbound-extension
+			 |tcpencap
+			 |tunnel-address-pool
+			 |outer-tunnel
+             |redirect-address)*)>
+
+<!ATTLIST tunnel
+	  name		ID		#REQUIRED
+	  app-id	CDATA		#IMPLIED
+	  ike-life	CDATA		#IMPLIED
+	  routing-instance	CDATA	#IMPLIED>
+
+<!-- cipher1 cipher2 null des 3des aes aes-ctr aes-gcm aes-gcm-64 -->
+<!-- aes-gcm-96 aes-ccm aes-ccm-64 aes-ccm-96 -->
+<!-- mac1 mac2 md5 sha1 sha2 xcbc-aes gmac-aes deflate lzs -->
+<!-- esp ipcomp ah -->
+<!-- Default transform is "esp aes 3des sha1 md5" -->
+
+<!ATTLIST tunnel
+	  transform	NMTOKENS	#IMPLIED>
+
+<!-- perhost perport dont-initiate interface-trigger dhcp -->
+<!-- omit-trigger-packet cfgmode l2tp aggressive-mode allow-dhcp -->
+<!-- allow-cfgmode require-cfgmode auto allow-l2tp proxy-arp -->
+<!-- tunnel transport internal-nat disable-anti-replay eap-request-id -->
+<!-- eap-only-authentication port-nat start-with-natt dont-initiate-natt -->
+<!-- disable-natt no-nats-allowed xauth-methods -->
+<!-- enable-outbound-sa-selectors long-seq short-seq no-cert-chains -->
+<!ATTLIST tunnel
+	  flags		NMTOKENS	#IMPLIED>
+
+<!ELEMENT redirect-address	(#PCDATA)>
+
+<!-- An IKE peer, IP address or Domain name -->
+<!ELEMENT peer	(#PCDATA)>
+
+<!-- Local IP address to be used with a tunnel. -->
+<!ELEMENT local-ip	(#PCDATA)>
+<!ATTLIST local-ip
+          precedence    NMTOKENS 	#IMPLIED>
+
+<!-- Local interface to be used with a tunnel. -->
+<!ELEMENT local-interface (#PCDATA)>
+<!ATTLIST local-interface
+          precedence    NMTOKENS 	#IMPLIED>
+
+<!-- Local IKE port to be used with the tunnel. -->
+<!ELEMENT local-port    (#PCDATA)>
+
+<!-- Request this IP address when doing IKE CFGMODE. -->
+<!ELEMENT cfgmode-address	(#PCDATA)>
+
+<!-- Use this virtual adapter. -->
+<!ELEMENT virtual-ifname	(#PCDATA)>
+
+<!-- Allowed Diffie-Hellman groups for IKE. -->
+<!ELEMENT ike-groups	(#PCDATA)>
+<!-- system-preferences -->
+<!ATTLIST ike-groups
+	  flags		NMTOKENS	#IMPLIED>
+
+<!-- Allowed IKE versions, currently support 1 and 2.   -->
+<!-- If both given, initiator starts with version 2.    -->
+<!-- If only 2 given start with version 2, no fallback. -->
+<!-- If only 1 given, start with version 1, and on responder set USE_V1. -->
+<!ELEMENT ike-versions (#PCDATA)>
+
+<!-- Perfect forward secrecy. -->
+<!ELEMENT pfs-groups	(#PCDATA)>
+<!-- system-preferences -->
+<!ATTLIST pfs-groups
+	  flags		NMTOKENS	#IMPLIED>
+
+<!-- A required access control group. -->
+<!ELEMENT access-group	(#PCDATA)>
+
+<!-- SA lifetime. -->
+<!ELEMENT life	(#PCDATA)>
+<!ATTLIST life
+	  type	(kbytes|seconds)	%default-life-type;>
+
+<!-- Trusted CA. -->
+<!ELEMENT ca	(#PCDATA)>
+<!ATTLIST ca
+	  file  CDATA		#IMPLIED>
+<!-- no-crl -->
+<!ATTLIST ca
+	  flags	NMTOKENS	#IMPLIED>
+
+<!-- An IKE identity. -->
+<!ELEMENT identity (local-secret*)>
+
+<!-- A pre-shared key for tunnel authenticaton. -->
+<!ELEMENT local-secret		                  (#PCDATA)>
+<!ATTLIST local-secret
+	  encoding	(binary|hex)		   "binary"
+          flags         NMTOKENS                   #IMPLIED>
+
+
+<!ATTLIST identity
+	  id-type	(dn|ip|fqdn|email|key-id|idlist)	#IMPLIED
+	  id		CDATA			    		#IMPLIED
+	  id-encoding	(binary|hex)		    		"binary"
+	  type		(local|remote)          		"local"
+          order         (1|2)                                   "1">
+
+<!-- enforce-identity -->
+<!ATTLIST identity
+	  flags	NMTOKENS	#IMPLIED>
+
+<!-- Tunnel authentication -->
+<!ELEMENT authentication	EMPTY>
+<!ATTLIST authentication
+	  auth-domain-name      CDATA	        #IMPLIED
+          order                 (1|2)           "1">
+
+<!-- Algorithm properties. -->
+<!ELEMENT algorithm-properties	EMPTY>
+<!-- cipher1 cipher2 aes aes-ctr aes-gcm aes-gcm-64 aes-gcm-96 gmac-aes -->
+<!-- aes-ccm aes-ccm-64 aes-ccm-96 sha2 mac1 mac2 -->
+
+<!ATTLIST algorithm-properties
+	  algorithm		NMTOKENS	#REQUIRED>
+
+<!ATTLIST algorithm-properties
+	  min-key-size		CDATA		#REQUIRED
+	  max-key-size		CDATA		#REQUIRED
+	  default-key-size	CDATA		#REQUIRED
+	  scope			(ike|ipsec|all)	"all">
+
+<!-- Algorithms for IKE SAs. -->
+<!-- cipher1 cipher2 des 3des aes aes-ctr mac1 mac2 md5 sha1 sha2 xcbc-aes -->
+<!-- aes-gcm aes-gcm-64 aes-gcm-96 aes-ccm aes-ccm-64 aes-ccm-96 -->
+<!ELEMENT ike-algorithms	(#PCDATA)>
+
+<!ELEMENT ike-window-size	(#PCDATA)>
+
+<!-- Configuring extension selector under decapsulation -->
+<!ELEMENT inbound-extension   EMPTY>
+<!ATTLIST inbound-extension
+	  index		CDATA	#REQUIRED
+          dst           CDATA   #REQUIRED>
+
+<!-- Configuring nested tunnels -->
+<!ELEMENT outer-tunnel  EMPTY>
+<!ATTLIST outer-tunnel
+          name          CDATA                   #REQUIRED>
+
+<!-- No flags specified at the moment. -->
+<!ATTLIST outer-tunnel
+          flags         NMTOKENS                #IMPLIED>
+
+<!-- Configuring address pools to tunnels -->
+<!ELEMENT tunnel-address-pool  EMPTY>
+<!ATTLIST tunnel-address-pool
+          name          IDREF                   #REQUIRED>
+
+<!-- Manually configured SAs. -->
+
+<!ELEMENT manual-key	(esp|ah|ipcomp)+>
+
+<!ELEMENT esp		EMPTY>
+<!ATTLIST esp
+	  spi-in	CDATA	#REQUIRED
+	  spi-out	CDATA	#REQUIRED
+	  encr-key-in	CDATA	#IMPLIED
+	  encr-key-out	CDATA	#IMPLIED
+	  auth-key-in	CDATA	#IMPLIED
+	  auth-key-out	CDATA	#IMPLIED>
+
+<!ELEMENT ah		EMPTY>
+<!ATTLIST ah
+	  spi-in	CDATA	#REQUIRED
+	  spi-out	CDATA	#REQUIRED
+	  auth-key-in	CDATA	#REQUIRED
+	  auth-key-out	CDATA	#REQUIRED>
+
+<!ELEMENT ipcomp		EMPTY>
+<!ATTLIST ipcomp
+	  cpi-in	CDATA	#REQUIRED
+	  cpi-out	CDATA	#REQUIRED>
+
+<!-- A policy rule. -->
+<!ELEMENT rule ((src|src-dns)?,(dst|dst-dns)?,
+		(ifname?|routed-ifname?),
+		local-stack?,
+		access-group*,
+		extension*)>
+
+<!ATTLIST rule
+	  app-id	ID		        #IMPLIED
+	  precedence	CDATA			#IMPLIED
+	  type		(pass|reject|drop)	%default-rule-type;
+	  from-tunnel	IDREF			#IMPLIED
+	  to-tunnel	IDREF			#IMPLIED
+          nat-dst       CDATA                   #IMPLIED
+          nat-dst-low   CDATA                   #IMPLIED
+          nat-dst-high  CDATA                   #IMPLIED
+          nat-dst-port  CDATA                   #IMPLIED
+          nat-src       CDATA                   #IMPLIED
+          nat-src-low   CDATA                   #IMPLIED
+          nat-src-high  CDATA                   #IMPLIED
+          nat-src-port  CDATA                   #IMPLIED
+          nat-src-port-preservation (loose|strict|overload|off) #IMPLIED
+          nat-src-type  (one-to-one)            #IMPLIED
+          nat-dst-type  (one-to-one)            #IMPLIED
+	  service	IDREF			#IMPLIED
+	  routing-instance	CDATA		#IMPLIED>
+
+<!-- connections -->
+<!ATTLIST rule
+	  log		NMTOKENS		#IMPLIED>
+
+<!-- no-flow rate-limit multi-homed set-df clear-df  -->
+<!-- match-local-ike adjust-local-address cfgmode-rules -->
+<!ATTLIST rule
+	  flags		NMTOKENS		#IMPLIED>
+
+<!-- Rule selectors. -->
+
+<!ELEMENT src		(#PCDATA)>
+<!ELEMENT dst		(#PCDATA)>
+<!ELEMENT src-dns	(#PCDATA)>
+<!ELEMENT dst-dns	(#PCDATA)>
+<!ELEMENT ifname	(#PCDATA)>
+<!ELEMENT routed-ifname	(#PCDATA)>
+
+<!ELEMENT local-stack	EMPTY>
+<!ATTLIST local-stack
+	  direction	(from|to)	#REQUIRED>
+
+<!ELEMENT extension	EMPTY>
+<!ATTLIST extension
+	  id		CDATA	#REQUIRED
+	  low		CDATA	#REQUIRED
+	  high		CDATA	#REQUIRED>

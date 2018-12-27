@@ -30,27 +30,31 @@
 #include "algo.h"
 #include "buffer.h"
 #include "kex.h"
-#include "random.h"
+#include "dbrandom.h"
 #include "service.h"
 #include "auth.h"
 #include "channel.h"
 
 #define MAX_UNAUTH_PACKET_TYPE SSH_MSG_USERAUTH_PK_OK
 
-static void recv_unimplemented();
+static void recv_unimplemented(void);
 
 /* process a decrypted packet, call the appropriate handler */
 void process_packet() {
 
 	unsigned char type;
 	unsigned int i;
+	time_t now;
 
-	TRACE(("enter process_packet"))
+	TRACE2(("enter process_packet"))
 
 	type = buf_getbyte(ses.payload);
-	TRACE(("process_packet: packet type = %d", type))
+	TRACE(("process_packet: packet type = %d,  len %d", type, ses.payload->len))
 
 	ses.lastpacket = type;
+
+	now = monotonic_now();
+	ses.last_packet_time_keepalive_recv = now;
 
 	/* These packets we can receive at any time */
 	switch(type) {
@@ -63,25 +67,49 @@ void process_packet() {
 		case SSH_MSG_UNIMPLEMENTED:
 			/* debugging XXX */
 			TRACE(("SSH_MSG_UNIMPLEMENTED"))
-			dropbear_exit("received SSH_MSG_UNIMPLEMENTED");
+			goto out;
 			
 		case SSH_MSG_DISCONNECT:
 			/* TODO cleanup? */
 			dropbear_close("Disconnect received");
 	}
 
-    ses.last_packet_time = time(NULL);
+	/* Ignore these packet types so that keepalives don't interfere with
+	idle detection. This is slightly incorrect since a tcp forwarded
+	global request with failure won't trigger the idle timeout,
+	but that's probably acceptable */
+	if (!(type == SSH_MSG_GLOBAL_REQUEST || type == SSH_MSG_REQUEST_FAILURE)) {
+		ses.last_packet_time_idle = now;
+	}
 
 	/* This applies for KEX, where the spec says the next packet MUST be
 	 * NEWKEYS */
 	if (ses.requirenext != 0) {
-		if (ses.requirenext != type) {
-			/* TODO send disconnect? */
-			dropbear_exit("unexpected packet type %d, expected %d", type,
-					ses.requirenext);
-		} else {
+		if (ses.requirenext == type)
+		{
 			/* Got what we expected */
-			ses.requirenext = 0;
+			TRACE(("got expected packet %d during kexinit", type))
+		}
+		else
+		{
+			/* RFC4253 7.1 - various messages are allowed at this point.
+			The only ones we know about have already been handled though,
+			so just return "unimplemented" */
+			if (type >= 1 && type <= 49
+				&& type != SSH_MSG_SERVICE_REQUEST
+				&& type != SSH_MSG_SERVICE_ACCEPT
+				&& type != SSH_MSG_KEXINIT)
+			{
+				TRACE(("unknown allowed packet during kexinit"))
+				recv_unimplemented();
+				goto out;
+			}
+			else
+			{
+				TRACE(("disallowed packet during kexinit"))
+				dropbear_exit("Unexpected packet type %d, expected %d", type,
+						ses.requirenext);
+			}
 		}
 	}
 
@@ -93,13 +121,19 @@ void process_packet() {
 		goto out;
 	}
 
+	/* Only clear the flag after we have checked ignorenext */
+	if (ses.requirenext != 0 && ses.requirenext == type)
+	{
+		ses.requirenext = 0;
+	}
+
 
 	/* Kindly the protocol authors gave all the preauth packets type values
 	 * less-than-or-equal-to 60 ( == MAX_UNAUTH_PACKET_TYPE ).
 	 * NOTE: if the protocol changes and new types are added, revisit this 
 	 * assumption */
 	if ( !ses.authstate.authdone && type > MAX_UNAUTH_PACKET_TYPE ) {
-		dropbear_exit("received message %d before userauth", type);
+		dropbear_exit("Received message %d before userauth", type);
 	}
 
 	for (i = 0; ; i++) {
@@ -123,7 +157,7 @@ out:
 	buf_free(ses.payload);
 	ses.payload = NULL;
 
-	TRACE(("leave process_packet"))
+	TRACE2(("leave process_packet"))
 }
 
 

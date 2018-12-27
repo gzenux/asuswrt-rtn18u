@@ -49,6 +49,29 @@ if(dualWAN_support){
 	}
 }
 
+function Check_IE_Version(){ //Edge: return 12
+    var rv = -1; // Return value assumes failure.
+
+    if (navigator.appName == 'Microsoft Internet Explorer'){
+
+       var ua = navigator.userAgent,
+           re  = new RegExp("MSIE ([0-9]{1,}[\\.0-9]{0,})");
+
+       if (re.exec(ua) !== null){
+         rv = parseFloat( RegExp.$1 );
+       }
+    }
+    else if(navigator.appName == "Netscape"){                       
+       /// in IE 11 the navigator.appVersion says 'trident'
+       /// in Edge the navigator.appVersion does not say trident
+       if(navigator.appVersion.indexOf('Trident') === -1 && navigator.appVersion.indexOf('Edge') >= 0) rv = 12;
+       else rv = 11;
+    }       
+
+    return rv;          
+}
+var IE_Version = Check_IE_Version();
+
 // get PTM WAN setting list from hook.
 // dsl_enable, dsl_proto, dsl_dot1q, dsl_vid
 var DSLWANList = [ <% get_DSL_WAN_list(); %> ];
@@ -59,6 +82,9 @@ function chg_pvc_0() {
 	enable_all_ctrl();
 	document.form.dsl_subunit.disabled = true;
 	change_dsl_unit_idx(8,0);
+	
+	document.form.dsl_proto.options[3] = null;	//remove beidge while edit Internet PVC		
+		
 	change_dsl_type(document.form.dsl_proto.value);
 	fixed_change_dsl_type(document.form.dsl_proto.value);
 }
@@ -80,7 +106,7 @@ function chg_pvc_sub(pvc_to_chg) {
 		if (DSLWANList[0][3] == "bridge")
 			remove_item_from_select_bridge();
 	}
-	//disable_pvc_summary();	Viz hide temp
+	
 	enable_all_ctrl();
 	change_dsl_unit_idx(pvc_to_chg,iptv_row);
 	change_dsl_type(document.form.dsl_proto.value);
@@ -95,7 +121,7 @@ function remove_item_from_select_bridge() {
 }
 
 function add_pvc() {
-	disable_pvc_summary();
+	
 	enable_all_ctrl();
 
 	// find a available PVC
@@ -130,6 +156,13 @@ function add_pvc() {
 	document.getElementById("PPPsetting").style.display = "none";
 	document.getElementById("vpn_server").style.display = "none";
 
+	if(IE_Version == 12){	//for IE/Edge only
+		setTimeout("disable_pvc_summary();",500);
+	}
+	else{
+		disable_pvc_summary();
+	}
+	
 	change_dsl_type(document.form.dsl_proto.value);
 	fixed_change_dsl_type(document.form.dsl_proto.value);
 }
@@ -138,6 +171,8 @@ function add_pvc_0() {
 	disable_pvc_summary();
 	enable_all_ctrl();
 	document.form.dsl_subunit.disabled = true;
+	
+	document.form.dsl_proto.options[3] = null;	//remove beidge while edit Internet PVC		
 
 	change_dsl_type(document.form.dsl_proto.value);
 	fixed_change_dsl_type(document.form.dsl_proto.value);
@@ -304,9 +339,7 @@ function initial(){
 	if(!dualWAN_support && !vdsl_support) {
 		document.getElementById("WANscap").style.display = "none";
 	}
-
-	//change_dsl_type(document.form.dsl_proto.value);		//Viz add
-	//fixed_change_dsl_type(document.form.dsl_proto.value);		//Viz add
+	
 }
 
 function change_wan_unit(obj){
@@ -442,69 +475,6 @@ function applyRule(){
 		document.form.submit();
 	}
 }
-/* Viz replace it
-function applyRule(){
-	var vpi_num = document.form.dsl_vpi.value;
-	var vci_num = document.form.dsl_vci.value;
-
-	for(var i = 0; i < DSLWANList.length; i++){
-		if (i!=document.form.dsl_unit.value) {
-			if (dsl_pvc_enabled[i] != "0") {
-				if (vpi_num == DSLWANList[i][1] && vci_num == DSLWANList[i][2]) {
-					alert("<#same_vpi_vci#>");
-					return;
-				}
-			}
-		}
-	}
-
-	if(document.form.dslx_dnsenable[1].checked == true && document.form.dsl_proto.value != "mer" && document.form.dslx_dns1.value == "" && document.form.dslx_dns2.value == "") {
-		alert("<#dns_server_no_set#>");
-		return;
-	}
-
-	if(validForm()){
-		showLoading();
-
-		inputCtrl(document.form.dslx_DHCPClient[0], 1);
-		inputCtrl(document.form.dslx_DHCPClient[1], 1);
-		if(!document.form.dslx_DHCPClient[0].checked){
-			inputCtrl(document.form.dslx_ipaddr, 1);
-			inputCtrl(document.form.dslx_netmask, 1);
-			inputCtrl(document.form.dslx_gateway, 1);
-		}
-
-		inputCtrl(document.form.dslx_dnsenable[0], 1);
-		inputCtrl(document.form.dslx_dnsenable[1], 1);
-		if(!document.form.dslx_dnsenable[0].checked){
-			inputCtrl(document.form.dslx_dns1, 1);
-			inputCtrl(document.form.dslx_dns1, 1);
-		}
-
-		if (document.form.dsl_unit.value=='0' && document.form.dsl_enable.value=='1') {
-			document.form.wan_enable.value = document.form.dslx_link_enable.value;
-			document.form.wan_unit.value = '0';
-			document.form.wan_enable.disabled = false;
-			document.form.wan_unit.disabled = false;
-		}
-
-		if (document.form.dsl_unit.value == 0 && document.form.dsl_proto.value == "bridge")
-			document.getElementById('bridgePPPoE_relay').innerHTML = '<input type="hidden" name="fw_pt_pppoerelay" value="1"> ';
-
-		inputCtrl(document.form.dsl_pcr, 1);
-		inputCtrl(document.form.dsl_scr, 1);
-		inputCtrl(document.form.dsl_mbs, 1);
-
-		if (document.form.dsl_proto.value == "bridge") {
-			document.form.action_script.value = "reboot";
-			document.form.action_wait.value = "<% get_default_reboot_time(); %>";
-		}
-
-		document.form.dslx_transmode.value = document.form.dsltmp_transmode.value;
-
-		document.form.submit();
-	}
-}*/
 
 // test if WAN IP & Gateway & DNS IP is a valid IP
 // DNS IP allows to input nothing
@@ -780,8 +750,7 @@ function fixed_change_dsl_type(dsl_type){
 		showhide("IPsetting",1);
 		showhide("DNSsetting",1);
 		showhide("vpn_server",1);
-	}
-	// Viz mod else if(dsl_type == "mer"){
+	}	
 	else if(dsl_type == "dhcp"){
 		inputCtrl(document.form.dslx_DHCPClient_x[0], 0);
 		inputCtrl(document.form.dslx_DHCPClient_x[1], 0);

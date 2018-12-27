@@ -4,7 +4,7 @@
  *******************************************************************/
 
 #ifndef DROPBEAR_VERSION
-#define DROPBEAR_VERSION "0.52"
+#define DROPBEAR_VERSION "2016.74"
 #endif
 
 #define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
@@ -23,6 +23,21 @@
 #define AUTH_TIMEOUT 300 /* we choose 5 minutes */
 #endif
 
+ #define DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT ((DROPBEAR_SVR_PUBKEY_AUTH) && (DROPBEAR_SVR_PUBKEY_OPTIONS))
+
+/* A client should try and send an initial key exchange packet guessing
+ * the algorithm that will match - saves a round trip connecting, has little
+ * overhead if the guess was "wrong". */
+#ifndef DROPBEAR_KEX_FIRST_FOLLOWS
+#define DROPBEAR_KEX_FIRST_FOLLOWS 1
+#endif
+/* Use protocol extension to allow "first follows" to succeed more frequently.
+ * This is currently Dropbear-specific but will gracefully fallback when connecting
+ * to other implementations. */
+#ifndef DROPBEAR_KEXGUESS2
+#define DROPBEAR_KEXGUESS2 1
+#endif
+
 /* Minimum key sizes for DSS and RSA */
 #ifndef MIN_DSS_KEYLEN
 #define MIN_DSS_KEYLEN 512
@@ -38,7 +53,7 @@
  * the clearenv() function */
 #define ENV_SIZE 100
 
-#define MAX_CMD_LEN 1024 /* max length of a command */
+#define MAX_CMD_LEN 9000 /* max length of a command */
 #define MAX_TERM_LEN 200 /* max length of TERM name */
 
 #define MAX_HOST_LEN 254 /* max hostname len for tcp fwding */
@@ -54,42 +69,66 @@
 
 #define _PATH_CP "/bin/cp"
 
+#define DROPBEAR_ESCAPE_CHAR '~'
+
 /* success/failure defines */
 #define DROPBEAR_SUCCESS 0
 #define DROPBEAR_FAILURE -1
-
-/* various algorithm identifiers */
-#define DROPBEAR_KEX_DH_GROUP1 0
-
-#define DROPBEAR_SIGNKEY_ANY 0
-#define DROPBEAR_SIGNKEY_RSA 1
-#define DROPBEAR_SIGNKEY_DSS 2
-#define DROPBEAR_SIGNKEY_NONE 3
-
-#define DROPBEAR_COMP_NONE 0
-#define DROPBEAR_COMP_ZLIB 1
-#define DROPBEAR_COMP_ZLIB_DELAY 2
+ 
+#define DROPBEAR_PASSWORD_ENV "DROPBEAR_PASSWORD"
 
 /* Required for pubkey auth */
-#if defined(ENABLE_SVR_PUBKEY_AUTH) || defined(DROPBEAR_CLIENT)
-#define DROPBEAR_SIGNKEY_VERIFY
-#endif
+#define DROPBEAR_SIGNKEY_VERIFY ((DROPBEAR_SVR_PUBKEY_AUTH) || (DROPBEAR_CLIENT))
 
-/* SHA1 is 20 bytes == 160 bits */
 #define SHA1_HASH_SIZE 20
-/* SHA512 is 64 bytes == 512 bits */
-#define SHA512_HASH_SIZE 64
-/* MD5 is 16 bytes = 128 bits */
 #define MD5_HASH_SIZE 16
-
-/* largest of MD5 and SHA1 */
-#define MAX_MAC_LEN SHA1_HASH_SIZE
-
+#define MAX_HASH_SIZE 64 /* sha512 */
 
 #define MAX_KEY_LEN 32 /* 256 bits for aes256 etc */
-#define MAX_IV_LEN 20 /* must be same as max blocksize, 
-						 and >= SHA1_HASH_SIZE */
-#define MAX_MAC_KEY 20
+#define MAX_IV_LEN 20 /* must be same as max blocksize,  */
+
+#if DROPBEAR_SHA2_512_HMAC
+#define MAX_MAC_LEN 64
+#elif DROPBEAR_SHA2_256_HMAC
+#define MAX_MAC_LEN 32
+#else
+#define MAX_MAC_LEN 20
+#endif
+
+
+#define DROPBEAR_ECC ((DROPBEAR_ECDH) || (DROPBEAR_ECDSA))
+
+/* Debian doesn't define this in system headers */
+#if !defined(LTM_DESC) && (DROPBEAR_ECC)
+#define LTM_DESC 
+#endif
+
+#define DROPBEAR_ECC_256 (DROPBEAR_ECC)
+#define DROPBEAR_ECC_384 (DROPBEAR_ECC)
+#define DROPBEAR_ECC_521 (DROPBEAR_ECC)
+
+#define DROPBEAR_LTC_PRNG (DROPBEAR_ECC)
+
+/* RSA can be vulnerable to timing attacks which use the time required for
+ * signing to guess the private key. Blinding avoids this attack, though makes
+ * signing operations slightly slower. */
+#define DROPBEAR_RSA_BLINDING 1
+
+/* hashes which will be linked and registered */
+#define DROPBEAR_SHA256 ((DROPBEAR_SHA2_256_HMAC) || (DROPBEAR_ECC_256)  \
+ 			|| (DROPBEAR_CURVE25519) || (DROPBEAR_DH_GROUP14_SHA256))
+#define DROPBEAR_SHA384 (DROPBEAR_ECC_384)
+/* LTC SHA384 depends on SHA512 */
+#define DROPBEAR_SHA512 ((DROPBEAR_SHA2_512_HMAC) || (DROPBEAR_ECC_521) \
+			|| (DROPBEAR_SHA384) || (DROPBEAR_DH_GROUP16))
+#define DROPBEAR_MD5 (DROPBEAR_MD5_HMAC)
+
+#define DROPBEAR_DH_GROUP14 ((DROPBEAR_DH_GROUP14_SHA256) || (DROPBEAR_DH_GROUP14_SHA1))
+
+#define DROPBEAR_NORMAL_DH ((DROPBEAR_DH_GROUP1) || (DROPBEAR_DH_GROUP14) || (DROPBEAR_DH_GROUP16))
+
+/* roughly 2x 521 bits */
+#define MAX_ECC_SIZE 140
 
 #define MAX_NAME_LEN 64 /* maximum length of a protocol name, isn't
 						   explicitly specified for all protocols (just
@@ -98,6 +137,7 @@
 #define MAX_PROPOSED_ALGO 20
 
 /* size/count limits */
+/* From transport rfc */
 #define MIN_PACKET_LEN 16
 
 #define RECV_MAX_PACKET_LEN (MAX(35000, ((RECV_MAX_PAYLOAD_LEN)+100)))
@@ -110,19 +150,21 @@
 								RECV_WINDOWEXTEND bytes */
 #define MAX_RECV_WINDOW (1024*1024) /* 1 MB should be enough */
 
-#define MAX_CHANNELS 100 /* simple mem restriction, includes each tcp/x11
+#define MAX_CHANNELS 1000 /* simple mem restriction, includes each tcp/x11
 							connection, so can't be _too_ small */
 
-#define MAX_STRING_LEN 1400 /* ~= MAX_PROPOSED_ALGO * MAX_NAME_LEN, also
-							   is the max length for a password etc */
+#define MAX_STRING_LEN (MAX(MAX_CMD_LEN, 2400)) /* Sun SSH needs 2400 for algos,
+                                                   MAX_CMD_LEN is usually longer */
 
 /* For a 4096 bit DSS key, empirically determined */
 #define MAX_PUBKEY_SIZE 1700
 /* For a 4096 bit DSS key, empirically determined */
 #define MAX_PRIVKEY_SIZE 1700
 
+#define MAX_HOSTKEYS 3
+
 /* The maximum size of the bignum portion of the kexhash buffer */
-/* Sect. 8 of the transport draft, K_S + e + f + K */
+/* Sect. 8 of the transport rfc 4253, K_S + e + f + K */
 #define KEXHASHBUF_MAX_INTS (1700 + 130 + 130 + 130)
 
 #define DROPBEAR_MAX_SOCKS 2 /* IPv4, IPv6 are all we'll get for now. Revisit
@@ -134,73 +176,90 @@
 												accept for keyb-interactive
 												auth */
 
-#if defined(DROPBEAR_AES256) || defined(DROPBEAR_AES128)
-#define DROPBEAR_AES
-#endif
 
-#if defined(DROPBEAR_TWOFISH256) || defined(DROPBEAR_TWOFISH128)
-#define DROPBEAR_TWOFISH
-#endif
+#define DROPBEAR_AES ((DROPBEAR_AES256) || (DROPBEAR_AES128))
 
-#ifndef ENABLE_X11FWD
-#define DISABLE_X11FWD
-#endif
+#define DROPBEAR_TWOFISH ((DROPBEAR_TWOFISH256) || (DROPBEAR_TWOFISH128))
 
-#ifndef ENABLE_AGENTFWD
-#define DISABLE_AGENTFWD
-#endif
+#define DROPBEAR_CLI_ANYTCPFWD ((DROPBEAR_CLI_REMOTETCPFWD) || (DROPBEAR_CLI_LOCALTCPFWD))
 
-#if defined(ENABLE_CLI_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD)
-#define ENABLE_CLI_ANYTCPFWD 
-#endif
+#define DROPBEAR_TCP_ACCEPT ((DROPBEAR_CLI_LOCALTCPFWD) || (DROPBEAR_SVR_REMOTETCPFWD))
 
-#if defined(ENABLE_CLI_LOCALTCPFWD) || defined(ENABLE_SVR_REMOTETCPFWD)
-#define DROPBEAR_TCP_ACCEPT
-#endif
+#define DROPBEAR_LISTENERS \
+   ((DROPBEAR_CLI_REMOTETCPFWD) || (DROPBEAR_CLI_LOCALTCPFWD) || \
+	(DROPBEAR_SVR_REMOTETCPFWD) || (DROPBEAR_SVR_LOCALTCPFWD) || \
+	(DROPBEAR_SVR_AGENTFWD) || (DROPBEAR_X11FWD))
 
-#if defined(ENABLE_CLI_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD) || \
-	defined(ENABLE_SVR_REMOTETCPFWD) || defined(ENABLE_SVR_LOCALTCPFWD) || \
-	defined(ENABLE_AGENTFWD) || defined(ENABLE_X11FWD)
-#define USING_LISTENERS
-#endif
+#define DROPBEAR_CLI_MULTIHOP ((DROPBEAR_CLI_NETCAT) && (DROPBEAR_CLI_PROXYCMD))
 
-#if defined(ENABLE_CLI_NETCAT) && defined(ENABLE_CLI_PROXYCMD)
-#define ENABLE_CLI_MULTIHOP
-#endif
+#define ENABLE_CONNECT_UNIX ((DROPBEAR_CLI_AGENTFWD) || (DROPBEAR_PRNGD_SOCKET))
 
-#if defined(DROPBEAR_CLIENT) || defined(ENABLE_SVR_PUBKEY_AUTH)
-#define DROPBEAR_KEY_LINES /* ie we're using authorized_keys or known_hosts */
-#endif
+/* if we're using authorized_keys or known_hosts */ 
+#define DROPBEAR_KEY_LINES ((DROPBEAR_CLIENT) || (DROPBEAR_SVR_PUBKEY_AUTH))
 
-#if defined(ENABLE_SVR_PASSWORD_AUTH) && defined(ENABLE_SVR_PAM_AUTH)
+/* Changing this is inadvisable, it appears to have problems
+ * with flushing compressed data */
+#define DROPBEAR_ZLIB_MEM_LEVEL 8
+
+#if (DROPBEAR_SVR_PASSWORD_AUTH) && (DROPBEAR_SVR_PAM_AUTH)
 #error "You can't turn on PASSWORD and PAM auth both at once. Fix it in options.h"
-#endif
-
-#if defined(DROPBEAR_RANDOM_DEV) && defined(DROPBEAR_PRNGD_SOCKET)
-#error "You can't turn on DROPBEAR_PRNGD_SOCKET and DROPBEAR_RANDOM_DEV at once"
-#endif
-
-#if !defined(DROPBEAR_RANDOM_DEV) && !defined(DROPBEAR_PRNGD_SOCKET)
-#error "You must choose one of DROPBEAR_PRNGD_SOCKET or DROPBEAR_RANDOM_DEV in options.h"
 #endif
 
 /* We use dropbear_client and dropbear_server as shortcuts to avoid redundant
  * code, if we're just compiling as client or server */
-#if defined(DROPBEAR_SERVER) && defined(DROPBEAR_CLIENT)
+#if (DROPBEAR_SERVER) && (DROPBEAR_CLIENT)
 
 #define IS_DROPBEAR_SERVER (ses.isserver == 1)
 #define IS_DROPBEAR_CLIENT (ses.isserver == 0)
 
-#elif defined(DROPBEAR_SERVER)
+#elif DROPBEAR_SERVER
 
 #define IS_DROPBEAR_SERVER 1
 #define IS_DROPBEAR_CLIENT 0
 
-#elif defined(DROPBEAR_CLIENT)
+#elif DROPBEAR_CLIENT
 
 #define IS_DROPBEAR_SERVER 0
 #define IS_DROPBEAR_CLIENT 1
 
 #else
-#error You must compiled with either DROPBEAR_CLIENT or DROPBEAR_SERVER selected
+/* Just building key utils? */
+#define IS_DROPBEAR_SERVER 0
+#define IS_DROPBEAR_CLIENT 0
+
+#endif /* neither DROPBEAR_SERVER nor DROPBEAR_CLIENT */
+
+#ifdef HAVE_FORK
+#define DROPBEAR_VFORK 0
+#else
+#define DROPBEAR_VFORK 1
 #endif
+
+#if MAX_UNAUTH_CLIENTS > MAX_CHANNELS
+#define DROPBEAR_LISTEN_BACKLOG MAX_UNAUTH_CLIENTS
+#else
+#define DROPBEAR_LISTEN_BACKLOG MAX_CHANNELS
+#endif
+
+#ifndef DROPBEAR_NONE_CIPHER
+#define DROPBEAR_NONE_CIPHER 0
+#endif
+
+/* free memory before exiting */
+#define DROPBEAR_CLEANUP 1
+
+/* Use this string since some implementations might special-case it */
+#define DROPBEAR_KEEPALIVE_STRING "keepalive@openssh.com"
+
+/* Linux will attempt TCP fast open, falling back if not supported by the kernel.
+ * Currently server is enabled but client is disabled by default until there
+ * is further compatibility testing */
+#ifdef __linux__
+#define DROPBEAR_SERVER_TCP_FAST_OPEN 1
+#define DROPBEAR_CLIENT_TCP_FAST_OPEN 0
+#else
+#define DROPBEAR_SERVER_TCP_FAST_OPEN 0
+#define DROPBEAR_CLIENT_TCP_FAST_OPEN 0
+#endif
+
+/* no include guard for this file */

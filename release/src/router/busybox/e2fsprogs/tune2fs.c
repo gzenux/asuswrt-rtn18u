@@ -11,7 +11,11 @@
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(3,3,0)
 typedef unsigned short umode_t;
 #endif
+#if LINUX_KERNEL_VERSION >= KERNEL_VERSION(3,4,0)
+#include "bb_e2fs_defs.h"
+#else
 #include <linux/ext2_fs.h>
+#endif
 
 // storage helpers
 char BUG_wrong_field_size(void);

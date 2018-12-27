@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup using two authentication rounds to 
+     establish an IKE SA. -->
+<!-- Related: hostb-multiauth.xml -->
+<quicksec>
+  <params>
+    <externalkey type="software" init-info="key_files(rsauser1.crt, 
+                                            rsauser1.prv)"/>
+
+    <!-- Default authentication domain does not have a name-attribute.
+         It will be used if there is no authentication domain set for
+         a tunnel. -->
+    <auth-domain>
+      <ca file="rsaca.ca"/>
+      <crl file="rsaca.crl"/>
+    </auth-domain>
+
+    <!-- A non-default authentication domain that accepts only 
+         certificates for authentication. -->
+    <auth-domain name="ad1">
+      <ca file="rsaca.ca"/>
+      <crl file="rsaca.crl"/>
+    </auth-domain>
+
+    <!-- A non-default authentication domain that accepts certificates
+         and EAP-MD5 for authentication. -->
+    <auth-domain name="ad2">
+      <ca file="rsaca.ca"/>
+      <crl file="rsaca.crl"/>
+      <password user-name="luser" password="luser"/>
+      <eap type="md5-challenge"/>
+    </auth-domain>
+
+    <!-- A non-default authentication domain that accepts only
+         EAP-MD5 for authentication. This can be used only during
+         second authentication, since certificate authentication 
+         is not defined for local authentication. -->
+    <auth-domain name="ad3">
+      <password user-name="second" password="second"/>
+      <eap type="md5-challenge"/>
+    </auth-domain>
+
+  </params>
+  <policy>
+
+    <!-- Tunnel requires 2 authentication rounds to establish an
+         IKE SA. This tunnel does not specify a second identity,
+         so it can be used only as a responder. -->
+    <tunnel name="host-to-host" flags="dont-initiate">
+      <identity id-type="email" id="rsauser1@ipsec.com"/>
+      <!-- ad2 is used in the first authentication round -->
+      <authentication order="1" auth-domain-name="ad2"/>
+      <!-- ad3 is used in the first authentication round -->
+      <authentication order="2" auth-domain-name="ad3"/>
+    </tunnel>
+
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

@@ -1,3 +1,6 @@
+/* Dropbear Note: This file is based on OpenSSH 4.3p2. Avoid unnecessary 
+   changes to simplify future updates */
+
 /*
  * Copyright (c) 2000 Markus Friedl.  All rights reserved.
  *
@@ -40,6 +43,7 @@
 
 /*RCSID("OpenBSD: xmalloc.c,v 1.16 2001/07/23 18:21:46 stevesk Exp ");*/
 
+#define _GNU_SOURCE
 #include "includes.h"
 #include "scpmisc.h"
 
@@ -222,6 +226,7 @@ void fatal(char* fmt,...)
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
+	fputc('\n', stderr);
 	exit(255);
 }
 

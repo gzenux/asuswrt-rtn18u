@@ -1,0 +1,3 @@
+obj-m := quicksec_usermode.o
+
+quicksec_usermode-y := \

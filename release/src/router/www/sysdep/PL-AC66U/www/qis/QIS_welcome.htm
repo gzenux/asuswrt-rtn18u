@@ -347,7 +347,7 @@ function startDetect(){
 	else if(sw_mode == 3)
 		submitForm(0);
 	else{
-		if((autodet_state == "2" && autodet_auxstate == "6") || (wanstate  == 2 && wansbstate == 0 && wanauxstate == 0)){
+		if((autodet_state == "6" || autodet_auxstate == "6") || (wanstate  == 2 && wansbstate == 0 && wanauxstate == 0)){
 			submitForm(1);
 		}
 		else{

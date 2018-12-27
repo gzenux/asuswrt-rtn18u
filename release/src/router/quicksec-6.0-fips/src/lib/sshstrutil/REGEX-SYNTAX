@@ -1,0 +1,313 @@
+SSH_REGEX_SYNTAX_SSH
+-------------------------------------------------------------------------------
+
+ESCAPE CHARACTER: tilde (~)
+
+MAIN SYNTAXES AND META CHARACTERS THAT NEED TO BE ESCAPED IF MEANT LITERALLY
+
+Here `E' (and 'F') denotes an arbitrary subexpression.
+
+  ~ - the escape character
+
+  ( - start a capturing subexpression
+
+  ) - end a capturing subexpression
+
+  { - start anonymous, non-capturing subexpression
+
+  } - end anonymous, non-capturing subexpression
+
+  E|F - disjunction, match (inclusively) either E or F. 
+        E is preferred if both match.
+
+  E* - Kleene star, match E zero or more times
+  E*? - Kleene star, but match non-greedily (lazy match)
+
+  E+ - closure, match E one or more times
+  E+? - closure, but match non-greedily (lazy match)
+
+  E? - option, match E optionally once
+  E?? - option, but match non-greedily (lazy match)
+
+  . - match ANY character, including possibly the NUL byte and the
+      newline characters
+
+  E/n/ - match E exactly n times
+
+  E/n,/ or
+  E/n,0/ - match E n or more times
+
+  E/,n/ or
+  E/0,n/ - match E at most n times
+
+  E/n,m/ - match E no less than n times and no more than m times
+
+  E/n,/?
+  E/n,0/?
+  E/,n/?
+  E/0,n/?
+  E/n,m/? - the lazy versions
+
+  [ - start a character set, see below
+
+  >C - one-character lookahead. `C' must be either a literal character
+       or parse as a character set. Match the empty string anywhere
+       provided that the next character is `C' or belongs to it.
+
+  <C - one-character lookback. As above, but examine the previous
+       character instead of the next character.
+
+  $ - match the empty string at the end of the input
+
+  ^ - match the empty string at the start of the input
+
+ESCAPED TOKENS
+
+  ~0n..n - the literal byte with octal value n..n
+
+  ~0 - the NUL byte
+
+  ~[1-9]..x - the literal byte with decimal value [1-9]..x
+
+  ~xn..n or
+  ~0xn..n - the literal byte with hexadecimal value n..n
+
+  ~< - match the empty string at the beginning of a word
+
+  ~> - match the empty string at the end of a word
+
+  ~b - match the empty string at a word boundary
+
+  ~B - match the empty string provided it is not at a word boundary
+
+  ~d - match any digit, equivalent to [0:9]
+
+  ~D - match any character except a digit
+
+  ~s - match a whitespace character (matches space, newline, line feed,
+         carriage return, tab and vertical tab).
+
+  ~S - match a non-whitespace character
+
+  ~w - match a word-consituent character, equivalent to [a:zA:Z0:9-]
+
+  ~W - match a non-word-consituent character
+
+  ~a - literal alarm character
+  ~e - literal escape character 
+  ~f - literal line feed
+  ~n - literal new line, equivalent to C's \n so can be more than one
+       character long
+  ~r - literal carriage return
+  ~t - literal tab
+
+  All other escaped characters denote the literal character itself.
+
+CHARACTER SETS
+
+  A character set starts with [ and ends at non-escaped ] that is not
+  part of a POSIX character set specifier and that does not follow
+  immediately after [.
+
+  The following characters have special meaning and need to be escaped
+  if meant literally:
+
+  : - range operator, except immediately after [ where it loses its
+      special meaning
+
+  - (minus sign) - until next +, the characters, ranges and sets will
+                   be subtracted from the current set instead of
+                   adding.  If appears as the first character after [,
+                   start subtracting from a set containing all
+                   characters instead of the empty set
+
+  + - until next -, the characters, ranges and sets will be added to
+      the current set. This is the default
+
+  [:alnum:] - characters for which `isalnum' returns true (see ctype.h)
+  [:alpha:] - ditto, but for `isalpha'
+  [:cntrl:] - ditto, but for `iscntrl'
+  [:digit:] - ditto, but for `isdigit'
+  [:graph:] - ditto, but for `isgraph'
+  [:lower:] - ditto, but for `islower'
+  [:print:] - ditto, but for `isprint'
+  [:punct:] - ditto, but for `ispunct'
+  [:space:] - ditto, but for `isspace'
+  [:upper:] - ditto, but for `isupper'
+  [:xdigit:] - ditto, but for `isxdigit'
+
+  Example:
+
+    [[:xdigit:]-a:e]
+
+  is typically equivalent to [0123456789ABCDEFf].
+
+  It is also possible to include the predefined escaped character sets
+  into a newly defined one, so
+
+    [~d~s]
+
+  matches digits and whitespace characters.
+
+  Also, escape sequences resulting in literals work inside character
+  sets.
+
+SSH_REGEX_SYNTAX_EGREP
+-------------------------------------------------------------------------------
+
+ESCAPE CHARACTER: backslash (\)
+
+MAIN SYNTAXES AND META CHARACTERS THAT NEED TO BE ESCAPED IF MEANT LITERALLY
+
+Here `E' (and 'F') denotes an arbitrary subexpression.
+
+  \ - the escape character
+
+  ( - start a capturing subexpression
+
+  ) - end a capturing subexpression
+
+  E|F - disjunction, match (inclusively) either E or F. 
+        E is preferred if both match.
+
+  E* - Kleene star, match E zero or more times
+
+  E+ - closure, match E one or more times
+
+  E? - option, match E optionally once
+
+  . - match any character except for newline characters (\n, \f, \r) and
+      and the NUL byte
+
+  E{n} - match E exactly n times
+
+  E{n,} or
+  E{n,0} - match E n or more times
+
+  E{,n} or
+  E{0,n} - match E at most n times
+
+  E{n,m} - match E no less than n times and no more than m times
+
+  [ - start a character set, see below
+
+  $ - match the empty string at the end of the input or at the end of a line
+
+  ^ - match the empty string at the start of the input or at the beginning
+      of a line
+
+ESCAPED TOKENS
+
+  \0n..n - the literal byte with octal value n..n
+
+  \0 - the NUL byte
+
+  \[1-9]..x - the literal byte with decimal value [1-9]..x
+
+  \xn..n or
+  \0xn..n - the literal byte with hexadecimal value n..n
+
+  \< - match the empty string at the beginning of a word
+
+  \> - match the empty string at the end of a word
+
+  \b - match the empty string at a word boundary
+
+  \B - match the empty string provided it is not at a word boundary
+
+  \w - match a word-consituent character, equivalent to [a:zA:Z0:9-]
+
+  \W - match a non-word-consituent character
+
+  \a - literal alarm character
+  \e - literal escape character 
+  \f - literal line feed
+  \n - literal new line, equivalent to C's \n so can be more than one
+       character long
+  \r - literal carriage return
+  \t - literal tab
+
+  All other escaped characters denote the literal character itself.
+
+CHARACTER SETS
+ 
+  A character set starts with [ and ends at non-escaped ] that is not
+  part of a POSIX character set specifier and that does not follow
+  immediately after [.
+
+  The following characters have special meaning and need to be escaped
+  if meant literally:
+
+  - (minus sign) - range operator, except immediately after [ where
+		   it loses its special meaning
+
+  ^ - immediately after the starting [, denotes complement: the whole
+      character set will be complemented. Otherwise literal ^.
+
+  [:alnum:] - characters for which `isalnum' returns true (see ctype.h)
+  [:alpha:] - ditto, but for `isalpha'
+  [:cntrl:] - ditto, but for `iscntrl'
+  [:digit:] - ditto, but for `isdigit'
+  [:graph:] - ditto, but for `isgraph'
+  [:lower:] - ditto, but for `islower'
+  [:print:] - ditto, but for `isprint'
+  [:punct:] - ditto, but for `ispunct'
+  [:space:] - ditto, but for `isspace'
+  [:upper:] - ditto, but for `isupper'
+  [:xdigit:] - ditto, but for `isxdigit'
+
+  Example:
+
+    [[:xdigit:]XY]
+
+  is typically equivalent to [0123456789ABCDEFabcdefXY].
+
+  It is also possible to include the predefined escaped character sets
+  into a newly defined one, so
+
+    [\d\s]
+
+  matches digits and whitespace characters.
+
+  Also, escape sequences resulting in literals work inside character
+  sets.
+
+SSH_REGEX_SYNTAX_ZSH_FILEGLOB
+-------------------------------------------------------------------------------
+
+ESCAPE CHARACTER: backslash (\)
+
+MAIN SYNTAXES AND META CHARACTERS THAT NEED TO BE ESCAPED IF MEANT LITERALLY
+
+  *   - match any string consisting of zero or more characters that can
+      	be any characters except for slash (/). However, if the previous
+      	character is slash (/) or `*' is tried to match at the beginning of
+      	the string, do not allow dot (.).
+       
+      	That is, `*' functions as normal `*' in UNIX shell fileglobs.
+
+  ?   - match any single character except for slash (/). However, do not
+      	match dot (.) if at the beginning of the string or if the
+      	previous character is slash (/).
+      
+      	That is, `?' functions as normal `?' in UNIX shell fileglobs
+      	(at least ZSH. I'm not sure about discarding the dot).
+
+  **/ - match any sequence of characters that is either empty or ends
+  	in a slash, however so that the substring `/.' is not
+  	allowed. This mimics ZSH's genious **/ construct. (Observe that
+  	`**' is equivalent to `*'.)
+
+  E#  - Act as Kleene star, match E zero or more times
+
+  E## - closure, match E one or more times
+
+  (   - start a capturing subexpression
+
+  )   - end a capturing subexpression
+
+  E|F - disjunction, match (inclusively) either E or F. 
+        E is preferred if both match.
+
+  [   - start a character set a'la egrep syntax except that ! is
+        treated the same as ^.

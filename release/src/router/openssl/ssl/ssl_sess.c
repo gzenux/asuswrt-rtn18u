@@ -256,8 +256,8 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
     dest->tlsext_ecpointformatlist = NULL;
     dest->tlsext_ellipticcurvelist = NULL;
 # endif
-#endif
     dest->tlsext_tick = NULL;
+#endif
 #ifndef OPENSSL_NO_SRP
     dest->srp_username = NULL;
 #endif
@@ -324,7 +324,6 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
             goto err;
     }
 # endif
-#endif
 
     if (ticket != 0) {
         dest->tlsext_tick = BUF_memdup(src->tlsext_tick, src->tlsext_ticklen);
@@ -334,6 +333,7 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
         dest->tlsext_tick_lifetime_hint = 0;
         dest->tlsext_ticklen = 0;
     }
+#endif
 
 #ifndef OPENSSL_NO_SRP
     if (src->srp_username) {
@@ -382,7 +382,7 @@ static int def_generate_session_id(const SSL *ssl, unsigned char *id,
 {
     unsigned int retry = 0;
     do
-        if (RAND_pseudo_bytes(id, *id_len) <= 0)
+        if (RAND_bytes(id, *id_len) <= 0)
             return 0;
     while (SSL_has_matching_session_id(ssl, id, *id_len) &&
            (++retry < MAX_SESS_ID_ATTEMPTS)) ;
@@ -573,10 +573,7 @@ int ssl_get_prev_session(SSL *s, unsigned char *session_id, int len,
     int r;
 #endif
 
-    if (len < 0 || len > SSL_MAX_SSL_SESSION_ID_LENGTH)
-        goto err;
-
-    if (session_id + len > limit) {
+    if (limit - session_id < len) {
         fatal = 1;
         goto err;
     }
@@ -922,6 +919,10 @@ int SSL_set_session(SSL *s, SSL_SESSION *session)
             session->krb5_client_princ_len > 0) {
             s->kssl_ctx->client_princ =
                 (char *)OPENSSL_malloc(session->krb5_client_princ_len + 1);
+            if (s->kssl_ctx->client_princ == NULL) {
+                SSLerr(SSL_F_SSL_SET_SESSION, ERR_R_MALLOC_FAILURE);
+                return 0;
+            }
             memcpy(s->kssl_ctx->client_princ, session->krb5_client_princ,
                    session->krb5_client_princ_len);
             s->kssl_ctx->client_princ[session->krb5_client_princ_len] = '\0';
@@ -1126,7 +1127,7 @@ int ssl_clear_bad_session(SSL *s)
     if ((s->session != NULL) &&
         !(s->shutdown & SSL_SENT_SHUTDOWN) &&
         !(SSL_in_init(s) || SSL_in_before(s))) {
-        SSL_CTX_remove_session(s->ctx, s->session);
+        SSL_CTX_remove_session(s->session_ctx, s->session);
         return (1);
     } else
         return (0);

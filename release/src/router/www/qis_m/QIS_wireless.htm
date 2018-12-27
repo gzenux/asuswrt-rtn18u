@@ -223,11 +223,13 @@ function QKWireless_load_body(){
 		}/*else
 			document.getElementById("field_general").style.display = "";*/
 
-	setTimeout(function(){
-		parent.document.start_update.action_script.value = "start_webs_update";
-		parent.document.start_update.flag.value = "background";
-		parent.document.start_update.submit();
-	}, 100);
+	if(live_update_support && !no_update_support){
+		setTimeout(function(){
+			parent.document.start_update.action_script.value = "start_webs_update";
+			parent.document.start_update.flag.value = "background";
+			parent.document.start_update.submit();
+		}, 100);
+	}
 }
 
 function submitForm(){
@@ -307,7 +309,7 @@ function submitForm(){
 			//confirm common string combination     #JS_common_passwd#
                         var is_common_string0 = check_common_string(document.form.wl0_wpa_psk.value, "wpa_key");
                         if(is_common_string0){
-                                if(confirm("<#JS_common_passwd#>")){
+                                if(!confirm("<#JS_common_passwd#>")){
                                         return false;
                                 }
                         }
@@ -399,7 +401,7 @@ function submitForm(){
 					//confirm common string combination     #JS_common_passwd#
 		                        var is_common_string1 = check_common_string(document.form.wl1_wpa_psk.value, "wpa_key");
                 		        if(is_common_string1){
-                                		if(confirm("<#JS_common_passwd#>")){
+                                		if(!confirm("<#JS_common_passwd#>")){
 							return false;
 						}
 					}
@@ -489,7 +491,7 @@ function submitForm(){
 					//confirm common string combination     #JS_common_passwd#
                         		var is_common_string2 = check_common_string(document.form.wl2_wpa_psk.value, "wpa_key");
 		                        if(is_common_string2){
-		                                if(confirm("<#JS_common_passwd#>")){
+		                                if(!confirm("<#JS_common_passwd#>")){
                        			                return false;
 		                                }
                        			}
@@ -876,8 +878,8 @@ function timezone_by_preferred_lang(v){
 			case "TH":
 					break;
 			case "TR":
-					if(v == "UTC-2DST")
-							document.form.time_zone.value = "UTC-2DST_2";
+					if(v == "UTC-3_1")
+							document.form.time_zone.value = "UTC-3_6";
 					break;
 			case "TW":
 					break;
@@ -1358,7 +1360,7 @@ function detect_LANStatus(_flag){
 <input type="hidden" name="time_zone_dst" value="<% nvram_get("time_zone_dst"); %>" disabled>
 <!-- wireless -->
 <input type="hidden" name="wps_enable" value="<% nvram_get("wps_enable"); %>" disabled>
-<input type="hidden" name="wps_band" value="<% nvram_get("wps_band"); %>" disabled>
+<input type="hidden" name="wps_band" value="<% nvram_get("wps_band_x"); %>" disabled>
 <input type="hidden" name="wps_multiband" value="<% nvram_get("wps_multiband"); %>" disabled>
 <input type="hidden" name="wps_dualband" value="<% nvram_get("wps_dualband"); %>" disabled>
 <input type="hidden" name="wl0_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl0_ssid"); %>">

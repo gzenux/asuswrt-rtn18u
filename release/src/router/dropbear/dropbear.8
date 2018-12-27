@@ -1,17 +1,15 @@
 .TH dropbear 8
 .SH NAME
-dropbear \- lightweight SSH2 server
+dropbear \- lightweight SSH server
 .SH SYNOPSIS
 .B dropbear
-[\-FEmwsgjki] [\-b
-.I banner\fR] [\-d
-.I dsskey\fR] [\-r
-.I rsakey\fR] [\-p
-.IR port ]
+[\fIflag arguments\fR] [\-b
+.I banner\fR] 
+[\-r
+.I hostkeyfile\fR] [\-p [\fIaddress\fR:]\fIport\fR]
 .SH DESCRIPTION
 .B dropbear
-is a SSH 2 server designed to be small enough to be used in small memory
-environments, while still being functional and secure enough for general use.
+is a small SSH server 
 .SH OPTIONS
 .TP
 .B \-b \fIbanner
@@ -20,24 +18,16 @@ Display the contents of the file
 .I banner
 before user login (default: none).
 .TP
-.B \-d \fIdsskey
-dsskeyfile.
+.B \-r \fIhostkey
 Use the contents of the file
-.I dsskey
-for the DSS host key (default: /etc/dropbear/dropbear_dss_host_key). 
-Note that 
-some SSH implementations
-use the term "DSA" rather than "DSS", they mean the same thing.
+.I hostkey
+for the SSH hostkey.
 This file is generated with
-.BR dropbearkey (8).
+.BR dropbearkey (1) 
+or automatically with the '-R' option. See "Host Key Files" below.
 .TP
-.B \-r \fIrsakey
-rsakeyfile.
-Use the contents of the file
-.I rsakey
-for the rsa host key (default: /etc/dropbear/dropbear_rsa_host_key).
-This file is generated with
-.BR dropbearkey (8).
+.B \-R
+Generate hostkeys automatically. See "Host Key Files" below.
 .TP
 .B \-F
 Don't fork into background.
@@ -63,7 +53,7 @@ Disable local port forwarding.
 .B \-k
 Disable remote port forwarding.
 .TP
-.B \-p \fI[address:]port
+.B \-p\fR [\fIaddress\fR:]\fIport
 Listen on specified 
 .I address
 and TCP
@@ -96,16 +86,25 @@ Ensure that traffic is transmitted at a certain interval in seconds. This is
 useful for working around firewalls or routers that drop connections after
 a certain period of inactivity. The trade-off is that a session may be
 closed if there is a temporary lapse of network connectivity. A setting
-if 0 disables keepalives.
+if 0 disables keepalives. If no response is received for 3 consecutive keepalives the connection will be closed.
 .TP
 .B \-I \fIidle_timeout
 Disconnect the session if no traffic is transmitted or received for \fIidle_timeout\fR seconds.
+.TP
+.B \-c \fIforced_command
+Disregard the command provided by the user and always run \fIforced_command\fR. This also
+overrides any authorized_keys command= option.
+.TP
+.B \-V
+Print the version
+
 .SH FILES
 
 .TP
 Authorized Keys
 
-~/.ssh/authorized_keys can be set up to allow remote login with a RSA or DSS
+~/.ssh/authorized_keys can be set up to allow remote login with a RSA,
+ECDSA, or DSS
 key. Each line is of the form
 .TP
 [restrictions] ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIgAsp... [comment]
@@ -132,8 +131,9 @@ Disable PTY allocation. Note that a user can still obtain most of the
 same functionality with other means even if no-pty is set.
 
 .TP
-.B command="\fIforced_command\fR"
+.B command=\fR"\fIforced_command\fR"
 Disregard the command provided by the user and always run \fIforced_command\fR.
+The -c command line option overrides this.
 
 The authorized_keys file and its containing ~/.ssh directory must only be
 writable by the user, otherwise Dropbear will not allow a login using public
@@ -143,9 +143,13 @@ key authentication.
 Host Key Files
 
 Host key files are read at startup from a standard location, by default
-/etc/dropbear/dropbear_dss_host_key and /etc/dropbear/dropbear_rsa_host_key
-or specified on the commandline with -d or -r. These are of the form generated
-by dropbearkey.
+/etc/dropbear/dropbear_dss_host_key, /etc/dropbear/dropbear_rsa_host_key, and 
+/etc/dropbear/dropbear_ecdsa_host_key
+or specified on the commandline with -r. These are of the form generated
+by dropbearkey. The -R option can be used to automatically generate keys
+in the default location - keys will be generated after startup when the first
+connection is established. This had the benefit that the system /dev/urandom
+random number source has a better chance of being securely seeded.
 
 .TP
 Message Of The Day
@@ -154,11 +158,40 @@ By default the file /etc/motd will be printed for any login shell (unless
 disabled at compile-time). This can also be disabled per-user
 by creating a file ~/.hushlogin .
 
+.SH ENVIRONMENT VARIABLES
+Dropbear sets the standard variables USER, LOGNAME, HOME, SHELL, PATH, and TERM.
+
+The variables below are set for sessions as appropriate. 
+
+.TP
+.B SSH_TTY
+This is set to the allocated TTY if a PTY was used.
+
+.TP
+.B SSH_CONNECTION
+Contains "<remote_ip> <remote_port> <local_ip> <local_port>".
+
+.TP
+.B DISPLAY
+Set X11 forwarding is used.
+
+.TP
+.B SSH_ORIGINAL_COMMAND
+If a 'command=' authorized_keys option was used, the original command is specified
+in this variable. If a shell was requested this is set to an empty value.
+
+.TP
+.B SSH_AUTH_SOCK
+Set to a forwarded ssh-agent connection.
+
+.SH NOTES
+Dropbear only supports SSH protocol version 2.
+
 .SH AUTHOR
 Matt Johnston (matt@ucc.asn.au).
 .br
 Gerrit Pape (pape@smarden.org) wrote this manual page.
 .SH SEE ALSO
-dropbearkey(8), dbclient(1)
+dropbearkey(1), dbclient(1), dropbearconvert(1)
 .P
-http://matt.ucc.asn.au/dropbear/dropbear.html
+https://matt.ucc.asn.au/dropbear/dropbear.html

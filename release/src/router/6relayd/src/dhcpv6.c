@@ -358,6 +358,8 @@ static void relay_server_response(uint8_t *data, size_t len)
 	bool is_authenticated = false;
 	struct in6_addr *dns_ptr = NULL;
 	size_t dns_count = 0;
+	uint8_t *domain_ptr = NULL;
+	size_t domain_len = 0;
 
 	// If the payload is relay-reply we have to send to the server port
 	if (payload_data[0] == DHCPV6_MSG_RELAY_REPL) {
@@ -370,6 +372,9 @@ static void relay_server_response(uint8_t *data, size_t len)
 			if (otype == DHCPV6_OPT_DNS_SERVERS && olen >= 16) {
 				dns_ptr = (struct in6_addr*)odata;
 				dns_count = olen / 16;
+			} else if (otype == DHCPV6_OPT_DNS_DOMAIN) {
+				domain_ptr = odata;
+				domain_len = olen;
 			} else if (otype == DHCPV6_OPT_AUTH) {
 				is_authenticated = true;
 			}
@@ -395,6 +400,13 @@ static void relay_server_response(uint8_t *data, size_t len)
 		// Copy over any other addresses
 		for (size_t i = 0; i < dns_count; ++i)
 			memcpy(&dns_ptr[i], rewrite, sizeof(*rewrite));
+	}
+
+	if (config->always_rewrite_dns && domain_ptr && domain_len > 0) {
+		if (is_authenticated)
+			return; // Impossible to rewrite
+
+		memset(domain_ptr, 0, domain_len);
 	}
 
 	struct iovec iov = {payload_data, payload_len};

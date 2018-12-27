@@ -29,7 +29,7 @@ wget_timeout=`nvram get apps_wget_timeout`
 #wget_options="-nv -t 2 -T $wget_timeout --dns-timeout=120"
 wget_options="-q -t 2 -T $wget_timeout"
 download_file=
-
+apps_new_arm=`nvram get apps_new_arm`  #sherry add 
 
 # $1: package name.
 # return value. 1: have package. 0: no package.
@@ -45,7 +45,7 @@ _check_package(){
 
 # $1: package name, $2: ipkg server name, $3: force(1/0).
 _get_pkg_file_name_old(){
-	pkg_file_full=`app_get_field.sh $1 Filename 2`
+	pkg_file_full=`/usr/sbin/app_get_field.sh $1 Filename 2`
 	old_pkg_file=`echo "$pkg_file_full" |awk '{FS=".ipk";print $1}'`
 	pkg_file=`echo "$old_pkg_file" |sed 's/\./-/g'`
 
@@ -58,7 +58,7 @@ _get_pkg_file_name_old(){
 
 # $1: package name.
 _get_pkg_file_name(){
-	pkg_file_full=`app_get_field.sh $1 Filename 2`
+	pkg_file_full=`/usr/sbin/app_get_field.sh $1 Filename 2`
 
 	echo "$pkg_file_full"
 }
@@ -114,7 +114,7 @@ _loop_delay(){
 
 # $1: package name, $2: ipkg log file.
 _log_ipkg_install(){
-	package_deps=`app_get_field.sh $1 Depends 2`
+	package_deps=`/usr/sbin/app_get_field.sh $1 Depends 2`
 	package_deps=`echo $package_deps |sed 's/,/ /g'`
 	package_deps_do=
 
@@ -203,7 +203,7 @@ _download_package(){
 	done
 
 	wget_pid=`pidof wget`
-	size=`app_get_field.sh $1 Size 2`
+	size=`/usr/sbin/app_get_field.sh $1 Size 2`
 	target_size=`ls -l $target |awk '{printf $5}'`
 	percent=$((target_size*100/size))
 	nvram set apps_download_percent=$percent
@@ -240,8 +240,8 @@ if [ -z "$1" ]; then
 	exit 1
 fi
 
-version=`app_get_field.sh $1 Version 1`
-new_version=`app_get_field.sh $1 Version 2`
+version=`/usr/sbin/app_get_field.sh $1 Version 1`
+new_version=`/usr/sbin/app_get_field.sh $1 Version 2`
 
 if [ "$version" == "$new_version" ]; then
 	echo "The package: $1 is the newest one."
@@ -262,8 +262,8 @@ need_asuslighttpd=0
 need_asusffmpeg=0
 need_smartsync=0
 if [ "$1" == "downloadmaster" ]; then
-	DM_version1=`app_get_field.sh downloadmaster Version 2 |awk '{FS=".";print $1}'`
-	DM_version4=`app_get_field.sh downloadmaster Version 2 |awk '{FS=".";print $4}'`
+	DM_version1=`/usr/sbin/app_get_field.sh downloadmaster Version 2 |awk '{FS=".";print $1}'`
+	DM_version4=`/usr/sbin/app_get_field.sh downloadmaster Version 2 |awk '{FS=".";print $4}'`
 
 	if [ "$DM_version1" -gt "3" ]; then
 		need_asuslighttpd=1
@@ -271,8 +271,8 @@ if [ "$1" == "downloadmaster" ]; then
 		need_asuslighttpd=1
 	fi
 elif [ "$1" == "mediaserver" ]; then
-	MS_version1=`app_get_field.sh mediaserver Version 2 |awk '{FS=".";print $1}'`
-	MS_version4=`app_get_field.sh mediaserver Version 2 |awk '{FS=".";print $4}'`
+	MS_version1=`/usr/sbin/app_get_field.sh mediaserver Version 2 |awk '{FS=".";print $1}'`
+	MS_version4=`/usr/sbin/app_get_field.sh mediaserver Version 2 |awk '{FS=".";print $4}'`
 
 	if [ "$MS_version1" -gt "1" ]; then
 		need_asuslighttpd=1
@@ -286,8 +286,8 @@ elif [ "$1" == "mediaserver" ]; then
 		need_asusffmpeg=1
 	fi
 elif [ "$1" == "aicloud" ]; then
-	AC_version1=`app_get_field.sh aicloud Version 2 |awk '{FS=".";print $1}'`
-	AC_version4=`app_get_field.sh aicloud Version 2 |awk '{FS=".";print $4}'`
+	AC_version1=`/usr/sbin/app_get_field.sh aicloud Version 2 |awk '{FS=".";print $1}'`
+	AC_version4=`/usr/sbin/app_get_field.sh aicloud Version 2 |awk '{FS=".";print $4}'`
 
 	if [ "$AC_version1" -gt "1" ]; then
 		need_smartsync=1
@@ -296,6 +296,106 @@ elif [ "$1" == "aicloud" ]; then
 	fi
 fi
 
+#sherry add for 2016.7.18
+APPS_INSTALL_FOLDER_BAK=$APPS_INSTALL_FOLDER".bak"
+APPS_INSTALL_PATH_BAK=$APPS_MOUNTED_PATH/$APPS_INSTALL_FOLDER_BAK
+ASUS_UCLIBC_VER=1.0.12-1
+dm_exist=
+aicloud_exist=
+ms_exist=
+if [ $apps_new_arm -eq 1 ]; then 
+	uclibc_control_file=$APPS_INSTALL_PATH/lib/ipkg/info/uclibc-opt.control
+
+	if [ -f "$uclibc_control_file" ]; then
+		uclibc_version=`cat "$uclibc_control_file" |grep "Version:"`
+		uclibc_version=${uclibc_version:9}
+		ASUS_UCLIBC_VER_NUM=`echo $ASUS_UCLIBC_VER |sed 's/\.//g'|sed 's/\-//g'`
+		uclibc_version_num=`echo $uclibc_version |sed 's/\.//g'|sed 's/\-//g'`
+		if [ $ASUS_UCLIBC_VER_NUM -gt $uclibc_version_num ]; then
+			app_init_run.sh allpkg stop
+			if [ -f $APPS_INSTALL_PATH/lib/ipkg/info/downloadmaster.control ]; then
+				dm_exist=1
+			fi
+
+			if [ -f $APPS_INSTALL_PATH/lib/ipkg/info/aicloud.control ]; then
+				aicloud_exist=1
+			fi
+
+			if [ -f $APPS_INSTALL_PATH/lib/ipkg/info/mediaserver.control ]; then
+				ms_exist=1
+			fi
+
+			cp -rf $APPS_INSTALL_PATH $APPS_INSTALL_PATH_BAK
+			rm -rf $APPS_INSTALL_PATH
+
+			app_base_packages.sh $APPS_DEV
+			if [ "$?" != "0" ]; then
+				exit 1
+			fi
+			app_update.sh
+
+			app_inst_error=0
+			dm_inst_error=1
+			ms_inst_error=1
+			aicloud_inst_error=1
+			i=0
+
+			while [ "$i" == "0" -o "$app_inst_error" == "1" ]; do
+	
+				i=$(($i+1))
+				if [ "$i" -gt "2" ]; then
+					break
+				fi
+				
+				if [ "$1" != "downloadmaster" ] && [ "$dm_exist" == "1" ] && [ "$dm_inst_error" == "1" ]; then
+					app_install.sh downloadmaster $APPS_DEV
+					echo $?
+					if [ "$?" == "0" ]; then
+						dm_inst_error=0
+					else
+						app_inst_error=1
+					fi
+				fi
+
+				
+				if [ "$1" != "aicloud" ] && [ "$aicloud_exist" == "1" ] && [ "$aicloud_inst_error" == "1" ]; then
+					app_install.sh aicloud $APPS_DEV
+					if [ "$?" == "0" ]; then
+						aicloud_inst_error=0
+					else
+						app_inst_error=1
+					fi
+				fi
+
+				
+				if [ "$1" != "mediaserver" ] && [ "$ms_exist" == "1" ] && [ "$ms_inst_error" == "1" ]; then
+					app_install.sh mediaserver $APPS_DEV
+					if [ "$?" == "0" ]; then
+						ms_inst_error=0
+					else
+						app_inst_error=1
+					fi
+				fi
+
+			done
+
+			if [ "$app_inst_error" == "1" ]; then #install error
+				rm -rf $APPS_INSTALL_PATH
+				cp -rf $APPS_INSTALL_PATH_BAK $APPS_INSTALL_PATH
+				rm -rf $APPS_INSTALL_PATH_BAK
+				app_init_run.sh allpkg start
+				exit 1
+			else
+				rm -rf $APPS_INSTALL_PATH_BAK
+			fi
+
+
+		fi
+	fi
+
+fi
+
+#end sherry 2016.7.18
 
 nvram set apps_state_upgrade=1 # DOWNLOADING
 target_file=
@@ -327,7 +427,7 @@ if [ "$need_asusffmpeg" == "1" ]; then
 fi
 if [ "$need_smartsync" == "1" ]; then
 	if [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
-		deps=`app_get_field.sh smartsync Depends 2 |sed 's/,/ /g'`
+		deps=`/usr/sbin/app_get_field.sh smartsync Depends 2 |sed 's/,/ /g'`
 
 		for dep in $deps; do
 			echo "Downloading the dependent package of smartsync: $dep..."
@@ -372,7 +472,7 @@ fi
 nvram set apps_state_upgrade=2 # REMOVING
 _check_package $1
 if [ "$?" != "0" ]; then
-	app_remove.sh $1
+	/usr/sbin/app_remove.sh $1
 	if [ "$?" != "0" ]; then
 		# apps_state_error was already set by app_remove.sh.
 		exit 1
@@ -398,14 +498,14 @@ done
 
 APPS_MOUNTED_TYPE=`mount |grep "/dev/$APPS_DEV on " |awk '{print $5}'`
 if [ "$APPS_MOUNTED_TYPE" == "vfat" ] || [ "$APPS_MOUNTED_TYPE" == "tfat" ]; then
-	app_move_to_pool.sh $APPS_DEV
+	/usr/sbin/app_move_to_pool.sh $APPS_DEV
 	if [ "$?" != "0" ]; then
 		# apps_state_error was already set by app_move_to_pool.sh.
 		exit 1
 	fi
 fi
 
-app_base_link.sh
+/usr/sbin/app_base_link.sh
 if [ "$?" != "0" ]; then
 	# apps_state_error was already set by app_base_link.sh.
 	exit 1
@@ -413,28 +513,28 @@ fi
 
 if [ "$need_asuslighttpd" == "1" ]; then
 	echo "Enabling the dependent package: asuslighttpd..."
-	app_set_enabled.sh asuslighttpd "yes"
+	/usr/sbin/app_set_enabled.sh asuslighttpd "yes"
 fi
 if [ "$need_asusffmpeg" == "1" ]; then
 	echo "Enabling the dependent package: asusffmpeg..."
-	app_set_enabled.sh asusffmpeg "yes"
+	/usr/sbin/app_set_enabled.sh asusffmpeg "yes"
 fi
 if [ "$need_smartsync" == "1" ]; then
 	if [ -n "$apps_ipkg_old" ] && [ "$apps_ipkg_old" == "1" ]; then
-		deps=`app_get_field.sh smartsync Depends 2 |sed 's/,/ /g'`
+		deps=`/usr/sbin/app_get_field.sh smartsync Depends 2 |sed 's/,/ /g'`
 
 		for dep in $deps; do
 			echo "Enabling the dependent package of smartsync: $dep..."
-			app_set_enabled.sh $dep "yes"
+			/usr/sbin/app_set_enabled.sh $dep "yes"
 		done
 	fi
 
 	echo "Enabling the dependent package: smartsync..."
-	app_set_enabled.sh smartsync "yes"
+	/usr/sbin/app_set_enabled.sh smartsync "yes"
 fi
 
 echo "Enabling the package: $1..."
-app_set_enabled.sh $1 "yes"
+/usr/sbin/app_set_enabled.sh $1 "yes"
 
 nvram set apps_download_file=
 nvram set apps_download_percent=

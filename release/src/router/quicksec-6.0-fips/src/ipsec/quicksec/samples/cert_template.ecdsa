@@ -1,0 +1,130 @@
+Certificate ::= {
+  OutputFile   ::= "ecdsaca.ca"
+
+  SerialNumber ::= 1
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test ECDSA CA>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test ECDSA CA>
+  Validity     ::= {
+    NotBefore  ::= "2003/06/30/19:30:00"
+    NotAfter   ::= "2018/01/01/12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Curve ::= secp521r1
+    Type ::= ecdsaEncryption
+    PrivateKeyFile ::= "ecdsaca.prv"
+  }
+  Signature ::= {
+    SelfSigned
+    SignatureAlgorithm ::= ecdsaWithSHA512
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      EMAIL ::= ecdsaca@ipsec.com
+    }
+    ExtendedKeyUsage ::= {
+      ServerAuth
+      ClientAuth
+      CodeSigning
+      EmailProtection
+      TimeStamping
+      IkeIntermediate
+    }
+    BasicConstraints ::= {
+      CA
+      PathLength ::= 0
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyCertSign
+      CRLSign
+    }
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "ecdsauser1.crt"
+
+  SerialNumber ::= 2
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=test ECDSA user 1>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test ECDSA CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2018 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Curve ::= secp521r1
+    Type ::= ecdsaEncryption
+    PrivateKeyFile ::= "ecdsauser1.prv"
+  }
+  Signature ::= {
+    SignatureAlgorithm ::= ecdsaWithSHA512
+    IssuerKeyFile ::= "ecdsaca.prv"
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      EMAIL ::= ecdsauser1@ipsec.com
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyEncipherment
+    }
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "ecdsauser2.crt"
+
+  SerialNumber ::= 3
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=test ECDSA user 2>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test ECDSA CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2018 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Curve ::= secp521r1
+    Type ::= ecdsaEncryption
+    PrivateKeyFile ::= "ecdsauser2.prv"
+  }
+  Signature ::= {
+    SignatureAlgorithm ::= ecdsaWithSHA512
+    IssuerKeyFile ::= "ecdsaca.prv"
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      EMAIL ::= ecdsauser2@ipsec.com
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyEncipherment
+    }
+  }
+}
+
+CRL ::= {
+  OutputFile ::= "ecdsaca.crl"
+
+  Signature ::= {
+    SignatureAlgorithm ::= ecdsaWithSHA512
+    IssuerKeyFile     ::= "ecdsaca.prv"
+  }
+
+  IssuerName ::= <C=FI,O=INSIDE Secure, CN=Test ECDSA CA>
+  ThisUpdate ::= "2003 Oct 8th, 20:00:00"
+  NextUpdate ::= "2018 Nov 1st, 21:00:00"
+
+  % Few notes are in order. This CRL indeed is a bit vague, because
+  % we revoke certificates in "future" this is not a standard practice
+  % although I don't know any reason why this wouldn't be perfectly
+  % legal. (Today that is.)
+
+  RevokedCertificates ::= [
+%    { SerialNumber ::= 2
+%      RevocationDate ::= "2003 Aug 30th, 17:01:00" }
+%    { SerialNumber ::= 3
+%      RevocationDate ::= "2003 Nov 1st, 17:01:00" }
+  ] % end revoked certificates list
+}
+
+
+

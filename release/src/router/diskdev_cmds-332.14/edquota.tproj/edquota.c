@@ -140,7 +140,8 @@ main(argc, argv)
 	extern int optind;
 	register long id, protoid;
 	register int quotatype, tmpfd;
-	char *protoname = NULL, ch;
+	char *protoname = NULL;
+	int ch;
 	int tflag = 0, pflag = 0;
 
 	if (argc < 2)

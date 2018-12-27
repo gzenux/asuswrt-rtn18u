@@ -34,12 +34,12 @@ ifeq ($(RTCONFIG_APP_PREINSTALLED),y)
 endif
 
 all:
-	@echo "" >rom/etc/motd
-	@echo "" >>rom/etc/motd
-	@echo "ASUSWRT `cat ../shared/version`" >>rom/etc/motd
+#	@echo "" >rom/etc/motd
+#	@echo "" >>rom/etc/motd
+#	@echo "ASUSWRT `cat ../shared/version`" >>rom/etc/motd
 
 clean:
-	rm -f rom/etc/motd
+#	rm -f rom/etc/motd
 
 install:
 	mkdir -p $(INSTALLDIR)
@@ -104,8 +104,15 @@ ifeq ($(RTCONFIG_HTTPS),y)
 else
 	cp -f webs_scripts/nozip_webs_upgrade.sh $(INSTALLDIR)/usr/sbin/webs_upgrade.sh
 endif
-
+ifeq ($(RTCONFIG_FBWIFI),y)
+	cp -f webs_scripts/fbwifi_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
+else
 	cp -f webs_scripts/ssl_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
+endif
+
+ifeq ($(RTAC68A),y)
+	cp -f webs_scripts/force_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
+endif
 
 ifeq ($(RTCONFIG_BWDPI),y)
 	cp -f webs_scripts/sig_upgrade.sh $(INSTALLDIR)/usr/sbin/sig_upgrade.sh
@@ -138,17 +145,19 @@ ifeq ($(RTAC68U),y)
 	cp -rf cfe/cfe_tmo_2.1.2.6.bin $(INSTALLDIR)/rom/cfe/
 	cp -rf cfe/cfe_1.0.2.0.bin $(INSTALLDIR)/rom/cfe
 	cp -rf cfe/cfe_1.0.2.0_esmt.bin $(INSTALLDIR)/rom/cfe
+	cp -rf cfe/cfe_ac66u_b1_1.1.2.0.bin $(INSTALLDIR)/rom/cfe
+	cp -rf cfe/cfe_rt-ac68u_5636_c0_1.3.0.7.bin $(INSTALLDIR)/rom/cfe
 	cp -rf cfe/mtd-write $(INSTALLDIR)/rom/cfe/
 endif
 
 ifeq ($(RTCONFIG_MEDIA_SERVER),y)
 	mkdir -p $(INSTALLDIR)/rom/dlna
-ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
-	cp -rf dlna/icon_sm.rt-ac68u.jpg $(INSTALLDIR)/rom/dlna/icon_sm.jpg
-	cp -rf dlna/icon_sm.rt-ac68u.png $(INSTALLDIR)/rom/dlna/icon_sm.png
-	cp -rf dlna/icon_lrg.rt-ac68u.jpg $(INSTALLDIR)/rom/dlna/icon_lrg.jpg
-	cp -rf dlna/icon_lrg.rt-ac68u.png $(INSTALLDIR)/rom/dlna/icon_lrg.png
-else
+ifeq ($(BUILD_NAME), RT-AC68U)
+	cp -rf dlna/icon_sm.rt-ac66u_v2.jpg $(INSTALLDIR)/rom/dlna/icon_alt_sm.jpg
+	cp -rf dlna/icon_sm.rt-ac66u_v2.png $(INSTALLDIR)/rom/dlna/icon_alt_sm.png
+	cp -rf dlna/icon_lrg.rt-ac66u_v2.jpg $(INSTALLDIR)/rom/dlna/icon_alt_lrg.jpg
+	cp -rf dlna/icon_lrg.rt-ac66u_v2.png $(INSTALLDIR)/rom/dlna/icon_alt_lrg.png
+endif
 ifeq ($(and $(LJPG),$(SJPG),$(LPNG),$(SPNG)),)
 	$(warning Add media server icon for $(BUILD_NAME) !!!!!!!!!!!!)
 else
@@ -156,10 +165,11 @@ else
 		install -D dlna/$(f).$(LCMODELNAME).png $(INSTALLDIR)/rom/dlna/$(f).png;)
 endif
 endif
-endif
 
 ifeq ($(RTCONFIG_GETREALIP),y)
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	install -m 0755 apps_scripts/getrealip.sh $(INSTALLDIR)/usr/sbin/getrealip.sh
 endif
+
+	install -m 0755 webs_scripts/GoogleDNS_Update.sh $(INSTALLDIR)/usr/sbin
 

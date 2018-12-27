@@ -1,0 +1,8 @@
+README for Quicksec Linux Interceptor
+-------------------------------------
+
+This directory contains the linux interceptor implementation and header files
+for both IPsec and MACsec interceptors.
+
+See ipsec/interceptor/linux/README and ipsec/interceptor/linux/INSTALL for 
+IPsec interceptor details.

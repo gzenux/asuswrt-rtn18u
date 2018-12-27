@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Nested tunnel setup, tunnel hosta-hostc is sent through a 
+     tunnel hosta-hostb. 
+     hosta = hostb - hostc -->
+<!-- Related: hostb-nested.xml, hostc-nested.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- Outer ESP tunnelmode tunnel -->
+    <!-- Flag `enable-outbound-sa-selectors' allows a host in netb to initiate
+         traffic to remote host once the outer tunnel is negotiated. -->
+    <tunnel name="outer" transform="esp aes sha1" 
+            flags="enable-outbound-sa-selectors dont-initiate">
+      <identity id-type="email" id="a@ipsec.com">
+        <local-secret>foo</local-secret>
+      </identity>
+      <local-ip>172.30.4.189</local-ip>
+      <peer>172.30.4.167</peer>      
+    </tunnel>
+
+    <!-- Allows traffic from outer tunnel to netb. -->
+    <rule from-tunnel="outer">
+      <dst>ipv4(192.168.1.0/24)</dst>
+    </rule>
+
+    <!-- Default passby rule. -->
+    <rule/>
+
+  </policy>
+</quicksec>

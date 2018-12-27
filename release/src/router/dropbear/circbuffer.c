@@ -33,11 +33,12 @@ circbuffer * cbuf_new(unsigned int size) {
 	circbuffer *cbuf = NULL;
 
 	if (size > MAX_CBUF_SIZE) {
-		dropbear_exit("bad cbuf size");
+		dropbear_exit("Bad cbuf size");
 	}
 
 	cbuf = (circbuffer*)m_malloc(sizeof(circbuffer));
-	cbuf->data = (unsigned char*)m_malloc(size);
+	/* data is malloced on first write */
+	cbuf->data = NULL;
 	cbuf->used = 0;
 	cbuf->readpos = 0;
 	cbuf->writepos = 0;
@@ -48,7 +49,10 @@ circbuffer * cbuf_new(unsigned int size) {
 
 void cbuf_free(circbuffer * cbuf) {
 
-	m_free(cbuf->data);
+	if (cbuf->data) {
+		m_burn(cbuf->data, cbuf->size);
+		m_free(cbuf->data);
+	}
 	m_free(cbuf);
 }
 
@@ -62,23 +66,6 @@ unsigned int cbuf_getavail(circbuffer * cbuf) {
 
 	return cbuf->size - cbuf->used;
 
-}
-
-unsigned int cbuf_readlen(circbuffer *cbuf) {
-
-	dropbear_assert(((2*cbuf->size)+cbuf->writepos-cbuf->readpos)%cbuf->size == cbuf->used%cbuf->size);
-	dropbear_assert(((2*cbuf->size)+cbuf->readpos-cbuf->writepos)%cbuf->size == (cbuf->size-cbuf->used)%cbuf->size);
-
-	if (cbuf->used == 0) {
-		TRACE(("cbuf_readlen: unused buffer"))
-		return 0;
-	}
-
-	if (cbuf->readpos < cbuf->writepos) {
-		return cbuf->writepos - cbuf->readpos;
-	}
-
-	return cbuf->size - cbuf->readpos;
 }
 
 unsigned int cbuf_writelen(circbuffer *cbuf) {
@@ -99,18 +86,30 @@ unsigned int cbuf_writelen(circbuffer *cbuf) {
 	return cbuf->size - cbuf->writepos;
 }
 
-unsigned char* cbuf_readptr(circbuffer *cbuf, unsigned int len) {
-	if (len > cbuf_readlen(cbuf)) {
-		dropbear_exit("bad cbuf read");
-	}
+void cbuf_readptrs(circbuffer *cbuf, 
+	unsigned char **p1, unsigned int *len1, 
+	unsigned char **p2, unsigned int *len2) {
+	*p1 = &cbuf->data[cbuf->readpos];
+	*len1 = MIN(cbuf->used, cbuf->size - cbuf->readpos);
 
-	return &cbuf->data[cbuf->readpos];
+	if (*len1 < cbuf->used) {
+		*p2 = cbuf->data;
+		*len2 = cbuf->used - *len1;
+	} else {
+		*p2 = NULL;
+		*len2 = 0;
+	}
 }
 
 unsigned char* cbuf_writeptr(circbuffer *cbuf, unsigned int len) {
 
 	if (len > cbuf_writelen(cbuf)) {
-		dropbear_exit("bad cbuf write");
+		dropbear_exit("Bad cbuf write");
+	}
+
+	if (!cbuf->data) {
+		/* lazy allocation */
+		cbuf->data = (unsigned char*)m_malloc(cbuf->size);
 	}
 
 	return &cbuf->data[cbuf->writepos];
@@ -118,7 +117,7 @@ unsigned char* cbuf_writeptr(circbuffer *cbuf, unsigned int len) {
 
 void cbuf_incrwrite(circbuffer *cbuf, unsigned int len) {
 	if (len > cbuf_writelen(cbuf)) {
-		dropbear_exit("bad cbuf write");
+		dropbear_exit("Bad cbuf write");
 	}
 
 	cbuf->used += len;
@@ -128,10 +127,6 @@ void cbuf_incrwrite(circbuffer *cbuf, unsigned int len) {
 
 
 void cbuf_incrread(circbuffer *cbuf, unsigned int len) {
-	if (len > cbuf_readlen(cbuf)) {
-		dropbear_exit("bad cbuf read");
-	}
-
 	dropbear_assert(cbuf->used >= len);
 	cbuf->used -= len;
 	cbuf->readpos = (cbuf->readpos + len) % cbuf->size;

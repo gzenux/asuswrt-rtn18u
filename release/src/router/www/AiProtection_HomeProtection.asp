@@ -15,7 +15,6 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
-<script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/form.js"></script>
 <style>
 .weakness{
@@ -87,6 +86,8 @@
 }
 </style>
 <script>
+if(usb_support) addNewScript("/disk_functions.js");
+
 window.onresize = function() {
 	if(document.getElementById("weakness_div").style.display == "block") {
 		cal_panel_block("weakness_div", 0.25);
@@ -964,7 +965,7 @@ function check_smtp_server_type(){
 														<tr>
 															<td>
 																<div style="width:430px"><#AiProtection_HomeDesc2#></div>
-																<div style="width:430px"><a style="text-decoration:underline;" href="http://www.asus.com/us/support/FAQ/1008719/" target="_blank"><#AiProtection_Home#> FAQ</a></div>
+																<div style="width:430px"><a style="text-decoration:underline;" href="http://www.asus.com/support/FAQ/1008719/" target="_blank"><#AiProtection_Home#> FAQ</a></div>
 															</td>
 															<td>
 																<div style="width:100px;height:48px;margin-left:-40px;background-image:url('images/New_ui/tm_logo.png');"></div>

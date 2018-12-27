@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup with IPv6 link-local hosts. -->
+<!-- Related: hostb-ipv6-link-local.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="ip" 
+                     id="fe80::219:b9ff:fe03:7136">foo</remote-secret>
+      <remote-secret id-type="ip" 
+                     id="fe80::219:b9ff:fe03:7137">foo2</remote-secret>
+      <remote-secret id-type="ip" 
+                     id="fe80::219:b9ff:fe03:7138">foo3</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+    
+    <!-- talk IPsec to all IPv6 link-local hosts using transport 
+         mode. The neighbor/router discovery/soliciation messages
+         are passed in plain text because of the high precedence
+         pass rules defined in spd_main_st.c. -->
+    <tunnel name="host-to-host" flags="perhost transport">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="ip" id="fe80::219:b9ff:fe03:7135">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- this option selects which IKE server is used for 
+           link-local IKE negotiations. This needs to be 
+           changed to match the setup in question. For
+           multihomed setups each link-local IKE server
+           needs a separate tunnel. -->
+      <local-interface>eth0</local-interface>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         packet matching to these selectors triggers IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv6(protocol:port,::) -->
+    <rule to-tunnel="host-to-host">
+      <!-- protect link-local traffic -->
+      <src>ipv6(fe80::/64)</src>
+      <dst>ipv6(fe80::/64)</dst>
+      <!-- interface for the link-local traffic. -->
+      <ifname>eth0</ifname>
+      <!-- to-tunnel rule packets are arriving from the local
+           TCP/IP stack. -->
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- Allows src address to initiate traffic to the dst address, 
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv6(protocol:port,::) -->
+    <rule from-tunnel="host-to-host">
+      <!-- protect link-local traffic -->
+      <src>ipv6(fe80::/64)</src>
+      <dst>ipv6(fe80::/64)</dst>
+      <!-- interface for the link-local traffic. -->
+      <ifname>eth0</ifname>
+      <!-- from-tunnel rule packets are going to the local
+           TCP/IP stack. -->
+      <local-stack direction="to"/>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

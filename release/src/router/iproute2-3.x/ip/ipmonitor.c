@@ -33,7 +33,6 @@ static void usage(void)
 	exit(-1);
 }
 
-
 int accept_msg(const struct sockaddr_nl *who,
 	       struct nlmsghdr *n, void *arg)
 {
@@ -68,6 +67,13 @@ int accept_msg(const struct sockaddr_nl *who,
 		return 0;
 	}
 	if (n->nlmsg_type == RTM_NEWNEIGH || n->nlmsg_type == RTM_DELNEIGH) {
+		if (preferred_family) {
+			struct ndmsg *r = NLMSG_DATA(n);
+
+			if (r->ndm_family != preferred_family)
+				return 0;
+		}
+
 		if (prefix_banner)
 			fprintf(fp, "[NEIGH]");
 		print_neigh(who, n, arg);

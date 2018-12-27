@@ -123,7 +123,7 @@ OPENSSL_wipe_cpu:
 			fmovs	%f1,%f3
 			fmovs	%f0,%f2
 
-	add	%fp,BIAS,%i0	! return pointer to caller´s top of stack
+	add	%fp,BIAS,%i0	! return pointer to callerÂ´s top of stack
 
 	ret
 	restore
@@ -429,6 +429,7 @@ OPENSSL_cleanse:
 .size	OPENSSL_cleanse,.-OPENSSL_cleanse
 
 .global	_sparcv9_vis1_instrument_bus
+.weak	_sparcv9_vis1_instrument_bus
 .align	8
 _sparcv9_vis1_instrument_bus:
 	mov	%o1,%o3					! save cnt
@@ -467,6 +468,7 @@ _sparcv9_vis1_instrument_bus:
 .size	_sparcv9_vis1_instrument_bus,.-_sparcv9_vis1_instrument_bus
 
 .global	_sparcv9_vis1_instrument_bus2
+.weak	_sparcv9_vis1_instrument_bus2
 .align	8
 _sparcv9_vis1_instrument_bus2:
 	mov	%o1,%o3					! save cnt

@@ -1,0 +1,58 @@
+override CPPFLAGS += \
+    -DMEMORY_LEAK_CHECKS \
+    -DMEMORY_LEAK_STACK_TRACE \
+    -DSSH_MEMORY_DEBUG_FREE_QUEUE \
+    -DSSHDIST_MEMORY_LEAK_CHECKS \
+    -DSSHDIST_QUICKSEC_INTERNAL \
+    -DSSHDIST_QUICKSEC_TESTS
+
+ifeq ($(AUTOTEST), 1)
+override CPPFLAGS += -DSSHDIST_AUTOTEST
+endif
+
+ifeq ($(ALLOCFAIL), 1)
+override CPPFLAGS += -DSSH_ALLOC_FAIL
+endif
+
+ifeq ($(ENCODEFAIL), 1)
+override CPPFLAGS += -DSSH_ENCODE_FAIL \
+    -DSSHDIST_ENCODE_FAIL
+endif
+
+ifeq ($(or $(ENCODEFAIL), $(ALLOCFAIL)), 1)
+override LDLIBS += -lgdbm
+endif
+
+override CFLAGS += -ggdb
+
+ifeq ($(COVERAGE), 1)
+override CFLAGS += \
+    -ftest-coverage \
+    -fprofile-arcs
+
+override LDFLAGS += \
+    -fprofile-arcs
+endif
+
+ifeq ($(PTHREADS), 1)
+override CFLAGS += -pthread
+override LDLIBS += -lpthread
+vpnclientpm: \
+    sshmt_pthreads.o \
+    sshmt_timeouts.o
+endif
+
+vpnclientpm: \
+    sshmallocdebug.o
+
+QUICKSEC_PROGRAMS += stacktrace
+
+stacktrace: \
+    stacktrace.o \
+    gnudebug.o \
+    gnuglob.o \
+    gnumalloc.o
+
+stacktrace: override LDLIBS += -lbfd
+
+vpath %.c $(QUICKSEC_SRCDIR)/apps/stacktrace

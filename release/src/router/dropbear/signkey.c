@@ -27,6 +27,21 @@
 #include "signkey.h"
 #include "buffer.h"
 #include "ssh.h"
+#include "ecdsa.h"
+
+static const char * const signkey_names[DROPBEAR_SIGNKEY_NUM_NAMED] = {
+#if DROPBEAR_RSA
+	"ssh-rsa",
+#endif
+#if DROPBEAR_DSS
+	"ssh-dss",
+#endif
+#if DROPBEAR_ECDSA
+	"ecdsa-sha2-nistp256",
+	"ecdsa-sha2-nistp384",
+	"ecdsa-sha2-nistp521"
+#endif /* DROPBEAR_ECDSA */
+};
 
 /* malloc a new sign_key and set the dss and rsa keys to NULL */
 sign_key * new_sign_key() {
@@ -34,103 +49,156 @@ sign_key * new_sign_key() {
 	sign_key * ret;
 
 	ret = (sign_key*)m_malloc(sizeof(sign_key));
-#ifdef DROPBEAR_DSS
-	ret->dsskey = NULL;
-#endif
-#ifdef DROPBEAR_RSA
-	ret->rsakey = NULL;
-#endif
+	ret->type = DROPBEAR_SIGNKEY_NONE;
+	ret->source = SIGNKEY_SOURCE_INVALID;
 	return ret;
-
 }
 
-/* Returns "ssh-dss" or "ssh-rsa" corresponding to the type. Exits fatally
+/* Returns key name corresponding to the type. Exits fatally
  * if the type is invalid */
-const char* signkey_name_from_type(int type, int *namelen) {
+const char* signkey_name_from_type(enum signkey_type type, unsigned int *namelen) {
+	if (type >= DROPBEAR_SIGNKEY_NUM_NAMED) {
+		dropbear_exit("Bad key type %d", type);
+	}
 
-#ifdef DROPBEAR_RSA
-	if (type == DROPBEAR_SIGNKEY_RSA) {
-		*namelen = SSH_SIGNKEY_RSA_LEN;
-		return SSH_SIGNKEY_RSA;
+	if (namelen) {
+		*namelen = strlen(signkey_names[type]);
 	}
-#endif
-#ifdef DROPBEAR_DSS
-	if (type == DROPBEAR_SIGNKEY_DSS) {
-		*namelen = SSH_SIGNKEY_DSS_LEN;
-		return SSH_SIGNKEY_DSS;
-	}
-#endif
-	dropbear_exit("bad key type %d", type);
-	return NULL; /* notreached */
+	return signkey_names[type];
 }
 
-/* Returns DROPBEAR_SIGNKEY_RSA, DROPBEAR_SIGNKEY_DSS, 
- * or DROPBEAR_SIGNKEY_NONE */
-int signkey_type_from_name(const char* name, int namelen) {
+/* Returns DROPBEAR_SIGNKEY_NONE if none match */
+enum signkey_type signkey_type_from_name(const char* name, unsigned int namelen) {
+	int i;
+	for (i = 0; i < DROPBEAR_SIGNKEY_NUM_NAMED; i++) {
+		const char *fixed_name = signkey_names[i];
+		if (namelen == strlen(fixed_name)
+			&& memcmp(fixed_name, name, namelen) == 0) {
 
-#ifdef DROPBEAR_RSA
-	if (namelen == SSH_SIGNKEY_RSA_LEN
-			&& memcmp(name, SSH_SIGNKEY_RSA, SSH_SIGNKEY_RSA_LEN) == 0) {
-		return DROPBEAR_SIGNKEY_RSA;
-	}
+#if DROPBEAR_ECDSA
+			/* Some of the ECDSA key sizes are defined even if they're not compiled in */
+			if (0
+#ifndef DROPBEAR_ECC_256
+				|| i == DROPBEAR_SIGNKEY_ECDSA_NISTP256
 #endif
-#ifdef DROPBEAR_DSS
-	if (namelen == SSH_SIGNKEY_DSS_LEN
-			&& memcmp(name, SSH_SIGNKEY_DSS, SSH_SIGNKEY_DSS_LEN) == 0) {
-		return DROPBEAR_SIGNKEY_DSS;
-	}
+#ifndef DROPBEAR_ECC_384
+				|| i == DROPBEAR_SIGNKEY_ECDSA_NISTP384
 #endif
+#ifndef DROPBEAR_ECC_521
+				|| i == DROPBEAR_SIGNKEY_ECDSA_NISTP521
+#endif
+				) {
+				TRACE(("attempt to use ecdsa type %d not compiled in", i))
+				return DROPBEAR_SIGNKEY_NONE;
+			}
+#endif
+
+			return (enum signkey_type)i;
+		}
+	}
+
+	TRACE(("signkey_type_from_name unexpected key type."))
 
 	return DROPBEAR_SIGNKEY_NONE;
+}
+
+/* Returns a pointer to the key part specific to "type" */
+void **
+signkey_key_ptr(sign_key *key, enum signkey_type type) {
+	switch (type) {
+#if DROPBEAR_ECDSA
+#if DROPBEAR_ECC_256
+		case DROPBEAR_SIGNKEY_ECDSA_NISTP256:
+			return (void**)&key->ecckey256;
+#endif
+#if DROPBEAR_ECC_384
+		case DROPBEAR_SIGNKEY_ECDSA_NISTP384:
+			return (void**)&key->ecckey384;
+#endif
+#if DROPBEAR_ECC_521
+		case DROPBEAR_SIGNKEY_ECDSA_NISTP521:
+			return (void**)&key->ecckey521;
+#endif
+#endif /* DROPBEAR_ECDSA */
+#if DROPBEAR_RSA
+		case DROPBEAR_SIGNKEY_RSA:
+			return (void**)&key->rsakey;
+#endif
+#if DROPBEAR_DSS
+		case DROPBEAR_SIGNKEY_DSS:
+			return (void**)&key->dsskey;
+#endif
+		default:
+			return NULL;
+	}
 }
 
 /* returns DROPBEAR_SUCCESS on success, DROPBEAR_FAILURE on fail.
  * type should be set by the caller to specify the type to read, and
  * on return is set to the type read (useful when type = _ANY) */
-int buf_get_pub_key(buffer *buf, sign_key *key, int *type) {
+int buf_get_pub_key(buffer *buf, sign_key *key, enum signkey_type *type) {
 
-	unsigned char* ident;
+	char *ident;
 	unsigned int len;
-	int keytype;
+	enum signkey_type keytype;
 	int ret = DROPBEAR_FAILURE;
 
-	TRACE(("enter buf_get_pub_key"))
+	TRACE2(("enter buf_get_pub_key"))
 
 	ident = buf_getstring(buf, &len);
 	keytype = signkey_type_from_name(ident, len);
 	m_free(ident);
 
 	if (*type != DROPBEAR_SIGNKEY_ANY && *type != keytype) {
+		TRACE(("buf_get_pub_key bad type - got %d, expected %d", keytype, *type))
 		return DROPBEAR_FAILURE;
 	}
+	
+	TRACE2(("buf_get_pub_key keytype is %d", keytype))
 
 	*type = keytype;
 
 	/* Rewind the buffer back before "ssh-rsa" etc */
 	buf_incrpos(buf, -len - 4);
 
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 	if (keytype == DROPBEAR_SIGNKEY_DSS) {
 		dss_key_free(key->dsskey);
-		key->dsskey = (dss_key*)m_malloc(sizeof(dss_key));
+		key->dsskey = m_malloc(sizeof(*key->dsskey));
 		ret = buf_get_dss_pub_key(buf, key->dsskey);
 		if (ret == DROPBEAR_FAILURE) {
 			m_free(key->dsskey);
 		}
 	}
 #endif
-#ifdef DROPBEAR_RSA
+#if DROPBEAR_RSA
 	if (keytype == DROPBEAR_SIGNKEY_RSA) {
 		rsa_key_free(key->rsakey);
-		key->rsakey = (rsa_key*)m_malloc(sizeof(rsa_key));
+		key->rsakey = m_malloc(sizeof(*key->rsakey));
 		ret = buf_get_rsa_pub_key(buf, key->rsakey);
 		if (ret == DROPBEAR_FAILURE) {
 			m_free(key->rsakey);
 		}
 	}
 #endif
+#if DROPBEAR_ECDSA
+	if (signkey_is_ecdsa(keytype)) {
+		ecc_key **eck = (ecc_key**)signkey_key_ptr(key, keytype);
+		if (eck) {
+			if (*eck) {
+				ecc_free(*eck);
+				m_free(*eck);
+				*eck = NULL;
+			}
+			*eck = buf_get_ecdsa_pub_key(buf);
+			if (*eck) {
+				ret = DROPBEAR_SUCCESS;
+			}
+		}
+	}
+#endif
 
-	TRACE(("leave buf_get_pub_key"))
+	TRACE2(("leave buf_get_pub_key"))
 
 	return ret;
 	
@@ -139,14 +207,14 @@ int buf_get_pub_key(buffer *buf, sign_key *key, int *type) {
 /* returns DROPBEAR_SUCCESS on success, DROPBEAR_FAILURE on fail.
  * type should be set by the caller to specify the type to read, and
  * on return is set to the type read (useful when type = _ANY) */
-int buf_get_priv_key(buffer *buf, sign_key *key, int *type) {
+int buf_get_priv_key(buffer *buf, sign_key *key, enum signkey_type *type) {
 
-	unsigned char* ident;
+	char *ident;
 	unsigned int len;
-	int keytype;
+	enum signkey_type keytype;
 	int ret = DROPBEAR_FAILURE;
 
-	TRACE(("enter buf_get_priv_key"))
+	TRACE2(("enter buf_get_priv_key"))
 
 	ident = buf_getstring(buf, &len);
 	keytype = signkey_type_from_name(ident, len);
@@ -162,105 +230,160 @@ int buf_get_priv_key(buffer *buf, sign_key *key, int *type) {
 	/* Rewind the buffer back before "ssh-rsa" etc */
 	buf_incrpos(buf, -len - 4);
 
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 	if (keytype == DROPBEAR_SIGNKEY_DSS) {
 		dss_key_free(key->dsskey);
-		key->dsskey = (dss_key*)m_malloc(sizeof(dss_key));
+		key->dsskey = m_malloc(sizeof(*key->dsskey));
 		ret = buf_get_dss_priv_key(buf, key->dsskey);
 		if (ret == DROPBEAR_FAILURE) {
 			m_free(key->dsskey);
 		}
 	}
 #endif
-#ifdef DROPBEAR_RSA
+#if DROPBEAR_RSA
 	if (keytype == DROPBEAR_SIGNKEY_RSA) {
 		rsa_key_free(key->rsakey);
-		key->rsakey = (rsa_key*)m_malloc(sizeof(rsa_key));
+		key->rsakey = m_malloc(sizeof(*key->rsakey));
 		ret = buf_get_rsa_priv_key(buf, key->rsakey);
 		if (ret == DROPBEAR_FAILURE) {
 			m_free(key->rsakey);
 		}
 	}
 #endif
+#if DROPBEAR_ECDSA
+	if (signkey_is_ecdsa(keytype)) {
+		ecc_key **eck = (ecc_key**)signkey_key_ptr(key, keytype);
+		if (eck) {
+			if (*eck) {
+				ecc_free(*eck);
+				m_free(*eck);
+				*eck = NULL;
+			}
+			*eck = buf_get_ecdsa_priv_key(buf);
+			if (*eck) {
+				ret = DROPBEAR_SUCCESS;
+			}
+		}
+	}
+#endif
 
-	TRACE(("leave buf_get_priv_key"))
+	TRACE2(("leave buf_get_priv_key"))
 
 	return ret;
 	
 }
 
 /* type is either DROPBEAR_SIGNKEY_DSS or DROPBEAR_SIGNKEY_RSA */
-void buf_put_pub_key(buffer* buf, sign_key *key, int type) {
+void buf_put_pub_key(buffer* buf, sign_key *key, enum signkey_type type) {
 
 	buffer *pubkeys;
 
-	TRACE(("enter buf_put_pub_key"))
+	TRACE2(("enter buf_put_pub_key"))
 	pubkeys = buf_new(MAX_PUBKEY_SIZE);
 	
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 	if (type == DROPBEAR_SIGNKEY_DSS) {
 		buf_put_dss_pub_key(pubkeys, key->dsskey);
 	}
 #endif
-#ifdef DROPBEAR_RSA
+#if DROPBEAR_RSA
 	if (type == DROPBEAR_SIGNKEY_RSA) {
 		buf_put_rsa_pub_key(pubkeys, key->rsakey);
 	}
 #endif
+#if DROPBEAR_ECDSA
+	if (signkey_is_ecdsa(type)) {
+		ecc_key **eck = (ecc_key**)signkey_key_ptr(key, type);
+		if (eck) {
+			buf_put_ecdsa_pub_key(pubkeys, *eck);
+		}
+	}
+#endif
 	if (pubkeys->len == 0) {
-		dropbear_exit("bad key types in buf_put_pub_key");
+		dropbear_exit("Bad key types in buf_put_pub_key");
 	}
 
-	buf_setpos(pubkeys, 0);
-	buf_putstring(buf, buf_getptr(pubkeys, pubkeys->len),
-			pubkeys->len);
-	
+	buf_putbufstring(buf, pubkeys);
 	buf_free(pubkeys);
-	TRACE(("leave buf_put_pub_key"))
+	TRACE2(("leave buf_put_pub_key"))
 }
 
 /* type is either DROPBEAR_SIGNKEY_DSS or DROPBEAR_SIGNKEY_RSA */
-void buf_put_priv_key(buffer* buf, sign_key *key, int type) {
+void buf_put_priv_key(buffer* buf, sign_key *key, enum signkey_type type) {
 
 	TRACE(("enter buf_put_priv_key"))
 	TRACE(("type is %d", type))
 
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 	if (type == DROPBEAR_SIGNKEY_DSS) {
 		buf_put_dss_priv_key(buf, key->dsskey);
-	TRACE(("leave buf_put_priv_key: dss done"))
-	return;
+		TRACE(("leave buf_put_priv_key: dss done"))
+		return;
 	}
 #endif
-#ifdef DROPBEAR_RSA
+#if DROPBEAR_RSA
 	if (type == DROPBEAR_SIGNKEY_RSA) {
 		buf_put_rsa_priv_key(buf, key->rsakey);
-	TRACE(("leave buf_put_priv_key: rsa done"))
-	return;
+		TRACE(("leave buf_put_priv_key: rsa done"))
+		return;
 	}
 #endif
-	dropbear_exit("bad key types in put pub key");
+#if DROPBEAR_ECDSA
+	if (signkey_is_ecdsa(type)) {
+		ecc_key **eck = (ecc_key**)signkey_key_ptr(key, type);
+		if (eck) {
+			buf_put_ecdsa_priv_key(buf, *eck);
+			TRACE(("leave buf_put_priv_key: ecdsa done"))
+			return;
+		}
+	}
+#endif
+	dropbear_exit("Bad key types in put pub key");
 }
 
 void sign_key_free(sign_key *key) {
 
-	TRACE(("enter sign_key_free"))
+	TRACE2(("enter sign_key_free"))
 
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 	dss_key_free(key->dsskey);
 	key->dsskey = NULL;
 #endif
-#ifdef DROPBEAR_RSA
+#if DROPBEAR_RSA
 	rsa_key_free(key->rsakey);
 	key->rsakey = NULL;
 #endif
+#if DROPBEAR_ECDSA
+#if DROPBEAR_ECC_256
+	if (key->ecckey256) {
+		ecc_free(key->ecckey256);
+		m_free(key->ecckey256);
+		key->ecckey256 = NULL;
+	}
+#endif
+#if DROPBEAR_ECC_384
+	if (key->ecckey384) {
+		ecc_free(key->ecckey384);
+		m_free(key->ecckey384);
+		key->ecckey384 = NULL;
+	}
+#endif
+#if DROPBEAR_ECC_521
+	if (key->ecckey521) {
+		ecc_free(key->ecckey521);
+		m_free(key->ecckey521);
+		key->ecckey521 = NULL;
+	}
+#endif
+#endif
+
+	m_free(key->filename);
 
 	m_free(key);
-	TRACE(("leave sign_key_free"))
+	TRACE2(("leave sign_key_free"))
 }
 
 static char hexdig(unsigned char x) {
-
 	if (x > 0xf)
 		return 'X';
 
@@ -272,7 +395,7 @@ static char hexdig(unsigned char x) {
 
 /* Since we're not sure if we'll have md5 or sha1, we present both.
  * MD5 is used in preference, but sha1 could still be useful */
-#ifdef DROPBEAR_MD5_HMAC
+#if DROPBEAR_MD5_HMAC
 static char * sign_key_md5_fingerprint(unsigned char* keyblob,
 		unsigned int keybloblen) {
 
@@ -287,8 +410,7 @@ static char * sign_key_md5_fingerprint(unsigned char* keyblob,
 	/* skip the size int of the string - this is a bit messy */
 	md5_process(&hs, keyblob, keybloblen);
 
-	if (md5_done(&hs, hash) != CRYPT_OK)
-		return NULL;
+	md5_done(&hs, hash);
 
 	/* "md5 hexfingerprinthere\0", each hex digit is "AB:" etc */
 	buflen = 4 + 3*MD5_HASH_SIZE;
@@ -325,14 +447,14 @@ static char * sign_key_sha1_fingerprint(unsigned char* keyblob,
 
 	sha1_done(&hs, hash);
 
-	/* "sha1 hexfingerprinthere\0", each hex digit is "AB:" etc */
-	buflen = 5 + 3*SHA1_HASH_SIZE;
+	/* "sha1!! hexfingerprinthere\0", each hex digit is "AB:" etc */
+	buflen = 7 + 3*SHA1_HASH_SIZE;
 	ret = (char*)m_malloc(buflen);
 
-	strcpy(ret, "sha1 ");
+	strcpy(ret, "sha1!! ");
 
 	for (i = 0; i < SHA1_HASH_SIZE; i++) {
-		unsigned int pos = 5 + 3*i;
+		unsigned int pos = 7 + 3*i;
 		ret[pos] = hexdig(hash[i] >> 4);
 		ret[pos+1] = hexdig(hash[i] & 0x0f);
 		ret[pos+2] = ':';
@@ -348,87 +470,94 @@ static char * sign_key_sha1_fingerprint(unsigned char* keyblob,
  * in either sha1 or md5 */
 char * sign_key_fingerprint(unsigned char* keyblob, unsigned int keybloblen) {
 
-#ifdef DROPBEAR_MD5_HMAC
+#if DROPBEAR_MD5_HMAC
 	return sign_key_md5_fingerprint(keyblob, keybloblen);
 #else
 	return sign_key_sha1_fingerprint(keyblob, keybloblen);
 #endif
 }
 
-void buf_put_sign(buffer* buf, sign_key *key, int type, 
-		const unsigned char *data, unsigned int len) {
-
+void buf_put_sign(buffer* buf, sign_key *key, enum signkey_type type, 
+	buffer *data_buf) {
 	buffer *sigblob;
-
 	sigblob = buf_new(MAX_PUBKEY_SIZE);
 
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 	if (type == DROPBEAR_SIGNKEY_DSS) {
-		buf_put_dss_sign(sigblob, key->dsskey, data, len);
+		buf_put_dss_sign(sigblob, key->dsskey, data_buf);
 	}
 #endif
-#ifdef DROPBEAR_RSA
+#if DROPBEAR_RSA
 	if (type == DROPBEAR_SIGNKEY_RSA) {
-		buf_put_rsa_sign(sigblob, key->rsakey, data, len);
+		buf_put_rsa_sign(sigblob, key->rsakey, data_buf);
+	}
+#endif
+#if DROPBEAR_ECDSA
+	if (signkey_is_ecdsa(type)) {
+		ecc_key **eck = (ecc_key**)signkey_key_ptr(key, type);
+		if (eck) {
+			buf_put_ecdsa_sign(sigblob, *eck, data_buf);
+		}
 	}
 #endif
 	if (sigblob->len == 0) {
-		dropbear_exit("non-matching signing type");
+		dropbear_exit("Non-matching signing type");
 	}
-
-	buf_setpos(sigblob, 0);
-	buf_putstring(buf, buf_getptr(sigblob, sigblob->len),
-			sigblob->len);
-			
+	buf_putbufstring(buf, sigblob);
 	buf_free(sigblob);
 
 }
 
-#ifdef DROPBEAR_SIGNKEY_VERIFY
+#if DROPBEAR_SIGNKEY_VERIFY
 /* Return DROPBEAR_SUCCESS or DROPBEAR_FAILURE.
  * If FAILURE is returned, the position of
  * buf is undefined. If SUCCESS is returned, buf will be positioned after the
  * signature blob */
-int buf_verify(buffer * buf, sign_key *key, const unsigned char *data,
-		unsigned int len) {
+int buf_verify(buffer * buf, sign_key *key, buffer *data_buf) {
 	
-	unsigned int bloblen;
-	unsigned char * ident = NULL;
-	unsigned int identlen = 0;
+	char *type_name = NULL;
+	unsigned int type_name_len = 0;
+	enum signkey_type type;
 
 	TRACE(("enter buf_verify"))
 
-	bloblen = buf_getint(buf);
-	ident = buf_getstring(buf, &identlen);
+	buf_getint(buf); /* blob length */
+	type_name = buf_getstring(buf, &type_name_len);
+	type = signkey_type_from_name(type_name, type_name_len);
+	m_free(type_name);
 
-#ifdef DROPBEAR_DSS
-	if (bloblen == DSS_SIGNATURE_SIZE &&
-			memcmp(ident, SSH_SIGNKEY_DSS, identlen) == 0) {
-		m_free(ident);
+#if DROPBEAR_DSS
+	if (type == DROPBEAR_SIGNKEY_DSS) {
 		if (key->dsskey == NULL) {
-			dropbear_exit("no dss key to verify signature");
+			dropbear_exit("No DSS key to verify signature");
 		}
-		return buf_dss_verify(buf, key->dsskey, data, len);
+		return buf_dss_verify(buf, key->dsskey, data_buf);
 	}
 #endif
 
-#ifdef DROPBEAR_RSA
-	if (memcmp(ident, SSH_SIGNKEY_RSA, identlen) == 0) {
-		m_free(ident);
+#if DROPBEAR_RSA
+	if (type == DROPBEAR_SIGNKEY_RSA) {
 		if (key->rsakey == NULL) {
-			dropbear_exit("no rsa key to verify signature");
+			dropbear_exit("No RSA key to verify signature");
 		}
-		return buf_rsa_verify(buf, key->rsakey, data, len);
+		return buf_rsa_verify(buf, key->rsakey, data_buf);
+	}
+#endif
+#if DROPBEAR_ECDSA
+	if (signkey_is_ecdsa(type)) {
+		ecc_key **eck = (ecc_key**)signkey_key_ptr(key, type);
+		if (eck) {
+			return buf_ecdsa_verify(buf, *eck, data_buf);
+		}
 	}
 #endif
 
-	m_free(ident);
-	dropbear_exit("non-matching signing type");
+	dropbear_exit("Non-matching signing type");
 	return DROPBEAR_FAILURE;
 }
 #endif /* DROPBEAR_SIGNKEY_VERIFY */
 
-#ifdef DROPBEAR_KEY_LINES /* ie we're using authorized_keys or known_hosts */
+#if DROPBEAR_KEY_LINES /* ie we're using authorized_keys or known_hosts */
 
 /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE when given a buffer containing
  * a key, a key, and a type. The buffer is positioned at the start of the

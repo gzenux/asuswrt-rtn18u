@@ -237,16 +237,16 @@ checkcrc_end:
 }
 
 /* 
- * 0: illegal image
- * 1: legal image
+ * 0: legal image
+ * 1: illegal image
  *
  * check product id, crc ..
  */
 
 int check_imagefile(char *fname)
 {
-	if(checkcrc(fname)==0) return 1;
-	return 0;
+	if(checkcrc(fname)==0) return 0;
+	return 1;
 }
 
 int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq)
@@ -802,3 +802,38 @@ void led_onoff(int unit)
 			led_control(unit?LED_5G:LED_2G, LED_OFF);	
 }
 #endif
+
+/* Return nvram variable name, e.g. et0macaddr, which is used to repented as LAN MAC.
+ * @return:
+ */
+char *get_lan_mac_name(void)
+{
+	/* TODO: handle exceptional model */
+	return "et0macaddr";
+}
+
+/* Return nvram variable name, e.g. et1macaddr, which is used to repented as WAN MAC.
+ * @return:
+ */
+char *get_wan_mac_name(void)
+{
+	/* TODO: handle exceptional model */
+	return "et1macaddr";
+}
+
+char *get_2g_hwaddr(void)
+{
+        return get_wan_hwaddr();
+}
+
+char *get_lan_hwaddr(void)
+{
+	/* TODO: handle exceptional model */
+        return nvram_safe_get("et0macaddr");
+}
+
+char *get_wan_hwaddr(void)
+{
+	/* TODO: handle exceptional model */
+        return nvram_safe_get("et1macaddr");
+}

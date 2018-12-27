@@ -1,0 +1,130 @@
+Certificate ::= {
+  OutputFile   ::= "rsaca.ca"
+
+  SerialNumber ::= 1
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=Test RSA CA>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test RSA CA>
+  Validity     ::= {
+    NotBefore  ::= "2003/06/30/19:30:00"
+    NotAfter   ::= "2018/01/01/12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Size ::= 1024
+    Type ::= rsaEncryption
+    PrivateKeyFile ::= "rsaca.prv"
+  }
+  Signature ::= {
+    SelfSigned
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      EMAIL ::= rsaca@ipsec.com
+    }
+    ExtendedKeyUsage ::= {
+      ServerAuth
+      ClientAuth
+      CodeSigning
+      EmailProtection
+      TimeStamping
+      IkeIntermediate
+    }
+    BasicConstraints ::= {
+      CA
+      PathLength ::= 0
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyCertSign
+      CRLSign
+    }
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "rsauser1.crt"
+
+  SerialNumber ::= 2
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=test RSA user 1>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test RSA CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2018 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Size ::= 1024
+    Type ::= rsaEncryption
+    PrivateKeyFile ::= "rsauser1.prv"
+  }
+  Signature ::= {
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile ::= "rsaca.prv"
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      EMAIL ::= rsauser1@ipsec.com
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyEncipherment
+    }
+  }
+}
+
+Certificate ::= {
+  OutputFile   ::= "rsauser2.crt"
+
+  SerialNumber ::= 3
+  SubjectName  ::= <C=FI,O=INSIDE Secure, CN=test RSA user 2>
+  IssuerName   ::= <C=FI,O=INSIDE Secure, CN=Test RSA CA>
+  Validity     ::= {
+    NotBefore  ::= "2003 Jul 30th, 19:30:00"
+    NotAfter   ::= "2018 Dec 1st,  12:00:00"
+  }
+  PublicKeyInfo ::= {
+    Size ::= 1024
+    Type ::= rsaEncryption
+    PrivateKeyFile ::= "rsauser2.prv"
+  }
+  Signature ::= {
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile ::= "rsaca.prv"
+  }
+  Extensions ::= {
+    SubjectAltNames ::= {
+      EMAIL ::= rsauser2@ipsec.com
+    }
+    KeyUsage ::= {
+      DigitalSignature
+      KeyEncipherment
+    }
+  }
+}
+
+CRL ::= {
+  OutputFile ::= "rsaca.crl"
+
+  Signature ::= {
+    SignatureAlgorithm ::= sha1WithRSAEncryption
+    IssuerKeyFile     ::= "rsaca.prv"
+  }
+
+  IssuerName ::= <C=FI,O=INSIDE Secure, CN=Test RSA CA>
+  ThisUpdate ::= "2003 Oct 8th, 20:00:00"
+  NextUpdate ::= "2018 Nov 1st, 21:00:00"
+
+  % Few notes are in order. This CRL indeed is a bit vague, because
+  % we revoke certificates in "future" this is not a standard practice
+  % although I don't know any reason why this wouldn't be perfectly
+  % legal. (Today that is.)
+
+  RevokedCertificates ::= [
+%    { SerialNumber ::= 2
+%      RevocationDate ::= "2003 Aug 30th, 17:01:00" }
+%    { SerialNumber ::= 3
+%      RevocationDate ::= "2003 Nov 1st, 17:01:00" }
+  ] % end revoked certificates list
+}
+
+
+

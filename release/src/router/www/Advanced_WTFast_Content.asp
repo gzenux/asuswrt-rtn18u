@@ -463,7 +463,7 @@ function addRule(){
 	}
 
 	if(cur_rule_enable == "1" && enable_num == wtfast_status.Max_Computers){
-		alert("The number of enabled rules reaches the limitiation of the account. The added rule will be default disabled.");
+		alert("<#GB_rulelist_addmax#>");
 		rule_enable = "0";
 	}
 
@@ -694,7 +694,7 @@ function enable_wtfast_rule(index, enable){
 
 	if(enable == "1"){
 		if(enable_num == wtfast_status.Max_Computers){
-			alert("The number of enabled rules reaches the limitiation of the account. You can't enable rule unless you disable one existed enabled rule first.");
+			alert("<#GB_rulelist_enablemax#>");
 			return;
 		}
 	}
@@ -1047,7 +1047,7 @@ function clean_macerr(){
 				<ul type="disc">
 					<li style="line-height:15px; margin-left:-25px; margin-top:-10px; color:#949393;"><#Game_Boost_Benefit1#></li>
 					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit2#></li>
-					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit3#><br>(Windows, Macintosh, Linux, Mobile, Console game).</li>
+					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit3#><br>(<#Game_Boost_Benefit3_1#>)</li>
 					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit4#></li>
 					<li style="line-height:15px; margin-left:-25px; color:#949393;"><#Game_Boost_Benefit5#></li>
 				</ul>

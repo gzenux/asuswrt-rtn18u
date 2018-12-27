@@ -245,7 +245,7 @@
 <% wanlink(); %>
 <% first_wanlink(); %>
 var wans_dualwan_orig = '<% nvram_get("wans_dualwan"); %>';
-var wans_flag = (wans_dualwan_orig.search("none") == -1) ? 1:0;
+var wans_flag = (wans_dualwan_orig.search("none") != -1 || !parent.dualWAN_support) ? 0 : 1;
 var dsllink_statusstr = "";
 if(wans_flag == 1)	//dual_wan enabled
 	dsllink_statusstr = first_wanlink_statusstr();
@@ -261,6 +261,10 @@ var ctf_disable = '<% nvram_get("ctf_disable"); %>';
 var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';
 var qos_bw_rulelist = "<% nvram_get("qos_bw_rulelist"); %>".replace(/&#62/g, ">").replace(/&#60/g, "<");
 var select_all_checked = 0;
+
+if(based_modelid == "RT-AC68A"){	//MODELDEP : Spec special fine tune
+	bwdpi_support = false;
+}	
 function initial(){
 	show_menu();
 	if(downsize_4m_support || downsize_8m_support)
@@ -274,9 +278,10 @@ function initial(){
 	}
 	
 	if(document.form.qos_enable_orig.value == 1){
-		if(document.form.qos_type.value == 2){		//Bandwidth Limiter
-			document.getElementById('upload_tr').style.display = "";
-			document.getElementById('download_tr').style.display = "";
+		if(document.form.qos_type.value == 2){		
+			// Bandwidth Limiter
+			document.getElementById('upload_tr').style.display = "none";
+			document.getElementById('download_tr').style.display = "none";
 			genMain_table();
 			if(document.form.qos_enable.value == 1)
 				showhide("list_table",1);
@@ -285,7 +290,8 @@ function initial(){
 			
 			showDropdownClientList('setClientIP', 'name>mac', 'all', 'ClientList_Block_PC', 'pull_arrow', 'all');
 		}
-		else if(document.form.qos_type.value == 1){		//Adaptive QoS
+		else if(document.form.qos_type.value == 1){		
+			// Adaptive QoS
 			if(document.getElementById("auto").checked){
 				document.getElementById('upload_tr').style.display = "";
 				document.getElementById('download_tr').style.display = "";
@@ -295,9 +301,10 @@ function initial(){
 				document.getElementById('download_tr').style.display = "none";
 			}
 		}
-		else{
-			document.getElementById('upload_tr').style.display = "none";
-			document.getElementById('download_tr').style.display = "none";
+		else{ 
+			// Traditional QoS
+			document.getElementById('upload_tr').style.display = "";
+			document.getElementById('download_tr').style.display = "";
 		}
 
 		document.getElementById('qos_type_tr').style.display = "";
@@ -328,10 +335,7 @@ function initial(){
 			if(document.form.qos_type.value == 0){		//Traditional Type				
 				add_option(document.getElementById("settingSelection"), '<#qos_user_rules#>', 3, 0);
 				add_option(document.getElementById("settingSelection"), '<#qos_user_prio#>', 4, 0);
-			}
-			else if(document.form.qos_type.value == 2){		//Bandwidth Limiter
-				add_option(document.getElementById("settingSelection"), "Bandwidth Limiter", 5, 0);
-			}
+			}			
 			else{		//Adaptive Type or else
 				document.getElementById('settingSelection').style.display = "none";	
 			}
@@ -341,13 +345,14 @@ function initial(){
 		}
 	}
 	else{
-		if(document.form.qos_type.value == 2){		//Bandwidth Limiter
-			add_option(document.getElementById("settingSelection"), "Bandwidth Limiter", 5, 0);
-		}
-		else{		//Traditional Type			
+		if(document.form.qos_type.value == 0){		//Traditional Type			
 			add_option(document.getElementById("settingSelection"), '<#qos_user_rules#>', 3, 0);
 			add_option(document.getElementById("settingSelection"), '<#qos_user_prio#>', 4, 0);
 		}
+		else{	//Bandwidth Limiter
+			document.getElementById('settingSelection').style.display = "none";	
+		}
+			
 		document.getElementById('content_title').innerHTML = "<#Menu_TrafficManager#> - <#menu5_3_2#>";		
 		document.getElementById('function_int_desc').style.display = "none";				
 	}
@@ -815,14 +820,19 @@ function addRow_main(obj, length){
 	if(document.form.PC_devicename.value == "" || document.getElementById("download_rate").value == "" || document.getElementById("upload_rate").value == ""){
 		return true;
 	}
-	
+
 	var enable_checkbox = $(obj.parentNode).siblings()[0].children[0];
 	var invalid_char = "";
 	var qos_bw_rulelist_row =  qos_bw_rulelist.split("<");
 	var max_priority = 0;
 	if(qos_bw_rulelist != "")
-		max_priority = qos_bw_rulelist_row.length;	
-	
+		max_priority = qos_bw_rulelist_row.length;
+
+	if(qos_bw_rulelist_row.length >= length){
+		alert("<#JS_itemlimit1#> " + length + " <#JS_itemlimit2#>");
+		return false;   
+	}
+
 	if(!validator.string(document.form.PC_devicename))
 		return false;
 	
@@ -943,7 +953,7 @@ function genMain_table(){
 	code += '</td>';
 	code += '<td style="border-bottom:2px solid #000;text-align:right;"><input type="text" id="download_rate" class="input_6_table" maxlength="6" onkeypress="return bandwidth_code(this, event);" onkeyup="check_field();"><span style="margin: 0 5px;color:#FFF;">Mb/s</span></td>';
 	code += '<td style="border-bottom:2px solid #000;text-align:right;"><input type="text" id="upload_rate" class="input_6_table" maxlength="6" onkeypress="return bandwidth_code(this, event);" onkeyup="check_field();"><span style="margin: 0 5px;color:#FFF;">Mb/s</span></td>';
-	code += '<td style="border-bottom:2px solid #000;"><div id="add_delete" class="add_disable" style="width:23px;height:23px;margin:0 auto" onclick="addRow_main(this, 32)"></div></td>';
+	code += '<td style="border-bottom:2px solid #000;"><div id="add_delete" class="add_disable" style="margin:0 auto" onclick="addRow_main(this, 32)"></div></td>';
 	code += '</tr>';
 	
 	if(qos_bw_rulelist == ""){
@@ -981,7 +991,7 @@ function genMain_table(){
 			
 			code += '<td style="text-align:center;">'+qos_bw_rulelist_col[2]/1024+' Mb/s</td>';
 			code += '<td style="text-align:center;">'+qos_bw_rulelist_col[3]/1024+' Mb/s</td>';
-			code += '<td><div class="remove" style="width:23px;height:23px;margin:0 auto" onclick="deleteRow_main(this);"></td>';
+			code += '<td><div class="remove" style="margin:0 auto" onclick="deleteRow_main(this);"></td>';
 			code += '</tr>';
 
 		}
@@ -1031,14 +1041,16 @@ function device_filter(obj){
 		for(var i = 0; i < clientList.length; i += 1) {
 			var clientObj = clientList[clientList[i]];
 			var clientName = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
-			if(clientList[i].indexOf(obj.value) == -1 && clientName.indexOf(obj.value) == -1)
+			if(clientList[i].toLowerCase().indexOf(obj.value.toLowerCase()) == -1 && clientName.toLowerCase().indexOf(obj.value.toLowerCase()) == -1)
 				continue;
 			
-			code += '<a title=' + clientList[i] + '><div style="height:auto;" onclick="setClientIP(\'' + clientName + '\', \'' + clientObj.mac + '\');"><strong>' + clientName + '</strong> ';
-			code += ' </div></a>';
+			code += '<div><a title=' + clientList[i] + '><div style="height:auto;" onclick="setClientIP(\'' + clientName + '\', \'' + clientObj.mac + '\');"><strong>' + clientName + '</strong> ';
+			code += ' </div><!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]--></a></div>';
 		}		
 		
-		document.getElementById("ClientList_Block_PC").innerHTML = code;		
+		document.getElementById("ClientList_Block_PC").innerHTML = code;
+
+		if(document.getElementById("ClientList_Block_PC").childNodes.length == "0")	hideClients_Block();
 	}
 }
 
@@ -1200,6 +1212,7 @@ function check_field(){
 			<input type="hidden" name="qos_enable" value="<% nvram_get("qos_enable"); %>">
 			<input type="hidden" name="qos_enable_orig" value="<% nvram_get("qos_enable"); %>">
 			<input type="hidden" name="qos_type_orig" value="<% nvram_get("qos_type"); %>">
+			<input type="hidden" name="qos_type" value="<% nvram_get("qos_type"); %>">
 			<input type="hidden" name="qos_obw" value="<% nvram_get("qos_obw"); %>" disabled>
 			<input type="hidden" name="qos_ibw" value="<% nvram_get("qos_ibw"); %>" disabled>
 			<input type="hidden" name="bwdpi_app_rulelist" value="<% nvram_get("bwdpi_app_rulelist"); %>" disabled>
@@ -1245,13 +1258,12 @@ function check_field(){
 														<ul>
 															<li id="function_int_desc"><#EzQoS_desc_Adaptive#></li>
 															<li><#EzQoS_desc_Traditional#></li>
-															<li><span style="font-size:14px;font-weight:bolder">Bandwidth Limiter</span> helps you to control download and upload max speed of your client devices.</li><!--untranslated string--> 
+															<li><#EzQoS_desc_Bandwidth_Limiter#></li>
 														</ul>
-														<!--#EzQoS_desc_note#-->
-														To enable QoS function, click the QoS slide switch and fill in the upload and download.<!--unstranlated string-->
+														<#EzQoS_desc_note#>														
 													</div>
 													<div class="formfontdesc">
-														<a id="faq" href="http://www.asus.com/us/support/FAQ/1008718/" target="_blank" style="text-decoration:underline;">QoS FAQ</a>
+														<a id="faq" href="http://www.asus.com/support/FAQ/1008718/" target="_blank" style="text-decoration:underline;">QoS FAQ</a>
 													</div>
 												</td>
 											</tr>
@@ -1308,15 +1320,15 @@ function check_field(){
 															 }
 														);
 													</script>			
-												<div id="qos_enable_hint" style="color:#FC0;margin:5px 0px 0px 100px;display:none">Enabling QoS may take several minutes.<!--#Adaptive_note#--></div><!--untranslated string-->
+												<div id="qos_enable_hint" style="color:#FC0;margin:5px 0px 0px 100px;display:none"><#QzQoS_note#></div>
 											</td>
 										</tr>
 										<tr id="qos_type_tr" style="display:none">
 											<th><#QoS_Type#></th>
 											<td colspan="2">
-												<input id="int_type" name="qos_type" value="1" onClick="change_qos_type(this.value);" style="display:none;" type="radio" <% nvram_match("qos_type", "1","checked"); %>><a id="int_type_link" class="hintstyle" style="display:none;" href="javascript:void(0);" onClick="openHint(20, 6);"><label for="int_type"><#Adaptive_QoS#></label></a>
-												<input id="trad_type" name="qos_type" value="0" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "0","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 7);"><label for="trad_type"><#EzQoS_type_traditional#></label></a>
-												<input id="bw_limit_type" name="qos_type" value="2" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "2","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 8)"><label for="bw_limit_type"><#Bandwidth_Limiter#></label></a>
+												<input id="int_type" name="qos_type_radio" value="1" onClick="change_qos_type(this.value);" style="display:none;" type="radio" <% nvram_match("qos_type", "1","checked"); %>><a id="int_type_link" class="hintstyle" style="display:none;" href="javascript:void(0);" onClick="openHint(20, 6);"><label for="int_type"><#Adaptive_QoS#></label></a>
+												<input id="trad_type" name="qos_type_radio" value="0" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "0","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 7);"><label for="trad_type"><#EzQoS_type_traditional#></label></a>
+												<input id="bw_limit_type" name="qos_type_radio" value="2" onClick="change_qos_type(this.value);" type="radio" <% nvram_match("qos_type", "2","checked"); %>><a class="hintstyle" href="javascript:void(0);" onClick="openHint(20, 8)"><label for="bw_limit_type"><#Bandwidth_Limiter#></label></a>
 											</td>
 										</tr>
 										<tr id="bandwidth_setting_tr" style="display:none">
@@ -1336,8 +1348,8 @@ function check_field(){
 											<td rowspan="2" style="width:250px;">
 												<div>
 													<ul style="padding:0 10px;margin:5px 0;">
-														<li>Get the bandwidth information from ISP or go to <a href="http://speedtest.net" target="_blank" style="text-decoration:underline;color:#FC0">Speedtest</a> to check bandwidth</li>
-														<li id="hint_zero">The default is 0, which means unlimited bandwidth</li>
+														<li><#EzQoS_bandwidth_note1#></li>
+														<li id="hint_zero"><#EzQoS_bandwidth_note2#></li>
 													</ul>
 												</div>
 												
@@ -1358,7 +1370,7 @@ function check_field(){
 						<table id="quick_setup_desc" width="98%" border="0" style="margin-top:5px;margin-left:5px;display:none;">
 							<tr>
 								<td height="30" align="left" valign="top" bgcolor="#4D595D">																		
-									<div class="formfontdesc" style="line-height:20px;font-size:14px;">Please select priority mode depending on your networking environment. You can also choice customize mode to prioritize app category.</div>	<!-- untranslated -->
+									<div class="formfontdesc" style="line-height:20px;font-size:14px;"><#Adaptive_QoS_priority#></div>
 								</td>								
 							</tr>
 						</table>	
@@ -1385,13 +1397,13 @@ function check_field(){
 							</tr>
 							<tr height="40px" align="center">
 								<td width="10px"></td>
-								<td class="Quick_Setup_title" align="center">Game</td>	<!-- untranslated -->
+								<td class="Quick_Setup_title" align="center"><#AiProtection_filter_stream1#></td><!--Games-->
 								<td width="50px"></td>
-								<td class="Quick_Setup_title" align="center">Media Streaming</td>	<!-- untranslated -->
+								<td class="Quick_Setup_title" align="center"><#AiProtection_filter_stream2#></td><!--Media Streaming-->
 								<td width="50px"></td>
-								<td class="Quick_Setup_title" align="center">Web Surfing</td>	<!-- untranslated -->
+								<td class="Quick_Setup_title" align="center"><#Adaptive_WebSurf#></td><!--Web Surfing-->
 								<td width="50px"></td>
-								<td class="Quick_Setup_title" align="center">Customize</td>	<!-- untranslated -->
+								<td class="Quick_Setup_title" align="center"><#Customize#></td>
 								<td width="20px"></td>
 							</tr>						
 							<tr height="40">

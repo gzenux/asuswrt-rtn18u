@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup with nested tunnels and config mode.
+     Hosta is the endserver, hostb the middleserver and hostc client.
+     hostb the midway GW and hostc the peer. 
+     hosta = hostb - hostc -->
+<!-- Related: hostb-cp-irac-nested.xml, hostc-cp-nested.xml -->
+<quicksec>
+
+  <!-- Network topology for nested tunnel remote access scenario
+
+       HostB                     HostA                   HostC    NetC
+                 outer tunnel              5001::/64              6001::/64
+       172.30  ________________  172.30                  
+       .4.167  ________________  .4.189                  
+                                                                
+       5002     inner tunnel                             5001    
+       ::f001  ========================================= ::254                -->
+
+  <params>
+    <!-- IRAS gives virtual IP address from range defined 
+         in address element. Subnet element defines which subnet
+         is accessible through the gateway. More than one subnet
+         element can be defined. -->
+    <address-pool>
+      <subnet>5001::/64</subnet>
+      <address netmask="ffff:ffff:ffff:ffff:0:0:0:0">5002::f001-5002::fff0</address>
+    </address-pool> 
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- The outer tunnel. Flag `allow-cfgmode' allows remote access
+         clients to request remote access attributes using IKEv2
+         configuration payloads. Flag `enable-outbound-sa-selectors'
+         allows nodes in the protected network to initiate connections
+         towards the remote access client. -->
+    <tunnel name="remote-access" flags="allow-cfgmode
+                                        enable-outbound-sa-selectors
+                                        proxy-arp
+                                        dont-initiate">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="a@ipsec.com">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+    </tunnel>
+
+    <!-- Allow traffic from the remote access clients to 
+         protected subnets. -->
+    <rule from-tunnel="remote-access">
+      <dst>ipv6(5001::/64),ipv6(5002::/64)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

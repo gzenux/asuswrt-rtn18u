@@ -58,14 +58,13 @@
 #include <typedefs.h>
 #else
 #include <wlioctl.h>
+#include <wlutils.h>
 #endif
 #endif
 
 #if defined(RTCONFIG_USB) && defined(RTCONFIG_NOTIFICATION_CENTER)
 #include <libnt.h>
 #endif
-
-
 
 #define BCM47XX_SOFTWARE_RESET	0x40		/* GPIO 6 */
 #define RESET_WAIT		2		/* seconds */
@@ -86,10 +85,16 @@
 #ifdef RTCONFIG_WPS_RST_BTN
 #define WPS_RST_DO_WPS_COUNT		( 1*10)	/*  1 seconds */
 #define WPS_RST_DO_RESTORE_COUNT	(10*10)	/* 10 seconds */
+#undef RESET_WAIT_COUNT
+#define RESET_WAIT_COUNT		WPS_RST_DO_RESTORE_COUNT
 #endif	/* RTCONFIG_WPS_RST_BTN */
 
 #ifdef RTCONFIG_WPS_ALLLED_BTN
 #define WPS_LED_WAIT_COUNT		1
+#endif
+
+#if defined(RTCONFIG_EJUSB_BTN)
+#define EJUSB_WAIT_COUNT	2		/* 2 seconds */
 #endif
 
 //#if defined(RTCONFIG_JFFS2LOG) && defined(RTCONFIG_JFFS2)
@@ -113,7 +118,9 @@ unsigned int tor_check_count = 0;
 
 static struct itimerval itv;
 /* to check watchdog alive */
+#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 static struct itimerval itv02;
+#endif
 static int watchdog_period = 0;
 #ifdef RTCONFIG_BCMARM
 static int chkusb3_period = 0;
@@ -164,6 +171,29 @@ extern int g_isEnrollee[MAX_NR_WL_IF];
 static int ddns_check_count = 0;
 static int freeze_duck_count = 0;
 
+static const struct mfg_btn_s {
+	enum btn_id id;
+	char *name;
+	char *nv;
+} mfg_btn_table[] = {
+#ifndef RTCONFIG_N56U_SR2
+	{ BTN_RESET,	"RESET", 	"btn_rst" },
+#endif
+	{ BTN_WPS,	"WPS",		"btn_ez" },
+#if defined(RTCONFIG_WIFI_TOG_BTN)
+	{ BTN_WIFI_TOG,	"WIFI_TOG",	"btn_wifi_toggle" },
+#endif
+#ifdef RTCONFIG_WIRELESS_SWITCH
+	{ BTN_WIFI_SW,	"WIFI_SW",	"btn_wifi_sw" },
+#endif
+#if defined(RTCONFIG_EJUSB_BTN)
+	{ BTN_EJUSB1,	"EJECT USB1",	"btn_ejusb_btn1" },
+	{ BTN_EJUSB2,	"EJECT USB2",	"btn_ejusb_btn2" },
+#endif
+
+	{ BTN_ID_MAX,	NULL,		NULL },
+};
+
 /* ErP Test */
 #ifdef RTCONFIG_ERP_TEST
 #define MODE_NORMAL 0
@@ -172,6 +202,13 @@ static int freeze_duck_count = 0;
 static int pwrsave_status = MODE_NORMAL;
 static int no_assoc_check = 0;
 #endif
+
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+#define WDG_MONITOR_PERIOD 60 /* second */
+static int wdg_timer_alive = 1;
+#endif
+
+void led_table_ctrl(int on_off);
 
 void
 sys_exit()
@@ -191,6 +228,7 @@ alarmtimer(unsigned long sec, unsigned long usec)
 }
 
 /* to check watchdog alive */
+#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 static void
 alarmtimer02(unsigned long sec, unsigned long usec)
 {
@@ -199,11 +237,19 @@ alarmtimer02(unsigned long sec, unsigned long usec)
 	itv02.it_interval = itv02.it_value;
 	setitimer(ITIMER_REAL, &itv02, NULL);
 }
+#endif
 
 extern int no_need_to_start_wps();
 
 void led_control_normal(void)
 {
+#ifdef RTAC87U
+        LED_switch_count = nvram_get_int("LED_switch_count");
+#endif
+#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN)
+	if (!nvram_get_int("AllLED")) return;
+#endif
+
 #ifdef RTCONFIG_WPS_LED
 	int v = LED_OFF;
 	// the behavior in normal when wps led != power led
@@ -217,12 +263,10 @@ void led_control_normal(void)
 #endif
 	// in case LED_WPS != LED_POWER
 
-#if defined(RTCONFIG_LED_BTN) && defined(RTAC87U)
-	LED_switch_count = nvram_get_int("LED_switch_count");
-	if (nvram_get_int("AllLED") == 0) return;
-#endif
-
 	led_control(LED_POWER, LED_ON);
+#ifdef RTCONFIG_LOGO_LED
+	led_control(LED_LOGO, LED_ON);
+#endif
 
 #if defined(RTN11P) || defined(RTN300)
 	led_control(LED_WPS, LED_ON);	//wps led is also 2g led. and NO power led.
@@ -230,7 +274,6 @@ void led_control_normal(void)
 	if (nvram_get_int("led_pwr_gpio") != nvram_get_int("led_wps_gpio"))
 		led_control(LED_WPS, LED_OFF);
 #endif
-
 }
 
 void erase_nvram(void)
@@ -259,6 +302,7 @@ void erase_nvram(void)
 int init_toggle(void)
 {
 	switch (get_model()) {
+#ifdef RTCONFIG_WIFI_TOG_BTN
 		case MODEL_RTAC56S:
 		case MODEL_RTAC56U:
 		case MODEL_RTAC3200:
@@ -272,6 +316,7 @@ int init_toggle(void)
 		case MODEL_RTAC3100:
 			nvram_set("btn_ez_radiotoggle", "1");
 			return BTN_WIFI_TOG;
+#endif
 		default:
 			return BTN_WPS;
 	}
@@ -290,88 +335,300 @@ void service_check(void)
 	led_control(LED_POWER, ++boot_ready%2);
 }
 
-void btn_check(void)
+/* @return:
+ * 	0:	not in MFG mode.
+ *  otherwise:	in MFG mode.
+ */
+static int handle_btn_in_mfg(void)
 {
-	if (nvram_match("asus_mfg", "1"))
-	{
-		//TRACE_PT("asus mfg btn check!!!\n");
-#ifndef RTCONFIG_N56U_SR2
-		if (button_pressed(BTN_RESET))
-		{
-			TRACE_PT("button RESET pressed\n");
-			nvram_set("btn_rst", "1");
+	char msg[64];
+	const struct mfg_btn_s *p;
+
+	if (!nvram_match("asus_mfg", "1"))
+		return 0;
+
+	// TRACE_PT("asus mfg btn check!!!\n");
+	for (p = &mfg_btn_table[0]; p->id < BTN_ID_MAX; ++p) {
+		if (button_pressed(p->id)) {
+			if (p->name) {
+				snprintf(msg, sizeof(msg), "button %s pressed\n", p->name);
+				TRACE_PT("%s", msg);
+			}
+
+			nvram_set(p->nv, "1");
+		} else {
+			/* TODO: handle button release. */
 		}
-#endif
-		if (button_pressed(BTN_WPS))
-		{
-			TRACE_PT("button WPS pressed\n");
-			nvram_set("btn_ez", "1");
-		}
+	}
+
 #ifdef RTCONFIG_WIRELESS_SWITCH
-		if (button_pressed(BTN_WIFI_SW))
-		{
-			TRACE_PT("button WIFI_SW pressed\n");
-			nvram_set("btn_wifi_sw", "1");
-		}
-		else
-		{
-			nvram_set("btn_wifi_sw", "0");
-		}
+	if (!button_pressed(BTN_WIFI_SW)) {
+		nvram_set("btn_wifi_sw", "0");
+	}
 #endif
-#if defined(RTCONFIG_WIFI_TOG_BTN)
-		if (button_pressed(BTN_WIFI_TOG))
-		{
-			TRACE_PT("button WIFI_TOG pressed\n");
-			nvram_set("btn_wifi_toggle", "1");
-		}
-#endif
-#ifdef RTCONFIG_TURBO
-		if (button_pressed(BTN_TURBO))
-		{
-			TRACE_PT("button TURBO pressed\n");
-			nvram_set("btn_turbo", "1");
-		}
-#endif
+
 #ifdef RTCONFIG_LED_BTN /* currently for RT-AC68U only */
 #if defined(RTAC3200) || defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300) || defined(RTAC5300R)
-		if (!button_pressed(BTN_LED))
-#else
-		if (!strcmp(get_productid(), "RT-AC66U V2"))
-			;
-		else if (((!nvram_match("cpurev", "c0") || nvram_get_int("PA") == 5023) && button_pressed(BTN_LED)) ||
-			   (nvram_match("cpurev", "c0") && nvram_get_int("PA") != 5023 && !button_pressed(BTN_LED)))
+	if (!button_pressed(BTN_LED))
+#elif defined(RTAC68U)
+	if (is_ac66u_v2_series())
+		;
+	else if (((!nvram_match("cpurev", "c0") || nvram_get_int("PA") == 5023) && button_pressed(BTN_LED)) ||
+		   (nvram_match("cpurev", "c0") && nvram_get_int("PA") != 5023 && !button_pressed(BTN_LED)))
 #endif
-		{
-			TRACE_PT("button LED pressed\n");
-			nvram_set("btn_led", "1");
-		}
+	{
+		TRACE_PT("button LED pressed\n");
+		nvram_set("btn_led", "1");
+	}
 #if defined(RTAC68U)
-		else if (!nvram_match("cpurev", "c0") || nvram_get_int("PA") == 5023)
-		{
-			TRACE_PT("button LED released\n");
-			nvram_set("btn_led", "0");
-		}
-#endif
-#endif
-#ifdef RTCONFIG_INTERNAL_GOBI
-		if (button_pressed(BTN_LTE))
-		{
-			TRACE_PT("button LTE pressed\n");
-			nvram_set("btn_lte", "1");
-		}
-#endif
-#ifdef RTCONFIG_SWMODE_SWITCH
-#if defined(PLAC66U)
-		if (button_pressed(BTN_SWMODE_SW_ROUTER) != nvram_get_int("swmode_switch"))
-		{
-			TRACE_PT("Switch changeover\n");
-			nvram_set("switch_mode", "1");
-		}
+	else if (!nvram_match("cpurev", "c0") || nvram_get_int("PA") == 5023)
+	{
+		TRACE_PT("button LED released\n");
+		nvram_set("btn_led", "0");
+	}
 #endif
 #endif
 
-		return;
+#ifdef RTCONFIG_SWMODE_SWITCH
+#if defined(PLAC66U)
+	if (button_pressed(BTN_SWMODE_SW_ROUTER) != nvram_get_int("swmode_switch"))
+	{
+		TRACE_PT("Switch changeover\n");
+		nvram_set("switch_mode", "1");
 	}
+#endif
+#endif
+
+	return 1;
+}
+
+#if defined(RTCONFIG_EJUSB_BTN) && defined(RTCONFIG_BLINK_LED)
+struct ejusb_btn_s {
+	enum btn_id btn;
+	char *name;
+	int state;
+	float t1;
+	unsigned int port_mask;
+	unsigned int nr_pids;
+	pid_t pids[8];
+	char *led[2];
+};
+
+
+/**
+ * Set USB LED blink pattern and enable it for eject USB button.
+ * @p:
+ * @mode:
+ * 	2:	user defined pattern mode,
+ * 		OFF 0.15s, ON 0.15s, OFF 0.05s, ON 0.05s, OFF 0.05s, ON 0.05s, OFF 0.05s, ON 0.05s
+ * 	1:	user defined pattern mode,
+ * 		OFF 0.7s, ON 0.7s
+ *  otherwise:	normal mode
+ */
+static inline void set_usbled_for_ejusb_btn(struct ejusb_btn_s *p, int mode)
+{
+	int i;
+
+	if (!p)
+		return;
+
+	switch (mode) {
+	case 2:
+		/* user defined pattern mode */
+		for (i = 0 ; i < ARRAY_SIZE(p->led); ++i) {
+			if (!p->led[i])
+				break;
+
+			set_bled_udef_pattern(p->led[i], 50, "0 0 0 1 1 1 0 1 0 1 0 1");
+			set_bled_udef_pattern_mode(p->led[i]);
+		}
+		break;
+	case 1:
+		/* user defined pattern mode */
+		for (i = 0 ; i < ARRAY_SIZE(p->led); ++i) {
+			if (!p->led[i])
+				break;
+
+			set_bled_udef_pattern(p->led[i], 700, "0 1");
+			set_bled_udef_pattern_mode(p->led[i]);
+		}
+		break;
+	default:
+		/* normal mode */
+		for (i = 0 ; i < ARRAY_SIZE(p->led); ++i) {
+			if (!p->led[i])
+				break;
+
+			set_bled_normal_mode(p->led[i]);
+		}
+	}
+}
+
+
+/**
+ * Handle eject USB button.
+ */
+static void handle_eject_usb_button(void)
+{
+	int i, v, port, m, model;
+	unsigned int c;
+	char *gpio, nv[32], port_str[5] = "-1";
+	char *ejusb_argv[] = { "ejusb", port_str, "1", "-u", "1", NULL };
+	struct ejusb_btn_s *p;
+	static unsigned int first = 1, nr_ejusb_btn = 0;
+	static struct ejusb_btn_s ejusb_btn[] = {
+		{
+			.btn = BTN_EJUSB1,
+			.name = "Eject USB button1",
+			.state = 0,
+			.port_mask = 0,
+			.led = { NULL, NULL },
+		},
+		{
+			.btn = BTN_EJUSB2,
+			.name = "Eject USB button2",
+			.state = 0,
+			.port_mask = 0,
+			.led = { NULL, NULL },
+		}
+	};
+
+	/* If RESET button is triggered, don't handle eject USB button. */
+	if (btn_pressed)
+		return;
+
+	if (first) {
+		first = 0;
+		p = &ejusb_btn[0];
+
+		for (i = 0; i < ARRAY_SIZE(ejusb_btn); ++i) {
+			sprintf(nv, "btn_ejusb%d_gpio", i + 1);
+			if (!(gpio = nvram_get(nv)))
+				continue;
+			if (((v = atoi(gpio)) & GPIO_PIN_MASK) == GPIO_PIN_MASK)
+				continue;
+
+			nr_ejusb_btn++;
+			p[i].port_mask = (v & GPIO_EJUSB_MASK) >> GPIO_EJUSB_SHIFT;
+		}
+
+		/* If DUT has two USB LED, associate 2-nd USB LED with eject USB button
+		 * based on number of eject USB button.
+		 */
+		model = get_model();
+		switch (nr_ejusb_btn) {
+		case 2:
+			if (have_usb3_led(model)) {
+				p[0].led[0] = "led_usb_gpio";
+				p[1].led[0] = "led_usb3_gpio";
+			} else {
+				p[0].led[0] = "led_usb_gpio";
+				p[1].led[0] = "led_usb_gpio";
+			}
+			break;
+		case 1:
+			if (have_usb3_led(model)) {
+				p[0].led[0] = "led_usb_gpio";
+				p[0].led[1] = "led_usb3_gpio";
+			} else {
+				p[0].led[0] = "led_usb_gpio";
+				p[0].led[1] = NULL;
+			}
+			break;
+		default:
+			nr_ejusb_btn = 0;
+		}
+	}
+	if (!nr_ejusb_btn)
+		return;
+
+	for (i = 0, p = &ejusb_btn[0]; i < ARRAY_SIZE(ejusb_btn); ++i, ++p) {
+		if (button_pressed(p->btn)) {
+			TRACE_PT("%s pressed\n", p->name);
+			/* button pressed */
+			switch (p->state) {
+			case 0:
+				p->state = 1;
+				p->t1 = uptime2();
+				break;
+			case 1:
+				if ((int)(uptime2() - p->t1) >= EJUSB_WAIT_COUNT) {
+					_dprintf("You can release %s now!\n", p->name);
+					set_usbled_for_ejusb_btn(p, 1);
+					p->state = 2;
+				}
+				break;
+			case 2:
+				/* nothing to do */
+				break;
+			case 3:
+				/* nothing to do */
+				break;
+			default:
+				_dprintf("%s: %s pressed, unknown state %d\n", __func__, p->state);
+				p->state = 0;
+				set_usbled_for_ejusb_btn(p, 0);
+			}
+		} else {
+			/* button released */
+			if (p->state)
+				TRACE_PT("%s released\n", p->name);
+
+			switch (p->state) {
+			case 0:
+				/* nothing to do */
+				break;
+			case 1:
+				p->state = 0;
+				break;
+			case 2:
+				/* Issue ejusb command. */
+				p->nr_pids = 0;
+				memset(&p->pids[0], 0, sizeof(p->pids));
+				set_usbled_for_ejusb_btn(p, 2);
+				if (p->port_mask) {
+					for (m = p->port_mask, port = 1; m > 0; m >>= 1, port++) {
+						if (!(m & 1))
+							continue;
+						sprintf(port_str, "%d", port);
+						_eval(ejusb_argv, NULL, 0, &p->pids[p->nr_pids++]);
+					}
+				} else {
+					strcpy(port_str, "-1");
+					_eval(ejusb_argv, NULL, 0, &p->pids[p->nr_pids++]);
+				}
+				p->state = 3;
+				break;
+			case 3:
+				for (i = 0, c = 0; p->nr_pids > 0 && i < p->nr_pids; ++i) {
+					if (!p->pids[i])
+						continue;
+					if (!process_exists(p->pids[i]))
+						p->pids[i] = 0;
+					else
+						c++;
+				}
+				if (!c) {
+					p->state = 0;
+					set_usbled_for_ejusb_btn(p, 0);
+				}
+				break;
+			default:
+				_dprintf("%s: %s released, unknown state %d\n", __func__, p->state);
+				p->state = 0;
+				set_usbled_for_ejusb_btn(p, 0);
+			}
+		}
+	}
+}
+#else	/* !(RTCONFIG_EJUSB_BTN && RTCONFIG_BLINK_LED) */
+static inline void handle_eject_usb_button(void) { }
+#endif	/* RTCONFIG_EJUSB_BTN && RTCONFIG_BLINK_LED  */
+
+void btn_check(void)
+{
+	if (handle_btn_in_mfg())
+		return;
 
 #ifdef BTN_SETUP
 	if (btn_pressed_setup == BTNSETUP_NONE)
@@ -389,9 +646,9 @@ void btn_check(void)
 #ifndef RTCONFIG_WPS_RST_BTN
 #ifdef RTCONFIG_DSL /* Paul add 2013/4/2 */
 			if ((btn_count % 2) == 0)
-				led_control(0, 1);
+				led_control(LED_POWER, LED_ON);
 			else
-				led_control(0, 0);
+				led_control(LED_POWER, LED_OFF);
 #endif
 #endif	/* ! RTCONFIG_WPS_RST_BTN */
 			if (!btn_pressed)
@@ -402,12 +659,9 @@ void btn_check(void)
 			}
 			else
 			{	/* Whenever it is pushed steady */
-#ifdef RTCONFIG_WPS_RST_BTN
-				btn_count++;
-#else	/* ! RTCONFIG_WPS_RST_BTN */
 				if (++btn_count > RESET_WAIT_COUNT)
 				{
-					fprintf(stderr, "You can release RESET button now!\n");
+					dbg("You can release RESET button now!\n");
 #if (defined(PLN12) || defined(PLAC56))
 					if (btn_pressed == 1)
 						set_wifiled(5);
@@ -417,7 +671,7 @@ void btn_check(void)
 				if (btn_pressed == 2)
 				{
 #ifdef RTCONFIG_DSL /* Paul add 2013/4/2 */
-					led_control(0, 0);
+					led_control(LED_POWER, LED_OFF);
 					alarmtimer(0, 0);
 					nvram_set("restore_defaults", "1");
 					if (notify_rc_after_wait("resetdefault")) {
@@ -428,12 +682,25 @@ void btn_check(void)
 				/* 0123456789 */
 				/* 0011100111 */
 					if ((btn_count % 10) < 2 || ((btn_count % 10) > 4 && (btn_count % 10) < 7))
+#if defined(RTN11P) || defined(RTN300)
+					{
+						led_control(LED_LAN, LED_OFF);
+						led_control(LED_WAN, LED_OFF);
+						led_control(LED_WPS, LED_OFF);
+					}
+					else
+					{
+						led_control(LED_LAN, LED_ON);
+						led_control(LED_WAN, LED_ON);
+						led_control(LED_WPS, LED_ON);
+					}
+#else	/* ! (RTN11P || RTN300) */
 						led_control(LED_POWER, LED_OFF);
 					else
 						led_control(LED_POWER, LED_ON);
+#endif	/* ! (RTN11P || RTN300) */
 #endif
 				}
-#endif	/* ! RTCONFIG_WPS_RST_BTN */
 			}
 	}
 #if defined(RTCONFIG_WIRELESS_SWITCH) && defined(RTCONFIG_DSL)
@@ -590,6 +857,9 @@ void btn_check(void)
 	}
 
 	if (btn_pressed != 0) return;
+
+	handle_eject_usb_button();
+
 #if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA)
 	// wait until wl is ready
 	if (!nvram_get_int("wlready")) return;
@@ -699,6 +969,15 @@ void btn_check(void)
 				eval("wl", "-i", "eth2", "ledbh", "11", "7");
 				kill_pidfile_s("/var/run/usbled.pid", SIGTSTP); // inform usbled to reset status
 #endif
+#ifdef RTCONFIG_QCA
+				led_control(LED_2G, LED_ON);
+#if defined(RTCONFIG_HAS_5G)
+				led_control(LED_5G, LED_ON);
+#endif
+#endif
+#ifdef RTCONFIG_LAN4WAN_LED
+				LanWanLedCtrl();
+#endif
 			}
 			else {
 				TRACE_PT("LED turn off\n");
@@ -712,19 +991,13 @@ void btn_check(void)
 	}
 #endif
 
-#ifdef RTCONFIG_TURBO
-	if (button_pressed(BTN_TURBO))
-	{
-		TRACE_PT("button BTN_TURBO pressed\n");
-	}
-#endif
 #ifdef RTCONFIG_LED_BTN
 	LED_status_old = LED_status;
 	LED_status = button_pressed(BTN_LED);
 
 #if defined(RTAC68U) || defined(RTAC3200) || defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300) || defined(RTAC5300R)
 #if defined(RTAC68U)
-	if (!strcmp(get_productid(), "RT-AC66U V2"))
+	if (is_ac66u_v2_series())
 		;
 	else if (nvram_match("cpurev", "c0") && nvram_get_int("PA") != 5023) {
 		if (!LED_status &&
@@ -803,7 +1076,7 @@ void btn_check(void)
 			kill_pidfile_s("/var/run/wanduck.pid", SIGUSR2);
 #else
 #ifdef RTAC68U
-			if (!strcmp(get_productid(), "RT-AC66U V2"))
+			if (is_ac66u_v2_series())
 				kill_pidfile_s("/var/run/wanduck.pid", SIGUSR2);
 			else
 #endif
@@ -846,13 +1119,8 @@ void btn_check(void)
 				led_control(LED_5G, LED_ON);
 			}
 #endif
-#ifdef RTCONFIG_TURBO
-			if (nvram_match("wl0_radio", "1") || nvram_match("wl1_radio", "1")
-#ifdef RTAC3200
-				|| nvram_match("wl2_radio", "1")
-#endif
-			)
-				led_control(LED_TURBO, LED_ON);
+#ifdef RTCONFIG_LOGO_LED
+			led_control(LED_LOGO, LED_ON);
 #endif
 			kill_pidfile_s("/var/run/usbled.pid", SIGTSTP); // inform usbled to reset status
 		}
@@ -1066,7 +1334,7 @@ void btn_check(void)
 		else
 			wps_led_control(LED_OFF);
 	}
-#endif
+#endif	/* BTN_SETUP */
 }
 
 #define DAYSTART (0)
@@ -1279,6 +1547,11 @@ void timecheck(void)
 	char wl_vifs[256], nv[40];
 	int expire, need_commit = 0;
 
+#if defined(RTCONFIG_PROXYSTA)
+	if (mediabridge_mode())
+		return;
+#endif
+
 	item = 0;
 	unit = 0;
 
@@ -1467,6 +1740,13 @@ static void catch_sig(int sig)
 
 		wsc_timeout = WPS_TIMEOUT_COUNT;
 	}
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+	else if (sig == SIGHUP)
+	{
+		_dprintf("[%s] Reset alarm timer...\n",  __FUNCTION__);
+		alarmtimer(NORMAL_PERIOD, 0);
+	}
+#endif
 #ifdef RTCONFIG_RALINK
 	else if (sig == SIGTTIN)
 	{
@@ -1619,6 +1899,7 @@ void fake_etlan_led(void)
 	static int status = -1;
 	static int status_old;
 
+#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN)
 	if (nvram_match("AllLED", "0")) {
 		if (allstatus)
 			led_control(LED_LAN, LED_OFF);
@@ -1626,6 +1907,7 @@ void fake_etlan_led(void)
 		return;
 	}
 	allstatus = 1;
+#endif
 
 	if (!GetPhyStatus(0)) {
 		if (lstatus)
@@ -1833,9 +2115,11 @@ void fake_wl_led_5g(void)
 			else {
 				led_control(LED_5G, LED_ON);
 			}
+			_dprintf("****** %s:%d ******\n", __func__, __LINE__);
 #endif
 		}
 		led_control(LED_5G, LED_ON);
+		_dprintf("****** %s:%d ******\n", __func__, __LINE__);
 	}
 
 	blink_5g_check++;
@@ -1887,11 +2171,15 @@ int confirm_led()
 	return led_confirmed;
 }
 
-static int swled_alloff_x = 0;
+#ifdef SW_DEVLED
 static int swled_alloff_counts = 0;
+#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN)
+static int swled_alloff_x = 0;
+#endif
 
 void led_check(int sig)
 {
+#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN)
 	int all_led;
 	int turnoff_counts = swled_alloff_counts?:3;
 
@@ -1907,6 +2195,7 @@ void led_check(int sig)
 		swled_alloff_x = 0;
 	else
 		return;
+#endif
 
 	if (!confirm_led()) {
 		get_gpio_values_once(1);
@@ -1933,7 +2222,7 @@ void led_check(int sig)
 	fake_etlan_led();
 #endif
 
-#if defined(RTCONFIG_USB) && !defined(RTCONFIG_BLINK_LED)
+#if defined(RTCONFIG_USB) && defined(RTCONFIG_BCM_7114)
 	char *p1_node, *p2_node, *ehci_ports, *xhci_ports;
 
 	/* led indicates which usb port */
@@ -1997,6 +2286,7 @@ if (nvram_match("dsltmp_adslsyncsts","up") && nvram_match("wan0_state_t","2"))
 #endif
 #endif
 }
+#endif
 
 void led_table_ctrl(int on_off)
 {
@@ -2125,7 +2415,7 @@ void swmode_check()
 	else if (flag_sw_mode == 1 && nvram_invmatch("asus_mfg", "1")) {
 		if (sw_mode != pre_sw_mode) {
 			if (++count_stable>4) { // stable for more than 5 second
-				fprintf(stderr, "Reboot to switch sw mode ..\n");
+				dbg("Reboot to switch sw mode ..\n");
 				flag_sw_mode=0;
 				/* sw mode changed: restore defaults */
 				led_control(LED_POWER, LED_OFF);
@@ -2160,7 +2450,7 @@ void swmode_check()
 		if (tmp_sw_mode == sw_mode) {
 			if (++count_stable>4) // stable for more than 5 second
 			{
-				fprintf(stderr, "Reboot to switch sw mode ..\n");
+				dbg("Reboot to switch sw mode ..\n");
 				flag_sw_mode=0;
 				sync();
 				/* sw mode changed: restore defaults */
@@ -2243,6 +2533,7 @@ static void client_check(void)
 #warning TBD: PL-AC66U...
 #endif
 		plc_wake = 0;
+		nvram_set("plc_wake", "0");
 	}
 	else if (plc_wake == 0 && no_client_cnt == 0) {
 		//dbg("%s: trigger Powerline to wake...\n", __func__);
@@ -2254,6 +2545,7 @@ static void client_check(void)
 #warning TBD: PL-AC66U...
 #endif
 		plc_wake = 1;
+		nvram_set("plc_wake", "1");
 	}
 
 	if (no_client_cnt >= 5)
@@ -2319,7 +2611,7 @@ void ddns_check(void)
 			if ( !strcmp(nvram_safe_get("ddns_return_code_chk"),"auth_fail") )
 				return;
 		}
-		if (internet_ready() == 1) {
+		if (nvram_get_int("ntp_ready") == 1) {
 			nvram_set("ddns_update_by_wdog", "1");
 			//unlink("/tmp/ddns.cache");
 			logmessage("watchdog", "start ddns.");
@@ -2409,8 +2701,10 @@ void qtn_module_check(void)
 	if (!nvram_get_int("qtn_ready"))
 		return;
 
+#if 0
 	if (nvram_get_int("qtn_diagnostics") == 1)
 		return;
+#endif
 
 	if(icmp_check(src_ip, dst_ip) == 0 ){
 		failed++;
@@ -2513,7 +2807,7 @@ void modem_flow_check(void) {
 	if (!modem_data_save) {
 		if (debug == 1)
 			_dprintf("modem_flow_check: save the data usage.\n");
-		eval("modem_status.sh", "bytes+");
+		eval("/usr/sbin/modem_status.sh", "bytes+");
 	}
 
 	if (++modem_flow_count >= MODEM_FLOW_PERIOD) {
@@ -2526,7 +2820,7 @@ void modem_flow_check(void) {
 		if (strlen(timebuf) <= 0 || !strcmp(timebuf, "0")) {
 			snprintf(timebuf, 32, "%d", (int)now);
 			nvram_set("modem_bytes_data_start", timebuf);
-			eval("modem_status.sh", "bytes-");
+			eval("/usr/sbin/modem_status.sh", "bytes-");
 		}
 		start = strtol(nvram_safe_get("modem_bytes_data_start"), NULL, 10);
 		memcpy(&tm_start, localtime(&start), sizeof(struct tm));
@@ -2600,7 +2894,7 @@ void modem_flow_check(void) {
 		if (reset) {
 			snprintf(timebuf, 32, "%d", (int)now);
 			nvram_set("modem_bytes_data_start", timebuf);
-			eval("modem_status.sh", "bytes-");
+			eval("/usr/sbin/modem_status.sh", "bytes-");
 		}
 
 		modem_flow_count = 0;
@@ -2715,7 +3009,9 @@ static void auto_firmware_check()
 			rand_min = rand_seed_by_time() % 60;
 		}
 
-		eval("/usr/sbin/webs_update.sh");
+		if(!nvram_contains_word("rc_support", "noupdate")){
+			eval("/usr/sbin/webs_update.sh");
+		}
 #ifdef RTCONFIG_DSL
 		eval("/usr/sbin/notif_update.sh");
 #endif
@@ -2727,7 +3023,7 @@ static void auto_firmware_check()
 			dbg("retrieve firmware information\n");
 
 #if defined(RTAC68U) || defined(RTCONFIG_FORCE_AUTO_UPGRADE)
-#if defined(RTAC68U)
+#if defined(RTAC68U) && !defined(RTAC68A)
 			if (!After(get_blver(nvram_safe_get("bl_version")), get_blver("2.1.2.1")) || nvram_get_int("PA") || nvram_match("cpurev", "c0"))
 				return;
 #endif
@@ -2744,10 +3040,6 @@ static void auto_firmware_check()
 				return;
 			}
 
-//#ifdef RTCONFIG_FORCE_AUTO_UPGRADE
-//			stop_httpd();
-//#endif
-//
 			nvram_set_int("auto_upgrade", 1);
 
 			eval("/usr/sbin/webs_upgrade.sh");
@@ -3397,10 +3689,11 @@ void watchdog(int sig)
 #ifdef RTCONFIG_BCMARM
 	if (u3_chk_life < 20) {
 		chkusb3_period = (chkusb3_period + 1) % u3_chk_life;
-		if (!chkusb3_period && nvram_match("usb_usb3", "1") && nvram_match("usb_path1_speed", "12")
-				&& strcmp(nvram_safe_get("usb_path1"), "printer")
-				&& strcmp(nvram_safe_get("usb_path1"), "modem")
-				) {
+		if (!chkusb3_period && nvram_get_int("usb_usb3") &&
+		    ((nvram_match("usb_path1_speed", "12") &&
+		      !nvram_match("usb_path1", "printer") && !nvram_match("usb_path1", "modem")) ||
+		     (nvram_match("usb_path2_speed", "12") &&
+		      !nvram_match("usb_path2", "printer") && !nvram_match("usb_path2", "modem")))) {
 			_dprintf("force reset usb pwr\n");
 			stop_usb_program(1);
 			sleep(1);
@@ -3477,6 +3770,11 @@ void watchdog(int sig)
 	ntevent_disk_usage_check();
 #endif
 
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+	if (pids("wdg_monitor"))
+		kill_pidfile_s("/var/run/wdg_monitor.pid", SIGUSR1);
+#endif
+
 	return;
 }
 
@@ -3488,10 +3786,32 @@ void watchdog02(int sig)
 }
 #endif  /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
 
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+void wdg_heartbeat(int sig)
+{
+	if(factory_debug())
+		return;
+
+	if(sig == SIGUSR1) {
+		wdg_timer_alive++;
+	}
+	else if(sig == SIGALRM) {
+		if(wdg_timer_alive) {
+			wdg_timer_alive = 0;
+		}
+		else {
+			_dprintf("[%s] Watchdog's heartbeat is stop! Recover...\n", __FUNCTION__);
+			kill_pidfile_s("/var/run/watchdog.pid", SIGHUP);
+		}
+	}
+}
+#endif
+
 int
 watchdog_main(int argc, char *argv[])
 {
 	FILE *fp;
+	const struct mfg_btn_s *p;
 
 	/* write pid */
 	if ((fp = fopen("/var/run/watchdog.pid", "w")) != NULL)
@@ -3520,6 +3840,10 @@ watchdog_main(int argc, char *argv[])
 	signal(SIGUSR2, catch_sig);
 	signal(SIGTSTP, catch_sig);
 	signal(SIGALRM, watchdog);
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+	signal(SIGHUP, catch_sig);
+#endif
+
 #ifdef RTCONFIG_RALINK
 	signal(SIGTTIN, catch_sig);
 #if 0
@@ -3539,6 +3863,15 @@ watchdog_main(int argc, char *argv[])
 	nvram_set("dsltmp_syncloss_apply", "0");
 #endif
 	nvram_unset("wps_ign_btn");
+
+	/* Set nvram variables which are used to record button state in mfg mode to "0".
+	 * Because original code in ate.c rely on such behavior.
+	 * If those variables are unset here, related ATE command print empty string
+	 * instead of "0".
+	 */
+	for (p = &mfg_btn_table[0]; p->id < BTN_ID_MAX; ++p) {
+		nvram_set(p->nv, "0");
+	}
 
 	if (!pids("ots"))
 		start_ots();
@@ -3583,6 +3916,7 @@ int watchdog02_main(int argc, char *argv[])
 }
 #endif	/* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
 
+#ifdef SW_DEVLED
 /* to control misc dev led */
 int sw_devled_main(int argc, char *argv[])
 {
@@ -3608,3 +3942,27 @@ int sw_devled_main(int argc, char *argv[])
 	}
 	return 0;
 }
+#endif
+
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+/* workaroud of watchdog timer shutdown */
+int wdg_monitor_main(int argc, char *argv[])
+{
+	FILE *fp;
+	if ((fp = fopen("/var/run/wdg_monitor.pid", "w")) != NULL) {
+		fprintf(fp, "%d", getpid());
+		fclose(fp);
+	}
+
+	signal(SIGUSR1, wdg_heartbeat);
+	signal(SIGALRM, wdg_heartbeat);
+
+	alarmtimer(WDG_MONITOR_PERIOD, 0);
+
+
+	while(1) {
+		pause();
+	}
+	return 0;
+}
+#endif

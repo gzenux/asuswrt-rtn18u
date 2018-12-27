@@ -22,8 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
 
-#ifndef _DEBUG_H_
-#define _DEBUG_H_
+#ifndef DROPBEAR_DEBUG_H_
+#define DROPBEAR_DEBUG_H_
 
 #include "includes.h"
 
@@ -39,7 +39,9 @@
  * Caution: Don't use this in an unfriendly environment (ie unfirewalled),
  * since the printing may not sanitise strings etc. This will add a reasonable
  * amount to your executable size. */
-/*#define DEBUG_TRACE*/
+#ifndef DEBUG_TRACE
+#define DEBUG_TRACE 0
+#endif
 
 /* All functions writing to the cleartext payload buffer call
  * CHECKCLEARTOWRITE() before writing. This is only really useful if you're
@@ -61,10 +63,12 @@
 /*#define DEBUG_RSA*/
 
 /* you don't need to touch this block */
-#ifdef DEBUG_TRACE
+#if DEBUG_TRACE
 #define TRACE(X) dropbear_trace X;
+#define TRACE2(X) dropbear_trace2 X;
 #else /*DEBUG_TRACE*/
 #define TRACE(X)
+#define TRACE2(X)
 #endif /*DEBUG_TRACE*/
 
 /* To debug with GDB it is easier to run with no forking of child processes.

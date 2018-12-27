@@ -107,7 +107,7 @@ country_n_isp[1] = new Array("edu","telecom","mobile","unicom");
 
 function initial(){
 	show_menu();
-	wans_flag = (wans_dualwan_orig.search("none") == -1) ? 1:0;
+	wans_flag = (wans_dualwan_orig.search("none") != -1 || !parent.dualWAN_support) ? 0 : 1;
 	wans_caps_primary = wans_caps;
 	wans_caps_secondary = wans_caps;
 	
@@ -945,7 +945,7 @@ function remain_origins(){
 <input type="hidden" name="next_page" value="Advanced_WANPort_Content.asp">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_wait" value="5">
+<input type="hidden" name="action_wait" value="<% get_default_reboot_time(); %>">
 <input type="hidden" name="action_script" value="reboot">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">

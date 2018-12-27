@@ -65,7 +65,7 @@
 # undef mul_add
 
 /*-
- * "m"(a), "+m"(r)      is the way to favor DirectPath µ-code;
+ * "m"(a), "+m"(r)      is the way to favor DirectPath Âµ-code;
  * "g"(0)               let the compiler to decide where does it
  *                      want to keep the value of zero;
  */
@@ -194,7 +194,7 @@ BN_ULONG bn_div_words(BN_ULONG h, BN_ULONG l, BN_ULONG d)
     BN_ULONG ret, waste;
 
  asm("divq      %4":"=a"(ret), "=d"(waste)
- :     "a"(l), "d"(h), "g"(d)
+ :     "a"(l), "d"(h), "r"(d)
  :     "cc");
 
     return ret;

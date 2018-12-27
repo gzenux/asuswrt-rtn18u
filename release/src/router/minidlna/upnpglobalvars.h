@@ -169,7 +169,8 @@
 	"http-get:*:audio/mp4:*," \
 	"http-get:*:audio/x-wav:*," \
 	"http-get:*:audio/x-flac:*," \
-	"http-get:*:application/ogg:*"
+	"http-get:*:application/ogg:*" \
+	"http-get:*:video/x-pn-realvideo:*"
 
 #define DLNA_FLAG_DLNA_V1_5      0x00100000
 #define DLNA_FLAG_HTTP_STALLING  0x00200000
@@ -228,7 +229,6 @@ extern sqlite3 *db;
 #define FRIENDLYNAME_MAX_LEN 64
 extern char friendly_name[];
 extern char db_path[];
-extern char db_path_spec[];
 extern char log_path[];
 extern struct media_dir_s *media_dirs;
 extern struct album_art_name_s *album_art_names;
@@ -237,5 +237,6 @@ extern volatile short int quitting;
 extern volatile uint32_t updateID;
 extern const char *force_sort_criteria;
 extern short int rescan_db;
+extern int web_status;
 
 #endif

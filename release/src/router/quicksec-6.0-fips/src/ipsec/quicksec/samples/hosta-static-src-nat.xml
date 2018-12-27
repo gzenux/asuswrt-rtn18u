@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <policy>
+
+    <!-- Pass rule, that performs source NAT operation 
+         for packets coming from src address to dst address.
+         After the NAT operation the packet is forwarded to
+         the dst address using nat-src address as src address. --> 
+    <rule nat-src="172.30.4.189">
+      <src>ipv4(192.168.2.2)</src>
+      <dst>ipv4(172.30.4.167)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

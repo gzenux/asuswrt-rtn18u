@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup with access groups using PSK. -->
+<!-- Related: hostb-access-group-psk.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email"
+                     id="user1@ipsec.com">foo</remote-secret>
+
+      <remote-secret id-type="email"
+                     id="user2@ipsec.com">foobar</remote-secret>
+    </auth-domain>
+
+    <!-- Access groups that limit access based on the identity
+         sent by remote IKE peer. The pattern can be a regular
+         expression for example pattern="*@ipsec.com". -->
+    <group name="trusted-user1">
+      <constraint type="key-subject" field="email"
+                  pattern="user1@ipsec.com"/>
+    </group>
+
+    <group name="trusted-user2">
+      <constraint type="key-subject" field="email"
+                  pattern="user2@ipsec.com"/>
+    </group>
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="a@ipsec.com">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+      <!-- Allow access to users that provide the identity defined
+           in the group elements listed below. -->
+      <access-group>trusted-user1</access-group>
+      <access-group>trusted-user2</access-group>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

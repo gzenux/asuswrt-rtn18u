@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- This is just a simple gateway configuration that accepts the redirected 
+     clients. No special config options are needed here. -->
+<quicksec>
+  <params>
+
+    <address-pool>
+      <subnet>192.168.200.0/24</subnet>
+      <address netmask="255.255.255.0">192.168.200.3-192.168.200.254</address>
+    </address-pool> 
+
+    <auth-domain>
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host" flags="allow-cfgmode proxy-arp">
+      <identity id-type="email" id="b@ipsec.com">
+        <local-secret>foo</local-secret>
+      </identity>
+    </tunnel>
+
+    <rule from-tunnel="host-to-host"/>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

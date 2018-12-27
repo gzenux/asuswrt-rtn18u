@@ -14,9 +14,14 @@ endif
 
 else ifeq ($(RTCONFIG_QCA),y)
 # QCA platform
-SRCFILE = qca
-ifeq ($(RT4GAC55U),y)
-SRCFILE = qca_4gac55u
+ifeq ($(RTCONFIG_SOC_QCA9557),y)
+SRCFILE = $(if $(RT4GAC55U),qca_4gac55u,qca)
+else ifeq ($(RTCONFIG_SOC_IPQ8064),y)
+SRCFILE = qca_ipq806x
+else ifeq ($(RTCONFIG_SOC_IPQ40XX),y)
+SRCFILE = qca_ipq40xx
+else
+$(error Tuxera driver is not available)
 endif
 
 else

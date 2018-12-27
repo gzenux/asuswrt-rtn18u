@@ -79,7 +79,7 @@ function setScenerion_asuswrt(mode){
 		parent.document.QKform.sw_mode.value = 3;
 		$("#Senario").attr("src", "/images/New_ui/ap.jpg");
 		$("#Senario").attr("style", "height:132px");
-		$("#mode_desc").html("<#OP_AP_desc#><br><span style=\"color:#FC0\"><#deviceDiscorvy3#></span>");		
+		$("#mode_desc").html("<#OP_AP_desc#>");		
 		document.form.sw_mode_radio[2].focus();
 		document.form.sw_mode_radio[2].checked = true;
 	}
@@ -149,7 +149,7 @@ function setScenerion(mode){
 		$("#Internet_span").css("display", "block");
 		$("#ap-line").css("display", "none");
 		$("#AP").html("<#Device_type_02_RT#>");
-		$("#mode_desc").html("<#OP_AP_desc#><br/><span style=\"color:#FC0\"><#deviceDiscorvy3#></span>");
+		$("#mode_desc").html("<#OP_AP_desc#>");
 		$("#nextButton").attr("value","<#CTL_next#>");
 		clearTimeout(id_WANunplungHint);
 		document.form.sw_mode_radio[2].focus();

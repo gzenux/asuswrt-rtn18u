@@ -193,6 +193,10 @@ int daemon(int nochdir, int noclose) {
 char *basename(const char *path) {
 
 	char *foo = strrchr(path, '/');
+	if (!foo)
+	{
+		return path;
+	}
 	return ++foo;
 }
 
@@ -231,7 +235,7 @@ void setusershell() {
 
 static char **initshells() {
 	/* don't touch this list. */
-	const char *okshells[] = { "/bin/sh", "/bin/csh", NULL };
+	static const char *okshells[] = { "/bin/sh", "/bin/csh", NULL };
 	register char **sp, *cp;
 	register FILE *fp;
 	struct stat statb;

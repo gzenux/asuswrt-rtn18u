@@ -105,16 +105,24 @@ static int rctest_main(int argc, char *argv[])
 			if(on) start_watchdog();
 			else stop_watchdog();
 		}
-#if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
+#ifdef RTAC87U
 		else if (strcmp(argv[1], "watchdog02") == 0) {
 			if(on) start_watchdog02();
 			else stop_watchdog02();
 		}
-#endif  /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
+#endif
+#ifdef SW_DEVLED
 		else if (strcmp(argv[1], "sw_devled") == 0) {
 			if(on) start_sw_devled();
 			else stop_sw_devled();
 		}
+#endif
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+		else if (strcmp(argv[1], "wdg_monitor") == 0) {
+			if(on) start_wdg_monitor();
+			else stop_wdg_monitor();
+		}
+#endif
 #ifdef RTCONFIG_FANCTRL
 		else if (strcmp(argv[1], "phy_tempsense") == 0) {
 			if(on) start_phy_tempsense();
@@ -246,6 +254,98 @@ static int rctest_main(int argc, char *argv[])
 }
 #endif
 
+#if defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_SOC_IPQ40XX)
+/* download firmware */
+#ifndef FIRMWARE_DIR
+#define FIRMWARE_DIR	"/lib/firmware"
+#endif
+#ifndef FW_BUF_SIZE
+#define FW_BUF_SIZE	4096
+#endif
+static int hotplug_firmware(void)
+{
+	int ret = EINVAL;
+	FILE *f_fw = NULL, *f_loading = NULL, *f_data = NULL;
+	char sysfs_path[PATH_MAX], fw_path[PATH_MAX];
+	unsigned char buf[FW_BUF_SIZE] __attribute__((aligned(4)));
+	char *action, *devpath, *fw_name;
+	char *fw_root = FIRMWARE_DIR;
+	char *sysfs_root = "/sys";
+	const void *hook_data;
+	size_t hook_size = 0, len, tlen = 0;
+
+	action = getenv("ACTION");
+	devpath = getenv("DEVPATH");
+	fw_name = getenv("FIRMWARE");
+	if (!action || !devpath || !fw_name) {
+		_dprintf("ACTION (%s), DEVPATH (%s), or FIRMWARE (%s) are NULL!\n",
+			(!action)?"<NULL>":action, (!devpath)?"<NULL>":devpath, (!fw_name)?"<NULL>":fw_name);
+		return EINVAL;
+	}
+	if (strcmp(action, "add"))	/* Only "add" action is required to support downloade firmware */
+		return 0;
+
+	// Generate filename that are required.
+	sysfs_path[0] = fw_path[0] = '\0';
+	sprintf(sysfs_path, "%s/%s/loading", sysfs_root, devpath);
+	f_loading = fopen(sysfs_path, "w");
+	if (!f_loading) {
+		_dprintf("Open %s fail\n", f_loading);
+		goto err_exit1;
+	}
+	sprintf(sysfs_path, "%s/%s/data", sysfs_root, devpath);
+	f_data = fopen(sysfs_path, "wb");
+
+	hook_data = req_fw_hook(fw_name, &hook_size);
+	if (!hook_data || !hook_size) {
+		sprintf(fw_path, "%s/%s", fw_root, fw_name);
+		f_fw = fopen(fw_path, "rb");
+	}
+	// If open firmware successful, notify kernel we are going to download firmware.
+	// If open firmware failure, notify kernel we cannot get firmware
+	if ((hook_data && hook_size) || (f_fw && f_data)) {
+		fputs ("1", f_loading);
+	} else {
+		fputs ("-1", f_loading);
+		_dprintf("Open data (%s,%p) or firmware (%s,%p) failure\n", sysfs_path, f_data, fw_path, f_fw);
+		goto err_exit2;
+	}
+	fflush (f_loading);
+
+	/* Download firmware */
+	if (hook_data && hook_size) {
+		tlen = len = hook_size;
+		while (tlen > 0) {
+			len = fwrite(hook_data + (hook_size - tlen), 1, len, f_data);
+			tlen -= len;
+		}
+	} else {
+		while (!feof(f_fw)) {
+			len = fread(buf, 1, FW_BUF_SIZE, f_fw);
+			len = fwrite(buf, 1, len, f_data);
+			tlen += len;
+		}
+	}
+	fflush (f_data);
+
+	/* Notify kernel the downloading process had finished */
+	fputs ("0", f_loading);
+	fflush (f_loading);
+
+	ret = 0;
+
+err_exit2:
+	if (f_loading)
+		fclose(f_loading);
+	if (f_data)
+		fclose(f_data);
+	if (f_fw)
+		fclose(f_fw);
+err_exit1:
+
+	return ret;
+}
+#endif
 
 static int hotplug_main(int argc, char *argv[])
 {
@@ -263,6 +363,11 @@ static int hotplug_main(int argc, char *argv[])
 			hotplug_usb();
 		}
 #endif
+#endif
+#if defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_SOC_IPQ40XX)
+		else if(!strcmp(argv[1], "firmware")) {
+			hotplug_firmware();
+		}
 #endif
 	}
 	return 0;
@@ -311,7 +416,12 @@ static const applets_t applets[] = {
 #if ! (defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK))
 	{ "watchdog02",			watchdog02_main			},
 #endif  /* ! (RTCONFIG_QCA || RTCONFIG_RALINK) */
+#ifdef SW_DEVLED
 	{ "sw_devled",			sw_devled_main			},
+#endif
+#if defined(RTAC1200G) || defined(RTAC1200GP)
+	{ "wdg_monitor",		wdg_monitor_main		},
+#endif
 #ifdef RTCONFIG_FANCTRL
 	{ "phy_tempsense",		phy_tempsense_main		},
 #endif
@@ -404,6 +514,9 @@ static const applets_t applets[] = {
 #endif
 #if defined(RTCONFIG_KEY_GUARD)
 	{ "keyguard",			keyguard_main			},
+#endif
+#if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
+	{ "erp_monitor",		erp_monitor_main		},
 #endif
 	{NULL, NULL}
 };
@@ -509,6 +622,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 #ifdef RTCONFIG_USB
+#ifdef RTCONFIG_ERPTEST
 	else if(!strcmp(base, "restart_usb")){
 		int f_stop = 0;
 		if(argc == 2)
@@ -517,6 +631,7 @@ int main(int argc, char **argv)
 		restart_usb(f_stop);
 		return 0;
 	}
+#endif
 	else if(!strcmp(base, "get_apps_name")){
 		if(argc != 2){
 			printf("Usage: get_apps_name [File name]\n");
@@ -690,6 +805,17 @@ int main(int argc, char **argv)
 			printf("ATE_ERROR\n");
 		return 0;
 	}
+#if defined(RTCONFIG_DSL)
+	else if(!strcmp(base, "asustest")) {
+		if( argc == 2 || argc == 3) {
+			asustest_command(argv[1], argv[2]);
+		}
+		else
+			printf("asustest:parameter error\n");
+		return 0;
+	}
+#endif
+
 #if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
 	else if (!strcmp(base, "FWRITE")) {
 		if (argc == 3)
@@ -811,7 +937,7 @@ int main(int argc, char **argv)
 #endif
 #if defined(CONFIG_BCMWL5) && defined(RTCONFIG_DUALWAN)
 	else if (!strcmp(base, "dualwan")){
-		dualwan_control();
+		dualwan_control(argc, argv);
 	}
 #endif
 #ifdef RTCONFIG_WIRELESSREPEATER
@@ -961,7 +1087,7 @@ int main(int argc, char **argv)
 	else if(!strcmp(base, "write_3g_ppp_conf")){
 		return write_3g_ppp_conf();
 	}
-#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
 	else if(!strcmp(base, "lplus")){
 		if(argc != 3){
 			printf("Usage: %s <integer1> <integer2>.\n", argv[0]);

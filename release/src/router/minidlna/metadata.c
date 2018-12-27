@@ -44,7 +44,9 @@
 #include "sql.h"
 #include "log.h"
 
+#ifndef MS_IPK
 #include "rtconfig.h"
+#endif
 
 #define FLAG_TITLE	0x00000001
 #define FLAG_ARTIST	0x00000002
@@ -480,7 +482,7 @@ GetAudioMetadata(const char *path, char *name)
 }
 
 /* For libjpeg error handling */
-jmp_buf setjmp_buffer;
+static jmp_buf setjmp_buffer;
 static void
 libjpeg_error_handler(j_common_ptr cinfo)
 {
@@ -489,7 +491,7 @@ libjpeg_error_handler(j_common_ptr cinfo)
 	return;
 }
 
-#ifdef RTCONFIG_WEBDAV
+#if defined MS_IPK || defined RTCONFIG_WEBDAV
 //- 20130708 Sungmin add
 static int
 thumb_cache_exists(const char *orig_path, char **cache_file)
@@ -612,7 +614,7 @@ GetImageMetadata(const char *path, char *name)
 		else
 		{
 			thumb = 1;
-#ifdef RTCONFIG_WEBDAV
+#if defined MS_IPK || defined RTCONFIG_WEBDAV
 			//- 20130708 Sungmin add
 			if(ed->data && ed->size)
 			{
@@ -889,6 +891,10 @@ GetVideoMetadata(const char *path, char *name)
 			xasprintf(&m.mime, "video/x-matroska");
 		else if( strcmp(ctx->iformat->name, "flv") == 0 )
 			xasprintf(&m.mime, "video/x-flv");
+		else if( strcmp(ctx->iformat->name, "rm") == 0 )
+			xasprintf(&m.mime, "video/x-pn-realvideo");
+		else if( strcmp(ctx->iformat->name, "rmvb") == 0 )
+			xasprintf(&m.mime, "video/x-pn-realvideo");
 		if( m.mime )
 			goto video_no_dlna;
 
@@ -1566,6 +1572,10 @@ video_no_dlna:
 			xasprintf(&m.mime, "video/x-matroska");
 		else if( strcmp(ctx->iformat->name, "flv") == 0 )
 			xasprintf(&m.mime, "video/x-flv");
+		else if( strcmp(ctx->iformat->name, "rm") == 0 )
+			xasprintf(&m.mime, "video/x-pn-realvideo");
+		else if( strcmp(ctx->iformat->name, "rmvb") == 0 )
+			xasprintf(&m.mime, "video/x-pn-realvideo");
 		else
 			DPRINTF(E_WARN, L_METADATA, "%s: Unhandled format: %s\n", path, ctx->iformat->name);
 	}

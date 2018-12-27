@@ -16,6 +16,7 @@ var selected_country = "";
 var ISP_List = [ <% get_isp_list("/www/ISP_List.txt"); %> ];
 var ISP_List_IPTV = [ <% get_isp_list("/www/ISP_List_IPTV.txt"); %> ];
 var ru_idx_start = 0;
+var dslx_annex_state = "<% nvram_get("dslx_annex"); %>";
 var x_Setting = "<% nvram_get("x_Setting"); %>";
 var w_Setting = "<% nvram_get("w_Setting"); %>";
 
@@ -355,7 +356,11 @@ function QIS_manual_setting_load_body() {
 	hidePVCInfo(1);
 	
 	if (x_Setting != "0" && parent.based_modelid != "DSL-AC68U") {
-		document.getElementById("bottom_btn1").style.display = 'none';
+		document.getElementById("detectButton").style.display = "none";
+	}
+	
+	if(dslx_annex_state == 5 || dslx_annex_state == 6){
+		document.getElementById("detectButton").style.display = "none";
 	}
 
 	if(country_code=="")
@@ -485,10 +490,16 @@ function btnNext() {
 	//Specific setting
 	if( document.form.dsltmp_cfg_country.value=='Thailand'
 		&& document.form.dsltmp_cfg_ispname.value=='3BB 15M/1.5M'
+		&& document.form.dslx_modulation.value != "4"
+		&& document.form.dslx_annex.value != "3"
+		&& parent.based_modelid != "DSL-N55U-B"
 	){
-		document.form.dsltmp_cfg_th3bb.value = "1";	//flag
-		document.form.dsltmp_cfg_modulation.value = "4";
-		document.form.dsltmp_cfg_annex.value = "3";
+		document.form.dslx_modulation.value = "4";
+		document.form.dslx_annex.value = "3";
+		parent.restartDSLSetting = true;
+	}
+	if(parent.restartDSLSetting) {
+		document.form.action_script.value = "restart_dsl_setting;".concat(document.form.action_script.value);
 	}
 
 	if (connection_type==0 || connection_type==1)
@@ -553,9 +564,8 @@ function btnNext() {
 <input type="hidden" name="dsltmp_cfg_iptv_enable" value="0">
 <input type="hidden" name="dsltmp_transmode" value="atm">
 <input type="hidden" name="dsltmp_qis_dsl_pvc_set" value="1">
-<input type="hidden" name="dsltmp_cfg_th3bb" value="0">
-<input type="hidden" name="dsltmp_cfg_modulation" value="">
-<input type="hidden" name="dsltmp_cfg_annex" value="">
+<input type="hidden" name="dslx_modulation" value="<% nvram_get("dslx_modulation"); %>">
+<input type="hidden" name="dslx_annex" value="<% nvram_get("dslx_annex"); %>">
 
 <div class="QISmain">
 	<!--
@@ -660,7 +670,7 @@ function btnNext() {
 	</div>
 
 	<div class="apply_gen" style="margin-top:10px">
-		<span id="bottom_btn1"><input type="button" value="<#CTL_Detect_Again#>" tabindex="11" onclick="submit_detect();" class="button_gen" ></span>
+		<input id="detectButton" type="button" value="<#CTL_Detect_Again#>" tabindex="11" onclick="submit_detect();" class="button_gen" >
 		<input type="button" value="<#CTL_next#>" tabindex="10" onclick="btnNext();" class="button_gen">
 	</div>
 

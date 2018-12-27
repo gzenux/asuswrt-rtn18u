@@ -23,10 +23,14 @@
 
 #define NDP_MAX_NEIGHBORS 1000
 
+#define NDP_F_NEIGH (1U << 0)
+#define NDP_F_ADDR  (1U << 1)
+
 struct ndp_neighbor {
 	struct list_head head;
 	struct relayd_interface *iface;
 	struct in6_addr addr;
 	uint8_t len;
 	time_t timeout;
+	bool is_addr;
 };

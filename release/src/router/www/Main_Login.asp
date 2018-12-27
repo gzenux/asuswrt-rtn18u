@@ -198,15 +198,58 @@ if(typeof Array.prototype.forEach != 'function'){
 	};
 }
 
-var lock_time = '<% get_parameter("lock_time"); %>';
-var remaining_time;
-remaining_time = 60 - lock_time;
-var countdownid, rtime_obj;
+function tryParseJSON (jsonString){
+    try {
+        var o = JSON.parse(jsonString);
 
-var redirect_page = '<% get_parameter("page"); %>';
+        if (o && typeof o === "object") {
+            return o;
+        }
+    }
+    catch (e) { }
+
+    return false;
+};
+
+var login_info =  tryParseJSON('<% login_error_info(); %>');
+var isIE8 = navigator.userAgent.search("MSIE 8") > -1; 
+var isIE9 = navigator.userAgent.search("MSIE 9") > -1; 
+var remaining_time = 60 - login_info.lock_time;
+var countdownid, rtime_obj;
+var redirect_page = login_info.page;
+var cloud_file = '<% get_parameter("file"); %>';
+var isRouterMode = ('<% nvram_get("sw_mode"); %>' == '1') ? true : false;
+
+var header_info = [<% get_header_info(); %>];
+var ROUTERHOSTNAME = header_info[0].host;
+var get_protocol = function() {
+	var protocol = "http:";
+	if(window.location.protocol == "http:" || window.location.protocol == "https:") {
+		protocol = window.location.protocol;
+		return protocol;
+	}
+
+	return protocol;
+};
+
+var iAmAlive = function(ret){if(ret.isdomain) top.location.href=top.location.href.replace(location.hostname, ROUTERHOSTNAME)};
+(function(){
+	var locationOrigin = get_protocol() + "//" + ROUTERHOSTNAME + (window.location.port ? ':' + window.location.port : '');
+	if(location.hostname !== ROUTERHOSTNAME && ROUTERHOSTNAME != "" && isRouterMode){
+		setTimeout(function(){
+			var s=document.createElement("script");s.type="text/javascript";s.src=locationOrigin+"/httpd_check.json?hostname="+location.hostname;;var h=document.getElementsByTagName("script")[0];h.parentNode.insertBefore(s,h);
+		}, 1);
+	}
+})();
+
+<% login_state_hook(); %>
 
 function initial(){
-	var flag = '<% get_parameter("error_status"); %>';
+	var flag = login_info.error_status;
+	if(isIE8 || isIE9){
+		document.getElementById("name_title_ie").style.display ="";
+		document.getElementById("password_title_ie").style.display ="";
+	}
 
 	if('<% check_asus_model(); %>' == '0'){
 		document.getElementById("warming_field").style.display ="";
@@ -216,8 +259,10 @@ function initial(){
 
 	if(flag != ""){
 		document.getElementById("error_status_field").style.display ="";
-		if(flag == 3)
+
+		if(flag == 3){
 			document.getElementById("error_status_field").innerHTML ="* Invalid username or password";
+		}
 		else if(flag == 7){
 			document.getElementById("error_status_field").innerHTML ="You have entered an incorrect username or password 5 times. Please try again after "+"<span id='rtime'></span>"+" seconds.";
 			document.getElementById("error_status_field").className = "error_hint error_hint1";
@@ -226,12 +271,12 @@ function initial(){
 			rtime_obj=document.getElementById("rtime");
 			rtime_obj.innerHTML=remaining_time;
 			countdownid = window.setInterval(countdownfunc,1000);
-		}else if(flag == 8){
+		}
+		else if(flag == 8){
 			document.getElementById("login_filed").style.display ="none";
 			document.getElementById("logout_field").style.display ="";
-		}else if(flag == 9){
-			<% login_state_hook(); %> 
-
+		}
+		else if(flag == 9){
 			var loginUserIp = (function(){
 				return (typeof login_ip_str === "function") ? login_ip_str().replace("0.0.0.0", "") : "";
 			})();
@@ -239,7 +284,7 @@ function initial(){
 			var getLoginUser = function(){
 				if(loginUserIp === "") return "";
 
-				var dhcpLeaseInfo = <% IP_dhcpLeaseInfo(); %>
+				var dhcpLeaseInfo = [];
 				var hostName = "";
 
 				dhcpLeaseInfo.forEach(function(elem){
@@ -252,11 +297,12 @@ function initial(){
 			};
 
 			document.getElementById("logined_ip_str").innerHTML = getLoginUser();
-
 			document.getElementById("login_filed").style.display ="none";
 			document.getElementById("nologin_field").style.display ="";
-		}else
+		}
+		else{
 			document.getElementById("error_status_field").style.display ="none";
+		}
 	}
 
 	document.form.login_username.focus();
@@ -363,10 +409,31 @@ function login(){
 	document.form.login_authorization.value = btoa(document.form.login_username.value + ':' + document.form.login_passwd.value);
 	document.form.login_username.disabled = true;
 	document.form.login_passwd.disabled = true;
-	if(redirect_page == "" || redirect_page == "Logout.asp" || redirect_page == "Main_Login.asp" || redirect_page.indexOf(" ") != -1 || (redirect_page.indexOf(".asp") == -1 && redirect_page.indexOf(".htm") == -1))
+
+	try{
+		if(redirect_page == "" 
+			|| redirect_page == "Logout.asp" 
+			|| redirect_page == "Main_Login.asp" 
+			|| redirect_page.indexOf(" ") != -1 
+			|| redirect_page.indexOf("//") != -1 
+			|| redirect_page.indexOf("http") != -1
+			|| (redirect_page.indexOf(".asp") == -1 && redirect_page.indexOf(".htm") == -1)
+		){
+			document.form.next_page.value = "index.asp";
+		}
+		else{
+			document.form.next_page.value = redirect_page;
+		}
+	}
+	catch(e){
 		document.form.next_page.value = "index.asp";
-	else
-		document.form.next_page.value = redirect_page;
+	}		
+
+	if(document.form.next_page.value == "cloud_sync.asp"){
+		document.form.cloud_file.disabled = false;
+		document.form.cloud_file.value = cloud_file;
+	}
+
 	document.form.submit();
 }
 
@@ -390,6 +457,7 @@ function disable_button(val){
 </head>
 <body class="wrapper" onload="initial();">
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
+<iframe id="dmRedirection" width="0" height="0" frameborder="0" scrolling="no" src=""></iframe>
 
 <form method="post" name="form" action="login.cgi" target="">
 <input type="hidden" name="group_id" value="">
@@ -399,6 +467,7 @@ function disable_button(val){
 <input type="hidden" name="current_page" value="Main_Login.asp">
 <input type="hidden" name="next_page" value="Main_Login.asp">
 <input type="hidden" name="login_authorization" value="">
+<input type="hidden" name="cloud_file" value="" disabled>
 <div class="div_table main_field_gap">
 	<div class="div_tr">
 		<div id="warming_field" style="display:none;" class="warming_desc">Note: the router you are using is not an ASUS device or has not been authorised by ASUS. ASUSWRT might not work properly on this device.</div>
@@ -413,16 +482,19 @@ function disable_button(val){
 		<!-- Login field -->
 		<div id="login_filed">
 			<div class="p1 title_gap"><#Sign_in_title#></div>
+
+			<div id="name_title_ie" style="display:none;margin:20px 0 -10px 78px;" class="p1 title_gap"><#HSDPAConfig_Username_itemname#></div>
 			<div class="title_gap">
 				<input type="text" id="login_username" name="login_username" tabindex="1" class="form_input" maxlength="20" autocapitalize="off" autocomplete="off" placeholder="<#HSDPAConfig_Username_itemname#>">
 			</div>
+			<div id="password_title_ie" style="display:none;margin:20px 0 -20px 78px;" class="p1 title_gap"><#HSDPAConfig_Password_itemname#></div>
 			<div class="password_gap">
 				<input type="password" name="login_passwd" tabindex="2" class="form_input" maxlength="16" placeholder="<#HSDPAConfig_Password_itemname#>" autocapitalize="off" autocomplete="off">
 			</div>
 			<div class="error_hint" style="display:none;" id="error_status_field"></div>
 				<div class="button" onclick="login();"><#CTL_signin#></div>
 		</div>
-		
+
 		<!-- No Login field -->
 		<div id="nologin_field" style="display:none;">
 			<div class="p1 title_gap"></div>

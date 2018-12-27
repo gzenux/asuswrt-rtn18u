@@ -13,6 +13,7 @@ static int sig_cur = -1;
 static int debug = 0;
 static int value = 0;
 static int is_first = 1;
+static int hm_alarm_status = 0;
 
 void hm_traffic_analyzer_save()
 {
@@ -78,7 +79,7 @@ void hm_traffic_analyzer_save()
 
 void hm_traffic_limiter_save()
 {
-	if(nvram_get_int("hour_monitor_debug") || nvram_get_int("tl_debug"))
+	if(nvram_get_int("hour_monitor_debug"))
 		debug = 1;
 	else
 		debug = 0;
@@ -88,12 +89,14 @@ void hm_traffic_limiter_save()
 	eval("traffic_limiter", "-w");
 }
 
+#if 0
 static void hm_networkmap_rescan()
 {
 	nvram_set("client_info_tmp", "");
 	nvram_set("refresh_networkmap", "1");
 	eval("killall", "-SIGUSR1", "networkmap");
 }
+#endif
 
 int hour_monitor_function_check()
 {
@@ -110,9 +113,12 @@ int hour_monitor_function_check()
 	if(nvram_get_int("bwdpi_db_enable"))
 		value |= TRAFFIC_ANALYZER;
 
+#if 0
+	//disable for preventing wake up sleep device
 	// networkmap
 	if(pidof("networkmap") != -1)
 		value |= NETWORKMAP;
+#endif
 	
 	if(debug)
 	{
@@ -126,7 +132,8 @@ int hour_monitor_function_check()
 static void hour_monitor_call_fucntion()
 {
 	// check function enable or not
-	if(!hour_monitor_function_check()) exit(0);
+	if(!hour_monitor_function_check())
+		return;
 
 	if((value & TRAFFIC_LIMITER) != 0)
 		hm_traffic_limiter_save();
@@ -134,8 +141,11 @@ static void hour_monitor_call_fucntion()
 	if((value & TRAFFIC_ANALYZER) != 0)
 		hm_traffic_analyzer_save();
 
+#if 0
+	//disable for preventing wake up sleep device
 	if((value & NETWORKMAP) != 0)
 		hm_networkmap_rescan();
+#endif
 }
 
 static void hour_monitor_save_database()
@@ -143,7 +153,8 @@ static void hour_monitor_save_database()
 	/* use for save database only */
 
 	// check function enable or not
-	if(!hour_monitor_function_check()) exit(0);
+	if(!hour_monitor_function_check())
+		return;
 
 	if((value & TRAFFIC_LIMITER) != 0)
 		hm_traffic_limiter_save();
@@ -158,7 +169,10 @@ static void catch_sig(int sig)
 
 	if (sig == SIGALRM)
 	{
-		hour_monitor_call_fucntion();
+		if (hm_alarm_status == 1)
+			hour_monitor_call_fucntion();
+		else if (hm_alarm_status == 0)
+			logmessage("hour monitor", "ntp sync fail, will retry after 120 sec");
 	}
 	else if (sig == SIGTERM)
 	{
@@ -215,6 +229,8 @@ int hour_monitor_main(int argc, char **argv)
 			time_t now;
 			int diff_sec = 0;
 
+			hm_alarm_status = 1;
+
 			time(&now);
 			localtime_r(&now, &local);
 			if(debug) dbg("%s: %d-%d-%d, %d:%d:%d\n", __FUNCTION__,
@@ -244,14 +260,14 @@ int hour_monitor_main(int argc, char **argv)
 			}
 
 			alarm(diff_sec);
-			pause();
 		}
 		else
 		{
 			if(debug) _dprintf("%s: ntp is not syn ... \n", __FUNCTION__);
-			logmessage("hour monitor", "ntp is not syn");
-			exit(0);
+			hm_alarm_status = 0;
+			alarm(120);
 		}
+		pause();
 	}
 
 	return 0;

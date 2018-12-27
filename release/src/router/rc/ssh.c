@@ -46,7 +46,8 @@ int start_sshd(void)
 	f_write_string("/root/.ssh/authorized_keys", nvram_safe_get("sshd_authkeys"), 0, 0700);
 
 	if (check_host_key("rsa", "sshd_hostkey", "/etc/dropbear/dropbear_rsa_host_key") |
-	    check_host_key("dss", "sshd_dsskey",  "/etc/dropbear/dropbear_dss_host_key"))
+	    check_host_key("dss", "sshd_dsskey",  "/etc/dropbear/dropbear_dss_host_key") |
+	    check_host_key("ecdsa", "sshd_ecdsakey",  "/etc/dropbear/dropbear_ecdsa_host_key"))
 		nvram_commit_x();
 
 	port = buf;

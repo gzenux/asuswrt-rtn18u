@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Client-server setup using TLS EAP. -->
+<!-- Related: hosta-eap-tls-gw.xml -->
+<quicksec>
+  <!-- The TLS client key and certificate tls.prv, tls.crt should be -->
+  <!-- generated using the TLS CA cert tls.ca. The TLS CA certificate -->
+  <!-- will need a trusted root certificate on TLS backend server that -->
+  <!-- is used in the EAP TLS protocol. --> 
+  <params>
+    <!-- Private key and certificate used for EAP TLS client authentication -->
+    <externalkey type="software" init-info="key_files(tls.prv, tls.crt)"/>
+
+    <auth-domain>
+      <!-- Trusted CA for IKE peer -->
+      <ca file="rsaca.ca"/>
+      <!-- static CRL for IKE peer from a file-->
+      <crl file="rsaca.crl"/>
+      
+      <!-- Trusted CA for the TLS server when performing EAP TLS -->
+      <ca file="tls.ca"/>
+
+      <!-- EAP type -->
+      <eap type="tls"/>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host">
+      <!-- local identity sent to the remote IKE peer. This identity -->
+      <!-- should match the identity in the TLS client certificate. -->
+      <identity id-type="email" id="user@domain"/>
+    </tunnel>
+
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Simple configuration for a gateway/responder that redirects all
+     clients -->
+<quicksec>
+  <params>
+
+    <address-pool>
+      <subnet>192.168.100.0/24</subnet>
+      <address netmask="255.255.255.0">192.168.100.3-192.168.100.254</address>
+    </address-pool>
+
+    <auth-domain>
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+
+    <!-- Redirect all clients at IKE_INIT phase-->
+    <ike-redirect phase="ike-init">
+      <!-- IP address of the gateway to which clients are redirected-->
+      <redirect-address>172.30.4.11</redirect-address>
+    </ike-redirect>
+
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host" flags="allow-cfgmode proxy-arp">
+      <identity id-type="email" id="b@ipsec.com">
+        <local-secret>foo</local-secret>
+      </identity>
+    </tunnel>
+
+    <rule from-tunnel="host-to-host"/>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>
+

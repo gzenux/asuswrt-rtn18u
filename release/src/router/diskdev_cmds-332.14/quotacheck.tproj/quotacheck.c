@@ -152,7 +152,8 @@ main(argc, argv)
 	struct quotaname *auxdata;
 	int i, argnum, maxrun, errs;
 	long done = 0;
-	char ch, *name;
+	int ch;
+	char *name;
 
 #ifdef __APPLE__
         int nfst;

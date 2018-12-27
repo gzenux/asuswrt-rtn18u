@@ -30,7 +30,7 @@
 #include "buffer.h"
 #include "dss.h"
 #include "ssh.h"
-#include "random.h"
+#include "dbrandom.h"
 #include "kex.h"
 #include "channel.h"
 #include "chansession.h"
@@ -39,8 +39,9 @@
 #include "service.h"
 #include "auth.h"
 #include "runopts.h"
+#include "crypto_desc.h"
 
-static void svr_remoteclosed();
+static void svr_remoteclosed(void);
 
 struct serversession svr_ses; /* GLOBAL */
 
@@ -52,14 +53,16 @@ static const packettype svr_packettypes[] = {
 	{SSH_MSG_KEXINIT, recv_msg_kexinit},
 	{SSH_MSG_KEXDH_INIT, recv_msg_kexdh_init}, /* server */
 	{SSH_MSG_NEWKEYS, recv_msg_newkeys},
-#ifdef ENABLE_SVR_REMOTETCPFWD
 	{SSH_MSG_GLOBAL_REQUEST, recv_msg_global_request_remotetcp},
-#endif
 	{SSH_MSG_CHANNEL_REQUEST, recv_msg_channel_request},
 	{SSH_MSG_CHANNEL_OPEN, recv_msg_channel_open},
 	{SSH_MSG_CHANNEL_EOF, recv_msg_channel_eof},
 	{SSH_MSG_CHANNEL_CLOSE, recv_msg_channel_close},
-#ifdef USING_LISTENERS
+	{SSH_MSG_CHANNEL_SUCCESS, ignore_recv_response},
+	{SSH_MSG_CHANNEL_FAILURE, ignore_recv_response},
+	{SSH_MSG_REQUEST_FAILURE, ignore_recv_response}, /* for keepalive */
+	{SSH_MSG_REQUEST_SUCCESS, ignore_recv_response}, /* client */
+#if DROPBEAR_LISTENERS
 	{SSH_MSG_CHANNEL_OPEN_CONFIRMATION, recv_msg_channel_open_confirmation},
 	{SSH_MSG_CHANNEL_OPEN_FAILURE, recv_msg_channel_open_failure},
 #endif
@@ -68,35 +71,55 @@ static const packettype svr_packettypes[] = {
 
 static const struct ChanType *svr_chantypes[] = {
 	&svrchansess,
-#ifdef ENABLE_SVR_LOCALTCPFWD
+#if DROPBEAR_SVR_LOCALTCPFWD
 	&svr_chan_tcpdirect,
 #endif
 	NULL /* Null termination is mandatory. */
 };
 
-void svr_session(int sock, int childpipe, 
-		char* remotehost, char *addrstring) {
+static void
+svr_session_cleanup(void) {
+	/* free potential public key options */
+	svr_pubkey_options_cleanup();
 
-    reseedrandom();
+	m_free(svr_ses.addrstring);
+	m_free(svr_ses.remotehost);
+	m_free(svr_ses.childpids);
+	svr_ses.childpidsize = 0;
+}
 
-	crypto_init();
-	common_session_init(sock, sock, remotehost);
+void svr_session(int sock, int childpipe) {
+	char *host, *port;
+	size_t len;
+
+	common_session_init(sock, sock);
 
 	/* Initialise server specific parts of the session */
 	svr_ses.childpipe = childpipe;
-	svr_ses.addrstring = addrstring;
+#if DROPBEAR_VFORK
+	svr_ses.server_pid = getpid();
+#endif
 	svr_authinitialise();
 	chaninitialise(svr_chantypes);
 	svr_chansessinitialise();
 
-	ses.connect_time = time(NULL);
+	/* for logging the remote address */
+	get_socket_address(ses.sock_in, NULL, NULL, &host, &port, 0);
+	len = strlen(host) + strlen(port) + 2;
+	svr_ses.addrstring = m_malloc(len);
+	snprintf(svr_ses.addrstring, len, "%s:%s", host, port);
+	m_free(host);
+	m_free(port);
+
+	get_socket_address(ses.sock_in, NULL, NULL, 
+			&svr_ses.remotehost, NULL, 1);
 
 	/* set up messages etc */
 	ses.remoteclosed = svr_remoteclosed;
+	ses.extra_session_cleanup = svr_session_cleanup;
 
 	/* packet handlers */
 	ses.packettypes = svr_packettypes;
-	ses.buf_match_algo = svr_buf_match_algo;
 
 	ses.isserver = 1;
 
@@ -104,7 +127,9 @@ void svr_session(int sock, int childpipe,
 	sessinitdone = 1;
 
 	/* exchange identification, version etc */
-	session_identification();
+	send_session_identification();
+	
+	kexfirstinitialise(); /* initialise the kex state */
 
 	/* start off with key exchange */
 	send_msg_kexinit();
@@ -119,36 +144,52 @@ void svr_session(int sock, int childpipe,
 
 /* failure exit - format must be <= 100 chars */
 void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
+	char exitmsg[150];
+	char fullmsg[300];
+	int i;
 
-	char fmtbuf[300];
+	/* Render the formatted exit message */
+	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
 
+	/* Add the prefix depending on session/auth state */
 	if (!sessinitdone) {
 		/* before session init */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"premature exit: %s", format);
+		snprintf(fullmsg, sizeof(fullmsg), "Early exit: %s", exitmsg);
 	} else if (ses.authstate.authdone) {
 		/* user has authenticated */
-		snprintf(fmtbuf, sizeof(fmtbuf),
-				"exit after auth (%s): %s", 
-				ses.authstate.pw_name, format);
+		snprintf(fullmsg, sizeof(fullmsg),
+				"Exit (%s): %s", 
+				ses.authstate.pw_name, exitmsg);
 	} else if (ses.authstate.pw_name) {
 		/* we have a potential user */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"exit before auth (user '%s', %d fails): %s",
-				ses.authstate.pw_name, ses.authstate.failcount, format);
+		snprintf(fullmsg, sizeof(fullmsg), 
+				"Exit before auth (user '%s', %u fails): %s",
+				ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
 	} else {
 		/* before userauth */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"exit before auth: %s", format);
+		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth: %s", exitmsg);
 	}
 
-	_dropbear_log(LOG_INFO, fmtbuf, param);
+	dropbear_log(LOG_INFO, "%s", fullmsg);
 
-	/* free potential public key options */
-	svr_pubkey_options_cleanup();
+#if DROPBEAR_VFORK
+	/* For uclinux only the main server process should cleanup - we don't want
+	 * forked children doing that */
+	if (svr_ses.server_pid == getpid())
+#endif
+	{
+		/* must be after we've done with username etc */
+		session_cleanup();
+	}
 
-	/* must be after we've done with username etc */
-	common_session_cleanup();
+	if (svr_opts.hostkey) {
+		sign_key_free(svr_opts.hostkey);
+		svr_opts.hostkey = NULL;
+	}
+	for (i = 0; i < DROPBEAR_MAX_PORTS; i++) {
+		m_free(svr_opts.addresses[i]);
+		m_free(svr_opts.ports[i]);
+	}
 
 	exit(exitcode);
 
@@ -165,25 +206,24 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 	vsnprintf(printbuf, sizeof(printbuf), format, param);
 
 #ifndef DISABLE_SYSLOG
-	if (svr_opts.usingsyslog) {
+	if (opts.usingsyslog) {
 		syslog(priority, "%s", printbuf);
 	}
 #endif
 
 	/* if we are using DEBUG_TRACE, we want to print to stderr even if
 	 * syslog is used, so it is included in error reports */
-#ifdef DEBUG_TRACE
+#if DEBUG_TRACE
 	havetrace = debug_trace;
 #endif
 
-	if (!svr_opts.usingsyslog || havetrace)
-	{
+	if (!opts.usingsyslog || havetrace) {
 		struct tm * local_tm = NULL;
 		timesec = time(NULL);
 		local_tm = localtime(&timesec);
 		if (local_tm == NULL
 			|| strftime(datestr, sizeof(datestr), "%b %d %H:%M:%S", 
-						localtime(&timesec)) == 0)
+						local_tm) == 0)
 		{
 			/* upon failure, just print the epoch-seconds time. */
 			snprintf(datestr, sizeof(datestr), "%d", (int)timesec);

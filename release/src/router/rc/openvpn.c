@@ -6,7 +6,7 @@
 
 */
 
-#include "rc.h"
+#include <rc.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -30,6 +30,8 @@
 
 #define BUF_SIZE 256
 #define IF_SIZE 8
+
+#define PUSH_LAN_METRIC 500
 
 static int ovpn_waitfor(const char *name)
 {
@@ -768,8 +770,10 @@ void start_vpnserver(int serverNum)
 	//protocol
 	sprintf(&buffer[0], "vpn_server%d_proto", serverNum);
 	fprintf(fp, "proto %s\n", nvram_safe_get(&buffer[0]));
-	if(!strcmp(nvram_safe_get(&buffer[0]), "udp"))
+	if(!strcmp(nvram_safe_get(&buffer[0]), "udp")) {
+		fprintf(fp, "multihome\n");
 		fprintf(fp_client, "proto %s\n", nvram_safe_get(&buffer[0]));
+	}
 	else
 		fprintf(fp_client, "proto tcp-client\n");
 
@@ -822,8 +826,9 @@ void start_vpnserver(int serverNum)
 		{
 			sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 			sscanf(nvram_safe_get("lan_netmask"), "%d.%d.%d.%d", &nm[0], &nm[1], &nm[2], &nm[3]);
-			fprintf(fp, "push \"route %d.%d.%d.%d %s\"\n", ip[0]&nm[0], ip[1]&nm[1], ip[2]&nm[2], ip[3]&nm[3],
-			        nvram_safe_get("lan_netmask"));
+			fprintf(fp, "push \"route %d.%d.%d.%d %s vpn_gateway %d\"\n",
+				ip[0]&nm[0], ip[1]&nm[1], ip[2]&nm[2], ip[3]&nm[3],
+				nvram_safe_get("lan_netmask"), PUSH_LAN_METRIC);
 		}
 
 		sprintf(&buffer[0], "vpn_server%d_ccd", serverNum);

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup using L2TP. lns is the server, lac the client. -->
+<!-- Related: hosta-l2tp-lns.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Shared secret and the identity of the remote IKE peer. -->
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+    <!-- Credentials used in L2TP authentication. -->
+    <client-auth type="l2tp" user-name="guest@ipsec.com" password="hi"/>
+  </params>
+  <policy>
+
+    <!-- The l2tp flag enables the L2TP LAC client side 
+         support. The auto flag establishes the
+         IKE and IPsec SAs automatically when 
+         Policy Manager is started. -->
+    <tunnel name="host-to-host" flags="l2tp auto transport aggressive-mode">
+      <!-- Local identity sent to the remote IKE peer. -->
+      <identity id-type="email" id="b@ipsec.com">
+        <!-- Local shared secret. -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- The IP address of the L2TP LNS, from where we
+           get the virtual IP. -->
+      <peer>172.30.4.189</peer>
+      <ike-versions>1</ike-versions>
+    </tunnel>
+
+    <!-- Rule for L2TP packets to/from UDP port 1701 of the LNS. Flag
+         `adjust-local-address' causes the address of the local
+         traffic selector of the IPSec SA to be set to the address of
+         the outgoing interface. -->
+    <rule to-tunnel="host-to-host" flags="adjust-local-address">
+      <src>ipv4(udp:1701,0.0.0.0)</src>
+      <dst>ipv4(udp:1701,172.30.4.189)</dst>
+    </rule>
+
+    <!-- Rule for tunneled traffic. -->
+    <rule to-tunnel="host-to-host">
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- A pass rule that handles all the traffic not matching
+         the traffic selectors of any higher precedence rules.
+         Remove this rule if plaintext traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

@@ -5,27 +5,17 @@
 <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 <meta name=viewport content="width=device-width, target-densitydpi=device-dpi, initial-scale=1, user-scalable=no">
 <title><#Web_Title#> - <#QIS_title#></title>
-<link rel="stylesheet" href="css/icon-qis.css"></link>
+<link rel="stylesheet" href="css/qis.css"></link>
+<link rel="stylesheet" href="css/icon.css"></link>
 <link rel="stylesheet" href="css/jquery.mobile.css"></link>
-<script src="js/jquery.js"></script>
-<script src="js/verge.min.js"></script>
-<script src="js/jquery.mobile.js"></script>
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/verge.min.js"></script>
+<script type="text/javascript" src="js/jquery.mobile.js"></script>
+<script type="text/javascript" src="/require/require.min.js"></script>
+<script type="text/javascript" src="/validator.js"></script>
 <style>
 body{
-	margin-left: 0px;
-	background-color:#000 !important; /*#AAD1E0*/
-}
-.filter_effect{
-	-webkit-filter: blur(5px);
-}
-#nav_rp:hover, #nav_ap:hover, #nav_mb:hover, #nav_info:hover, #nav_express_2g:hover, #nav_express_5g:hover, #nav_back:hover{
-	background-color:#555;
-}
-#pap_manual_band_option-button, #pap_manual_auth_option-button, #pap_ip_advanced_option-button{
-	padding: 22px;
-}
-a.ui-btn{
-	height:30px;
+	background-color:#000;
 }
 .ui-panel-dismiss-open.ui-panel-dismiss-position-left{
 	left:30em;
@@ -57,7 +47,7 @@ a.ui-btn{
 }
 
 #wireless_2g_field{
-	border-bottom:1px solid #43474B;
+	border-bottom:1px solid #DBDBDB;
 }
 
 .desktop_sort{
@@ -68,7 +58,7 @@ a.ui-btn{
 @media screen and (min-width: 1000px){
 	.desktop_left_field{
 		display:table-cell;
-		width:300px;
+		width:250px;
 		color:#007AFE;
 		text-align:right;		
 	}
@@ -92,7 +82,7 @@ a.ui-btn{
 	}
 	
 	#wireless_2g_field{
-		border-bottom:0px solid #43474B;
+		border-bottom:0px solid #DBDBDB;
 	}
 	
 	.desktop_sort{
@@ -100,6 +90,53 @@ a.ui-btn{
 		width:300px;
 		padding-left:200px;
 	}
+}
+
+.led_intro{
+		-webkit-animation: led_animation 4s infinite linear;
+		-moz-animation: led_animation 4s infinite linear;
+		-o-animation: led_animation 4s infinite linear;
+		animation: led_animation 4s infinite linear;				
+}
+@keyframes led_animation {
+	0% {
+		background:url('images/qis/LED01-10.png') no-repeat;
+	}
+	20% {
+		background:url('images/qis/LED02-05.png') no-repeat;
+	}
+	30% {
+		background:url('images/qis/LED03-05.png') no-repeat;
+	}
+	40% {
+		background:url('images/qis/LED04-05.png') no-repeat;
+	}
+	50%	{
+		background:url('images/qis/LED05-10.png') no-repeat;
+	}
+	70% {
+		background:url('images/qis/LED06-05.png') no-repeat;
+	}
+	80% {
+		background:url('images/qis/LED07-05.png') no-repeat;
+	}	
+	90% {
+		background:url('images/qis/LED08-05.png') no-repeat;
+	}
+	100% {
+		background:url('images/qis/LED08-05.png') no-repeat;	
+	}
+}
+.preload_image{
+	display:none;
+	background: url('images/qis/LED01-10.png') no-repeat,
+				url('images/qis/LED02-05.png') no-repeat,
+				url('images/qis/LED03-05.png') no-repeat,
+				url('images/qis/LED04-05.png') no-repeat,
+				url('images/qis/LED05-10.png') no-repeat,
+				url('images/qis/LED06-05.png') no-repeat,
+				url('images/qis/LED07-05.png') no-repeat,
+				url('images/qis/LED08-05.png') no-repeat;
 }
 </style>
 <script>
@@ -109,13 +146,78 @@ document.querySelector("meta[name=viewport]").setAttribute(
 	'content', 'width=' + verge.viewportW() + ', target-densitydpi=device-dpi, initial-scale=' + (0.5*verge.viewportW())/375 + ', maximum-scale=1, user-scalable=no'
 );
 
+var htmlEnDeCode = (function() {
+    var charToEntityRegex,
+        entityToCharRegex,
+        charToEntity,
+        entityToChar;
+
+    function resetCharacterEntities() {
+        charToEntity = {};
+        entityToChar = {};
+        // add the default set
+        addCharacterEntities({
+            '&amp;'     :   '&',
+            '&gt;'      :   '>',
+            '&lt;'      :   '<',
+            '&quot;'    :   '"',
+            '&#39;'     :   "'"
+        });
+    }
+
+    function addCharacterEntities(newEntities) {
+        var charKeys = [],
+            entityKeys = [],
+            key, echar;
+        for (key in newEntities) {
+            echar = newEntities[key];
+            entityToChar[key] = echar;
+            charToEntity[echar] = key;
+            charKeys.push(echar);
+            entityKeys.push(key);
+        }
+        charToEntityRegex = new RegExp('(' + charKeys.join('|') + ')', 'g');
+        entityToCharRegex = new RegExp('(' + entityKeys.join('|') + '|&#[0-9]{1,5};' + ')', 'g');
+    }
+
+    function htmlEncode(value){
+        var htmlEncodeReplaceFn = function(match, capture) {
+            return charToEntity[capture];
+        };
+
+        return (!value) ? value : String(value).replace(charToEntityRegex, htmlEncodeReplaceFn);
+    }
+
+    function htmlDecode(value) {
+        var htmlDecodeReplaceFn = function(match, capture) {
+            return (capture in entityToChar) ? entityToChar[capture] : String.fromCharCode(parseInt(capture.substr(2), 10));
+        };
+
+        return (!value) ? value : String(value).replace(entityToCharRegex, htmlDecodeReplaceFn);
+    }
+
+    resetCharacterEntities();
+
+    return {
+        htmlEncode: htmlEncode,
+        htmlDecode: htmlDecode
+    };
+})();
+
 // parsing rc_support
+var productid='<% nvram_get("productid"); %>';
 var rc_support = '<% nvram_get("rc_support"); %>';
 var band5g_support = (rc_support.search("5G") == -1) ? false : true;
 var Rawifi_support = (rc_support.search("rawifi") == -1) ? false : true;
 var Qcawifi_support = (rc_support.search("qcawifi") == -1) ? false : true;
 var isDefault = ('<% nvram_get("x_Setting"); %>' == 0) ? true : false;
-
+var accounts = [<% get_all_accounts(); %>];
+for(var i=0; i<accounts.length; i++){
+	accounts[i] = decodeURIComponent(accounts[i]);	
+}
+if(accounts.length == 0)
+	accounts = ['<% nvram_get("http_username"); %>'];
+	
 /*Navigation Pane;*/
 var panel = '<div id="navigation" data-role="panel" data-display="overlay" data-theme="b" class="navigation" style="width:520px;opacity:0.96;"><div class="ui-panel-inner" style="padding:0"><ul>';
 	panel += '<div class="icon_menu_expand" style="width:43px;height:32px;display:inline-block"></div>';
@@ -137,9 +239,9 @@ var panel = '<div id="navigation" data-role="panel" data-display="overlay" data-
 	panel += '<option value="JP">日本語</option>';
 	panel += '</select></div></td></tr></table></div>';*/
 	panel += '<div style="font-family:HelveticaNeue-Medium,Arial;font-weight:bold;font-size:1.375em;color:#A8CBF4;line-height:20px;padding:20px 0 19px 0;border-bottom:1px solid #4C545E;">OPERATION MODE</div>';
-	panel += '<div id="nav_rp" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'RP\')"><#OP_RE_item#></div>';
-	panel += '<div id="nav_ap" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'AP\')"><#OP_AP_item#></div>';
-	panel += '<div id="nav_mb" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'MB\')"><#OP_MB_item#></div>';
+	panel += '<div id="nav_rp" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'RP\')">REPEATER</div>';
+	panel += '<div id="nav_ap" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'AP\')">ACCESS POINT(AP)</div>';
+	panel += '<div id="nav_mb" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'MB\')">MEDIA BRIDGE(CLIENT)</div>';
 	panel += '<div id="nav_express_5g" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'express_5g\')">Express Way<br>(Router to repeater use 5GHz only, repeater to client use 2.4GHz only)</div>';
 	panel += '<div id="nav_express_2g" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;line-height:28px;padding:26px 10px;border-bottom:1px solid #4C545E;cursor:pointer" onclick="operation_mode_switch(\'express_2g\')">Express Way<br>(Router to repeater use 2.4GHz only, repeater to client use 5GHz only)</div>';	
 	panel += '<div style="font-family:HelveticaNeue-Medium,Arial;font-weight:bold;font-size:1.375em;color:#A8CBF4;line-height:20px;padding:20px 0 19px 0;border-bottom:1px solid #4C545E;margin-top:14px;">Other Item</div>';
@@ -150,10 +252,12 @@ var panel = '<div id="navigation" data-role="panel" data-display="overlay" data-
 	panel += '</ul></div>';
 
 $(document).one('pagebeforecreate', function () {
-    $.mobile.pageContainer.prepend(panel);
-    $("#navigation").panel().enhanceWithin();
+	$.mobile.pageContainer.prepend(panel);
+	$("#navigation").panel().enhanceWithin();
 });
 
+var forceChangePW = false;
+var scan_flag = 0;
 var aplist_info = "";
 var parent_ap = new Array();
 var pap_2g_count = 0;
@@ -163,10 +267,69 @@ var sw_mode = '<% nvram_get("sw_mode"); %>';
 var wlc_express = '<% nvram_get("wlc_express"); %>';
 var wlc_psta = '<% nvram_get("wlc_psta"); %>';
 var qis_flag = '<% get_parameter("flag"); %>';
-if(sw_mode == "3" && wlc_psta == "1")
+if((sw_mode == "2" || sw_mode == "3") && wlc_psta == "1")
 	sw_mode = "4";		// Media Bridge
 
 $(document).ready(function(){
+	if(qis_flag == "lanip"){
+		sw_mode = "3";
+		document.form.sw_mode.value = "3";
+		document.form.wlc_express.value = "0";
+		document.form.wlc_psta.value = "0";
+		//$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});
+		document.getElementById("welcome_button").innerHTML = "Start Access Point";
+	}
+	else if(qis_flag == "sitesurvey_exp2"){
+		sw_mode = "2";
+		document.form.sw_mode.value = "2";
+		document.form.wlc_express.value = "1";
+		document.form.wlc_psta.value = "0";
+		document.getElementById("welcome_button").innerHTML = "Start Express Way";
+	}
+	else if(qis_flag == "sitesurvey_exp5"){
+		sw_mode = "2";
+		document.form.sw_mode.value = "2";
+		document.form.wlc_express.value = "2";
+		document.form.wlc_psta.value = "0";
+		document.getElementById("welcome_button").innerHTML = "Start Express Way";
+	}
+	else if(qis_flag == "sitesurvey_rep"){
+		sw_mode = "2";
+		document.form.sw_mode.value = "2";
+		document.form.wlc_express.value = "0";
+		document.form.wlc_psta.value = "0";
+		document.getElementById("welcome_button").innerHTML = "Start Repeater";
+	}
+	else if(qis_flag == "sitesurvey_mb"){
+		sw_mode = "4";
+		if (Qcawifi_support)
+			document.form.sw_mode.value = "2";
+		else
+			document.form.sw_mode.value = "3";
+			
+		document.form.wlc_express.value = "0";
+		document.form.wlc_psta.value = "1";
+		document.getElementById("welcome_button").innerHTML = "Start Media Bridge";
+	}
+	else{
+		if(document.form.sw_mode.value == "3" && document.form.wlc_express.value == "0" && document.form.wlc_psta.value == "0"){
+			document.getElementById("welcome_button").innerHTML = "Start Access Point";
+		}
+		else if(document.form.sw_mode.value == "2" && document.form.wlc_express.value == "1" && document.form.wlc_psta.value == "0"){
+			document.getElementById("welcome_button").innerHTML = "Start Express Way";
+		}
+		else if(document.form.sw_mode.value == "2" && document.form.wlc_express.value == "2" && document.form.wlc_psta.value == "0"){
+			document.getElementById("welcome_button").innerHTML = "Start Express Way";
+		}
+		else if(document.form.sw_mode.value == "2" && document.form.wlc_express.value == "2" && document.form.wlc_psta.value == "0"){
+			document.getElementById("welcome_button").innerHTML = "Start Repeater";
+		}
+		else if(((Qcawifi_support && document.form.sw_mode.value == "2") || document.form.sw_mode.value == "3") && document.form.wlc_express.value == "0" && document.form.wlc_psta.value == "1"){
+			document.getElementById("welcome_button").innerHTML = "Start Media Bridge";
+		}
+	
+	}
+	 
 	$("#loading_container").hide();
 	if (!band5g_support){
 		$('#pap_manual_band_option').prop('disabled', true);
@@ -203,7 +366,12 @@ $(document).ready(function(){
 	}
 	else if(qis_flag == "sitesurvey_mb"){
 		sw_mode = "4";
-		document.form.sw_mode.value = "3";
+
+		if(Rawifi_support || Qcawifi_support)
+			document.form.sw_mode.value = "2";
+		else	
+			document.form.sw_mode.value = "3";
+		
 		document.form.wlc_express.value = "0";
 		document.form.wlc_psta.value = "1";
 	}
@@ -318,76 +486,125 @@ $(document).ready(function(){
 		}
 	});
 
+	// setup time_zone
+	if(isDefault){
+		require(['/require/modules/timeZone.js'], function(timeZone) {
+			var preferredLang = $("preferred_lang").value;
+			var timeZoneObj = new timeZone.get(preferredLang);
+
+			document.form.time_zone.value = timeZoneObj.time_zone;
+			document.form.time_zone.disabled = false;
+			document.form.time_zone_dst.value = (timeZoneObj.hasDst) ? 1 : 0;
+			document.form.time_zone_dst.disabled = !timeZoneObj.hasDst;
+		});
+	}
+
 	setTimeout(function(){
-		navigation_opmode_style();
+		navigation_opmode_style("initial");
 	}, 2000);
 });
 
-function navigation_opmode_style(){		
-	if(document.form.sw_mode.value == "2"){		//Repeater, Media Bridge mode
-		rescan();
+function navigation_opmode_style(flag){
+	$('#http_username').val('');
+	$('#http_passwd').val('');
+	$('#http_passwd_confirm').val('');
+
+	if(sw_mode == "2"){		//Repeater
+		if(flag != "initial")
+			rescan("switch");
+		
 		if(document.form.wlc_express.value == "1"){		//Express: parent 2.4 GHz, client 5 GHz
 			document.getElementById("nav_rp").style.color = "#FFF";
-			document.getElementById("nav_express_2g").style.color = "#279FD9";
+			document.getElementById("nav_express_2g").style.color = "#007AFF";
 			document.getElementById("nav_express_5g").style.color = "#FFF";
 			document.getElementById("nav_ap").style.color = "#FFF";
 			document.getElementById("nav_mb").style.color = "#FFF";
 			wl0_checked = "";
 			wl1_checked = "1";
+
+			$("#wlCancel").show();
+			$("#sortByBand").hide();
 		}
-		else if(document.form.wlc_express.value == "2"){		//Express: parent 5 GHz, client 2.4 GHz
+		//Express: parent 5 GHz, client 2.4 GHz
+		else if(document.form.wlc_express.value == "2"){
 			document.getElementById("nav_rp").style.color = "#FFF";
 			document.getElementById("nav_express_2g").style.color = "#FFF";
-			document.getElementById("nav_express_5g").style.color = "#279FD9";
+			document.getElementById("nav_express_5g").style.color = "#007AFF";
 			document.getElementById("nav_ap").style.color = "#FFF";
 			document.getElementById("nav_mb").style.color = "#FFF";
 			wl0_checked = "1";
 			wl1_checked = "";
+
+			$("#wlCancel").show();
+			$("#sortByBand").hide();
 		}
-		else{		//Repater
-			document.getElementById("nav_rp").style.color = "#279FD9";
+		//Repater
+		else{
+			document.getElementById("nav_rp").style.color = "#007AFF";
 			document.getElementById("nav_express_2g").style.color = "#FFF";
 			document.getElementById("nav_express_5g").style.color = "#FFF";
 			document.getElementById("nav_ap").style.color = "#FFF";
 			document.getElementById("nav_mb").style.color = "#FFF";
+
+			$("#wlCancel").show();
+			$("#sortByBand").show();
 		}
 
 		$("#wifiPrevious").show();
 		$("#sync_pap_container").show();
+		$("#loading_container").hide();
+		$("#welcome_main_field").show();		
 	}
-	else if(document.form.sw_mode.value == "3"){	
-		if(document.form.wlc_psta.value == "1"){	//Media Bridge
-			rescan();
-			document.getElementById("nav_rp").style.color = "#FFF";
-			document.getElementById("nav_express_2g").style.color = "#FFF";
-			document.getElementById("nav_express_5g").style.color = "#FFF";
-			document.getElementById("nav_ap").style.color = "#FFF";
-			document.getElementById("nav_mb").style.color = "#279FD9";
-			$("#wifiPrevious").show();
-			$("#sync_pap_container").show();
-		}
-		else{	//Access Point
-			document.getElementById("nav_rp").style.color = "#FFF";
-			document.getElementById("nav_express_2g").style.color = "#FFF";
-			document.getElementById("nav_express_5g").style.color = "#FFF";
-			document.getElementById("nav_ap").style.color = "#279FD9";
-			document.getElementById("nav_mb").style.color = "#FFF";
+	else if(sw_mode == "4"){ // Media Bridge
+		if(flag != "initial") rescan("switch");
+		
+		document.getElementById("nav_rp").style.color = "#FFF";
+		document.getElementById("nav_express_2g").style.color = "#FFF";
+		document.getElementById("nav_express_5g").style.color = "#FFF";
+		document.getElementById("nav_ap").style.color = "#FFF";
+		document.getElementById("nav_mb").style.color = "#007AFF";
 
-			document.getElementById('wireless_2g_ssid').disabled = false;
-			document.getElementById('wireless_2g_key').disabled = false;
-			document.getElementById('wireless_5g_ssid').disabled = false;
-			document.getElementById('wireless_5g_key').disabled = false;
+		$("#wifiPrevious").show();
+		$("#sync_pap_container").show();
+		$("#loading_container").hide();
+		$("#welcome_main_field").show();
+		$("#wlCancel").show();
+		$("#sortByBand").show();
+
+		$.mobile.changePage("#welcome", {transition: "slide", changeHash: false}); //?
+	}
+	else{   //Access Point
+		document.getElementById("nav_rp").style.color = "#FFF";
+		document.getElementById("nav_express_2g").style.color = "#FFF";
+		document.getElementById("nav_express_5g").style.color = "#FFF";
+		document.getElementById("nav_ap").style.color = "#007AFF";
+		document.getElementById("nav_mb").style.color = "#FFF";
+
+		document.getElementById('wireless_2g_ssid').disabled = false;
+		document.getElementById('wireless_2g_key').disabled = false;
+		document.getElementById('wireless_5g_ssid').disabled = false;
+		document.getElementById('wireless_5g_key').disabled = false;
+
+		var defaultSSID = [<% get_default_ssid(); %>][0];
+		if(defaultSSID.length > 0){
+			$('#wireless_2g_ssid').val(defaultSSID[0]);
+			$('#wireless_2g_key').val('');
+			$('#wireless_5g_ssid').val(defaultSSID[1]);
+			$('#wireless_5g_key').val('');		
+		}
+		else{
 			var model_name = document.form.productid.value.split('-');
 			$('#wireless_2g_ssid').val('ASUS_' + model_name[0] + model_name[1]);
 			$('#wireless_2g_key').val('');
 			$('#wireless_5g_ssid').val('ASUS_' + model_name[0] + model_name[1] + '_5G');
 			$('#wireless_5g_key').val('');
-
-			$("#wifiPrevious").hide();
-			$("#sync_pap_container").hide();
-
-			$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});
 		}
+
+		$("#sortByBand").show();
+		$("#wlCancel").hide();
+		$("#wifiPrevious").hide();
+		$("#sync_pap_container").hide();
+		$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false}); //?
 	}
 }
 
@@ -444,10 +661,42 @@ function update_site_info(e) { //Use AJAX to get real-time AP status from aplist
 					gen_aplist_table();
 				}
 				
-				$.mobile.changePage("#pap_list", {transition: "fade", changeHash: false});
+				scan_flag = 1;
 			}
 		}
 	});
+}
+
+function login_next(){
+	if(validForm()){
+		if(document.form.sw_mode.value == "3" && document.form.wlc_express.value == "0" && document.form.wlc_psta.value == "0"){
+			$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});		
+		}
+		else{
+			if(scan_flag == 1){
+				$.mobile.changePage("#pap_list", {transition: "fade", changeHash: false});
+			}
+			else{
+				show_progress();
+				$("#login_desc").html("Search for available Wi-Fi networks around ASUS repeater");
+				$("#loading_container").show();
+				$("#login_field").hide();	
+				setTimeout(wait_ap_scan, 1000);
+			}
+		}
+
+		document.form.http_username.value = document.getElementById("http_username").value;
+		document.form.http_passwd.value = document.getElementById("http_passwd").value;
+	}
+}
+
+function wait_ap_scan(){
+	if(scan_flag == 1){
+		$.mobile.changePage("#pap_list", {transition: "fade", changeHash: false});
+	}
+	else{
+		setTimeout(wait_ap_scan, 1000);
+	}
 }
 
 function arrange_ap(){
@@ -455,7 +704,7 @@ function arrange_ap(){
 		parent_ap[i] = aplist_info[i][6];
 		parent_ap[aplist_info[i][6]] = {
 			band: aplist_info[i][0],
-			SSID: decodeURIComponent(aplist_info[i][1]),
+			SSID: htmlEnDeCode.htmlEncode(decodeURIComponent(aplist_info[i][1])),
 			channel: aplist_info[i][2],
 			authentication: aplist_info[i][3],
 			encryption: aplist_info[i][4],
@@ -575,7 +824,6 @@ var select_band = 0;
 function register_apList_event(){
 	$("#ap_list > div").click(function (){
 		$("#pap_ssid").html(parent_ap[this.id].SSID);
-		//$("#ssid_auth").html(parent_ap[this.id].authentication);
 		if(parent_ap[this.id].authentication == "Unknown")
 			$("#auth_type").html(parent_ap[this.id].encryption);
 		else
@@ -600,6 +848,10 @@ function register_apList_event(){
 				document.form.wlc0_auth_mode.value = "open";
 				document.form.wlc0_crypto.value = "";
 			}
+			else if(parent_ap[this.id].encryption == "TKIP"){
+				document.form.wlc0_auth_mode.value = "psk";
+				document.form.wlc0_crypto.value = "tkip";			
+			}
 			else{
 				document.form.wlc0_auth_mode.value = "psk2";
 				document.form.wlc0_crypto.value = "aes";
@@ -609,11 +861,15 @@ function register_apList_event(){
 			select_band = "5g";
 			if(primary_pap == "")
 				primary_pap = "5G";
-				
+	
 			document.form.wlc1_ssid.value = parent_ap[this.id].SSID;
 			if(parent_ap[this.id].encryption == "NONE"){
 				document.form.wlc1_auth_mode.value = "open";
 				document.form.wlc1_crypto.value = "";
+			}
+			else if(parent_ap[this.id].encryption == "TKIP"){
+				document.form.wlc1_auth_mode.value = "psk";
+				document.form.wlc1_crypto.value = "tkip";			
 			}
 			else{
 				document.form.wlc1_auth_mode.value = "psk2";
@@ -740,16 +996,21 @@ function ip_advance_setting_show(obj){
 
 var wl0_checked = "";
 var wl1_checked = "";
+var wl_last_checked = "";
 function pap_connect(){
 	if(!document.getElementById("parentAP_key").disabled && !validator.psk(document.getElementById("parentAP_key"))) return false;
 
 	if(select_band == "2g"){
 		document.form.wlc0_wpa_psk.value = $('#parentAP_key').val();
+		document.form.wlc0_check_ha.value = 0;
 		wl0_checked = "1"
+		wl_last_checked = "2.4G";
 	}
 	else{
 		document.form.wlc1_wpa_psk.value = $('#parentAP_key').val();
+		document.form.wlc1_check_ha.value = 0;
 		wl1_checked = "1"
+		wl_last_checked = "5G";
 	}
 
 	if(document.getElementById("pap_ip_advanced_option").value == "dhcp"){
@@ -757,18 +1018,18 @@ function pap_connect(){
 		document.form.lan_ipaddr.disabled = true;
 		document.form.lan_netmask.disabled = true;
 		document.form.lan_gateway.disabled = true;
-		document.form.wan_dhcpenable_x.value = "1";
-		document.form.wan_dns1_x.value = "";
-		document.form.wan_dns2_x.value = "";
+		document.form.lan_dnsenable_x.value = "1";
+		document.form.lan_dns1_x.value = "";
+		document.form.lan_dns1_x.value = "";
 	}
 	else{
 		document.form.lan_proto.value = "static";
 		document.form.lan_ipaddr.value = document.getElementById("pap_ip_advance_setting_ipaddr").value;
 		document.form.lan_netmask.value = document.getElementById("pap_ip_advance_setting_subnet").value;
 		document.form.lan_gateway.value = document.getElementById("pap_ip_advance_setting_gateway").value;
-		document.form.wan_dhcpenable_x.value = "0";
-		document.form.wan_dns1_x.value = document.getElementById("pap_ip_advance_setting_dns1").value;
-		document.form.wan_dns2_x.value = document.getElementById("pap_ip_advance_setting_dns2").value;
+		document.form.lan_dnsenable_x.value = "0";
+		document.form.lan_dns1_x.value = document.getElementById("pap_ip_advance_setting_dns1").value;
+		document.form.lan_dns1_x.value = document.getElementById("pap_ip_advance_setting_dns2").value;
 	}
 
 	$('#parentAP_key').val('');		//clear Key field
@@ -788,20 +1049,20 @@ function pap_connect(){
 		$.mobile.changePage("#pap_list", {transition: "slide", changeHash: false});
 	}
 	else{
-		if(document.form.sw_mode.value == "3" && document.form.wlc_psta.value == "1"){	//Media Bridge
+		if((document.form.sw_mode.value == "3" && document.form.wlc_psta.value == "1") || sw_mode == "4"){	//Media Bridge
 			$(".icon_menu").hide();
 			$("#summary_2g_field").hide();
 			$("#summary_5g_field").hide();
-			$("#summary_desc").append(
-				"<br/>In Media Bridge mode, only wireless devices connect to the P-AP. Client devices need to be connected to the Media Bridge with a network cable."
-			);
 
 			$.mobile.changePage("#summary_page", {transition: "slide", changeHash: false});
+			if(productid != "RP-AC68U") final_summary();
+
 			document.form.submit();
 
 			setTimeout(function(){
 				startQuery();
-			}, 30000);
+				$("#summary_try").show();
+			}, 80000);
 		}
 		else{
 			if(document.form.wlc_express.value == "2"){
@@ -818,14 +1079,15 @@ function pap_connect(){
 			}
 
 			$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});
-			use_pap_setting(document.getElementById("sync_pap_custom"));
+			document.getElementById("sync_pap").checked = false;
+			setTimeout("use_pap_setting();",10000);
 		}
 	}
 }
 
 var startQuery = function(){
 	$.ajax({ 
-		url: "http://repeater.asus.com/httpd_check.json",
+		url: "http://ec2-54-202-251-7.us-west-2.compute.amazonaws.com/find/internet_check.json",
 		dataType: 'jsonp',
 		timeout: 2000,
 		error: function(){
@@ -836,77 +1098,15 @@ var startQuery = function(){
 	});
 }
 
-function iAmAlive(){
-	top.location.href = "http://repeater.asus.com";
+function internetCheck(){
+	$("#summary_try_button").show();
+	var lang_alise = get_supportsite_lang();
+	url = "http://www.asus.com/" + lang_alise + "/Networking/";
+	setTimeout('top.location.href =" ' + url + '"', 10000);
 }
 
 function use_pap_setting(obj){
-	if(obj.id == "sync_pap"){
-		if(document.getElementById("sync_pap").checked){
-			document.getElementById("sync_pap_custom").checked = false	
-		}
-	}
-	else{
-		if(document.getElementById("sync_pap_custom").checked){
-			document.getElementById("sync_pap").checked = false	
-		}	
-	}
-
-	if(document.getElementById("sync_pap_custom").checked){
-		$("#copy_pap").removeClass("ui-checkbox-on").addClass("ui-checkbox-off");
-		document.getElementById("sync_pap").checked = false;
-		if(primary_pap == "2G"){
-			if(document.form.wlc_express.value == "1"){
-				document.getElementById('wireless_2g_ssid').disabled = true;
-				document.getElementById('wireless_2g_key').disabled = true;
-			}
-			else{
-				document.getElementById('wireless_2g_ssid').disabled = false;
-				document.getElementById('wireless_2g_key').disabled = false;
-				document.getElementById('wireless_2g_ssid').value = document.form.wlc0_ssid.value.slice(0,28) + "_RPT";
-				document.getElementById('wireless_2g_key').value = document.form.wlc0_wpa_psk.value
-			}
-			
-			if(document.form.wlc1_ssid.value != ""){
-				document.getElementById('wireless_5g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT";
-				document.getElementById('wireless_5g_key').value = document.form.wlc1_wpa_psk.value;
-			}
-			else{
-				document.getElementById('wireless_5g_ssid').value = document.form.wlc0_ssid.value.slice(0,28) + "_RPT5G";
-				document.getElementById('wireless_5g_key').value = document.form.wlc0_wpa_psk.value;
-			}
-		}
-		else{
-			if(document.form.wlc0_ssid.value != ""){
-				document.getElementById('wireless_2g_ssid').value = document.form.wlc0_ssid.value.slice(0,28) + "_RPT";
-				document.getElementById('wireless_2g_key').value = document.form.wlc0_wpa_psk.value;
-			}
-			else{
-				document.getElementById('wireless_2g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT";
-				document.getElementById('wireless_2g_key').value = document.form.wlc1_wpa_psk.value;
-			}
-
-			if(document.form.wlc_express.value == "2"){
-				document.getElementById('wireless_5g_ssid').disabled = true;
-				document.getElementById('wireless_5g_key').disabled = true;
-				
-			}else{
-				document.getElementById('wireless_5g_ssid').disabled = false;
-				document.getElementById('wireless_5g_key').disabled = false;
-				if(document.form.wlc0_ssid.value != ""){
-					document.getElementById('wireless_5g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT";
-					document.getElementById('wireless_5g_key').value = document.form.wlc1_wpa_psk.value;				
-				}
-				else{
-					document.getElementById('wireless_5g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT5G";
-					document.getElementById('wireless_5g_key').value = document.form.wlc1_wpa_psk.value;
-				}
-			}
-		}
-	}
-	else if(document.getElementById("sync_pap").checked){
-		$("#custom_pap").removeClass("ui-checkbox-on").addClass("ui-checkbox-off");
-		document.getElementById("sync_pap_custom").checked = false;
+	if(document.getElementById("sync_pap").checked){
 		if(primary_pap == "2G"){
 			if(document.form.wlc_express.value == "1"){
 				document.getElementById('wireless_2g_ssid').disabled = true;
@@ -951,6 +1151,57 @@ function use_pap_setting(obj){
 				}
 				else{
 					document.getElementById('wireless_5g_ssid').value = document.form.wlc1_ssid.value;
+					document.getElementById('wireless_5g_key').value = document.form.wlc1_wpa_psk.value;
+				}
+			}
+		}
+	}
+	else{
+		$("#copy_pap").removeClass("ui-checkbox-on").addClass("ui-checkbox-off");
+		if(primary_pap == "2G"){
+			if(document.form.wlc_express.value == "1"){
+				document.getElementById('wireless_2g_ssid').disabled = true;
+				document.getElementById('wireless_2g_key').disabled = true;
+			}
+			else{
+				document.getElementById('wireless_2g_ssid').disabled = false;
+				document.getElementById('wireless_2g_key').disabled = false;
+				document.getElementById('wireless_2g_ssid').value = document.form.wlc0_ssid.value.slice(0,28) + "_RPT";
+				document.getElementById('wireless_2g_key').value = document.form.wlc0_wpa_psk.value
+			}
+			
+			if(document.form.wlc1_ssid.value != ""){
+				document.getElementById('wireless_5g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT";
+				document.getElementById('wireless_5g_key').value = document.form.wlc1_wpa_psk.value;
+			}
+			else{
+				document.getElementById('wireless_5g_ssid').value = document.form.wlc0_ssid.value.slice(0,28) + "_RPT5G";
+				document.getElementById('wireless_5g_key').value = document.form.wlc0_wpa_psk.value;
+			}
+		}
+		else{
+			if(document.form.wlc0_ssid.value != ""){
+				document.getElementById('wireless_2g_ssid').value = document.form.wlc0_ssid.value.slice(0,28) + "_RPT";
+				document.getElementById('wireless_2g_key').value = document.form.wlc0_wpa_psk.value;
+			}
+			else{
+				document.getElementById('wireless_2g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT";
+				document.getElementById('wireless_2g_key').value = document.form.wlc1_wpa_psk.value;
+			}
+
+			if(document.form.wlc_express.value == "2"){
+				document.getElementById('wireless_5g_ssid').disabled = true;
+				document.getElementById('wireless_5g_key').disabled = true;
+				
+			}else{
+				document.getElementById('wireless_5g_ssid').disabled = false;
+				document.getElementById('wireless_5g_key').disabled = false;
+				if(document.form.wlc0_ssid.value != ""){
+					document.getElementById('wireless_5g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT";
+					document.getElementById('wireless_5g_key').value = document.form.wlc1_wpa_psk.value;				
+				}
+				else{
+					document.getElementById('wireless_5g_ssid').value = document.form.wlc1_ssid.value.slice(0,28) + "_RPT5G";
 					document.getElementById('wireless_5g_key').value = document.form.wlc1_wpa_psk.value;
 				}
 			}
@@ -1029,11 +1280,15 @@ function wireless_apply(){
 
 	$(".icon_menu").hide();
 	$.mobile.changePage("#summary_page", {transition: "slide", changeHash: false});
+	if(productid !== "RP-AC68U") final_summary();
+
 	document.form.submit();
 
 	setTimeout(function(){
 		startQuery();
-	}, 30000);
+		$("#summary_try").show();
+
+	}, 80000);
 }
 
 function show_progress(){
@@ -1049,27 +1304,49 @@ function show_progress(){
 }
 
 function start_welcome(){
-	$("#scan_desc").show();
-	$("#loading_container").show();
-	$("#welcome_main_field").hide();
-	show_progress();
+	if(!forceChangePW){
+		if(document.form.sw_mode.value == "3" && document.form.wlc_express.value == "0" && document.form.wlc_psta.value == "0"){
+			$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});		
+		}
+		else{
+			if(scan_flag == 1){
+				$.mobile.changePage("#pap_list", {transition: "fade", changeHash: false});
+			}
+			else{
+				show_progress();
+				$("#login_desc").html("Search for available Wi-Fi networks around ASUS repeater");
+				$("#loading_container").show();
+				$("#login_field").hide();	
+				setTimeout(wait_ap_scan, 1000);
+			}
+		}
+	}
+	else{
+		$.mobile.changePage("#login_name", {transition: "slide", changeHash: false});
+	}
 }
 
-function rescan(){
-	$("#scan_desc").show();
-	$("#loading_container").show();
-	$("#welcome_main_field").hide();
-	show_progress();
+function rescan(flag){
+	scan_flag = 0;
+	if(flag == "switch"){
+		$.mobile.changePage("#welcome", {transition: "fade", changeHash: false});
+	}
+	else{
+		$("#login_desc").html("Search for available Wi-Fi networks around ASUS repeater");
+		$("#loading_container").show();
+		$("#login_field").hide();
+		$.mobile.changePage("#login_name", {transition: "fade", changeHash: false});
+	}
 
-	$.mobile.changePage("#welcome", {transition: "fade", changeHash: false});
+	show_progress();
 	if(document.getElementById("sort_field").style.display == ""){
 		show_sort_field();
 	}
-	
+	wait_ap_scan();
 	document.wlScan_form.flag.value = "sitesurvey";
 	document.wlScan_form.action_wait.value	= "1";
 	document.wlScan_form.action_script.value = "restart_wlcscan";
-	document.wlScan_form.submit();		
+	document.wlScan_form.submit();
 }
 
 function pap_manual_connect(){
@@ -1108,6 +1385,7 @@ function pap_manual_connect(){
 		document.form.wlc0_auth_mode.value = auth_mode;
 		document.form.wlc0_crypto.value = crypto;
 		document.form.wlc0_wpa_psk.value = key;	
+		document.form.wlc0_check_ha.value = 1;
 	}
 	else{
 		wl1_checked = "1";
@@ -1118,11 +1396,13 @@ function pap_manual_connect(){
 		document.form.wlc1_auth_mode.value = auth_mode;
 		document.form.wlc1_crypto.value = crypto;
 		document.form.wlc1_wpa_psk.value = key;
+		document.form.wlc0_check_ha.value = 1;
 	}	
 
 	document.getElementById("pap_manual_ssid").value = "";
 	document.getElementById("pap_manual_key").value = "";
-	if(wl0_checked == "" || wl1_checked == ""){
+
+	if((wl0_checked == "" || wl1_checked == "") && document.form.wlc_express.value == 0){
 		document.getElementById("dualBand_skip").style.display = "";
 		$("#dualBand_skip_desktop").css("display", "table-cell");
 		if(wl0_checked == "1"){
@@ -1139,18 +1419,44 @@ function pap_manual_connect(){
 	}
 	else{
 		$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});
-		use_pap_setting(document.getElementById("sync_pap_custom"));
+		document.getElementById("sync_pap").checked = false;
+		use_pap_setting();
 	}
 }
 
 function skip_pap(){
-	if(document.form.sw_mode.value == "3" && document.form.wlc_psta.value == "1"){
+	if(sw_mode == "4"){
+		$(".icon_menu").hide();
+		$("#summary_2g_field").hide();
+		$("#summary_5g_field").hide();
+
 		$.mobile.changePage("#summary_page", {transition: "slide", changeHash: false});
+		if(productid !== "RP-AC68U") final_summary();
+
 		document.form.submit();
+		setTimeout(function(){
+			startQuery();
+			$("#summary_try").show();
+		}, 80000);
 	}
 	else{
+		if(wl0_checked == ""){
+			document.form.wlc0_ssid.value = "";			
+			document.form.wlc0_auth_mode.value = "";
+			document.form.wlc0_crypto.value = "";
+			document.form.wlc0_wpa_psk.value = "";
+		}
+		
+		if(wl1_checked == ""){
+			document.form.wlc1_ssid.value = "";
+			document.form.wlc1_auth_mode.value = "";
+			document.form.wlc1_crypto.value = "";
+			document.form.wlc1_wpa_psk.value = "";
+		}
+
 		$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});
-		use_pap_setting(document.getElementById("sync_pap_custom"));
+		document.getElementById("sync_pap").checked = false;
+		use_pap_setting();
 	}
 }
 
@@ -1161,19 +1467,21 @@ function resetVar(){
 
 	$("#dualBand_skip").hide();
 	$("#dualBand_skip_desktop").css("display", "none");
-	$("#scan_desc").hide();
 	$("#loading_container").hide();
-	$("#welcome_main_field").show();
+	$("#login_field").show();
+	document.getElementById("pap_list_title").style.display = "";
+	document.getElementById("pap_list_title_2g_skip").style.display = "none";
+	document.getElementById("pap_list_title_5g_skip").style.display = "none";
 
 	$.mobile.changePage("#fakePage", {transition: "none", changeHash: false});
 }
 
 /*
-Repeater:            sw_mode: 2, wlc_express: 0, wlc_psta: 0
+Repeater:			sw_mode: 2, wlc_express: 0, wlc_psta: 0
 Express Way 2.4 GHz: sw_mode: 2, wlc_express: 1, wlc_psta: 0
 Express Way 5 GHz:   sw_mode: 2, wlc_express: 2, wlc_psta: 0
-AP mode:             sw_mode: 3, wlc_express: 0, wlc_psta: 0
-Media Bridge:        sw_mode: 3, wlc_express: 0, wlc_psta: 1
+AP mode:			 sw_mode: 3, wlc_express: 0, wlc_psta: 0
+Media Bridge:		sw_mode: 3, wlc_express: 0, wlc_psta: 1
 
 *under Media Bridge mode, it will convert sw_mode ==  4 (sw_mode == 3 && wlc_psta == 1) for UI
 */
@@ -1186,35 +1494,39 @@ function operation_mode_switch(mode){
 		document.form.sw_mode.value = "2";
 		document.form.wlc_express.value = "0";
 		document.form.wlc_psta.value = "0";
+		document.getElementById("welcome_button").innerHTML = "Start Repeater";
 	}
 	else if(mode == "MB"){		//Media Bridge
 		sw_mode = "4";
-		if(Rawifi_support || Qcawifi_support)
+		if(Rawifi_support || Qcawifi_support)		//QCA, MTK
 			document.form.sw_mode.value = "2";
-		else	
-			document.form.sw_mode.value = "3";
+		else
+			document.form.sw_mode.value = "3";		//Broadcom
 		
 		document.form.wlc_express.value = "0";
 		document.form.wlc_psta.value = "1";
+		document.getElementById("welcome_button").innerHTML = "Start Media Bridge";
 	}
 	else if(mode == "AP"){		//Access Point
 		sw_mode = "3";
 		document.form.sw_mode.value = "3";
 		document.form.wlc_express.value = "0";
 		document.form.wlc_psta.value = "0";
-		$.mobile.changePage("#wireless_setting", {transition: "slide", changeHash: false});
+		document.getElementById("welcome_button").innerHTML = "Start Access Point";
 	}
 	else if(mode == "express_5g"){		//Express: parent 5 GHz, client 2.4 GHz
 		sw_mode = "2";
 		document.form.sw_mode.value = "2";
 		document.form.wlc_express.value = "2";
 		document.form.wlc_psta.value = "0";
+		document.getElementById("welcome_button").innerHTML = "Start Express Way";
 	}
 	else if(mode == "express_2g"){		//Express: parent 2.4 GHz, client 5 GHz
 		sw_mode = "2";
 		document.form.sw_mode.value = "2";
 		document.form.wlc_express.value = "1";
 		document.form.wlc_psta.value = "0";
+		document.getElementById("welcome_button").innerHTML = "Start Express Way";
 	}
 	
 	navigation_opmode_style();
@@ -1234,8 +1546,6 @@ function uploadSetting(){
 		file_obj.focus();
 	}
 	else{		
-		//disableCheckChangedStatus();
-		//showtext($("loading_text"), "<#SET_ok_desc#>");
 		document.form.action = "/upload.cgi";
 		document.form.action_script.value = "";
 		document.form.enctype = "multipart/form-data";
@@ -1275,16 +1585,19 @@ function pass_checked(obj, icon){
 	if(_obj.type == "text"){
 		switchType(_obj, false);
 		icon.className = "icon_eye_close";
+		if(obj == "http_passwd")
+			switchType(http_passwd_confirm, false);
 	}
 	else{
 		switchType(_obj, true);
 		icon.className = "icon_eye_open";
+		if(obj == "http_passwd")
+			switchType(http_passwd_confirm, true);
 	}
 }
 
 function submit_language(obj){
 	if(obj != $("preferred_lang").value){
-		//showLoading();
 		
 		with(document.titleForm){
 			action = "/start_apply.htm";
@@ -1295,7 +1608,6 @@ function submit_language(obj){
 				current_page.value = location.pathname;
 				
 			preferred_lang.value = obj;
-			//preferred_lang.value = $("select_lang").value;
 			flag.value = "set_language";
 			
 			submit();
@@ -1317,117 +1629,6 @@ function scrollTop(){
 	}, 100);
 }
 
-var validator = {
-	ssidChar: function(ch){
-		if(ch >= 32 && ch <= 126)
-			return false;
-		
-		return true;
-	},
-
-	string: function(string_obj, flag){
-		if(string_obj.value.charAt(0) == '"'){
-			if(flag != "noalert")
-				alert('<#JS_validstr1#> ["]');
-
-			string_obj.value = "";
-			string_obj.focus();
-
-			return false;
-		}
-		else{
-			var invalid_char = "";
-			for(var i = 0; i < string_obj.value.length; ++i){
-				if(string_obj.value.charAt(i) < ' ' || string_obj.value.charAt(i) > '~'){
-					invalid_char = invalid_char+string_obj.value.charAt(i);
-				}
-			}
-
-			if(invalid_char != ""){
-				if(flag != "noalert")
-					alert("<#JS_validstr2#> '"+invalid_char+"' !");
-
-				string_obj.value = "";
-				string_obj.focus();
-
-				return false;
-			}
-		}
-
-		return true;
-	},
-
-	psk: function(psk_obj){
-		var psk_length = psk_obj.value.length;
-		
-		if(psk_length < 8 || psk_length > 64){
-			alert("<#JS_PSK64Hex#>");
-			psk_obj.focus();
-			psk_obj.select();
-			return false;
-		}
-				
-		if(psk_length >= 8 && psk_length <= 63 && !this.string(psk_obj)){
-			alert("<#JS_PSK64Hex#>");
-			psk_obj.focus();
-			psk_obj.select();
-			return false;
-		}
-				
-		if(psk_length == 64 && !this.hex(psk_obj)){
-			alert("<#JS_PSK64Hex#>");
-			psk_obj.focus();
-			psk_obj.select();				
-			return false;
-		}
-		
-		return true;
-	},
-
-	hex: function(obj){
-		var obj_value = obj.value
-		var re = new RegExp("[^a-fA-F0-9]+","gi");
-		
-		if(re.test(obj_value))
-			return false;
-		else
-			return true;
-	},
-
-	stringSSID: function(o){
-		var c;	// character code
-		var flag=0; // notify valid characters of SSID except space
-		
-		if(o.value==""){      // to limit null SSID
-			alert('<#JS_fieldblank#>');
-			o.focus();
-			return false;
-		}	
-		
-		for(var i = 0; i < o.value.length; ++i){
-			c = o.value.charCodeAt(i);
-			
-			if(this.ssidChar(c)){
-				alert('<#JS_validSSID1#> '+o.value.charAt(i)+' <#JS_validSSID2#>');
-				o.value = "";
-				o.focus();
-				o.select();
-				return false;
-			}
-			
-			if(c != 32)
-				flag ++;
-		}
-		
-		if(flag ==0){     // to limit SSID only include space
-			alert('<#JS_fieldblank#>');
-			return false;
-		}
-		
-		return true;
-	}
-}
-
 function actionAfterReboot(){
 	return false;
 }
@@ -1435,6 +1636,160 @@ function actionAfterReboot(){
 function showLoading(){
 	// handle apply successful callback.
 	return false;
+}
+
+function clear_info(){		
+	if(wl_last_checked == "2.4G"){
+		wl0_checked = "";
+		document.form.wlc0_ssid.value = "";			
+		document.form.wlc0_auth_mode.value = "";
+		document.form.wlc0_crypto.value = "";
+		document.form.wlc0_wpa_psk.value = "";
+	}
+	else{
+		wl1_checked = "";
+		document.form.wlc1_ssid.value = "";			
+		document.form.wlc1_auth_mode.value = "";
+		document.form.wlc1_crypto.value = "";
+		document.form.wlc1_wpa_psk.value = "";
+	}
+}
+
+function final_summary(){
+	var string = "";
+	string += "You can now follow information below and connect to extended Wi-Fi network";
+	if(document.form.sw_mode.value == "3" && document.form.wlc_psta.value == "1"){
+		string += "<br/>In Media Bridge mode, only wireless devices connect to the P-AP. Client devices need to be connected to the Media Bridge with a network cable.";			
+	}
+		
+	string += "<br/><span>Use <a href='http://repeater.asus.com' target='_blank' style='text-decoration:underline'>repeater.asus.com</a> to login the device</span>";
+	string += "<br/><span id='summary_try' style='display:none'>Try Connecting to Internet...</span><span id='summary_try_button' style='margin-left:12px;padding:3px 12px;border-radius:3px;background:#007AFF;display:none' onclick='startQuery();'>GO</span>";
+		
+	$("#summary_desc").html(string);
+	document.getElementById("summary_desc").style.textAlign = "left";
+	document.getElementById("summary_desc").style.marginTop = "10px";
+	document.getElementById("summary_desc").style.marginLeft = "10px";
+	$("#summary_led").hide();		
+	$("#summary_main").show();
+	
+	document.getElementById("led_field").style.display = "table-cell";
+}
+
+function get_supportsite_lang(){
+        var faqLang = {
+                EN : "/",
+                TW : "/tw/",
+                CN : ".cn/",
+                BR : "/br/",
+                CZ : "/cz/",
+                DA : "/dk/",
+                DE : "/de/",
+                ES : "/es/",
+                FI : "/fi/",
+                FR : "/fr/",
+                HU : "/hu/",
+                IT : "/it/",
+                JP : "/jp/",
+                KR : "/kr/",
+                MS : "/my/",
+                NO : "/no/",
+                PL : "/pl/",
+                RO : "/ro/",
+                RU : "/ru/",
+                SV : "/se/",
+                TH : "/th/",
+                TR : "/tr/",
+                UK : "/ua/"
+        }
+
+        var href_lang = faqLang.<% nvram_get("preferred_lang"); %>;
+        return href_lang;
+}
+
+function validForm(){	
+	if(document.getElementById("http_username").value.length == 0){
+		alert("<#File_Pop_content_alert_desc1#>");
+		document.getElementById("http_username").focus();
+		document.getElementById("http_username").select();
+		return false;
+	}
+	else{
+		var alert_str = validator.hostName(document.getElementById("http_username"));
+
+		if(alert_str != ""){
+			alert(alert_str);
+			document.getElementById("http_username").focus();
+			document.getElementById("http_username").select();
+			return false;
+		}
+
+		document.getElementById("http_username").value = trim(document.getElementById("http_username").value);
+
+		if(document.getElementById("http_username").value == "root"
+		|| document.getElementById("http_username").value == "guest"
+		|| document.getElementById("http_username").value == "anonymous"){
+			alert("<#USB_Application_account_alert#>");
+			document.getElementById("http_username").focus();
+			document.getElementById("http_username").select();
+			return false;
+		}
+	}
+
+	if(document.getElementById("http_passwd").value != document.getElementById("http_passwd_confirm").value){
+		alert("* <#File_Pop_content_alert_desc7#>");
+		if(document.getElementById("http_passwd").value.length <= 0){
+			document.getElementById("http_passwd").focus();
+			document.getElementById("http_passwd").select();
+		}else{
+			document.getElementById("http_passwd_confirm").focus();
+			document.getElementById("http_passwd_confirm").select();
+		}
+		return false;
+	}
+
+	if(!validator.string(document.getElementById("http_passwd"))){
+		document.getElementById("http_passwd").focus();
+		document.getElementById("http_passwd").select();
+		return false;
+	}	
+
+	if(document.getElementById("http_passwd").value == '<% nvram_default_get("http_passwd"); %>'){	
+		alert("* <#QIS_adminpass_confirm0#>");
+		document.getElementById("http_passwd").focus();
+		document.getElementById("http_passwd").select();
+		return false;
+	}	
+		
+	return true;
+}
+
+function trim(val){
+	val = val+'';
+	for (var startIndex=0;startIndex<val.length && val.substring(startIndex,startIndex+1) == ' ';startIndex++);
+	for (var endIndex=val.length-1; endIndex>startIndex && val.substring(endIndex,endIndex+1) == ' ';endIndex--);
+	return val.substring(startIndex,endIndex+1);
+}
+
+function cancel_button(){
+	$("#parentAP_key").val("");
+	resetVar();
+	$.mobile.changePage("#pap_list", {transition: "slide", changeHash: false, reverse: true});
+}
+
+function genOptions(){
+	var options = "";
+
+	if(wl0_checked == ""){
+		options += "<option value='2g'>2.4 GHz</option>";
+		$("#pap_manual_band_option-button span").html("2.4 GHz");
+	}
+
+	if(wl1_checked == ""){	
+		options += "<option value='5g'>5 GHz</option>";
+		$("#pap_manual_band_option-button span").html("5 GHz");
+	}	
+
+	$("#pap_manual_band_option").html(options);
 }
 </script>
 </head>
@@ -1446,7 +1801,7 @@ function showLoading(){
 			<div style="height:15px;width:250px;background-color:#555; border:2px solid #888;border-radius:10px;margin:auto">
 				<div id="upload_progress_bar" style="width: 0%;height:15px;background:#529CEE;border-radius:10px"></div>
 			</div>
-			<div style="color:#757575;font-size:30pt;font-family:HelveticaNeueW10-35Thin,Helvetica W01 Light,Arial;margin:21px 0">Setting is uploading! Please wait about 120 seconds.</div>
+			<div style="color:#DBDBDB;font-size:30pt;font-family:HelveticaNeueW10-35Thin,Helvetica W01 Light,Arial;margin:21px 0">Setting is uploading! Please wait about 120 seconds.</div>
 		</div>	
 	</div>	
 </div>
@@ -1474,27 +1829,106 @@ function showLoading(){
 		</table>
 	</div>
 
-	<div id="scan_desc" style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;display:none">Search for available Wi-Fi networks around ASUS repeater.</div>
 	<div id="welcome_main_field">
 		<div style="font-family:Uni Sans Thin, Helvetica W01 Light, Arial;font-size:9em;color:#FFF;line-height:50px;margin:120px 46px 0 46px;text-align:center;">Welcome</div>
-		<div style="font-family:Uni Sans Thin, Helvetica W01 Light, Arial;font-size:2.875em;color:#279FD9;text-align:center;margin:36px 46px 0 46px;">ASUS Networking Family</div>
+		<div style="font-family:Uni Sans Thin, Helvetica W01 Light, Arial;font-size:2.875em;color:#007AFF;text-align:center;margin:36px 46px 0 46px;">ASUS Networking Family</div>
 		<div style="height:334px;width:auto;background:url('images/Model_product.png') no-repeat;background-size:145px;background-position:center;margin-top:36px;"></div>
-		<div id="model_welcome_field" style="text-align:center;color:#757575;font-size:30pt;font-family:HelveticaNeueW10-35Thin,Helvetica W01 Light,Arial;line-height:23px;margin:21px 0"></div>
+		<div id="model_welcome_field" style="text-align:center;color:#DBDBDB;font-size:30pt;font-family:HelveticaNeueW10-35Thin,Helvetica W01 Light,Arial;line-height:23px;margin:21px 0"></div>
 		<div style="text-align:center;margin:31px 0">
-			<div style="width:314px;height:88px;border-radius:4px;color:#C5C5C5;background-color:rgba(48,48,48,0.2);border:1px solid #555;font-size:2.25em;margin:auto;line-height:88px;" onclick="start_welcome();">START</div>
+			<div  id="welcome_button" style="width:414px;height:88px;border-radius:4px;color:#FFF;background-color:#007AFF;border:1px solid #007AFF;font-size:2.25em;margin:auto;line-height:88px;" onclick="start_welcome();">Start Repeater</div>
 		</div>
+		<div style="color:#FFF;font-size:18px;text-align:center;"><a href="#navigation">Advanced Setting</a></div>
+	</div>
+</div>
+
+<div data-role="page" id="login_name" name="login_name" style="background:url('images/qis/pattern3-3_10_A15.png'),url('images/qis/pattern3_05_4.png'),url('images/qis/mainimage_img4.png') #1D1E1F no-repeat;">
+	<div style="margin:34px 0 0 27px;">
+		<table style="width:100%">
+			<tr>
+				<td style="padding:0;width:38px;">
+					<div style="margin-right:20px;">
+						<a href="#navigation">
+							<div class="icon_menu" style="width:38px;height:38px"></div>
+						</a>
+					</div>
+				</td>
+				<td style="padding:0;width:130px;">
+					<div style="margin-right:35px;">
+						<div style="width:130px;height:38px;" class="icon_logo"></div>
+					</div>
+				</td>
+				<td style="padding:0;">
+					<div id="model_welcome" style="color:#FFF;font-family:Arial Bold;font-size:1.875em;background-color:rgba(79,79,79,62);padding-left:11px;"></div>
+				</td>		
+			</tr>
+		</table>
+	</div>
+	<div class="desktop_left_field">
+		<div style="font-size:60px">Login </div>
+		<div style="font-size:32px">Username/Passowrd</div>
+		<div style="font-size:32px">Setting</div>
 	</div>
 	
-	<div id="loading_container" style="max-width:520px;margin:50px auto 0 auto">
-		<div style="background:url('images/qis/loading.gif');width:132px;height:132px;margin:auto"></div>
-		<div id="progress_container" style="height:30px;width:100%;margin-top:10px;">
-			<div style="height:15px;width:250px;background-color:#555; border:2px solid #888;border-radius:10px;margin:auto">
-				<div id="progress_bar" style="width: 0%;height:15px;background:#529CEE;border-radius:10px"></div>
+	<div class="table_td">
+		<div id="login_desc" style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;"><#QIS_pass_desc1#></div>
+		<div id="login_field">
+			<div style="margin-left:38px;">
+				<div style="display:table;margin:18px 0 19px 30px;width:100%">
+					<div style="HelveticaNeueLT45_Light_regular,Helvetica_regular,Arial;font-size:1.5em;color:#B8D8FF;display:table-cell"><#Router_Login_Name#></div>
+				</div>	
+				<div style="margin:22px 55px 41px 30px">
+					<input id="http_username" type="text" maxlength="64" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#DBDBDB;" value="" data-clear-btn="true"></input>
+				</div>
+			</div>		
+			<div style="margin-left:38px;">
+				<div style="display:table;margin:18px 0 19px 30px;width:100%">
+					<div style="HelveticaNeueLT45_Light_regular,Helvetica_regular,Arial;font-size:1.5em;color:#B8D8FF;display:table-cell"><#PASS_new#></div>
+					<div class="icon_eye_open" style="width:32px;height:32px;display:table-cell;padding-right:110px;" onclick="pass_checked('http_passwd', this)"></div>
+				</div>	
+				<div style="margin:22px 55px 41px 30px">
+					<input id="http_passwd" type="text" maxlength="64" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#DBDBDB;" value="" data-clear-btn="true"></input>
+				</div>
 			</div>
+			<div style="margin-left:38px;">
+				<div style="display:table;margin:18px 0 19px 30px;width:100%">
+					<div style="HelveticaNeueLT45_Light_regular,Helvetica_regular,Arial;font-size:1.5em;color:#B8D8FF;display:table-cell"><#PASS_retype#></div>
+				</div>	
+				<div style="margin:22px 55px 41px 30px">
+					<input id="http_passwd_confirm" type="text" maxlength="64" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#DBDBDB;" value="" data-clear-btn="true"></input>
+				</div>
+			</div>
+				<!--for desktop-->
+			<div class="footer_desktop" style="color:#FFF;text-align:center;margin-top:0;">
+				<div style="display:inline-block;width:300px;border:1px solid #DBDBDB;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick='$("#http_username").val("");$("#http_passwd").val("");$("#http_password_confirm").val("");$.mobile.changePage("#welcome", {transition: "slide", changeHash: false, reverse: true});'>CANCEL</div>
+				<div style="display:inline-block;width:300px;border:1px solid #DBDBDB;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick="login_next();">Next</div>
+			</div>		
+			<div class="footer_mobile">
+				<table style="width:100%;">
+					<tr style="height:98px;text-align:center">
+						<td style="width:50%" onclick='$("#http_username").val("");$("#http_passwd").val("");$("#http_password_confirm").val("");$.mobile.changePage("#welcome", {transition: "slide", changeHash: false, reverse: true});'>
+							<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#7E8593">CANCEL</div>
+						</td>
+						<td style="width:50%;background:#007AFF" onclick="login_next();">
+							<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#FFF;border-left:1px solid #333;">Next</div>
+						</td>
+					</tr>
+				</table>
+			</div>			
 		</div>
-		<div style="text-align:center;color:#757575;font-size:30pt;font-family:HelveticaNeueW10-35Thin,Helvetica W01 Light,Arial;line-height:23px;margin:21px 0">Please wait for few seconds</div>
+			
+		<div id="loading_container" style="max-width:520px;margin:50px auto 0 auto">
+			<div style="background:url('images/qis/loading.gif');width:132px;height:132px;margin:auto"></div>
+			<div id="progress_container" style="height:30px;width:100%;margin-top:10px;">
+				<div style="height:15px;width:250px;background-color:#555; border:2px solid #888;border-radius:10px;margin:auto">
+					<div id="progress_bar" style="width: 0%;height:15px;background:#529CEE;border-radius:10px"></div>
+				</div>
+			</div>
+			<div style="text-align:center;color:#DBDBDB;font-size:30pt;font-family:HelveticaNeueW10-35Thin,Helvetica W01 Light,Arial;line-height:23px;margin:21px 0">Please wait for few seconds</div>
+		</div>
+		<div class="preload_image"></div>		
 	</div>	
 </div>
+
 <!-- P-AP List Page -->
 <div data-role="page" id="pap_list" style="background:url('images/qis/pattern3-3_10_A15.png'),url('images/qis/pattern3_05_4.png'),url('images/qis/mainimage_img4.png') #1D1E1F no-repeat;">
 	<div style="margin:34px 0 0 27px;">
@@ -1524,15 +1958,15 @@ function showLoading(){
 		<div style="font-size:32px">List</div>
 	</div>
 	<div class="table_td" style="width:1000px;">
-		<div id="pap_list_title" style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;">Select the Wi-Fi network you would like to extend.</div>
-		<div id="pap_list_title_2g_skip" style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;display:none">You hava already selected the 2.4 GHz wireless network. Do you want to select the 5 GHz wireless network? If no, click [SKIP]</div>
-		<div id="pap_list_title_5g_skip" style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;display:none">You hava already selected the 5 GHz wireless network. Do you want to select the 2.4 GHz wireless network? If no, click [SKIP]</div>
-		<div id="ap_list_title" style="font-family:HelveticaCE55-Roman,Helvetica,Arial;font-size:1.75em;color:#B8D8FF;margin:20px 0 0 46px;padding-bottom:19px;border-bottom:1px solid #43474B">
+		<div id="pap_list_title" style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;">Select the Wi-Fi network you would like to extend.</div>
+		<div id="pap_list_title_2g_skip" style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;display:none">You have already selected the 2.4 GHz wireless network. Do you want to select the 5 GHz wireless network? If no, click [SKIP]</div>
+		<div id="pap_list_title_5g_skip" style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;display:none">You have already selected the 5 GHz wireless network. Do you want to select the 2.4 GHz wireless network? If no, click [SKIP]</div>
+		<div id="ap_list_title" style="font-family:HelveticaCE55-Roman,Helvetica,Arial;font-size:1.75em;color:#B8D8FF;margin:20px 0 0 46px;padding-bottom:19px;border-bottom:1px solid #DBDBDB">
 			<div style="display:table-cell">Wi-Fi Network Lists</div>
 			<div class="desktop_sort">
 				<div style="table-row">
 					<div style="display:table-cell;width:70px;" onclick="show_sort_field();"><div class="icon_sorting" style="width:28px;height:32px;font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.125em;margin:auto;"></div></div>
-					<div style="display:table-cell;width:70px;" onclick='$.mobile.changePage("#pap_manual", {transition: "fade", changeHash: false});'><div class="icon_plus" style="width:32px;height:32px;font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.125em;margin:auto;"></div></div>
+					<div style="display:table-cell;width:70px;" onclick='genOptions();$.mobile.changePage("#pap_manual", {transition: "fade", changeHash: false});'><div class="icon_plus" style="width:32px;height:32px;font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.125em;margin:auto;"></div></div>
 					<div style="display:table-cell;width:70px;" onclick="rescan();"><div class="icon_rescan" style="width:32px;height:32px;font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.125em;margin:auto;"></div></div>
 					<div id="dualBand_skip_desktop" style="display:none;width:90px;vertical-align:middle;text-align:center" onclick="skip_pap();">SKIP</div>
 				</div>
@@ -1588,7 +2022,7 @@ function showLoading(){
 					</td>				
 				</tr>				
 				<tr><td colspan="3"><div style="height:1px;width:100%;background:rgba(255,255,255,0.9)"></div></td></tr>
-				<tr>
+				<tr id="sortByBand">
 					<td style="padding:0;">
 						<div style="width:284px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#FFF;margin:38px 0 38px 46px;">Order By <div style="font-size:2.25em">BAND</div></div>
 					</td>
@@ -1638,7 +2072,7 @@ function showLoading(){
 		<div style="font-size:32px">Information</div>
 	</div>
 	<div class="table_td">
-		<div style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;">Enter the network key (Wi-Fi Password) for the selected Wi-Fi network</div>
+		<div style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;">Enter the network key (Wi-Fi Password) for the selected Wi-Fi network</div>
 		<div style="margin-left:38px">
 			<div style="border-bottom:1px solid #43474B;padding:29px 0">
 				<div style="display:table-row;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:2.25em;color:#DBDBDB">
@@ -1646,19 +2080,19 @@ function showLoading(){
 						<div id="pap_wifi" class="icon_wifi_4" style="width:41px;height:32px;"></div>
 					</div>
 					<div id="pap_ssid" style="display:table-cell;width:90%;padding-left:12px;color:#007AFE"></div>
-					<div style="display:table-cell;width:30px;text-align:right;padding-right:28px;">
+					<div style="display:table-cell;width:30px;text-align:right;padding:0 28px 0 10px;">
 						<div class="icon_arrow_down" style="width:52px;height:32px;"></div>
 					</div>				
 				</div>
 			</div>
 		</div>
-		<div id="pap_key_field" style="margin-left:38px;border-bottom:1px solid #43474B">
+		<div id="pap_key_field" style="margin-left:38px;border-bottom:1px solid #DBDBDB">
 			<div style="display:table;margin:18px 0 19px 30px;width:100%">
 				<div style="HelveticaNeueLT45_Light_regular,Helvetica_regular,Arial;font-size:1.5em;color:#B8D8FF;display:table-cell">Network Key</div>
 				<div class="icon_eye_open" style="width:32px;height:32px;display:table-cell;padding-right:110px;" onclick="pass_checked('parentAP_key', this)"></div>
 			</div>	
 			<div style="margin:22px 55px 41px 30px">
-				<input id="parentAP_key" type="text" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#9BA7B1;" value="" data-clear-btn="true"></input>
+				<input id="parentAP_key" type="text" maxlength="64" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#DBDBDB;" value="" data-clear-btn="true"></input>
 			</div>
 		</div>
 		<div style="margin-left:38px";>
@@ -1678,39 +2112,39 @@ function showLoading(){
 		<div id="ip_advance_setting" style="margin:20px 55px 123px 38px;display:none">
 			<label style="HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#B8D8FF;margin-left:18px;">IP Address</label>
 			<div style="margin:20px 0 20px 18px;">
-				<input id="pap_ip_advance_setting_ipaddr" type="text" style="color:#5e666c;font-size:1.875em" data-clear-btn="true" disabled>
+				<input id="pap_ip_advance_setting_ipaddr" onkeypress="return validator.isIPAddr(this, event);" maxlength="15" type="text" style="color:#DBDBDB;font-size:1.875em" data-clear-btn="true">
 			</div>
 			<label style="HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#B8D8FF;margin-left:18px;">Subnet Mask</label>
 			<div style="margin:20px 0 20px 18px;">
-				<input id="pap_ip_advance_setting_subnet" type="text" style="color:#5e666c;font-size:1.875em" data-clear-btn="true" disabled>
+				<input id="pap_ip_advance_setting_subnet" onkeypress="return validator.isIPAddr(this, event);" maxlength="15" type="text" style="color:#DBDBDB;font-size:1.875em" data-clear-btn="true" disabled>
 			</div>
 			<label style="HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#B8D8FF;margin-left:18px;">Default Gateway</label>
 			<div style="margin:20px 0 20px 18px;">
-				<input id="pap_ip_advance_setting_gateway" type="text" style="color:#5e666c;font-size:1.875em" data-clear-btn="true" disabled>
+				<input id="pap_ip_advance_setting_gateway" onkeypress="return validator.isIPAddr(this, event);" maxlength="15" type="text" style="color:#DBDBDB;font-size:1.875em" data-clear-btn="true" disabled>
 			</div>
 			<label style="HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#B8D8FF;margin-left:18px;">DNS 1</label>
 			<div style="margin:20px 0 20px 18px;">
-				<input id="pap_ip_advance_setting_dns1" type="text" style="color:#5e666c;font-size:1.875em" data-clear-btn="true" disabled>
+				<input id="pap_ip_advance_setting_dns1" onkeypress="return validator.isIPAddr(this, event);" maxlength="15" type="text" style="color:#DBDBDB;font-size:1.875em" data-clear-btn="true" disabled>
 			</div>
 			<label style="HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#B8D8FF;margin-left:18px;">DNS 2</label>
 			<div style="margin:20px 0 20px 18px;">
-				<input id="pap_ip_advance_setting_dns2" type="text" style="color:#5e666c;font-size:1.875em" data-clear-btn="true" disabled>
+				<input id="pap_ip_advance_setting_dns2" onkeypress="return validator.isIPAddr(this, event);" maxlength="15" type="text" style="color:#DBDBDB;font-size:1.875em" data-clear-btn="true" disabled>
 			</div>
 		</div>
 		
 		<!--for desktop-->
 		<div class="footer_desktop" style="color:#FFF;text-align:center;margin-top:0;">
-			<div style="display:inline-block;width:300px;border:1px solid #43474B;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick='$("#parentAP_key").val("");$.mobile.changePage("#pap_list", {transition: "slide", changeHash: false, reverse: true});'>CANCEL</div>
+			<div id="wlCancel" style="display:inline-block;width:300px;border:1px solid #43474B;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick="cancel_button();">CANCEL</div>
 			<div style="display:inline-block;width:300px;border:1px solid #43474B;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick="pap_connect();">CONNECT</div>
 		</div>
 		
 		<div class="footer_mobile">
 			<table style="width:100%;">
 				<tr style="height:98px;text-align:center">
-					<td style="width:50%" onclick='$("#parentAP_key").val("");$.mobile.changePage("#pap_list", {transition: "slide", changeHash: false, reverse: true});'>
+					<td style="width:50%" onclick="cancel_button();">
 						<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#7E8593">CANCEL</div>
 					</td>
-					<td style="width:50%" onclick="pap_connect();">
+					<td style="width:50%;background:#007AFF" onclick="pap_connect();">
 						<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#FFF;border-left:1px solid #333;">CONNECT</div>
 					</td>
 				</tr>
@@ -1747,14 +2181,14 @@ function showLoading(){
 		<div style="font-size:32px">Setting</div>
 	</div>
 	<div class="table_td">
-			<div style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;">Extend Wi-Fi network will follow the same settings of Wi-Fi network you just selected.</div>
+			<div style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;">Extend Wi-Fi network will follow the same settings of Wi-Fi network you just selected.</div>
 			<div id="sync_pap_container" style="margin-left:38px";>
 				<label id="copy_pap" style="background:transparent;color:#C5C5C5; border:0;font-size:1.875em;font-weight:normal;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;text-align:left;left:-0.3em">
-					<input id="sync_pap" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);" >Copy AP SSID/Password
+					<input id="sync_pap" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);" >Same with parent AP SSID/Password
 				</label>
-				<label id="custom_pap" style="background:transparent;color:#C5C5C5; border:0;font-size:1.875em;font-weight:normal;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;text-align:left;left:-0.3em">
-					<input id="sync_pap_custom" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);" checked><#QIS_apextended_usedefault#>
-				</label>	
+				<!--label id="custom_pap" style="background:transparent;color:#C5C5C5; border:0;font-size:1.875em;font-weight:normal;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;text-align:left;left:-0.3em">
+					<input id="sync_pap_custom" type="checkbox" style="width:21px;height:21px;" onclick="use_pap_setting(this);"><#QIS_apextended_usedefault#>
+				</label-->	
 			</div>
 			<div id="wireless_2g_field" style="padding-bottom:35px;" class="wireless_field">
 				<div style="margin:31px 48px 7px 46px">
@@ -1763,7 +2197,7 @@ function showLoading(){
 						<span style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#C3C3C3;margin-left:15px;">Network Name (SSID)</span>
 					</div>
 					<div style="margin-top:19px">
-						<input id="wireless_2g_ssid" type="text" style="color:#5e666c;font-size:1.875em;padding:0 18px" data-clear-btn="true">
+						<input id="wireless_2g_ssid" type="text" maxlength="32" onkeypress="return validator.isString(this, event)" style="color:#DBDBDB;font-size:1.875em;padding:0 18px" data-clear-btn="true">
 					</div>
 				</div>
 				<div style="margin:31px 48px 7px 46px">
@@ -1777,7 +2211,7 @@ function showLoading(){
 						</table>
 					</div>
 					<div style="margin-top:19px">
-						<input id="wireless_2g_key" type="text" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#9BA7B1;" value="" data-clear-btn="true"></input>
+						<input id="wireless_2g_key" type="text" maxlength="64" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#DBDBDB;" value="" data-clear-btn="true"></input>
 					</div>		
 				</div>
 			</div>
@@ -1788,7 +2222,7 @@ function showLoading(){
 						<span style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#C3C3C3;margin-left:15px;">Network Name (SSID)</span>
 					</div>
 					<div style="margin-top:19px">
-						<input id="wireless_5g_ssid" type="text" style="color:#5e666c;font-size:1.875em;padding:0 18px" data-clear-btn="true">
+						<input id="wireless_5g_ssid" type="text" maxlength="32" onkeypress="return validator.isString(this, event)" style="color:#DBDBDB;font-size:1.875em;padding:0 18px" data-clear-btn="true">
 					</div>
 				</div>
 				<div style="margin:31px 48px 7px 46px">
@@ -1802,15 +2236,15 @@ function showLoading(){
 						</table>
 					</div>
 					<div style="margin-top:19px">
-						<input id="wireless_5g_key" type="text" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#9BA7B1;" value="" data-clear-btn="true"></input>
+						<input id="wireless_5g_key" type="text" maxlength="64" style="padding-left:18px;font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#DBDBDB;" value="" data-clear-btn="true"></input>
 					</div>
 				</div>
 			</div>
 			
 					<!--for desktop-->
 			<div class="footer_desktop" style="color:#FFF;text-align:center;margin-top:0;max-width:1000px;">
-				<div style="display:inline-block;width:300px;border:1px solid #43474B;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick='$.mobile.changePage("#pap_list", {transition: "slide", changeHash: false, reverse: true});'>CANCEL</div>
-				<div style="display:inline-block;width:300px;border:1px solid #43474B;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick="wireless_apply();">CONNECT</div>
+				<div style="display:inline-block;width:300px;border:1px solid #DBDBDB;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick='clear_info();$.mobile.changePage("#pap_list", {transition: "slide", changeHash: false, reverse: true});'>CANCEL</div>
+				<div style="display:inline-block;width:300px;border:1px solid #DBDBDB;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick="wireless_apply();">APPLY</div>
 			</div>
 			
 			<div class="footer_mobile">
@@ -1819,7 +2253,7 @@ function showLoading(){
 						<td style="width:50%" id="wifiPrevious" onclick='$.mobile.changePage("#pap_list", {transition: "slide", changeHash: false, reverse: true});'>
 							<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#7E8593" >PREVIOUS</div>
 						</td>
-						<td style="width:50%" onclick="wireless_apply();">
+						<td style="width:50%;background:#007AFF" onclick="wireless_apply();">
 							<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#FFF;border-left:1px solid #333;" >APPLY</div>
 						</td>
 					</tr>
@@ -1852,35 +2286,35 @@ function showLoading(){
 			</tr>
 		</table>
 	</div>
-	<div class="desktop_left_field" style="font-size:60px">Summary</div>
-	<div class="table_td">
-		<div id="summary_desc" style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;">Congratulation!<br>You can now follow information below and connect to extended Wi-Fi network</div>	
-		<div style="margin-bottom:120px;">
-			<div id="summary_2g_field" style="margin:15px 0 0 46px;" class="wireless_field">
-				<div style="font-family:Helvetica LT W10 Bold,Arial;font-size:1.5em;color:#B8D8FF;padding:21px 0 15px;border-bottom:1px solid #43474B">Wireless - 2.4 GHz</div>
-				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0">Network Name (SSID)</div>
-				<div id="summary_wl0_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
-				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0;">Network Key</div>
-				<div id="summary_wl0_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
-			</div>
-			<div id="summary_5g_field" style="margin:15px 0 0 46px;" class="wireless_field wireless_field_5g">
-				<div style="font-family:Helvetica LT W10 Bold,Arial;font-size:1.5em;color:#B8D8FF;padding:21px 0 15px;border-bottom:1px solid #43474B">Wireless - 5 GHz</div>
-				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0">Network Name (SSID)</div>
-				<div id="summary_wl1_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
-				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0;">Network Key</div>
-				<div id="summary_wl1_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#279FD9;padding-bottom:24px;border-bottom:1px solid #43474B"></div>
+	<div class="desktop_left_field" style="font-size:50px">Summary</div>
+	<div id="led_field" class="table_td" style="display:block">
+		<!--div id="summary_desc" style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;">Congratulation!<br>You can now follow information below and connect to extended Wi-Fi network</div-->
+		<div id="summary_desc" style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;text-align:center;">You can turn on/off LED by touching ASUS logo.</div>
+		<div id="summary_led" style="margin:15px 0 0 46px;">
+			<div class="led_intro" style="height:588px;width:614px;background-position:center;margin:36px auto 0;"></div>
+			<div style="text-align:center;margin:31px 0">
+				<div style="width:314px;height:88px;border-radius:4px;color:#FFF;background-color:#007AFF;border:1px solid #007AFF;font-size:2.25em;margin:auto;line-height:88px;" onclick="final_summary();">NEXT</div>
 			</div>
 		</div>
+		<div id="summary_main"  style="margin-bottom:120px;display:none">
+			<div id="summary_2g_field" style="margin:15px 0 0 46px;" class="wireless_field">
+				<div style="font-family:Helvetica LT W10 Bold,Arial;font-size:1.5em;color:#B8D8FF;padding:21px 0 15px;border-bottom:1px solid #DBDBDB">Wireless - 2.4 GHz</div>
+				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0">Network Name (SSID)</div>
+				<div id="summary_wl0_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #DBDBDB"></div>
+				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0;">Network Key</div>
+				<div id="summary_wl0_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #DBDBDB"></div>
+			</div>
+			<div id="summary_5g_field" style="margin:15px 0 0 46px;" class="wireless_field wireless_field_5g">
+				<div style="font-family:Helvetica LT W10 Bold,Arial;font-size:1.5em;color:#B8D8FF;padding:21px 0 15px;border-bottom:1px solid #DBDBDB">Wireless - 5 GHz</div>
+				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0">Network Name (SSID)</div>
+				<div id="summary_wl1_ssid" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #DBDBDB"></div>
+				<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.375em;color:#999;padding:21px 0 22px 0;">Network Key</div>
+				<div id="summary_wl1_key" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#007AFF;padding-bottom:24px;border-bottom:1px solid #DBDBDB"></div>
+			</div>
+		</div>
+		
+
 	</div>
-	<!--div style="position:fixed;bottom:0;width:100%;height:102px;background:rgb(34,34,34);border-top:1px solid #333;z-index:2;">
-		<table style="width:100%;">
-			<tr style="height:98px;text-align:center">
-				<td style="width:100%">
-					<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#7E8593">CLOSE</div>
-				</td>
-			</tr>
-		</table>
-	</div-->	
 </div>
 
 <!--Manual Input P-AP-->
@@ -1912,20 +2346,16 @@ function showLoading(){
 		<div style="font-size:32px">Input</div>
 	</div>
 	<div class="table_td">
-		<div style="font-family:Helvetica,Arial;font-size:2em;color:#808080;margin:34px 0 0 46px;padding:30px 0;text-align:left;">Please enter the specific Wi-Fi network you would like to extend</div>
+		<div style="font-family:Helvetica,Arial;font-size:2em;color:#FFF;margin:34px 0 0 46px;text-align:left;">Please enter the specific Wi-Fi network you would like to extend</div>
 		<div style="margin:31px 48px 120px 46px;">
 			<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#C3C3C3;padding:19px 0 19px 0">Frequency</div>
 			<div>
-				<select id="pap_manual_band_option">
-					<option value="2g">2.4 GHz</option>
-					<option value="5g">5 GHz</option>
-					
-				</select>
+				<select id="pap_manual_band_option"></select>
 			</div>
 			
 			<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#C3C3C3;padding:19px 0 19px 0">Network Name (SSID)</div>
 			<div style="">
-				<input id="pap_manual_ssid" type="text" style="color:#5e666c;font-size:1.875em;" data-clear-btn="true">
+				<input id="pap_manual_ssid" type="text" maxlength="32" onkeypress="return validator.isString(this, event)" style="color:#DBDBDB;font-size:1.875em;" data-clear-btn="true">
 			</div>
 			
 			<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.5em;color:#C3C3C3;padding:19px 0">Authentication Method</div>
@@ -1952,15 +2382,15 @@ function showLoading(){
 					</table>
 				</div>	
 				<div>
-					<input id="pap_manual_key" type="text" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#9BA7B1;" value="" data-clear-btn="true"></input>
+					<input id="pap_manual_key" type="text" maxlength="64" style="font-family:HelveticaNeueW10-45Ligh,Helvetica,Arial;font-size:1.875em;color:#DBDBDB;" value="" data-clear-btn="true"></input>
 				</div>
 			</div>
 		</div>
 		
 		<!--for desktop-->
 		<div class="footer_desktop" style="color:#FFF;text-align:center;">
-			<div style="display:inline-block;width:300px;border:1px solid #43474B;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick='$("#parentAP_key").val("");$.mobile.changePage("#pap_list", {transition: "fade", changeHash: false, reverse: true});'>CANCEL</div>
-			<div style="display:inline-block;width:300px;border:1px solid #43474B;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick="pap_manual_connect();">CONNECT</div>
+			<div style="display:inline-block;width:300px;border:1px solid #DBDBDB;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;" onclick='$("#parentAP_key").val("");$.mobile.changePage("#pap_list", {transition: "fade", changeHash: false, reverse: true});'>CANCEL</div>
+			<div style="display:inline-block;width:300px;border:1px solid #DBDBDB;border-radius:4px;height:66px;line-height:66px;margin:0 20px;font-size:1.5em;cursor:pointer;background:#007AFF" onclick="pap_manual_connect();">CONNECT</div>
 		</div>
 		
 		<div class="footer_mobile">
@@ -1969,7 +2399,7 @@ function showLoading(){
 					<td style="width:50%" onclick='$("#parentAP_key").val("");$.mobile.changePage("#pap_list", {transition: "fade", changeHash: false, reverse: true});'>
 						<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#7E8593" >CANCEL</div>
 					</td>
-					<td style="width:50%">
+					<td style="width:50%;background:#007AFF">
 						<div style="font-family:HelveticaNeueW10-45Ligh,Helvetica W01 Light,Arial;font-size:1.875em;color:#FFF;border-left:1px solid #333;" onclick="pap_manual_connect();">CONNECT</div>
 					</td>
 				</tr>
@@ -1982,13 +2412,12 @@ function showLoading(){
 
 <form method="post" name="form" action="start_apply.htm" target="hidden_frame">
 <!-- submit needed -->
-<!--input type="hidden" name="qis_form" value="1"-->
 <input type="hidden" name="current_page" value="QIS_wizard.htm">
 <input type="hidden" name="next_page" value="QIS_wizard.htm">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="reboot">
 <input type="hidden" name="action_wait" value="3">
-<!--input type="hidden" name="qis_apply" value="0"-->
+<input type="hidden" name="x_Setting" id="x_Setting" value="1">
 <!-- APCLI -->
 <input type="hidden" name="wlc_band" value="0">
 <input type="hidden" name="wlc_ssid" value="<% nvram_get("wlc_ssid"); %>">
@@ -1999,118 +2428,79 @@ function showLoading(){
 <input type="hidden" name="wlc_wpa_psk" value="<% nvram_get("wlc_wpa_psk"); %>">
 <input type="hidden" name="wlc_psta" value="<% nvram_get("wlc_psta"); %>">
 <input type="hidden" name="wlc_express" value="<% nvram_get("wlc_express"); %>">
-
 <input type="hidden" name="wlc0_ssid" value="<% nvram_get("wlc0_ssid"); %>">
-<!--input type="hidden" name="wlc0_bssid" value=""-->
 <input type="hidden" name="wlc0_auth_mode" value="<% nvram_get("wlc0_auth_mode"); %>">
-<!--input type="hidden" name="wlc0_wep_x" value="0"-->
-<!--input type="hidden" name="wlc0_wpa_mode" value="2"-->
 <input type="hidden" name="wlc0_crypto" value="<% nvram_get("wlc0_crypto"); %>">
-<!--input type="hidden" name="wlc0_encryption" value="AES"-->
 <input type="hidden" name="wlc0_wpa_psk" value="<% nvram_get("wlc0_wpa_psk"); %>">
 <input type="hidden" name="wlc0_key" value="1">
-<!--input type="hidden" name="wlc0_key_type" value="0"-->
 <input type="hidden" name="wlc0_key1" value="">
 <input type="hidden" name="wlc0_key2" value="">
 <input type="hidden" name="wlc0_key3" value="">
 <input type="hidden" name="wlc0_key4" value="">
-<!--input type="hidden" name="wlc0_check_ha" value="0"-->
 <input type="hidden" name="wlc0_band" value="0">
 <input type="hidden" name="wlc0_wep" value="0">
 <input type="hidden" name="wlc1_ssid" value="<% nvram_get("wlc1_ssid"); %>">
-<!--input type="hidden" name="wlc1_bssid" value=""-->
 <input type="hidden" name="wlc1_auth_mode" value="<% nvram_get("wlc1_auth_mode"); %>">
-<!--input type="hidden" name="wlc1_wep_x" value="0"-->
-<!--input type="hidden" name="wlc1_wpa_mode" value="2"-->
 <input type="hidden" name="wlc1_crypto" value="<% nvram_get("wlc1_crypto"); %>">
-<!--input type="hidden" name="wlc1_encryption" value="AES"-->
 <input type="hidden" name="wlc1_wpa_psk" value="<% nvram_get("wlc1_wpa_psk"); %>">
 <input type="hidden" name="wlc1_key" value="1">
-<!--input type="hidden" name="wlc1_key_type" value="0"-->
 <input type="hidden" name="wlc1_key1" value="">
 <input type="hidden" name="wlc1_key2" value="">
 <input type="hidden" name="wlc1_key3" value="">
 <input type="hidden" name="wlc1_key4" value="">
-<!--input type="hidden" name="wlc1_check_ha" value="0"-->
 <input type="hidden" name="wlc1_band" value="1">
 <input type="hidden" name="wlc1_wep" value="0">
-
-<!-- Enterprise -->
-<!--input type="hidden" name="security_infra" value=""-->
-<!--input type="hidden" name="cert_auth_type_from_wpa" value="">
-<input type="hidden" name="cert_tunnel_auth_peap" value="">
-<input type="hidden" name="cert_tunnel_auth_ttls" value="">
-<input type="hidden" name="cert_id" value="">
-<input type="hidden" name="cert_password" value=""-->
 <!-- Wireless -->
 <input type="hidden" name="wl0_ssid" value="<% nvram_get("wl0_ssid"); %>">
 <input type="hidden" name="wl0_wpa_psk" value="<% nvram_get("wl0_wpa_psk"); %>">
-<!--input type="hidden" name="wl0_auth_mode" value="psk"-->
 <input type="hidden" name="wl0_wep_x" value="<% nvram_get("wl0_wep_x"); %>">
-<!--input type="hidden" name="wl0_wpa_mode" value="0"-->
 <input type="hidden" name="wl0_crypto" value="<% nvram_get("wl0_crypto"); %>">
 <input type="hidden" name="wl0_nmode_x" value="<% nvram_get("wl0_nmode_x"); %>">
 <input type="hidden" name="wl0_key" value="1">
-<!--input type="hidden" name="wl0_key_type" value="0"-->
 <input type="hidden" name="wl0_key1" value="">
 <input type="hidden" name="wl0_key2" value="">
 <input type="hidden" name="wl0_key3" value="">
 <input type="hidden" name="wl0_key4" value="">
 <input type="hidden" name="wl0_channel" value="<% nvram_get("wl0_channel"); %>">
 <input type="hidden" name="wl0_auth_mode_x" value="<% nvram_get("wl0_auth_mode_x"); %>">
-
+<input type="hidden" name="wl0_hide_pap" value="<% nvram_get("wl0_hide_pap"); %>">
 <input type="hidden" name="wl1_ssid" value="<% nvram_get("wl1_ssid"); %>">
 <input type="hidden" name="wl1_wpa_psk" value="<% nvram_get("wl1_wpa_psk"); %>">
-<!--input type="hidden" name="wl1_auth_mode" value="psk"-->
 <input type="hidden" name="wl1_wep_x" value="<% nvram_get("wl1_wep_x"); %>">
-<!--input type="hidden" name="wl1_wpa_mode" value="0"-->
 <input type="hidden" name="wl1_crypto" value="<% nvram_get("wl1_crypto"); %>">
 <input type="hidden" name="wl1_nmode_x" value="<% nvram_get("wl1_nmode_x"); %>">
 <input type="hidden" name="wl1_key" value="1">
-<!--input type="hidden" name="wl1_key_type" value="0"-->
 <input type="hidden" name="wl1_key1" value="">
 <input type="hidden" name="wl1_key2" value="">
 <input type="hidden" name="wl1_key3" value="">
 <input type="hidden" name="wl1_key4" value="">
 <input type="hidden" name="wl1_channel" value="<% nvram_get("wl1_channel"); %>">
 <input type="hidden" name="wl1_auth_mode_x" value="<% nvram_get("wl1_auth_mode_x"); %>">
-<!-- detect -->
-<input type="hidden" name="wan_proto" value="<% nvram_get("wan_proto"); %>">
-<!-- internet IP -->
-<input type="hidden" name="wan_dhcpenable_x" value="<% nvram_get("wan_dhcpenable_x"); %>">
-<input type="hidden" name="wan_ipaddr_x" value="<% nvram_get("wan_ipaddr_x"); %>">
-<input type="hidden" name="wan_netmask_x" value="<% nvram_get("wan_netmask_x"); %>">
-<input type="hidden" name="wan_gateway_x" value="<% nvram_get("wan_gateway_x"); %>">
-<input type="hidden" name="wan_heartbeat_x" value="<% nvram_get("wan_heartbeat_x"); %>">
-<input type="hidden" name="wan_dnsenable_x" value="<% nvram_get("wan_dnsenable_x"); %>">
-<input type="hidden" name="wan_dns1_x" value="<% nvram_get("wan_dns1_x"); %>">
-<input type="hidden" name="wan_dns2_x" value="<% nvram_get("wan_dns2_x"); %>">
-<!--input type="hidden" name="lan_proto_x" value="<% nvram_get("lan_proto_x"); %>"-->
+<input type="hidden" name="wl1_hide_pap" value="<% nvram_get("wl1_hide_pap"); %>">
+<!-- LAN -->
 <input type="hidden" name="lan_ipaddr" value="<% nvram_get("lan_ipaddr"); %>">
 <input type="hidden" name="lan_netmask" value="<% nvram_get("lan_netmask"); %>">
 <input type="hidden" name="lan_gateway" value="<% nvram_get("lan_gateway"); %>">
 <input type="hidden" name="lan_proto" value="<% nvram_get("lan_proto"); %>">
-<input type="hidden" name="lan_dnsenable_x" value="<% nvram_get("lan_dnsenable_x"); %>" disabled>
-<!-- internet ISP -->
-<input type="hidden" name="wan_hostname" value="<% nvram_get("wan_hostname"); %>">
-<input type="hidden" name="wan_hwaddr" value="<% nvram_get("wan_hwaddr"); %>">
-<!-- internet Account -->
-<input type="hidden" name="wan_pppoe_username" value="<% nvram_get("wan_pppoe_username"); %>">
-<input type="hidden" name="wan_pppoe_passwd" value="<% nvram_get("wan_pppoe_passwd"); %>">
-<!-- system -->
+<input type="hidden" name="lan_dnsenable_x" value="<% nvram_get("lan_dnsenable_x"); %>">
+<input type="hidden" name="lan_dns1_x" value="<% nvram_get("lan_dns1_x"); %>">
+<input type="hidden" name="lan_dns2_x" value="<% nvram_get("lan_dns2_x"); %>">
+<!-- System -->
 <input type="hidden" name="productid" value="<% nvram_get("productid"); %>">
-<input type="hidden" name="http_username" value="<% nvram_get("http_username"); %>">
-<input type="hidden" name="http_passwd" value="<% nvram_get("http_passwd"); %>">
+<input type="hidden" name="http_username" value="" disabled>
+<input type="hidden" name="http_passwd" value="" disabled>
 <input type="hidden" name="sw_mode" value="<% nvram_get("sw_mode"); %>">
-<!--input type="hidden" name="re_expressway" value="<% nvram_get("re_expressway"); %>"-->
-<!--input type="hidden" name="re_mediabridge" value="<% nvram_get("re_mediabridge"); %>"-->
 <input type="hidden" name="cur_freq" value="<% nvram_get("cur_freq"); %>">
 <input type="hidden" name="re_wifipxy" value="<% nvram_get("re_wifipxy"); %>">
-<div style="display:none">
-<input id="upload_setting_profile" type="file" name="file" class="input" style="color:#FFCC00;" onchange="uploadSetting();">
-</div>
-</form>
+<!-- timezone -->
+<input type="hidden" name="time_zone" value="<% nvram_get("time_zone"); %>" disabled>
+<input type="hidden" name="time_zone_dst" value="<% nvram_get("time_zone_dst"); %>" disabled>
 
+<div style="display:none">
+	<input id="upload_setting_profile" type="file" name="file" class="input" style="color:#FFCC00;" onchange="uploadSetting();">
+</div>
+
+</form>
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="titleForm" id="titleForm" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="next_page" value="">
@@ -2122,7 +2512,6 @@ function showLoading(){
 <input type="hidden" name="wl_subunit" value="-1" disabled="">
 <input type="hidden" name="preferred_lang" value="EN">
 <input type="hidden" name="flag" value="">
-<input type="hidden" name="wan_unit" value="">
 </form>
 <form method="post" name="wlScan_form" action="start_apply2.htm" target="hidden_frame">
 <input type="hidden" name="flag" value="sitesurvey">

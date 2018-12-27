@@ -1,0 +1,309 @@
+QUICKSEC_FASTPATH ?=
+
+QUICKSEC_HWACCEL ?=
+
+obj-m := quicksec.o
+
+quicksec-y := \
+    obj/interceptor/linux/linux_debug.o \
+    obj/interceptor/linux/linux_hook_magic.o \
+    obj/interceptor/linux/linux_iface.o \
+    obj/interceptor/linux/linux_ip_glue.o \
+    obj/interceptor/linux/linux_ipm.o \
+    obj/interceptor/linux/linux_kernel_alloc.o \
+    obj/interceptor/linux/linux_main.o \
+    obj/interceptor/linux/linux_misc.o \
+    obj/interceptor/linux/linux_mutex.o \
+    obj/interceptor/linux/linux_packet.o \
+    obj/interceptor/linux/linux_procfs.o \
+    obj/interceptor/linux/linux_route.o \
+    obj/interceptor/linux/linux_timeout.o \
+    obj/interceptor/linux/linux_virtual_adapter.o \
+    obj/ipsec/quicksec/engine/engine_alloc.o \
+    obj/ipsec/quicksec/engine/engine_arp.o \
+    obj/ipsec/quicksec/engine/engine_audit.o \
+    obj/ipsec/quicksec/engine/engine_audit_pkt.o \
+    obj/ipsec/quicksec/engine/engine_flow_id.o \
+    obj/ipsec/quicksec/engine/engine_flows.o \
+    obj/ipsec/quicksec/engine/engine_icmp.o \
+    obj/ipsec/quicksec/engine/engine_init.o \
+    obj/ipsec/quicksec/engine/engine_interfaces.o \
+    obj/ipsec/quicksec/engine/engine_mediatypes.o \
+    obj/ipsec/quicksec/engine/engine_nat.o \
+    obj/ipsec/quicksec/engine/engine_natt_keepalive.o \
+    obj/ipsec/quicksec/engine/engine_next_hop.o \
+    obj/ipsec/quicksec/engine/engine_packet_handler.o \
+    obj/ipsec/quicksec/engine/engine_pm_api_engine.o \
+    obj/ipsec/quicksec/engine/engine_pm_api_tcp_encaps.o \
+    obj/ipsec/quicksec/engine/engine_pme.o \
+    obj/ipsec/quicksec/engine/engine_pmtu.o \
+    obj/ipsec/quicksec/engine/engine_random.o \
+    obj/ipsec/quicksec/engine/engine_rate_limit.o \
+    obj/ipsec/quicksec/engine/engine_route.o \
+    obj/ipsec/quicksec/engine/engine_rule_execute.o \
+    obj/ipsec/quicksec/engine/engine_rule_lookup.o \
+    obj/ipsec/quicksec/engine/engine_rule_lookup_list.o \
+    obj/ipsec/quicksec/engine/engine_rule_lookup_tree.o \
+    obj/ipsec/quicksec/engine/engine_rules.o \
+    obj/ipsec/quicksec/engine/engine_tcp.o \
+    obj/ipsec/quicksec/engine/engine_tcp_rst.o \
+    obj/ipsec/quicksec/engine/engine_timeout.o \
+    obj/ipsec/quicksec/engine/engine_transform.o \
+    obj/ipsec/quicksec/engine/engine_trigger.o \
+    obj/ipsec/quicksec/engine/engine_udp.o \
+    obj/ipsec/util/ip_cksum.o \
+    obj/ipsec/util/ip_cksum_packet.o \
+    obj/ipsec/util/virtual_adapter_arp.o \
+    obj/ipsec/util/virtual_adapter_misc.o \
+    obj/ipsec/quicksec/engine/engine_pm_api_util.o \
+    obj/ipsec/util/ip_interfaces.o \
+    obj/ipsec/util/virtual_adapter_util.o \
+    obj/interceptor/libkernelutil/kernel_alloc.o \
+    obj/interceptor/libkernelutil/kernel_encode.o \
+    obj/interceptor/libkernelutil/packet_utils.o \
+    obj/sshmath/sshmp-xuint.o \
+    obj/sshaudit/sshaudit.o \
+    obj/sshcore/sshdebug.o \
+    obj/sshcore/sshenum.o \
+    obj/sshcore/sshfatal.o \
+    obj/sshcore/sshmatch.o \
+    obj/sshcore/sshmemcmp.o \
+    obj/sshcore/sshrand.o \
+    obj/sshcore/sshsnprintf.o \
+    obj/sshcore/sshustr.o \
+    obj/sshnet/sshinetbits.o \
+    obj/sshnet/sshinetcalc.o \
+    obj/sshnet/sshinetencode.o \
+    obj/sshnet/sshinetether.o \
+    obj/sshnet/sshinethash.o \
+    obj/sshnet/sshinetmapped.o \
+    obj/sshnet/sshinetmask.o \
+    obj/sshnet/sshinetmerge.o \
+    obj/sshnet/sshinetprint.o \
+    obj/sshnet/sshinetproto.o \
+    obj/sshnet/sshinetrender.o \
+    obj/sshstrutil/sshencodetypes.o \
+    obj/ipsec/quicksec/fastpath/software/engine_fastpath.o \
+    obj/ipsec/quicksec/fastpath/software/engine_fastpath_impl.o \
+    obj/ipsec/quicksec/fastpath/software/engine_fragment.o \
+    obj/ipsec/quicksec/fastpath/software/engine_tcp_encaps.o \
+    obj/ipsec/quicksec/fastpath/software/engine_transform_in.o \
+    obj/ipsec/quicksec/fastpath/software/engine_transform_ipcomp.o \
+    obj/ipsec/quicksec/fastpath/software/engine_transform_nat.o \
+    obj/ipsec/quicksec/fastpath/software/engine_transform_out.o \
+    obj/ipsec/quicksec/fastpath/software/engine_transform_utils.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_alloc.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_flow_id.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_flows.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_fragmagic.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_icmp.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_init.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_mediatypes.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_packet_pullup.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_tcp.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_udp.o \
+    obj/ipsec/quicksec/fastpath/software/fastpath_utils.o \
+    obj/sshcipher/des.o \
+    obj/sshcipher/mode-gcm.o \
+    obj/sshcipher/mode-ccm.o \
+    obj/sshcipher/mscapi-cipher.o \
+    obj/sshcipher/octeon-cipher.o \
+    obj/sshcipher/rijndael.o \
+    obj/sshcryptocore/crypto_init.o \
+    obj/sshhash/hash-oid.o \
+    obj/sshhash/md5.o \
+    obj/sshhash/mscapi-hash.o \
+    obj/sshhash/octeon-hash.o \
+    obj/sshhash/sha.o \
+    obj/sshhash/sha256.o \
+    obj/sshhash/sha512.o \
+    obj/sshmac/hmac.o \
+    obj/sshmac/xcbc-mac.o \
+    obj/zlib/adler32.o \
+    obj/zlib/deflate.o \
+    obj/zlib/infblock.o \
+    obj/zlib/infcodes.o \
+    obj/zlib/inffast.o \
+    obj/zlib/inflate.o \
+    obj/zlib/inftrees.o \
+    obj/zlib/infutil.o \
+    obj/zlib/trees.o \
+    obj/zlib/zutil.o \
+    obj/ipsec/quicksec/fastpath/software/engine_transform_crypto.o
+
+override EXTRA_CFLAGS += \
+    -I$M/obj/. \
+    -I$M/obj/interceptor/include \
+    -I$M/obj/interceptor/libkernelutil \
+    -I$M/obj/ipsec \
+    -I$M/obj/ipsec/hwaccel \
+    -I$M/obj/sshdhcp \
+    -I$M/obj/sshikev2 \
+    -I$M/obj/sshisakmp \
+    -I$M/obj/sshl2tp \
+    -I$M/obj/sshppp \
+    -I$M/obj/ipsec/quicksec \
+    -I$M/obj/ipsec/quicksec/apps \
+    -I$M/obj/ipsec/quicksec/engine \
+    -I$M/obj/ipsec/quicksec/fastpath \
+    -I$M/obj/ipsec/quicksec/fastpath/software \
+    -I$M/obj/ipsec/quicksec/policymanager \
+    -I$M/obj/ipsec/util \
+    -I$M/obj/sshapputil \
+    -I$M/obj/sshasn1 \
+    -I$M/obj/sshcert \
+    -I$M/obj/sshcrypto \
+    -I$M/obj/sshcipher \
+    -I$M/obj/sshcryptocore \
+    -I$M/obj/sshhash \
+    -I$M/obj/sshmac \
+    -I$M/obj/sshpk \
+    -I$M/obj/sshrandom \
+    -I$M/obj/sshcryptoaux \
+    -I$M/obj/ssheap \
+    -I$M/obj/sshenroll \
+    -I$M/obj/sshexternalkey \
+    -I$M/obj/sshhttp \
+    -I$M/obj/sshldap \
+    -I$M/obj/sshmath \
+    -I$M/obj/sshpkcs \
+    -I$M/obj/sshradius \
+    -I$M/obj/sshsim \
+    -I$M/obj/sshtls \
+    -I$M/obj/sshutil \
+    -I$M/obj/sshadt \
+    -I$M/obj/sshaudit \
+    -I$M/obj/sshcore \
+    -I$M/obj/ssheloop \
+    -I$M/obj/sshfsm \
+    -I$M/obj/sshmisc \
+    -I$M/obj/sshnet \
+    -I$M/obj/sshpacketstream \
+    -I$M/obj/sshstream \
+    -I$M/obj/sshstrutil \
+    -I$M/obj/sshsysutil \
+    -I$M/obj/sshtestutil \
+    -I$M/obj/sshvalidator \
+    -I$M/obj/sshxml \
+    -I$M/obj/zlib \
+    -I$M/obj/interceptor/linux \
+    -DSSH_BUILD_IPSEC \
+    -DINTERCEPTOR_HAS_MARK_FUNC \
+    -DINTERCEPTOR_HAS_PACKET_COPYIN \
+    -DINTERCEPTOR_HAS_PACKET_COPYOUT \
+    -DINTERCEPTOR_HAS_PACKET_DETACH \
+    -DINTERCEPTOR_HAS_PLATFORM_INCLUDE \
+    -DINTERCEPTOR_HAS_VIRTUAL_ADAPTERS \
+    -DINTERCEPTOR_PROVIDES_INTERFACE_INFORMATION \
+    -DINTERCEPTOR_PROVIDES_IP_ROUTING \
+    -DINTERCEPTOR_PROVIDES_VIRTUAL_ADAPTERS \
+    -DSSH_LINUX_KBUILD_COMPILATION \
+    -DKERNEL \
+    -D_KERNEL
+
+ifeq ($(DEBUG), 1)
+override EXTRA_CFLAGS += -DDEBUG_LIGHT
+endif
+
+ifeq ($(SERVER), 1)
+override EXTRA_CFLAGS += -DQUICKSEC_DIST_SERVER
+endif
+
+ifeq ($(CLIENT), 1)
+override EXTRA_CFLAGS += -DQUICKSEC_DIST_CLIENT
+endif
+
+ifeq ($(VRF),MONTAVISTA)
+override EXTRA_CFLAGS += -DHAVE_MVL_VRF
+quicksec-y += \
+           obj/interceptor/linux/linux_vrf_montavista.o
+endif
+
+ifeq ($(VRF),WINDRIVER)
+override EXTRA_CFLAGS += -DHAVE_WRL_VRF
+quicksec-y += \
+           obj/interceptor/linux/linux_vrf_windriver.o
+endif
+
+ifeq ($(VRF),)
+quicksec-y += \
+           obj/interceptor/linux/linux_vrf_generic.o
+endif
+
+ifeq ($(CAPTURE),IP)
+override EXTRA_CFLAGS += -DSSH_IPSEC_IP_ONLY_INTERCEPTOR
+endif
+
+ifeq ($(SMALL),1)
+override EXTRA_CFLAGS += -DSSH_IPSEC_SMALL
+endif
+
+ifneq ($(QUICKSEC_HWACCEL),)
+
+quicksec-y += \
+    obj/interceptor/linux/linux_pcihw.o
+
+endif
+
+ifeq ($(QUICKSEC_HWACCEL),)
+
+quicksec-y += \
+    obj/ipsec/hwaccel/none/hwaccel_none.o
+
+endif
+
+ifeq ($(QUICKSEC_HWACCEL),OCF)
+
+quicksec-y += \
+    obj/ipsec/hwaccel/ocf/ocf.o
+
+override EXTRA_CFLAGS += \
+    -DSSH_IPSEC_HWACCEL_CONFIGURED \
+    -DSSH_IPSEC_HWACCEL_NAME=OCF
+
+endif
+
+ifeq ($(QUICKSEC_HWACCEL),SAFENET1742)
+
+quicksec-y += \
+    obj/ipsec/hwaccel/safenet_pe/safenet_la.o \
+    obj/ipsec/hwaccel/safenet_pe/safenet_la_utils.o \
+    obj/ipsec/hwaccel/safenet_pe/safenet_pe_pec.o
+
+override EXTRA_CFLAGS += \
+    -I$M/obj/ipsec/hwaccel/safenet_pe \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR) \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR)/Kit/DMABuf/incl \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR)/Examples/Driver/incl \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR)/Kit/DriverFramework/Basic_Defs_API/incl \
+    -DSAFENET_PE_PLATFORM_1742 \
+    -DSSH_IPSEC_HWACCEL_16_BYTE_PADDING \
+    -DSSH_IPSEC_HWACCEL_CONFIGURED \
+    -DSSH_IPSEC_HWACCEL_NAME=SAFENET_PE_PEC_1742 \
+    -DSSH_IPSEC_HWACCEL_USE_COMBINED_TRANSFORM
+
+endif
+
+ifeq ($(QUICKSEC_HWACCEL),SAFENET1746)
+
+quicksec-y += \
+    obj/ipsec/hwaccel/safenet_pe/safenet_la.o \
+    obj/ipsec/hwaccel/safenet_pe/safenet_la_utils.o \
+    obj/ipsec/hwaccel/safenet_pe/safenet_pe_pec.o
+
+override EXTRA_CFLAGS += \
+    -I$M/obj/ipsec/hwaccel/safenet_pe \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR) \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR)/Kit/DMABuf/incl \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR)/Examples/Driver/incl \
+    -I$(QUICKSEC_HWACCEL_DDK_DIR)/Kit/DriverFramework/Basic_Defs_API/incl \
+    -DSAFENET_PE_PLATFORM_1746 \
+    -DSSH_IPSEC_HWACCEL_16_BYTE_PADDING \
+    -DSSH_IPSEC_HWACCEL_CONFIGURED \
+    -DSSH_IPSEC_HWACCEL_NAME=SAFENET_PE_PEC_1746 \
+    -DSSH_IPSEC_HWACCEL_USE_COMBINED_TRANSFORM
+
+endif
+
+-include $M/Makefile.inc
+-include $M/Makefile.internal

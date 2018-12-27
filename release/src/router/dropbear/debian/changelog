@@ -1,3 +1,130 @@
+dropbear (2016.74-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Thu, 21 Jul 2016 22:51:57 +0800
+
+dropbear (2016.73-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Fri, 18 Mar 2016 22:52:58 +0800
+
+dropbear (2016.72-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Wed, 10 Mar 2016 22:52:58 +0800
+
+dropbear (2015.70-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Thu, 26 Nov 2015 22:52:58 +0800
+
+dropbear (2015.69-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Wed, 25 Nov 2015 22:52:58 +0800
+
+dropbear (2015.68-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Sat, 8 Aug 2015 22:52:58 +0800
+
+dropbear (2015.67-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Wed, 28 Jan 2015 22:53:59 +0800
+
+dropbear (2014.66-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Thu, 23 Oct 2014 22:54:00 +0800
+
+dropbear (2014.65-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Fri, 8 Aug 2014 22:54:00 +0800
+
+dropbear (2014.64-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Sun, 27 Jul 2014 22:54:00 +0800
+
+dropbear (2014.63-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Wed, 19 Feb 2014 22:54:00 +0800
+
+dropbear (2013.62) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Tue, 7 Dec 2013 22:54:00 +0800
+
+dropbear (2013.60-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Wed, 16 Oct 2013 22:54:00 +0800
+
+dropbear (2013.59-0.1) unstable; urgency=low
+
+  * New upstream release.
+  * Build with DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+ -- Matt Johnston <matt@ucc.asn.au>  Fri, 4 Oct 2013 22:54:00 +0800
+
+dropbear (2013.58-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Thu, 18 Apr 2013 22:54:00 +0800
+
+dropbear (2013.57-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Mon, 15 Apr 2013 22:54:00 +0800
+
+dropbear (2013.56-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Thu, 21 Mar 2013 22:54:00 +0800
+
+dropbear (2012.55-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Wed, 22 Feb 2012 22:54:00 +0800
+
+dropbear (2011.54-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Tues, 8 Nov 2011 22:54:00 +0800
+
+dropbear (0.53.1-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Wed, 2 Mar 2011 22:54:00 +0900
+
+dropbear (0.53-0.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matt Johnston <matt@ucc.asn.au>  Thu, 24 Feb 2011 22:54:00 +0900
+
 dropbear (0.52-0.1) unstable; urgency=low
 
   * New upstream release.

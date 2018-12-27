@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup with IKEv1. -->
+<!-- Related: hosta-ikev1-cfgmode-gw.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Shared secret and the identity of the remote IKE peer. -->
+      <remote-secret id-type="email"
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- The cfgmode flag enables the configuration payload
+         client side support. The auto flag establishes the
+         IKEv1 and IPsec SAs automatically when
+         Policy Manager is started. -->
+    <tunnel name="host-to-host" flags="cfgmode auto aggressive-mode">
+      <!-- Local identity sent to the remote IKE peer. -->
+      <identity id-type="email" id="b@ipsec.com">
+        <!-- Local shared secret. -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- The IP address of the CFGMODE sever, from where we
+           get the virtual IP. -->
+      <peer>172.30.4.189</peer>
+      <ike-versions>1</ike-versions>
+    </tunnel>
+
+    <!-- As we do not know which virtual IP address the IRAS is going
+         to assign to us, we don't need the src element. The flag
+         `adjust-local-address' will cause the local traffic selector
+         to be set to the virtual IP address when using IKEv1. With
+         IKEv2 this is negotiated with the gateway and done
+         automatically. We fill the dst element with the known
+         VPN subnets. -->
+    <rule to-tunnel="host-to-host" flags="cfgmode-rules adjust-local-address">
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- A pass rule that handles all the traffic not matching
+         the traffic selectors of any higher precedence rules.
+         Remove this rule if plaintext traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

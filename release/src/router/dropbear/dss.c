@@ -28,7 +28,7 @@
 #include "dss.h"
 #include "buffer.h"
 #include "ssh.h"
-#include "random.h"
+#include "dbrandom.h"
 
 /* Handle DSS (Digital Signature Standard), aka DSA (D.S. Algorithm),
  * operations, such as key reading, signing, verification. Key generation
@@ -37,21 +37,17 @@
  * See FIPS186 or the Handbook of Applied Cryptography for details of the
  * algorithm */
 
-#ifdef DROPBEAR_DSS 
+#if DROPBEAR_DSS 
 
 /* Load a dss key from a buffer, initialising the values.
  * The key will have the same format as buf_put_dss_key.
  * These should be freed with dss_key_free.
  * Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
-int buf_get_dss_pub_key(buffer* buf, dss_key *key) {
+int buf_get_dss_pub_key(buffer* buf, dropbear_dss_key *key) {
 
 	TRACE(("enter buf_get_dss_pub_key"))
 	dropbear_assert(key != NULL);
-	key->p = m_malloc(sizeof(mp_int));
-	key->q = m_malloc(sizeof(mp_int));
-	key->g = m_malloc(sizeof(mp_int));
-	key->y = m_malloc(sizeof(mp_int));
-	m_mp_init_multi(key->p, key->q, key->g, key->y, NULL);
+	m_mp_alloc_init_multi(&key->p, &key->q, &key->g, &key->y, NULL);
 	key->x = NULL;
 
 	buf_incrpos(buf, 4+SSH_SIGNKEY_DSS_LEN); /* int + "ssh-dss" */
@@ -76,7 +72,7 @@ int buf_get_dss_pub_key(buffer* buf, dss_key *key) {
 /* Same as buf_get_dss_pub_key, but reads a private "x" key at the end.
  * Loads a private dss key from a buffer
  * Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
-int buf_get_dss_priv_key(buffer* buf, dss_key *key) {
+int buf_get_dss_priv_key(buffer* buf, dropbear_dss_key *key) {
 
 	int ret = DROPBEAR_FAILURE;
 
@@ -87,8 +83,7 @@ int buf_get_dss_priv_key(buffer* buf, dss_key *key) {
 		return DROPBEAR_FAILURE;
 	}
 
-	key->x = m_malloc(sizeof(mp_int));
-	m_mp_init(key->x);
+	m_mp_alloc_init_multi(&key->x, NULL);
 	ret = buf_getmpint(buf, key->x);
 	if (ret == DROPBEAR_FAILURE) {
 		m_free(key->x);
@@ -99,11 +94,11 @@ int buf_get_dss_priv_key(buffer* buf, dss_key *key) {
 	
 
 /* Clear and free the memory used by a public or private key */
-void dss_key_free(dss_key *key) {
+void dss_key_free(dropbear_dss_key *key) {
 
-	TRACE(("enter dsa_key_free"))
+	TRACE2(("enter dsa_key_free"))
 	if (key == NULL) {
-		TRACE(("enter dsa_key_free: key == NULL"))
+		TRACE2(("enter dsa_key_free: key == NULL"))
 		return;
 	}
 	if (key->p) {
@@ -127,7 +122,7 @@ void dss_key_free(dss_key *key) {
 		m_free(key->x);
 	}
 	m_free(key);
-	TRACE(("leave dsa_key_free"))
+	TRACE2(("leave dsa_key_free"))
 }
 
 /* put the dss public key into the buffer in the required format:
@@ -138,7 +133,7 @@ void dss_key_free(dss_key *key) {
  * mpint	g
  * mpint	y
  */
-void buf_put_dss_pub_key(buffer* buf, dss_key *key) {
+void buf_put_dss_pub_key(buffer* buf, dropbear_dss_key *key) {
 
 	dropbear_assert(key != NULL);
 	buf_putstring(buf, SSH_SIGNKEY_DSS, SSH_SIGNKEY_DSS_LEN);
@@ -150,7 +145,7 @@ void buf_put_dss_pub_key(buffer* buf, dss_key *key) {
 }
 
 /* Same as buf_put_dss_pub_key, but with the private "x" key appended */
-void buf_put_dss_priv_key(buffer* buf, dss_key *key) {
+void buf_put_dss_priv_key(buffer* buf, dropbear_dss_key *key) {
 
 	dropbear_assert(key != NULL);
 	buf_put_dss_pub_key(buf, key);
@@ -158,12 +153,10 @@ void buf_put_dss_priv_key(buffer* buf, dss_key *key) {
 
 }
 
-#ifdef DROPBEAR_SIGNKEY_VERIFY
+#if DROPBEAR_SIGNKEY_VERIFY
 /* Verify a DSS signature (in buf) made on data by the key given. 
  * returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
-int buf_dss_verify(buffer* buf, dss_key *key, const unsigned char* data,
-		unsigned int len) {
-
+int buf_dss_verify(buffer* buf, dropbear_dss_key *key, buffer *data_buf) {
 	unsigned char msghash[SHA1_HASH_SIZE];
 	hash_state hs;
 	int ret = DROPBEAR_FAILURE;
@@ -172,7 +165,7 @@ int buf_dss_verify(buffer* buf, dss_key *key, const unsigned char* data,
 	DEF_MP_INT(val3);
 	DEF_MP_INT(val4);
 	char * string = NULL;
-	int stringlen;
+	unsigned int stringlen;
 
 	TRACE(("enter buf_dss_verify"))
 	dropbear_assert(key != NULL);
@@ -187,13 +180,13 @@ int buf_dss_verify(buffer* buf, dss_key *key, const unsigned char* data,
 
 	/* hash the data */
 	sha1_init(&hs);
-	sha1_process(&hs, data, len);
+	sha1_process(&hs, data_buf->data, data_buf->len);
 	sha1_done(&hs, msghash);
 
 	/* create the signature - s' and r' are the received signatures in buf */
 	/* w = (s')-1 mod q */
 	/* let val1 = s' */
-	bytes_to_mp(&val1, &string[SHA1_HASH_SIZE], SHA1_HASH_SIZE);
+	bytes_to_mp(&val1, (const unsigned char*) &string[SHA1_HASH_SIZE], SHA1_HASH_SIZE);
 
 	if (mp_cmp(&val1, key->q) != MP_LT) {
 		TRACE(("verify failed, s' >= q"))
@@ -215,7 +208,7 @@ int buf_dss_verify(buffer* buf, dss_key *key, const unsigned char* data,
 
 	/* u2 = ((r')w) mod q */
 	/* let val1 = r' */
-	bytes_to_mp(&val1, &string[0], SHA1_HASH_SIZE);
+	bytes_to_mp(&val1, (const unsigned char*) &string[0], SHA1_HASH_SIZE);
 	if (mp_cmp(&val1, key->q) != MP_LT) {
 		TRACE(("verify failed, r' >= q"))
 		goto out;
@@ -258,52 +251,12 @@ out:
 }
 #endif /* DROPBEAR_SIGNKEY_VERIFY */
 
-#ifdef DSS_PROTOK	
-/* convert an unsigned mp into an array of bytes, malloced.
- * This array must be freed after use, len contains the length of the array,
- * if len != NULL */
-static unsigned char* mptobytes(mp_int *mp, int *len) {
-	
-	unsigned char* ret;
-	int size;
-
-	size = mp_unsigned_bin_size(mp);
-	ret = m_malloc(size);
-	if (mp_to_unsigned_bin(mp, ret) != MP_OKAY) {
-		dropbear_exit("mem alloc error");
-	}
-	if (len != NULL) {
-		*len = size;
-	}
-	return ret;
-}
-#endif
-
 /* Sign the data presented with key, writing the signature contents
- * to the buffer
- *
- * When DSS_PROTOK is #defined:
- * The alternate k generation method is based on the method used in PuTTY. 
- * In particular to avoid being vulnerable to attacks using flaws in random
- * generation of k, we use the following:
- *
- * proto_k = SHA512 ( SHA512(x) || SHA160(message) )
- * k = proto_k mod q
- *
- * Now we aren't relying on the random number generation to protect the private
- * key x, which is a long term secret */
-void buf_put_dss_sign(buffer* buf, dss_key *key, const unsigned char* data,
-		unsigned int len) {
-
+ * to the buffer */
+void buf_put_dss_sign(buffer* buf, dropbear_dss_key *key, buffer *data_buf) {
 	unsigned char msghash[SHA1_HASH_SIZE];
 	unsigned int writelen;
 	unsigned int i;
-#ifdef DSS_PROTOK
-	unsigned char privkeyhash[SHA512_HASH_SIZE];
-	unsigned char *privkeytmp;
-	unsigned char proto_k[SHA512_HASH_SIZE];
-	DEF_MP_INT(dss_protok);
-#endif
 	DEF_MP_INT(dss_k);
 	DEF_MP_INT(dss_m);
 	DEF_MP_INT(dss_temp1);
@@ -317,68 +270,44 @@ void buf_put_dss_sign(buffer* buf, dss_key *key, const unsigned char* data,
 	
 	/* hash the data */
 	sha1_init(&hs);
-	sha1_process(&hs, data, len);
+	sha1_process(&hs, data_buf->data, data_buf->len);
 	sha1_done(&hs, msghash);
 
 	m_mp_init_multi(&dss_k, &dss_temp1, &dss_temp2, &dss_r, &dss_s,
 			&dss_m, NULL);
-#ifdef DSS_PROTOK	
-	/* hash the privkey */
-	privkeytmp = mptobytes(key->x, &i);
-	sha512_init(&hs);
-	sha512_process(&hs, "the quick brown fox jumped over the lazy dog", 44);
-	sha512_process(&hs, privkeytmp, i);
-	sha512_done(&hs, privkeyhash);
-	m_burn(privkeytmp, i);
-	m_free(privkeytmp);
-
-	/* calculate proto_k */
-	sha512_init(&hs);
-	sha512_process(&hs, privkeyhash, SHA512_HASH_SIZE);
-	sha512_process(&hs, msghash, SHA1_HASH_SIZE);
-	sha512_done(&hs, proto_k);
-
-	/* generate k */
-	m_mp_init(&dss_protok);
-	bytes_to_mp(&dss_protok, proto_k, SHA512_HASH_SIZE);
-	if (mp_mod(&dss_protok, key->q, &dss_k) != MP_OKAY) {
-		dropbear_exit("dss error");
-	}
-	mp_clear(&dss_protok);
-	m_burn(proto_k, SHA512_HASH_SIZE);
-#else /* DSS_PROTOK not defined*/
+	/* the random number generator's input has included the private key which
+	 * avoids DSS's problem of private key exposure due to low entropy */
 	gen_random_mpint(key->q, &dss_k);
-#endif
 
 	/* now generate the actual signature */
 	bytes_to_mp(&dss_m, msghash, SHA1_HASH_SIZE);
 
 	/* g^k mod p */
 	if (mp_exptmod(key->g, &dss_k, key->p, &dss_temp1) !=  MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 	/* r = (g^k mod p) mod q */
 	if (mp_mod(&dss_temp1, key->q, &dss_r) != MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 
 	/* x*r mod q */
 	if (mp_mulmod(&dss_r, key->x, key->q, &dss_temp1) != MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 	/* (SHA1(M) + xr) mod q) */
 	if (mp_addmod(&dss_m, &dss_temp1, key->q, &dss_temp2) != MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 	
 	/* (k^-1) mod q */
 	if (mp_invmod(&dss_k, key->q, &dss_temp1) != MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 
 	/* s = (k^-1(SHA1(M) + xr)) mod q */
 	if (mp_mulmod(&dss_temp1, &dss_temp2, key->q, &dss_s) != MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 
 	buf_putstring(buf, SSH_SIGNKEY_DSS, SSH_SIGNKEY_DSS_LEN);
@@ -392,7 +321,7 @@ void buf_put_dss_sign(buffer* buf, dss_key *key, const unsigned char* data,
 	}
 	if (mp_to_unsigned_bin(&dss_r, buf_getwriteptr(buf, writelen)) 
 			!= MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 	mp_clear(&dss_r);
 	buf_incrwritepos(buf, writelen);
@@ -405,7 +334,7 @@ void buf_put_dss_sign(buffer* buf, dss_key *key, const unsigned char* data,
 	}
 	if (mp_to_unsigned_bin(&dss_s, buf_getwriteptr(buf, writelen)) 
 			!= MP_OKAY) {
-		dropbear_exit("dss error");
+		dropbear_exit("DSS error");
 	}
 	mp_clear(&dss_s);
 	buf_incrwritepos(buf, writelen);

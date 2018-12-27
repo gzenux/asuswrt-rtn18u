@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup with IPsec over TCP encapsulation.
+     Iras acting as server, irac as client. -->
+<!-- Related: hostb-cp-irac-tcpencap.xml -->
+<quicksec>
+  <params>
+    <!-- IRAS gives virtual IP address from range defined
+         in address element. Subnet element defines which subnet
+         is accessible through the gateway. More than one subnet
+         element can be defined. -->
+    <address-pool>
+      <subnet>192.168.100.0/24</subnet>
+      <address netmask="255.255.255.0">192.168.200.3-192.168.200.254</address>
+    </address-pool>
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+    <!-- IPSec over TCP encapsulation
+
+         Attributes:
+         local-port      Local TCP port to use. Gateway must define this.
+         peer-port       Remote TCP port to use. If defined, gateway will 
+                         allow incoming TCP connections only from this port.
+         ike-port        UDP port for IKE, optional.
+
+         Elements:
+         local-ip        Local IP address to use, optional. If not defined, 
+                         gateway will listen on all local IP addresses.
+         peer            Peer IP address range, optional. Id defined, gateway 
+                         will allow incoming TCP connections only from this
+                         peer address range. Only one peer range is allowed. 
+                         -->
+    <tcpencap local-port="443"/>
+  </params>
+
+  <policy>
+
+      <tunnel name="remote-access" flags="allow-cfgmode
+                                          aggressive-mode
+                                          proxy-arp
+                                          dont-initiate">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="a@ipsec.com">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- IPsec over TCP works now with both IKEv1 and IKEv2.-->
+      <ike-versions>1 2</ike-versions>
+    </tunnel>
+
+    <!-- Allow traffic from the remote access clients. -->
+    <rule from-tunnel="remote-access"/>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

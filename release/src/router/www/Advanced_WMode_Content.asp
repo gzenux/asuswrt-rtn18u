@@ -105,8 +105,6 @@ function initial(){
 	}
 
 	wl_bwch_hint();
-	if(Qcawifi_support)
-		wl_vht_hint();
 	setTimeout("wds_scan();", 500);
 }
 
@@ -200,11 +198,6 @@ function applyRule(){
 	if(document.form.wl_mode_x.value == "0"){
 		inputRCtrl1(document.form.wl_wdsapply_x, 1);
 		inputRCtrl2(document.form.wl_wdsapply_x, 1);
-		if(based_modelid == "RT-AC55U" || based_modelid == "RT-AC55UHP" || based_modelid == "4G-AC55U")
-		{
-			inputRCtrl1(document.form.wl_wds_vht, 1);
-			inputRCtrl2(document.form.wl_wds_vht, 1);
-		}   
 	}
 	
 	if(document.form.wl_mode_x.value == "1"){
@@ -265,7 +258,7 @@ function showLANIPList(){
 	var show_title = "";
 	if(wds_aplist != ""){
 		for(var i = 0; i < wds_aplist.length ; i++){
-			wds_aplist[i][0] = decodeURIComponent(wds_aplist[i][0]);
+			wds_aplist[i][0] = htmlEnDeCode.htmlEncode(decodeURIComponent(wds_aplist[i][0]));
 			if(wds_aplist[i][0] && wds_aplist[i][0].length > 12)
 				show_name = wds_aplist[i][0].substring(0, 10) + "...";
 			else
@@ -346,14 +339,6 @@ function wl_bwch_hint(){
 		document.getElementById("wl_bw_hint").style.display=(document.form.wl_bw.value == "1") ? "" : "none";
 		document.getElementById("wl_ch_hint").style.display=(document.form.wl_channel.value == "0") ? "" : "none";
 	}
-}
-
-function wl_vht_hint(){ 
-	var u='<% nvram_get("wl_unit"); %>';	
-   	if(u=='1')
-	   document.getElementById("wlvht").style.display ="";  
-   	else
-	   document.getElementById("wlvht").style.display ="none";  
 }
 
 </script>
@@ -467,13 +452,6 @@ function wl_vht_hint(){
 												</select>
 											</td>
 										</tr>
-										<tr id="wlvht" class="wlvht" style="display:none;">
-											<th>VHT MODE</th>
-											<td>
-												<input type="radio" value="1" name="wl_wds_vht" class="input" <% nvram_match("wl_wds_vht", "1", "checked"); %>><#checkbox_Yes#>
-												<input type="radio" value="0" name="wl_wds_vht" class="input" <% nvram_match("wl_wds_vht", "0", "checked"); %>><#checkbox_No#>
-											</td>
-										</tr>	
 										<tr>
 											<th align="right">
 												<a class="hintstyle" href="javascript:void(0);"  onClick="openHint(1,3);">

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup with IPsec over TCP encapsulation.
+     Iras acting as server, irac as client. -->
+<!-- Related: hosta-cp-iras-tcpencap.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Shared secret and the identity of the remote IKE peer. -->
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- The `cfgmode' flag enables the configuration payload
+         client side support. The auto flag establishes the
+         IKE and IPsec SAs automatically when 
+         Policy Manager is started. 
+
+         The `disable-natt' flag is for disabling switching
+         to RFC3948 UDP encapsulation of IPsec packets. -->
+    <tunnel name="host-to-host" flags="cfgmode disable-natt
+                                       auto aggressive-mode">
+      <!-- Local identity sent to the remote IKE peer. -->
+      <identity id-type="email" id="b@ipsec.com">
+        <!-- Local shared secret. -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- The IP address of the IRAS, from where we
+           get the virtual IP. -->
+      <peer>172.30.4.189</peer>
+      <!-- You can request a specific address to be
+           assigned to you by the IRAS. The IRAS can
+           ignore this message, or if the address is
+           already assigned to some other peer, give
+           a different address. This is an optional
+           element. To enable it, uncomment the element
+           below. -->
+      <!-- <cfgmode-address>192.168.200.123</cfgmode-address> -->
+
+      <!-- IPSec over TCP encapsulation initiator configuration is embedded
+           in the tunnel.
+           Attributes:
+           local-port      Local TCP port to use, optional. If not defined the
+           local port is chosen randomly.
+           peer-port       Remote TCP port to use. Client must define this.
+           ike-port        UDP port for IKE. Optional. -->
+      <tcpencap peer-port="443"/>
+
+      <!-- IPsec over TCP works now with both IKEv1 and IKEv2. -->
+      <ike-versions>1 2</ike-versions>
+    </tunnel>
+
+    <!-- As we do not know which virtual IP address the IRAS
+         is going to assign to us, we don't need the src 
+         element. In this case we know the subnets that are
+         going to be assigned by the IRAS so we fill the
+         dst element with the known subnets. -->
+    <rule to-tunnel="host-to-host">
+      <dst>ipv4(192.168.100.0/24)</dst>
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- A pass rule that handles all the traffic not matching
+         the traffic selectors of any higher precedence rules.
+         Remove this rule if plaintext traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

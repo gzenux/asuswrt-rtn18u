@@ -112,6 +112,8 @@ var ciphersarray = [
 		["SEED-CBC"]
 ];
 
+var wans_mode ='<% nvram_get("wans_mode"); %>';
+
 function initial(){
 	var currentcipher = "<% nvram_get("vpn_server_cipher"); %>";
 
@@ -123,18 +125,6 @@ function initial(){
 	}
 
 	formShowAndHide(vpn_server_enable, "openvpn");
-	//check DUT is belong to private IP.
-
-	if(realip_support){
-		if(!external_ip){
-			document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
-			document.getElementById("privateIP_notes").style.display = "";			
-		}
-	}
-	else if(validator.isPrivateIP(wanlink_ipaddr())){	
-		document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
-		document.getElementById("privateIP_notes").style.display = "";
-	}
 
 	/*Advanced Setting start */
 	allowed_openvpn_clientlist();
@@ -151,6 +141,52 @@ function initial(){
 	setRadioValue(document.form.vpn_server_x_dns, ((document.form.vpn_serverx_dns.value.indexOf(''+(openvpn_unit)) >= 0) ? "1" : "0"));
 	update_visibility();
 	/*Advanced Setting end */
+
+	//check DUT is belong to private IP.
+	setTimeout("show_warning_message();", 100);
+}
+
+var MAX_RETRY_NUM = 5;
+var external_ip_retry_cnt = MAX_RETRY_NUM;
+function show_warning_message(){
+	if(realip_support && wans_mode != "lb"){
+		if(realip_state != "2" && external_ip_retry_cnt > 0){
+			if( external_ip_retry_cnt == MAX_RETRY_NUM )
+				get_real_ip();
+			else
+				setTimeout("get_real_ip();", 3000);
+		}
+		else if(realip_state != "2"){
+			if(validator.isPrivateIP(wanlink_ipaddr())){
+				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
+				document.getElementById("privateIP_notes").style.display = "";
+			}
+		}
+		else{
+			if(!external_ip){
+				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
+				document.getElementById("privateIP_notes").style.display = "";
+			}
+		}
+	}
+	else if(validator.isPrivateIP(wanlink_ipaddr())){
+		document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>"
+		document.getElementById("privateIP_notes").style.display = "";
+	}
+}
+
+function get_real_ip(){
+	$.ajax({
+		url: 'get_real_ip.asp',
+		dataType: 'script',
+		error: function(xhr){
+			get_real_ip();
+		},
+		success: function(response){
+			external_ip_retry_cnt--;
+			show_warning_message();
+		}
+	});
 }
 
 function formShowAndHide(server_enable, server_type) {
@@ -211,6 +247,21 @@ function openvpnd_connected_status(){
 }
 
 function applyRule(){
+	var validForm = function() {
+		if(!validator.numberRange(document.form.vpn_server_port, 1, 65535)) {
+			return false;
+		}
+		if(!validator.numberRange(document.form.vpn_server_poll, 0, 1440)) {
+			return false;
+		}
+		if(!validator.numberRange(document.form.vpn_server_reneg, -1, 2147483647)) {
+			return false;
+		}
+		return true;
+	};
+	if(!validForm())
+		return false;
+
 	var confirmFlag = true;
 	//if(document.form.VPNServer_mode.value != "openvpn" && vpn_server_enable == '1') {
 	//	 confirmFlag = confirm("<#vpn_switch_confirm#>");
@@ -466,12 +517,16 @@ function applyRule(){
 					document.form.vpn_serverx_dns.value = tmp_value;
 				}
 			}();
-			/* Advanced setting end */	
+			/* Advanced setting end */
+			if (enable_samba == 1)
+				document.form.action_script.value += ";restart_samba";
 		}
 		else {		//disable server
 			document.form.action_script.value = "stop_openvpnd";
+			if (enable_samba == 1)
+				document.form.action_script.value += ";restart_samba";
 			document.form.vpn_serverx_clientlist.value = get_group_value();
-		}	
+		}
 		
 		showLoading();
 		document.form.submit();
@@ -518,7 +573,7 @@ function addRow_Group(upper){
 	var password_obj = document.form.vpn_server_clientlist_password;
 	var rule_num = document.getElementById("openvpnd_clientlist_table").rows.length;
 	var item_num = document.getElementById("openvpnd_clientlist_table").rows[0].cells.length;		
-	if(rule_num >= upper + 1) {
+	if(rule_num >= upper) {
 		alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
 		return false;	
 	}
@@ -1333,7 +1388,7 @@ function update_vpn_client_state() {
 											<tr>
 												<th><#WLANAuthentication11a_ExAuthDBPortNumber_itemname#></th>
 												<td>
-													<input type="text" maxlength="5" class="input_6_table" name="vpn_server_port" onKeyPress="return validator.isNumber(this,event);" onblur="validator.numberRange(this, 1, 65535)" value="<% nvram_get("vpn_server_port"); %>" autocorrect="off" autocapitalize="off">
+													<input type="text" maxlength="5" class="input_6_table" name="vpn_server_port" onKeyPress="return validator.isNumber(this,event);" value="<% nvram_get("vpn_server_port"); %>" autocorrect="off" autocapitalize="off">
 													<span style="color:#FC0">(<#Setting_factorydefault_value#> : 1194)</span>
 												</td>
 											</tr>
@@ -1410,7 +1465,7 @@ function update_vpn_client_state() {
 											<tr>
 												<th><#vpn_openvpn_PollInterval#></th>
 												<td>
-													<input type="text" maxlength="4" class="input_6_table" name="vpn_server_poll" onKeyPress="return validator.isNumber(this,event);" onblur="validator.numberRange(this, 0, 1440)" value="<% nvram_get("vpn_server_poll"); %>" autocorrect="off" autocapitalize="off"> <#Minute#>
+													<input type="text" maxlength="4" class="input_6_table" name="vpn_server_poll" onKeyPress="return validator.isNumber(this,event);" value="<% nvram_get("vpn_server_poll"); %>" autocorrect="off" autocapitalize="off"> <#Minute#>
 													<span style="color:#FC0">(<#zero_disable#>)</span>
 												</td>
 											</tr>
@@ -1462,7 +1517,7 @@ function update_vpn_client_state() {
 											<tr id="server_reneg">
 												<th><#vpn_openvpn_TLSTime#></th>
 												<td>
-													<input type="text" maxlength="5" class="input_6_table" name="vpn_server_reneg" onblur="validator.range(this, -1, 2147483647)" value="<% nvram_get("vpn_server_reneg"); %>" autocorrect="off" autocapitalize="off"> <#Second#>
+													<input type="text" maxlength="5" class="input_6_table" name="vpn_server_reneg" value="<% nvram_get("vpn_server_reneg"); %>" autocorrect="off" autocapitalize="off"> <#Second#>
 													<span style="color:#FC0">(<#Setting_factorydefault_value#> : -1)</span>
 												</td>
 											</tr>

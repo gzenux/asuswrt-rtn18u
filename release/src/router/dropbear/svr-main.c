@@ -28,22 +28,23 @@
 #include "buffer.h"
 #include "signkey.h"
 #include "runopts.h"
-#include "random.h"
+#include "dbrandom.h"
+#include "crypto_desc.h"
 
 static size_t listensockets(int *sock, size_t sockcount, int *maxfd);
 static void sigchld_handler(int dummy);
 static void sigsegv_handler(int);
 static void sigintterm_handler(int fish);
 #ifdef INETD_MODE
-static void main_inetd();
+static void main_inetd(void);
 #endif
 #ifdef NON_INETD_MODE
-static void main_noinetd();
+static void main_noinetd(void);
 #endif
-static void commonsetup();
+static void commonsetup(void);
 
-#if defined(DBMULTI_dropbear) || !defined(DROPBEAR_MULTI)
-#if defined(DBMULTI_dropbear) && defined(DROPBEAR_MULTI)
+#if defined(DBMULTI_dropbear) || !DROPBEAR_MULTI
+#if defined(DBMULTI_dropbear) && DROPBEAR_MULTI
 int dropbear_main(int argc, char ** argv)
 #else
 int main(int argc, char ** argv)
@@ -77,22 +78,16 @@ int main(int argc, char ** argv)
 
 #ifdef INETD_MODE
 static void main_inetd() {
-
-	struct sockaddr_storage remoteaddr;
-	socklen_t remoteaddrlen;
-	char * addrstring = NULL;
+	char *host, *port = NULL;
 
 	/* Set up handlers, syslog, seed random */
 	commonsetup();
 
-	remoteaddrlen = sizeof(remoteaddr);
-	if (getpeername(0, (struct sockaddr*)&remoteaddr, &remoteaddrlen) < 0) {
-		dropbear_exit("Unable to getpeername: %s", strerror(errno));
-	}
-
 	/* In case our inetd was lax in logging source addresses */
-	addrstring = getaddrstring(&remoteaddr, 1);
-	dropbear_log(LOG_INFO, "Child connection from %s", addrstring);
+	get_socket_address(0, NULL, NULL, &host, &port, 0);
+	dropbear_log(LOG_INFO, "Child connection from %s:%s", host, port);
+	m_free(host);
+	m_free(port);
 
 	/* Don't check the return value - it may just fail since inetd has
 	 * already done setsid() after forking (xinetd on Darwin appears to do
@@ -102,14 +97,14 @@ static void main_inetd() {
 	/* Start service program 
 	 * -1 is a dummy childpipe, just something we can close() without 
 	 * mattering. */
-	svr_session(0, -1, getaddrhostname(&remoteaddr), addrstring);
+	svr_session(0, -1);
 
 	/* notreached */
 }
 #endif /* INETD_MODE */
 
 #ifdef NON_INETD_MODE
-void main_noinetd() {
+static void main_noinetd() {
 	fd_set fds;
 	unsigned int i, j;
 	int val;
@@ -124,7 +119,6 @@ void main_noinetd() {
 	int childsock;
 	int childpipe[2];
 
-	memset(listensocks, 0, sizeof(listensocks));
 	/* Note: commonsetup() must happen before we daemon()ise. Otherwise
 	   daemon() will chdir("/"), and we won't be able to find local-dir
 	   hostkeys. */
@@ -134,7 +128,7 @@ void main_noinetd() {
 	for (i = 0; i < MAX_UNAUTH_CLIENTS; i++) {
 		childpipes[i] = -1;
 	}
-	bzero(preauth_addrs, sizeof(preauth_addrs));
+	memset(preauth_addrs, 0x0, sizeof(preauth_addrs));
 	
 	/* Set up the listening sockets */
 	listensockcount = listensockets(listensocks, MAX_LISTEN_ADDR, &maxsock);
@@ -143,11 +137,15 @@ void main_noinetd() {
 		dropbear_exit("No listening ports available.");
 	}
 
+	for (i = 0; i < listensockcount; i++) {
+		FD_SET(listensocks[i], &fds);
+	}
+
 	/* fork */
 	if (svr_opts.forkbg) {
 		int closefds = 0;
-#ifndef DEBUG_TRACE
-		if (!svr_opts.usingsyslog) {
+#if !DEBUG_TRACE
+		if (!opts.usingsyslog) {
 			closefds = 1;
 		}
 #endif
@@ -219,14 +217,13 @@ void main_noinetd() {
 
 		/* handle each socket which has something to say */
 		for (i = 0; i < listensockcount; i++) {
-
-			struct sockaddr_storage remoteaddr;
-			socklen_t remoteaddrlen = 0;
 			size_t num_unauthed_for_addr = 0;
 			size_t num_unauthed_total = 0;
-			char * remote_addr_str = NULL;
+			char *remote_host = NULL, *remote_port = NULL;
 			pid_t fork_ret = 0;
 			size_t conn_idx = 0;
+			struct sockaddr_storage remoteaddr;
+			socklen_t remoteaddrlen;
 
 			if (!FD_ISSET(listensocks[i], &fds)) 
 				continue;
@@ -241,14 +238,14 @@ void main_noinetd() {
 			}
 
 			/* Limit the number of unauthenticated connections per IP */
-			remote_addr_str = getaddrstring(&remoteaddr, 0);
+			getaddrstring(&remoteaddr, &remote_host, NULL, 0);
 
 			num_unauthed_for_addr = 0;
 			num_unauthed_total = 0;
 			for (j = 0; j < MAX_UNAUTH_CLIENTS; j++) {
 				if (childpipes[j] >= 0) {
 					num_unauthed_total++;
-					if (strcmp(remote_addr_str, preauth_addrs[j]) == 0) {
+					if (strcmp(remote_host, preauth_addrs[j]) == 0) {
 						num_unauthed_for_addr++;
 					}
 				} else {
@@ -262,6 +259,8 @@ void main_noinetd() {
 				goto out;
 			}
 
+			seedrandom();
+
 			if (pipe(childpipe) < 0) {
 				TRACE(("error creating child pipe"))
 				goto out;
@@ -273,29 +272,32 @@ void main_noinetd() {
 			fork_ret = fork();
 #endif
 			if (fork_ret < 0) {
-				dropbear_log(LOG_WARNING, "error forking: %s", strerror(errno));
+				dropbear_log(LOG_WARNING, "Error forking: %s", strerror(errno));
 				goto out;
+			}
 
-			} else if (fork_ret > 0) {
+			addrandom((void*)&fork_ret, sizeof(fork_ret));
+			
+			if (fork_ret > 0) {
 
 				/* parent */
 				childpipes[conn_idx] = childpipe[0];
 				m_close(childpipe[1]);
-				preauth_addrs[conn_idx] = remote_addr_str;
-				remote_addr_str = NULL;
+				preauth_addrs[conn_idx] = remote_host;
+				remote_host = NULL;
 
 			} else {
 
 				/* child */
-				char * addrstring = NULL;
 #ifdef DEBUG_FORKGPROF
 				extern void _start(void), etext(void);
 				monstartup((u_long)&_start, (u_long)&etext);
 #endif /* DEBUG_FORKGPROF */
 
-				m_free(remote_addr_str);
-				addrstring = getaddrstring(&remoteaddr, 1);
-				dropbear_log(LOG_INFO, "Child connection from %s", addrstring);
+				getaddrstring(&remoteaddr, NULL, &remote_port, 0);
+				dropbear_log(LOG_INFO, "Child connection from %s:%s", remote_host, remote_port);
+				m_free(remote_host);
+				m_free(remote_port);
 
 #ifndef DEBUG_NOFORK
 				if (setsid() < 0) {
@@ -304,16 +306,14 @@ void main_noinetd() {
 #endif
 
 				/* make sure we close sockets */
-				for (i = 0; i < listensockcount; i++) {
-					m_close(listensocks[i]);
+				for (j = 0; j < listensockcount; j++) {
+					m_close(listensocks[j]);
 				}
 
 				m_close(childpipe[0]);
 
 				/* start the session */
-				svr_session(childsock, childpipe[1], 
-								getaddrhostname(&remoteaddr),
-								addrstring);
+				svr_session(childsock, childpipe[1]);
 				/* don't return */
 				dropbear_assert(0);
 			}
@@ -321,8 +321,8 @@ void main_noinetd() {
 out:
 			/* This section is important for the parent too */
 			m_close(childsock);
-			if (remote_addr_str) {
-				m_free(remote_addr_str);
+			if (remote_host) {
+				m_free(remote_host);
 			}
 		}
 	} /* for(;;) loop */
@@ -336,20 +336,24 @@ out:
 static void sigchld_handler(int UNUSED(unused)) {
 	struct sigaction sa_chld;
 
-	while(waitpid(-1, NULL, WNOHANG) > 0); 
+	const int saved_errno = errno;
+
+	while(waitpid(-1, NULL, WNOHANG) > 0) {}
 
 	sa_chld.sa_handler = sigchld_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
+	sigemptyset(&sa_chld.sa_mask);
 	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
 		dropbear_exit("signal() error");
 	}
+	errno = saved_errno;
 }
 
 /* catch any segvs */
 static void sigsegv_handler(int UNUSED(unused)) {
 	fprintf(stderr, "Aiee, segfault! You should probably report "
 			"this as a bug to the developer\n");
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
 
 /* catch ctrl-c or sigterm */
@@ -363,8 +367,8 @@ static void commonsetup() {
 
 	struct sigaction sa_chld;
 #ifndef DISABLE_SYSLOG
-	if (svr_opts.usingsyslog) {
-		startsyslog();
+	if (opts.usingsyslog) {
+		startsyslog(PROGNAME);
 	}
 #endif
 
@@ -380,6 +384,7 @@ static void commonsetup() {
 	/* catch and reap zombie children */
 	sa_chld.sa_handler = sigchld_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
+	sigemptyset(&sa_chld.sa_mask);
 	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
 		dropbear_exit("signal() error");
 	}
@@ -387,28 +392,30 @@ static void commonsetup() {
 		dropbear_exit("signal() error");
 	}
 
+	crypto_init();
+
 	/* Now we can setup the hostkeys - needs to be after logging is on,
 	 * otherwise we might end up blatting error messages to the socket */
-	loadhostkeys();
+	load_all_hostkeys();
 
-    seedrandom();
+	seedrandom();
 }
 
 /* Set up listening sockets for all the requested ports */
-static size_t listensockets(int *sock, size_t sockcount, int *maxfd) {
-	
-	unsigned int i;
+static size_t listensockets(int *socks, size_t sockcount, int *maxfd) {
+
+	unsigned int i, n;
 	char* errstring = NULL;
 	size_t sockpos = 0;
 	int nsock;
 
-	TRACE(("listensockets: %d to try\n", svr_opts.portcount))
+	TRACE(("listensockets: %d to try", svr_opts.portcount))
 
 	for (i = 0; i < svr_opts.portcount; i++) {
 
 		TRACE(("listening on '%s:%s'", svr_opts.addresses[i], svr_opts.ports[i]))
 
-		nsock = dropbear_listen(svr_opts.addresses[i], svr_opts.ports[i], &sock[sockpos], 
+		nsock = dropbear_listen(svr_opts.addresses[i], svr_opts.ports[i], &socks[sockpos], 
 				sockcount - sockpos,
 				&errstring, maxfd);
 
@@ -417,6 +424,14 @@ static size_t listensockets(int *sock, size_t sockcount, int *maxfd) {
 							svr_opts.ports[i], errstring);
 			m_free(errstring);
 			continue;
+		}
+
+		for (n = 0; n < (unsigned int)nsock; n++) {
+			int sock = socks[sockpos + n];
+			set_sock_priority(sock, DROPBEAR_PRIO_LOWDELAY);
+#if DROPBEAR_SERVER_TCP_FAST_OPEN
+			set_listen_fast_open(sock);
+#endif
 		}
 
 		sockpos += nsock;

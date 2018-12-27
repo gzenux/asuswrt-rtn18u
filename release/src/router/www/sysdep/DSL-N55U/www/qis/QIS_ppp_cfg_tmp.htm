@@ -48,6 +48,9 @@ span{
 }
 </style>
 <script>
+	
+<% login_state_hook(); %>	
+
 var w_Setting = "<% nvram_get("w_Setting"); %>";
 var prctl_str = "default";
 var prctl_val = "<% nvram_get("dsltmp_cfg_prctl"); %>";
@@ -136,7 +139,7 @@ function QKfinish_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";
 	parent.set_step("t2");
 
-	DE_ISP_note_detect();
+	DE_ISP_detect();
 
 	if (prctl_val == "0")
 		document.form.dsltmp_qis_proto.value = "pppoe";
@@ -156,15 +159,13 @@ function QKfinish_load_body(){
 			}
 
 			if (ispname_str == "Telefonica Speedy"){
-				document.form.dsltmp_qis_pppoe_mtu.value = "1480";
-				//document.form.dsltmp_qis_pppoe_mru_0.value = "1480";
+				document.form.dsltmp_qis_pppoe_mtu.value = "1480";				
 			}
 		}
 
 		if (country_str == "India"){
 			if(ispname_str == "BSNL (PPPOE)" || ispname_str == "BSNL (PPPOA)" || ispname_str == "MTNL (PPPOE)" || ispname_str == "MTNL (PPPOA)"){
 				document.form.dsltmp_qis_pppoe_mtu.value = "1442";
-				//document.form.dsltmp_qis_pppoe_mru_0.value = "1442";
 			}
 		}
 
@@ -181,30 +182,69 @@ function QKfinish_load_body(){
 	}
 }
 
-function DE_ISP_note_detect(){
+function DE_ISP_detect(){	
 	if(country_str == "Germany" 
-		&& (ispname_str == "Deutsche Telekom" || ispname_str == "1&1" || ispname_str == "NetCologne" || ispname_str == "NetCologne (VLAN ID 10)" || 
-				ispname_str == "Deutsche Telekom (ohne Entertain)" || ispname_str == "Deutsche Telekom (mit Entertain)" || ispname_str == "1&1 (Telekom VDSL Resale Anschluss)"))
-	{
-		document.getElementById("DE_ISP_note").style.display="";
-		document.getElementById("Deutsche_Telekom").style.display="none";
-		document.getElementById("Deutsche_1n1_ATM").style.display="none";
-		document.getElementById("Deutsche_1n1_PTM").style.display="none";
-		document.getElementById("Deutsche_NetCologne").style.display="none";
-		if(ispname_str == "Deutsche Telekom" || ispname_str == "Deutsche Telekom (ohne Entertain)" || ispname_str == "Deutsche Telekom (mit Entertain)")
-			document.getElementById("Deutsche_Telekom").style.display="";
-		if(ispname_str == "1&1")	
-			document.getElementById("Deutsche_1n1_ATM").style.display="";
-		if(ispname_str == "1&1 (Telekom VDSL Resale Anschluss)")	
-			document.getElementById("Deutsche_1n1_PTM").style.display="";
-		if(ispname_str == "NetCologne" || ispname_str == "NetCologne (VLAN ID 10)")	
-			document.getElementById("Deutsche_NetCologne").style.display="";				
+		&& (ispname_str == "1&1" || 
+				ispname_str == "Congstar" || /*Both in ATM/PTM*/
+				ispname_str == "Deutsche Telekom" || ispname_str == "Deutsche Telekom (ohne Entertain)" || ispname_str == "Deutsche Telekom (mit Entertain)" || /*1st is ATM, else PTM*/
+				ispname_str.search("GMX") >= 0 ||	/*Both in ATM/PTM*/
+				ispname_str == "KielNET" || ispname_str == "KielNET DSL" || /*1st is ATM, 2nd is PTM*/
+				ispname_str == "NetAachen" ||	ispname_str == "NetAachen (VLAN ID 10)" || 	/*1st is ATM, 2nd is PTM*/
+				ispname_str == "NetCologne" || ispname_str == "NetCologne (VLAN ID 10)" || 	/*1st is ATM, 2nd is PTM*/
+				ispname_str == "1&1 (Telekom VDSL Resale Anschluss)"	/*PTM*/
+				)
+	){		
+		document.getElementById("tblsetting_2").style.display="none";
+		document.getElementById("tblsetting_DE_ATM").style.display="";
+		document.getElementById("tr_DE_password").style.display="";
+		document.getElementById("tr_DE_hwaddr").style.display="";
+		//document.getElementById("DE_ISP_note").style.display="";		
+		//document.getElementById("Deutsche_Telekom").style.display="none";		
+		//document.getElementById("Deutsche_1n1_PTM").style.display="none";
+		//document.getElementById("Deutsche_NetCologne").style.display="none";
+		if(ispname_str == "1&1"){
+			document.getElementById("tr_DE_username").style.display="";
+			document.getElementById("ATM_1n1").style.display="";
+		}
+		if(ispname_str == "Congstar"){
+			document.getElementById("tr_DE_username").style.display="";
+			document.getElementById("ATM_PTM_Congstar").style.display="";
+		}
+		if(ispname_str == "Deutsche Telekom" || ispname_str == "Deutsche Telekom (ohne Entertain)" || ispname_str == "Deutsche Telekom (mit Entertain)"){
+			document.getElementById("tr_DE_Deutsche_id").style.display="";
+			document.getElementById("tr_DE_Deutsche_AN").style.display="";
+			document.getElementById("tr_DE_Deutsche_Co").style.display="";
+		}		
+		if(ispname_str.search("GMX") >= 0){
+			document.getElementById("tr_DE_username").style.display="";
+			document.getElementById("ATM_PTM_GMX").style.display="";
+		}
+		if(ispname_str == "KielNET" || ispname_str == "KielNET DSL"){
+			document.getElementById("tr_DE_username").style.display="";
+			document.getElementById("default_username").style.display="";
+			document.form.DE_pppoe_username.value = "acs";
+			document.form.pppoe_password_DE.value = "acs";
+		}
+		
+		if(ispname_str == "NetAachen" || ispname_str == "NetAachen (VLAN ID 10)" ||
+			ispname_str == "NetCologne" || ispname_str == "NetCologne (VLAN ID 10)"
+		){
+			document.getElementById("tr_DE_username").style.display="";
+			document.getElementById("default_username").style.display="";
+			document.form.DE_pppoe_username.value = "nc@nc";
+			document.form.pppoe_password_DE.value = "nc";			
+		}	
+			
+		if(ispname_str == "1&1 (Telekom VDSL Resale Anschluss)"){	//PTM
+			document.getElementById("tr_DE_username").style.display="";
+			document.getElementById("PTM_1n1").style.display="";
+		}		
 	}
-	else
-		document.getElementById("DE_ISP_note").style.display="none";
 }
 
 function validForm(){
+	if(document.getElementById("tblsetting_2").style.display != "none"){
+		
 		if(document.form.dsltmp_qis_pppoe_username.value.length <= 0){
 			alert("<#WANJS9Text#>.");
 			document.form.dsltmp_qis_pppoe_username.focus();
@@ -217,8 +257,7 @@ function validForm(){
 		}
 		if(!validator.string(document.form.dsltmp_qis_pppoe_username)
 		|| !validator.string(document.form.dsltmp_qis_pppoe_passwd)
-		) {
-			alert("return false: "+document.form.dsltmp_qis_pppoe_username.value+"/"+document.form.dsltmp_qis_pppoe_passwd.value);
+		) {			
 			return false;
 		}
 		if(document.form.dsltmp_qis_pppoe_passwd.value != document.form.confirm_cfg_pppoe_passwd.value){
@@ -226,13 +265,58 @@ function validForm(){
 			document.form.dsltmp_qis_pppoe_passwd.focus();
 			return false;
 		}
+	}
+		
 	return true;
 }
 
 function submitForm(){
 		if(validForm()){
-					document.form.next_page.value = "/qis/QIS_wireless.htm";
-					document.form.submit();
+				if(country_str == "Germany"){ 
+					
+					if(ispname_str == "1&1"){//ATM
+							document.form.dsltmp_qis_pppoe_username.value = "1und1/"+ document.form.pppoe_username_1n1_ATM.value +"@online.de";
+							document.form.dsltmp_qis_pppoe_passwd.value = document.form.pppoe_password_DE.value;
+					}
+					
+					if(ispname_str == "Congstar"){	//Both in ATM/PTM
+							document.form.dsltmp_qis_pppoe_username.value = document.form.pppoe_username_Congstar.value +"@congstar.de";
+							document.form.dsltmp_qis_pppoe_passwd.value = document.form.pppoe_password_DE.value;
+					}	
+					
+					if(ispname_str == "Deutsche Telekom" || ispname_str == "Deutsche Telekom (ohne Entertain)" || ispname_str == "Deutsche Telekom (mit Entertain)"){	/*1st is ATM, else PTM*/
+						if(document.form.pppoe_AN_Deutsche.value.length < 12)	//length < 12, add '#' symbol
+							document.form.dsltmp_qis_pppoe_username.value = document.form.pppoe_id_Deutsche.value + document.form.pppoe_AN_Deutsche.value +"#"+ document.form.pppoe_Co_Deutsche.value +"@t-online.de";
+						else
+							document.form.dsltmp_qis_pppoe_username.value = document.form.pppoe_id_Deutsche.value + document.form.pppoe_AN_Deutsche.value + document.form.pppoe_Co_Deutsche.value +"@t-online.de";
+							document.form.dsltmp_qis_pppoe_passwd.value = document.form.pppoe_password_DE.value;
+					}
+					
+					if(ispname_str.search("GMX") >= 0){	//Both in ATM/PTM
+							document.form.dsltmp_qis_pppoe_username.value = "GMX/"+ document.form.pppoe_username_GMX.value +"@online.de";
+							document.form.dsltmp_qis_pppoe_passwd.value = document.form.pppoe_password_DE.value;
+					}
+					
+					if(ispname_str == "KielNET" || ispname_str == "KielNET DSL" ||		/*1st is ATM, 2nd is PTM*/
+							ispname_str == "NetAachen" || ispname_str == "NetAachen (VLAN ID 10)" ||	/*1st is ATM, 2nd is PTM*/
+							ispname_str == "NetCologne" || ispname_str == "NetCologne (VLAN ID 10)"	/*1st is ATM, 2nd is PTM*/
+					){
+							document.form.dsltmp_qis_pppoe_username.value = document.form.DE_pppoe_username.value;
+							document.form.dsltmp_qis_pppoe_passwd.value = document.form.pppoe_password_DE.value;
+					}
+					
+					if(ispname_str == "1&1 (Telekom VDSL Resale Anschluss)"){	//PTM
+							document.form.dsltmp_qis_pppoe_username.value = "H1und1/"+ document.form.pppoe_username_1n1_PTM.value +"@online.de";
+							document.form.dsltmp_qis_pppoe_passwd.value = document.form.pppoe_password_DE.value;
+					}
+										
+				}	
+					
+				
+				document.form.dsltmp_qis_hwaddr.value = document.form.wan_hwaddr_DE.value;
+				document.form.next_page.value = "/qis/QIS_wireless.htm";
+				//alert(document.form.dsltmp_qis_pppoe_username.value +" ; "+ document.form.dsltmp_qis_pppoe_passwd.value +" ; "+ document.form.dsltmp_qis_hwaddr.value);
+				document.form.submit();
 		}	  
 }
 
@@ -246,6 +330,11 @@ function gotoHome() {
 	}
 }
 
+function showMAC(){
+	var tempMAC = "";	
+	document.form.wan_hwaddr_DE.value = login_mac_str();
+	document.form.wan_hwaddr_DE.focus();
+}
 </script>
 </head>
 
@@ -309,31 +398,27 @@ function gotoHome() {
   </tr>
   </table>
   
-<div id="DE_ISP_note" style="display:none;margin-top:10px;">
+<!--div id="DE_ISP_note" style="display:none;margin-top:10px;">
 		<span class="isp_note_title">Notice:</span> Bitte geben Sie diese Zugangsdaten in folgendem Format ein.</span>
-		<div class="isp_note" id="Deutsche_Telekom" style="display:none;">	<!--ATM: 231 & PTM: 66, 67 -->
+		<div class="isp_note" id="Deutsche_Telekom" style="display:none;">
 			Für Telekom ADSL und VDSL Anschlüsse<br>
 			Bei einer 12-stelligen Zugangsnummer (Neue Zugangsdaten):<br>
 			<div class="account_format">Anschlusskennung<span class="num1">Zugangsnummer</span><span class="num2">Mitbenutzernummer</span>@t-online.de</div><br>
 			Bei einer Zugangsnummer mit weniger als 12 Stellen (Alte Zugangsdaten):<br>
 			<div class="account_format">Anschlusskennung<span class="num1">Zugangsnummer</span>#<span class="num2">Mitbenutzernummer</span>@t-online.de</div>
-		</div>	
-		<div class="isp_note" id="Deutsche_1n1_ATM" style="display:none;">	<!-- ATM: 219 -->
-			Bei einem 1&1 ADSL Anschluss
-			<div class="account_format">1und1/<span class="num1">benutzername</span>@online.de (1&1 Internetzugangs-Kennung)</div>
-		</div>
-		<div class="isp_note" id="Deutsche_1n1_PTM" style="display:none;">	<!-- PTM: 62 -->
+		</div>		
+		<div class="isp_note" id="Deutsche_1n1_PTM" style="display:none;">
 			Bei einem 1&1 VDSL Anschluss (basierend auf Telekom Technik) - Bitte ein „H“ voranstellen:
 			<div class="account_format">H1und1/<span class="num1">benutzername</span>@online.de (1&1 Internetzugangs-Kennung)</div>
 		</div>
-		<div class="isp_note" id="Deutsche_NetCologne" style="display:none;">	<!-- ATM: 246, 247 -->
+		<div class="isp_note" id="Deutsche_NetCologne" style="display:none;">
 			<div class="account_format">nc-<span class="num1">username</span>@netcologne.de</div>
 		</div>
-	</div>  
+</div-->
 
 <table id="tblsetting_2" class="QISform" width="400" border="0" align="center" cellpadding="3" cellspacing="0" style="margin-top:10px;">
   <tr>	
-	<th width="120"><#PPPConnection_UserName_itemname#></th>
+	<th width="120"><#HSDPAConfig_Username_itemname#></th>
 	<td>
 	  <input type="text" name="dsltmp_qis_pppoe_username" class="input_32_table" value="" tabindex="1" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">
 	</td>
@@ -359,6 +444,66 @@ function gotoHome() {
 	</td>
   </tr>
 </table>
+
+<!-- Germany ISP setting start-->
+<table id="tblsetting_DE_ATM" class="QISform" width="400" border="0" align="center" cellpadding="3" cellspacing="0" style="margin-top:10px;">
+  <tr id="tr_DE_username" style="display:none;">
+	<th width="120"><#HSDPAConfig_Username_itemname#></th>
+	<td>
+		<span id="ATM_1n1" style="display:none;">
+	  	1und1/<input type="text" name="pppoe_username_1n1_ATM" class="input_22_table" value="" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">@online.de
+	  </span>
+	  <span id="ATM_PTM_Congstar" style="display:none;">
+	  	<input type="text" name="pppoe_username_Congstar" class="input_22_table" value="" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">@congstar.de
+	  </span>
+	  <span id="ATM_PTM_GMX" style="display:none;">
+	  	GMX/<input type="text" name="pppoe_username_GMX" class="input_22_table" value="" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">@online.de
+	  </span>
+	  <span id="PTM_1n1" style="display:none;">
+	  	H1und1/<input type="text" name="pppoe_username_1n1_PTM" class="input_22_table" value="" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">@online.de
+	  </span>
+	  <span id="default_username" style="display:none;">
+	  	<input type="text" name="DE_pppoe_username" class="input_32_table" value="" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">
+	  </span>
+	</td>		
+  </tr>
+  
+  <tr id="tr_DE_Deutsche_id" style="display:none;">
+  	<th><#ppp_ID_Connection#></th>
+  	<td>
+	  	<input type="text" name="pppoe_id_Deutsche" class="input_18_table" value="" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">
+  	</td>
+  </tr>	
+  <tr id="tr_DE_Deutsche_AN" style="display:none;">
+  	<th><#ppp_Access_Number#></th>
+  	<td>
+	  	<input type="text" name="pppoe_AN_Deutsche" class="input_18_table" value="" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">
+  	</td>
+  </tr>
+  <tr id="tr_DE_Deutsche_Co" style="display:none;">
+  	<th><#ppp_CoUser_Number#></th>
+  	<td>
+	  	<input type="text" name="pppoe_Co_Deutsche" class="input_6_table" value="" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">
+  	</td>
+  </tr>
+  
+  <tr id="tr_DE_password" style="display:none;">
+	<th width="120"><#PPPConnection_Password_itemname#></th>
+	<td>
+	  <input type="text" name="pppoe_password_DE" class="input_32_table" value="" maxlength="32" autocomplete="off" autocorrect="off" autocapitalize="off" autocapitalize="off">
+	</td>
+  </tr>
+  <tr id="tr_DE_hwaddr" style="display:none;">
+		<th width="120"><#BOP_isp_mac_item#></th>
+		<td class="QISformtd">
+			<input type="text" name="wan_hwaddr_DE" onkeypress="return validator.isHWAddr(this,event);" style="height:25px;" class="input_20_table" size="36" maxlength="17" value="" autocorrect="off" autocapitalize="off">
+			<input type="button" class="button_gen_long" onclick="showMAC();" value="<#BOP_isp_MACclone#>">
+		</td>
+	</tr>
+</table>	
+
+<!-- Germany ISP setting end-->
+
 	<div class="apply_gen" style="margin-top:30px">
 		<input type="button" id="prevButton" value="<#Manual_Setting_btn#>" tabindex="6" onclick="gotoprev(document.form);" class="button_gen" >
 <!--

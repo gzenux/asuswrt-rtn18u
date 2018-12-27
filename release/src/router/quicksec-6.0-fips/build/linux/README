@@ -1,0 +1,304 @@
+QuickSec build for GNU/Linux
+============================
+
+   This directory contains files needed to build QuickSec executables using
+   the GNU/Linux native toolchain (GCC and GNU make). There is also limited
+   support for GNU/Linux-to-GNU/Linux cross build.
+
+Prerequisites
+-------------
+
+   A Linux kernel source tree is needed to build the packet interceptor. The
+   kernel needs to be configured and built before building the packet
+   interceptor. The kernel must be configured with loadable module support
+   and network packet filtering (netfilter) support.
+
+   In the instructions below, QUICKSEC denotes the root directory of the
+   unpacked QuickSec toolkit.
+
+Customization
+-------------
+
+   There is a separate GNU makefile in each of the directories
+
+      QUICKSEC/build/linux/interceptor
+      QUICKSEC/build/linux/usermode
+      QUICKSEC/build/linux/interceptor-ue
+      QUICKSEC/build/linux/usermode-ue
+
+   In each subdirectory, another makefile called `Makefile.inc' can be
+   optionally created for customizing build parameters. `Makefile' will read
+   this file after the default build parameters have been set which allows
+   `Makefile.inc' to replace or modify selected build parameters. For
+   example, to add GDB debug information into the user mode binaries, create
+   the file
+
+      QUICKSEC/build/linux/usermode/Makefile.inc
+
+   with the following contents:
+
+      override CFLAGS += -ggdb
+
+   The `override' directive is needed for proper interaction between
+   variables defined on the command line, in `Makefile' and in
+   `Makefile.inc'. As another example, to remove the `DEBUG_LIGHT'
+   preprocessor macro, add the following line in `Makefile.inc':
+
+      override CPPFLAGS := $(filter-out -DDEBUG_LIGHT,$(CPPFLAGS))
+
+   Instead of `Makefile.inc', additional build parameters can be given on the
+   command line when running the `make' command in a subdirectory. For
+   example, to enable C optimization for user mode build, give the command as
+   follows:
+
+      make CFLAGS=-O2
+
+   Alternatively, parameters can be specified as environment
+   variables. Generally, `Makefile' preserves parameter values given on the
+   command line or in the environment and appends the default values. However
+   if the parameter in question is supposed to have just one value (such as
+   the `QUICKSEC_SRCDIR' parameter), `Makefile' will use the default value
+   only if the parameter was not given on the command line or in the
+   environment.
+
+   Note that some parameter names differ between kernel mode and user mode
+   builds; the most important parameters are listed in the corresponding
+   sections below.
+
+Default build
+-------------
+
+   To build the default targets, i.e. the packet interceptor kernel module
+   and user mode executables follow the steps below.
+
+   1. Cd to the Linux build directory:
+
+         cd QUICKSEC/build/linux
+
+   2. Build the default targets
+
+         make
+
+      Following parameters can be used with this command. These can also be
+      used when compiling kernel and usermode components separately:
+
+         DEBUG=1
+
+             Allow debug messages and certain other debug functionality in
+             the compiled executables.
+
+         SERVER=1
+
+             Compile only server functionality for the executables.
+
+         CLIENT=1
+
+             Compile only client functionality for the executables.
+
+   3. The resulting packet interceptor kernel module is
+
+         QUICKSEC/build/linux/interceptor/quicksec.ko
+
+      User mode executables are located in the directory
+
+         QUICKSEC/build/linux/usermode
+
+   4. To remove all build results:
+
+         make clean
+
+Building the packet interceptor
+-------------------------------
+
+   To build the packet interceptor kernel module only follow the steps below.
+
+   1. Cd to the interceptor build directory:
+
+         cd QUICKSEC/build/linux/interceptor
+
+   2. Assuming the kernel source tree is located in `/usr/src/linux', build
+      the kernel module usig the following command:
+
+         make KDIR=/usr/src/linux
+
+      Leaving out `KDIR' causes the packet interceptor makefile to use the
+      source tree of the running kernel:
+
+         make
+
+      This is equivalent to
+
+         make KDIR=/lib/modules/`uname -r`/build
+
+      The build makes a copy of the source tree with symbolic links to the
+      real source files. Object files will go into this directory tree and
+      the real source tree remains untouched.
+
+      The Linux `ARCH' and `CROSS_COMPILE' variables can be used to build the
+      packet interceptor for another platform. The kernel source tree must
+      have been configured and built with the same values of these
+      variables. For example, to build for an ARM target with cross tools
+      found in the command search path with prefix `arm-eabi-':
+
+         make KDIR=/usr/src/linux ARCH=arm CROSS_COMPILE=arm-eabi-
+
+   3. The resulting kernel module is
+
+         QUICKSEC/build/linux/interceptor/quicksec.ko
+
+   4. To remove all build results:
+
+         make clean
+
+   In addition to the Kbuild parameters `KDIR', `ARCH' and `CROSS_COMPILE',
+   the following variables can be customized on the command line or by
+   creating the optional `Makefile.inc' makefile:
+
+      QUICKSEC_SRCDIR
+
+         Path to the QuickSec source tree, by default `../../../src`.
+
+      QUICKSEC_FASTPATH
+
+         The name of a hardware IPsec fastpath to build support for. If empty
+         then support for the software fastpath only is included. Currently
+         no hardware fastpaths are supported by these build files.
+
+      QUICKSEC_HWACCEL
+
+         The name of an IPsec hardware accelerator to build support for. If
+         empty then no hardware accelerator support is included. The
+         following accelerator names are supported:
+
+            OCF            OpenBSD Cryptographic Framework on Linux
+            SAFENET1742    SafeNet 1742
+            SAFENET1746    SafeNet 1746
+
+         Note: if using SAFENET1742 or SAFENET1746 the variable
+         QUICKSEC_HWACCEL_DDK_DIR must be defined as the absolute path to the
+         root directory of the unpacked and installed SafeXcel DDK.
+
+      EXTRA_CFLAGS
+
+         C preprocessor and compiler flags.
+
+Building user mode executables
+------------------------------
+
+   To build the policy managers and other user mode executables
+   follow the steps below.
+
+   1. Cd to the user mode build directory:
+
+         cd QUICKSEC/build/linux/usermode
+
+   2. Build all user mode executables (see the list below):
+
+         make
+
+   3. Alternatively, build a subset of the user mode executables:
+
+         make EXECUTABLES
+
+      where `EXECUTABLES' is one or more of the following
+
+         quicksecpm
+         tinypm
+         clientpm
+         dtd-compress
+         make-vendor-id
+         ssh-berdump
+         ssh-certmake
+         ssh-certview
+         ssh-cmpclient
+         ssh-keytool
+	 ssh-p12extract
+         ssh-p12make
+         ssh-scepclient
+
+   4. Enabling and disabling dependencies.
+
+      When compiling a C file the build always produces a `.d' file
+      containing header file dependencies of the corresponding `.o' file. To
+      combine all `.d' files into a file called `Makefile.depend' give the
+      command
+
+         make depend
+
+      If `Makefile.depend' exists, subsequent builds will read dependencies
+      from this file and will be able to recompile the right object files
+      after header file changes. The file must be updated manually by saying
+      `make depend' whenever needed. To remove the file give the command
+
+         make nodepend
+
+   5. To remove all build results:
+
+         make clean
+
+   The following variables can be customized on the command line or by
+   creating the optional `Makefile.inc' makefile:
+
+      QUICKSEC_SRCDIR
+
+         Path to the QuickSec source tree, by default `../../../src`.
+
+      CC, AR, LD
+
+         Can be used to override the default C compiler, archiver and linker
+         commands.
+
+      CPPFLAGS
+
+         C preprocessor flags, i.e. header file search paths and macro
+         definitions.
+
+      CFLAGS
+
+         C compiler flags.
+
+      LDFLAGS
+
+         Linker flags.
+
+   Many other variables are recoginzed by GNU make; information about these
+   may be obtained by running `make' with the `-p' option.
+
+Cross build
+-----------
+
+   Depending on the target platform and its development environment, these
+   build files may be used for cross building for another GNU/Linux
+   platform. In particular, if the user mode cross build works just by
+   redefining the `CC', `AR' and `LD' variables and potentially modifying
+   `CPPFLAGS', `CFLAGS' and `LDFLAGS' then these files may work. On the other
+   hand, if the development environment requires using special makefiles then
+   they probably will not.
+
+   To cross build the packet interceptor, simply define `ARCH' and
+   `CROSS_COMPILE' appropriately for the target platform.
+
+   To cross build user mode executables, redefine `CC', `AR' and `LD' to
+   point to the cross C compiler, archiver and linker, respectively. If
+   system header directories need to be specified explicitly for the C
+   compiler, put these in `CPPFLAGS'. Put any special C compilation flags in
+   `CFLAGS'. System library directories and special linker flags can be
+   speficied in `LDFLAGS' if needed.
+
+Building executables for user mode IPsec processing
+---------------------------------------------------
+
+   The packet interceptor and policy managers can be built to perform IPsec
+   processing in the policy manager process instead of the kernel module. If
+   this is required, replace the packet interceptor and user mode build
+   directories in the instructions above by
+
+      QUICKSEC/build/linux/interceptor-ue
+      QUICKSEC/build/linux/usermode-ue
+
+   The build process is otherwise identical to the normal build process
+   described above. The resulting executables are
+
+      QUICKSEC/build/linux/interceptor-ue/quicksec_usermode.ko
+      QUICKSEC/build/linux/usermode-ue/quicksecpm_usermode
+

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <!-- to generate the CA and end entity certificates used in this
+       sample, please execute 'ssh-certmake cert_template.rsa'
+       (found from the src/ipsec/quicksec/samples directory).
+       This will generate the necessary files needed by this policy.
+       This operation must be done only on one of the test hosts!
+       Convert the resulting certificate and private key files into
+       PKCS #12 format for importing into the Windows certificate store
+       by executing './ssh-p12make -o rsauser1.p12 -c rsaca.ca
+       rsauser1.crt rsauser1.prv'. Then use the Windows certificate
+       installer to install the .p12 file. -->
+  <params>
+    <!-- Identities of trusted CAs. Specify identity format in the 'flags'
+         attribute. Allowed formats are 'dn' (distinguished name),
+         'ip' (IP address), 'fqdn' (domain name), 'email' (e-mail address)
+         and ''key-id' (key identifier). To specify multiple CAs,
+         use multiple 'ca' elements. -->
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <ca flags="email">rsaca@ipsec.com</ca>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="rsauser1@ipsec.com"/>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         packet matching to these selectors triggers IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.189)</src>
+      <dst>ipv4(172.30.4.167)</dst>
+    </rule>
+
+    <!-- Allows src address to initiate traffic to the dst address, 
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

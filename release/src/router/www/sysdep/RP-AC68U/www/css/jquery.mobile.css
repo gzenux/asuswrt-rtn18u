@@ -964,7 +964,7 @@ html .ui-panel-page-container-a {
 	/*background-color: 			#fff*/ /*{a-body-background-color}*//*; Jieming modified*/ 
 	background-color: 			rgba(48,48,48,0.2);
 	/*border-color:	 		#ddd *//*{a-body-border}*//*;Jieming modified*/
-	border-color:	 		#43474B ;
+	border-color:	 		#DBDBDB ;
 	color: 					#333 /*{a-body-color}*/;
 }
 .ui-body-a {
@@ -1012,7 +1012,7 @@ html head + body .ui-btn.ui-btn-a:visited {
 	/*background-color: 			#f6f6f6*/ /*{a-bup-background-color}*/ /*Jieming modified*/
 	background-color: 		rgb(40,40,40) /*{a-bup-background-color}*/;
 	/*border-color:	 		#ddd*/ /*{a-bup-border}*/;
-	border-color:	 		#43474b /*{a-bup-border}*/;	/*Jieming modified*/
+	border-color:	 		#DBDBDB /*{a-bup-border}*/;	/*Jieming modified*/
 	/*color: 					#333*//*{a-bup-color}*//*Jieming modified*/
 	color: 					#818181 /*{a-bup-color}*/;
 }

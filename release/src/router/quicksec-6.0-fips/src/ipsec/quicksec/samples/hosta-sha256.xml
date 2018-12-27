@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup with SHA2 256. -->
+<!-- Related: hostb-sha256.xml -->
+<quicksec>
+  <params>
+    <http-interface/>
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="a@ipsec.com">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <ike-algorithms>aes 3des sha2</ike-algorithms>
+      <algorithm-properties algorithm="sha2"
+                            min-key-size="256"
+                            max-key-size="256"
+                            default-key-size="256"/>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         packet matching to these selectors triggers IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.189)</src>
+      <dst>ipv4(172.30.4.167)</dst>
+    </rule>
+
+    <!-- Allows src address to initiate traffic to the dst address, 
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

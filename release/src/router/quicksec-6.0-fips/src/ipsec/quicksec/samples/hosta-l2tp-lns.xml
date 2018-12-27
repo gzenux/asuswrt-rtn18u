@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup using L2TP. lns is the server, lac the client. -->
+<!-- Related: hostb-l2tp-lac.xml -->
+<quicksec>
+  <params>
+    <!-- Address pool for allocation virtual IP addresses for remote -->
+    <!-- access clients. -->
+    <address-pool dns="192.168.1.2" wins="192.168.1.2" dhcp="192.168.1.2">
+      <address netmask="255.255.255.0">192.168.1.3-192.168.1.100</address>
+    </address-pool>
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="b@ipsec.com">foo</remote-secret>
+
+      <!-- RADIUS authentication. -->
+
+      <!-- <radius-client nas-ip-address="172.30.4.189"/> -->
+      <!-- <radius server="172.30.4.78" secret="test"/> -->
+
+      <!-- Password based authentication. -->
+      <password user-name="guest@ipsec.com" password="hi"/>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- L2TP tunnel -->
+    <tunnel name="lns" flags="allow-l2tp
+                              transport
+                              proxy-arp
+                              aggressive-mode
+                              dont-initiate">
+      <identity id-type="email" id="a@ipsec.com">
+        <local-secret>foo</local-secret>
+      </identity>
+      <ike-versions>1</ike-versions>
+    </tunnel>
+
+    <!-- We may at some point receive plaintext L2tp packets.
+         If these are processed by a rule which creates a flow,
+         then any L2tp control packets which are sent by the
+         policymanager may actually hit this flow in the
+         reverse direction. Therefore we explicitly forbid plaintext 
+         packets to the L2tp control port -->
+    <rule type="drop">
+      <dst>ipv4(udp:1701,0.0.0.0/0)</dst>
+      <local-stack direction="to"/>
+    </rule>
+
+    <!-- Allow traffic from L2TP clients. -->
+    <rule from-tunnel="lns"/>
+
+    <!-- The local host stack, the policymanager and the
+         kernel mode engine may at some points be out of
+         sync for short amounts of time, when the IPsec SA
+         protecting the L2tp disappears. This rule ensures
+         that l2tp packets are dropped if they arrive into
+         the engine when no suitable transform (apply rule) 
+         exists. -->
+    <rule type="drop">
+      <src>ipv4(udp:1701,0.0.0.0/0)</src>
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- Pass everything else in plain-text. -->
+    <rule/>
+  </policy>
+</quicksec>

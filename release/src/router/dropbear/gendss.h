@@ -22,15 +22,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
 
-#ifndef _GENDSS_H_
-#define _GENDSS_H_
+#ifndef DROPBEAR_GENDSS_H_
+#define DROPBEAR_GENDSS_H_
 
 #include "dss.h"
 
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 
-dss_key * gen_dss_priv_key(unsigned int size);
+dropbear_dss_key * gen_dss_priv_key(unsigned int size);
 
 #endif /* DROPBEAR_DSS */
 
-#endif /* _GENDSS_H_ */
+#endif /* DROPBEAR_GENDSS_H_ */

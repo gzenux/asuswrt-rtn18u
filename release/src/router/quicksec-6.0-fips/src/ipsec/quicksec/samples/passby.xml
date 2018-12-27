@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <policy>
+    <!-- Pass all IPv4 traffic, logging new connections -->
+    <rule log="connections">
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+    <!-- Pass all IPv6 traffic, logging new connections -->
+    <rule log="connections">
+      <src>ipv6(::/0)</src>
+      <dst>ipv6(::/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

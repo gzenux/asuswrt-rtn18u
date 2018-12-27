@@ -8,7 +8,7 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
-<title><#Web_Title#> - <#menu3#></title>
+<title><#Web_Title#> - AiCloud 2.0</title>
 <link rel="stylesheet" type="text/css" href="index_style.css"> 
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <script type="text/javascript" src="/state.js"></script>
@@ -17,9 +17,9 @@
 <script type="text/javascript" src="/md5.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
+<script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
-<script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/form.js"></script>
 <style type="text/css">
 /* folder tree */
@@ -135,7 +135,6 @@
 }
 </style>
 <script>
-
 window.onresize = function() {
 	if(document.getElementById("cloudAddTable_div").style.display == "block") {
 		cal_panel_block("cloudAddTable_div", 0.2);

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup with SHA2 256 using manual keys. -->
+<!-- Related: hostb-sha256-manual-key.xml -->
+<quicksec>
+  <params><http-interface/></params>
+  <policy>
+    <!-- A manually configured tunnel -->
+    <tunnel name="host-to-host" transform="aes sha2 esp">
+      <manual-key>
+        <esp spi-in="256"
+             encr-key-in="000102030405060708090a0b0c0d0e0f"
+             auth-key-in="202122232425262728292a2b2c2d2e2f404142434445464748494a4b4c4d4e4f"
+             spi-out="257"
+             encr-key-out="101112131415161718191a1b1c1d1e1f"
+             auth-key-out="303132333435363738393a3b3c3d3e3f505152535455565758595a5b5c5d5e5f"/>
+      </manual-key>
+      <peer>172.30.4.167</peer>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         packet matching to these selectors triggers IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.189)</src>
+      <dst>ipv4(172.30.4.167)</dst>
+    </rule>
+
+    <!-- Allows src address to initiate traffic to the dst address, 
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

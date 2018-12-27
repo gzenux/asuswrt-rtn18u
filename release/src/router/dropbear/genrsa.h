@@ -22,15 +22,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
 
-#ifndef _GENRSA_H_
-#define _GENRSA_H_
+#ifndef DROPBEAR_GENRSA_H_
+#define DROPBEAR_GENRSA_H_
 
 #include "rsa.h"
 
-#ifdef DROPBEAR_RSA
+#if DROPBEAR_RSA
 
-rsa_key * gen_rsa_priv_key(unsigned int size);
+dropbear_rsa_key * gen_rsa_priv_key(unsigned int size);
 
 #endif /* DROPBEAR_RSA */
 
-#endif /* _GENRSA_H_ */
+#endif /* DROPBEAR_GENRSA_H_ */

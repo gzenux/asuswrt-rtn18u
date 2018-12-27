@@ -30,25 +30,18 @@ void traffic_limiter_datawrite(char *dualwan_mode)
 	unsigned long long tx_t = 0, rx_t = 0;	// old
 	unsigned long long tx_n = 0, rx_n = 0;	// diff
 
-	int debug = nvram_get_int("tl_debug");
 	long int date_start = nvram_get_int("tl_date_start");
 	
 	lock = file_lock("traffic_limiter");
 	mkdir(TL_PATH, 0666);
 
-	/* check daul wan mode */
-	if (traffic_limiter_dualwan_check(dualwan_mode) == 0) {
-		file_unlock(lock);
-		return;
-	}
-
 	g = dualwan = strdup(nvram_safe_get("wans_dualwan"));
-	for (unit = TL_UNIT_S; unit < TL_UNIT_E; ++unit)
+	for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit)
 	{
 		memset(ifmap, 0, sizeof(ifmap));
 		memset(wanif, 0, sizeof(wanif));
-		if((!g) || ((word = strsep(&g, " ")) == NULL)) continue;
-		if(!strcmp(word, "none")) continue;
+		if ((!g) || ((word = strsep(&g, " ")) == NULL)) continue;
+		if (!strcmp(word, "none")) continue;
 		snprintf(wanif, sizeof(wanif), "wan%d_ifname", unit);
 		ifname_mapping(word, ifmap); // database interface mapping
 
@@ -64,10 +57,10 @@ void traffic_limiter_datawrite(char *dualwan_mode)
 
 		ret = sqlite3_open(path, &db);
 		if (ret) {
-			printf("%s : Can't open database %s\n", __FUNCTION__, sqlite3_errmsg(db));
+			TL_DBG("CAN'T open database %s\n", sqlite3_errmsg(db));
 			sqlite3_close(db);
 			file_unlock(lock);
-			exit(1);
+			exit(0);
 		}
 
 		// get timestamp
@@ -76,18 +69,15 @@ void traffic_limiter_datawrite(char *dualwan_mode)
 		if (f_exists(path)) {
 			// delete database out of last 1 months (DATA_PERIOD)
 			// we allow 30 secs delay because of save data will be delay some secs
-			memset(sql, 0, sizeof(sql));
 			sprintf(sql, "DELETE FROM traffic WHERE timestamp NOT BETWEEN %ld AND %ld", (date_start - DATA_PERIOD - 30), (now + 30));
-				if (sqlite3_exec(db, sql, NULL, NULL, &zErr) != SQLITE_OK) {
-				if (zErr != NULL) {
-					printf("%s - delete : SQL error: %s\n", __FUNCTION__, zErr);
-					sqlite3_free(zErr);
-				}
-			}
+
+			// delete database with specific condition
+			ret = sqlite3_exec(db, sql, NULL, NULL, &zErr);
+			sqlite_result_check(ret, zErr, "DELETE");
 
 			// add index for timestamp
-			sqlite3_exec(db, "CREATE INDEX timestamp ON traffic(timestamp ASC)", NULL, NULL, &zErr);
-			if(zErr != NULL) sqlite3_free(zErr);
+			ret = sqlite3_exec(db, "CREATE INDEX timestamp ON traffic(timestamp ASC)", NULL, NULL, &zErr);
+			sqlite_result_check(ret, zErr, "INDEX");
 		}
 
 		ret = sqlite3_exec(db,
@@ -97,16 +87,8 @@ void traffic_limiter_datawrite(char *dualwan_mode)
 			"tx UNSIGNED BIG INT NOT NULL,"
 			"rx UNSIGNED BIG INT NOT NULL)",
 			NULL, NULL, &zErr);
+		if (zErr != NULL) sqlite3_free(zErr); // not to show error message
 
-		if (ret != SQLITE_OK)
-		{
-			if (zErr != NULL)
-			{
-				printf("SQL error: %s\n", zErr);
-				sqlite3_free(zErr);
-			}
-		}
-			
 		// record database
 		if ((fp = fopen("/proc/net/dev", "r")) != NULL)
 		{
@@ -127,7 +109,7 @@ void traffic_limiter_datawrite(char *dualwan_mode)
 
 				// check wan ifname
 				if (strcmp(ifname, nvram_safe_get(wanif))) continue;
-				if (debug) dbg("%s: wanif=%s, word=%s, ifmap=%s, ifname=%s\n", __FUNCTION__, nvram_safe_get(wanif), word, ifmap, ifname);
+				TL_DBG("wanif=%s, word=%s, ifmap=%s, ifname=%s\n", nvram_safe_get(wanif), word, ifmap, ifname);
 
 				// search traffic
 				if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &rx, &tx) != 2) continue;
@@ -166,16 +148,14 @@ void traffic_limiter_datawrite(char *dualwan_mode)
 				sprintf(tmp, "%llu", rx);
 				f_write_string(rx_path, tmp, 0, 0);
 
-				if (debug) dbg("%s : tx/tx_t/tx_n = %16llu/%16lld/%16lld\n", __FUNCTION__, tx, tx_t, tx_n);
-				if (debug) dbg("%s : rx/rx_t/rx_n = %16llu/%16lld/%16lld\n", __FUNCTION__, rx, rx_t, rx_n);
-
 				// debug message
-				if (debug) dbg("%s : %12lu/%10s/%16llu/%16llu\n", __FUNCTION__, now, ifmap, tx_n, rx_n);
-				memset(sql, 0, sizeof(sql));
+				TL_DBG("tx/tx_t/tx_n = %16llu/%16lld/%16lld\n", tx, tx_t, tx_n);
+				TL_DBG("rx/rx_t/rx_n = %16llu/%16lld/%16lld\n", rx, rx_t, rx_n);
+
 				sprintf(sql, "INSERT INTO traffic VALUES ('%lu','%s','%llu','%llu')",
 					now, ifmap, tx_n, rx_n);
 				sqlite3_exec(db, sql, NULL, NULL, &zErr);
-				if (zErr != NULL) sqlite3_free(zErr);
+				if (zErr != NULL) sqlite3_free(zErr); // not to show error message
 			}// while loop
 			fclose(fp);
 		}// record database
@@ -199,7 +179,6 @@ void traffic_limiter_dataread(char *q_if, char *q_ts, char *q_te)
 	char path[IFPATH_MAX];
 	char sql[256];
 
-	int debug = nvram_get_int("tl_debug");
 	lock = file_lock("traffic_limiter");
 
 	if (q_if == NULL || q_ts == NULL || q_te == NULL) goto finish;
@@ -207,21 +186,24 @@ void traffic_limiter_dataread(char *q_if, char *q_ts, char *q_te)
 	// q_if and ifmap mapping
 	memset(ifmap, 0, sizeof(ifmap));
 	ifname_mapping(q_if, ifmap); // database interface mapping
-	if (debug) dbg("%s: q_if=%s, ifmap=%s\n", __FUNCTION__, q_if, ifmap);
+	TL_DBG("q_if=%s, ifmap=%s\n", q_if, ifmap);
 	snprintf(path, sizeof(path), TL_PATH"%s/traffic.db", ifmap);
 
 	ret = sqlite3_open(path, &db);
 	if (ret) {
-		printf("%s : Can't open database %s\n", __FUNCTION__, sqlite3_errmsg(db));
+		TL_DBG("CAN'T open database %s\n", sqlite3_errmsg(db));
 		goto finish;
 	}
 
 	// get data
-	memset(sql, 0, sizeof(sql));
 	te = atoll(q_te);
 	ts = atoll(q_ts);
 	sprintf(sql, "SELECT ifname, SUM(tx), SUM(rx) FROM (SELECT timestamp, ifname, tx, rx FROM traffic WHERE timestamp BETWEEN %ld AND %ld) WHERE ifname = \"%s\"",
 		(ts - 30), (te + 30), ifmap);
+
+	if (!f_exists(TLD_DEBUG_LOG)) {
+		printf("WON'T show any debug message, please touch /tmp/TLD_LOG\n");
+	}
 
 	if (sql_get_table(db, sql, &result, &rows, &cols) == SQLITE_OK)
 	{
@@ -230,7 +212,7 @@ void traffic_limiter_dataread(char *q_if, char *q_ts, char *q_te)
 		int index = cols;
 		for (i = 0; i < rows; i++) {
 			for (j = 0; j < cols; j++) {
-				printf("%s :[%3d/%3d] %16s\n", __FUNCTION__, i, j, result[index]);
+				TL_LOG("[%3d/%3d] %16s", i, j, result[index]); // /tmp/TLD.log
 				++index;
 			}
 		}
@@ -261,18 +243,11 @@ void traffic_limiter_queryreal(char *dualwan_mode)
 	memset(end, 0, sizeof(end));
 	memset(tmp, 0, sizeof(tmp));
 
-	int debug = nvram_get_int("tl_debug");
 	lock = file_lock("traffic_limiter");
 	start = nvram_safe_get("tl_date_start");
 
-	/* check daul wan mode */
-	if (traffic_limiter_dualwan_check(dualwan_mode) == 0) {
-		file_unlock(lock);
-		return;
-	}
-
 	g = dualwan = strdup(nvram_safe_get("wans_dualwan"));
-	for (unit = TL_UNIT_S; unit < TL_UNIT_E; ++unit)
+	for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit)
 	{
 		char *pos = NULL;
 		char *old = NULL;
@@ -305,7 +280,7 @@ void traffic_limiter_queryreal(char *dualwan_mode)
 		int alert_s = nvram_get_int(strcat_r(prefix, "alert_enable", tmp));
 		double limit_v = atof(nvram_safe_get(strcat_r(prefix, "limit_max", tmp)));
 		double alert_v = atof(nvram_safe_get(strcat_r(prefix, "alert_max", tmp)));
-		if (debug) dbg("%s : unit=%d, ls=%d, lv=%.2f, as=%d, av=%.2f\n", __FUNCTION__, unit, limit_s, limit_v, alert_s, alert_v);
+		TL_DBG("unit=%d, ls=%d, lv=%.2f, as=%d, av=%.2f\n", limit_s, limit_v, alert_s, alert_v);
 
 		// save realtime traffic
 		snprintf(path, sizeof(path), "/tmp/tl%d_realtime", unit);
@@ -344,14 +319,8 @@ void traffic_limiter_HW_reboot(char *dualwan_mode)
 
 	lock = file_lock("traffic_limiter");
 
-	/* check daul wan mode */
-	if (traffic_limiter_dualwan_check(dualwan_mode) == 0) {
-		file_unlock(lock);
-		return;
-	}
-
 	g = dualwan = strdup(nvram_safe_get("wans_dualwan"));
-	for (unit = TL_UNIT_S; unit < TL_UNIT_E; ++unit)
+	for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit)
 	{
 		memset(ifmap, 0, sizeof(ifmap));
 		if ((!g) || ((word = strsep(&g, " ")) == NULL)) continue;
@@ -370,15 +339,14 @@ void traffic_limiter_HW_reboot(char *dualwan_mode)
 		{
 			ret = sqlite3_open(path, &db);
 			if (ret) {
-				printf("%s : Can't open database %s\n", __FUNCTION__, sqlite3_errmsg(db));
+				TL_DBG("CAN'T open database %s\n", sqlite3_errmsg(db));
 				sqlite3_close(db);
 				file_unlock(lock);
-				exit(1);
+				exit(0);
 			}
 
 			// get timestamp
 			time(&now);
-			memset(sql, 0, sizeof(sql));
 			sprintf(sql, "INSERT INTO traffic VALUES ('%lu','%s','0','%llu')", now, ifmap, current);
 			sqlite3_exec(db, sql, NULL, NULL, &zErr);
 			if (zErr != NULL) sqlite3_free(zErr);

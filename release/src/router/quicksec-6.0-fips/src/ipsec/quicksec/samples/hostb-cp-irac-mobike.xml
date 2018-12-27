@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Remote access setup using mobike. Iras acting as server, 
+     irac as client. -->
+<!-- Related: hosta-cp-iras-mobike.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Shared secret and the identity of the remote IKE peer. -->
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+    <!-- The mobike flag enables mobike support for the IKE SA. 
+         The cfgmode flag enables the configuration payload
+         client side support. The interface-trigger flag establishes 
+         the IKEv2 and IPsec SAs automatically when the virtual adapter
+         is brought up. -->
+    <tunnel name="host-to-host" flags="mobike cfgmode interface-trigger">
+      <!-- Local identity sent to the remote IKE peer. -->
+      <identity id-type="email" id="b@ipsec.com">
+        <!-- Local shared secret. -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- The IP address of the IRAS, from where we
+           get the virtual IP. -->
+      <peer>172.30.4.189</peer>
+      <!-- You can request a specific address to be
+           assigned to you by the IRAS. The IRAS can
+           ignore this message, or if the address is
+           already assigned to some other peer, give
+           a different address. This is an optional
+           element. To enable it, uncomment the element
+           below. -->
+      <!-- <cfgmode-address>192.168.200.123</cfgmode-address> -->
+      <!-- Multiple local IP addresses and local interfaces may be
+           specified for the tunnel. Precedence is used for selecting
+           the local IP address for the IKE SA. -->
+      <!-- IPv4 and IPv6 (except link-local) addresses from the local
+           interface are added to the local IP address list with specified
+           precedence. -->
+      <local-interface precedence="10">eth1</local-interface>
+      <!-- Default precedence value is 0 (lowest precedence). -->
+      <local-ip>172.30.4.167</local-ip>
+      <!-- Name of virtual adapter to use. If there are more than one
+           virtual adapters in the system and the tunnel defines the
+           interface-trigger flag, then the tunnel must also specify
+           which virtual adapter's interface events it must react to. -->
+      <!-- <virtual-ifname>vip0</virtual-ifname> -->
+    </tunnel>
+
+    <!-- As we do not know which virtual IP address the IRAS
+         is going to assign to us, we don't need the src 
+         element. In this case we know the subnets that are
+         going to be assigned by the IRAS so we fill the
+         dst element with the known subnets. -->
+    <rule to-tunnel="host-to-host">
+      <dst>ipv4(192.168.200.0/24),ipv4(192.168.100.0/24)</dst>
+      <local-stack direction="from"/>
+    </rule>
+
+    <!-- A pass rule that handles all the traffic not matching
+         the traffic selectors of any higher precedence rules.
+         Remove this rule if plaintext traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

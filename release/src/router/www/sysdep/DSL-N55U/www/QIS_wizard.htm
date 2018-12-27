@@ -34,6 +34,7 @@
 var targeturl = "/index.htm";
 var firmver = '<% nvram_get("firmver"); %>';
 var detect_status = '<% nvram_get("dsltmp_autodet_state"); %>';
+var wan_type = '<% nvram_get("dsltmp_autodet_wan_type"); %>';
 var autodet_annex_counter = 0;	//for QIS_detect to switch dslx_annex value
 var restartDSLSetting = false;
 var x_Setting = "<% nvram_get("x_Setting"); %>";
@@ -61,6 +62,7 @@ function set_step(focus_id){
 }
 
 function QIS_load_body(){
+	var dslx_annex_state = '<% nvram_get("dslx_annex"); %>';
 	var showCase;
 	showCase = document.getElementById("flag").value;
 
@@ -87,7 +89,16 @@ function QIS_load_body(){
 	}
 	
 	with(document.redirectForm){
-		if ( (detect_status == "Detecting") || (detect_status == "wait_for_init") ||
+		
+		if(wan_type == "PTM"){
+			action = "/qis/QIS_PTM_manual_setting.htm";
+			submit();
+		}
+		else if(detect_status == "up" && wan_type == "ATM" && (dslx_annex_state == 5 || dslx_annex_state == 6)){
+			action = "/qis/QIS_manual_setting.htm";
+			submit();
+		}
+		else if ( (detect_status == "Detecting") || (detect_status == "wait_for_init") ||
 			(detect_status == "initializing") || (detect_status == "up") || 
 			(detect_status == "init") || (detect_status == "wait") ||
 			(detect_status == "down") ) {
@@ -95,11 +106,21 @@ function QIS_load_body(){
 			submit();
 		}
 		else if ( (detect_status == "pppoe") || (detect_status == "pppoa") ) { //1:PPPoE, 2:PPPoA
-			action = "/qis/QIS_ppp_cfg.htm";
+			if(dslx_annex_state == 5 || dslx_annex_state == 6){
+				action = "/qis/QIS_manual_setting.htm";
+			}
+			else{
+				action = "/qis/QIS_ppp_cfg.htm";
+			}
 			submit();
 		}
 		else if ( detect_status == "dhcp") { //2:MER
-			action = "/qis/QIS_mer_cfg.htm";
+			if(dslx_annex_state == 5 || dslx_annex_state == 6){
+				action = "/qis/QIS_manual_setting.htm";
+			}
+			else{
+				action = "/qis/QIS_mer_cfg.htm";
+			}
 			submit();
 		}
 		else if ( detect_status == "Fail") {

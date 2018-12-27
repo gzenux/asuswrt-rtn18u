@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Client-server setup using EAP. -->
+<!-- Related: hosta-eap-gw.xml -->
+<quicksec>
+  <!-- to generate the CA and end entity certificates used in this
+       sample, please execute 'ssh-certmake cert_template.rsa'
+       (found from the src/ipsec/quicksec/samples directory).
+       This will generate the necessary files needed by this policy.
+       This operation must be done only on one of the test hosts!
+       Copy the generated rsa* files to local and to remote IKE
+       peer's directory (where policy manager is located). -->
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Trusted CA -->
+      <ca file="rsaca.ca"/>
+
+      <!-- static CRL from a file-->
+      <crl file="rsaca.crl"/>
+
+      <!-- EAP type -->
+      <eap type="md5-challenge"/>
+      <!-- <eap type="sim"/> -->
+      <!-- <eap type="tls"/> -->
+      <!-- <eap type="aka"/> -->
+      <!-- <eap type="mschapv2"/> -->
+    </auth-domain>
+
+    <!-- username and password for EAP authentication.
+         Note that the username is identical to the local identity in
+         the tunnel "host-to-host" below. In IKEv2, the EAP server should 
+         not send EAP identity requests to the client when performing EAP 
+         authentication as the client has already sent its identity in the 
+         first IKE_AUTH message. The identity the client will use in 
+         IKE_AUTH message is the tunnel's local identity. If the EAP server
+         does send an EAP identity request, the client will respond to the EAP 
+         identity request with the username as configured in the client-auth 
+         block below. In any case, the password is used for md5-challenge
+         authentication.
+         EAP-SIM and EAP-AKA do not use the password at all because
+         authentication secrets are stored in a SIM/USIM card. If the server
+         sends an EAP identity request, the username configured here is used
+         by EAP-SIM or EAP-AKA as follows: if the username is complete, e.g.
+         "user@domain" then that username is used unchanged. If it contains
+         a domain only, e.g. "@domain" then the IMSI is obtained from the
+         SIM/USIM card, prefixed with "1" (EAP-SIM) or "0" (EAP-AKA) and the
+         domain part is appended to it to form the final username, for example
+         "0555444333222111@domain". If no username is configured here then
+         the prefixed IMSI is used without any domain part. -->
+    <client-auth type="eap" user-name="user@domain" password="password"/> 
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host">
+      <!-- local identity sent to the remote IKE peer 
+           local identity must be the same as the user-name in the 
+           client-auth element -->
+      <identity id-type="email" id="user@domain"/>
+    </tunnel>
+
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

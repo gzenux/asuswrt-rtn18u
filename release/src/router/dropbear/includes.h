@@ -22,8 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
 
-#ifndef _INCLUDES_H_
-#define _INCLUDES_H_
+#ifndef DROPBEAR_INCLUDES_H_
+#define DROPBEAR_INCLUDES_H_
 
 
 #include "config.h"
@@ -120,18 +120,48 @@
 #include <libgen.h>
 #endif
 
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
+#ifdef BUNDLED_LIBTOM
 #include "libtomcrypt/src/headers/tomcrypt.h"
 #include "libtommath/tommath.h"
+#else
+#include <tomcrypt.h>
+#include <tommath.h>
+#endif
+
 
 #include "compat.h"
-#include "fake-rfc2553.h"
 
-#ifndef HAVE_UINT16_T
+#ifndef HAVE_U_INT8_T
+typedef unsigned char u_int8_t;
+#endif /* HAVE_U_INT8_T */
+#ifndef HAVE_UINT8_T
+typedef u_int8_t uint8_t;
+#endif /* HAVE_UINT8_T */
+
 #ifndef HAVE_U_INT16_T
 typedef unsigned short u_int16_t;
 #endif /* HAVE_U_INT16_T */
+#ifndef HAVE_UINT16_T
 typedef u_int16_t uint16_t;
 #endif /* HAVE_UINT16_T */
+
+#ifndef HAVE_U_INT32_T
+typedef unsigned int u_int32_t;
+#endif /* HAVE_U_INT32_T */
+#ifndef HAVE_UINT32_T
+typedef u_int32_t uint32_t;
+#endif /* HAVE_UINT32_T */
+
+#ifdef SO_PRIORITY
+#include <linux/types.h>
+#include <linux/pkt_sched.h>
+#endif
+
+#include "fake-rfc2553.h"
 
 #ifndef LOG_AUTHPRIV
 #define LOG_AUTHPRIV LOG_AUTH
@@ -147,4 +177,4 @@ typedef u_int16_t uint16_t;
 # define UNUSED(x) x 
 #endif
 
-#endif /* _INCLUDES_H_ */
+#endif /* DROPBEAR_INCLUDES_H_ */

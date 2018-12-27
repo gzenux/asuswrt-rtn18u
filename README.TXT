@@ -17,6 +17,7 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 		libstdc++6-4.4-dev
 		g++-4.4
 		g++
+		gengetopt
 		git (or git-core)
 		gitk
 		zlib1g-dev
@@ -33,6 +34,14 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 		texinfo
 		dos2unix (or tofrodos)
 		xsltproc
+		uboot-mkimage
+		device-tree-compiler
+		python 2.7 or above.
+
+		If you are using Ubuntu amd64, you may need to install 32-bit packages listed below.
+			libc6-i386
+			lib32stdc++6
+			lib32z1
 
 		If you are using Ubuntu amd64, you may need to install 32-bit packages listed below.
 			libc6-i386
@@ -40,8 +49,11 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 			lib32z1
 
 	b. Fedora
+		python 2.7 or above.
 		sudo yum groupinstall "Development Tools"
-		sudo yum install gettext-devel libxml2-devel mtd-utils-ubi ncurses-devel zlib-devel intltool sharutils docbook-dtds docbook-style-xsl
+		sudo yum install gettext-devel libxml2-devel mtd-utils-ubi ncurses-devel \
+			zlib-devel intltool sharutils docbook-dtds docbook-style-xsl \
+			uboot-tools dtc gengetopt
 
 		If you are using Fedora 19 or above, you need to install below packages.
 		sudo yum groupinstall "C Development Tools and Libraries"
@@ -80,17 +92,31 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 	    	    - extract mips-2012.03.tar.bz2 directory to /opt
 		    - add /opt/mips-2012.03/bin to your uboot path
 
-	Qualcomm SoC models
-	===================
+	Qualcomm QCA9557 MIPS SoC models
+	================================
+
+		For example, RT-AC55U, 4G-AC55U.
 
 		To install the tools:
-	    	    - extract openwrt-gcc463.mips.tar.bz2 directory to /opt
+	    	    - extract tools/openwrt-gcc463.mips.tar.bz2 directory to /opt
 		    - add /opt/openwrt-gcc463.mips/bin to your path
 		    - If you want to build small utilities out of asuswrt box,
 		      add STAGING_DIR environment variable as below:
 
 		      export STAGING_DIR=/opt/openwrt-gcc463.mips
+
+	Qualcomm IPQ806x/IPQ40xx ARM SoC models
+	===============================
+
+		For example, BRT-AC828M2.
+
+		To install the tools:
+		    - extract tools/openwrt-gcc463.arm.tar.bz2 directory to /opt
+		    - add /opt/openwrt-gcc463.arm/bin to your path
+		    - If you want to build small utilities out of asuswrt box,
+		      add STAGING_DIR environment variable as below:
 	
+		      export STAGING_DIR=/opt/openwrt-gcc463.arm
 
 	Note: Broadcom/Ralink(except 4708 series) platform use the same toolchain for user space program, so please set PATH to the same directory as above
    
@@ -126,3 +152,12 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 		cd release/src-qca
 		make rt-ac55u
 		( make rt-ac55uhp )
+
+	g. brt-ac828m2 (/ rt-ac88q )
+		cd release/src-qca-ipq8064
+		make brt-ac828m2
+
+	h. rt-ac58u (/ rt-ac42u )
+		cd release/src-qca-dakota
+		make rt-ac58u
+		( make rt-ac42u )

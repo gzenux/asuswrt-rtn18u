@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <params>
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peers -->
+      <remote-secret id-type="ip" 
+                     id="172.30.4.167">barfoo</remote-secret>
+      <remote-secret id-type="ip" 
+                     id="172.30.4.252">barfoobar</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+    <!-- This policy demonstrates use of multiple IKE ports. My own address
+         is 172.30.4.189. The peer at address ...167 is contacted
+         using IKE at port 500, and peer at ...252 using IKE at port
+         4501. The system also allows contacting two services at the
+         same peer using different ports, e.g. it is legal to change
+         string 252 to 167 globally. 
+
+         To be able to set non-standard port, the command line
+         option "ike-ports" needs to be specified. Multiple "ike-ports" 
+         options may be set.
+    -->
+
+    <tunnel name="port500">
+      <identity id-type="email" id="a@ipsec.com">
+        <local-secret>foobar</local-secret>
+      </identity>
+      <local-ip>172.30.4.189</local-ip>
+      <local-port>500</local-port>
+    </tunnel>
+
+    <tunnel name="port4501">
+      <identity id-type="email" id="a@ipsec.com">
+        <local-secret>foobarfoo</local-secret>
+      </identity>
+      <local-ip>172.30.4.189</local-ip>
+      <local-port>4501</local-port>
+    </tunnel>
+
+    <!-- Allow IKE traffic on port 4501, and corresponding nat-t port
+         5501. Standard ports 500 and 4500 are opened internally, but
+         the extra port need to be enabled at the policy. -->
+    <rule>
+      <dst>ipv4(udp:4501,0.0.0.0/0)</dst>
+    </rule>
+    <rule>
+      <dst>ipv4(udp:5501,0.0.0.0/0)</dst>
+    </rule>
+
+    <rule to-tunnel="port500">
+      <src>ipv4(172.30.4.189)</src>
+      <dst>ipv4(172.30.4.167)</dst>
+    </rule>
+
+    <rule to-tunnel="port4501">
+      <src>ipv4(172.30.4.189)</src>
+      <dst>ipv4(172.30.4.252)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

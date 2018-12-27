@@ -30,13 +30,13 @@
 #include "ssh.h"
 #include "auth.h"
 
-static void send_msg_service_accept(unsigned char *name, int len);
+static void send_msg_service_accept(char *name, int len);
 
 /* processes a SSH_MSG_SERVICE_REQUEST, returning 0 if finished,
  * 1 if not */
 void recv_msg_service_request() {
 
-	unsigned char * name;
+	char * name;
 	unsigned int len;
 
 	TRACE(("enter recv_msg_service_request"))
@@ -57,7 +57,7 @@ void recv_msg_service_request() {
 	if (len == SSH_SERVICE_CONNECTION_LEN &&
 			(strncmp(SSH_SERVICE_CONNECTION, name, len) == 0)) {
 		if (ses.authstate.authdone != 1) {
-			dropbear_exit("request for connection before auth");
+			dropbear_exit("Request for connection before auth");
 		}
 
 		send_msg_service_accept(name, len);
@@ -68,12 +68,12 @@ void recv_msg_service_request() {
 
 	m_free(name);
 	/* TODO this should be a MSG_DISCONNECT */
-	dropbear_exit("unrecognised SSH_MSG_SERVICE_REQUEST");
+	dropbear_exit("Unrecognised SSH_MSG_SERVICE_REQUEST");
 
 
 }
 
-static void send_msg_service_accept(unsigned char *name, int len) {
+static void send_msg_service_accept(char *name, int len) {
 
 	TRACE(("accepting service %s", name))
 

@@ -24,6 +24,8 @@
 #ifndef _httpd_h_
 #define _httpd_h_
 
+#define _GNU_SOURCE
+
 #include <arpa/inet.h>
 #if defined(DEBUG) && defined(DMALLOC)
 #include <dmalloc.h>
@@ -268,6 +270,7 @@ extern int get_token_list_length(void);
 extern asus_token_t* search_timeout_in_list(asus_token_t **prev, int fromapp_flag);
 extern asus_token_t* add_token_to_list(char *token, int add_to_end);
 extern asus_token_t* create_list(char *token);
+extern void set_referer_host(void);
 
 /* web-*.c */
 extern int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit);

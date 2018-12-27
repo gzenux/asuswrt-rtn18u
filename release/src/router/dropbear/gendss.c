@@ -26,7 +26,7 @@
 #include "dbutil.h"
 #include "signkey.h"
 #include "bignum.h"
-#include "random.h"
+#include "dbrandom.h"
 #include "buffer.h"
 #include "gendss.h"
 #include "dss.h"
@@ -35,31 +35,28 @@
 
 /* This is just a test */
 
-#ifdef DROPBEAR_DSS
+#if DROPBEAR_DSS
 
-static void getq(dss_key *key);
-static void getp(dss_key *key, unsigned int size);
-static void getg(dss_key *key);
-static void getx(dss_key *key);
-static void gety(dss_key *key);
+static void getq(dropbear_dss_key *key);
+static void getp(dropbear_dss_key *key, unsigned int size);
+static void getg(dropbear_dss_key *key);
+static void getx(dropbear_dss_key *key);
+static void gety(dropbear_dss_key *key);
 
-dss_key * gen_dss_priv_key(unsigned int size) {
+dropbear_dss_key * gen_dss_priv_key(unsigned int size) {
 
-	dss_key *key;
+	dropbear_dss_key *key;
 
-	key = (dss_key*)m_malloc(sizeof(dss_key));
+	if (size != 1024) {
+		dropbear_exit("DSS keys have a fixed size of 1024 bits");
+	}
 
-	key->p = (mp_int*)m_malloc(sizeof(mp_int));
-	key->q = (mp_int*)m_malloc(sizeof(mp_int));
-	key->g = (mp_int*)m_malloc(sizeof(mp_int));
-	key->y = (mp_int*)m_malloc(sizeof(mp_int));
-	key->x = (mp_int*)m_malloc(sizeof(mp_int));
-	m_mp_init_multi(key->p, key->q, key->g, key->y, key->x, NULL);
-	
-	seedrandom();
+	key = m_malloc(sizeof(*key));
+
+	m_mp_alloc_init_multi(&key->p, &key->q, &key->g, &key->y, &key->x, NULL);
 	
 	getq(key);
-	getp(key, size);
+	getp(key, size/8);
 	getg(key);
 	getx(key);
 	gety(key);
@@ -68,9 +65,9 @@ dss_key * gen_dss_priv_key(unsigned int size) {
 	
 }
 
-static void getq(dss_key *key) {
+static void getq(dropbear_dss_key *key) {
 
-	char buf[QSIZE];
+	unsigned char buf[QSIZE];
 
 	/* 160 bit prime */
 	genrandom(buf, QSIZE);
@@ -81,12 +78,12 @@ static void getq(dss_key *key) {
 
 	/* 18 rounds are required according to HAC */
 	if (mp_prime_next_prime(key->q, 18, 0) != MP_OKAY) {
-		fprintf(stderr, "dss key generation failed\n");
+		fprintf(stderr, "DSS key generation failed\n");
 		exit(1);
 	}
 }
 
-static void getp(dss_key *key, unsigned int size) {
+static void getp(dropbear_dss_key *key, unsigned int size) {
 
 	DEF_MP_INT(tempX);
 	DEF_MP_INT(tempC);
@@ -100,7 +97,7 @@ static void getp(dss_key *key, unsigned int size) {
 
 	/* 2*q */
 	if (mp_mul_d(key->q, 2, &temp2q) != MP_OKAY) {
-		fprintf(stderr, "dss key generation failed\n");
+		fprintf(stderr, "DSS key generation failed\n");
 		exit(1);
 	}
 	
@@ -117,25 +114,25 @@ static void getp(dss_key *key, unsigned int size) {
 
 		/* C = X mod 2q */
 		if (mp_mod(&tempX, &temp2q, &tempC) != MP_OKAY) {
-			fprintf(stderr, "dss key generation failed\n");
+			fprintf(stderr, "DSS key generation failed\n");
 			exit(1);
 		}
 
 		/* P = X - (C - 1) = X - C + 1*/
 		if (mp_sub(&tempX, &tempC, &tempP) != MP_OKAY) {
-			fprintf(stderr, "dss key generation failed\n");
+			fprintf(stderr, "DSS key generation failed\n");
 			exit(1);
 		}
 		
 		if (mp_add_d(&tempP, 1, key->p) != MP_OKAY) {
-			fprintf(stderr, "dss key generation failed\n");
+			fprintf(stderr, "DSS key generation failed\n");
 			exit(1);
 		}
 
 		/* now check for prime, 5 rounds is enough according to HAC */
 		/* result == 1  =>  p is prime */
 		if (mp_prime_is_prime(key->p, 5, &result) != MP_OKAY) {
-			fprintf(stderr, "dss key generation failed\n");
+			fprintf(stderr, "DSS key generation failed\n");
 			exit(1);
 		}
 	} while (!result);
@@ -145,7 +142,7 @@ static void getp(dss_key *key, unsigned int size) {
 	m_free(buf);
 }
 
-static void getg(dss_key * key) {
+static void getg(dropbear_dss_key * key) {
 
 	DEF_MP_INT(div);
 	DEF_MP_INT(h);
@@ -155,11 +152,11 @@ static void getg(dss_key * key) {
 
 	/* get div=(p-1)/q */
 	if (mp_sub_d(key->p, 1, &val) != MP_OKAY) {
-		fprintf(stderr, "dss key generation failed\n");
+		fprintf(stderr, "DSS key generation failed\n");
 		exit(1);
 	}
 	if (mp_div(&val, key->q, &div, NULL) != MP_OKAY) {
-		fprintf(stderr, "dss key generation failed\n");
+		fprintf(stderr, "DSS key generation failed\n");
 		exit(1);
 	}
 
@@ -168,12 +165,12 @@ static void getg(dss_key * key) {
 	do {
 		/* now keep going with g=h^div mod p, until g > 1 */
 		if (mp_exptmod(&h, &div, key->p, key->g) != MP_OKAY) {
-			fprintf(stderr, "dss key generation failed\n");
+			fprintf(stderr, "DSS key generation failed\n");
 			exit(1);
 		}
 
 		if (mp_add_d(&h, 1, &h) != MP_OKAY) {
-			fprintf(stderr, "dss key generation failed\n");
+			fprintf(stderr, "DSS key generation failed\n");
 			exit(1);
 		}
 	
@@ -182,15 +179,15 @@ static void getg(dss_key * key) {
 	mp_clear_multi(&div, &h, &val, NULL);
 }
 
-static void getx(dss_key *key) {
+static void getx(dropbear_dss_key *key) {
 
 	gen_random_mpint(key->q, key->x);
 }
 
-static void gety(dss_key *key) {
+static void gety(dropbear_dss_key *key) {
 
 	if (mp_exptmod(key->g, key->x, key->p, key->y) != MP_OKAY) {
-		fprintf(stderr, "dss key generation failed\n");
+		fprintf(stderr, "DSS key generation failed\n");
 		exit(1);
 	}
 }

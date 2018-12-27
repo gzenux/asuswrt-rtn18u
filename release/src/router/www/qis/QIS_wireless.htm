@@ -12,12 +12,18 @@
 <script type="text/javascript" src="/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script>
+var wanstate = -1;
+var wansbstate = -1;
+var wanauxstate = -1;
 var wl0_ssid_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl0_ssid"); %>');
 var wl1_ssid_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl1_ssid"); %>');
 var wl2_ssid_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl2_ssid"); %>');
 var wl0_wpa_psk_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl0_wpa_psk"); %>');
 var wl1_wpa_psk_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl1_wpa_psk"); %>');
 var wl2_wpa_psk_orig = decodeURIComponent('<% nvram_char_to_ascii("", "wl2_wpa_psk"); %>');
+var ttc = '<% nvram_get("territory_code"); %>';
+var is_TW_sku = (ttc.search("TW") == -1) ? false : true;
+var is_CN_sku = (ttc.search("CN") == -1) ? false : true;
 
 if('<% nvram_get("x_Setting"); %>' == '0')
 	var smart_connect_tmp = '1';
@@ -41,120 +47,13 @@ var smart_connect_desc_flag = '0';
 var wlc_state = '0';
 var wlc_sbstate = '0';
 var wlc_scan_state = '0';
-var systime = new Date();
-
-Date.prototype.stdTimezoneOffset_if_dst = function() {
-    var jan = new Date(this.getFullYear(), 0, 1);
-    var jul = new Date(this.getFullYear(), 6, 1);
-    if(jan != jul)
-    	return true;	// w/ DST
-    else
-    	return false;	// w/o DST
-}
-
-Date.prototype.stdTimezoneOffset_withoutDST = function() {
-    var jan = new Date(this.getFullYear(), 0, 1);
-    var jul = new Date(this.getFullYear(), 6, 1);
-    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());	//DST w/o offset value
-}
-
-Date.prototype.dst = function() {
-	if(this.stdTimezoneOffset_if_dst()){	// w/ DST		
-		if(this.getTimezoneOffset() == this.stdTimezoneOffset_withoutDST()){
-			return 2; //is in not DST now
-		}	
-		else if(this.getTimezoneOffset() < this.stdTimezoneOffset_withoutDST()){
-			return 3; //is in DST now
-		}
-		else
-			return 2;
-	}
-	else{	// w/o DST
-		return 1;
-	}
-}
-
 var isDefault = false;
-
-var timezones = {
-	"720":"UTC12",
-	"660":"UTC11",
-	"600":"UTC10",
-	"540":"NAST9DST",
-	"480":"PST8DST",
-	"420":"MST7_2",
-	"360":"CST6_2",
-	"300":"UTC5_1",
-	"270":"UTC4.30",
-	"240":"UTC4_1",
-	"210":"NST3.30DST",
-	"180":"UTC3",
-	"120":"NORO2DST",
-	"60":"UTC1",
-	"0":"GMT0",
-	"-60":"UTC-1_2",
-	"-120":"UTC-2_1",
-	"-180":"UTC-3_1",
-	"-210":"UTC-3.30DST",
-	"-240":"UTC-4_5",
-	"-270":"UTC-4.30",
-	"-300":"UTC-5",
-	"-330":"UTC-5.30_1",
-	"-345":"UTC-5.45",
-	"-360":"UTC-6",
-	"-390":"UTC-6.30",
-	"-420":"UTC-7",
-	"-480":"CCT-8",
-	"-540":"JST",
-	"-570":"CST-9.30",
-	"-600":"UTC-10_2",
-	"-660":"UTC-11",
-	"-720":"UTC-12",
-	"-780":"UTC-13"
-};
-
-var timezones_dst = {
-	"720":"UTC12",
-	"660":"UTC11",
-	"600":"UTC10",
-	"540":"NAST9DST",
-	"480":"PST8DST",
-	"420":"MST7DST_1",
-	"360":"UTC6DST",
-	"300":"EST5DST",
-	"270":"UTC4.30",
-	"240":"AST4DST",
-	"210":"NST3.30DST",
-	"180":"EBST3DST_1",
-	"120":"NORO2DST",
-	"60":"EUT1DST",
-	"0":"GMT0DST_1",
-	"-60":"UTC-1DST_1",
-	"-120":"UTC-2DST",
-	"-180":"IST-3",
-	"-210":"UTC-3.30DST",
-	"-240":"UTC-4DST_2",
-	"-270":"UTC-4.30",
-	"-300":"UTC-5",
-	"-330":"UTC-5.30_1",
-	"-345":"UTC-5.45",
-	"-360":"RFT-6",
-	"-390":"UTC-6.30",
-	"-420":"UTC-7",
-	"-480":"CCT-8",
-	"-540":"JST",
-	"-570":"UTC-9.30DST",
-	"-600":"UTC-10DST_1",
-	"-660":"UTC-11",
-	"-720":"NZST-12DST",
-	"-780":"UTC-13"
-};
  
 function QKWireless_load_body(){	
 	parent.document.title = "<#Web_Title#> - <#QKSet_wireless_webtitle#>";
-	parent.set_step("t3");	
-	
-	/*To Handle copy, paste for mobile device*/
+	parent.set_step("t3");
+	check_pppoe_state();
+		/*To Handle copy, paste for mobile device*/
 	if (document.getElementById("wl0_ssid").addEventListener){
 		document.getElementById("wl0_ssid").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
 		document.getElementById("wl0_wpa_psk").addEventListener("paste", function(e){setTimeout(function(){Sync_2ghz(2);},100);});
@@ -281,11 +180,56 @@ function QKWireless_load_body(){
 			document.getElementById("field_general").style.display = "";
 	}
 
-	setTimeout(function(){
-		parent.document.start_update.action_script.value = "start_webs_update";
-		parent.document.start_update.flag.value = "background";
-		parent.document.start_update.submit();
-	}, 100);
+	if((parent.document.QKform.sw_mode.value == 1) && (is_TW_sku || is_CN_sku)){	
+		check_wan_state();
+	}	
+
+	if(parent.isFirst && !parent.swisscom_support){
+		require(['/require/modules/timeZone.js'], function(timeZone) {
+			var preferredLang = top.document.titleForm.preferred_lang.value;
+			var timeZoneObj = new timeZone.get(preferredLang);
+
+			document.form.time_zone.value = timeZoneObj.time_zone;
+			document.form.time_zone.disabled = false;
+			document.form.time_zone_dst.value = (timeZoneObj.hasDst) ? 1 : 0;
+			document.form.time_zone_dst.disabled = !timeZoneObj.hasDst;
+			parent.restartTime = true;
+		});
+	}
+
+	if(live_update_support && !no_update_support){
+		setTimeout(function(){
+			parent.document.start_update.action_script.value = "start_webs_update";
+			parent.document.start_update.flag.value = "background";
+			parent.document.start_update.submit();
+		}, 100);
+	}
+}
+
+function check_wan_state(){
+	$.ajax({
+		url: '/result_of_get_changed_status_QIS.asp',
+		dataType: 'script',		
+		error: function(xhr){
+			setTimeout("check_wan_state();", 1000);
+		},
+		success: function(response){
+			setTimeout("check_wan_state();", 1000);
+			if((wanstate  == 1 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 6 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 4 && wansbstate == 2 && wanauxstate == 0)){
+				if(!parent.flag_manual)
+					parent.pppoe_failed_flag = true;
+			}
+			else if(wanstate == 4 && wansbstate == 4 && wanauxstate == 0){
+				parent.pppoe_failed_flag = false;
+				parent.changeSubnet = true;
+			}
+			else{	
+				if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
+					parent.pppoe_failed_flag = false;
+				}
+			}
+		}
+	});	
 }
 
 function submitForm(){
@@ -365,7 +309,7 @@ function submitForm(){
 			//confirm common string combination     #JS_common_passwd#
 			var is_common_string0 = check_common_string(document.form.wl0_wpa_psk.value, "wpa_key");
 			if(is_common_string0){
-				if(confirm("<#JS_common_passwd#>")){
+				if(!confirm("<#JS_common_passwd#>")){
 					document.form.wl0_wpa_psk.focus();
 					document.form.wl0_wpa_psk.select();
 					return false;   
@@ -458,7 +402,7 @@ function submitForm(){
 					//confirm common string combination     #JS_common_passwd#
 					var is_common_string1 = check_common_string(document.form.wl1_wpa_psk.value, "wpa_key");
 					if(is_common_string1){
-						if(confirm("<#JS_common_passwd#>")){
+						if(!confirm("<#JS_common_passwd#>")){
 							document.form.wl1_wpa_psk.focus();
 							document.form.wl1_wpa_psk.select();
 							return false;   
@@ -551,7 +495,7 @@ function submitForm(){
 					//confirm common string combination     #JS_common_passwd#
 					var is_common_string2 = check_common_string(document.form.wl2_wpa_psk.value, "wpa_key");
 					if(is_common_string2){
-						if(confirm("<#JS_common_passwd#>")){
+						if(!confirm("<#JS_common_passwd#>")){
 							document.form.wl2_wpa_psk.focus();
 							document.form.wl2_wpa_psk.select();
 							return false;   
@@ -797,41 +741,6 @@ function submitForm(){
 		}	
 	}
 
-	/* Viz patched to set time_zone automatically 2014.06 start */
-	if(timezones[systime.getTimezoneOffset()] != undefined 
-			&& timezones[systime.getTimezoneOffset()] != "" 
-			&& document.form.time_zone.value != timezones[systime.getTimezoneOffset()]
-			&& parent.isFirst
-			&& !parent.swisscom_support)
-	{
-				document.form.time_zone.disabled = false;				
-				if(systime.dst() == 2){		// w/ DST and is not in DST now		
-					if(timezones_dst[systime.getTimezoneOffset()] != "")
-						document.form.time_zone.value = timezones_dst[systime.getTimezoneOffset()];
-					else if(document.form.time_zone.value == "")
-						document.form.time_zone.value = timezones_dst[0];
-				}
-				else if(systime.dst() == 3){		// w/ DST and is in DST now
-					if(timezones_dst[systime.getTimezoneOffset()+60] != "")
-						document.form.time_zone.value = timezones_dst[systime.getTimezoneOffset()+60];
-					else if(document.form.time_zone.value == "")
-						document.form.time_zone.value = timezones_dst[0];
-				}
-				else{	// w/o DST
-					if(timezones[systime.getTimezoneOffset()] != "")
-						document.form.time_zone.value = timezones[systime.getTimezoneOffset()];	
-					else if(document.form.time_zone.value == "")
-						document.form.time_zone.value = timezones_dst[0];	
-					
-					document.form.time_zone_dst.disabled = false;	
-					document.form.time_zone_dst.value = "0";	//Do disable manual dstoff
-				}
-
-				parent.restartTime = true;
-				timezone_by_preferred_lang(document.form.time_zone.value);
-	}
-
-	/* Viz patched to set time_zone automatically 2014.06 end */
 	child_macaddr = '';
 	parent.w_Setting_tmp = document.form.w_Setting.value;
 	document.getElementById("loadingIcon").style.display = "";
@@ -863,99 +772,26 @@ function submitForm(){
 		document.form.action_script.value = "saveNvram";
 		document.form.action_wait.value = "0";
 		
-		if(document.form.sw_mode.value == "1" && !document.form.wl0_ssid.disabled) parent.restartWireless = true;
+		if(document.form.sw_mode.value == "1" && !document.form.wl0_ssid.disabled) 
+			parent.restartWireless = true;
+	}
+
+	if(parent.pppoe_failed_flag && parent.document.QKform.sw_mode.value == 1 && !parent.flag_manual){
+		document.form.action_script.value = "saveNvram";
+		document.form.flag.value = "pppoe_failed";
+		document.form.next_page.value = "/qis/QIS_internet_account.htm";
+	}
+
+	if(parent.document.QKform.wan_proto.value == "pppoe" && parent.flag_manual){
+		document.form.action_script.value += "restart_wan_if";
 	}
 
 	document.form.submit();
-	if(document.form.sw_mode.value == "1" || document.form.sw_mode.value == "3"){
+	if((document.form.sw_mode.value == "1" || document.form.sw_mode.value == "3") && !parent.pppoe_failed_flag){
 		setTimeout(function(){
 			location.href = "/qis/QIS_finish.htm";
 		}, 500)
 	}
-}
-
-function timezone_by_preferred_lang(v){
-
-		switch("<% nvram_get("preferred_lang"); %>"){
-			case "BR":	//"EBST3DST_1",	#TZ21#"
-					break;
-			case "CN":
-					if(v == "CCT-8")
-							document.form.time_zone.value = "CST-8";
-					break;
-			case "CZ":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "UTC-1DST_1_1";				
-					break;
-			case "DA":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "MET-1DST";
-					break;
-			case "DE":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "MEZ-1DST";
-					break;
-			case "ES":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "MET-1DST_1";
-					break;
-			case "FI":
-					if(v == "UTC-2DST")
-							document.form.time_zone.value = "UTC-2DST_3";
-					break;
-			case "FR":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "MET-1DST_1";
-					break;
-			case "HU":
-					break;
-			case "IT":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "MEZ-1DST_1";
-					break;
-			case "JP":
-					break;
-			case "KR":
-					if(v == "JST")
-							document.form.time_zone.value = "UTC-9_1";
-					break;
-			case "MS":
-					if(v == "CCT-8")
-							document.form.time_zone.value = "SST-8";
-					break;
-			case "NO":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "MET-1DST";
-					break;
-			case "PL":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "UTC-1DST_2";
-					break;
-			case "RO":
-					break;
-			case "RU":
-					if(v == "UTC-3_1")
-							document.form.time_zone.value = "UTC-3_4";
-					break;
-			case "SV":
-					if(v == "UTC-1DST_1")
-							document.form.time_zone.value = "MET-1DST";
-					break;
-			case "TH":
-					break;
-			case "TR":
-					if(v == "UTC-2DST")
-							document.form.time_zone.value = "UTC-2DST_2";
-					break;
-			case "TW":
-					break;
-			case "UK":
-					if(v == "UTC-2DST")
-							document.form.time_zone.value = "EET-2DST";
-					break;
-			default:
-					break;
-		}
 }
 
 function reset_wl_hwaddr(prefix){
@@ -1462,6 +1298,26 @@ function detect_LANStatus(_flag){
 		}
 	});
 }
+
+function check_pppoe_state(){
+	$.ajax({
+		url: '/result_of_get_changed_status_QIS.asp',
+		dataType: 'script',		
+		error: function(xhr){
+			check_pppoe_state();		
+		},
+		success: function(response){
+			setTimeout("check_pppoe_state();", 1000);
+			if((wanstate  == 1 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 1 && wansbstate == 0 && wanauxstate == 1) || (wanstate  == 6 && wansbstate == 0 && wanauxstate == 0) || (wanstate  == 4 && wansbstate == 2 && wanauxstate == 0)){
+				if(!parent.flag_manual)
+					parent.pppoe_failed_flag = true;				
+			}
+			else if(wanstate  == 2 && wansbstate == 0 && wanauxstate == 0){
+				parent.pppoe_failed_flag = false;
+			}	
+		}
+	});	
+}
 </script>
 </head>
 
@@ -1474,7 +1330,7 @@ function detect_LANStatus(_flag){
 <input type="hidden" name="prev_page" value="QIS_internet_success.htm">
 <input type="hidden" name="flag" value="">
 <input type="hidden" name="wsc_config_state" value="1">
-
+<input type="hidden" name="wan_unit" value="0">
 
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_wait" value="3">
@@ -1485,7 +1341,7 @@ function detect_LANStatus(_flag){
 <input type="hidden" name="time_zone_dst" value="<% nvram_get("time_zone_dst"); %>" disabled>
 <!-- wireless -->
 <input type="hidden" name="wps_enable" value="<% nvram_get("wps_enable"); %>" disabled>
-<input type="hidden" name="wps_band" value="<% nvram_get("wps_band"); %>" disabled>
+<input type="hidden" name="wps_band" value="<% nvram_get("wps_band_x"); %>" disabled>
 <input type="hidden" name="wps_multiband" value="<% nvram_get("wps_multiband"); %>" disabled>
 <input type="hidden" name="wps_dualband" value="<% nvram_get("wps_dualband"); %>" disabled>
 <input type="hidden" name="wl0_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl0_ssid"); %>">
@@ -1533,7 +1389,7 @@ function detect_LANStatus(_flag){
 <input type="hidden" name="http_username" value="" disabled>
 <input type="hidden" name="http_passwd" value="" disabled>
 <input type="hidden" name="sw_mode" value="">
-<input type="hidden" name="x_Setting" value="1" disabled>
+<input type="hidden" name="x_Setting" value="1">
 <input type="hidden" name="w_Setting" value="1">
 <!-- wireless client -->
 <input type="hidden" name="wlc_ure_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wlc_ure_ssid"); %>" disabled>
@@ -1668,10 +1524,8 @@ function detect_LANStatus(_flag){
 			</td>
 		</tr>
 	</table>
-
 	<br/>
 	<div class="QISWireless_DescSetting" align="left"><#qis_wireless_setting#></div>
-	<br/>
 	<table class="QISform_wireless" width="400" border=0 align="center" cellpadding="4" cellspacing="0">
 	<tr>
 		<th colspan="2" id="wl0_desc_name" class="QISWireless_DescSecurity">2.4 GHz - <#Security#> </th>
@@ -1683,14 +1537,14 @@ function detect_LANStatus(_flag){
 		</td>
 	</tr>
 	<tr id="wl_unit_field_0">
-		<th width="160"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#Network_key#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
+		<th width="160"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#PPPConnection_Password_itemname#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 		<td class="QISformtd">
 			<input id="wl0_wpa_psk" name="wl0_wpa_psk" type="password" tabindex="4" onBlur="switchType(this, false);" onFocus="switchType(this, true);" value="<% nvram_char_to_ascii("WLANConfig11b", "wl0_wpa_psk"); %>" onkeyup="Sync_2ghz(2);" style="height:25px;" class="input_32_table" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off"/>
 		</td>
 	</tr>
 	<tr id="wl_unit_field_1">
 		<th id="wl_unit_field_1_1" class="QISWireless_DescSecurity">5 GHz - <#Security#> </th>
-		<td class="QISformtd" id="wl_unit_field_1_2" style="padding-top:12px;">
+		<td class="QISformtd" id="wl_unit_field_1_2" style="padding-top:12px;display:none">
 			<input type="checkbox" id="sync_with_2ghz" name="sync_with_2ghz" tabindex="5" class="input" onclick="setTimeout('Sync_2ghz(2);',0);" checked="checked"><span id="syncCheckbox"><#qis_ssid_desc#></span>
 		</td>
 	</tr>
@@ -1701,14 +1555,14 @@ function detect_LANStatus(_flag){
 		</td>
 	</tr>
 	<tr id="wl_unit_field_3">
-		<th width="160"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#Network_key#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
+		<th width="160"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#PPPConnection_Password_itemname#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 		<td class="QISformtd">
 			<input id="wl1_wpa_psk" name="wl1_wpa_psk" type="password" tabindex="7" onBlur="switchType(this, false);" onFocus="switchType(this, true);" value="<% nvram_char_to_ascii("WLANConfig11b", "wl1_wpa_psk"); %>" onkeyup="Sync_2ghz(5);" style="height:25px;" class="input_32_table" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off"/>
 		</td>
 	</tr>
 	<tr id="wl_unit_field_4" style="display:none;">
 		<th class="QISWireless_DescSecurity">5 GHz-2 - <#Security#> </th>
-		<td class="QISformtd" id="wl_unit_field_4_2" style="padding-top:12px;">
+		<td class="QISformtd" id="wl_unit_field_4_2" style="padding-top:12px;display:none">
 			<input type="checkbox" id="sync_with_5ghz" name="sync_with_5ghz" tabindex="8" class="input" onclick="setTimeout('Sync_5ghz(2);',0);" checked="checked"><span id="syncCheckbox_5_2"><#qis_ssid_desc#></span>
 		</td>
 	</tr>
@@ -1719,7 +1573,7 @@ function detect_LANStatus(_flag){
 		</td>
 	</tr>
 	<tr id="wl_unit_field_6" style="display:none;">
-		<th width="160"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#Network_key#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
+		<th width="160"><span onmouseout="return nd();" onclick="openHint(0, 23);" style="cursor:help;"><#PPPConnection_Password_itemname#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 		<td class="QISformtd">
 			<input id="wl2_wpa_psk" name="wl2_wpa_psk" tabindex="10" type="password" onBlur="switchType(this, false);" onFocus="switchType(this, true);" value="<% nvram_char_to_ascii("WLANConfig11b", "wl2_wpa_psk"); %>" onkeyup="Sync_5ghz(5);" style="height:25px;" class="input_32_table" maxlength="64" autocomplete="off"  autocorrect="off" autocapitalize="off"/>
 		</td>

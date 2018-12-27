@@ -1,1 +1,1 @@
-#include "dummytest.c"
+dummytest.c

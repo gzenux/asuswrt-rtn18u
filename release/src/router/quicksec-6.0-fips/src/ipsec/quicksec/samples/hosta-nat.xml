@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <params>
+    <!-- Enable port NAT on all traffic going out 
+         of interface eth2 -->
+    <nat type="port" ifname="eth2"/>
+  </params>
+  <policy>
+
+    <!-- Pass rule, that allows traffic from subnet 192.168.2.0/24 
+         to be passed (and NATed) to any address. -->
+    <rule>
+      <src>ipv4(192.168.2.0/24)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

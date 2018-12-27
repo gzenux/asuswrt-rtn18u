@@ -33,10 +33,6 @@
 #include <shutils.h>
 #include <rc.h>
 
-#ifdef RTCONFIG_USB_MODEM
-#include <usb_info.h>
-#endif
-
 /*
 * parse ifname to retrieve unit #
 */
@@ -177,7 +173,7 @@ ipdown_main(int argc, char **argv)
 	wan_down(wan_ifname);
 
 	// override wan_state to get real reason
-	update_wan_state(prefix, WAN_STATE_STOPPED, pppstatus());
+	update_wan_state(prefix, WAN_STATE_STOPPED, pppstatus(unit));
 
 	unlink(strcat_r("/tmp/ppp/link.", wan_ifname, tmp));
 

@@ -642,7 +642,7 @@ iw_get_priv_info(int		skfd,
       else
 	maxpriv *= 2;
     }
-  while(maxpriv < 1000);
+  while(maxpriv <= 2048);
 
   /* Cleanup */
   if(priv)

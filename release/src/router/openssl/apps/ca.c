@@ -99,25 +99,19 @@
 #undef PROG
 #define PROG ca_main
 
-#define BASE_SECTION    "ca"
-#define CONFIG_FILE "openssl.cnf"
+#define BASE_SECTION            "ca"
+#define CONFIG_FILE             "openssl.cnf"
 
 #define ENV_DEFAULT_CA          "default_ca"
 
-#define STRING_MASK     "string_mask"
+#define STRING_MASK             "string_mask"
 #define UTF8_IN                 "utf8"
 
-#define ENV_DIR                 "dir"
-#define ENV_CERTS               "certs"
-#define ENV_CRL_DIR             "crl_dir"
-#define ENV_CA_DB               "CA_DB"
 #define ENV_NEW_CERTS_DIR       "new_certs_dir"
 #define ENV_CERTIFICATE         "certificate"
 #define ENV_SERIAL              "serial"
 #define ENV_CRLNUMBER           "crlnumber"
-#define ENV_CRL                 "crl"
 #define ENV_PRIVATE_KEY         "private_key"
-#define ENV_RANDFILE            "RANDFILE"
 #define ENV_DEFAULT_DAYS        "default_days"
 #define ENV_DEFAULT_STARTDATE   "default_startdate"
 #define ENV_DEFAULT_ENDDATE     "default_enddate"
@@ -2109,25 +2103,23 @@ static int do_body(X509 **xret, EVP_PKEY *pkey, X509 *x509,
         goto err;
 
     /* We now just add it to the database */
-    row[DB_type] = (char *)OPENSSL_malloc(2);
-
     tm = X509_get_notAfter(ret);
-    row[DB_exp_date] = (char *)OPENSSL_malloc(tm->length + 1);
-    memcpy(row[DB_exp_date], tm->data, tm->length);
-    row[DB_exp_date][tm->length] = '\0';
-
-    row[DB_rev_date] = NULL;
-
-    /* row[DB_serial] done already */
-    row[DB_file] = (char *)OPENSSL_malloc(8);
+    row[DB_type] = OPENSSL_malloc(2);
+    row[DB_exp_date] = OPENSSL_malloc(tm->length + 1);
+    row[DB_rev_date] = OPENSSL_malloc(1);
+    row[DB_file] = OPENSSL_malloc(8);
     row[DB_name] = X509_NAME_oneline(X509_get_subject_name(ret), NULL, 0);
-
     if ((row[DB_type] == NULL) || (row[DB_exp_date] == NULL) ||
+        (row[DB_rev_date] == NULL) ||
         (row[DB_file] == NULL) || (row[DB_name] == NULL)) {
         BIO_printf(bio_err, "Memory allocation failure\n");
         goto err;
     }
-    BUF_strlcpy(row[DB_file], "unknown", 8);
+
+    memcpy(row[DB_exp_date], tm->data, tm->length);
+    row[DB_exp_date][tm->length] = '\0';
+    row[DB_rev_date][0] = '\0';
+    strcpy(row[DB_file], "unknown");
     row[DB_type][0] = 'V';
     row[DB_type][1] = '\0';
 
@@ -2313,6 +2305,7 @@ static int certify_spkac(X509 **xret, char *infile, EVP_PKEY *pkey,
 
     j = NETSCAPE_SPKI_verify(spki, pktmp);
     if (j <= 0) {
+        EVP_PKEY_free(pktmp);
         BIO_printf(bio_err,
                    "signature verification failed on SPKAC public key\n");
         goto err;
@@ -2538,6 +2531,8 @@ static int do_updatedb(CA_DB *db)
     char **rrow, *a_tm_s;
 
     a_tm = ASN1_UTCTIME_new();
+    if (a_tm == NULL)
+        return -1;
 
     /* get actual time and make a string */
     a_tm = X509_gmtime_adj(a_tm, 0);

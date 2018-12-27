@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Gateway to gateway setup. -->
+<quicksec>
+  <params>
+    <nat ifname="eth2"/>
+    <externalkey type="software" init-info="key_files(pki/ecdsauser1.crt, 
+                                            pki/ecdsauser1.prv)"/>
+
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- Trusted CA -->
+      <ca file="pki/ecdsaca.ca"/>
+
+      <!-- static CRL from a file-->
+      <crl file="pki/ecdsaca.crl"/>
+
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="gw-to-gw" flags="auto">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="ecdsauser1@ipsec.com"/>
+      <!-- Remote IKE peer -->
+      <peer>192.168.10.31</peer>
+      <!-- Local IKE peer -->
+      <local-ip>192.168.10.34</local-ip>
+    </tunnel>
+
+    <!-- Allows hosts on source subnet to initiate traffic to 
+         destination subnet. Packets matching to these selectors 
+         trigger IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule to-tunnel="gw-to-gw">
+      <src>ipv4(192.168.1.0/24)</src>
+      <dst>ipv4(192.168.5.0/24)</dst>
+    </rule>
+
+    <rule from-tunnel="gw-to-gw">
+      <src>ipv4(192.168.5.0/24)</src>
+      <dst>ipv4(192.168.1.0/24)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+
+  </policy>
+</quicksec>

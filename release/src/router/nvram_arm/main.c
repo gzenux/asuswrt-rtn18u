@@ -34,6 +34,8 @@
 #define PROFILE_HEADER_NEW	"HDR2"
 #endif
 
+#define PROTECT_CHAR	'x'
+
 /*******************************************************************
 * NAME: _secure_romfile
 * AUTHOR: Andy Chiu
@@ -50,7 +52,7 @@ static int _secure_conf(char* buf)
 {
 	char name[128], *item;
 	int i, flag;
-	const char *keyword_token[] = {"http_username", "pppoe_username", "passwd", "password", ""};	//Andy Chiu, 2015/12/18
+	const char *keyword_token[] = {"http_username", "passwd", "password", ""};	//Andy Chiu, 2015/12/18
 	
 	const char *token1[] = {"wan_pppoe_passwd", "modem_pass", "modem_pincode", 
 		"http_passwd", "wan0_pppoe_passwd", "dslx_pppoe_passwd", "ddns_passwd_x", 
@@ -68,9 +70,10 @@ static int _secure_conf(char* buf)
 		"wl1_key1", "wl1_key2", "wl1_key3", "wl1_key4",
 		"wl0_phrase_x", "wl0.1_phrase_x", "wl0.2_phrase_x", "wl0.3_phrase_x", 
 		"wl1_phrase_x", "wl1.1_phrase_x", "wl1.2_phrase_x", "wl1.3_phrase_x", 
-		"wl_phrase_x", "vpnc_openvpn_pwd", "PM_SMTP_AUTH_USER", "PM_MY_EMAIL", "PM_SMTP_AUTH_PASS", "wtf_username", ""};
+		"wl_phrase_x", "vpnc_openvpn_pwd", "PM_SMTP_AUTH_USER", "PM_MY_EMAIL", 
+		"PM_SMTP_AUTH_PASS", "wtf_username", "ddns_hostname_x", "ddns_username_x", ""};
 	
-	const char *token2[] = {"acc_list", "pptpd_clientlist", ""};
+	const char *token2[] = {"acc_list", "pptpd_clientlist", "vpn_serverx_clientlist", ""};
 	//admin>99999<Family>99999999<aaaaa>9999999<bbbbb>999999
 	//pptpd_clientlist=<aaaaaaaaa>999999999<bbbbbbbbbb>9999999999
 		
@@ -79,6 +82,9 @@ static int _secure_conf(char* buf)
 
 	const char cloud_token[] = "cloud_sync";
 //	0>aaaaaaaaaaa>9999999999>none>0>/tmp/mnt/SANDISK_32G/aaa>1
+
+	const char pppoe_username_token[] = "pppoe_username";
+	//replace xxx@aaa.bbb
 
 	if(!buf)
 		return -1;
@@ -230,6 +236,17 @@ static int _secure_conf(char* buf)
 				}
 			}while(b);
 			//fprintf(stderr, "[%s, %d]<%s>replace(%s)\n", __FUNCTION__, __LINE__, name, ptr);			
+		}
+
+		if(strstr(name, pppoe_username_token))
+		{
+			int len = strlen(ptr);
+			for(i = 0; i < len; ++i)
+			{
+				if(ptr[i] == '@')
+					break;
+				ptr[i] = PROTECT_CHAR;
+			}
 		}
 	}
 	return 0;

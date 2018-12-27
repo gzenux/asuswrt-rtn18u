@@ -3,7 +3,7 @@ include ../common.mak
 ASUSWRTTOOLSDIR = $(SRCBASE)/router/tools/Lnx_AsusWrtDictPrep
 ASUSWRTTOOLSDIR2 = $(SRCBASE)/router/tools/Lnx_ToolHelp
 
-MODELS_HAVE_USB3 = "DSL-AC68U RT-AC3200 RT-AC87U RT-AC69U RT-AC68U RT-AC56S RT-AC56U RT-AC55U RT-AC55UHP RT-N18U RT-N65U RT-AC88U RT-AC3100 RT-AC5300 RT-AC5300R"
+MODELS_HAVE_USB3 = "DSL-AC68U RT-AC3200 RT-AC87U RT-AC68U RT-AC68A 4G-AC68U RT-AC56S RT-AC56U RT-AC55U RT-AC55UHP RT-N18U RT-N65U RT-AC88U RT-AC3100 RT-AC5300 RT-AC5300R RT-AC58U RT-AC82U"
 
 all:
 
@@ -134,7 +134,14 @@ ifeq ($(RTCONFIG_4M_SFP),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/ap.jpg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/mb.jpg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/login_bg.png
+	rm -rf $(INSTALLDIR)/www/images/backtohome.png
+	rm -rf $(INSTALLDIR)/www/images/backtohomeclick.png
+	rm -rf $(INSTALLDIR)/www/images/wifi_hw_sw.png
+	rm -rf $(INSTALLDIR)/www/images/qis/security_key.png
+	rm -rf $(INSTALLDIR)/www/images/qis/select_wireless.jpg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/vender-listover.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/Bandwidth_Limiter.png
+	cd $(INSTALLDIR)/www/images/New_ui/networkmap && ln -sf vender-list.png vender-listover.png && cd $(TOP)/www
 endif
 ifneq ($(RTCONFIG_PROXYSTA),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/mb.jpg
@@ -299,7 +306,7 @@ ifneq ($(RTCONFIG_TIMEMACHINE),y)
 endif
 ifneq ($(RTCONFIG_PROXYSTA),y)
 ifneq ($(RTCONFIG_WIRELESSREPEATER),y)
-	rm -rf $(INSTALLDIR)/www/images/survey
+#	rm -rf $(INSTALLDIR)/www/images/survey
 	rm -rf $(INSTALLDIR)/www/images/New_ui/re.jpg
 	rm -rf $(INSTALLDIR)/www/qis/QIS_sitesurvey.htm
 endif
@@ -375,7 +382,7 @@ ifneq ($(RTCONFIG_SNMPD), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_SNMP_Content.asp
 endif
 
-ifneq ($(BUILD_NAME),$(filter $(BUILD_NAME), RT-AC3200 RT-AC5300 RT-AC5300R RT-AC88U))
+ifneq ($(BUILD_NAME),$(filter $(BUILD_NAME), RT-AC3200 RT-AC5300 RT-AC5300R RT-AC88U RT-AC3100))
 	rm -rf $(INSTALLDIR)/www/Advanced_Smart_Connect.asp
 	rm -rf $(INSTALLDIR)/www/images/New_ui/smart_connect.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/smart_connect_concept.gif
@@ -398,7 +405,7 @@ ifneq ($(RTCONFIG_TOR), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_TOR_Content.asp
 endif
 
-ifneq ($(BUILD_NAME),$(filter $(BUILD_NAME), RT-AC3200 RT-AC88U RT-AC3100 RT-AC5300 RT-AC5300R RT-AC87U DSL-AC68U RT-AC68U RT-AC68R RT-AC68W RT-AC68RW RT-AC1900P RT-AC67U))
+ifneq ($(BUILD_NAME),$(filter $(BUILD_NAME), RT-AC3200 RT-AC88U RT-AC3100 RT-AC5300 RT-AC5300R RT-AC87U DSL-AC68U RT-AC56U RT-AC56R RT-AC68U RT-AC68R RT-AC68W RT-AC68RW RT-AC1900P RT-AC67U))
 	rm -rf $(INSTALLDIR)/www/TrafficAnalyzer_Statistic.asp
 	rm -rf $(INSTALLDIR)/www/images/New_ui/TrafficAnalyzer.gif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/cancel.svg
@@ -479,7 +486,13 @@ ifneq ($(RTCONFIG_IFTTT), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_IFTTT_Pincode.asp
 endif
 
+ifneq ($(RTCONFIG_PORT_BASED_VLAN), y)
+	rm -rf $(INSTALLDIR)/www/Advanced_VLAN_Content.asp
+	rm -rf $(INSTALLDIR)/www/Advanced_VLAN_DHCP_Content.asp
+	rm -rf $(INSTALLDIR)/www/Advanced_VLAN_Group_Content.asp
+endif
 ifneq ($(RTCONFIG_FBWIFI), y)
 	rm -rf $(INSTALLDIR)/www/Guest_network_fbwifi.asp
 	rm -rf $(INSTALLDIR)/www/ajax_fbwifi.asp
+	rm -rf $(INSTALLDIR)/www/fbwifi
 endif

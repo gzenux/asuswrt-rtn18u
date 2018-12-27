@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup using two authentication rounds to 
+     establish an IKE SA. -->
+<!-- Related: hosta-multiauth.xml -->
+<quicksec>
+  <params>
+    <externalkey type="software" init-info="key_files(rsauser2.crt, 
+                                            rsauser2.prv)"/>
+
+    <!-- Default authentication domain does not have a name-attribute.
+         It will be used if there is no authentication domain set for
+         a tunnel. -->
+    <auth-domain>
+      <ca file="rsaca.ca"/>
+      <crl file="rsaca.crl"/>
+    </auth-domain>
+
+    <!-- A non-default authentication domain that accepts only
+         EAP-MD5 for authentication. This can be used only during
+         second authentication, since certificate authentication 
+         is not defined for remote authentication. -->
+    <auth-domain name="ad3">
+      <eap type="md5-challenge"/>
+    </auth-domain>
+
+    <!-- Client authentications. Attribute "order" defines the 
+         authentication round this password is used. -->
+    <client-auth type="eap" user-name="luser" password="luser"/> 
+    <client-auth type="eap" user-name="second" password="second" order="2"/> 
+  </params>
+  <policy>
+
+    <tunnel name="host-to-host">
+      <!-- First authenticated identity is an email address located
+           inside a certificate. -->
+      <identity id-type="email" id="rsauser2@ipsec.com"/>
+      <!-- Second authenticated identity is fqdn matching a
+           client-auth set earlier -->
+      <identity id-type="fqdn" id="second" order="2"/>
+
+      <!-- Default authentication domain is used in the first
+           authentication round. It is selected automatically. -->
+
+      <!-- ad3 is used for the second authentication round. -->
+      <authentication order="2" auth-domain-name="ad3"/>
+    </tunnel>
+
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

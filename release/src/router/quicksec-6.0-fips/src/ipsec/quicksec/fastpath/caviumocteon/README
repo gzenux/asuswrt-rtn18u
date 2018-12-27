@@ -1,0 +1,210 @@
+README for QuickSec Cavium Octeon Fastpath
+------------------------------------------
+
+Building Kernel Image from Octeon-SDK
+-------------------------------------
+
+Refer to Octeon-SDK documentation for general instructions on building the 
+linux kernel image. The QuickSec specific configuration changes are discussed
+below.
+
+QuickSec requires the linux kernel to have NETFILTER support enabled.
+
+QuickSec requires additional functionality from cavium-ethernet driver provided
+by the Octeon-SDK. The diff at the end of this README adds the following 
+cavium-ethernet module options:
+
+   pip_group    All ethernet hardware will be configured to pass incoming
+	        frames to the POW group specified by pip_group. Default 
+		value is 15.
+
+   pip_qos      All ethernet hardware will be configured to pass incoming
+	        frames to the POW queue specified by pip_qos. Default value
+                is 0.
+
+The diff are for Octeon-SDK versions 1.8.1 and 1.9.0 and applying it as 
+such to another SDK version may fail.
+
+
+Building QuickSec
+-----------------
+
+Before QuickSec can be built the linux kernel (in Octeon-SDK) needs to be 
+configured.
+
+After this the script "octeon-conf-sdk-x.x.x" in the QuickSec top directory 
+can be used for configuring the QuickSec toolkit. Note that 
+"octeon-conf-sdk-x.x.x" expects that the Octeon-SDK environment variables 
+have been set.
+
+Compile using command "make". This produces the following programs/modules:
+
+   ipsec/interceptor/caviumocteon/linux/kbuild/quicksec.ko
+      The QuickSec kernel module for the linux kernel
+
+   ipsec/interceptor/caviumocteon/se/qs_se_fastpath
+      The QuickSec Simple Executive Fastpath
+
+   ipsec/quicksec/usermode/quicksecpm
+      The QuickSec Policymanager for linux
+
+
+Booting the Octeon System
+-------------------------
+
+QuickSec requires at least one Octeon core to run linux and at least one cores
+to run the QuickSec Simple Executive Fastpath, "qs_se_fastpath". Refer to
+Octeon-SDK documentation on how to load images to the system and how to boot a
+linux kernel and Simple Executive programs in parallel.
+
+The "qs_se_fastpath" takes the following command line arguments:
+
+   -se_fastpath_0   Start qs_se_fastpath as the first fastpath
+
+   -se_fastpath_1   Start qs_se_fastpath as the second fastpath
+
+On single-processor Octeon systems these arguments may be ignored.
+
+On multi-processor Octeon systems the "qs_se_fastpath" program that runs on the
+same CPU as the linux kernel should be started with the "-se_fastpath_0" 
+argument, and the "qs_se_fastpath" started on the other CPU should be started
+with the "-se_fastpath_1" argument.
+
+
+Loading cavium-ethernet.ko and quicksec.ko Modules
+--------------------------------------------------
+
+Once the Octeon system has booted into linux kernel, first load the 
+cavium-ethernet.ko module using the following module options:
+
+   # insmod cavium-ethernet.ko pip_group=1 pip_qos=7 pow_receive_group=2
+
+This initializes the hardware to pass all incoming ethernet frames to POW group
+1 and POW queue 7, and confgures the linux kernel ethernet driver to receive
+packets sent to POW group 2. The POW group values must match the compile time
+defines in "octeon_se_fastpath_shared.h".
+
+Next load quicksec.ko:
+
+   # insmod quicksec.ko
+
+The quicksec.ko takes the following Octeon specific module option:
+
+   num_se_fastpaths   Specifies the number of Quicksec Simple Executive
+                      Fastpaths running in the system. Default value is 1.
+
+On single-processor Octeon systems the option may be omitted. On 
+multi-processor Octeon systems the option "num_se_fastpaths" must be set to the
+number of "qs_se_fastpath" programs started during the boot process.
+
+
+Starting QuickSec Policymanager
+-------------------------------
+
+Run:
+   # quicksecpm -f <policy_file.xml>
+
+
+
+Diff for cavium-ethernet for Octeon-SDK-1.8.1
+---------------------------------------------
+
+  ---------------------------------------------------------------------------
+diff -wibur ../OCTEON-SDK/linux/kernel_2.6/linux/drivers/net/cavium-ethernet/ethernet.c ./ethernet.c
+--- ../OCTEON-SDK/linux/kernel_2.6/linux/drivers/net/cavium-ethernet/ethernet.c	2008-11-11 16:38:07.000000000 +0200
++++ ./ethernet.c	2009-01-23 13:56:49.000000000 +0200
+@@ -54,10 +54,22 @@
+ int pow_receive_group = 15;
+ module_param(pow_receive_group, int, 0444);
+ MODULE_PARM_DESC(pow_receive_group, "\n"
+-                 "\t\tPOW group to receive packets from. All ethernet hardware\n"
+-                 "\t\twill be configured to send incomming packets to this POW\n"
+-                 "\t\tgroup. Also any other software can submit packets to this\n"
+-                 "\t\tgroup for the kernel to process.");
++                 "\t\tPOW group to receive packets from.");
++
++int pip_group = 15;
++module_param(pip_group, int, 0444);
++MODULE_PARM_DESC(pip_group, "\n"
++                 "\t\tAll ethernet hardware will be configured to send\n"
++		 "\t\tincoming packets to this POW group. This is used for\n"
++		 "\t\tscheduling packets to a simple executive based fastpath.\n"
++		 "\t\tAny other software can also submit packets to this group\n"
++		 "\t\tfor the fastpath to process.");
++
++int pip_qos = 0;
++module_param(pip_qos, int, 0444);
++MODULE_PARM_DESC(pip_qos, "\n"
++                 "\t\tAll ethernet hardware will be configured to send\n"
++		 "\t\tincoming packets to POW with this QoS level.");
+ 
+ int pow_send_group = -1;
+ module_param(pow_send_group, int, 0644);
+@@ -302,9 +314,15 @@
+         for (port=cvmx_helper_get_ipd_port(interface, 0); port<cvmx_helper_get_ipd_port(interface, num_ports); port++)
+         {
+             cvmx_pip_prt_tagx_t pip_prt_tagx;
++	    cvmx_pip_prt_cfgx_t pip_prt_cfgx;
++
+             pip_prt_tagx.u64 = cvmx_read_csr(CVMX_PIP_PRT_TAGX(port));
+-            pip_prt_tagx.s.grp = pow_receive_group;
++            pip_prt_tagx.s.grp = pip_group;
+             cvmx_write_csr(CVMX_PIP_PRT_TAGX(port), pip_prt_tagx.u64);
++
++            pip_prt_cfgx.u64 = cvmx_read_csr(CVMX_PIP_PRT_CFGX(port));
++            pip_prt_cfgx.s.qos = pip_qos;
++            cvmx_write_csr(CVMX_PIP_PRT_CFGX(port), pip_prt_cfgx.u64);
+         }
+     }
+  ---------------------------------------------------------------------------
+
+Diff for cavium-ethernet for Octeon-SDK-1.9.0
+---------------------------------------------
+
+  ---------------------------------------------------------------------------
+--- ethernet.c.orig	2009-11-02 16:41:41.000000000 +0200
++++ ethernet.c	2009-11-02 16:51:29.000000000 +0200
+@@ -57,10 +57,22 @@
+ int pow_receive_group = 15;
+ module_param(pow_receive_group, int, 0444);
+ MODULE_PARM_DESC(pow_receive_group, "\n"
+-		 "\t\tPOW group to receive packets from. All ethernet hardware\n"
+-		 "\t\twill be configured to send incomming packets to this POW\n"
+-		 "\t\tgroup. Also any other software can submit packets to this\n"
+-		 "\t\tgroup for the kernel to process.");
++                 "\t\tPOW group to receive packets from.");
++
++int pip_group = 15;
++module_param(pip_group, int, 0444);
++MODULE_PARM_DESC(pip_group, "\n"
++                 "\t\tAll ethernet hardware will be configured to send\n"
++		 "\t\tincoming packets to this POW group. This is used for\n"
++		 "\t\tscheduling packets to a simple executive based fastpath.\n"
++		 "\t\tAny other software can also submit packets to this group\n"
++		 "\t\tfor the fastpath to process.");
++
++int pip_qos = 0;
++module_param(pip_qos, int, 0444);
++MODULE_PARM_DESC(pip_qos, "\n"
++                 "\t\tAll ethernet hardware will be configured to send\n"
++		 "\t\tincoming packets to POW with this QoS level.");
+ 
+ int pow_send_group = -1;
+ module_param(pow_send_group, int, 0644);
+@@ -310,9 +322,15 @@
+ 
+ 		for (port = cvmx_helper_get_ipd_port(interface, 0); port < cvmx_helper_get_ipd_port(interface, num_ports); port++) {
+ 			cvmx_pip_prt_tagx_t pip_prt_tagx;
++			cvmx_pip_prt_cfgx_t pip_prt_cfgx;
++
+ 			pip_prt_tagx.u64 = cvmx_read_csr(CVMX_PIP_PRT_TAGX(port));
+-			pip_prt_tagx.s.grp = pow_receive_group;
++			pip_prt_tagx.s.grp = pip_group;
+ 			cvmx_write_csr(CVMX_PIP_PRT_TAGX(port), pip_prt_tagx.u64);
++			pip_prt_cfgx.u64 = cvmx_read_csr(CVMX_PIP_PRT_CFGX(port));
++			pip_prt_cfgx.s.qos = pip_qos;
++			cvmx_write_csr(CVMX_PIP_PRT_CFGX(port), pip_prt_cfgx.u64);
++
+ 		}
+ 	}
+  ---------------------------------------------------------------------------

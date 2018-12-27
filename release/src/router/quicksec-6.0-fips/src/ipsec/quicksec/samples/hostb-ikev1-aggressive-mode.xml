@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Peer-to-peer setup using IKEv1 aggressive mode. -->
+<!-- Related: hosta-ikev1-aggressive-mode.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKEv1 aggressive mode peer.
+           This allows the policymanager to map a secret to certain identity
+           sent by the remote IKEv1 aggressive-mode peer. -->
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <!-- The aggressive-mode flag tells the policymanager to 
+         start the IKEv1 SA negotiation using aggressive-mode.
+         The responder will always use the mode that the
+         initiator proposes. -->
+    <tunnel name="host-to-host" flags="aggressive-mode auto">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="b@ipsec.com">
+        <!-- shared secret used by the aggressive-mode initiator -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- Enable the use of IKEv1 protocol -->
+      <ike-versions>1</ike-versions>
+    </tunnel>
+
+    <!-- Allows src address to initiate traffic to the dst address,
+         packet matching to these selectors triggers IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule to-tunnel="host-to-host">
+      <src>ipv4(172.30.4.167)</src>
+      <dst>ipv4(172.30.4.189)</dst>
+    </rule>
+
+    <!-- Allows src address to initiate traffic to the dst address, 
+         if the packet came from the specified from-tunnel.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule from-tunnel="host-to-host">
+      <src>ipv4(172.30.4.189)</src>
+      <dst>ipv4(172.30.4.167)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

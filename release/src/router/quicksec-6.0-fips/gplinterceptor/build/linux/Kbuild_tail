@@ -1,0 +1,5 @@
+
+override EXTRA_CFLAGS += \
+    -DKERNEL \
+    -D_KERNEL \
+    -DWITH_IPV6

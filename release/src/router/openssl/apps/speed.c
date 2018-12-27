@@ -1,4 +1,4 @@
-/* apps/speed.c -*- mode:C; c-file-style: "eay" -*- */
+/* apps/speed.c */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -2614,6 +2614,10 @@ static int do_multi(int multi)
     static char sep[] = ":";
 
     fds = malloc(multi * sizeof *fds);
+    if (fds == NULL) {
+        fprintf(stderr, "Out of memory in speed (do_multi)\n");
+        exit(1);
+    }
     for (n = 0; n < multi; ++n) {
         if (pipe(fd) == -1) {
             fprintf(stderr, "pipe failure\n");

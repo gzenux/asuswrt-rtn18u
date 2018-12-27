@@ -23,6 +23,7 @@ var extend_autodet = 1;
 var linkup_autodet = 0;
 var AnnexSwitch_count = 0;
 var AnnexSwitch_enable = 1;
+var dslx_annex_state = '<% nvram_get("dslx_annex"); %>';
 var wan_type = '<% nvram_get("dsltmp_autodet_wan_type"); %>';
 var dsl_autodet_state = '<% nvram_get("dsltmp_autodet_state"); %>';
 var dsl_line_state = '<% nvram_get("dsltmp_adslsyncsts"); %>';
@@ -51,8 +52,14 @@ function getWANStatus(){
 		},
 		success: function(response){
 			RetryCountDown_fail = 5;
+			
 			if( dsl_line_state == "up") {
-				if(dsl_autodet_state == "pppoe" || dsl_autodet_state == "pppoa")
+
+				if(wan_type == "PTM")
+					redirect_page("PTM_manual_setting");
+				else if(wan_type == "ATM" && (dslx_annex_state == 5 || dslx_annex_state == 6))
+					redirect_page("manual_setting");
+				else if(dsl_autodet_state == "pppoe" || dsl_autodet_state == "pppoa")
 					redirect_page("ppp_cfg");
 				else if(dsl_autodet_state == "dhcp")
 					redirect_page("mer_cfg");
@@ -64,8 +71,6 @@ function getWANStatus(){
 						redirect_page("PTM_manual_setting");
 					}
 				}
-				else if(wan_type == "PTM")
-					redirect_page("PTM_manual_setting");
 				else {
 					AnnexSwitch_enable = 0;
 					linkup_autodet = 1;
@@ -79,11 +84,20 @@ function getWANStatus(){
 						else{
 							if(wan_type == "ATM"){
 								document.form.action = "QIS_manual_setting.htm";
+								document.form.submit();
 							}
-							else{
+							else if(wan_type == "PTM"){
 								document.form.action = "QIS_PTM_manual_setting.htm";
+								document.form.submit();
 							}
-							document.form.submit();
+							else{	//unknown type, detect again
+								linkup_autodet = 0;
+								Redirect_count = 0;
+								document.redirectForm.rc_service.value = "restart_dsl_autodet";
+								document.redirectForm.submit();
+								set_state_info(dsl_line_state);
+								setTimeout('getWANStatus();', 5000);
+							}
 							return;
 						}
 					}
@@ -94,7 +108,6 @@ function getWANStatus(){
 			else if ( (dsl_line_state == "init")
 				|| (dsl_line_state == "initializing")
 				|| (dsl_line_state == "wait")
-				|| (dsl_line_state == "wait_for_init")
 			) {
 				if(linkup_autodet == 1) {	//up -> down, restart auto det
 					linkup_autodet = 0;
@@ -109,6 +122,7 @@ function getWANStatus(){
 			else if ( (AnnexSwitch_enable == 1) &&
 				((dsl_line_state == "down")
 				|| (dsl_line_state == "Detecting")
+				|| (dsl_line_state == "wait for init")
 				|| (dsl_line_state == ""))
 			){
 				if(linkup_autodet == 1) {	//up -> down, restart auto det
@@ -119,7 +133,7 @@ function getWANStatus(){
 				}
 
 				++AnnexSwitch_count;
-				if(AnnexSwitch_count >= 12){	//12*5 = 180 sec = 3 min
+				if(AnnexSwitch_count >= 18){	//18*5 = 90 sec = 1.5 min
 					AnnexSwitch_count = 0;
 					++parent.autodet_annex_counter;
 					if(parent.autodet_annex_counter <= 3){
@@ -127,7 +141,7 @@ function getWANStatus(){
 							document.redirectForm.dslx_annex.value = 6;
 						else if(document.redirectForm.dslx_annex.value == 6)
 							document.redirectForm.dslx_annex.value = 4;
-						document.redirectForm.rc_service.value = "restart_dsl_setting";
+						document.redirectForm.rc_service.value = "restart_dsl_setting;restart_dsl_autodet";
 						document.redirectForm.submit();
 
 						set_state_info(dsl_line_state);
@@ -159,7 +173,7 @@ function set_state_info(state){
 								document.getElementById("no_cable").style.display = "";
 								break;
 				case "wait":
-				case "wait_for_init":
+				case "wait for init":
 								document.getElementById("LED_state").innerHTML = "<#adsl_link_sts_itemname#> : <span style=\"color:#FFCC00;\">Wait for init (DSL LED Flashing)</span><br><br>";
 								document.getElementById("LED_state").style.display = "";		
 								document.getElementById("no_cable").style.display = "none";

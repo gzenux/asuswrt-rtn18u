@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <policy>
+
+    <!-- Suite VPN-A as defined by RFC 4308. The attributes 'transform', -->
+    <!-- 'ike-life' and the elements 'ike-groups', 'life' are fixed      --> 
+    <!-- by the RFC, the other tunnel properties can be modified.        -->
+    <!-- The vpn-a-* entities are defined in quicksec.dtd -->
+    <tunnel name="VPN-A" transform="&vpn-a-transform;" 
+            ike-life="&vpn-a-ike-life;">
+      <ike-groups>&vpn-a-group;</ike-groups>
+      <life type="seconds">&vpn-a-ipsec-life;</life>
+    </tunnel>
+
+    <!-- Suite VPN-B as defined by RFC 4308. The attributes 'transform', -->
+    <!-- 'ike-life' and the elements 'ike-groups', 'life' are fixed      --> 
+    <!-- by the RFC, the other tunnel properties can be modified.        -->
+    <!-- The vpn-b-* entities are defined in quicksec.dtd -->
+    <tunnel name="VPN-B" transform="&vpn-b-transform;" 
+            ike-life="&vpn-b-ike-life;">
+      <ike-groups>&vpn-b-group;</ike-groups>
+      <life type="seconds">&vpn-b-ipsec-life;</life>
+    </tunnel>
+
+  </policy>
+</quicksec>

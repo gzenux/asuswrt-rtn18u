@@ -1,0 +1,67 @@
+IKE supported features
+
+1. Isakmp SA negotiation (phase I) features
+	- Both Main mode and aggressive mode.
+	- Authentication with pre shared keys, DSS signatures, RSA
+	  signatures, or RSA encryption.
+	- Supports X509 signature certificates. 
+	- Supports ISAKMP SA encryption with DES, IDEA, Blowfish, RC5,
+	  3DES and CAST (not all cipher are included in standard
+	  distribution). 
+	- Supports both MD5, SHA, Tiger, and RIPEMD160 hash algorithms
+	  in ISAKMP SA. 
+	- Supports both MODP 768 (group 1), MODP 1024 (group 2), EC2N
+	  155 (group 3), EC2N 185 (group 4), and MODP 1536 (group 5?)
+	  groups in ISAKMP SA negotiation. 
+	- Supports private groups inlined in ISAKMP SA negotiation.
+	- Supports sending of delete notitifications for ISAKMP SAs.
+	- Supports resource limitations for number of ISAKMP SAs.
+	- Supports expiration of ISAKMP SA using both time (seconds)
+	  or kilobytes.
+	- Supports receiving of delete notifications and ISAKMP SA
+	  deletion.
+	- compatibility options: ignore certificate request payloads,
+	  no certificate hash in public key encryption authentication,
+	  no certificate request payloads, no crl payloads, and send full
+	  cert chains.
+	- Supports automatic randomizer generation when idle for
+	  faster Diffie-Hellman negotiation.
+	- Support sending and receiving initial contact notification.
+	- Support for sending CRLs inside IKE negotiation. 
+	- Automatically limit the size used by the certificates and crls
+	  inside packet. 
+	- Supports receiving PKCS#7 wrapped certificates inside the IKE.
+
+2. New group mode features
+	- Supports new group negotiation for phase II.
+	- Supports MODP/ECP/EC2N groups.
+	- Checks that group provided by the other end is strong. 
+
+3. Quick Mode features (Phase II)
+	- Supports any SA proposals.
+	- Supports perfect forward secrecy (Diffie-Hellman in quick
+	  mode) using group 1, 2, 3, 4 or 5, or any private group
+	  negotiated with new group mode.
+	- Supports sending of delete notitifications for Quick Mode SA
+	- Supports receiving of delete notifications and forwarding them to
+	  the underlaying ipsec engine.
+	- Supports multiple quick mode SA negotiations in one quick
+	  mode exchange.
+	- Support for sending and receiving RESPONDER LIFETIME
+	  notification. 
+
+4. Configuration mode features (phase I or Phase II)
+	- Supports any cfg mode request/set.
+	- Supports multiple cfg transactions in one negotiation.
+
+Standard track RFCs:
+RFC2407 (The Internet IP Security Domain of Interpretation for ISAKMP)
+RFC2408 (Internet Security Association and Key Management Protocol (ISAKMP))
+RFC2409 (The Internet Key Exchange (IKE))
+
+Informational RFCs:
+RFC2412 (The OAKLEY Key Determination Protocol)
+
+Drafts:
+draft-ietf-ipsec-isakmp-mode-cfg-00,01,02,03,04.txt
+draft-ietf-ipsec-isakmp-xauth-02.txt

@@ -31,7 +31,7 @@
 #include "dbutil.h"
 #include "auth.h"
 
-#ifdef ENABLE_SVR_PAM_AUTH
+#if DROPBEAR_SVR_PAM_AUTH
 
 #if defined(HAVE_SECURITY_PAM_APPL_H)
 #include <security/pam_appl.h>
@@ -56,11 +56,7 @@ pamConvFunc(int num_msg,
 	struct UserDataS* userDatap = (struct UserDataS*) appdata_ptr;
 	unsigned int msg_len = 0;
 	unsigned int i = 0;
-
-	const char* message = (*msg)->msg;
-
-	/* make a copy we can strip */
-	char * compare_message = m_strdup(message);
+	char * compare_message = NULL;
 
 	TRACE(("enter pamConvFunc"))
 
@@ -71,15 +67,10 @@ pamConvFunc(int num_msg,
 		dropbear_log(LOG_INFO, "pamConvFunc() called with >1 messages: not supported.");
 		return PAM_CONV_ERR;
 	}
+
+	/* make a copy we can strip */
+	compare_message = m_strdup((*msg)->msg);
 	
-	TRACE(("msg_style is %d", (*msg)->msg_style))
-	if (compare_message) {
-		TRACE(("message is '%s'", compare_message))
-	} else {
-		TRACE(("null message"))
-	}
-
-
 	/* Make the string lowercase. */
 	msg_len = strlen(compare_message);
 	for (i = 0; i < msg_len; i++) {
@@ -101,8 +92,9 @@ pamConvFunc(int num_msg,
 			if (!(strcmp(compare_message, "password:") == 0)) {
 				/* We don't recognise the prompt as asking for a password,
 				   so can't handle it. Add more above as required for
-				   different pam modules/implementations */
-				dropbear_log(LOG_NOTICE, "PAM unknown prompt %s (no echo)",
+				   different pam modules/implementations. If you need
+				   to add an entry here please mail the Dropbear developer */
+				dropbear_log(LOG_NOTICE, "PAM unknown prompt '%s' (no echo)",
 						compare_message);
 				rc = PAM_CONV_ERR;
 				break;
@@ -123,12 +115,16 @@ pamConvFunc(int num_msg,
 
 		case PAM_PROMPT_ECHO_ON:
 
-			if (!((strcmp(compare_message, "login:" ) == 0) 
-				|| (strcmp(compare_message, "please enter username:") == 0))) {
+			if (!(
+				(strcmp(compare_message, "login:" ) == 0) 
+				|| (strcmp(compare_message, "please enter username:") == 0)
+				|| (strcmp(compare_message, "username:") == 0)
+				)) {
 				/* We don't recognise the prompt as asking for a username,
 				   so can't handle it. Add more above as required for
-				   different pam modules/implementations */
-				dropbear_log(LOG_NOTICE, "PAM unknown prompt %s (with echo)",
+				   different pam modules/implementations. If you need
+				   to add an entry here please mail the Dropbear developer */
+				dropbear_log(LOG_NOTICE, "PAM unknown prompt '%s' (with echo)",
 						compare_message);
 				rc = PAM_CONV_ERR;
 				break;
@@ -144,6 +140,22 @@ pamConvFunc(int num_msg,
 			resp->resp = m_strdup(userDatap->user);
 			TRACE(("userDatap->user='%s'", userDatap->user))
 			(*respp) = resp;
+			break;
+
+		case PAM_ERROR_MSG:
+		case PAM_TEXT_INFO:
+
+			if (msg_len > 0) {
+				buffer * pam_err = buf_new(msg_len + 4);
+				buf_setpos(pam_err, 0);
+				buf_putbytes(pam_err, "\r\n", 2);
+				buf_putbytes(pam_err, (*msg)->msg, msg_len);
+				buf_putbytes(pam_err, "\r\n", 2);
+				buf_setpos(pam_err, 0);
+
+				send_msg_userauth_banner(pam_err);
+				buf_free(pam_err);
+			}
 			break;
 
 		default:
@@ -176,7 +188,7 @@ void svr_auth_pam() {
 
 	pam_handle_t* pamHandlep = NULL;
 
-	unsigned char * password = NULL;
+	char * password = NULL;
 	unsigned int passwordlen;
 
 	int rc = PAM_SUCCESS;
@@ -200,27 +212,30 @@ void svr_auth_pam() {
 
 	/* Init pam */
 	if ((rc = pam_start("sshd", NULL, &pamConv, &pamHandlep)) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_start() failed, rc=%d, %s\n", 
+		dropbear_log(LOG_WARNING, "pam_start() failed, rc=%d, %s", 
 				rc, pam_strerror(pamHandlep, rc));
 		goto cleanup;
 	}
 
 	/* just to set it to something */
-	if ((rc = pam_set_item(pamHandlep, PAM_TTY, "ssh") != PAM_SUCCESS)) {
-		dropbear_log(LOG_WARNING, "pam_set_item() failed, rc=%d, %s\n", 
+	if ((rc = pam_set_item(pamHandlep, PAM_TTY, "ssh")) != PAM_SUCCESS) {
+		dropbear_log(LOG_WARNING, "pam_set_item() failed, rc=%d, %s",
 				rc, pam_strerror(pamHandlep, rc));
 		goto cleanup;
 	}
 
+#ifdef HAVE_PAM_FAIL_DELAY
+	/* We have our own random delay code already, disable PAM's */
 	(void) pam_fail_delay(pamHandlep, 0 /* musec_delay */);
+#endif
 
 	/* (void) pam_set_item(pamHandlep, PAM_FAIL_DELAY, (void*) pamDelayFunc); */
 
 	if ((rc = pam_authenticate(pamHandlep, 0)) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_authenticate() failed, rc=%d, %s\n", 
+		dropbear_log(LOG_WARNING, "pam_authenticate() failed, rc=%d, %s", 
 				rc, pam_strerror(pamHandlep, rc));
 		dropbear_log(LOG_WARNING,
-				"bad PAM password attempt for '%s' from %s",
+				"Bad PAM password attempt for '%s' from %s",
 				ses.authstate.pw_name,
 				svr_ses.addrstring);
 		send_msg_userauth_failure(0, 1);
@@ -228,10 +243,10 @@ void svr_auth_pam() {
 	}
 
 	if ((rc = pam_acct_mgmt(pamHandlep, 0)) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_acct_mgmt() failed, rc=%d, %s\n", 
+		dropbear_log(LOG_WARNING, "pam_acct_mgmt() failed, rc=%d, %s", 
 				rc, pam_strerror(pamHandlep, rc));
 		dropbear_log(LOG_WARNING,
-				"bad PAM password attempt for '%s' from %s",
+				"Bad PAM password attempt for '%s' from %s",
 				ses.authstate.pw_name,
 				svr_ses.addrstring);
 		send_msg_userauth_failure(0, 1);
@@ -255,4 +270,4 @@ cleanup:
 	}
 }
 
-#endif /* ENABLE_SVR_PAM_AUTH */
+#endif /* DROPBEAR_SVR_PAM_AUTH */

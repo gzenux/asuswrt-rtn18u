@@ -1,0 +1,82 @@
+The Linux 2.6.x specific generic interceptor code.
+
+@linux_debug.c
+Debug output routines.
+
+@linux_hook_magic.c
+Netfilter hook initialization routines.
+
+@linux_iface.c
+Linux interface list handling code.
+
+@linux_internal.h
+Internal definitions for Linux interceptor.
+
+@linux_ip_glue.c
+Packet interception and sending.
+
+@linux_ipm.c 
+Routines to handle transports between the policy manager queue and the
+packet processing engine. 
+
+@linux_kernel_alloc.c
+Implementation of the memory allocation routines for Linux 2.6.x.
+
+@linux_main.c
+The main kernel module for Linux interceptor.
+
+@linux_misc.c
+General kernel-space utility functions for the interceptor (that are
+missing from kernel but are part of POSIX library) - atoi,
+strcasecmp(PPC), memchr(!i386).
+
+@linux_mutex.c
+Linux 2.6.x implementation of kernel_mutex.h.
+
+@linux_mutex_internal.h
+Definition of the SshKernelMutex structure whose API is implemented by 
+linux_mutex.c
+
+@linux_nf_internal.h
+Internal definitions for IPsec interceptor.
+
+@linux_nf_params.h
+IPsec interceptor tunable parameters.
+
+@linux_packet.c
+Packet manipulation routines.
+
+@linux_packet_internal.h
+Internal definitions for <tt>linux/linux_packet.c</tt>
+
+@linux_params.h
+Linux interceptor tunable parameters.
+
+@linux_procfs.c
+Procfs statistics, version information and debug level handling.
+
+@linux_route.c
+ssh_interceptor_route implementation (IPv4+IPv6).
+
+@linux_timeout.c
+Implementation of kernel timeouts for Linux 2.x.
+
+@linux_versions.h
+Linux kernel version dependent defines.
+
+@linux_virtual_adapter.c
+Linux implementation of the interceptor virtual adapter API.
+
+@linux_virtual_adapter_internal.c
+Internal definitions for virtual adapters.
+
+@platform_interceptor.h
+Platform specific interceptor defines.
+
+@platform_kernel_alloc.h
+Empty header file (required by engine) - provides space for
+platform-dependant extra alloc functionality, which Linux doesn't
+have.
+
+@platform_kernel_mutex.h
+Platform specific mutex defines.

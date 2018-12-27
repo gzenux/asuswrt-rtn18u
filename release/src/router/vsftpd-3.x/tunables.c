@@ -183,7 +183,7 @@ tunables_load_defaults()
   tunable_use_localtime = 0;
   tunable_check_shell = 1;
   tunable_hide_ids = 0;
-  tunable_listen = 1;
+  tunable_listen = 0;
   tunable_port_promiscuous = 0;
   tunable_passwd_chroot_enable = 0;
   tunable_no_anon_password = 0;

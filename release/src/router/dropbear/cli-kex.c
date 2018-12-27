@@ -33,44 +33,75 @@
 #include "ssh.h"
 #include "packet.h"
 #include "bignum.h"
-#include "random.h"
+#include "dbrandom.h"
 #include "runopts.h"
 #include "signkey.h"
+#include "ecc.h"
 
 
 static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen);
 #define MAX_KNOWNHOSTS_LINE 4500
 
 void send_msg_kexdh_init() {
-
-	cli_ses.dh_e = (mp_int*)m_malloc(sizeof(mp_int));
-	cli_ses.dh_x = (mp_int*)m_malloc(sizeof(mp_int));
-	m_mp_init_multi(cli_ses.dh_e, cli_ses.dh_x, NULL);
-
-	gen_kexdh_vals(cli_ses.dh_e, cli_ses.dh_x);
+	TRACE(("send_msg_kexdh_init()"))	
 
 	CHECKCLEARTOWRITE();
 	buf_putbyte(ses.writepayload, SSH_MSG_KEXDH_INIT);
-	buf_putmpint(ses.writepayload, cli_ses.dh_e);
+	switch (ses.newkeys->algo_kex->mode) {
+#if DROPBEAR_NORMAL_DH
+		case DROPBEAR_KEX_NORMAL_DH:
+			if (ses.newkeys->algo_kex != cli_ses.param_kex_algo
+				|| !cli_ses.dh_param) {
+				if (cli_ses.dh_param) {
+					free_kexdh_param(cli_ses.dh_param);
+				}
+				cli_ses.dh_param = gen_kexdh_param();
+			}
+			buf_putmpint(ses.writepayload, &cli_ses.dh_param->pub);
+			break;
+#endif
+#if DROPBEAR_ECDH
+		case DROPBEAR_KEX_ECDH:
+			if (ses.newkeys->algo_kex != cli_ses.param_kex_algo
+				|| !cli_ses.ecdh_param) {
+				if (cli_ses.ecdh_param) {
+					free_kexecdh_param(cli_ses.ecdh_param);
+				}
+				cli_ses.ecdh_param = gen_kexecdh_param();
+			}
+			buf_put_ecc_raw_pubkey_string(ses.writepayload, &cli_ses.ecdh_param->key);
+			break;
+#endif
+#if DROPBEAR_CURVE25519
+		case DROPBEAR_KEX_CURVE25519:
+			if (ses.newkeys->algo_kex != cli_ses.param_kex_algo
+				|| !cli_ses.curve25519_param) {
+				if (cli_ses.curve25519_param) {
+					free_kexcurve25519_param(cli_ses.curve25519_param);
+				}
+				cli_ses.curve25519_param = gen_kexcurve25519_param();
+			}
+			buf_putstring(ses.writepayload, (const char*)cli_ses.curve25519_param->pub, CURVE25519_LEN);
+			break;
+#endif
+	}
+
+	cli_ses.param_kex_algo = ses.newkeys->algo_kex;
 	encrypt_packet();
-	ses.requirenext = SSH_MSG_KEXDH_REPLY;
 }
 
 /* Handle a diffie-hellman key exchange reply. */
 void recv_msg_kexdh_reply() {
 
-	DEF_MP_INT(dh_f);
 	sign_key *hostkey = NULL;
 	unsigned int type, keybloblen;
 	unsigned char* keyblob = NULL;
-
 
 	TRACE(("enter recv_msg_kexdh_reply"))
 
 	if (cli_ses.kex_state != KEXDH_INIT_SENT) {
 		dropbear_exit("Received out-of-order kexdhreply");
 	}
-	m_mp_init(&dh_f);
 	type = ses.newkeys->algo_hostkey;
 	TRACE(("type is %d", type))
 
@@ -88,19 +119,61 @@ void recv_msg_kexdh_reply() {
 		dropbear_exit("Bad KEX packet");
 	}
 
-	if (buf_getmpint(ses.payload, &dh_f) != DROPBEAR_SUCCESS) {
-		TRACE(("failed getting mpint"))
-		dropbear_exit("Bad KEX packet");
+	switch (ses.newkeys->algo_kex->mode) {
+#if DROPBEAR_NORMAL_DH
+		case DROPBEAR_KEX_NORMAL_DH:
+			{
+			DEF_MP_INT(dh_f);
+			m_mp_init(&dh_f);
+			if (buf_getmpint(ses.payload, &dh_f) != DROPBEAR_SUCCESS) {
+				TRACE(("failed getting mpint"))
+				dropbear_exit("Bad KEX packet");
+			}
+
+			kexdh_comb_key(cli_ses.dh_param, &dh_f, hostkey);
+			mp_clear(&dh_f);
+			}
+			break;
+#endif
+#if DROPBEAR_ECDH
+		case DROPBEAR_KEX_ECDH:
+			{
+			buffer *ecdh_qs = buf_getstringbuf(ses.payload);
+			kexecdh_comb_key(cli_ses.ecdh_param, ecdh_qs, hostkey);
+			buf_free(ecdh_qs);
+			}
+			break;
+#endif
+#if DROPBEAR_CURVE25519
+		case DROPBEAR_KEX_CURVE25519:
+			{
+			buffer *ecdh_qs = buf_getstringbuf(ses.payload);
+			kexcurve25519_comb_key(cli_ses.curve25519_param, ecdh_qs, hostkey);
+			buf_free(ecdh_qs);
+			}
+			break;
+#endif
 	}
 
-	kexdh_comb_key(cli_ses.dh_e, cli_ses.dh_x, &dh_f, hostkey);
-	mp_clear(&dh_f);
-	mp_clear_multi(cli_ses.dh_e, cli_ses.dh_x, NULL);
-	m_free(cli_ses.dh_e);
-	m_free(cli_ses.dh_x);
+	if (cli_ses.dh_param) {
+		free_kexdh_param(cli_ses.dh_param);
+		cli_ses.dh_param = NULL;
+	}
+#if DROPBEAR_ECDH
+	if (cli_ses.ecdh_param) {
+		free_kexecdh_param(cli_ses.ecdh_param);
+		cli_ses.ecdh_param = NULL;
+	}
+#endif
+#if DROPBEAR_CURVE25519
+	if (cli_ses.curve25519_param) {
+		free_kexcurve25519_param(cli_ses.curve25519_param);
+		cli_ses.curve25519_param = NULL;
+	}
+#endif
 
-	if (buf_verify(ses.payload, hostkey, ses.hash, SHA1_HASH_SIZE) 
-			!= DROPBEAR_SUCCESS) {
+	cli_ses.param_kex_algo = NULL;
+	if (buf_verify(ses.payload, hostkey, ses.hash) != DROPBEAR_SUCCESS) {
 		dropbear_exit("Bad hostkey signature");
 	}
 
@@ -112,7 +185,8 @@ void recv_msg_kexdh_reply() {
 	TRACE(("leave recv_msg_kexdh_init"))
 }
 
-static void ask_to_confirm(unsigned char* keyblob, unsigned int keybloblen) {
+static void ask_to_confirm(unsigned char* keyblob, unsigned int keybloblen,
+	const char* algoname) {
 
 	char* fp = NULL;
 	FILE *tty = NULL;
@@ -120,14 +194,16 @@ static void ask_to_confirm(unsigned char* keyblob, unsigned int keybloblen) {
 
 	fp = sign_key_fingerprint(keyblob, keybloblen);
 	if (cli_opts.always_accept_key) {
-		fprintf(stderr, "\nHost '%s' key accepted unconditionally.\n(fingerprint %s)\n",
+		dropbear_log(LOG_INFO, "\nHost '%s' key accepted unconditionally.\n(%s fingerprint %s)\n",
 				cli_opts.remotehost,
+				algoname,
 				fp);
 		m_free(fp);
 		return;
 	}
-	fprintf(stderr, "\nHost '%s' is not in the trusted hosts file.\n(fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
+	fprintf(stderr, "\nHost '%s' is not in the trusted hosts file.\n(%s fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
 			cli_opts.remotehost, 
+			algoname,
 			fp);
 	m_free(fp);
 
@@ -217,16 +293,22 @@ static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen) {
 	buffer * line = NULL;
 	int ret;
 
+	if (cli_opts.no_hostkey_check) {
+		dropbear_log(LOG_INFO, "Caution, skipping hostkey check for %s\n", cli_opts.remotehost);
+		return;
+	}
+
+	algoname = signkey_name_from_type(ses.newkeys->algo_hostkey, &algolen);
+
 	hostsfile = open_known_hosts_file(&readonly);
 	if (!hostsfile)	{
-		ask_to_confirm(keyblob, keybloblen);
+		ask_to_confirm(keyblob, keybloblen, algoname);
 		/* ask_to_confirm will exit upon failure */
 		return;
 	}
 	
 	line = buf_new(MAX_KNOWNHOSTS_LINE);
 	hostlen = strlen(cli_opts.remotehost);
-	algoname = signkey_name_from_type(ses.newkeys->algo_hostkey, &algolen);
 
 	do {
 		if (buf_getline(line, hostsfile) == DROPBEAR_FAILURE) {
@@ -244,9 +326,8 @@ static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen) {
 		}
 
 		/* Compare hostnames */
-		if (strncmp(cli_opts.remotehost, buf_getptr(line, hostlen),
+		if (strncmp(cli_opts.remotehost, (const char *) buf_getptr(line, hostlen),
 					hostlen) != 0) {
-			TRACE(("hosts don't match"))
 			continue;
 		}
 
@@ -257,7 +338,7 @@ static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen) {
 			continue;
 		}
 
-		if (strncmp(buf_getptr(line, algolen), algoname, algolen) != 0) {
+		if (strncmp((const char *) buf_getptr(line, algolen), algoname, algolen) != 0) {
 			TRACE(("algo doesn't match"))
 			continue;
 		}
@@ -269,7 +350,7 @@ static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen) {
 		}
 
 		/* Now we're at the interesting hostkey */
-		ret = cmp_base64_key(keyblob, keybloblen, algoname, algolen,
+		ret = cmp_base64_key(keyblob, keybloblen, (const unsigned char *) algoname, algolen,
 						line, &fingerprint);
 
 		if (ret == DROPBEAR_SUCCESS) {
@@ -280,17 +361,18 @@ static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen) {
 
 		/* The keys didn't match. eep. Note that we're "leaking"
 		   the fingerprint strings here, but we're exiting anyway */
-		dropbear_exit("\n\nHost key mismatch for %s !\n"
+		dropbear_exit("\n\n%s host key mismatch for %s !\n"
 					"Fingerprint is %s\n"
 					"Expected %s\n"
 					"If you know that the host key is correct you can\nremove the bad entry from ~/.ssh/known_hosts", 
+					algoname,
 					cli_opts.remotehost,
 					sign_key_fingerprint(keyblob, keybloblen),
 					fingerprint ? fingerprint : "UNKNOWN");
 	} while (1); /* keep going 'til something happens */
 
 	/* Key doesn't exist yet */
-	ask_to_confirm(keyblob, keybloblen);
+	ask_to_confirm(keyblob, keybloblen, algoname);
 
 	/* If we get here, they said yes */
 
@@ -304,12 +386,11 @@ static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen) {
 		fseek(hostsfile, 0, SEEK_END); /* In case it wasn't opened append */
 		buf_setpos(line, 0);
 		buf_setlen(line, 0);
-		buf_putbytes(line, ses.remotehost, hostlen);
+		buf_putbytes(line, (const unsigned char *) cli_opts.remotehost, hostlen);
 		buf_putbyte(line, ' ');
-		buf_putbytes(line, algoname, algolen);
+		buf_putbytes(line, (const unsigned char *) algoname, algolen);
 		buf_putbyte(line, ' ');
 		len = line->size - line->pos;
-		TRACE(("keybloblen %d, len %d", keybloblen, len))
 		/* The only failure with base64 is buffer_overflow, but buf_getwriteptr
 		 * will die horribly in the case anyway */
 		base64_encode(keyblob, keybloblen, buf_getwriteptr(line, len), &len);
@@ -327,4 +408,5 @@ out:
 	if (line != NULL) {
 		buf_free(line);
 	}
+	m_free(fingerprint);
 }

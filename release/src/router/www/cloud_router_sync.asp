@@ -16,9 +16,9 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
+<script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
-<script type="text/javascript" src="/disk_functions.js"></script>
 <script language="JavaScript" type="text/javascript" src="/md5.js"></script>
 <script language="JavaScript" type="text/javascript" src="/form.js"></script>
 <style type="text/css">
@@ -122,7 +122,6 @@ sizingMethod='scale')";
 }
 </style>
 <script>
-
 <% wanlink(); %>
 <% get_AiDisk_status(); %>
 var cloud_status = "";
@@ -1199,7 +1198,7 @@ function checkDDNSReturnCode(){
 										<th width="25%"><#LANHostConfig_x_DDNSHostNames_itemname#></th>
 										<td>
 											<select id="protocol_type" class="input_option" style="height:27px;">
-												<option value="0">Http</option>
+												<!--<option value="0">Http</option>-->
 												<option value="1">Https</option>
 											</select>
 											<input id="host_name" type="text" maxlength="32"  class="input_32_table" style="height:25px;font-size:13px;"  onKeyPress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off">&nbsp:

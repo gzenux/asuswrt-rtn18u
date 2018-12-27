@@ -517,7 +517,7 @@ add_option (char *p[], int line, int unit)
 #endif
 				nvram_set(buf, strstr(p[2], "-----BEGIN"));
 			//key-direction
-			sprintf(buf, "vpn_crt_client%d_hmac", unit);
+			sprintf(buf, "vpn_client%d_hmac", unit);
 			if(nvram_match(buf, "-1"))	//default, disable
 				nvram_set(buf, "2");	//openvpn default value: KEY_DIRECTION_BIDIRECTIONAL
 		}

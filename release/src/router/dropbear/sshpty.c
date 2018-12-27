@@ -133,7 +133,7 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, int namebuflen)
 		close(*ptyfd);
 		return 0;
 	}
-#ifndef HAVE_CYGWIN
+#if !defined(HAVE_CYGWIN) && defined(I_PUSH)
 	/*
 	 * Push the appropriate streams modules, as described in Solaris pts(7).
 	 * HP-UX pts(7) doesn't have ttcompat module.
@@ -234,7 +234,7 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, int namebuflen)
 
 		return 1;
 	}
-	dropbear_log(LOG_WARNING, "failed to open any /dev/pty?? devices");
+	dropbear_log(LOG_WARNING, "Failed to open any /dev/pty?? devices");
 	return 0;
 #endif /* HAVE_DEV_PTS_AND_PTC */
 #endif /* USE_DEV_PTMX */

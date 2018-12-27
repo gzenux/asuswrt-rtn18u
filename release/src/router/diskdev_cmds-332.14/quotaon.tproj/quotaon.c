@@ -99,7 +99,8 @@ int main(argc, argv)
 	char **argv;
 {
 	register struct fstab *fs;
-	char ch, *qfnp, *whoami, *rindex();
+	int ch;
+	char *qfnp, *whoami, *rindex();
 	long argnum, done = 0;
 	int i, offmode = 0, errs = 0;
 #ifdef __APPLE__

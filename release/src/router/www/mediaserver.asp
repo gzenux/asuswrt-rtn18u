@@ -15,9 +15,9 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
+<script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
-<script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/form.js"></script>
 <style type="text/css">
 .upnp_table{
@@ -262,7 +262,9 @@ function applyRule(){
 		document.form.dms_dir_x.disabled = true;
 		document.form.dms_dir_type_x.disabled = true;		
 	}
-	
+
+	document.form.dms_dir.disabled = true;
+
 	showLoading();
 	FormActions("start_apply.htm", "apply", "restart_media", "5");
 	document.form.submit();
@@ -724,12 +726,12 @@ function show_dlna_path(){
 		for(var i = 1; i < dms_dir_x_array_row.length; i++){
 			var tmp_type = "";
 			code +='<tr id="row'+i+'">';
-			if(dms_dir_x_array_row[i].length > 35){
-				temp = dms_dir_x_array_row[i].substr(0,35) + "...";
-				code +='<td width="45%" class="dlna_path_td" title="'+ dms_dir_x_array_row[i] +'">'+ temp +'</td>';
+			if(decodeURIComponent(dms_dir_x_array_row[i]).length > 35){
+				temp = decodeURIComponent(dms_dir_x_array_row[i]).substr(0,35) + "...";
+				code +='<td width="45%" class="dlna_path_td" title="'+ decodeURIComponent(dms_dir_x_array_row[i]) +'">'+ temp +'</td>';
 			}
 			else{
-				code +='<td width="45%" class="dlna_path_td" title="'+ dms_dir_x_array_row[i] +'">'+ dms_dir_x_array_row[i] +'</td>';
+				code +='<td width="45%" class="dlna_path_td" title="'+ decodeURIComponent(dms_dir_x_array_row[i]) +'">'+ decodeURIComponent(dms_dir_x_array_row[i]) +'</td>';
 			}
 				tmp_type += dms_dir_type_x_array_row[i].indexOf("A")>=0? "Audio " : "";
 				tmp_type += dms_dir_type_x_array_row[i].indexOf("P")>=0? "Image " : "";

@@ -1,0 +1,8 @@
+all:
+	$(if $(KDIR),,\
+	    $(eval KDIR := /lib/modules/$(shell uname -r)/build)\
+	    $(warning defaulting KDIR to $(KDIR)))
+	$(MAKE) -C "$(KDIR)" M="`pwd`" modules
+
+clean:
+	rm -rf *.o vpnclient* .vpnclient* .tmp_versions [Mm]odule* .*.cmd

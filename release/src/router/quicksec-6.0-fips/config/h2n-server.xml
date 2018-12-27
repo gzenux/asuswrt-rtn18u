@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+<quicksec>
+  <params>
+    <!-- This is the interface used for uplink when the gateway is doing NAT -->
+    <nat ifname="eth2"/>
+
+    <!-- Address pool for allocation virtual IP addresses for remote -->
+    <address-pool dns="192.168.1.1" dhcp="192.168.1.1">
+	  <!-- The private network(s) -->
+	  <subnet>192.168.1.0/24</subnet>
+	  <!-- Allocate virtual IP to connecting hosts in the following range. It should be outside of the private subnet. -->
+      <address netmask="255.255.255.0">192.168.3.200-192.168.3.249</address>
+    </address-pool>
+
+   <!-- Authentication domain specifies IKE authentication parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" id="b@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  
+  
+  <policy>
+    <!-- Configuration for the remote access -->
+    <tunnel name="remote-access" flags="require-cfgmode
+                                        allow-cfgmode
+                                        dont-initiate">
+      <identity id-type="email" id="a@ipsec.com"/>
+      <ike-versions>1 2</ike-versions>
+    </tunnel>
+
+    <!-- Set up the traffic selectors for the remote access -->
+    <rule from-tunnel="remote-access"/>
+    <rule to-tunnel="remote-access">
+      <src>ipv4(192.168.1.0/24)</src>
+      <dst>ipv4(192.168.3.0/24)</dst>
+    </rule>
+    
+   <!-- Allow outgoing traffic without any transform. -->
+    <rule>
+      <src>ipv4(192.168.1.0/24)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+	
+  </policy>
+</quicksec>

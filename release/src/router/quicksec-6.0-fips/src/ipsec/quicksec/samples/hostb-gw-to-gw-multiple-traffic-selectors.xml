@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE quicksec PUBLIC "quicksec:dtd" "quicksec.dtd">
+
+
+<!-- Gateway to gateway setup with multiple traffic selectors. -->
+<!-- Related: hosta-gw-to-gw-multiple-traffic-selectors.xml -->
+<quicksec>
+  <params>
+    <!-- Authentication domain specifies IKE authentication
+         parameters -->
+    <auth-domain>
+      <!-- shared secret and identity of remote IKE peer -->
+      <remote-secret id-type="email" 
+                     id="a@ipsec.com">foo</remote-secret>
+    </auth-domain>
+  </params>
+  <policy>
+
+    <tunnel name="gw-to-gw">
+      <!-- local identity sent to the remote IKE peer -->
+      <identity id-type="email" id="b@ipsec.com">
+        <!-- local shared secret -->
+        <local-secret>foo</local-secret>
+      </identity>
+      <!-- Remote IKE peer -->
+      <peer>172.30.4.189</peer>
+      <!-- Local IKE peer -->
+      <local-ip>172.30.4.167</local-ip>
+    </tunnel>
+
+    <!-- Allows hosts on source subnet to initiate traffic to 
+         destination subnet. Packets matching to these selectors 
+         trigger IKE negotiation.
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule to-tunnel="gw-to-gw">
+      <src>ipv4(192.168.1.0/24)</src>
+      <dst>ipv4(192.168.2.1-192.168.2.100),ipv4(192.168.2.254)</dst>
+    </rule>
+
+    <!-- Allows hosts on source subnet to initiate traffic to 
+         destination subnet, if the packet came from the specified
+         from-tunnel. 
+         Protocol/port information can be encoded in the traffic
+         selector as ipv4(protocol:port,a.b.c.d) -->
+    <rule from-tunnel="gw-to-gw">
+      <src>ipv4(192.168.2.1-192.168.2.100),ipv4(192.168.2.254)</src>
+      <dst>ipv4(192.168.1.0/24)</dst>
+    </rule>
+
+    <!-- Pass rule, that handles all traffic not matching
+         to traffic selectors on any higher precedence rules.
+         Remove this rule if plain text traffic is forbidden. -->
+    <rule>
+      <src>ipv4(0.0.0.0/0)</src>
+      <dst>ipv4(0.0.0.0/0)</dst>
+    </rule>
+  </policy>
+</quicksec>

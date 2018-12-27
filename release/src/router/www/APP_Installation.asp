@@ -73,14 +73,9 @@
 }
 </style>
 <script>
-
-
 var apps_array = <% apps_info("asus"); %>;
-
 <% apps_state_info(); %>
-
 var apps_download_percent_done = 0;
-
 <% apps_action(); %> //trigger apps_action.
 
 var stoppullstate = 0;
@@ -120,10 +115,10 @@ function initial(){
 	if(sw_mode == 2 || sw_mode == 3 || sw_mode == 4 || noaidisk_support)
 		default_apps_array = default_apps_array.del(default_apps_array.getIndexByValue2D("AiDisk")[0]);
 
-	if(!printer_support)
+	if(!printer_support || noprinter_support)
 		default_apps_array = default_apps_array.del(default_apps_array.getIndexByValue2D("<#Network_Printer_Server#>")[0]);
 
-	if(sw_mode == 2 || sw_mode == 3 || sw_mode == 4 || !modem_support || based_modelid == "4G-AC55U")
+	if(sw_mode == 2 || sw_mode == 3 || sw_mode == 4 || !modem_support || nomodem_support || based_modelid == "4G-AC55U")
 		default_apps_array = default_apps_array.del(default_apps_array.getIndexByValue2D("3G/4G")[0]);
 
 	if(!timemachine_support)
@@ -537,10 +532,9 @@ function show_apps(){
 		if(apps_array[i][0] != "downloadmaster" && apps_array[i][0] != "mediaserver" && apps_array[i][0] != "mediaserver2" && apps_array[i][0] != "aicloud") // discard unneeded apps
 			continue;
 		else if((apps_array[i][0] == "downloadmaster" || apps_array[i][0] == "mediaserver" || apps_array[i][0] == "mediaserver2" || apps_array[i][0] == "aicloud") && apps_array[i][3] == "yes" && apps_array[i][4] == "yes"){
-			if(location.host.split(":").length > 1)
-				apps_array[i][6] = "http://" + location.host.split(":")[0] + ":" + dm_http_port;
-			else
-				apps_array[i][6] = "http://" + location.host + ":" + dm_http_port;
+
+			var header_info = [<% get_header_info(); %>];
+			apps_array[i][6] = "http://" + header_info[0].host + ":" + dm_http_port;
 
 			if(apps_array[i][0] == "aicloud") // append URL
 				apps_array[i][6] = "/cloud_main.asp";
@@ -729,7 +723,7 @@ var hasNewVer = function(arr){
 
 var partitions_array = [];
 function show_partition(){
- 	require(['/require/modules/diskList.js'], function(diskList){
+ 	require(['/require/modules/diskList.js?hash=' + Math.random().toString()], function(diskList){
 		var htmlcode = "";
 		var mounted_partition = 0;
 		partitions_array = [];
@@ -784,14 +778,6 @@ function show_partition(){
 	});
 }
 
-function detectUSBStatusApp(){
- 	require(['/require/modules/diskList.js'], function(diskList){
-		setInterval(function(){
-			diskList.update(show_partition); 
-		}, 2000);
-	});
-}
-
 function apps_form(_act, _name, _flag){
 	cookie.set("apps_last", _name, 1000);
 
@@ -811,16 +797,14 @@ function divdisplayctrl(flag1, flag2, flag3, flag4){
 		document.getElementById("return_btn").style.display = "none";
 	}
 	else if(flag2 != "none"){ // partition list
-		detectUSBStatusApp();
-		show_partition();
+	 	setInterval(show_partition, 2000);
+		show_partition()
 		document.getElementById("return_btn").style.display = "";
 		calHeight(1);
 	}
 	else if(flag4 != "none"){ // help
-		if(location.host.split(":").length > 1)
-			var _quick_dmlink = "http://" + location.host.split(":")[0] + ":" + dm_http_port;
-		else
-			var _quick_dmlink = "http://" + location.host + ":" + dm_http_port;
+		var header_info = [<% get_header_info(); %>];
+		var _quick_dmlink = "http://" + header_info[0].host + ":" + dm_http_port;
 		
 		if(_dm_enable == "yes"){
 			document.getElementById("realLink").href = _quick_dmlink;
@@ -956,10 +940,10 @@ function go_modem_page(usb_unit_flag){
 								<a id="faq" href="http://www.asus.com/support/FAQ/1009773/" target="_blank" style="text-decoration:underline;font-size:14px;font-weight:bolder;color:#FFF">Download Master FAQ</a>
 							</li>
 							<li style="margin-top:10px;">
-								<a id="faq2" href="http://www.asus.com/support/faq/114002/" target="_blank" style="text-decoration:underline;font-size:14px;font-weight:bolder;color:#FFF">Download Master Tool FAQ</a>
+								<a id="faq2" href="http://www.asus.com/support/FAQ/1016385/" target="_blank" style="text-decoration:underline;font-size:14px;font-weight:bolder;color:#FFF">Download Master Tool FAQ</a>
 							</li>
 							<li style="margin-top:10px;">
-								<a id="DMUtilityLink" href="http://dlcdnet.asus.com/pub/ASUS/wireless/ASUSWRT/DM2_2037.zip" style="text-decoration:underline;font-size:14px;font-weight:bolder;color:#FFF"><#DM_Download_Tool#></a>
+								<a id="DMUtilityLink" href="http://dlcdnet.asus.com/pub/ASUS/wireless/RT-AC5300/UT_Download_Master_2228_Win.zip" style="text-decoration:underline;font-size:14px;font-weight:bolder;color:#FFF"><#DM_Download_Tool#></a>
 							</li>
 						</ul>
 					</td>

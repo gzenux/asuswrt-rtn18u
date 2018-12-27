@@ -33,10 +33,6 @@ ifeq ($(RTN14U)$(RTAC52U)$(RTAC51U)$(RTN11P)$(RTN300)$(RTN54U)$(RTAC1200HP)$(RTN
 CFLAGS += -DRA_ESW
 endif
 
-ifeq ($(RTCONFIG_USB),y)
-CFLAGS += -I$(TOP)/libdisk	
-endif
-
 ifeq ($(RTCONFIG_DNSMASQ),y)
 CFLAGS += -DDNSMASQ
 endif
@@ -50,6 +46,10 @@ CFLAGS += -I$(TOP)/traffic_limiter
 CFLAGS += -I$(TOP)/sqlite
 endif
 
+ifeq ($(or $(RTAC68A),$(RT4GAC68U)),y)
+CFLAGS += -DRTAC68U
+endif
+
 OBJS = httpd.o cgi.o ej.o 
 OBJS += web.o common.o nvram_f.o 
 OBJS += aspbw.o initial_web_hook.o
@@ -60,13 +60,9 @@ OBJS += web-ralink.o
 else ifeq ($(CONFIG_QCA),y)
 OBJS += web-qca.o
 else
-ifeq ($(RTCONFIG_BCMWL6),y)
-OBJS += web-broadcom-wl6.o
+OBJS += web-broadcom.o
 ifeq ($(RTCONFIG_QTN),y)
 OBJS += find_host_addr.o
-endif
-else
-OBJS += web-broadcom.o
 endif
 endif
 
@@ -110,7 +106,12 @@ endif
 endif
 
 ifeq ($(RTCONFIG_USB),y)
+CFLAGS += -I$(TOP)/libdisk	
 LIBS += -L$(TOP)/libdisk -ldisk
+ifeq ($(RTCONFIG_USB_SMS_MODEM),y)
+CFLAGS += -I$(TOP)/smspdu
+LIBS += -L$(TOP)/smspdu -lsmspdu
+endif
 endif
 
 ifeq ($(RTCONFIG_HTTPS),y)
@@ -172,7 +173,7 @@ all: httpd #test_apps
 
 httpd: $(OBJS)
 	@echo " [httpd] CC $@"
-	$(CC) -o $@ $(OBJS) $(LIBS)
+	@$(CC) -o $@ $(OBJS) $(LIBS)
 
 	$(SIZECHECK)
 	$(CPTMP)

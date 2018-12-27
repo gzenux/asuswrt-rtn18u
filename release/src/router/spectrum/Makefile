@@ -16,7 +16,7 @@ endif
 
 ifeq ($(wildcard $(TOP)/spectrum/*.c),)
 all:
-	-cp -f $(TOP)/spectrum/prebuilt/spectrum spectrum
+	-cp -f $(TOP)/spectrum/prebuild/spectrum spectrum
 else
 all: spectrum
 endif

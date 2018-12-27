@@ -100,7 +100,8 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	char ch, *host;
+	int ch;
+	char *host;
 	int do_browse = 0;
 
 	while ((ch = getopt(argc, argv, "Aade3")) != EOF)

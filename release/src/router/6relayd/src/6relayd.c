@@ -56,7 +56,6 @@ static void set_stop(_unused int signal);
 static void wait_child(_unused int signal);
 static int open_interface(struct relayd_interface *iface,
 		const char *ifname, bool external);
-static void relayd_receive_packets(struct relayd_event *event);
 
 
 int main(int argc, char* const argv[])
@@ -371,6 +370,12 @@ static int open_interface(struct relayd_interface *iface,
 
 	iface->ifindex = ifr.ifr_ifindex;
 
+	// Detect non-NDP link
+	if (ioctl(ioctl_sock, SIOCGIFFLAGS, &ifr) < 0)
+		return -1;
+	iface->nondp = (ifr.ifr_flags &
+		(IFF_POINTOPOINT | IFF_NOARP | IFF_LOOPBACK));
+
 	// Detect MAC-address of interface
 	if (ioctl(ioctl_sock, SIOCGIFHWADDR, &ifr) < 0)
 		goto err;
@@ -492,10 +497,10 @@ ssize_t relayd_forward_packet(int socket, struct sockaddr_in6 *dest,
 
 	ssize_t sent = sendmsg(socket, &msg, MSG_DONTWAIT);
 	if (sent < 0)
-		syslog(LOG_WARNING, "Failed to relay to %s%%%s (%s)",
+		syslog(LOG_NOTICE, "Failed to relay to %s%%%s (%s)",
 				ipbuf, iface->ifname, strerror(errno));
 	else
-		syslog(LOG_NOTICE, "Relayed %li bytes to %s%%%s",
+		syslog(LOG_DEBUG, "Relayed %li bytes to %s%%%s",
 				(long)sent, ipbuf, iface->ifname);
 	return sent;
 }
@@ -537,6 +542,7 @@ ssize_t relayd_get_interface_addresses(int ifindex,
 
 		struct ifaddrmsg *ifa = NLMSG_DATA(nhm);
 		if (ifa->ifa_scope != RT_SCOPE_UNIVERSE ||
+				ifa->ifa_flags & IFA_F_TENTATIVE ||
 				ifa->ifa_index != (unsigned)ifindex)
 			continue;
 
@@ -595,7 +601,7 @@ struct relayd_interface* relayd_get_interface_by_name(const char *name)
 
 
 // Convenience function to receive and do basic validation of packets
-static void relayd_receive_packets(struct relayd_event *event)
+void relayd_receive_packets(struct relayd_event *event)
 {
 	uint8_t data_buf[RELAYD_BUFFER_SIZE], cmsg_buf[128];
 	union {
@@ -620,15 +626,23 @@ static void relayd_receive_packets(struct relayd_event *event)
 
 		// Extract destination interface
 		int destiface = 0;
+		int *hlim = NULL;
 		struct in6_pktinfo *pktinfo;
-		for (struct cmsghdr *ch = CMSG_FIRSTHDR(&msg); ch != NULL &&
-				destiface == 0; ch = CMSG_NXTHDR(&msg, ch)) {
+		for (struct cmsghdr *ch = CMSG_FIRSTHDR(&msg); ch != NULL;
+				ch = CMSG_NXTHDR(&msg, ch)) {
 			if (ch->cmsg_level == IPPROTO_IPV6 &&
 					ch->cmsg_type == IPV6_PKTINFO) {
 				pktinfo = (struct in6_pktinfo*)CMSG_DATA(ch);
 				destiface = pktinfo->ipi6_ifindex;
+			} else if (ch->cmsg_level == IPPROTO_IPV6 &&
+					ch->cmsg_type == IPV6_HOPLIMIT) {
+				hlim = (int*)CMSG_DATA(ch);
 			}
 		}
+
+		// Check hoplimit if received
+		if (hlim && *hlim != 255)
+			continue;
 
 		// Detect interface for packet sockets
 		if (addr.ll.sll_family == AF_PACKET)
@@ -647,8 +661,8 @@ static void relayd_receive_packets(struct relayd_event *event)
 		else if (addr.in6.sin6_family == AF_INET6)
 			inet_ntop(AF_INET6, &addr.in6.sin6_addr, ipbuf, sizeof(ipbuf));
 
-		syslog(LOG_NOTICE, "--");
-		syslog(LOG_NOTICE, "Received %li Bytes from %s%%%s", (long)len,
+		syslog(LOG_DEBUG, "--");
+		syslog(LOG_DEBUG, "Received %li Bytes from %s%%%s", (long)len,
 				ipbuf, (iface) ? iface->ifname : "netlink");
 
 		event->handle_dgram(&addr, data_buf, len, iface);
@@ -659,4 +673,12 @@ static void relayd_receive_packets(struct relayd_event *event)
 void relayd_urandom(void *data, size_t len)
 {
 	read(urandom_fd, data, len);
+}
+
+
+time_t relayd_monotonic_time(void)
+{
+	struct timespec ts;
+	syscall(SYS_clock_gettime, CLOCK_MONOTONIC, &ts);
+	return ts.tv_sec;
 }

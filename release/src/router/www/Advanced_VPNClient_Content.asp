@@ -275,16 +275,16 @@ function addRow_Group(upper, flag, idx){
 									document.form.vpn_client1_password.value = vpnc_clientlist_col[4];
 									break;
 								case "2" :
-									document.form.vpn_client1_password.value = vpnc_clientlist_col[4];
+									document.form.vpn_client2_password.value = vpnc_clientlist_col[4];
 									break;
 								case "3" :
-									document.form.vpn_client1_password.value = vpnc_clientlist_col[4];
+									document.form.vpn_client3_password.value = vpnc_clientlist_col[4];
 									break;
 								case "4" :
-									document.form.vpn_client1_password.value = vpnc_clientlist_col[4];
+									document.form.vpn_client4_password.value = vpnc_clientlist_col[4];
 									break;
 								case "5" :
-									document.form.vpn_client1_password.value = vpnc_clientlist_col[4];
+									document.form.vpn_client5_password.value = vpnc_clientlist_col[4];
 									break;
 							}
 						}
@@ -1466,6 +1466,7 @@ function pptpOptionChange() {
 </table>
 </form>
 <!---- vpnc_OpenVPN start  ---->
+<div id="openvpnc_setting_openvpn" class="contentM_qis" style="box-shadow: 1px 5px 10px #000;"> 
 <form method="post" name="vpnclientForm" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="current_page" value="Advanced_VPNClient_Content.asp">
 <input type="hidden" name="next_page" value="Advanced_VPNClient_Content.asp">
@@ -1486,7 +1487,7 @@ function pptpOptionChange() {
 <input type="hidden" name="vpnc_auto_conn" value="<% nvram_get("vpnc_auto_conn"); %>">
 <input type="hidden" name="vpnc_pptp_options_x_list" value="<% nvram_get("vpnc_pptp_options_x_list"); %>">
 <input type="hidden" name="vpnc_openvpn_unit_edit" value="1">
-<div id="openvpnc_setting_openvpn" class="contentM_qis" style="box-shadow: 1px 5px 10px #000;"> 
+
 	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0">
 		<tr style="height:32px;">
 			<td>		

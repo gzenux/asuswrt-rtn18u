@@ -1,0 +1,151 @@
+README for Quicksec IPSec over TCP support
+
+
+
+Features
+
+* IPSec over TCP encapsulation of IKE and IPSec packets
+	* Interoperable with Cisco VPN Client and Cisco VPN Concentrator
+	  with IKEv1
+	* Support for IKEv1 and IKEv2
+	* Support for multiple IPsec SAs over a single encapsulating TCP 
+	  connection
+* IPv4 / IPv6 operation
+* MOBIKE support
+	* On demand TCP connection establishment and closing
+
+
+
+Basic Operation
+
+
+TCP Connection Establishment
+
+In the client, the policy manager creates a pending TCP connection to engine
+when initiating a new IKE negotiation. The TCP connection holds TCP endpoint 
+addresses and ports and the IKE session is mapped to the TCP connection by IKE 
+initiator SPI.
+
+The first IKE packet leaving from the client will trigger a TCP handshake to 
+the peer IP address and port. After the connection is established, the 
+triggering IKE packet is TCP encapsulated and sent to peer. 
+
+In the SGW the incoming TCP connection attempt is accepted if it matches the
+globally configured TCP listen address and port. After a successful TCP 
+handshake the IKE packet is decapsulated and the IKE initiator SPI is stored 
+with the connection entry. This IKE SPI mapping is used during IKE and IPsec SA
+rekey.
+
+When the IPSec SA is negotiated, the SPI values are stored to the connection 
+entry. This IPsec SPI mapping is used during IKE and IPsec SA rekey.
+
+
+TCP Encapsulation and Decapsulation
+
+The encapsulating TCP tunnel selection is based on TCP connection ID, IKE SPI 
+or IPsec SPI mapping.
+
+For IKE packets the lookup is done on (local IP, peer IP, IKE initiator SPI) 
+-tuple. The TCP connection entry will store two sets of IKE initiator SPI
+values to allow smooth operation during IKE rekey.
+
+For normal packets that go into a tunnel, the TCP connection lookup is done on 
+a TCP connection ID that is stored in the flow.
+
+For no-flow packets going into a tunnel, the lookup is done on (local IP, 
+peer IP, outbound SPI) -tuple. The TCP connection entry will store multiple 
+IPsec SPI values to allow multiple IPsec SAs to be encapsulated using a single 
+TCP connection.
+
+In TCP encapsulation a TCP header is inserted to the packet after the IPv4 or
+IPv6 header (and extensiopn headers), and a TCP encapsulation trailer is 
+appended to the packet. The engine will account for the extra packet enlargment
+caused by TCP encapsulation when performing fragmentation and handling PMTU.
+During decapsulation the TCP header and TCP encapsulation trailers are sanity 
+checked and removed, and the IPv4 header checksum is recalculated. For 
+decapsulated IKE packets, the UDP checksum is cleared if IPv4 is used and 
+recalculated if IPv6 is used.
+
+
+MOBIKE Support
+
+The engine will clone existing TCP connections and IKE SPI mappings when it 
+detects that the policy manager has started using a new address pair for a 
+MOBIKE enabled IKEv2 SA. Once the MOBIKE address operation is finished, the 
+policy manager will remove any unused IKE SPI mappings from the engine and the
+engine closes these unused TCP connections.
+
+
+TCP Connection Management
+
+TCP connection are closed by sending a TCP RST to the peer. Quicksec is able to
+handle incoming TCP keepalives. Quicksec does not send TCP keepalives (like 
+Cisco implementation does). Instead standard DPD messages are used for checking
+connectivity and keeping NAT state alive.
+
+TCP connections can be configured to use fixed ports or to use a random local
+port. The range where the local port is chosen can be changed by modifying the
+defines SSH_ENGINE_TCP_ENCAPS_LOCAL_PORT_MIN and 
+SSH_ENGINE_TCP_ENCAPS_LOCAL_PORT_MAX. Quicksec checks for port collision 
+internaly, but does not check if host OS IP stack is using a colliding local 
+port.
+
+
+
+Known Limitations
+
+
+IKE SA lifetime and Per Port SAs
+
+Only one active IKE negotiation per each TCP tunnel is supported. Each TCP
+connection entry has two sets of IKE initiator cookie and SPI values stored. 
+This is to allow delete notifications to be sent for the old SPIs of a rekeyed 
+SA. It is expected that the IKE SA lifetime is atleast 60 seconds.
+
+Per port IPSec SAs are supported but the number of IPsec SAs using the TCP 
+connection is limited to SSH_ENGINE_TCP_ENCAPS_MAX_SAS (16 by default).
+
+
+AH and IPcomp
+
+IPsec over TCP encapsulation does not support encapsulation of IPsec AH or 
+IPcomp packets.
+
+
+IKE SA and IPsec SA export
+
+IPsec over TCP state is not exported or imported with the IKE and IPsec SAs.
+
+
+TCP Ports
+
+The TCP ports used for IPsec over TCP are configured inside Quicksec only. It 
+is assumed that there are no servers running on the host stack on these 
+reserved TCP ports. A server running on a reserved port will be unreachable.
+
+
+Known Issues
+
+NAT reboot may not be detected by policy manager.
+
+Delete notification for the old IKE SPI values of a rekeyed IKEv2 SA may in 
+some cases be transmitted without TCP encapsulation. This happens on the 
+responder if a MOBIKE address update is performed right after the IKEv2 SA 
+rekey and before the delete notification is sent for the old IKE SPI value.
+
+Global TCP listen port XML reconfiguration does not remove old configuration
+entries, but only adds new ones.
+
+
+
+Configuration
+
+Please refer to ipsec/quicksec/samples/hosta-cp-iras-tcpencap.xml and
+		ipsec/quicksec/samples/hostb-cp-irac-tcpencap.xml.
+
+
+
+Applying the patch
+
+After the patch is applied the IPsec over TCP support must be enabled by 
+defining SSH_IPSEC_TCPENCAP in ipsec_params.h.
