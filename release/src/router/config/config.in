@@ -719,15 +719,6 @@ config RTCONFIG_BONDING
 	bool "Linux Net Bonding"
 	default n
 
-config RTCONFIG_TMOBILE
-	bool "T-Mobile Support"
-	default n
-
-config RTCONFIG_NOPP
-	bool "Disable Passpoint"
-	depends on RTCONFIG_TMOBILE
-	default n
-
 config RTCONFIG_UIDEBUG
 	bool "Enable UI debug mode"
 	default n
@@ -738,4 +729,15 @@ config RTCONFIG_ROG
 
 config RTCONFIG_GEOIP
 	bool "determine country by IP address"
+	default n
+
+config RTCONFIG_NOWL
+	bool "no load wl module (only dhd test)"
+	default n
+config RTCONFIG_TR069
+	bool "TR-069 agent"
+	default n
+
+config RTCONFIG_TR181
+	bool "Support TR-181 data model"
 	default n

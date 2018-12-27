@@ -9,6 +9,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/validator.js"></script>
 <script>
 
 var w_Setting = "<% nvram_get("w_Setting"); %>";
@@ -204,17 +205,17 @@ function submitForm(){
 			return false;
 	}
 
-	if(!validate_string_ssid(document.form.wl1_ssid))
+	if(!validator.stringSSID(document.form.wl1_ssid))
 		return false;
 
-	if(!validate_string_ssid(document.form.wl0_ssid))
+	if(!validator.stringSSID(document.form.wl0_ssid))
 		return false;
 
 	if(document.form.wl1_wpa_psk.value.length > 0){
 		document.form.wl1_auth_mode_x.value = "psk2";
 		/*if(!validate_wlpsk(document.form.wl1_wpa_psk))
 			return false;*/
-		if(!validate_psk(document.form.wl1_wpa_psk))
+		if(!validator.psk(document.form.wl1_wpa_psk))
 			return false;
 	}
 	else
@@ -224,7 +225,7 @@ function submitForm(){
 		document.form.wl0_auth_mode_x.value = "psk2";
 		/*if(!validate_wlpsk(document.form.wl0_wpa_psk))
 			return false;*/
-		if(!validate_psk(document.form.wl0_wpa_psk))
+		if(!validator.psk(document.form.wl0_wpa_psk))
 			return false;
 	}
 	else
@@ -314,7 +315,7 @@ function validate_wlpsk(psk_obj){
 		return false;
 	}
 
-	if(psk_length >= 8 && psk_length <= 63 && !validate_string(psk_obj)){
+	if(psk_length >= 8 && psk_length <= 63 && !validator.string(psk_obj)){
 		alert("<#JS_PSK64Hex#>");
 		psk_obj.focus();
 		psk_obj.select();
@@ -475,7 +476,7 @@ function gotoHome(){
 	<tr>
 	<th width="180"><span onmouseout="return nd();" onclick="openHint(0, 22);" style="cursor:help;"><#QIS_finish_wireless_item1#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 	<td class="QISformtd">
-		<input type="text" id="wl0_ssid" name="wl0_ssid" tabindex="1" onkeypress="return is_string(this, event);" onkeyup="Sync_2ghz(2);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
+		<input type="text" id="wl0_ssid" name="wl0_ssid" tabindex="1" onkeypress="return validator.isString(this, event);" onkeyup="Sync_2ghz(2);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
 	</td>
 	</tr>
 
@@ -496,7 +497,7 @@ function gotoHome(){
 	<tr id="wl_unit_field_2">
 	<th width="180"><span onmouseout="return nd();" onclick="openHint(0, 22);" style="cursor:help;"><#QIS_finish_wireless_item1#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="/images/New_ui/helpicon.png"></span></th>
 	<td class="QISformtd">
-		<input type="text" id="wl1_ssid" name="wl1_ssid" tabindex="4" onkeypress="return is_string(this, event);" onkeyup="Sync_2ghz(5);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
+		<input type="text" id="wl1_ssid" name="wl1_ssid" tabindex="4" onkeypress="return validator.isString(this, event);" onkeyup="Sync_2ghz(5);" style="height:25px;" class="input_32_table" maxlength="32" value="default"/>
 	</td>
 	</tr>
 

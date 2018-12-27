@@ -8,7 +8,7 @@
 <link rel="stylesheet" type="text/css" href="qis_style.css">
 <script type="text/JavaScript" src="/state.js"></script>
 <script type="text/JavaScript" src="/general.js"></script>
-<script type="text/JavaScript" src="/form.js"></script>
+<script type="text/JavaScript" src="/validator.js"></script>
 <style>
 span{
 	border:0px solid #FFFFFF;
@@ -93,8 +93,8 @@ function QKfinish_load_body(){
 }
 
 function validForm(){
-		if(!validate_string(document.form.dsltmp_qis_pppoe_username)
-		|| !validate_string(document.form.dsltmp_qis_pppoe_passwd)
+		if(!validator.string(document.form.dsltmp_qis_pppoe_username)
+		|| !validator.string(document.form.dsltmp_qis_pppoe_passwd)
 		) {
 			alert("return false: "+document.form.dsltmp_qis_pppoe_username.value+"/"+document.form.dsltmp_qis_pppoe_passwd.value);
 			return false;

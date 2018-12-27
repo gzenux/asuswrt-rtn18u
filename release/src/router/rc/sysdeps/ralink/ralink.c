@@ -52,7 +52,7 @@
 char *wlc_nvname(char *keyword);
 //#endif
 
-#if defined(RTAC52U) || defined(RTAC51U) 
+#if defined(RTAC52U) || defined(RTAC51U) || defined(RTN54U)
 #define VHT_SUPPORT /* 11AC */
 #endif
 
@@ -458,7 +458,7 @@ int setRegSpec(const char *regSpec)
 	char file[64];
 	int i;
 
-	if (regSpec == NULL || regSpec[0] == '\0' || strlen(regSpec) > 3)
+	if (regSpec == NULL || regSpec[0] == '\0' || strlen(regSpec) > MAX_REGSPEC_LEN)
 		return -1;
 
 	memset(REGSPEC, 0, sizeof(REGSPEC));
@@ -2015,8 +2015,14 @@ int gen_ralink_config(int band, int is_iNIC)
 			if (atoi(str) == 0)
 			{
 				fprintf(fp, "AutoChannelSelect=%d\n", 2);
-				if(band && nvram_get_int(strcat_r(prefix, "bw", tmp)) > 0)
+				if (band && nvram_get_int(strcat_r(prefix, "bw", tmp)) > 0) {
+#ifdef RTN56U
+					if (nvram_match(strcat_r(prefix, "country_code", tmp), "TW"))
+						fprintf(fp, "AutoChannelSkipList=%d;%d\n", 56, 165);
+					else
+#endif
 					fprintf(fp, "AutoChannelSkipList=%d\n", 165); // skip 165 in A band when bw setting to 20/40Mhz or 40Mhz.
+				}
 			}
 			else
 				fprintf(fp, "AutoChannelSelect=%d\n", 0);
@@ -3270,7 +3276,7 @@ int gen_ralink_config(int band, int is_iNIC)
 
 
 		fprintf(fp, "ApCliEnable=0\n");
-		fprintf(fp, "ApCliSsid=%s\n", nvram_safe_get("wlc_ssid"));
+		fprintf(fp, "ApCliSsid%d=%s\n", 1, nvram_safe_get("wlc_ssid"));
 		fprintf(fp, "ApCliBssid=\n");
 
 		str = nvram_safe_get("wlc_auth_mode");
@@ -3301,7 +3307,7 @@ int gen_ralink_config(int band, int is_iNIC)
 					fprintf(fp, "ApCliEncrypType=%s\n", "AES");
 
 				//WPAPSK
-				fprintf(fp, "ApCliWPAPSK=%s\n", nvram_safe_get("wlc_wpa_psk"));
+				fprintf(fp, "ApCliWPAPSK%d=%s\n", 1, nvram_safe_get("wlc_wpa_psk"));
 			}
 			else
 			{

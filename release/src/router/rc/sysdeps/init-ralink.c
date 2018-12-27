@@ -760,6 +760,12 @@ void init_syspara(void)
 		nvram_set("wl0_country_code", country_code);
 		nvram_set("wl1_country_code", country_code);
 	}
+#if defined(RTN14U) // for CE Adaptivity
+	if ((strcmp(country_code, "DE") == 0) || (strcmp(country_code, "EU") == 0))
+		nvram_set("reg_spec", "CE");
+	else
+		nvram_set("reg_spec", "NDF");
+#endif
 #else	/* ! RTCONFIG_NEW_REGULATION_DOMAIN */
 	dst = buffer;
 
@@ -989,6 +995,11 @@ void init_syspara(void)
 		modelname[sizeof(modelname)-1] = '\0';
 		if(modelname[0] != 0 && (unsigned char)(modelname[0]) != 0xff && is_valid_hostname(modelname) && strcmp(modelname, "ASUS"))
 		{
+#ifdef RTN11P
+			if(strcmp(modelname, "RT-N12E_B")==0)
+				nvram_set("odmpid", "RT-N12E_B1");
+			else
+#endif	/* RTN11P */
 			nvram_set("odmpid", modelname);
 		}
 		else

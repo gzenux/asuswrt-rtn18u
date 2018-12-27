@@ -44,7 +44,7 @@
 #ifdef RTCONFIG_BCMWL6
 #ifdef RTCONFIG_PROXYSTA
 
-#define NORMAL_PERIOD   30
+#define NORMAL_PERIOD	30
 #define	MAX_STA_COUNT	128
 #define	NVRAM_BUFSIZE	100
 
@@ -264,26 +264,26 @@ static void check_wl_rate(const char *ifname)
 
 	sprintf(rate_buf, "0 Mbps");
 
-        if (wl_ioctl(ifname, WLC_GET_RATE, &rate, sizeof(int)))
+	if (wl_ioctl(ifname, WLC_GET_RATE, &rate, sizeof(int)))
 	{
-                dbG("can not get rate info of %s\n", ifname);
+		dbG("can not get rate info of %s\n", ifname);
 		goto ERROR;
 	}
-        else
-        {
-                rate = dtoh32(rate);
+	else
+	{
+		rate = dtoh32(rate);
 		if ((rate == -1) || (rate == 0))
 			sprintf(rate_buf, "auto");
 		else
 			sprintf(rate_buf, "%d%s Mbps", (rate / 2), (rate & 1) ? ".5" : "");
-        }
+	}
 
 ERROR:
 	logmessage(LOGNAME, "wl interface %s data rate: %s", ifname, rate_buf);
 }
 #endif
 static void
-psta_keepalive()
+psta_keepalive(int ex)
 {
 	char tmp[NVRAM_BUFSIZE], prefix[] = "wlXXXXXXXXXX_";
 	char *name = NULL;
@@ -293,8 +293,10 @@ psta_keepalive()
 	struct ether_addr bssid;
 	unsigned char bssid_null[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	char macaddr[18];
+	char band_var[16];
 
-	unit = nvram_get_int("wlc_band");
+	sprintf(band_var, "wlc_band%s", ex?"_ex":"");
+	unit = nvram_get_int(band_var);
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 
 	if (!nvram_match(strcat_r(prefix, "mode", tmp), "psta"))
@@ -378,7 +380,9 @@ psta_monitor(int sig)
 {
 	if (sig == SIGALRM)
 	{
-		psta_keepalive();
+		psta_keepalive(0);
+		if(nvram_match("exband", "1"))
+			psta_keepalive(1);
 		alarm(NORMAL_PERIOD);
 	}
 }
@@ -388,10 +392,10 @@ psta_monitor_exit(int sig)
 {
 	if (sig == SIGTERM)
 	{
-        	alarmtimer(0, 0);
-        	remove("/var/run/psta_monitor.pid");
-        	exit(0);
-        }
+		alarmtimer(0, 0);
+		remove("/var/run/psta_monitor.pid");
+		exit(0);
+	}
 }
 
 int 

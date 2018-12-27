@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
-#include <proto/ethernet.h>
+#include <net/ethernet.h>
 
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -71,9 +71,6 @@ expires(char *wan_ifname, unsigned int in)
 static int
 deconfig(int zcip)
 {
-#ifdef RTCONFIG_DSL_TCLINUX //tmp
-	return 0;
-#endif
 	char *wan_ifname = safe_getenv("interface");
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	int unit = wan_ifunit(wan_ifname);
@@ -115,9 +112,6 @@ bound(void)
 	char route[sizeof("255.255.255.255/255")];
 	int unit, ifunit;
 	int changed = 0;
-#ifdef RTCONFIG_TMOBILE
-	int changed_sip = 0;
-#endif
 
 #ifdef DHCP_ZEROCONF
 	killall("zcip", SIGTERM);
@@ -147,17 +141,17 @@ bound(void)
 	//	sethostname(value, strlen(value) + 1);
 	if ((value = getenv("domain")))
 		nvram_set(strcat_r(prefix, "domain", tmp), trim_r(value));
-#ifdef RTCONFIG_TMOBILE
-	if ((value = getenv("sipsrv"))) {
-		changed_sip = !nvram_match(strcat_r(prefix, "sipsrv", tmp), trim_r(value));
-		nvram_set(strcat_r(prefix, "sipsrv", tmp), trim_r(value));
-	}
-#endif
 	if ((value = getenv("lease"))) {
 		unsigned int lease = atoi(value);
 		nvram_set_int(strcat_r(prefix, "lease", tmp), lease);
 		expires(wan_ifname, lease);
 	}
+
+#if (defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181))
+	nvram_unset("vivso");
+	if ((value = getenv("vivso")))
+		nvram_set("vivso", trim_r(value));
+#endif
 
 	/* classful static routes */
 	nvram_set(strcat_r(prefix, "routes", tmp), getenv("routes"));
@@ -218,10 +212,6 @@ bound(void)
 		 nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
 
 	wan_up(wan_ifname);
-#ifdef RTCONFIG_TMOBILE
-	if (changed_sip)
-		notify_rc("restart_dnsmasq");
-#endif
 
 	logmessage("dhcp client", "bound %s via %s during %d seconds.",
 		nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
@@ -249,9 +239,6 @@ renew(void)
 	char wanprefix[] = "wanXXXXXXXXXX_";
 	int unit, ifunit;
 	int changed = 0;
-#ifdef RTCONFIG_TMOBILE
-	int changed_sip = 0;
-#endif
 
 #ifdef DHCP_ZEROCONF
 	killall("zcip", SIGTERM);
@@ -282,12 +269,6 @@ renew(void)
 	//	sethostname(value, strlen(value) + 1);
 	if ((value = getenv("domain")))
 		nvram_set(strcat_r(prefix, "domain", tmp), trim_r(value));
-#ifdef RTCONFIG_TMOBILE
-	if ((value = getenv("sipsrv"))) {
-		changed_sip = !nvram_match(strcat_r(prefix, "sipsrv", tmp), trim_r(value));
-		nvram_set(strcat_r(prefix, "sipsrv", tmp), trim_r(value));
-	}
-#endif
 	if ((value = getenv("lease"))) {
 		unsigned int lease = atoi(value);
 		nvram_set_int(strcat_r(prefix, "lease", tmp), lease);
@@ -297,10 +278,6 @@ renew(void)
 	/* Update actual DNS or delayed for DHCP+PPP */
 	if (changed)
 		update_resolvconf();
-#ifdef RTCONFIG_TMOBILE
-	if (changed_sip)
-		notify_rc("restart_dnsmasq");
-#endif
 
 	/* Update connected state and DNS for WEB UI,
 	 * but skip physical VPN subinterface */
@@ -383,16 +360,24 @@ start_udhcpc(char *wan_ifname, int unit, pid_t *ppid)
 		NULL,		/* -Oip6rd rfc */
 		NULL,		/* -Oip6rd comcast */
 #endif
-#ifdef RTCONFIG_TMOBILE
-		NULL,		/* -Osip */
-#endif
 #ifdef RTCONFIG_DSL
 		NULL, NULL,	/* -x 61:wan_clientid */
+#endif
+#if (defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181))
+		NULL, 		/* -x 125:vivso */
 #endif
 		NULL };
 	int index = 7;		/* first NULL */
 	int dr_enable;
-
+#if (defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181))
+	unsigned char hwaddr[6];
+	char buf_tmp[128], serial_buf[128], oui_buf[32], class_buf[128];
+	char vivso[256];
+	int i = 0;
+	char *c = NULL;
+	int len = 0;
+	char tmp_str[4];
+#endif
 	/* Use unit */
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 
@@ -433,11 +418,6 @@ start_udhcpc(char *wan_ifname, int unit, pid_t *ppid)
 	}
 #endif
 
-#ifdef RTCONFIG_TMOBILE
-	/* request option sip */
-	dhcp_argv[index++] = "-O120";
-#endif
-
 #ifdef RTCONFIG_DSL
 	value = nvram_safe_get(strcat_r(prefix, "clientid", tmp));
 	if (*value) {
@@ -449,6 +429,54 @@ start_udhcpc(char *wan_ifname, int unit, pid_t *ppid)
 		dhcp_argv[index++] = clientid;
 	}
 #endif
+
+#if (defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181))
+	/* convert serial number */
+	memset(buf_tmp, 0, sizeof(buf_tmp));
+	memset(serial_buf, 0, sizeof(serial_buf));
+#ifdef RTAC87U
+	ether_atoe(nvram_safe_get("et1macaddr"), hwaddr);
+#else
+	ether_atoe(nvram_safe_get("et0macaddr"), hwaddr);
+#endif
+	snprintf(buf_tmp, sizeof(buf_tmp), "%02X%02X%02X%02X%02X%02X", hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+	len = strlen(buf_tmp);
+	for (i = 0; i < len; i ++) {
+		snprintf(tmp_str, sizeof(tmp_str), "%02x", buf_tmp[i]);
+		strcat(serial_buf, tmp_str);
+	}
+
+	/* convert oui */
+	memset(buf_tmp, 0, sizeof(buf_tmp));
+	memset(oui_buf, 0, sizeof(oui_buf));
+#ifdef RTAC87U
+	ether_atoe(nvram_safe_get("et1macaddr"), hwaddr);
+#else
+	ether_atoe(nvram_safe_get("et0macaddr"), hwaddr);
+#endif
+	snprintf(buf_tmp, sizeof(buf_tmp), "%02X%02X%02X", hwaddr[0], hwaddr[1], hwaddr[2]);
+	len = strlen(buf_tmp);
+	for (i = 0; i < len; i ++) {
+		snprintf(tmp_str, sizeof(tmp_str), "%02x", buf_tmp[i]);
+		strcat(oui_buf, tmp_str);
+	}
+
+	/* convert class */
+	memset(class_buf, 0, sizeof(class_buf));
+	c = nvram_safe_get("productid");
+	len = strlen(c);
+	for (i = 0; i < len; i ++) {
+		snprintf(tmp_str, sizeof(tmp_str), "%02x", c[i]);
+		strcat(class_buf, tmp_str);
+	}
+	
+	/* convert vivso */
+	snprintf(vivso, sizeof(vivso), "125:%08x%02x01%02x%s02%02x%s03%02x%s", 3561, 6 + (strlen(oui_buf) / 2) + (strlen(serial_buf) /2) + (strlen(class_buf) / 2), strlen(oui_buf) / 2, oui_buf, strlen(serial_buf) / 2, serial_buf, strlen(class_buf) / 2, class_buf);
+
+	dhcp_argv[index++] = "-x";
+	dhcp_argv[index++] = vivso;
+#endif
+
 
 	return _eval(dhcp_argv, NULL, 0, ppid);
 }
@@ -602,6 +630,12 @@ bound_lan(void)
 	if (nvram_get_int("lan_dnsenable_x") && (value = getenv("dns")))
 		nvram_set("lan_dns", trim_r(value));
 
+#if (defined(RTCONFIG_TR069) && defined(RTCONFIG_TR181))
+	nvram_unset("vivso");
+	if ((value = getenv("vivso")))
+		nvram_set("vivso", trim_r(value));
+#endif
+
 _dprintf("%s: IFUP.\n", __FUNCTION__);
 #ifdef RTCONFIG_WIRELESSREPEATER
 	if(nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_mode") == 0){
@@ -727,30 +761,16 @@ skip:
 
 	dns_changed = env2nv("new_domain_name_servers", "ipv6_get_dns");
 	dns_changed += env2nv("new_domain_name", "ipv6_get_domain");
-	if (dns_changed && nvram_get_int("ipv6_dnsenable")) {
+	if (dns_changed && nvram_get_int("ipv6_dnsenable"))
 		update_resolvconf();
-#ifndef RTCONFIG_WIDEDHCP6
-#ifdef DNS6_PASSTHROUGH /* unused */
-		start_dnsmasq();
-#endif
-#endif /* !RTCONFIG_WIDEDHCP6 */
-	}
 
 #ifdef RTCONFIG_WIDEDHCP6
-#ifdef DNS6_PASSTHROUGH /* unused */
-	if ((dns_changed && nvram_get_int("ipv6_dnsenable")) ||
-	    (prefix_changed && nvram_get_int("ipv6_autoconf_type")))
-		start_dhcp6s();
-	if (prefix_changed ||
-	    (dns_changed && nvram_get_int("ipv6_dnsenable")))
-		start_radvd();
-#else
 	if (lanaddr_changed ||
-	    (prefix_changed && nvram_get_int("ipv6_autoconf_type")))
+	    (prefix_changed && nvram_get_int("ipv6_autoconf_type")) ||
+	    !pids("dhcp6s"))
 		start_dhcp6s();
-	if (prefix_changed || lanaddr_changed)
+	if (prefix_changed || lanaddr_changed || !pids("radvd"))
 		start_radvd();
-#endif
 #endif /* RTCONFIG_WIDEDHCP6 */
 
 	return 0;
@@ -792,20 +812,11 @@ start_dhcp6c(void)
 	         nvram_match("ipv6_ra_conf", "oset"));
 
 #ifdef RTCONFIG_WIDEDHCP6
-#ifdef DNS6_PASSTHROUGH /* unused */
-	if (!nvram_get_int("ipv6_dnsenable") &&
-	    (!nvram_get_int("ipv6_autoconf_type") || !nvram_get_int("ipv6_dhcp_pd")))
-		start_dhcp6s();
-	if (!nvram_get_int("ipv6_dhcp_pd") &&
-	    !nvram_get_int("ipv6_dnsenable"))
-		start_radvd();
-#else /* !RTCONFIG_WIDEDHCP6 */
 	if (!nvram_get_int("ipv6_dhcp_pd")) {
 		start_dhcp6s();
 		start_radvd();
 	}
 #endif
-#endif /* !RTCONFIG_WIDEDHCP6 */
 
 	if (!need_wanaddr && !need_prefix && !need_dns)
 		return 0;
@@ -922,12 +933,8 @@ deconfig6(char *wan_ifname)
 	    nvram_invmatch("ipv6_get_domain", "")) {
 		nvram_set("ipv6_get_dns", "");
 		nvram_set("ipv6_get_domain", "");
-		if (nvram_get_int("ipv6_dnsenable")) {
+		if (nvram_get_int("ipv6_dnsenable"))
 			update_resolvconf();
-#ifdef DNS6_PASSTHROUGH /* unused */
-			start_dnsmasq();
-#endif
-		}
 	}
 
 	return 0;
@@ -1007,12 +1014,8 @@ skip:
 
 	dns_changed = env2nv("RDNSS", "ipv6_get_dns");
 	dns_changed += env2nv("DOMAINS", "ipv6_get_domain");
-	if (dns_changed && nvram_get_int("ipv6_dnsenable")) {
+	if (dns_changed && nvram_get_int("ipv6_dnsenable"))
 		update_resolvconf();
-#ifdef DNS6_PASSTHROUGH /* unused */
-		start_dnsmasq();
-#endif
-	}
 
 	if (bound == 1 || wanaddr_changed || prefix_changed) {
 		char *address = nvram_safe_get("ipv6_wan_addr");
@@ -1056,13 +1059,14 @@ start_dhcp6c(void)
 {
 	char *wan_ifname = (char *)get_wan6face();
 	char *dhcp6c_argv[] = { "odhcp6c",
-		"-d", "-R",
+		"-df", "-R",
 		"-p", "/var/run/odhcp6c.pid",
 		"-s", "/tmp/dhcp6c",
 		"-N", "try",
 		NULL, NULL,	/* -c duid */
 		NULL, NULL,	/* -FP len:iaidhex */
 		NULL, NULL,	/* -rdns -rdomain */
+		NULL, NULL, 	/* -rsolmaxrt -r infmaxrt */
 		NULL,		/* -lloglevel */
 		NULL,		/* interface */
 		NULL };
@@ -1084,10 +1088,6 @@ start_dhcp6c(void)
 	if (!wan_ifname || *wan_ifname == '\0')
 		return -1;
 
-	if (getpid() != 1) {
-		notify_rc("start_dhcp6c");
-		return 0;
-	}
 	stop_dhcp6c();
 
 	if (ether_atoe(nvram_safe_get("wan0_hwaddr"), duid.ea)) {
@@ -1122,7 +1122,9 @@ start_dhcp6c(void)
 	if (nvram_get_int("ipv6_dnsenable")) {
 		dhcp6c_argv[index++] = "-r23";	/* dns */
 		dhcp6c_argv[index++] = "-r24";	/* domain */
-	} 
+	}
+	dhcp6c_argv[index++] = "-r82";	/* sol_max_rt */
+	dhcp6c_argv[index++] = "-r83";	/* inf_max_rt */
 
 	if (!nvram_get_int("ipv6_debug"))
 		dhcp6c_argv[index++] = "-l7";	/* LOG_DEBUG */

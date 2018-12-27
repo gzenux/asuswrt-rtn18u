@@ -69,7 +69,6 @@
 <script>
 var $j = jQuery.noConflict();
 
-<% login_state_hook(); %>
 wan_route_x = '<% nvram_get("wan_route_x"); %>';
 wan_nat_x = '<% nvram_get("wan_nat_x"); %>';
 wan_proto = '<% nvram_get("wan_proto"); %>';
@@ -82,7 +81,6 @@ var apps_download_percent_done = 0;
 
 <% apps_action(); %> //trigger apps_action.
 
-var curr_pool_name = "";
 var stoppullstate = 0;
 var isinstall = 0;
 var installPercent = 1;
@@ -103,7 +101,6 @@ var webs_state_update;
 var webs_state_error;
 var webs_state_info;
 
-<% disk_pool_mapping_info(); %>
 
 function initial(){
 	show_menu();
@@ -183,11 +180,11 @@ function update_appstate(e){
 			if(stoppullstate == 1)
 				return false;
 			else if(!check_appstate()){
-      	setTimeout("update_appstate();", 1000);
+      			setTimeout("update_appstate();", 1000);
 				calHeight(0);
 			}
 			else
-      	setTimeout("update_applist();", 3000);
+      			setTimeout("update_applist();", 3000);
 		}    
   });
 }
@@ -198,10 +195,10 @@ function update_applist(e){
     dataType: 'script',
 	
     error: function(xhr){
-      update_applist();
+		update_applist();
     },
     success: function(response){
-			if(isinstall > 0 && getCookie_help("apps_last") == "downloadmaster"){
+			if(isinstall > 0 && cookie.get("apps_last") == "downloadmaster"){
 				for(var i = 0; i < apps_array.length; i++){
 					if(apps_array[i][0] == "DM2_Utility")
 						$("DMUtilityLink").href = apps_array[i][5]+ "/" + apps_array[i][12];
@@ -216,7 +213,7 @@ function update_applist(e){
 				$("return_btn").style.display = "";
 			}
 			else{
-				setTimeout('show_partition();', 100);
+				// setTimeout('show_partition();', 100);
 				setTimeout('show_apps();', 100);
 			}
 		}    
@@ -236,8 +233,6 @@ function check_appstate(){
 		if(apps_state_install == 5 || apps_state_upgrade == 4){
 			if(installPercent > 1 && installPercent < 95)
 				installPercent = 95;
-			/*else if(installPercent < 98)
-				installPercent = installPercent + 1;*/
 			else
 				return true;
 		}
@@ -248,10 +243,7 @@ function check_appstate(){
 	var errorcode;
 	var proceed = 0.6;
 
-	/*if(apps_state_install == 5 || apps_state_upgrade == 4 || (apps_state_enable == 1 && apps_state_install == 4)){
-		$("apps_state_desc").innerHTML = "[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
-	}
-	else */if(apps_state_upgrade != 4 && apps_state_upgrade != ""){ // upgrade error handler
+	if(apps_state_upgrade != 4 && apps_state_upgrade != ""){ // upgrade error handler
 		errorcode = "apps_state_upgrade = " + apps_state_upgrade;
 		if(apps_state_error == 1)
 			$("apps_state_desc").innerHTML = "<#usb_inputerror#>";
@@ -278,7 +270,7 @@ function check_appstate(){
 				if(installPercent > 99)
 					installPercent = 99;
 				$("loadingicon").style.display = "none";
-				$("apps_state_desc").innerHTML = "[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
+				$("apps_state_desc").innerHTML = "[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
 				installPercent = installPercent + proceed;//*/
 			}
 			else{
@@ -291,9 +283,9 @@ function check_appstate(){
 		else{
 			if(apps_depend_action_target != "terminated" && apps_depend_action_target != "error"){
 				if(apps_depend_action_target == "")
-					$("apps_state_desc").innerHTML = "<b>[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> </b>";
+					$("apps_state_desc").innerHTML = "<b>[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> </b>";
 				else
-					$("apps_state_desc").innerHTML = "<b>[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> </b>"
+					$("apps_state_desc").innerHTML = "<b>[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> </b>"
 							+"<br> <span style='font-size: 16px;'> <#Excute_processing#>："+apps_depend_do+"</span>"
 							+"<br> <span style='font-size: 16px;'>"+apps_depend_action+"  "+apps_depend_action_target+"</span>"
 							;
@@ -302,7 +294,7 @@ function check_appstate(){
 				if(installPercent > 99)
 					installPercent = 99;
 				$("loadingicon").style.display = "none";
-				$("apps_state_desc").innerHTML = "[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
+				$("apps_state_desc").innerHTML = "[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
 				installPercent = installPercent + proceed;
 			}
 		}
@@ -404,7 +396,7 @@ function check_appstate(){
 				if(installPercent > 99)
 					installPercent = 99;
 				$("loadingicon").style.display = "none";
-				$("apps_state_desc").innerHTML = "[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
+				$("apps_state_desc").innerHTML = "[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
 				installPercent = installPercent + proceed;//*/
 			}
 			else{
@@ -418,13 +410,13 @@ function check_appstate(){
 					if(installPercent > 99)
 						installPercent = 99;
 					$("loadingicon").style.display = "none";
-					$("apps_state_desc").innerHTML = "[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
+					$("apps_state_desc").innerHTML = "[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
 					installPercent = installPercent + proceed;
 				}
 				else{
 					var _apps_depend_do = apps_depend_do.replace(apps_depend_action, "<span style='color:#FC0'>"+apps_depend_action+"</span>");
 
-					$("apps_state_desc").innerHTML = "<b>[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> </b>"
+					$("apps_state_desc").innerHTML = "<b>[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> </b>"
 							+"<br> <span style='font-size: 16px;'> <#Excute_processing#>："+_apps_depend_do+"</span>"
 							+"<br><br> <span style='font-size: 18px;'>"+apps_depend_action+"  "+apps_depend_action_target+"</span>"
 					;
@@ -434,7 +426,7 @@ function check_appstate(){
 				if(installPercent > 99)
 					installPercent = 99;
 				$("loadingicon").style.display = "none";
-				$("apps_state_desc").innerHTML = "[" + getCookie_help("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
+				$("apps_state_desc").innerHTML = "[" + cookie.get("apps_last") + "] " + "<#Excute_processing#> <b>" + Math.round(installPercent) +"</b> <span style='font-size: 16px;'>%</span>";
 				installPercent = installPercent + proceed;
 			}
 		}
@@ -452,7 +444,6 @@ function check_appstate(){
 	else
 		$("return_btn").style.display = "none";
 
-	//$("apps_state_desc").innerHTML += '<span class="app_action" onclick="apps_form(\'cancel\',\'\',\'\');">(<#CTL_Cancel#>)</span>';
 	$("cancelBtn").style.display = "";
 	return false;
 }
@@ -559,16 +550,14 @@ function show_apps(){
 		htmlcode += '<tr style="height: 100px;"><td class="app_table_radius_left" align="center" style="width:85px">\n';
 		if(apps_array[i][4] == "yes" && apps_array[i][3] == "yes"){
 			if(apps_array[i][6] != ""){
-					//htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/mediaserver.png" style="cursor:pointer" onclick="location.href=\''+ apps_array[i][6] +'\';"></td>\n';
-					htmlcode += '<div id="'+apps_array[i][0]+'_png" style="cursor:pointer" onclick="location.href=\''+ apps_array[i][6] +'\';"></div>';
+				htmlcode += '<div id="'+apps_array[i][0]+'_png" style="cursor:pointer" onclick="location.href=\''+ apps_array[i][6] +'\';"></div>';
 			}
 			else{
-					//htmlcode += '<img style="margin-top:0px;" src="/images/New_ui/USBExt/'+ apps_array[i][0] +'.png"></td>\n';
-					htmlcode += '<div id="'+apps_array[i][0]+'_png"></div>';	
+				htmlcode += '<div id="'+apps_array[i][0]+'_png"></div>';	
 			}
 		}	
 		else{
-				htmlcode += '<div id="'+apps_array[i][0]+'_png"></div>';
+			htmlcode += '<div id="'+apps_array[i][0]+'_png"></div>';
 		}
 		htmlcode += '</td>\n';
 
@@ -659,8 +648,8 @@ function show_apps(){
 				htmlcode += '<span class="app_action" onclick="divdisplayctrl(\'none\', \'none\', \'none\', \'\');">Help</span>\n';
 			}
 
-			cookie_help.set("dm_install", apps_array[i][3], 1000);
-			cookie_help.set("dm_enable", apps_array[i][4], 1000);
+			cookie.set("dm_install", apps_array[i][3], 1000);
+			cookie.set("dm_enable", apps_array[i][4], 1000);
 		}
 
 		if(hasNewVer(apps_array[i]))
@@ -681,7 +670,7 @@ function show_apps(){
 	divdisplayctrl("", "none", "none", "none");
 	stoppullstate = 1;
 	calHeight(1);
-	cookie_help.set("hwaddr", '<% nvram_get("lan_hwaddr"); %>', 1000);
+	cookie.set("hwaddr", '<% nvram_get("lan_hwaddr"); %>', 1000);
 }
 
 /* 
@@ -700,11 +689,11 @@ var hasNewVer = function(arr){
 		return false;
 	
 	for(var i=0; i<4; i++){ 
-		if(newVer[i] > oldVer[i]){
+		if(parseInt(newVer[i]) > parseInt(oldVer[i])){
 			return true;
 			break;
 		}
-		else if(newVer[i] == oldVer[i])
+		else if(parseInt(newVer[i]) == parseInt(oldVer[i]))
 			continue;
 		else
 			return false;
@@ -724,92 +713,73 @@ var hasNewVer = function(arr){
 	return false;
 }
 
-var partitions_array = "";
+var partitions_array = [];
 function show_partition(){
-	var htmlcode = "";
-	var mounted_partition = 0;
+ 	require(['/require/modules/diskList.js'], function(diskList){
+		var htmlcode = "";
+		var mounted_partition = 0;
+		partitions_array = [];
+		$("app_table").style.display = "none";
+		htmlcode += '<table align="center" style="margin:auto;border-collapse:collapse;">';
 
-	if(pool_names() != "") //  avoid no_disk error
-		partitions_array = pool_devices(); 
+ 		var usbDevicesList = diskList.list();
 
-	var diskArray = new Array()
-	for(var i=0; i<foreign_disk_total_mounted_number().length; i++){
-		for(var j=0; j<foreign_disk_total_mounted_number()[i]; j++){
-			diskArray.push(foreign_disks()[i]);
-		}			
-	}
-	
-	$("app_table").style.display = "none";
-	htmlcode += '<table align="center" style="margin:auto;border-collapse:collapse;">';
+		for(var i=0; i < usbDevicesList.length; i++){
+			for(var j=0; j < usbDevicesList[i].partition.length; j++){
+				partitions_array.push(usbDevicesList[i].partition[j].mountPoint);
+				var accessableSize = simpleNum(usbDevicesList[i].partition[j].size-usbDevicesList[i].partition[j].used);
+				var totalSize = simpleNum(usbDevicesList[i].partition[j].size);
 
-	for(var i = 0; i < partitions_array.length; i++){
-		var all_accessable_size = simpleNum(pool_kilobytes()[i]-pool_kilobytes_in_use()[i]);
-		var all_total_size = simpleNum(pool_kilobytes()[i]);
+				if(usbDevicesList[i].partition[j].status == "unmounted")
+					continue;
+					
+				if(usbDevicesList[i].partition[j].isAppDev){
+					if(accessableSize > 1)
+						htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk" onclick="apps_form(\'install\',\'' + _appname +'\',\'' + usbDevicesList[i].partition[j].mountPoint +'\');"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
+					else
+						htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk_noquota"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
 
-		if(pool_status()[i] == "unmounted")
-			continue;
+					htmlcode += '<div class="app_desc"><b>'+ usbDevicesList[i].partition[j].partName + ' (active)</b></div>';
+				}
+				else{
+					if(accessableSize > 1)
+						htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk" onclick="apps_form(\'switch\',\''+_appname+'\',\''+usbDevicesList[i].partition[j].mountPoint+'\');"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
+					else
+						htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk_noquota"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
+					htmlcode += '<div class="app_desc"><b>'+ usbDevicesList[i].partition[j].partName + '</b></div>'; 
+				}
 
-		if(apps_dev == partitions_array[i]){
-			curr_pool_name = pool_names()[i];
-			if(all_accessable_size > 1)
-				htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk" onclick="apps_form(\'install\',\''+ _appname +'\',\''+ partitions_array[i] +'\');"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
-			else
-				htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk_noquota"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
-			htmlcode += '<div class="app_desc"><b>'+ pool_names()[i] + ' (active)</b></div>';
+				if(accessableSize > 1)
+					htmlcode += '<div class="app_desc"><#Availablespace#>: <b>'+ accessableSize+" GB" + '</b></div>'; 
+				else
+					htmlcode += '<div class="app_desc"><#Availablespace#>: <b>'+ accessableSize+" GB <span style=\'color:#FFCC00\'>(Disk quota can not less than 1GB)" + '</span></b></div>'; 
+
+				htmlcode += '<div class="app_desc"><#Totalspace#>: <b>'+ totalSize+" GB" + '</b></div>'; 
+				htmlcode += '<div class="app_desc"><b>' + usbDevicesList[i].deviceName + '</b></div>'; 
+				htmlcode += '</div><br/><br/></td></tr>\n';
+				mounted_partition++;	
+			}
 		}
-		else{
-			if(all_accessable_size > 1)
-				htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk" onclick="apps_form(\'switch\',\''+_appname+'\',\''+partitions_array[i]+'\');"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
-			else
-				htmlcode += '<tr><td class="app_table_radius_left"><div class="iconUSBdisk_noquota"></div></td><td class="app_table_radius_right" style="width:300px;">\n';
-			htmlcode += '<div class="app_desc"><b>'+ pool_names()[i] + '</b></div>'; 
-		}
 
-		if(all_accessable_size > 1)
-			htmlcode += '<div class="app_desc"><#Availablespace#>: <b>'+ all_accessable_size+" GB" + '</b></div>'; 
-		else
-			htmlcode += '<div class="app_desc"><#Availablespace#>: <b>'+ all_accessable_size+" GB <span style=\'color:#FFCC00\'>(Disk quota can not less than 1GB)" + '</span></b></div>'; 
+		if(mounted_partition == 0)
+			htmlcode += '<tr height="360px"><td colspan="2" class="nohover"><span class="app_name" style="line-height:100%"><#no_usb_found#></span></td></tr>\n';
 
-		htmlcode += '<div class="app_desc"><#Totalspace#>: <b>'+ all_total_size+" GB" + '</b></div>'; 
-		htmlcode += '<div class="app_desc"><b>' + decodeURIComponent(diskArray[i]) + '</b></div>'; 
-		htmlcode += '</div><br/><br/></td></tr>\n';
-		mounted_partition++;
-	}
-
-	if(mounted_partition == 0)
-		htmlcode += '<tr height="360px"><td colspan="2" class="nohover"><span class="app_name" style="line-height:100%"><#no_usb_found#></span></td></tr>\n';
-
-	$("partition_div").innerHTML = htmlcode;
-	$("usbHint").innerHTML = "<#DM_Install_partition#> :";
-	calHeight(1);
+		$("partition_div").innerHTML = htmlcode;
+		$("usbHint").innerHTML = "<#DM_Install_partition#> :";
+		calHeight(1);
+	});
 }
 
-var mounted_partition_old = 0;
 function detectUSBStatusApp(){
-	var mounted_partition = 0;
-	$j.ajax({
-    		url: '/update_diskinfo.asp',
-    		dataType: 'script',
-    		error: function(xhr){
-    			detectUSBStatusApp();
-    		},
-    		success: function(){
-					for(i=0; i<foreign_disk_interface_names().length; i++){
-						if(foreign_disk_total_mounted_number()[i] != 0){
-							mounted_partition += foreign_disk_total_mounted_number()[i];
-						}
-					}
-					if(mounted_partition != mounted_partition_old){
-						show_partition();
-					}
-					mounted_partition_old = mounted_partition;
-					setTimeout("detectUSBStatusApp();", 1000);
-  			}
-  });
+ 	require(['/require/modules/diskList.js'], function(diskList){
+		setInterval(function(){
+			diskList.update(show_partition); 
+		}, 2000);
+	});
 }
 
 function apps_form(_act, _name, _flag){
-	cookie_help.set("apps_last", _name, 1000);
+	cookie.set("apps_last", _name, 1000);
 
 	document.app_form.apps_action.value = _act;
 	document.app_form.apps_name.value = _name;
@@ -828,7 +798,7 @@ function divdisplayctrl(flag1, flag2, flag3, flag4){
 	}
 	else if(flag2 != "none"){ // partition list
 		detectUSBStatusApp();
-		show_partition()
+		show_partition();
 		$("return_btn").style.display = "";
 		calHeight(1);
 	}
@@ -906,9 +876,7 @@ function reloadAPP(){
 <table>
 
   <tr>
-  	<td class="formfonttitle"><!--#Menu_usb_application#>
-			<img id="return_btn" onclick="show_apps();" align="right" style="cursor:pointer;margin-right:10px;margin-top:-10px" title="<#menu5_4#>" src="/images/backprev.png" onMouseOver="this.src='/images/backprevclick.png'" onMouseOut="this.src='/images/backprev.png'"-->
-
+  	<td class="formfonttitle">
 				<div style="width:730px">
 					<table width="730px">
 						<tr>

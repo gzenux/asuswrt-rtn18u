@@ -370,39 +370,25 @@ function btnNext() {
 	if (connection_type==0) //PPPoE
 	{
 		document.form.next_page.value = "/qis/QIS_ppp_cfg_tmp.htm";
-		document.form.dsl_proto.value = "pppoe";
 		submit_page();
 	}
 	else if (connection_type==2) //Automatic IP
 	{
 		document.form.next_page.value = "/qis/QIS_mer_cfg_tmp.htm";
-		document.form.dsl_proto.value = "dhcp";
 		submit_page();
 	}
 	else if (connection_type==4) //Static IP
 	{
 		document.form.next_page.value = "/qis/QIS_ipoa_cfg_tmp.htm";
-		document.form.dsl_proto.value = "static";
 		submit_page();
 	}
 	else if (connection_type==3) //BRIDGE
 	{
 		document.form.next_page.value = "/qis/QIS_bridge_cfg_tmp.htm";
-		document.form.dsl_proto.value = "bridge";
 		submit_page();
 	}
 	else
 		return;
-}
-
-function gotoIndex(){
-	if (w_Setting == "0") {
-		alert("<#QIS_recommand_encryption#>");	
-		location.href = '/qis/QIS_wireless.htm';
-	}
-	else {
-		parent.location.href = '/index.asp';
-	}
 }
 
 function submit_detect(){
@@ -435,7 +421,6 @@ function submit_detect(){
 <input type="hidden" name="dsl_unit" value="8">
 <input type="hidden" name="ISP_value" value="">
 <input type="hidden" name="ISPSVC_value" value="">
-<input type="hidden" name="dsl_proto" value="">
 <div class="QISmain">
 	<!--
 	<div class="formfonttitle" style="padding:0 0 0 10;" id="FailReason"><#Manual_Setting_Title#></div>
@@ -449,11 +434,11 @@ function submit_detect(){
 							<span class="description_down"><#Manual_Setting_Title#></span>
 						</td>
 					</tr>
-					<tr id="home_button">
+					<!--Tr id="home_button">
 						<td align="right">
 							<img onclick="gotoIndex();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
 						</td>
-					</tr>
+					</tr-->
 				</table>
 			</div>
 			<div style="margin:5px;"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>

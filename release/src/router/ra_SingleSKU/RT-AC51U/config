@@ -1,11 +1,11 @@
 
 SKU_2G_FCC  = 
 SKU_5G_FCC  = 
-SKU_2G_CE   = "20140428_SingleSKU_CE.dat"
-SKU_5G_CE   = "20140428_SingleSKU_5G_CE.dat"
+SKU_2G_CE   = "20141018_SingleSKU_2.4G_CE.dat"
+SKU_5G_CE   = "20141018_SingleSKU_5G_CE.dat"
 SKU_2G_SG   = 
 SKU_5G_SG   = 
 SKU_2G_AU   = 
 SKU_5G_AU   = 
 SKU_2G_NCC  = "20140613_SingleSKU_NCC_2.4G_Final.dat"
-SKU_5G_NCC  = "20140605_SingleSKU_5G_Final_NCC.dat"
+SKU_5G_NCC  = "20140827_SingleSKU_5G_Final1_NCC.dat"

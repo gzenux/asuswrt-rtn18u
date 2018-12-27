@@ -33,7 +33,6 @@ a:active {
 <script>
 var $j = jQuery.noConflict();
 var diskOrder = parent.getSelectedDiskOrder();
-var _DMDiskNum = (pool_devices().getIndexByValue('<% nvram_get("apps_dev"); %>') < foreign_disk_total_mounted_number()[0])? 0 : 1;
 
 var ddns_result = '<% nvram_get("ddns_return_code_chk");%>'; //Boyau
 <% get_AiDisk_status(); %>
@@ -46,7 +45,6 @@ var ddns_enable = '<% nvram_get("ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get("ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get("ddns_hostname_x"); %>';
 var apps_array = <% apps_info("asus"); %>;
-var apps_dev = "<% nvram_get("apps_dev"); %>";
 var dummyShareway = '<% nvram_get("dummyShareway"); %>';
 
 function initial(){
@@ -70,7 +68,7 @@ function initial(){
 	if(sw_mode == "2" || sw_mode == "3" || sw_mode == "4")
 		$("aidisk_hyperlink").style.display = "none";
 	
-	if(based_modelid == "RT-AC87U"){
+	if(based_modelid == "RT-AC87U" && parent.currentUsbPort == 0){
 		document.getElementById('reduce_usb3_table').style.display = "";
 	}		
 }

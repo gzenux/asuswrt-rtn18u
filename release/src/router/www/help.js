@@ -2,10 +2,15 @@
 	fw_size_higher_mem : 'Memory space is NOT enough to upgrade on internet. Please wait for rebooting.',
 	the_array_is_end : "end here.",
 	link_rate : "Link rate",
+	ASUSGATE_note9 : "Your DSL line appears to be unstable. DLA (Dynamic Line Adjustment) which enabled by default already adopted necessary changes and ensure stability. However if interruption continues please submit a feedback form for our analysis.",
 	ASUSGATE_note6 : "Your DSL line appears to be unstable. We strongly recommend that you submit a feedback form for our analysis.",
 	ASUSGATE_note7 : "If you are experiencing any DSL related issues or have any comments / suggestions, please feel free to inform our support team.",
 	JS_validclientname : "Client device name only accept alphanumeric characters, under line and dash symbol. The first character cannot be dash \"-\" or under line \"_\".",
-	ASUSGATE_act_feedback : "Feedback now"
+	ASUSGATE_act_feedback : "Feedback now",
+	ASUSGATE_DSL_setting : "Go setting DSL",
+	ISP_not_support : 'We currently do not support this location, please use <b>Manual</b>.',
+	period_time_validation : 'The value of check period can\'t be less than',
+	filter_lw_date_valid : 'Please select at least one day or disable this feature.'
 };
 var clicked_help_string = "<#Help_init_word1#> <a class=\"hintstyle\" style=\"background-color:#7aa3bd\"><#Help_init_word2#></a> <#Help_init_word3#>";
 
@@ -17,14 +22,6 @@ if(isSupport("tmo"))
         var theUrl = "cellspot.router";
 else
         var theUrl = "router.asus.com";
-
-// init Helper
-function addNewScript_help(scriptName){
-	var script = document.createElement("script");
-	script.type = "text/javascript";
-	script.src = scriptName;
-	document.getElementsByTagName("head")[0].appendChild(script);
-}
 
 /* convert some special character for shown string */
 function handle_show_str(show_str)
@@ -79,8 +76,17 @@ function isMobile_help(){
 
 var helptitle = new Array();
 var helpcontent = new Array();
-if(!isMobile_help())
-	setTimeout("addNewScript_help('/help_content.js');", 2000);
+
+(function(){
+	if(!isMobile_help()){
+		setTimeout(function(){
+			var newScript = document.createElement("script");
+			newScript.type = "text/javascript";
+			newScript.src = '/help_content.js';
+			document.getElementsByTagName("head")[0].appendChild(newScript);
+		}, 2000);
+	}
+})();
 
 function suspendconn(wanenable){
 	document.internetForm_title.wan_enable.value = wanenable;
@@ -118,7 +124,6 @@ function gotoDSL_log(){
 	top.location.href = "/Main_AdslStatus_Content.asp";
 }
 
-<% available_disk_names_and_sizes(); %>
 function overHint(itemNum){
 	var statusmenu = "";
 	var title2 = 0;
@@ -147,7 +152,9 @@ function overHint(itemNum){
 	if(itemNum == 24)		
 		statusmenu += "<span>The USB 3.0 cable without well-shielded would affect the 2.4Ghz wireless range.Enabling this feature to ensure the best wireless performance If your USB 3.0 device is not USB-IF certified.</span>";
 	
-	//for AiProtection-Router Security Scan
+	//for AiProtection-Router Security Assessment
+	if(itemNum == 25)
+		statusmenu += "<span>Disable Wi-Fi Protected Setup to avoid attacker to obtain the keys via an intelligent brute force </span>";
 	if(itemNum == 23)		
 		statusmenu += "<span><#AiProtection_scan_note23#></span>";
 	if(itemNum == 22)		
@@ -232,19 +239,22 @@ function overHint(itemNum){
 
 	// printer
 	if(itemNum == 6){
-		for(var i=0; i<usbDevices.length; i++){
-			if(usbDevices[i].deviceType != "printer") continue;
+	 	require(['/require/modules/diskList.js'], function(diskList){
+	 		var usbDevicesList = diskList.list();
+			for(var i=0; i<usbDevicesList.length; i++){
+				if(usbDevicesList[i].deviceType != "printer") continue;
 
-			statusmenu += "<div class='StatusHint' style='margin-top:8px'>" + usbDevices[i].deviceName + ":</div>";
-			if(usbDevices[i].serialNum == '<% nvram_get("u2ec_serial"); %>'){
-				statusmenu += "<div><#CTL_Enabled#></div>";
+				statusmenu += "<div class='StatusHint' style='margin-top:8px'>" + usbDevicesList[i].deviceName + ":</div>";
+				if(usbDevicesList[i].serialNum == '<% nvram_get("u2ec_serial"); %>'){
+					statusmenu += "<div><#CTL_Enabled#></div>";
 
-				if(monoClient != "monoClient=")
-					statusmenu += "<div><#Printing_button_item#>" + monoClient.substring(11, monoClient.length) + "</div>";
+					if(monoClient != "monoClient=")
+						statusmenu += "<div><#Printing_button_item#>" + monoClient.substring(11, monoClient.length) + "</div>";
+				}
+				else
+					statusmenu += "<div><#CTL_Disabled#></div>";
 			}
-			else
-				statusmenu += "<div><#CTL_Disabled#></div>";
-		}
+		});
 	}
 	if(itemNum == 5){
 		statusmenu = "<span class='StatusHint'><#no_printer_detect#></span>";	
@@ -383,8 +393,10 @@ function overHint(itemNum){
 					statusmenu = "<span class='StatusHint'><#APSurvey_msg_connected#></span><br><br>";
 					if(wlc_band == 0)	
 						statusmenu += "<b>Link rate: </b>"+ data_rate_info_2g;
-					else
+					else if(wlc_band == 1)
 						statusmenu += "<b>Link rate: </b>"+ data_rate_info_5g;
+					else if(wlc_band == 2)
+						statusmenu += "<b>Link rate: </b>"+ data_rate_info_5g_2;
 				}	
 				else{
 					if(_wlc_sbstate == "wlc_sbstate=2")
@@ -398,28 +410,35 @@ function overHint(itemNum){
 
 	// usb storage
 	if(itemNum == 2){
-		if(!usbDevices.length){
-			statusmenu = "<div class='StatusHint'><#no_usb_found#></div>";}
-		else{
-			statusmenu = "";
-			for(var i=0; i<usbDevices.length; i++){
-				if(usbDevices[i].deviceType == "printer") continue;
+	 	require(['/require/modules/diskList.js'], function(diskList){
+	 		var usbDevicesList = diskList.list();
 
-				statusmenu += "<div class='StatusHint' style='margin-top:8px'>" + usbDevices[i].deviceName + ":</div>";
-				statusmenu += "<div>" + usbDevices[i].deviceType.charAt(0).toUpperCase() + usbDevices[i].deviceType.substring(1).toLowerCase() + "</div>";
+			if(!usbDevicesList.length){
+				statusmenu = "<div class='StatusHint'><#no_usb_found#></div>";
+			}
+			else{
+				statusmenu = "";
+				for(var i=0; i<usbDevicesList.length; i++){
+					if(usbDevicesList[i].deviceType == "printer") continue;
 
-				if(usbDevices[i].deviceType == "storage" && usbDevices[i].mountNumber == 0)
-					statusmenu += "<div><#DISK_UNMOUNTED#></div>";
-				else if(usbDevices[i].hasErrPart)
-					statusmenu += "<div><#diskUtility_crash_found#></div>";
-				else{				
-					if(usbDevices[i].hasAppDev)
-						statusmenu += "<div><#menu5_4#></div>";
-					if(usbDevices[i].hasTM)
-						statusmenu += "<div>Time Machine</div>";
+					statusmenu += "<div class='StatusHint' style='margin-top:8px'>" + usbDevicesList[i].deviceName + ":</div>";
+					statusmenu += "<div>" + usbDevicesList[i].deviceType.charAt(0).toUpperCase() + usbDevicesList[i].deviceType.substring(1).toLowerCase() + "</div>";
+
+					if(usbDevicesList[i].deviceType == "storage" && usbDevicesList[i].mountNumber == 0)
+						statusmenu += "<div><#DISK_UNMOUNTED#></div>";
+					else if(usbDevicesList[i].hasErrPart)
+						statusmenu += "<div><#diskUtility_crash_found#></div>";
+					else{				
+						if(usbDevicesList[i].hasAppDev)
+							statusmenu += "<div><#menu5_4#></div>";
+						if(usbDevicesList[i].hasTM)
+							statusmenu += "<div>Time Machine</div>";
+					}
 				}
 			}
-		}
+
+			return overlib(statusmenu, OFFSETX, -160, LEFT, DELAY, 400);
+		});
 	}
 
 	return overlib(statusmenu, OFFSETX, -160, LEFT, DELAY, 400);
@@ -486,21 +505,25 @@ function openHint(hint_array_id, hint_show_id, flag){
 			_caption = "Internet Status";
 		}
 		else if(hint_show_id == 2){
-			var statusmenu = "";
+			statusmenu = "";
 
-			for(var i=0; i<usbDevices.length; i++){
-				if(usbDevices[i].mountNumber > 0){
-					statusmenu += "<div style='margin-top:2px;' class='StatusClickHint' onclick='remove_disk("+ usbDevices[i].node +");' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>";
-					statusmenu += "<#Eject_usb_disk#> <span style='font-weight:normal'>"+ usbDevices[i].deviceName +"</span></div>";
+		 	require(['/require/modules/diskList.js'], function(diskList){
+		 		var usbDevicesList = diskList.list();
+				for(var i=0; i<usbDevicesList.length; i++){
+					if(usbDevicesList[i].mountNumber > 0){
+						statusmenu += "<div style='margin-top:2px;' class='StatusClickHint' onclick='remove_disk("+ usbDevicesList[i].node +");' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>";
+						statusmenu += "<#Eject_usb_disk#> <span style='font-weight:normal'>"+ usbDevicesList[i].deviceName +"</span></div>";
+					}
 				}
-			}
 
-			if(statusmenu == "")
-				statusmenu = "<span class='StatusHint'><#DISK_UNMOUNTED#></span>";
-			else if(statusmenu.howMany("remove_disk") > 1)
-				statusmenu += "<div style='margin-top:2px;' class='StatusClickHint' onclick='remove_disk(\"all\");' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>Eject all USB disks</div>";
+				if(statusmenu == "")
+					statusmenu = "<span class='StatusHint'><#DISK_UNMOUNTED#></span>";
+				else if(statusmenu.howMany("remove_disk") > 1)
+					statusmenu += "<div style='margin-top:2px;' class='StatusClickHint' onclick='remove_disk(\"all\");' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>Eject all USB disks</div>";
 
 				_caption = "USB storage";
+				return overlib(statusmenu, OFFSETX, -160, LEFT, STICKY, CAPTION, " ", CLOSETITLE, '');
+			});
 		}
 		else if(hint_show_id == 1){
 			if(hadPlugged("printer"))

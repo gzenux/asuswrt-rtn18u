@@ -158,7 +158,13 @@ function showadslbootTime(){
 								<td>
 									<% nvram_get("dsllog_attenup"); %>
 								</td>
-							</tr>							
+							</tr>
+							<tr>
+								<th width="20%">Path Mode</th>
+								<td>
+									<% nvram_get("dsllog_wanlistmode"); %>
+								</td>
+							</tr>
 							<tr>
 								<th width="20%">Data Rate Down</th>
 								<td>

@@ -891,7 +891,8 @@ redirect_default_route_to_vpn (struct route_list *rl, const struct tuntap *tt, u
 
 	  if (rl->flags & RG_REROUTE_GW)
 	    {
-	      if (rl->flags & RG_DEF1)
+	      if(1)//Sam, 2014/09/30, force RG_DEF1 mode, we do not replace original default gateway
+	      //if (rl->flags & RG_DEF1)
 		{
 		  /* add new default route (1st component) */
 		  add_route3 (0x00000000,

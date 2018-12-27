@@ -41,11 +41,7 @@
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-#ifdef RTCONFIG_TMOBILE
-#define DUT_DOMAIN_NAME "cellspot.router"
-#else
 #define DUT_DOMAIN_NAME "router.asus.com"
-#endif
 #define OLD_DUT_DOMAIN_NAME1 "www.asusnetwork.net"
 #define OLD_DUT_DOMAIN_NAME2 "www.asusrouter.com"
 
@@ -252,6 +248,11 @@ extern int setMN(const char *MN);
 extern int getMN(void);
 #endif
 extern int check_imagefile(char *fname);
+#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
+static inline int setWlOffLed(void) { return 0; }
+#else
+extern int setWlOffLed(void);
+#endif
 
 /* board API under sysdeps/ralink/ralink.c */
 #ifdef RTCONFIG_RALINK
@@ -298,6 +299,7 @@ extern int init_nvram(void);
 extern void wl_defaults(void);
 extern void wl_defaults_wps(void);
 extern void restore_defaults_module(char *prefix);
+extern void clean_modem_state(int flag);
 
 // interface.c
 extern int _ifconfig(const char *name, int flags, const char *addr, const char *netmask, const char *dstaddr);
@@ -449,9 +451,6 @@ extern int start_iQos(void);
 extern void stop_iQos(void);
 extern void del_iQosRules(void);
 extern int add_iQosRules(char *pcWANIF);
-#ifdef RTCONFIG_TMOBILE_QOS
-extern void add_EbtablesRules(void);
-#endif
 
 /* rtstate.c */
 extern void add_rc_support(char *feature);
@@ -503,17 +502,9 @@ extern void stop_ubifs(int stop);
 static inline void start_jffs2(void) { start_ubifs(); }
 static inline void stop_jffs2(int stop) { stop_ubifs(stop); }
 #elif defined(RTCONFIG_JFFS2) || defined(RTCONFIG_JFFSV1) || defined(RTCONFIG_BRCM_NAND_JFFS2)
-#ifdef RTCONFIG_TMOBILE
-extern void mount_2nd_jffs2(void);
-extern void format_mount_2nd_jffs2(void);
-#endif
 extern void start_jffs2(void);
 extern void stop_jffs2(int stop);
 #else
-#ifdef RTCONFIG_TMOBILE
-static inline void mount_2nd_jffs2(void) { }
-static inline void format_mount_2nd_jffs2(void) { }
-#endif
 static inline void start_jffs2(void) { }
 static inline void stop_jffs2(int stop) { }
 #endif
@@ -726,9 +717,6 @@ extern int write_3g_ppp_conf(void);
 
 //services.c
 extern void write_static_leases(char *file);
-#ifdef RTCONFIG_YANDEXDNS
-extern const char *yandex_dns(int mode);
-#endif
 extern void start_dnsmasq(void);
 extern void stop_dnsmasq(void);
 extern void reload_dnsmasq(void);
@@ -742,6 +730,8 @@ extern void start_radvd(void);
 extern void stop_radvd(void);
 extern void start_dhcp6s(void);
 extern void stop_dhcp6s(void);
+extern void start_rdisc6(void);
+extern void stop_rdisc6(void);
 extern void start_rdnssd(void);
 extern void stop_rdnssd(void);
 #endif /* RTCONFIG_WIDEDHCP6 */
@@ -765,6 +755,7 @@ extern int stop_watchdog(void);
 extern int start_watchdog(void);
 extern int get_apps_name(const char *string);
 extern int run_app_script(const char *pkg_name, const char *pkg_action);
+extern void set_hostname(void);
 extern int start_telnetd(void);
 extern void stop_telnetd(void);
 extern int run_telnetd(void);
@@ -883,16 +874,20 @@ extern int speedtest();
 extern int bwdpi_main(int argc, char **argv);
 extern int bwdpi_monitor_main(int argc, char **argv);
 extern int bwdpi_check_main(int argc, char **argv);
+extern int bwdpi_wred_alive_main(int argc, char **argv);
 extern int show_wrs_main(int argc, char **argv);
 extern int rsasign_sig_check_main(int argc, char *argv[]);
-#endif
-#ifdef RTCONFIG_TMOBILE
-extern int sendm_main(int argc, char **argv);
 #endif
 
 #ifdef RTCONFIG_IPERF
 // monitor.c
 extern int monitor_main(int argc, char *argv[]);
+#endif
+
+#ifdef RTCONFIG_TR069
+extern int start_tr(void);
+extern void stop_tr(void);
+extern int dhcpc_lease_main(int argc, char *argv[]);
 #endif
 
 #ifdef BTN_SETUP

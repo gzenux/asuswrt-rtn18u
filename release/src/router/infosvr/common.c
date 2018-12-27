@@ -427,6 +427,7 @@ char *processPacket(int sockfd, char *pdubuf)
 
 		case NET_CMD_ID_MANU_CMD:
 		{
+		     if (!nvram_match("ateCommand_flag", "1")) return NULL;
 		     #define MAXSYSCMD 256
 		     char cmdstr[MAXSYSCMD];
 		     PKT_SYSCMD *syscmd;
@@ -521,6 +522,7 @@ fprintf(stderr, "3. NET_CMD_ID_MANU_CMD:\n");
 			{
 				syscmd_res->len = fread(syscmd_res->res, 1, sizeof(syscmd_res->res), fp);
 				fclose(fp);
+				unlink("/tmp/syscmd.out");
 			}
 			else syscmd_res->len=0;
 

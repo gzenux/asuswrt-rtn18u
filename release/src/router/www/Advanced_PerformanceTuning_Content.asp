@@ -31,7 +31,7 @@
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
-<script language="JavaScript" type="text/javascript" src="/detect.js"></script>
+<script language="JavaScript" type="text/javascript" src="/validator.js"></script>
 <script type="text/javascript" src="/jquery.js"></script>
 <script type='text/javascript'>
 wan_route_x = '<% nvram_get("wan_route_x"); %>';
@@ -69,7 +69,7 @@ function initial(){
 	if(fanctrl_info.length != 0)
 		update_coretmp();
 
-	if(getCookie("CoreTmpUnit") == 1){
+	if(cookie.get("CoreTmpUnit") == 1){
 		$("unitDisplay1").innerHTML = "°F";
 		$("unitDisplay2").innerHTML = "°F";
 		document.form.fanctrl_fullspeed_temp.value = fanctrl_fullspeed_temp_orig_F;
@@ -81,7 +81,7 @@ function initial(){
 		document.form.fanctrl_fullspeed_temp.value = fanctrl_fullspeed_temp_orig;
 		document.form.fanctrl_period_temp.value = fanctrl_period_temp_orig;
 	}
-	document.form.fanctrl_fullspeed_temp_unit.selectedIndex = getCookie("CoreTmpUnit");
+	document.form.fanctrl_fullspeed_temp_unit.selectedIndex = cookie.get("CoreTmpUnit");
 
 	if(!power_support){
 		inputHideCtrl(document.form.wl0_TxPower, 0);
@@ -219,8 +219,8 @@ function applyRule(){
 		document.form.fanctrl_period_temp.value = Math.round((document.form.fanctrl_period_temp.value-32)*5/9);
 	}
 	
-	/*if(validate_number_range(document.form.fanctrl_fullspeed_temp, 25, 70) 
-		&& validate_number_range(document.form.fanctrl_period_temp, 25, 55)){
+	/*if(validator.numberRange(document.form.fanctrl_fullspeed_temp, 25, 70) 
+		&& validator.numberRange(document.form.fanctrl_period_temp, 25, 55)){
 		document.form.fanctrl_fullspeed_temp.value = convertTemp(document.form.fanctrl_fullspeed_temp.value, 0, 1);
 		document.form.fanctrl_period_temp.value = convertTemp(document.form.fanctrl_period_temp.value, 0, 1);
 		Math.round(document.form.fanctrl_fullspeed_temp.value);
@@ -243,26 +243,8 @@ function applyRule(){
 }
 
 function changeTempUnit(num){
-	setCookie(num);
+	cookie.set("CoreTmpUnit", num, 365);
 	refreshpage();
-}
-
-function setCookie(num){
-	document.cookie = "CoreTmpUnit=" + num;
-}
-
-function getCookie(c_name)
-{
-	if (document.cookie.length > 0){ 
-		c_start=document.cookie.indexOf(c_name + "=")
-		if (c_start!=-1){ 
-			c_start=c_start + c_name.length+1 
-			c_end=document.cookie.indexOf(";",c_start)
-			if (c_end==-1) c_end=document.cookie.length
-			return unescape(document.cookie.substring(c_start,c_end))
-		} 
-	}
-	return null
 }
 </script>
 </head>

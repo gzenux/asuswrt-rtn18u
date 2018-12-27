@@ -38,7 +38,7 @@
 
 #include <stdarg.h>
 #include <netdb.h>	// for struct addrinfo
-#include <proto/ethernet.h>
+#include <net/ethernet.h>
 
 #define WEBSTRFILTER 1
 #define CONTENTFILTER 1
@@ -1022,6 +1022,111 @@ char *ipoffset(char *ip, int offset, char *tmp)
 }
 */
 
+#ifdef RTCONFIG_YANDEXDNS
+void write_yandexdns_filter(FILE *fp, char *lan_if, char *lan_ip)
+{
+	unsigned char ea[ETHER_ADDR_LEN];
+	char *name, *mac, *mode, *enable, *server[2];
+	char *nv, *nvp, *b;
+	char lan_class[32];
+	int i, count, dnsmode, defmode = nvram_get_int("yadns_mode");
+
+	/* Reroute all DNS requests from LAN */
+	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
+	fprintf(fp, "-A PREROUTING -s %s -p udp -m udp --dport 53 -m u32 --u32 0>>22&0x3c@8>>15&1=0 -j YADNS\n"
+		    "-A PREROUTING -s %s -p tcp -m tcp --dport 53 -m u32 --u32 0>>22&0x3c@12>>26&0x3c@8>>15&1=0 -j YADNS\n",
+		lan_class, lan_class);
+
+	for (dnsmode = YADNS_FIRST; dnsmode < YADNS_COUNT; dnsmode++) {
+		fprintf(fp, ":YADNS%u - [0:0]\n", dnsmode);
+		if (dnsmode == defmode)
+			continue;
+		count = get_yandex_dns(AF_INET, dnsmode, server, sizeof(server)/sizeof(server[0]));
+		if (count <= 0)
+			continue;
+		if (dnsmode == YADNS_BASIC)
+			fprintf(fp, "-A YADNS%u ! -d %s -j ACCEPT\n", dnsmode, lan_ip);
+		else for (i = 0; i < count; i++)
+			fprintf(fp, "-A YADNS%u -d %s -j ACCEPT\n", dnsmode, server[i]);
+		fprintf(fp, "-A YADNS%u -j DNAT --to-destination %s\n", dnsmode, server[0]);
+	}
+
+	/* Protection level per client */
+	nv = nvp = strdup(nvram_safe_get("yadns_rulelist"));
+	while (nv && (b = strsep(&nvp, "<")) != NULL) {
+		if (vstrsep(b, ">", &name, &mac, &mode, &enable) < 3)
+			continue;
+		if (enable && atoi(enable) == 0)
+			continue;
+		if (!*mac || !*mode || !ether_atoe(mac, ea))
+			continue;
+		dnsmode = atoi(mode);
+		/* Skip incorrect and default levels */
+		if (dnsmode < YADNS_FIRST || dnsmode >= YADNS_COUNT || dnsmode == defmode)
+			continue;
+		fprintf(fp, "-A YADNS -m mac --mac-source %s -j YADNS%u\n", mac, dnsmode);
+	}
+	free(nv);
+
+	/* Default protection level */
+	if (defmode != YADNS_DISABLED && defmode != YADNS_BASIC)
+		fprintf(fp, "-A YADNS ! -d %s -j DNAT --to-destination %s\n", lan_ip, lan_ip);
+}
+
+#ifdef RTCONFIG_IPV6
+void write_yandexdns_filter6(FILE *fp, char *lan_if, char *lan_ip)
+{
+	unsigned char ea[ETHER_ADDR_LEN];
+	char *name, *mac, *mode, *enable, *server[2];
+	char *nv, *nvp, *b;
+	int i, count, dnsmode, defmode = nvram_get_int("yadns_mode");
+
+	/* Reroute all DNS requests from LAN */
+	fprintf(fp, "-A INPUT -i %s -p udp -m udp --dport 53 -m u32 --u32 48>>15&1=0 -j YADNSI\n"
+		    "-A INPUT -i %s -p tcp -m tcp --dport 53 -m u32 --u32 52>>26&0x3c@8>>15&1=0 -j YADNSI\n"
+		    "-A FORWARD -i %s -p udp -m udp --dport 53 -m u32 --u32 48>>15&1=0 -j YADNSF\n"
+		    "-A FORWARD -i %s -p tcp -m tcp --dport 53 -m u32 --u32 52>>26&0x3c@8>>15&1=0 -j YADNSF\n",
+		lan_if, lan_if, lan_if, lan_if);
+
+	for (dnsmode = YADNS_FIRST; dnsmode < YADNS_COUNT; dnsmode++) {
+		fprintf(fp, ":YADNS%u - [0:0]\n", dnsmode);
+		if (dnsmode == defmode)
+			continue;
+		count = get_yandex_dns(AF_INET6, dnsmode, server, sizeof(server)/sizeof(server[0]));
+		if (count <= 0)
+			continue;
+		if (dnsmode == YADNS_BASIC)
+			fprintf(fp, "-A YADNS%u -j ACCEPT\n", dnsmode);
+		else for (i = 0; i < count; i++)
+			fprintf(fp, "-A YADNS%u -d %s -j ACCEPT\n", dnsmode, server[i]);
+		fprintf(fp, "-A YADNS%u -j DROP\n", dnsmode);
+	}
+
+	/* Protection level per client */
+	nv = nvp = strdup(nvram_safe_get("yadns_rulelist"));
+	while (nv && (b = strsep(&nvp, "<")) != NULL) {
+		if (vstrsep(b, ">", &name, &mac, &mode, &enable) < 3)
+			continue;
+		if (enable && atoi(enable) == 0)
+			continue;
+		if (!*mac || !*mode || !ether_atoe(mac, ea))
+			continue;
+		dnsmode = atoi(mode);
+		/* Skip incorrect and default levels */
+		if (dnsmode < YADNS_FIRST || dnsmode >= YADNS_COUNT || dnsmode == defmode)
+			continue;
+		fprintf(fp, "-A YADNSI -m mac --mac-source %s -j DROP\n", mac);
+		fprintf(fp, "-A YADNSF -m mac --mac-source %s -j YADNS%u\n", mac, dnsmode);
+	}
+	free(nv);
+
+	/* Default protection level */
+	if (defmode != YADNS_DISABLED && defmode != YADNS_BASIC)
+		fprintf(fp, "-A YADNSF -j DROP\n");
+}
+#endif /* RTCONFIG_IPV6 */
+#endif /* RTCONFIG_YANDEXDNS */
+
 #ifdef RTCONFIG_WIRELESSREPEATER
 void repeater_nat_setting(){
 	FILE *fp;
@@ -1093,33 +1198,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *wanx_if, char *wanx_ip, char 
 		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wanx_ip);
 
 #ifdef RTCONFIG_YANDEXDNS
-	if (nvram_get_int("yadns_enable_x")) {
-		char *name, *mac, *mode;
-		unsigned char ea[ETHER_ADDR_LEN];
-
-		/* Reroute all DNS requests from LAN to Yandex.DNS */
-		ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-		fprintf(fp,
-			"-A PREROUTING -s %s -p udp -m udp --dport 53 -j YADNS\n"
-			"-A PREROUTING -s %s -p tcp -m tcp --dport 53 -j YADNS\n",
-			lan_class, lan_class);
-
-		/* Protection level per client */
-		nv = nvp = strdup(nvram_safe_get("yadns_rulelist"));
-		while (nv && (b = strsep(&nvp, "<")) != NULL) {
-			if (vstrsep(b, ">", &name, &mac, &mode) != 3)
-				continue;
-			if (!*mac || !*mode || !ether_atoe(mac, ea))
-				continue;
-			fprintf(fp,
-				"-A YADNS -m mac --mac-source %s -j DNAT --to-destination %s\n",
-				mac, yandex_dns(atoi(mode)));
-		}
-		free(nv);
-
-		/* Catch other queries for default level */
-		fprintf(fp, "-A YADNS ! -d %s -j DNAT --to-destination %s\n", lan_ip, lan_ip);
-	}
+	if (nvram_get_int("yadns_enable_x"))
+		write_yandexdns_filter(fp, lan_if, lan_ip);
 #endif
 
 	// need multiple instance for tis?
@@ -1133,11 +1213,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *wanx_if, char *wanx_ip, char 
 		if ((wan_port = nvram_get_int("misc_httpsport_x")) == 0)
 			wan_port = 8443;
 		fprintf(fp, "-A VSERVER -p tcp -m tcp --dport %d -j DNAT --to-destination %s:%s\n",
-#ifdef RTCONFIG_TMOBILE
-			wan_port, lan_ip, "443");
-#else
 			wan_port, lan_ip, nvram_safe_get("https_lanport"));
-#endif
 #endif
 	}
 
@@ -1233,11 +1309,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *wanx_if, char *wanx_ip, char 
 
 			port = nvram_get_int("webdav_https_port");
 			if (!port || port >= 65536)
-#ifdef RTCONFIG_TMOBILE
-				port = 8443;
-#else
 				port = 443;
-#endif
 			fprintf(fp, "-A LOCALSRV -p tcp -m tcp --dport %d -j DNAT --to-destination %s:%d\n", port, lan_ip, port);
 			port = nvram_get_int("webdav_http_port");
 			if (!port || port >= 65536)
@@ -1363,33 +1435,8 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 	}
 
 #ifdef RTCONFIG_YANDEXDNS
-	if (nvram_get_int("yadns_enable_x")) {
-		char *id, *mac, *mode;
-		unsigned char ea[ETHER_ADDR_LEN];
-
-		/* Reroute all DNS requests from LAN to Yandex.DNS */
-		ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-		fprintf(fp,
-			"-A PREROUTING -s %s -p udp -m udp --dport 53 -j YADNS\n"
-			"-A PREROUTING -s %s -p tcp -m tcp --dport 53 -j YADNS\n",
-			lan_class, lan_class);
-
-		/* Protection level per client */
-		nv = nvp = strdup(nvram_safe_get("yadns_rulelist"));
-		while (nv && (b = strsep(&nvp, "<")) != NULL) {
-			if (vstrsep(b, ">", &id, &mac, &mode) != 3)
-				continue;
-			if (!*mac || !*mode || !ether_atoe(mac, ea))
-				continue;
-			fprintf(fp,
-				"-A YADNS -m mac --mac-source %s -j DNAT --to-destination %s\n",
-				mac, yandex_dns(atoi(mode)));
-		}
-		free(nv);
-
-		/* Catch other queries for default level */
-		fprintf(fp, "-A YADNS ! -d %s -j DNAT --to-destination %s\n", lan_ip, lan_ip);
-	}
+	if (nvram_get_int("yadns_enable_x"))
+		write_yandexdns_filter(fp, lan_if, lan_ip);
 #endif
 
 	// need multiple instance for tis?
@@ -1403,11 +1450,7 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 		if ((wan_port = nvram_get_int("misc_httpsport_x")) == 0)
 			wan_port = 8443;
 		fprintf(fp, "-A VSERVER -p tcp -m tcp --dport %d -j DNAT --to-destination %s:%s\n",
-#ifdef RTCONFIG_TMOBILE
-			wan_port, lan_ip, "443");
-#else
 			wan_port, lan_ip, nvram_safe_get("https_lanport"));
-#endif
 #endif
 	}
 
@@ -1520,11 +1563,7 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 
 			port = nvram_get_int("webdav_https_port");
 			if (!port || port >= 65536)
-#ifdef RTCONFIG_TMOBILE
-				port = 8443;
-#else
 				port = 443;
-#endif
 			fprintf(fp, "-A LOCALSRV -p tcp -m tcp --dport %d -j DNAT --to-destination %s:%d\n", port, lan_ip, port);
 			port = nvram_get_int("webdav_http_port");
 			if (!port || port >= 65536)
@@ -1672,33 +1711,72 @@ start_default_filter(int lanunit)
 {
 	// TODO: handle multiple lan
 	FILE *fp;
+	char *lan_if = nvram_safe_get("lan_ifname");
 
-	printf("\nset default filter settings\n");	// tmp test
-	if ((fp=fopen("/tmp/filter.default", "w"))==NULL) return;
+	if ((fp = fopen("/tmp/filter.default", "w")) == NULL)
+		return;
+	fprintf(fp, "*filter\n"
+	    ":INPUT DROP [0:0]\n"
+	    ":FORWARD DROP [0:0]\n"
+	    ":OUTPUT ACCEPT [0:0]\n"
+	    ":logaccept - [0:0]\n"
+	    ":logdrop - [0:0]\n");
 
-	fprintf(fp, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n");
-	fprintf(fp, "-A INPUT -m state --state INVALID -j DROP\n");
 	fprintf(fp, "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n");
-	fprintf(fp, "-A INPUT -i lo -m state --state NEW -j ACCEPT\n");
-	fprintf(fp, "-A INPUT -i br0 -m state --state NEW -j ACCEPT\n");
-	fprintf(fp, "-A INPUT -j DROP\n");
-	fprintf(fp, "-A FORWARD -m state --state INVALID -j DROP\n");
+	fprintf(fp, "-A INPUT -m state --state INVALID -j DROP\n");
+	fprintf(fp, "-A INPUT -i %s -m state --state NEW -j ACCEPT\n", "lo");
+	fprintf(fp, "-A INPUT -i %s -m state --state NEW -j ACCEPT\n", lan_if);
+	//fprintf(fp, "-A FORWARD -m state --state INVALID -j DROP\n");
 	fprintf(fp, "-A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT\n");
-	fprintf(fp, "-A FORWARD -i br0 -o br0 -j ACCEPT\n");
-	fprintf(fp, "-A FORWARD -i lo -o lo -j ACCEPT\n");
-	fprintf(fp, "-A FORWARD -j DROP\n");
+	fprintf(fp, "-A FORWARD -i %s -o %s -j ACCEPT\n", lan_if, lan_if);
+	fprintf(fp, "-A FORWARD -i %s -o %s -j ACCEPT\n", "lo", "lo");
+
 	fprintf(fp, "-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" "
 		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
 		  "-A logaccept -j ACCEPT\n");
-
 	fprintf(fp,"-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" "
 		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
 		  "-A logdrop -j DROP\n");
+
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
 
-	//system("iptables -F");
 	eval("iptables-restore", "/tmp/filter.default");
+
+#ifdef RTCONFIG_IPV6
+	if ((fp = fopen("/tmp/filter_ipv6.default", "w")) == NULL)
+		return;
+	fprintf(fp, "*filter\n"
+	    ":INPUT DROP [0:0]\n"
+	    ":FORWARD DROP [0:0]\n"
+	    ":OUTPUT %s [0:0]\n"
+	    ":logaccept - [0:0]\n"
+	    ":logdrop - [0:0]\n",
+	    ipv6_enabled() ? "ACCEPT" : "DROP");
+
+	if (ipv6_enabled()) {
+		fprintf(fp, "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n");
+		fprintf(fp, "-A INPUT -m state --state INVALID -j DROP\n");
+		fprintf(fp, "-A INPUT -i %s -m state --state NEW -j ACCEPT\n", "lo");
+		fprintf(fp, "-A INPUT -i %s -m state --state NEW -j ACCEPT\n", lan_if);
+		//fprintf(fp, "-A FORWARD -m state --state INVALID -j DROP\n");
+		fprintf(fp, "-A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT\n");
+		fprintf(fp, "-A FORWARD -i %s -o %s -j ACCEPT\n", lan_if, lan_if);
+		fprintf(fp, "-A FORWARD -i %s -o %s -j ACCEPT\n", "lo", "lo");
+	}
+
+	fprintf(fp, "-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" "
+		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
+		  "-A logaccept -j ACCEPT\n");
+	fprintf(fp,"-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" "
+		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
+		  "-A logdrop -j DROP\n");
+
+	fprintf(fp, "COMMIT\n\n");
+	fclose(fp);
+
+	eval("ip6tables-restore", "/tmp/filter_ipv6.default");
+#endif
 }
 
 #ifdef WEBSTRFILTER
@@ -2058,27 +2136,33 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	}
 #endif
 
-	fprintf(fp, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:FUPNP - [0:0]\n");
+	fprintf(fp, "*filter\n"
+	    ":INPUT ACCEPT [0:0]\n"
+	    ":FORWARD ACCEPT [0:0]\n"
+	    ":OUTPUT ACCEPT [0:0]\n"
+	    ":FUPNP - [0:0]\n"
 #ifdef RTCONFIG_PARENTALCTRL
-	fprintf(fp, ":PControls - [0:0]\n");
+	    ":PControls - [0:0]\n"
 #else
-	fprintf(fp, ":MACS - [0:0]\n");
+	    ":MACS - [0:0]\n"
 #endif
-	fprintf(fp, ":logaccept - [0:0]\n:logdrop - [0:0]\n");
+	    ":logaccept - [0:0]\n"
+	    ":logdrop - [0:0]\n");
 
 #ifdef RTCONFIG_IPV6
-	if (ipv6_enabled()){
-		if (nvram_match("ipv6_fw_enable", "1")){
-			fprintf(fp_ipv6, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD DROP [0:0]\n:OUTPUT ACCEPT [0:0]\n");
-		} else {
-		fprintf(fp_ipv6, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
-		}
+	if (ipv6_enabled()) {
+		fprintf(fp_ipv6, "*filter\n"
+		    ":INPUT ACCEPT [0:0]\n"
+		    ":FORWARD %s [0:0]\n"
+		    ":OUTPUT ACCEPT [0:0]\n"
 #ifdef RTCONFIG_PARENTALCTRL
-		fprintf(fp_ipv6, ":PControls - [0:0]\n");
+		    ":PControls - [0:0]\n"
 #else
-		fprintf(fp_ipv6, ":MACS - [0:0]\n");
+		    ":MACS - [0:0]\n"
 #endif
-		fprintf(fp_ipv6, ":logaccept - [0:0]\n:logdrop - [0:0]\n");
+		    ":logaccept - [0:0]\n"
+		    ":logdrop - [0:0]\n",
+		nvram_match("ipv6_fw_enable", "1") ? "DROP" : "ACCEPT");
 	}
 #endif
 
@@ -2237,11 +2321,7 @@ TRACE_PT("writing Parental Control\n");
 		{
 			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport %s -j %s\n", lan_ip, nvram_safe_get("lan_port"), logaccept);
 #ifdef RTCONFIG_HTTPS
-#ifdef RTCONFIG_TMOBILE
-			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport %s -j %s\n", lan_ip, "443", logaccept);
-#else
 			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport %s -j %s\n", lan_ip, nvram_safe_get("https_lanport"), logaccept);
-#endif
 #endif
 		}
 #ifdef RTCONFIG_SSH
@@ -2254,8 +2334,16 @@ TRACE_PT("writing Parental Control\n");
 		{
 			fprintf(fp, "-A INPUT -p tcp -m tcp --dport 21 -j %s\n", logaccept);
 			int local_ftpport = nvram_get_int("vts_ftpport");
-			if(nvram_match("vts_enable_x", "1") && local_ftpport != 0 && local_ftpport != 21 && ruleHasFTPport())
+			if (nvram_match("vts_enable_x", "1") && local_ftpport != 0 && local_ftpport != 21 && ruleHasFTPport())
 				fprintf(fp, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", local_ftpport, logaccept);
+#ifdef RTCONFIG_IPV6
+			if (ipv6_enabled() && nvram_match("ipv6_fw_enable", "1"))
+			{
+				fprintf(fp_ipv6, "-A INPUT -p tcp -m tcp --dport 21 -j %s\n", logaccept);
+				if (nvram_match("vts_enable_x", "1") && local_ftpport != 0 && local_ftpport != 21 && ruleHasFTPport())
+					fprintf(fp_ipv6, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", local_ftpport, logaccept);
+			}
+#endif
 		}
 
 #ifdef RTCONFIG_WEBDAV
@@ -2322,6 +2410,12 @@ TRACE_PT("writing Parental Control\n");
 			fprintf(fp, "-A INPUT -p 41 -j %s\n", "ACCEPT");
 			break;
 		}
+#endif
+
+
+#ifdef RTCONFIG_TR069
+		fprintf(fp, "-A INPUT -i %s -p tcp --dport %d -j %s\n", wan_if, nvram_get_int("tr_conn_port"), logaccept);
+		fprintf(fp, "-A INPUT -i %s -p udp --dport %d -j %s\n", wan_if, nvram_get_int("tr_conn_port"), logaccept);
 #endif
 
 		fprintf(fp, "-A INPUT -j %s\n", logdrop);
@@ -2683,19 +2777,15 @@ TRACE_PT("writing Parental Control\n");
 #endif
 
 	// Block VPN traffic
-	if (nvram_match("fw_pt_pptp", "0"))
+	if (nvram_match("fw_pt_pptp", "0")) {
 		fprintf(fp, "-I %s -i %s -o %s -p tcp --dport %d -j %s\n", chain, lan_if, wan_if, 1723, "DROP");
+		fprintf(fp, "-I %s -i %s -o %s -p 47 -j %s\n", chain, lan_if, wan_if, "DROP");
+	}
 	if (nvram_match("fw_pt_l2tp", "0"))
 		fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 1701, "DROP");
-	if (nvram_match("fw_pt_ipsec", "0"))
-	{
+	if (nvram_match("fw_pt_ipsec", "0")) {
 		fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 500, "DROP");
 		fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 4500, "DROP");
-	}
-	if (nvram_match("fw_pt_pptp", "0"))
-		fprintf(fp, "-I %s -i %s -o %s -p 47 -j %s\n", chain, lan_if, wan_if, "DROP");
-	if (nvram_match("fw_pt_ipsec", "0"))
-	{
 		fprintf(fp, "-I %s -i %s -o %s -p 50 -j %s\n", chain, lan_if, wan_if, "DROP");
 		fprintf(fp, "-I %s -i %s -o %s -p 51 -j %s\n", chain, lan_if, wan_if, "DROP");
 	}
@@ -3000,26 +3090,33 @@ filter_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 	}
 #endif
 
-	fprintf(fp, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:FUPNP - [0:0]\n");
+	fprintf(fp, "*filter\n"
+	    ":INPUT ACCEPT [0:0]\n"
+	    ":FORWARD ACCEPT [0:0]\n"
+	    ":OUTPUT ACCEPT [0:0]\n"
+	    ":FUPNP - [0:0]\n"
 #ifdef RTCONFIG_PARENTALCTRL
-	fprintf(fp, ":PControls - [0:0]\n");
+	    ":PControls - [0:0]\n"
 #else
-	fprintf(fp, ":MACS - [0:0]\n");
+	    ":MACS - [0:0]\n"
 #endif
-	fprintf(fp, ":logaccept - [0:0]\n:logdrop - [0:0]\n");
+	    ":logaccept - [0:0]\n"
+	    ":logdrop - [0:0]\n");
+
 #ifdef RTCONFIG_IPV6
-	if (ipv6_enabled()){
-		if (nvram_match("ipv6_fw_enable", "1")){
-			fprintf(fp_ipv6, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD DROP [0:0]\n:OUTPUT ACCEPT [0:0]\n");
-		} else {
-		fprintf(fp_ipv6, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
-		}
+	if (ipv6_enabled()) {
+		fprintf(fp_ipv6, "*filter\n"
+		    ":INPUT ACCEPT [0:0]\n"
+		    ":FORWARD %s [0:0]\n"
+		    ":OUTPUT ACCEPT [0:0]\n"
 #ifdef RTCONFIG_PARENTALCTRL
-		fprintf(fp_ipv6, ":PControls - [0:0]\n");
+		    ":PControls - [0:0]\n"
 #else
-		fprintf(fp_ipv6, ":MACS - [0:0]\n");
+		    ":MACS - [0:0]\n"
 #endif
-		fprintf(fp_ipv6, ":logaccept - [0:0]\n:logdrop - [0:0]\n");
+		    ":logaccept - [0:0]\n"
+		    ":logdrop - [0:0]\n",
+		nvram_match("ipv6_fw_enable", "1") ? "DROP" : "ACCEPT");
 	}
 #endif
 
@@ -3186,11 +3283,7 @@ TRACE_PT("writing Parental Control\n");
 		{
 			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport %s -j %s\n", lan_ip, nvram_safe_get("lan_port"), logaccept);
 #ifdef RTCONFIG_HTTPS
-#ifdef RTCONFIG_TMOBILE
-			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport %s -j %s\n", lan_ip, "443", logaccept);
-#else
 			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport %s -j %s\n", lan_ip, nvram_safe_get("https_lanport"), logaccept);
-#endif
 #endif
 		}
 #ifdef RTCONFIG_SSH
@@ -3203,8 +3296,16 @@ TRACE_PT("writing Parental Control\n");
 		{
 			fprintf(fp, "-A INPUT -p tcp -m tcp --dport 21 -j %s\n", logaccept);
 			int local_ftpport = nvram_get_int("vts_ftpport");
-			if(nvram_match("vts_enable_x", "1") && local_ftpport != 0 && local_ftpport != 21 && ruleHasFTPport())
+			if (nvram_match("vts_enable_x", "1") && local_ftpport != 0 && local_ftpport != 21 && ruleHasFTPport())
 				fprintf(fp, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", local_ftpport, logaccept);
+#ifdef RTCONFIG_IPV6
+			if (ipv6_enabled() && nvram_match("ipv6_fw_enable", "1"))
+			{
+				fprintf(fp_ipv6, "-A INPUT -p tcp -m tcp --dport 21 -j %s\n", logaccept);
+				if (nvram_match("vts_enable_x", "1") && local_ftpport != 0 && local_ftpport != 21 && ruleHasFTPport())
+					fprintf(fp_ipv6, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", local_ftpport, logaccept);
+			}
+#endif
 		}
 
 #ifdef RTCONFIG_WEBDAV
@@ -3271,6 +3372,18 @@ TRACE_PT("writing Parental Control\n");
 		case IPV6_6RD:
 			fprintf(fp, "-A INPUT -p 41 -j %s\n", "ACCEPT");
 			break;
+		}
+#endif
+
+#ifdef RTCONFIG_TR069
+		for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
+			snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+			if(nvram_get_int(strcat_r(prefix, "state_t", tmp)) != WAN_STATE_CONNECTED)
+				continue;
+
+			wan_if = get_wan_ifname(unit);
+			fprintf(fp, "-A INPUT -i %s -p tcp --dport %d -j %s\n", wan_if, nvram_get_int("tr_conn_port"), logaccept);
+			fprintf(fp, "-A INPUT -i %s -p udp --dport %d -j %s\n", wan_if, nvram_get_int("tr_conn_port"), logaccept);
 		}
 #endif
 
@@ -3709,28 +3822,22 @@ TRACE_PT("writing Parental Control\n");
 #endif
 
 	// Block VPN traffic
-	for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
+	for (unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; unit++) {
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-		if(nvram_get_int(strcat_r(prefix, "state_t", tmp)) != WAN_STATE_CONNECTED)
+		if (nvram_get_int(strcat_r(prefix, "state_t", tmp)) != WAN_STATE_CONNECTED)
 			continue;
 
 		wan_if = get_wan_ifname(unit);
 
-		if (nvram_match("fw_pt_pptp", "0"))
+		if (nvram_match("fw_pt_pptp", "0")) {
 			fprintf(fp, "-I %s -i %s -o %s -p tcp --dport %d -j %s\n", chain, lan_if, wan_if, 1723, "DROP");
-
+			fprintf(fp, "-I %s -i %s -o %s -p 47 -j %s\n", chain, lan_if, wan_if, "DROP");
+		}
 		if (nvram_match("fw_pt_l2tp", "0"))
 			fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 1701, "DROP");
-
-		if (nvram_match("fw_pt_ipsec", "0")){
+		if (nvram_match("fw_pt_ipsec", "0")) {
 			fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 500, "DROP");
 			fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 4500, "DROP");
-		}
-
-		if (nvram_match("fw_pt_pptp", "0"))
-			fprintf(fp, "-I %s -i %s -o %s -p 47 -j %s\n", chain, lan_if, wan_if, "DROP");
-
-		if (nvram_match("fw_pt_ipsec", "0")){
 			fprintf(fp, "-I %s -i %s -o %s -p 50 -j %s\n", chain, lan_if, wan_if, "DROP");
 			fprintf(fp, "-I %s -i %s -o %s -p 51 -j %s\n", chain, lan_if, wan_if, "DROP");
 		}
@@ -4065,17 +4172,45 @@ void
 mangle_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 {
 	if(nvram_get_int("qos_enable") == 1 && nvram_get_int("qos_type") == 0){
-#ifdef RTCONFIG_TMOBILE_QOS
-			add_EbtablesRules();
-#else
 			add_iQosRules(wan_if);
-#endif
 	}
 	else {
 		eval("iptables", "-t", "mangle", "-F");
 #ifdef RTCONFIG_IPV6
 		eval("ip6tables", "-t", "mangle", "-F");
 #endif
+	}
+
+#ifdef RTCONFIG_YANDEXDNS
+#ifdef RTCONFIG_IPV6
+	if (nvram_get_int("yadns_enable_x") && ipv6_enabled()) {
+		FILE *fp;
+		
+		fp = fopen("/tmp/mangle_rules_ipv6.yadns", "w");
+		if (fp != NULL) {
+			fprintf(fp, "*mangle\n"
+			    ":YADNSI - [0:0]\n"
+			    ":YADNSF - [0:0]\n");
+
+			write_yandexdns_filter6(fp, lan_if, lan_ip);
+
+			fprintf(fp, "COMMIT\n");
+			fclose(fp);
+
+			eval("ip6tables-restore", "/tmp/mangle_rules_ipv6.yadns");
+		}
+	}
+#endif /* RTCONFIG_IPV6 */
+#endif /* RTCONFIG_YANDEXDNS */
+
+/* In Bangladesh, ISPs force the packet TTL as 1 at modem side to block ip sharing. Increase the TTL once the packet come at WAN with TTL=1 */
+	if(nvram_match("ttl_inc_enable", "1"))
+	{
+#ifdef RTCONFIG_IPV6
+		if(ipv6_enabled())
+			eval("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_if, "-m", "hl", "--hl-eq", "1", "-j", "HL", "--hl-set", "64");
+#endif
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_if, "-m", "ttl", "--ttl-eq", "1", "-j", "TTL", "--ttl-set", "64");
 	}
 
 #ifdef CONFIG_BCMWL5
@@ -4112,7 +4247,7 @@ mangle_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		}
 #ifdef RTCONFIG_BCMARM
 		/* mark STUN connection*/
-		if (nvram_match("fw_pt_stun", "1")) {
+		if (nvram_match("ctf_pt_udp", "1")) {
 			eval("iptables", "-t", "mangle", "-A", "FORWARD",
 			     "-p", "udp",
 			     "-m", "state", "--state", "NEW", "-j", "MARK", "--set-mark", "0x01/0x7");
@@ -4128,15 +4263,6 @@ mangle_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 			     "-m", "state", "--state", "NEW", "-j", "SKIPLOG");
 #endif
 		}
-#endif
-
-#if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
-                //Set mark if ppp connection without encryption
-                if( nvram_match("pptpd_enable", "1") && (nvram_get_int("pptpd_mppe")>7) ) {
-                        eval("iptables", "-t", "mangle", "-A", "FORWARD",
-                             "-p", "tcp",
-                             "-m", "state", "--state", "NEW", "-j", "MARK", "--set-mark", "0x01/0x7");
-                }
 #endif
 	}
 #endif
@@ -4157,11 +4283,7 @@ mangle_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 				continue;
 
 			wan_if = get_wan_ifname(unit);
-#ifdef RTCONFIG_TMOBILE_QOS
-			add_EbtablesRules();
-#else
 			add_iQosRules(wan_if);
-#endif
 		}
 	}
 	else {
@@ -4169,6 +4291,16 @@ mangle_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 #ifdef RTCONFIG_IPV6
 		eval("ip6tables", "-t", "mangle", "-F");
 #endif
+	}
+
+/* In Bangladesh, ISPs force the packet TTL as 1 at modem side to block ip sharing. Increase the TTL once the packet come at WAN with TTL=1 */
+	if(nvram_match("ttl_inc_enable", "1"))
+	{
+#ifdef RTCONFIG_IPV6
+        	if(ipv6_enabled())
+                	eval("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_if, "-m", "hl", "--hl-eq", "1", "-j", "HL", "--hl-set", "64");
+#endif
+                	eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_if, "-m", "ttl", "--ttl-eq", "1", "-j", "TTL", "--ttl-set", "64");
 	}
 
 #ifdef CONFIG_BCMWL5
@@ -4205,7 +4337,7 @@ mangle_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 		}
 #ifdef RTCONFIG_BCMARM
 		/* mark STUN connection*/
-		if (nvram_match("fw_pt_stun", "1")) {
+		if (nvram_match("ctf_pt_udp", "1")) {
 			eval("iptables", "-t", "mangle", "-A", "FORWARD",
 			     "-p", "udp",
 			     "-m", "state", "--state", "NEW", "-j", "MARK", "--set-mark", "0x01/0x7");
@@ -4422,7 +4554,11 @@ int start_firewall(int wanunit, int lanunit)
 		modprobe("xt_length");
 	}
 #endif
-
+	if(nvram_match("ttl_inc_enable", "1"))
+	{
+		modprobe("xt_HL");
+		modprobe("xt_hl");
+	}
 	/* nat setting */
 #ifdef RTCONFIG_DUALWAN // RTCONFIG_DUALWAN
 	if(nvram_match("wans_mode", "lb")){
@@ -4639,7 +4775,12 @@ int start_firewall(int wanunit, int lanunit)
 #ifdef RTCONFIG_OPENVPN
 	run_vpn_firewall_scripts();
 #endif
-
+	
+	if(nvram_match("ttl_inc_enable", "0"))
+	{
+		modprobe_r("xt_HL");
+		modprobe_r("xt_hl");
+	}
 	return 0;
 }
 

@@ -1,4 +1,6 @@
-﻿/* Internet Explorer lacks this array method */
+﻿document.write('<script type="text/javascript" src="/require/require.min.js"></script>');
+
+/* Internet Explorer lacks this array method */
 if (!('indexOf' in Array.prototype)) {
 	Array.prototype.indexOf = function(find, i) {
 		if(i===undefined) i=0;
@@ -58,6 +60,7 @@ var productid = '<#Web_Title2#>';
 var based_modelid = '<% nvram_get("productid"); %>';
 var odmpid = '<% nvram_get("odmpid"); %>';
 var hw_ver = '<% nvram_get("hardware_version"); %>';
+var bl_version = '<% nvram_get("bl_version"); %>';
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);
 var boottime = parseInt(uptimeStr.substring(32,42));
@@ -73,47 +76,41 @@ var httpd_dir = "/cifs1"
 var isFromWAN = false;
 var svc_ready = '<% nvram_get("svc_ready"); %>';
 
-var wl_band = function(){
-	var wl_nband_array = '<% wl_nband_info(); %>'.toArray();
-	var band2g_count = 0;
-	var band5g_count = 0;
-	for (var j=0; j<wl_nband_array.length; j++) {
-		if(wl_nband_array[j] == '2')
-			band2g_count++;
-		else if(wl_nband_array[j] == '1')
-			band5g_count++;
-	}
-	this.band2g_support = function(){
-		if(band2g_count > 0)
-			return true;
-		else
-			return false;
-	}
-	this.band5g_1_support = function(){
-		if(band5g_count > 0)
-			return true;
-		else
-			return false;
-	}
-	this.band5g_2_support = function(){
-		if(band5g_count > 1)
-			return true;
-		else
-			return false;
-	}
-	this.band2g_len = band2g_count;
-	this.band5g_len = band5g_count;
-	this.wl_if_len = wl_nband_array.length;
-};
-var wl = new wl_band();
-var wl_info = {
-	band2g_support:wl.band2g_support(),
-	band5g_1_support:wl.band5g_1_support(),
-	band5g_2_support:wl.band5g_2_support(),
-	wl_if_len:wl.wl_if_len,
-	band2g_len:wl.band2g_len,
-	band5g_len:wl.band5g_len
+//wireless
+var wl_nband_array = '<% wl_nband_info(); %>'.toArray();
+var band2g_count = 0;
+var band5g_count = 0;
+for (var j=0; j<wl_nband_array.length; j++) {
+	if(wl_nband_array[j] == '2')
+		band2g_count++;
+	else if(wl_nband_array[j] == '1')
+		band5g_count++;
 }
+
+var wl_info = {
+	band2g_support:(function(){
+				if(band2g_count > 0)
+					return true;
+				else
+					return false;
+			})(),
+	band5g_support:(function(){
+				if(band5g_count > 0)
+					return true;
+				else
+					return false;
+			})(),
+	band5g_2_support:(function(){
+				if(band5g_count == 2)
+					return true;
+				else
+					return false;
+			})(),
+	band2g_total:band2g_count,
+	band5g_total:band5g_count,
+	wl_if_total:wl_nband_array.length
+};
+//wireless end
 
 // parsing rc_support
 var rc_support = '<% nvram_get("rc_support"); %>';
@@ -153,7 +150,6 @@ var wifi_tog_btn_support = isSupport("wifi_tog_btn");
 
 var usb_support = isSupport("usbX");
 var usbPortMax = rc_support.charAt(rc_support.indexOf("usbX")+4);
-
 var printer_support = isSupport("printer"); 
 var appbase_support = isSupport("appbase");
 var appnet_support = isSupport("appnet");
@@ -165,10 +161,9 @@ var manualstb_support = isSupport("manual_stb");
 var wps_multiband_support = isSupport("wps_multiband");
 
 //MODELDEP : DSL-N55U、DSL-N55U-B、RT-N56U
+var aicloudipk_support = false;
 if(based_modelid == "DSL-N55U" || based_modelid == "DSL-N55U-B" || based_modelid == "RT-N56U")
-	var aicloudipk_support = true;
-else
-	var aicloudipk_support = false;
+	aicloudipk_support = true;
 
 var modem_support = isSupport("modem"); 
 var IPv6_support = isSupport("ipv6"); 
@@ -206,6 +201,7 @@ var bwdpi_support = isSupport("bwdpi");
 var rog_support = isSupport("rog");
 var smart_connect_support = isSupport("smart_connect");
 var rrsut_support = isSupport("rrsut");
+var gobi_support = isSupport("gobi");
 
 var localAP_support = true;
 if(sw_mode == 4)
@@ -213,14 +209,15 @@ if(sw_mode == 4)
 
 var ntfs_sparse_support = isSupport("sparse");
 
+var tr069_support = isSupport("tr069");
 var QISWIZARD = "QIS_wizard.htm";
 // Todo: Support repeater mode
 if(isMobile() && sw_mode != 2 && !dsl_support)
-	QISWIZARD = "QIS_wizard_m.htm";
+	QISWIZARD = "MobileQIS_Login.asp";
 
 //T-Mobile, force redirect to Mobile QIS page if client is mobile devices
 if(tmo_support && isMobile()){	
-	if(location.pathname != "/MobileQIS_Login.asp" && location.pathname != "/QIS_wizard_m.htm")
+	if(location.pathname != "/MobileQIS_Login.asp")
 		location.href = "MobileQIS_Login.asp";
 }
 	
@@ -242,15 +239,6 @@ var gn_array_2g = <% wl_get_guestnetwork("0"); %>;
 var gn_array_5g = <% wl_get_guestnetwork("1"); %>;
 var gn_array_5g_2 = <% wl_get_guestnetwork("2"); %>;
 
-var apps_fsck_ret = '<% apps_fsck_ret(); %>'.toArray();
-var apps_dev = '<% nvram_get("apps_dev"); %>';
-var tm_device_name = '<% nvram_get("tm_device_name"); %>';
-
-<% available_disk_names_and_sizes(); %>
-<% disk_pool_mapping_info(); %>
-<% get_printer_info(); %>
-<% get_modem_info(); %>
-
 //notification value
 var notice_acpw_is_default = '<% check_acpw(); %>';
 var noti_auth_mode_2g = '<% nvram_get("wl0_auth_mode_x"); %>';
@@ -263,10 +251,16 @@ var enable_samba = '<% nvram_get("enable_samba"); %>';
 var enable_ftp = '<% nvram_get("enable_ftp"); %>';
 // MODELDEP : DSL-AC68U Only for now
 if(based_modelid == "DSL-AC68U"){
-	var dsl_loss_sync = (vdsl_support == false) ? "0" :'<% nvram_get("dsltmp_syncloss"); %>';
+	var dla_modified = (vdsl_support == false) ? "0" :'<% nvram_get("dsltmp_dla_modified"); %>';	
+	var dsl_loss_sync = "";
+	if(dla_modified == "1")
+		dsl_loss_sync = "1";
+	else
+		dsl_loss_sync = (vdsl_support == false) ? "0" :'<% nvram_get("dsltmp_syncloss"); %>';	
 	var experience_fb = (dsl_support == false) ? "2" : '<% nvram_get("fb_experience"); %>';
 }
 else{
+				var dla_modified = "0";
         var dsl_loss_sync = "0";
         var experience_fb = "2";
 }
@@ -291,130 +285,10 @@ if(dsl_support){
     	}	
 }  
 
-var newDisk = function(){
-	this.usbPath = "";
-	this.deviceIndex = "";
-	this.node = "";
-	this.manufacturer = "";
-	this.deviceName = "";
-	this.deviceType = "";
-	this.totalSize = "";
-	this.totalUsed = "";
-	this.mountNumber = "";
-	this.serialNum = "";
-	this.hasErrPart = false;
-	this.hasAppDev = false;
-	this.hasTM = false;
-	this.partition = new Array(0);
-}
-
-var newPartition = function(){
-	this.partName = "";
-	this.mountPoint = "";
-	this.isAppDev = false;
-	this.isTM = false;
-	this.fsck = "";
-	this.size = "";
-	this.used = "";
-	this.format = "";
-}
-
 var allUsbStatus = "";
 var allUsbStatusTmp = "";
 var allUsbStatusArray = '<% show_usb_path(); %>'.toArray();
-var pool_name = new Array();
-if(typeof pool_devices != "undefined") pool_name = pool_devices();
 
-var usbDevices = new Array();
-function genUsbDevices(){
-	var allPartIndex = 0;
-	usbDevices = new Array();
-
-	for(var i=0; i<foreign_disk_interface_names().length; i++){
-		if(foreign_disk_interface_names()[i].charAt(0) > usbPortMax) continue;
-
-		var tmpDisk = new newDisk();
-		tmpDisk.usbPath = foreign_disk_interface_names()[i].charAt(0);
-		tmpDisk.deviceIndex = i;
-		tmpDisk.node = foreign_disk_interface_names()[i];
-		tmpDisk.deviceName = decodeURIComponentSafe(foreign_disks()[i]);
-		tmpDisk.deviceType = "storage";
-		tmpDisk.mountNumber = foreign_disk_total_mounted_number()[i];
-
-		var _mountedPart = 0;	
-		while (_mountedPart < tmpDisk.mountNumber && allPartIndex < pool_name.length){
-			if(pool_types()[allPartIndex] != "unknown" || pool_status()[allPartIndex] != "unmounted"){
-				var tmpParts = new newPartition();
-				tmpParts.partName = pool_names()[allPartIndex];
-				tmpParts.mountPoint = pool_devices()[allPartIndex];
-				if(tmpParts.mountPoint == apps_dev){
-					tmpParts.isAppDev = true;
-					tmpDisk.hasAppDev = true;
-				}
-				if(tmpParts.mountPoint == tm_device_name){
-					tmpParts.isTM = true;
-					tmpDisk.hasTM = true;
-				}		
-				tmpParts.size = parseInt(pool_kilobytes()[allPartIndex]);
-				tmpParts.used = parseInt(pool_kilobytes_in_use()[allPartIndex]);
-				tmpParts.format = pool_types()[allPartIndex];
-				if(apps_fsck_ret.length > 0) {
-					tmpParts.fsck = apps_fsck_ret[allPartIndex][1];
-					if(apps_fsck_ret[allPartIndex][1] == 1){
-						tmpDisk.hasErrPart = true;
-					}
-				}
-
-				tmpDisk.partition.push(tmpParts);
-				tmpDisk.totalSize = parseInt(tmpDisk.totalSize + tmpParts.size);
-				tmpDisk.totalUsed = parseInt(tmpDisk.totalUsed + tmpParts.used);
-				_mountedPart++;
-			}
-
-			allPartIndex++;
-		}
-
-		if(tmpDisk.deviceName != "") usbDevices.push(tmpDisk);
-	}
-
-	for(var i=0; i<allUsbStatusArray.length; i++){
-		for(var j=0; j<allUsbStatusArray[i].length; j++){
-			if(allUsbStatusArray[i][j][0].charAt(0) > usbPortMax) continue;
-
-			if(allUsbStatusArray[i][j].join().search("storage") == -1 || allUsbStatusArray[i][j].length == 0){
-				tmpDisk = new newDisk();
-				tmpDisk.usbPath = allUsbStatusArray[i][j][0].charAt(0);
-				tmpDisk.deviceIndex = usbDevices.length;
-				tmpDisk.node = allUsbStatusArray[i][j][0];
-				tmpDisk.deviceType = allUsbStatusArray[i][j][1];
-
-				if(tmpDisk.deviceType == "printer" && printer_support){
-					var idx = printer_pool().getIndexByValue(tmpDisk.node)
-					if(idx == -1)
-						continue;
-
-					tmpDisk.manufacturer = printer_manufacturers()[idx];
-					tmpDisk.deviceName = tmpDisk.manufacturer + " " + printer_models()[idx].replace(tmpDisk.manufacturer, "");
-					tmpDisk.serialNum = printer_serialn()[idx];
-				}
-				else if(tmpDisk.deviceType == "modem" && modem_support){
-					var idx = modem_pool().getIndexByValue(tmpDisk.node)
-					if(idx == -1)
-						continue;
-
-					tmpDisk.manufacturer = modem_manufacturers()[idx];
-					tmpDisk.deviceName = tmpDisk.manufacturer + " " + modem_models()[idx].replace(tmpDisk.manufacturer, "");
-					tmpDisk.serialNum = modem_serialn()[idx];
-				}
-
-				if(tmpDisk.deviceName != "") usbDevices.push(tmpDisk);
-			}
-		}	
-	}
-}
-
-if(usb_support)
-	genUsbDevices();
 
 var wan_line_state = "<% nvram_get("dsltmp_adslsyncsts"); %>";
 var wlan0_radio_flag = "<% nvram_get("wl0_radio"); %>";
@@ -438,6 +312,10 @@ function change_wl_unit_status(_unit){
 	document.titleForm.target = "";
 	document.titleForm.submit();
 }
+
+var wans_dualwan = new Array();
+wans_dualwan = '<% nvram_get("wans_dualwan"); %>'.split(" ");
+var usb_index = wans_dualwan.getIndexByValue("usb");
 
 var banner_code, menu_code="", menu1_code="", menu2_code="", tab_code="", footer_code;
 function show_banner(L3){// L3 = The third Level of Menu
@@ -500,6 +378,12 @@ function show_banner(L3){// L3 = The third Level of Menu
 	banner_code +='<input type="hidden" name="wan_unit" value="<% get_wan_unit(); %>">\n';
 	banner_code +='</form>\n';
 
+	banner_code +='<form method="post" name="rebootForm" action="apply.cgi" target="hidden_frame">\n';
+	banner_code +='<input type="hidden" name="action_mode" value="reboot">\n';
+	banner_code +='<input type="hidden" name="action_script" value="">\n';
+	banner_code +='<input type="hidden" name="action_wait" value="<% get_default_reboot_time(); %>">\n';
+	banner_code +='</form>\n';
+
 	banner_code +='<div class="banner1" align="center"><img src="images/New_ui/asustitle.png" width="218" height="54" align="left">\n';
 	banner_code +='<div style="margin-top:13px;margin-left:-90px;*margin-top:0px;*margin-left:0px;" align="center"><span id="modelName_top" onclick="this.focus();" class="modelName_top"><#Web_Title2#></span></div>';
 
@@ -554,7 +438,7 @@ function show_banner(L3){// L3 = The third Level of Menu
 	
 	if(printer_support)
 		banner_code +='<td width="30"><div id="printer_status" class="printstatusoff"></div></td>\n';
-
+	
 	banner_code +='<td width="17"></td>\n';
 	banner_code +='</tr></tbody></table></td></tr></table>\n';
 
@@ -562,25 +446,25 @@ function show_banner(L3){// L3 = The third Level of Menu
 
 	show_loading_obj();	
 	show_top_status();
-	updateStatus_AJAX();
+	updateStatus();
 }
 
 //Level 3 Tab
 var tabtitle = new Array();
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "WDS", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "Passpoint");
-tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "IPTV", "Switch Control");
+tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "IPTV", "<#Switch_itemname#>");
 tabtitle[3] = new Array("", "<#menu5_3_1#>", "<#dualwan#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>", "<#NAT_passthrough_itemname#>", "<#menu5_4_4#>");
 tabtitle[4] = new Array("", "<#UPnPMediaServer#>", "<#menu5_4_1#>", "<#menu5_4_2#>");
 tabtitle[5] = new Array("", "IPv6");
 tabtitle[6] = new Array("", "<#BOP_isp_heart_item#>", "VPN Client");	//, "VPN Client Advanced"
 tabtitle[7] = new Array("", "<#menu5_1_1#>", "<#menu5_5_2#>", "<#menu5_5_5#>", "<#menu5_5_3#>", "<#menu5_5_4#>", "<#menu5_5_6#>");
-tabtitle[8] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>", "Performance tuning", "<#menu_dsl_setting#>", "<#menu_feedback#>", "SNMP");
+tabtitle[8] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>", "Performance tuning", "<#menu_dsl_setting#>", "<#menu_feedback#>", "SNMP", "TR-069");
 tabtitle[9] = new Array("", "<#menu5_7_2#>", "<#menu5_7_4#>", "<#menu5_7_3#>", "IPv6", "<#menu5_7_6#>", "<#menu5_7_5#>", "<#menu_dsl_log#>", "<#Connections#>");
 tabtitle[10] = new Array("", "<#Network_Analysis#>", "Netstat", "<#NetworkTools_WOL#>", "SMTP Client");
 if(bwdpi_support){
 	tabtitle[11] = new Array("", "<#Bandwidth_monitor#>", "QoS", "<#Adaptive_History#>", "<table style='margin-top:-10px \\9;'><tr><td><img src='/images/ROG_Logo.png' style='border:0px;width:32px;'></td><td>ROG First</td></tr></table>", "<#traffic_monitor#>");
-	tabtitle[12] = new Array("", "<#AiProtection_Home#>", "Parental Controls");
+	tabtitle[12] = new Array("", "<#AiProtection_Home#>", "<#Parental_Control#>");
 	tabtitle[13] = new Array("", "Time Limits", "<#AiProtection_filter#>");
 }
 else{
@@ -596,9 +480,9 @@ tablink[2] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.as
 tablink[3] = new Array("", "Advanced_WAN_Content.asp", "Advanced_WANPort_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp", "Advanced_NATPassThrough_Content.asp", "Advanced_Modem_Content.asp");
 tablink[4] = new Array("", "mediaserver.asp", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp");
 tablink[5] = new Array("", "Advanced_IPv6_Content.asp");
-tablink[6] = new Array("", "Advanced_VPN_Content.asp", "Advanced_VPNClient_Content.asp");
+tablink[6] = new Array("", "Advanced_VPN_PPTP.asp", "Advanced_VPNClient_Content.asp");
 tablink[7] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_KeywordFilter_Content.asp","Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp", "Advanced_Firewall_IPv6_Content.asp");
-tablink[8] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp", "Advanced_PerformanceTuning_Content.asp", "Advanced_ADSL_Content.asp", "Advanced_Feedback.asp", "Advanced_SNMP_Content.asp");
+tablink[8] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp", "Advanced_PerformanceTuning_Content.asp", "Advanced_ADSL_Content.asp", "Advanced_Feedback.asp", "Advanced_SNMP_Content.asp", "Advanced_TR069_Content.asp");
 tablink[9] = new Array("", "Main_LogStatus_Content.asp", "Main_WStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_IPV6Status_Content.asp", "Main_RouteStatus_Content.asp", "Main_IPTStatus_Content.asp", "Main_AdslStatus_Content.asp", "Main_ConnStatus_Content.asp");
 tablink[10] = new Array("", "Main_Analysis_Content.asp", "Main_Netstat_Content.asp", "Main_WOL_Content.asp", "SMTP_Client.asp");
 if(bwdpi_support){
@@ -651,7 +535,7 @@ function remove_url(){
 		remove_menu_item("SMTP_Client.asp");	
 	}
 
-	if(isSupport("nopp") && (odmpid == "TM-AC1900")) {	//MODELDEP: TM-AC1900
+	if(isSupport("nopp") /*&& (odmpid == "TM-AC1900")*/) {	//MODELDEP: TM-AC1900
 		menuL2_title[2]="";
 		menuL2_link[2]="";
 	}
@@ -871,18 +755,26 @@ function remove_url(){
 			menuL2_link[7] = "";
 		}
 		else{
-			remove_menu_item("Advanced_VPN_Content.asp");
+			remove_menu_item("Advanced_VPN_PPTP.asp");
 			menuL2_link[7] = "Advanced_VPNClient_Content.asp";
 		}
 	}
-	else if(pptpd_support && !openvpnd_support){
+	else {
 		if(!vpnc_support){
 			remove_menu_item("Advanced_VPNClient_Content.asp");
+		}
+		if(!pptpd_support && openvpnd_support) {
+			tablink[6][1] = "Advanced_VPN_OpenVPN.asp";
+			menuL2_link[7] = "Advanced_VPN_OpenVPN.asp";
 		}
 	}
 
 	if(!SwitchCtrl_support){
 		remove_menu_item("Advanced_SwitchCtrl_Content.asp");		
+	}
+
+	if(!tr069_support){
+		remove_menu_item("Advanced_TR069_Content.asp");
 	}
 
 	if(!snmp_support){
@@ -1041,26 +933,33 @@ function show_menu(){
 	if(current_url.indexOf("cloud") == 0)
 		L1 = 6;
 
-	if(current_url.indexOf("ParentalControl") == 0){
-		traffic_L2_dx = 13;
-		traffic_L3_dx = 0;
-
-		if(bwdpi_support){
-			traffic_L1_dx = 3;
-			traffic_L3_dx = 2
-		}
-		else{
-			traffic_L1_dx = 4;			
-		}
-		
-		if(yadns_support){
-			traffic_L3_dx = 1;		
-		}
-		
-		L1 = traffic_L1_dx;	
-		L2 = traffic_L2_dx;
-		L3 = traffic_L3_dx;
-	}	
+	if(!bwdpi_support){
+		if(current_url.indexOf("ParentalControl") == 0){
+			traffic_L1_dx = 4;
+			traffic_L2_dx = 13;
+			traffic_L3_dx = 0;
+			
+			if(yadns_support){
+				traffic_L3_dx = 1;		
+			}
+			
+			L1 = traffic_L1_dx;	
+			L2 = traffic_L2_dx;
+			L3 = traffic_L3_dx;
+		}	
+	}
+	else{
+		if(current_url.indexOf("ParentalControl") == 0){
+			traffic_L2_dx = 13;
+			traffic_L3_dx = 2;				
+			if(yadns_support){
+				traffic_L3_dx = 1;		
+			}
+			
+			L2 = traffic_L2_dx;
+			L3 = traffic_L3_dx;		
+		}	
+	}
 	
 	if(current_url.indexOf("AdaptiveQoS_Adaptive") == 0){
 			traffic_L1_dx = 4;
@@ -1069,51 +968,21 @@ function show_menu(){
 			L2 = traffic_L2_dx;
 			L3 = 2;
 	}
-	
-	if(current_url.indexOf("AiProtection_") == 0){
-		traffic_L3_dx = 0;
 		
-		if(bwdpi_support){			
-			traffic_L1_dx = 3;
-			traffic_L2_dx = 13;
-			if(current_url.indexOf("ParentalControl.asp") == 0 || current_url.indexOf("AiProtection_WebProtector") == 0)
-				traffic_L3_dx = 2;
-			else if(current_url.indexOf("AiProtection_HomeProtection.asp") == 0)
-				traffic_L3_dx = 1;
-			else if(current_url.indexOf("AiProtection_ADsBlocking.asp") == 0)
-				traffic_L3_dx = 3;
-		}
-		else{
-			traffic_L1_dx = 4;
-			traffic_L2_dx = 13;
-			if(yadns_support && current_url.indexOf("ParentalControl.asp") == 0)
-				traffic_L3_dx = 2	
-		}
-		
+	if(current_url.indexOf("Advanced_VPN") == 0){
+		traffic_L1_dx = 0;
+		traffic_L2_dx = 7;
 		L1 = traffic_L1_dx;	
 		L2 = traffic_L2_dx;
-		L3 = traffic_L3_dx;
-		
-		if(current_url.indexOf("AiProtection_Group") == 0){
-			traffic_L1_dx = 4;
-			traffic_L2_dx = 13;
-			L1 = traffic_L1_dx;	
-			L2 = traffic_L2_dx;
-			L3 = 1;
+		L3 = 1;
+		if(current_url.indexOf("Advanced_VPNClient_Content.asp") == 0 && (pptpd_support || openvpnd_support)) {
+			L3 = 2;
 		}
-	}
-	
-	if(current_url.indexOf("Advanced_VPNAdvanced") == 0){
-			traffic_L1_dx = 0;
-			traffic_L2_dx = 7;
-			L1 = traffic_L1_dx;	
-			L2 = traffic_L2_dx;
-			L3 = 1;
 	}	
 	
 	if(	current_url.indexOf("Advanced_DSL_Content") == 0 || 
-			current_url.indexOf("Advanced_VDSL_Content") == 0 ||
-			current_url.indexOf("Advanced_WAN_Content") == 0){
+		current_url.indexOf("Advanced_VDSL_Content") == 0 ||
+		current_url.indexOf("Advanced_WAN_Content") == 0){
 			traffic_L1_dx = 0;
 			traffic_L2_dx = 4;
 			L1 = traffic_L1_dx;	
@@ -1133,11 +1002,11 @@ function show_menu(){
 
 	//Feedback Info
 	if(current_url.indexOf("Feedback_Info") == 0){
-			traffic_L1_dx = 0;
-			traffic_L2_dx = 9;
-			L1 = traffic_L1_dx;	
-			L2 = traffic_L2_dx;
-			L3 = 5;
+		traffic_L1_dx = 0;
+		traffic_L2_dx = 9;
+		L1 = traffic_L1_dx;	
+		L2 = traffic_L2_dx;
+		L3 = 5;
 	}
 	
 	show_banner(L3);
@@ -1211,7 +1080,7 @@ function show_menu(){
 
 	// Tabs
 	if(L3){
-		if(L2 == traffic_L2_dx){ // if tm
+		if(L2 == traffic_L2_dx && L2 != 13){ // if tm
 			tab_code = '<table border="0" cellspacing="0" cellpadding="0"><tr>\n';
 			for(var i=1; i < tabtitle[traffic_L2_dx-1].length; ++i){
 				if(tabtitle[traffic_L2_dx-1][i] == "")
@@ -1235,7 +1104,7 @@ function show_menu(){
 			}
 			tab_code += '</tr></table>\n';		
 		}
-
+		
 		$("tabMenu").innerHTML = tab_code;
 	}
 
@@ -1310,14 +1179,27 @@ function show_menu(){
 	}else
 		notification.samba = 0;
 
-	//dsl_loss_sync  0: default / 1:need to feedback / 2:Feedback submitted
+	//Higher priority: DLA intervened case dsltmp_dla_modified 0: default / 1:need to feedback / 2:Feedback submitted 
+	//Lower priority: dsl_loss_sync  0: default / 1:need to feedback / 2:Feedback submitted
 	// Only DSL-AC68U for now
-	if(dsl_loss_sync == 1){         //case6	
-		notification.array[6] = 'noti_loss_sync';
+	if(dsl_loss_sync == 1){         //case9(case10 act) + case6
+		
 		notification.loss_sync = 1;
-		notification.desc[6] = Untranslated.ASUSGATE_note6;
-		notification.action_desc[6] = Untranslated.ASUSGATE_act_feedback;
-		notification.clickCallBack[6] = "location.href = '/Advanced_Feedback.asp';"
+		if(dla_modified == 1){
+				notification.array[9] = 'noti_dla_modified';
+				notification.desc[9] = Untranslated.ASUSGATE_note9;
+				notification.action_desc[9] = Untranslated.ASUSGATE_DSL_setting;
+				notification.clickCallBack[9] = "location.href = '/Advanced_ADSL_Content.asp?af=dslx_dla_enable';";
+				notification.array[10] = 'noti_dla_modified_fb';
+				notification.action_desc[10] = Untranslated.ASUSGATE_act_feedback;
+				notification.clickCallBack[10] = "location.href = '/Advanced_Feedback.asp';";
+		}
+		else{
+				notification.array[6] = 'noti_loss_sync';
+				notification.desc[6] = Untranslated.ASUSGATE_note6;
+				notification.action_desc[6] = Untranslated.ASUSGATE_act_feedback;
+				notification.clickCallBack[6] = "location.href = '/Advanced_Feedback.asp';";
+		}						
 	}else
 		notification.loss_sync = 0;
 		
@@ -1350,221 +1232,214 @@ function show_menu(){
 }
 
 function addOnlineHelp(obj, keywordArray){
+	var support_path = "support/Knowledge-searchV2/?";
 	var faqLang = {
-		EN : "/us",
-		TW : "/us",
-		CN : "/us",
-		CZ : "/us",
-		PL : "/us",
-		RU : "/us",
-		DE : "/us",
-		FR : "/us",
-		TR : "/us",
-		TH : "/us",
-		MS : "/us",
-		NO : "/us",
-		FI : "/us",
-		DA : "/us",
-		SV : "/us",
-		BR : "/us",
-		JP : "/us",
-		ES : "/us",
-		IT : "/us",
-		UK : "/us",
-		HU : "/us",
-		RO : "/us",
-		KR : "/us"
+		EN : "/us/",
+		TW : "/us/",
+		CN : "/us/",
+		CZ : "/us/",
+		PL : "/us/",
+		RU : "/us/",
+		DE : "/us/",
+		FR : "/us/",
+		TR : "/us/",
+		TH : "/us/",
+		MS : "/us/",
+		NO : "/us/",
+		FI : "/us/",
+		DA : "/us/",
+		SV : "/us/",
+		BR : "/us/",
+		JP : "/us/",
+		ES : "/us/",
+		IT : "/us/",
+		UK : "/us/",
+		HU : "/us/",
+		RO : "/us/",
+		KR : "/us/"
 	}
 
 	// exception start
 	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "download" 
 			&& (keywordArray[2] == "master" || keywordArray[2] == "associated")){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-		faqLang.RU = "/ru";
-		faqLang.MS = "/my";
-		faqLang.SV = "/se";
-		faqLang.UK = "/ua";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+		faqLang.RU = "/ru/";
+		faqLang.MS = "/my/";
+		faqLang.SV = "/se/";
+		faqLang.UK = "/ua/";
 	
 	}else if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "ez" && keywordArray[2] == "printer"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-                faqLang.RU = "/ru";
-                faqLang.MS = "/my";
-                faqLang.SV = "/se";
-                faqLang.UK = "/ua";
-		faqLang.DA = "/dk";
-		faqLang.FI = "/fi";
-		faqLang.TR = "/tr";
-		faqLang.DE = "/de";
-		faqLang.PL = "/pl";
-		faqLang.CZ = "/cz";
+		support_path = "support/Search-Result-Detail/552E63A3-FA2D-1265-7029-84467B3993E4/?";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+        faqLang.RU = "/ru/";
+        faqLang.MS = "/my/";
+        faqLang.SV = "/se/";
+        faqLang.UK = "/ua/";
+		faqLang.DA = "/dk/";
+		faqLang.FI = "/fi/";
+		faqLang.TR = "/tr/";
+		faqLang.DE = "/de/";
+		faqLang.PL = "/pl/";
+		faqLang.CZ = "/cz/";
 	
 	}else if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "lpr"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-                faqLang.RU = "/ru";
-                faqLang.MS = "/my";
-                faqLang.SV = "/se";
-                faqLang.UK = "/ua";
-                faqLang.FI = "/fi";
-                faqLang.TR = "/tr";
-                faqLang.DE = "/de";
-                faqLang.PL = "/pl";
-                faqLang.CZ = "/cz";
-		faqLang.BR = "/br";
-		faqLang.TH = "/th";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+        faqLang.RU = "/ru/";
+        faqLang.MS = "/my/";
+        faqLang.SV = "/se/";
+        faqLang.UK = "/ua/";
+        faqLang.FI = "/fi/";
+        faqLang.TR = "/tr/";
+        faqLang.DE = "/de/";
+        faqLang.PL = "/pl/";
+        faqLang.CZ = "/cz/";
+		faqLang.BR = "/br/";
+		faqLang.TH = "/th/";
 	
 	}else	if(keywordArray[0] == "mac" && keywordArray[1] == "lpr"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-                faqLang.RU = "/ru";
-                faqLang.MS = "/my";
-                faqLang.SV = "/se";
-                faqLang.UK = "/ua";
-                faqLang.FI = "/fi";
-                faqLang.TR = "/tr";
-                faqLang.DE = "/de";
-                faqLang.PL = "/pl";
-                faqLang.CZ = "/cz";
-                faqLang.BR = "/br";
-                faqLang.TH = "/th";
-
-	
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+        faqLang.RU = "/ru/";
+        faqLang.MS = "/my/";
+        faqLang.SV = "/se/";
+        faqLang.UK = "/ua/";
+        faqLang.FI = "/fi/";
+        faqLang.TR = "/tr/";
+        faqLang.DE = "/de/";
+        faqLang.PL = "/pl/";
+        faqLang.CZ = "/cz/";
+        faqLang.BR = "/br/";
+        faqLang.TH = "/th/";
 	}else	if(keywordArray[0] == "monopoly" && keywordArray[1] == "mode"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
 	
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "IPv6"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.MS = "/my";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.MS = "/my/";
 	
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "VPN"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-		faqLang.MS = "/my";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+		faqLang.MS = "/my/";
 	
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "DMZ"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-		faqLang.MS = "/my";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+		faqLang.MS = "/my/";
 	
 	}else	if(keywordArray[0] == "set" && keywordArray[1] == "up" && keywordArray[2] == "specific" && keywordArray[3] == "IP" && keywordArray[4] == "addresses"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";		
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";		
 	
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "port" && keywordArray[2] == "forwarding"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-		faqLang.MS = "/my";
-		faqLang.RU = "/ru";
-		faqLang.UK = "/ua";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+		faqLang.MS = "/my/";
+		faqLang.RU = "/ru/";
+		faqLang.UK = "/ua/";
 	
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "port" && keywordArray[2] == "trigger"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.ES = "/es";		
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.ES = "/es/";		
 	
 	}else	if(keywordArray[0] == "UPnP"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-                faqLang.RU = "/ru";
-                faqLang.MS = "/my";
-                faqLang.UK = "/ua";
-                faqLang.PL = "/pl";
-	
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+        faqLang.RU = "/ru/";
+        faqLang.MS = "/my/";
+        faqLang.UK = "/ua/";
+        faqLang.PL = "/pl/";
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "hard" && keywordArray[2] == "disk" 
 		&& keywordArray[3] == "USB"){
 
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "Traffic" && keywordArray[2] == "Monitor"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-		faqLang.RU = "/ru";
-                faqLang.MS = "/my";
-                faqLang.UK = "/ua";
-	
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+		faqLang.RU = "/ru/";
+        faqLang.MS = "/my/";
+        faqLang.UK = "/ua/";
 	}else	if(keywordArray[0] == "ASUSWRT" && keywordArray[1] == "samba" && keywordArray[2] == "Windows"
 			&& keywordArray[3] == "network" && keywordArray[4] == "place"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.MY = "/my";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.MY = "/my/";
 	
 	}else	if(keywordArray[0] == "samba"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
 	
 	}else	if(keywordArray[0] == "WOL" && keywordArray[1] == "wake" && keywordArray[2] == "on"
 			&& keywordArray[3] == "lan"){
 	
 	}else	if(keywordArray[0] == "WOL" && keywordArray[1] == "BIOS"){
-		faqLang.TW = "/tw";
-		faqLang.CN = ".cn";
-		faqLang.FR = "/fr";
-		faqLang.ES = "/es";
-		faqLang.RU = "/ru";
-                faqLang.MS = "/my";
-                faqLang.KR = "/kr";
-                faqLang.UK = "/ua";
-
+		faqLang.TW = "/tw/";
+		faqLang.CN = ".cn/";
+		faqLang.FR = "/fr/";
+		faqLang.ES = "/es/";
+		faqLang.RU = "/ru/";
+        faqLang.MS = "/my/";
+        faqLang.KR = "/kr/";
+        faqLang.UK = "/ua/";
 	}else{
-		faqLang.BR = "/us";
-		faqLang.CN = "/us";
-		faqLang.CZ = "/us";
-		faqLang.DA = "/us";
-		faqLang.DE = "/us";
-		faqLang.EN = "/us";
-		faqLang.ES = "/us";
-		faqLang.FI = "/us";
-		faqLang.FR = "/us";
-		faqLang.HU = "/us";
-		faqLang.IT = "/us";
-		faqLang.JP = "/us";
-		faqLang.KR = "/us";
-		faqLang.MS = "/us";
-		faqLang.NO = "/us";
-		faqLang.PL = "/us";
-		faqLang.RO = "/us";
-		faqLang.RU = "/us";
-		faqLang.SV = "/us";
-		faqLang.TH = "/us";
-		faqLang.TR = "/us";
-		faqLang.TW = "/us";
-		faqLang.UK = "/us";
-
+		faqLang.BR = "/us/";
+		faqLang.CN = "/us/";
+		faqLang.CZ = "/us/";
+		faqLang.DA = "/us/";
+		faqLang.DE = "/us/";
+		faqLang.EN = "/us/";
+		faqLang.ES = "/us/";
+		faqLang.FI = "/us/";
+		faqLang.FR = "/us/";
+		faqLang.HU = "/us/";
+		faqLang.IT = "/us/";
+		faqLang.JP = "/us/";
+		faqLang.KR = "/us/";
+		faqLang.MS = "/us/";
+		faqLang.NO = "/us/";
+		faqLang.PL = "/us/";
+		faqLang.RO = "/us/";
+		faqLang.RU = "/us/";
+		faqLang.SV = "/us/";
+		faqLang.TH = "/us/";
+		faqLang.TR = "/us/";
+		faqLang.TW = "/us/";
+		faqLang.UK = "/us/";
 	}		
 	// exception end	
-	
 
 	if(obj){
-		//obj.href = "http://support.asus.com/search.aspx?SLanguage=";
-		//obj.href += faqLang.<% nvram_get("preferred_lang"); %>;
 		obj.href = "http://www.asus.com"+faqLang.<% nvram_get("preferred_lang"); %>;
-		obj.href += "/support/Knowledge-searchV2/?";
+		obj.href += support_path;
 		obj.href += "keyword=";
 		for(var i=0; i<keywordArray.length; i++){
 			obj.href += keywordArray[i];
@@ -1590,11 +1465,11 @@ function Block_chars(obj, keywordArray){
 	// check if char in the specified array
 	if(obj.value){
 		for(var i=0; i<keywordArray.length; i++){
-				if( obj.value.indexOf(keywordArray[i]) >= 0){						
-					alert(keywordArray+ " are invalid characters.");
-					obj.focus();
-					return false;
-				}	
+			if( obj.value.indexOf(keywordArray[i]) >= 0){						
+				alert(keywordArray+ " are invalid characters.");
+				obj.focus();
+				return false;
+			}	
 		}
 	}
 	
@@ -1619,8 +1494,8 @@ function cal_height(){
 	// index.asp
 	else if($("NM_table")){
 		var statusPageHeight = 720;
-		if(table_height < 740)
-			table_height = 740;
+		if(table_height < 800)
+			table_height = 800;
 		$("NM_table").style.height = table_height + "px";
 
 		var root = document.compatMode == 'BackCompat' ? document.body : document.documentElement;
@@ -1639,26 +1514,28 @@ function cal_height(){
 	// APP Install
 	else if($("applist_table")){
 		if(sw_mode == 2 || sw_mode == 3 || sw_mode == 4)
-				table_height = table_height + 120;				
+			table_height = table_height + 120;				
 		else
-				table_height = table_height + 40;	//2
+			table_height = table_height + 40;	//2
+		
 		$("applist_table").style.height = table_height + "px";		
 		tableClientHeight = $("applist_table").clientHeight;
 		
 		if(navigator.appName.indexOf("Microsoft") >= 0)
-						contentObj[0].style.height = contentObj[0].clientHeight + 18 + "px";
+			contentObj[0].style.height = contentObj[0].clientHeight + 18 + "px";
 	}
 	// PrinterServ
 	else if($("printerServer_table")){
 		if(sw_mode == 2 || sw_mode == 4)
-				table_height = table_height + 90;
+			table_height = table_height + 90;
 		else
-				table_height = table_height + 2;
+			table_height = table_height + 2;
+		
 		$("printerServer_table").style.height = table_height + "px";		
 		tableClientHeight = $("printerServer_table").clientHeight;
 		
 		if(navigator.appName.indexOf("Microsoft") >= 0)
-						contentObj[0].style.height = contentObj[0].clientHeight + 18 + "px";
+			contentObj[0].style.height = contentObj[0].clientHeight + 18 + "px";
 	}	
 
 	/*// overflow
@@ -1698,36 +1575,39 @@ function show_footer(){
 
 	if(based_modelid =="RT-N12" || hw_ver.search("RTN12") != -1){	//MODELDEP : RT-N12
 		if( hw_ver.search("RTN12HP") != -1){	//RT-N12HP
-				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12HP/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12HP/HelpDesk_Download/" target="_blank">Utility</a>';
+				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12HP/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12HP/HelpDesk_Download/" target="_blank">Utility</a>';
 		}else if(hw_ver.search("RTN12B1") != -1){ //RT-N12B1
-				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12_B1/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12_B1/HelpDesk_Download/" target="_blank">Utility</a>';
+				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12_B1/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12_B1/HelpDesk_Download/" target="_blank">Utility</a>';
 		}else if(hw_ver.search("RTN12C1") != -1){ //RT-N12C1
-				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12_C1/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12_C1/HelpDesk_Download/" target="_blank">Utility</a>';
+				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12_C1/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12_C1/HelpDesk_Download/" target="_blank">Utility</a>';
 		}else if(hw_ver.search("RTN12D1") != -1){ //RT-N12D1
-				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12_D1/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/RTN12_D1/HelpDesk_Download/" target="_blank">Utility</a>';
+				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12_D1/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/RTN12_D1/HelpDesk_Download/" target="_blank">Utility</a>';
 		}else{	//RT-N12
-				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/'+ model_name_supportsite +'/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/' + model_name_supportsite + '/HelpDesk_Download/" target="_blank">Utility</a>';	
+				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/'+ model_name_supportsite +'/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/' + model_name_supportsite + '/HelpDesk_Download/" target="_blank">Utility</a>';	
 		}
 	}
-	else if(productid == "DSL-N55U"){	//MODELDEP : DSL-N55U
+	else if(based_modelid == "DSL-N55U"){	//MODELDEP : DSL-N55U
 		footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLN55U_Annex_A/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLN55U_Annex_A/HelpDesk_Download/" target="_blank">Utility</a>';
 	}
-	else if(productid == "DSL-N55U-B"){	//MODELDEP : DSL-N55U-B
-		footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLN55U_Annex_B/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLN55U_Annex_B/HelpDesk_Download/" target="_blank">Utility</a>';
+	else if(based_modelid == "DSL-N55U-B"){	//MODELDEP : DSL-N55U-B
+								
+		footer_codk_Download += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLN55U_Annex_B/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLN55U_Annex_B/HelpDesk_Download/" target="_blank">Utility</a>';
 	}
-	else if(productid == "DSL-AC68U"){	//MODELDEP : DSL-AC68U
-		footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLAC68U/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLAC68U/HelpDesk_Download/" target="_blank">Utility</a>';
-	}
-	else if(productid == "DSL-AC68R"){      //MODELDEP : DSL-AC68R
-                footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLAC68R/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com/Networking/DSLAC68R/HelpDesk_Download/" target="_blank">Utility</a>';
-        }
 	else{
+		if(based_modelid == "DSL-AC68U" || based_modelid == "DSL-AC68R" || based_modelid == "RT-N11P")
+			href_lang = "/";	//global only
+
+		if(odmpid == "RT-N12+")
+			model_name_supportsite = "RTN12Plus";
+		else if(odmpid.search("RT-N12E_B") != -1)	//RT-N12E_B or RT-N12E_B1
+			model_name_supportsite = "RTN12E_B1";
+
 		if(tmo_support){
 				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp';	
 				footer_code += '&nbsp|&nbsp<a style="font-weight:bolder;text-decoration:underline;cursor:pointer;" onClick="show_contactus();">Contact ASUS</a><div id="contactus_block" style="position:absolute;z-index:999;width:280px;height:155px;margin-top:-200px;*margin-top:-180px;margin-left:0px;*margin-left:-100px;background-color:#2B373B;box-shadow: 3px 10px 10px #000;-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius:5px;display:none;"></div>';
 		}
 		else
-				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/'+ model_name_supportsite +'/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'/Networking/' + model_name_supportsite + '/HelpDesk_Download/" target="_blank">Utility</a>';	
+				footer_code += '<td width="300" id="bottom_help_link" align="left">&nbsp&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/'+ model_name_supportsite +'/HelpDesk_Manual/" target="_blank">Manual</a>&nbsp|&nbsp<a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="http://www.asus.com'+ href_lang +'Networking/' + model_name_supportsite + '/HelpDesk_Download/" target="_blank">Utility</a>';	
 	}
 
 
@@ -1775,29 +1655,29 @@ function close_contactus(){
 
 function get_supportsite_lang(obj){
 	var faqLang = {
-		EN : "/us",
-		TW : "/tw",
-		CN : ".cn",
-		BR : "/us",	//	/br
-		CZ : "/cz",
-		DA : "/dk",
-		DE : "/de",
-		ES : "/es",
-		FI : "/fi",
-		FR : "/fr",
-		HU : "/hu",
-		IT : "/it",
-		JP : "/us",	//	/jp
-		KR : "/us",	//	/kr
-		MS : "/my",
-		NO : "/no",
-		PL : "/pl",
-		RO : "/ro",
-		RU : "/ru",
-		SV : "/se",
-		TH : "/th",
-		TR : "/tr",
-		UK : "/ua"
+		EN : "/us/",
+		TW : "/tw/",
+		CN : ".cn/",
+		BR : "/br/",
+		CZ : "/cz/",
+		DA : "/dk/",
+		DE : "/de/",
+		ES : "/es/",
+		FI : "/fi/",
+		FR : "/fr/",
+		HU : "/hu/",
+		IT : "/it/",
+		JP : "/jp/",
+		KR : "/kr/",
+		MS : "/my/",
+		NO : "/no/",
+		PL : "/pl/",
+		RO : "/ro/",
+		RU : "/ru/",
+		SV : "/se/",
+		TH : "/th/",
+		TR : "/tr/",
+		UK : "/ua/"
 	}	
 	
 	var href_lang = faqLang.<% nvram_get("preferred_lang"); %>;
@@ -1806,38 +1686,36 @@ function get_supportsite_lang(obj){
 
 function search_supportsite(obj){
 	var faqLang = {
-		EN : "/us",
-		TW : "/tw",
-		CN : ".cn",
-		BR : "/us",	//	/br	
-		CZ : "/us",	//	/cz
-		DA : "/us",	//	/dk
-		DE : "/de",
-		ES : "/es",
-		FI : "/us",	//	/fi
-		FR : "/fr",
-		HU : "/us",	//	/hu
-		IT : "/us",	//	/it
-		JP : "/jp",
-		KR : "/kr",
-		MS : "/my",
-		NO : "/us",	//	/no
-		PL : "/pl",
-		RO : "/us",	//	/ro
-		RU : "/ru",
-		SV : "/us",	//	/se
-		TH : "/us",	//	/th
-		TR : "/tr",
-		UK : "/ua"
+		EN : "/us/",
+		TW : "/tw/",
+		CN : ".cn/",
+		BR : "/br/",
+		CZ : "/cz/",
+		DA : "/dk/",
+		DE : "/de/",
+		ES : "/es/",
+		FI : "/fi/",
+		FR : "/fr/",
+		HU : "/hu/",
+		IT : "/it/",
+		JP : "/jp/",
+		KR : "/kr/",
+		MS : "/my/",
+		NO : "/no/",
+		PL : "/pl/",
+		RO : "/ro/",
+		RU : "/ru/",
+		SV : "/se/",
+		TH : "/th/",
+		TR : "/tr/",
+		UK : "/ua/"
 	}	
 	
 		var keywordArray = $("FAQ_input").value.split(" ");
 		var faq_href;
-		//faq_href = "http://support.asus.com/search.aspx?SLanguage=";
-		//faq_href += faqLang.<% nvram_get("preferred_lang"); %>;
 		faq_href = "http://www.asus.com";		
 		faq_href += faqLang.<% nvram_get("preferred_lang"); %>;
-		faq_href += "/support/Knowledge-searchV2/?";
+		faq_href += "support/Knowledge-searchV2/?";
 		faq_href += "keyword=";
 		for(var i=0; i<keywordArray.length; i++){
 			faq_href += keywordArray[i];
@@ -1958,7 +1836,7 @@ function show_top_status(){
 			$('elliptic_ssid_5g_2').innerHTML = extend_display_ssid(topbanner_ssid_5g_2)+"...";
 		}
 		else{
-			$('topbanner_ssid_5g_2').innerHTML = topbanner_ssid_5g_2;
+			$('elliptic_ssid_5g_2').innerHTML = topbanner_ssid_5g_2;
 		}
 		$('elliptic_ssid_5g_2').title = "5 GHz: \n"+ssid_status_5g_2;
 	}
@@ -2080,7 +1958,12 @@ function extend_display_ssid(ssid){		//"&amp;"5&; "&lt;"4< ; "&gt;"4> ; "&nbsp;"
 }
 
 function go_setting(page){
+	if(tmo_support && isMobile()){
+		location.href = "/MobileQIS_Login.asp";
+	}
+	else{
 		location.href = page;
+	}
 }
 
 function go_setting_parent(page){
@@ -2093,7 +1976,7 @@ function show_time(){
 	JS_timeObj3 = checkTime(JS_timeObj.getHours()) + ":" +
 				  			checkTime(JS_timeObj.getMinutes()) + ":" +
 				  			checkTime(JS_timeObj.getSeconds());
-	$('systemtime').innerHTML ="<a href='/Advanced_System_Content.asp'>" + JS_timeObj3 + "</a>";
+	$('systemtime').innerHTML ="<a href='/Advanced_System_Content.asp'>" + JS_timeObj3 + "</a>"; 
 	systime_millsec += 1000;		
 	
 	stime_ID = setTimeout("show_time();", 1000);
@@ -2226,7 +2109,7 @@ function show_selected_language(){
 			break;
 		}	
 		case 'UK':{
-			$('selected_lang').innerHTML = "Ukrainian";
+			$('selected_lang').innerHTML = "Український";
 			break;
 		}		
 	}
@@ -2270,14 +2153,7 @@ function logout(){
 
 function reboot(){
 	if(confirm("<#Main_content_Login_Item7#>")){
-		if(document.form.current_page){
-			if(document.form.current_page.value.indexOf("Advanced_FirmwareUpgrade_Content")>=0
-		  	 || document.form.current_page.value.indexOf("Advanced_SettingBackup_Content")>=0)
-					document.form.removeAttribute('enctype');
-		}
-
-		FormActions("apply.cgi", "reboot", "", "<% get_default_reboot_time(); %>");
-		document.form.submit();
+		document.rebootForm.submit();
 	}
 }
 
@@ -2376,6 +2252,13 @@ function showtext(obj, str){
 		obj.innerHTML = str;//*/
 }
 
+function showtext2(obj, str, visible){
+	if(obj){
+		obj.innerHTML = str;
+		obj.style.display = (visible) ? "" : "none";
+	}
+}
+
 function showhtmlspace(ori_str){
 	var str = "", head, tail_num;
 	
@@ -2424,241 +2307,6 @@ function IEKey(){
 
 function NSKey(){
 	return event.which;
-}
-
-function is_string(o, event){
-	keyPressed = event.keyCode ? event.keyCode : event.which;
-
-	if(keyPressed >= 0 && keyPressed <= 126)
-		return true;
-	else{
-		alert('<#JS_validchar#>');
-		return false;
-	}	
-}
-
-function validate_string(string_obj, flag){
-	if(string_obj.value.charAt(0) == '"'){
-		if(flag != "noalert")
-			alert('<#JS_validstr1#> ["]');
-		
-		string_obj.value = "";
-		string_obj.focus();
-		
-		return false;
-	}
-	else{
-		invalid_char = "";
-		
-		for(var i = 0; i < string_obj.value.length; ++i){
-			if(string_obj.value.charAt(i) < ' ' || string_obj.value.charAt(i) > '~'){
-				invalid_char = invalid_char+string_obj.value.charAt(i);
-			}
-		}
-		
-		if(invalid_char != ""){
-			if(flag != "noalert")
-				alert("<#JS_validstr2#> '"+invalid_char+"' !");
-			string_obj.value = "";
-			string_obj.focus();
-			
-			return false;
-		}
-	}
-	
-	return true;
-}
-
-function validate_hex(obj){
-	var obj_value = obj.value
-	var re = new RegExp("[^a-fA-F0-9]+","gi");
-	
-	if(re.test(obj_value))
-		return false;
-	else
-		return true;
-}
-
-function validate_psk(psk_obj, wl_unit){
-	var psk_length = psk_obj.value.length;
-	
-	if(psk_length < 8){
-				alert("<#JS_passzero#>");
-				psk_obj.value = "00000000";
-				psk_obj.focus();
-				psk_obj.select();
-				
-				return false;
-	}
-			
-	if(psk_length > 64){
-				alert("<#JS_PSK64Hex#>");
-				psk_obj.focus();
-				psk_obj.select();
-				return false;
-	}
-			
-	if(psk_length >= 8 && psk_length <= 63 && !validate_string(psk_obj)){
-				alert("<#JS_PSK64Hex#>");
-				psk_obj.focus();
-				psk_obj.select();
-				return false;
-	}
-			
-	if(psk_length == 64 && !validate_hex(psk_obj)){
-				alert("<#JS_PSK64Hex#>");
-				psk_obj.focus();
-				psk_obj.select();				
-				return false;
-	}
-	
-	return true;
-}
-
-function validate_wlkey(key_obj){
-	var wep_type = document.form.wl_wep_x.value;
-	var iscurrect = true;
-	var str = "<#JS_wepkey#>";
-
-	if(wep_type == "0")
-		iscurrect = true;	// do nothing
-	else if(wep_type == "1"){
-		if(key_obj.value.length == 5 && validate_string(key_obj)){
-			document.form.wl_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else if(key_obj.value.length == 10 && validate_hex(key_obj)){
-			document.form.wl_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else{
-			str += "(<#WLANConfig11b_WEPKey_itemtype1#>)";
-			
-			iscurrect = false;
-		}
-	}
-	else if(wep_type == "2"){
-		if(key_obj.value.length == 13 && validate_string(key_obj)){
-			document.form.wl_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else if(key_obj.value.length == 26 && validate_hex(key_obj)){
-			document.form.wl_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else{
-			str += "(<#WLANConfig11b_WEPKey_itemtype2#>)";
-			
-			iscurrect = false;
-		}
-	}
-	else{
-		alert("System error!");
-		iscurrect = false;
-	}
-	
-	if(iscurrect == false){
-		alert(str);
-		
-		key_obj.focus();
-		key_obj.select();
-	}
-	
-	return iscurrect;
-}
-
-function validate_ssidchar(ch){
-	if(ch >= 32 && ch <= 126)
-		return false;
-	
-	return true;
-}
-
-function validate_hostname(obj){        
-        var re = new RegExp("^[a-zA-Z0-9][a-zA-Z0-9\-\_]+$","gi");
-        if(re.test(obj.value)){
-                return "";
-        }
-	else if(location.pathname == "/" || location.pathname == "/index.asp"){
-                return Untranslated.JS_validclientname;
-        }
-	else{
-		return "<#JS_validhostname#>";
-	}
-}
-
-function validate_account(string_obj, flag){
-	var invalid_char = "";
-
-	if(string_obj.value.charAt(0) == ' '){
-		if(flag != "noalert")
-			alert('<#JS_validstr1#> [  ]');
-
-		string_obj.value = "";
-		string_obj.focus();
-
-		if(flag != "noalert")
-			return false;
-		else
-			return '<#JS_validstr1#> [&nbsp;&nbsp;&nbsp;]';
-	}
-	else if(string_obj.value.charAt(0) == '-'){
-		if(flag != "noalert")
-			alert('<#JS_validstr1#> [-]');
-
-		string_obj.value = "";
-		string_obj.focus();
-
-		if(flag != "noalert")
-			return false;
-		else
-			return '<#JS_validstr1#> [-]';
-	}
-
-	for(var i = 0; i < string_obj.value.length; ++i){
-		if(validate_ssidchar(string_obj.value.charCodeAt(i))){
-			invalid_char = invalid_char+string_obj.value.charAt(i);
-		}	
-		
-		if(string_obj.value.charAt(i) == '"'
-				||  string_obj.value.charAt(i) == '/'
-				||  string_obj.value.charAt(i) == '\\'
-				||  string_obj.value.charAt(i) == '['
-				||  string_obj.value.charAt(i) == ']'
-				||  string_obj.value.charAt(i) == ':'
-				||  string_obj.value.charAt(i) == ';'
-				||  string_obj.value.charAt(i) == '|'
-				||  string_obj.value.charAt(i) == '='
-				||  string_obj.value.charAt(i) == ','
-				||  string_obj.value.charAt(i) == '+'
-				||  string_obj.value.charAt(i) == '*'
-				||  string_obj.value.charAt(i) == '?'
-				||  string_obj.value.charAt(i) == '<'
-				||  string_obj.value.charAt(i) == '>'
-				||  string_obj.value.charAt(i) == '@'
-				||  string_obj.value.charAt(i) == ' '
-				){
-			invalid_char = invalid_char+string_obj.value.charAt(i);
-		}
-	}
-
-	if(invalid_char != ""){
-		if(flag != "noalert")
-			alert("<#JS_validstr2#> ' "+invalid_char+" ' !");
-
-		string_obj.value = "";
-		string_obj.focus();
-
-		if(flag != "noalert")
-			return false;
-		else
-			return "<#JS_validstr2#> ' "+invalid_char+" ' !";
-	}
-
-	if(flag != "noalert")
-		return true;
-	else
-		return "";
 }
 
 function checkDuplicateName(newname, targetArray){
@@ -2850,19 +2498,6 @@ function inputHideCtrl(obj, flag){
 	return true;
 }
 
-function detectUSBStatus(){
-	$j.ajax({
-		url: '/update_diskinfo.asp',
-		dataType: 'script',
-		error: function(xhr){
-			detectUSBStatus();
-		},
-		success: function(){
-			genUsbDevices();
-		}
-  });
-}
-
 function hadPlugged(deviceType){
 	if(allUsbStatusArray.join().search(deviceType) != -1)
 		return true;
@@ -2870,50 +2505,16 @@ function hadPlugged(deviceType){
 	return false;
 }
 
-//Update current status via AJAX
-var updateStatusCounter = 0;
-var AUTOLOGOUT_MAX_MINUTE = parseInt('<% nvram_get("http_autologout"); %>');
-function updateStatus_AJAX(){
-	if(stopFlag == 1)
-		return false;
+//Update current system status
+var AUTOLOGOUT_MAX_MINUTE = parseInt('<% nvram_get("http_autologout"); %>') * 20;
+function updateStatus(){
+	if(stopFlag == 1) return false;
+	if(AUTOLOGOUT_MAX_MINUTE == 1) location = "Logout.asp"; // 0:disable auto logout, 1:trigger auto logout. 
 
-	if(updateStatusCounter > parseInt(20 * AUTOLOGOUT_MAX_MINUTE))
-		location = "Logout.asp";
-
-	if(window.XMLHttpRequest)
-		makeRequest_status('/ajax_status.xml');
-	else if(window.ActiveXObject)
-		makeRequest_status_ie('/ajax_status.xml');
-	else{
-		alert("Your browser does not support XMLHTTP.");
-		stopFlag = 1;
-	}
-
-	setTimeout("updateStatus_AJAX();", 3000);
-}
-
-function makeRequest_status(url){
-	var xmlHttp = new XMLHttpRequest();
-
-	xmlHttp.onreadystatechange = function(){
-		if(xmlHttp.readyState == 4 && xmlHttp.status == 200){
-			refresh_info_status(xmlHttp.responseXML);
-		}
-	}
-
-	xmlHttp.open('GET', url, true);
-	xmlHttp.send(null);
-}
-
-var xmlHttp_ActiveX;
-function makeRequest_status_ie(file){
-	xmlHttp_ActiveX = new ActiveXObject("Microsoft.XMLDOM");
-	xmlHttp_ActiveX.async = false;
-
-	if(xmlHttp_ActiveX.readyState==4){
-		xmlHttp_ActiveX.load(file);
-		setTimeout("refresh_info_status(xmlHttp_ActiveX);", 1000);
-	}
+	require(['/require/modules/makeRequest.js'], function(makeRequest){
+		if(AUTOLOGOUT_MAX_MINUTE != 0) AUTOLOGOUT_MAX_MINUTE--;
+		makeRequest.start('/ajax_status.xml', refreshStatus, function(){stopFlag = 1;});
+	});
 }
 
 var link_status;
@@ -2927,8 +2528,9 @@ var vpnc_proto = '<% nvram_get("vpnc_proto");%>';
 var vpnd_state;	
 var qtn_state_t = '';
 
-function refresh_info_status(xmldoc){
-	if(AUTOLOGOUT_MAX_MINUTE > 0) updateStatusCounter++;
+function refreshStatus(xmldoc){
+	// restart ajax
+	setTimeout(function(){updateStatus();}, 3000);
 
 	var devicemapXML = xmldoc.getElementsByTagName("devicemap");
 	var wanStatus = devicemapXML[0].getElementsByTagName("wan");
@@ -2948,6 +2550,7 @@ function refresh_info_status(xmldoc){
 	wlan1_radio_flag = wanStatus[12].firstChild.nodeValue.replace("wlan1_radio_flag=", "");
 	data_rate_info_2g = wanStatus[13].firstChild.nodeValue.replace("data_rate_info_2g=", "");
 	data_rate_info_5g = wanStatus[14].firstChild.nodeValue.replace("data_rate_info_5g=", "");
+	data_rate_info_5g_2 = wanStatus[15].firstChild.nodeValue.replace("data_rate_info_5g_2=", "");
 
 	var vpnStatus = devicemapXML[0].getElementsByTagName("vpn");
 	vpnc_proto = vpnStatus[0].firstChild.nodeValue.replace("vpnc_proto=", "");
@@ -2961,7 +2564,7 @@ function refresh_info_status(xmldoc){
 	qtn_state_t = qtn_state[0].firstChild.nodeValue.replace("qtn_state=", "");
 
 	var usbStatus = devicemapXML[0].getElementsByTagName("usb");
-	allUsbStatus = usbStatus[0].firstChild.nodeValue.toString();
+	allUsbStatus = usbStatus[0].firstChild.nodeValue.toString();	
 
 	if(vpnc_proto == "openvpn"){
 		if('<% nvram_get("vpn_client_unit"); %>' == 1)
@@ -3049,8 +2652,10 @@ function refresh_info_status(xmldoc){
 		if(location.pathname == "/" || location.pathname == "/index.asp"){
 			if(wlc_band == 0)		// show repeater and media bridge date rate
 				var speed_info = data_rate_info_2g;	
-			else
+			else if (wlc_band == 1)
 				var speed_info = data_rate_info_5g;
+			else if (wlc_band == 2)
+				var speed_info = data_rate_info_5g_2;
 			
 			$('speed_status').innerHTML = speed_info;
 		}	
@@ -3089,18 +2694,31 @@ function refresh_info_status(xmldoc){
 				location.href = "/index.asp";
 		}
 
-		if(allUsbStatus.search("storage") == -1 || usbDevices.length == 0){
-			$("usb_status").className = "usbstatusoff";
-			$("usb_status").onclick = function(){overHint(2);}
-		}
-		else{
-			$("usb_status").className = "usbstatuson";
-			$("usb_status").onclick = function(){openHint(24,2);}
-		}
-		$("usb_status").onmouseover = function(){overHint(2);}
-		$("usb_status").onmouseout = function(){nd();}
+	 	require(['/require/modules/diskList.js'], function(diskList){
+	 		var usbDevicesList = diskList.list();
+	 		var index = 0, find_storage = 0;
 
-		allUsbStatusTmp = allUsbStatus;
+			for(index = 0; index < usbDevicesList.length; index++){
+				if(usbDevicesList[index].deviceType == "storage"){
+					find_storage = 1;
+					break;
+				}
+			}
+
+			if(find_storage){
+				$("usb_status").className = "usbstatuson";
+				$("usb_status").onclick = function(){openHint(24,2);}				
+			}
+			else{
+				$("usb_status").className = "usbstatusoff";
+				$("usb_status").onclick = function(){overHint(2);}			
+			}
+
+			$("usb_status").onmouseover = function(){overHint(2);}
+			$("usb_status").onmouseout = function(){nd();}
+
+			allUsbStatusTmp = allUsbStatus;
+		});
 	}
 
 	// usb.printer
@@ -3192,7 +2810,7 @@ var notification = {
 	clickCallBack: [],
 	notiClick: function(){
 		// stop flashing after the event is checked.
-		cookie_help.set("notification_history", [notification.upgrade, notification.wifi_2g ,notification.wifi_5g ,notification.ftp ,notification.samba ,notification.loss_sync ,notification.experience_FB ,notification.notif_hint].join(), 1000);
+		cookie.set("notification_history", [notification.upgrade, notification.wifi_2g ,notification.wifi_5g ,notification.ftp ,notification.samba ,notification.loss_sync ,notification.experience_FB ,notification.notif_hint].join(), 1000);
 		clearInterval(notification.flashTimer);
 		document.getElementById("notification_status").className = "notification_on";
 
@@ -3208,10 +2826,17 @@ var notification = {
 
 		  			if( i == 2 ){					  				
 		  				txt += '<tr><td width="100%"><div style="text-decoration:underline;text-align:right;color:#FFCC00;font-size:14px;cursor: pointer" onclick="' + notification.clickCallBack[i] + '">' + notification.action_desc[i] + '</div></td></tr>';
-		  				if(notification.array[3] != null && notification.array[i] != "off")
-		  				txt += '<tr><td width="100%"><div style="text-decoration:underline;text-align:right;color:#FFCC00;font-size:14px;cursor: pointer" onclick="' + notification.clickCallBack[i+1] + '">' + notification.action_desc[i+1] + '</div></td></tr>';
+		  				if(band5g_support && notification.array[3] != null && notification.array[i] != "off")
+		  						txt += '<tr><td width="100%"><div style="text-decoration:underline;text-align:right;color:#FFCC00;font-size:14px;cursor: pointer" onclick="' + notification.clickCallBack[i+1] + '">' + notification.action_desc[i+1] + '</div></td></tr>';
 		  				notification.array[3] = "off";
-		  			}else{
+		  			}
+						else if( i == 9){
+		  				txt += '<tr><td width="100%"><div style="text-decoration:underline;text-align:right;color:#FFCC00;font-size:14px;cursor: pointer" onclick="' + notification.clickCallBack[i] + '">' + notification.action_desc[i] + '</div></td></tr>';
+							if(notification.array[10] != null && notification.array[10] != "off")
+									txt += '<tr><td width="100%"><div style="text-decoration:underline;text-align:right;color:#FFCC00;font-size:14px;cursor: pointer" onclick="' + notification.clickCallBack[i+1] + '">' + notification.action_desc[i+1] + '</div></td></tr>';
+							notification.array[10] = "off";
+						}
+		  			else{
 	  					txt += '<tr><td><table width="100%"><div style="text-decoration:underline;text-align:right;color:#FFCC00;font-size:14px;cursor: pointer" onclick="' + notification.clickCallBack[i] + '">' + notification.action_desc[i] + '</div></table></td></tr>';
 		  			}
 
@@ -3241,7 +2866,7 @@ var notification = {
 			tarObj1.className = "notification_on1";
 		}
 
-		if(this.flash == "on" && getCookie_help("notification_history") != [notification.upgrade, notification.wifi_2g ,notification.wifi_5g ,notification.ftp ,notification.samba ,notification.loss_sync ,notification.experience_FB ,notification.notif_hint].join()){
+		if(this.flash == "on" && cookie.get("notification_history") != [notification.upgrade, notification.wifi_2g ,notification.wifi_5g ,notification.ftp ,notification.samba ,notification.loss_sync ,notification.experience_FB ,notification.notif_hint].join()){
 			notification.flashTimer = setInterval(function(){
 				tarObj.className = (tarObj.className == "notification_on") ? "notification_off" : "notification_on";
 			}, 1000);
@@ -3299,18 +2924,6 @@ function change_wl_unit(){
 	document.form.submit();
 }
 
-function compareWirelessClient(target1, target2){
-	if(target1.length != target2.length)
-		return (target2.length-target1.length);
-	
-	for(var i = 0; i < target1.length; ++i)
-		for(var j = 0; j < 3; ++j)
-			if(target1[i][j] != target2[i][j])
-					return 1;
-	
-	return 0;
-}
-
 function addNewScript(scriptName){
 	var script = document.createElement("script");
 	script.type = "text/javascript";
@@ -3324,26 +2937,6 @@ function addNewCSS(cssName){
 	cssNode.rel = 'stylesheet';
 	cssNode.href = cssName;
 	document.getElementsByTagName("head")[0].appendChild(cssNode);
-}
-
-var cookie_help = {
-	set: function(key, value, days) {
-		document.cookie = key + '=' + value + '; expires=' +
-			(new Date(new Date().getTime() + ((days ? days : 14) * 86400000))).toUTCString() + '; path=/';
-	}
-};
-
-function getCookie_help(c_name){
-	if (document.cookie.length > 0){ 
-		c_start=document.cookie.indexOf(c_name + "=")
-		if (c_start!=-1){ 
-			c_start=c_start + c_name.length+1 
-			c_end=document.cookie.indexOf(";",c_start)
-			if (c_end==-1) c_end=document.cookie.length
-			return unescape(document.cookie.substring(c_start,c_end))
-		} 
-	}
-	return null;
 }
 
 function unload_body(){
@@ -3365,8 +2958,9 @@ function isMobile(){
 	
 	if(	navigator.userAgent.match(/iPhone/i) || 
 		navigator.userAgent.match(/iPod/i)    ||
-		//(navigator.userAgent.match(/Android/i) && (navigator.userAgent.match(/Mobile/i) || navigator.userAgent.match(/Tablet/i))) ||
-		(navigator.userAgent.match(/Android/i) && navigator.userAgent.match(/Mobile/i))||			//Android phone
+		navigator.userAgent.match(/iPad/i)    ||
+		(navigator.userAgent.match(/Android/i) && (navigator.userAgent.match(/Mobile/i) || navigator.userAgent.match(/Tablet/i))) ||
+		//(navigator.userAgent.match(/Android/i) && navigator.userAgent.match(/Mobile/i))||			//Android phone
 		(navigator.userAgent.match(/Opera/i) && (navigator.userAgent.match(/Mobi/i) || navigator.userAgent.match(/Mini/i))) ||		// Opera mobile or Opera Mini
 		navigator.userAgent.match(/IEMobile/i)	||		// IE Mobile
 		navigator.userAgent.match(/BlackBerry/i)		//BlackBerry
@@ -3515,6 +3109,9 @@ function decodeURIComponentSafe(_ascii){
 var isNewFW = function(FWVer){
 	var Latest_firmver = FWVer.split("_");
 
+	if (odmpid == "TM-AC1900" && bl_version == "2.1.2.2")
+		return true;
+
 	if(typeof Latest_firmver[0] !== "undefined" && typeof Latest_firmver[1] !== "undefined" && typeof Latest_firmver[2] !== "undefined"){
 		var Latest_firm = parseInt(Latest_firmver[0]);
 		var Latest_buildno = parseInt(Latest_firmver[1]);
@@ -3564,23 +3161,40 @@ function getBrowser_info(){
 
 	return browser;
 }
-function regen_band(){
+function regen_band(obj_name){
 	var band_desc = new Array();
 	var band_value = new Array();
 	current_band = '<% nvram_get("wl_unit"); %>';
-	for(i=1;i<wl_info.band2g_len+1;i++){
-		if(wl_info.band2g_len == 1)
+	for(i=1;i<wl_info.band2g_total+1;i++){
+		if(wl_info.band2g_total == 1)
 			band_desc.push("2.4GHz");
 		else
 			band_desc.push("2.4GHz-"+i);
 	}
-	for(i=1;i<wl_info.band5g_len+1;i++){
-		if(wl_info.band5g_len == 1)
+	for(i=1;i<wl_info.band5g_total+1;i++){
+		if(wl_info.band5g_total == 1)
 			band_desc.push("5GHz");
 		else
 			band_desc.push("5GHz-"+i);	
 	}
-	for(i=0;i<wl_info.wl_if_len;i++)
+	for(i=0;i<wl_info.wl_if_total;i++)
 		band_value.push(i);
-	add_options_x2(document.form.wl_unit, band_desc, band_value, current_band);
+	add_options_x2(obj_name, band_desc, band_value, current_band);
 }
+
+var cookie = {
+	set: function(key, value, days) {
+		document.cookie = key + '=' + value + '; expires=' +
+			(new Date(new Date().getTime() + ((days ? days : 14) * 86400000))).toUTCString() + '; path=/';
+	},
+
+	get: function(key) {
+		var r = ('; ' + document.cookie + ';').match(key + '=(.*?);');
+		return r ? r[1] : null;
+	},
+
+	unset: function(key) {
+		document.cookie = key + '=; expires=' +
+			(new Date(1)).toUTCString() + '; path=/';
+	}
+};

@@ -71,12 +71,13 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 		cd release/src-ra-3.0
 		make rt-n65u
 	
-	d. rt-n14u (/ rt-ac52u / rt-ac51u / rt-n11p)
+	d. rt-n14u (/ rt-ac52u / rt-ac51u / rt-n11p / rt-n54u)
 		cd release/src-ra-mt7620
 		make rt-n14u
 		( make rt-ac52u  )
 		( make rt-ac51u  )
 		( make rt-n11p   )
+		( make rt-n54u   )
 
 	e. rt-ac56u (/ rt-ac68u / rt-n18uhp)
 		cd release/src-rt-6.x.4708

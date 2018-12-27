@@ -8,7 +8,7 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
-<title><#Web_Title#> - Switch Control</title>
+<title><#Web_Title#> - <#Switch_itemname#></title>
 <link rel="stylesheet" type="text/css" href="index_style.css"> 
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <link rel="stylesheet" type="text/css" href="other.css">
@@ -16,15 +16,14 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script type="text/javascript" src="/detect.js"></script>
+<script type="text/javascript" src="/validator.js"></script>
 
 <script>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
 	show_menu();
 	if(based_modelid == "RT-N14U" || based_modelid == "RT-N11P" ||
-	   based_modelid == "RT-AC52U" || based_modelid == "RT-AC51U")
+	   based_modelid == "RT-AC52U" || based_modelid == "RT-AC51U" || based_modelid == "RT-N54U")
 	{
 		inputCtrl(document.form.switch_ctrlrate_unknown_unicast, 0);
 		inputCtrl(document.form.switch_ctrlrate_unknown_multicast, 0);
@@ -41,10 +40,10 @@ function applyRule(){
 }
 
 function valid_form(){
-	if(!validate_range(document.form.switch_ctrlrate_unknown_unicast, 0, 1024) ||
-	   !validate_range(document.form.switch_ctrlrate_unknown_multicast, 0, 1024) ||
-	   !validate_range(document.form.switch_ctrlrate_multicast, 0, 1024) ||
-	   !validate_range(document.form.switch_ctrlrate_broadcast, 0, 1024)){
+	if(!validator.range(document.form.switch_ctrlrate_unknown_unicast, 0, 1024) ||
+	   !validator.range(document.form.switch_ctrlrate_unknown_multicast, 0, 1024) ||
+	   !validator.range(document.form.switch_ctrlrate_multicast, 0, 1024) ||
+	   !validator.range(document.form.switch_ctrlrate_broadcast, 0, 1024)){
 			return false;
 	}
 		
@@ -109,37 +108,37 @@ function valid_form(){
 	<tr>
 		  <td bgcolor="#4D595D" valign="top"  >
 		  <div>&nbsp;</div>
-		  <div class="formfonttitle"><#menu5_2#> - Switch Control</div>
+		  <div class="formfonttitle"><#menu5_2#> - <#Switch_itemname#></div>
       <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-      <div class="formfontdesc">Setting <#Web_Title2#> switch control.</div>
+      <div class="formfontdesc"><#SwitchCtrl_desc#></div>
 		  
 		  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 		  	
 			<tr>
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
         	<td><!-- valid_muliticast(); -->
-          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_unknown_unicast" name="switch_ctrlrate_unknown_unicast" value="<% nvram_get("switch_ctrlrate_unknown_unicast"); %>" onkeypress="return is_number(this, event);">
+          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_unknown_unicast" name="switch_ctrlrate_unknown_unicast" value="<% nvram_get("switch_ctrlrate_unknown_unicast"); %>" onkeypress="return validator.isNumber(this, event);">
           </td>
 			</tr>
 
 				<tr>
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(6, 7);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
         	<td>
-          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_unknown_multicast" name="switch_ctrlrate_unknown_multicast" value="<% nvram_get("switch_ctrlrate_unknown_multicast"); %>" onkeypress="return is_number(this, event);">
+          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_unknown_multicast" name="switch_ctrlrate_unknown_multicast" value="<% nvram_get("switch_ctrlrate_unknown_multicast"); %>" onkeypress="return validator.isNumber(this, event);">
           </td>
 				</tr>
 
 				<tr>
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(6, 7);"><#RouterConfig_GWMulticast_Multicast_itemname#></a></th>
         	<td>
-          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_multicast" name="switch_ctrlrate_multicast" value="<% nvram_get("switch_ctrlrate_multicast"); %>" onkeypress="return is_number(this, event);">
+          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_multicast" name="switch_ctrlrate_multicast" value="<% nvram_get("switch_ctrlrate_multicast"); %>" onkeypress="return validator.isNumber(this, event);">
           </td>
 				</tr>
 
 				<tr>
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(6, 7);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
         	<td>
-          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_broadcast" name="switch_ctrlrate_broadcast" value="<% nvram_get("switch_ctrlrate_broadcast"); %>" onkeypress="return is_number(this, event);">
+          	<input type="text" maxlength="4" class="input_6_table" id="switch_ctrlrate_broadcast" name="switch_ctrlrate_broadcast" value="<% nvram_get("switch_ctrlrate_broadcast"); %>" onkeypress="return validator.isNumber(this, event);">
           </td>
 				</tr>
       	<tr>

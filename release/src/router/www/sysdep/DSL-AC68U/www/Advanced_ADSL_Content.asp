@@ -16,13 +16,12 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script type="text/javascript" src="/detect.js"></script>
 
 <script>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
 	show_menu();
+	change_dla("<% nvram_get("dslx_dla_enable"); %>");
 }
 
 function applyRule(){
@@ -36,6 +35,14 @@ function valid_form(){
 	return true;
 }
 
+function change_dla(enable){
+	if(enable == "1") {
+		document.form.dslx_snrm_offset.disabled = true;
+	}
+	else {
+		document.form.dslx_snrm_offset.disabled = false;
+	}
+}
 </script>
 </head>
 
@@ -128,6 +135,17 @@ function valid_form(){
 						<option value="4" <% nvram_match("dslx_annex", "4", "selected"); %>>Annex A/I/J/L/M</option>
 						<option value="5" <% nvram_match("dslx_annex", "5", "selected"); %>>Annex B</option>
 						<option value="6" <% nvram_match("dslx_annex", "6", "selected"); %>>Annex B/J/M</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,10);">Dynamic Line Adjustment (ADSL)</a>
+				</th>
+				<td>
+					<select id="" class="input_option" name="dslx_dla_enable" onchange='change_dla(this.value);'>
+						<option value="1" <% nvram_match("dslx_dla_enable", "1", "selected"); %>><#btn_Enabled#></option>
+						<option value="0" <% nvram_match("dslx_dla_enable", "0", "selected"); %>><#btn_Disabled#></option>
 					</select>
 				</td>
 			</tr>
@@ -262,12 +280,23 @@ function valid_form(){
 			</tr>
 			<tr>
 				<th>
-					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,3);">Bitswap</a>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,3);">Bitswap (ADSL)</a>
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_bitswap">
 						<option value="1" <% nvram_match("dslx_bitswap", "1", "selected"); %>><#btn_Enabled#></option>
 						<option value="0" <% nvram_match("dslx_bitswap", "0", "selected"); %>><#btn_Disabled#></option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,3);">Bitswap (VDSL)</a>
+				</th>
+				<td>
+					<select id="" class="input_option" name="dslx_vdsl_bitswap">
+						<option value="1" <% nvram_match("dslx_vdsl_bitswap", "1", "selected"); %>><#btn_Enabled#></option>
+						<option value="0" <% nvram_match("dslx_vdsl_bitswap", "0", "selected"); %>><#btn_Disabled#></option>
 					</select>
 				</td>
 			</tr>
@@ -284,12 +313,23 @@ function valid_form(){
 			</tr>
 			<tr>
 				<th>
-					Improved Impulse Noise Protection (G.998.4)
+					G.INP (G.998.4)
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_ginp">
 						<option value="1" <% nvram_match("dslx_ginp", "1", "selected"); %>><#btn_Enabled#></option>
 						<option value="0" <% nvram_match("dslx_ginp", "0", "selected"); %>><#btn_Disabled#></option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					G.vector (G.993.5)
+				</th>
+				<td>
+					<select id="" class="input_option" name="dslx_vdsl_vectoring">
+						<option value="1" <% nvram_match("dslx_vdsl_vectoring", "1", "selected"); %>><#btn_Enabled#></option>
+						<option value="0" <% nvram_match("dslx_vdsl_vectoring", "0", "selected"); %>><#btn_Disabled#></option>
 					</select>
 				</td>
 			</tr>

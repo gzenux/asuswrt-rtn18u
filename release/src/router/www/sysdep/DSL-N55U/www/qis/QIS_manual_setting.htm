@@ -458,16 +458,6 @@ function btnNext() {
 	}
 }
 
-function gotoIndex(){
-	if (w_Setting == "0") {
-		alert("<#QIS_recommand_encryption#>");	
-		location.href = '/qis/QIS_wireless.htm';
-	}
-	else {
-		parent.location.href = '/index.asp';
-	}
-}
-
 function update_dsl_info(){
 	$j.ajax({
 		url: '/start_dsl_autodet.asp',
@@ -517,11 +507,11 @@ function update_dsl_info(){
 							<span class="description_down"><#Manual_Setting_Title#></span>
 						</td>
 					</tr>
-					<tr id="home_button">
+					<!--tr id="home_button">
 						<td align="right">
 							<img onclick="gotoIndex();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
 						</td>
-					</tr>
+					</tr-->
 				</table>
 			</div>
 			<div style="margin:5px;"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>

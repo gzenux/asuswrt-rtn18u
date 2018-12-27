@@ -8,7 +8,7 @@ CFLAGS += -idirafter$(LINUXDIR)/arch/arm/include -idirafter$(LINUXDIR)/include
 LDFLAGS += $(EXTRALDFLAGS2)
 LDFLAGS += -L$(TOP)/bwdpi -lbwdpi
 LDFLAGS += -L$(TOP)/sqlite/.libs -lsqlite3
-#LDFLAGS += -lpthread
+LDFLAGS += -lpthread
 
 ifeq ($(RTCONFIG_QTN),y)
 CFLAGS += -I$(TOP)/libqcsapi_client
@@ -25,7 +25,7 @@ endif
 ifeq ($(wildcard $(SRCBASE)/router/bwdpi_sqlite/*.c),)
 all:
 	-cp -f prebuilt/bwdpi_sqlite bwdpi_sqlite
-	-cp -f prebuilt/bwdpi_sqlite libbwdpi_sql.so
+	-cp -f prebuilt/libbwdpi_sql.so libbwdpi_sql.so
 else
 all: bwdpi_sqlite libbwdpi_sql.so
 endif

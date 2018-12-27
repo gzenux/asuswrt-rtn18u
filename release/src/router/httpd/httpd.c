@@ -845,15 +845,15 @@ handle_request(void)
 //2008.08 magic{
 #ifdef RTCONFIG_TMOBILE	
 	if (file[0] == '\0' || file[len-1] == '/'){
-		x_Setting = nvram_get_int("x_Setting");
-		if(x_Setting)
-			file = "index.asp";
-		else
-			file = "MobileQIS_Login.asp";
+		file = "MobileQIS_Login.asp";
 	}	
 #else
-	if (file[0] == '\0' || file[len-1] == '/')
-		file = "index.asp";
+	if (file[0] == '\0' || file[len-1] == '/'){
+		if (is_firsttime())
+			file = "QIS_wizard.htm";
+		else
+			file = "index.asp";
+	}
 #endif
 
 
@@ -921,7 +921,7 @@ handle_request(void)
 
 #ifdef RTCONFIG_TMOBILE
 	        isAjaxLogin = 0;
-        	if(!strcmp(file, "AjaxLogin.asp")){
+        	if(!strcmp(file, "AjaxLogin.asp") || !strcmp(file, "start_apply.htm")){
                 	isAjaxLogin = 1;
         	}
 #endif
@@ -959,6 +959,9 @@ handle_request(void)
 							&& !strstr(url, ".gif")
 							&& !strstr(url, ".png"))
 						http_login(login_ip_tmp, url);
+#ifdef RTCONFIG_TMOBILE
+					if (strstr(url, "AjaxLogin.asp")) http_login(login_ip_tmp, url);
+#endif
 				}
 			}
 
@@ -991,7 +994,11 @@ handle_request(void)
 #endif
 			}
 
-			if(!strstr(file, ".cgi") && !strstr(file, "syslog.txt") && !(strstr(file,".CFG")) && !check_if_file_exist(file)){
+			if(!strstr(file, ".cgi") && !strstr(file, "syslog.txt") && !(strstr(file,".CFG")) && !check_if_file_exist(file)
+#ifdef RTCONFIG_USB_MODEM
+					&& !strstr(file, "modemlog.txt")
+#endif
+					){
 				send_error( 404, "Not Found", (char*) 0, "File not found." );
 				return;
 			}
@@ -1016,11 +1023,7 @@ handle_request(void)
 	}
 
 	if(!fromapp) {
-#ifdef RTCONFIG_TMOBILE
-		if(!strcmp(file, "Logout.asp") || !strcmp(file, "AjaxLogin.asp")){
-#else
 		if(!strcmp(file, "Logout.asp")){
-#endif
 			isLogout = 1;
 			http_logout(login_ip_tmp);
 		}

@@ -9,15 +9,16 @@
 
 //#define BLOCKLOCAL
 
-#define pc_dbg(fmt, args...) do{ \
+#if 0
+#define _dprintf(fmt, args...) do{ \
 		FILE *fp = fopen("/dev/console", "a+"); \
 		if(fp){ \
-			fprintf(fp, "[pc_dbg: %s] ", __FUNCTION__); \
+			fprintf(fp, "[_dprintf: %s] ", __FUNCTION__); \
 			fprintf(fp, fmt, ## args); \
 			fclose(fp); \
 		} \
 	}while(0)
-
+#endif
 
 pc_event_s *initial_event(pc_event_s **target_e){
 	pc_event_s *tmp_e;
@@ -71,7 +72,7 @@ pc_event_s *get_event_list(pc_event_s **target_list, char *target_string){
 	foreach_60(word, target_string, next_word){
 		if(n_t){
 			if(initial_event(follow_e_list) == NULL){
-				pc_dbg("No memory!!(follow_e_list)\n");
+				_dprintf("No memory!!(follow_e_list)\n");
 				continue;
 			}
 
@@ -136,7 +137,7 @@ pc_event_s *get_event_list(pc_event_s **target_list, char *target_string){
 
 pc_event_s *cp_event(pc_event_s **dest, const pc_event_s *src){
 	if(initial_event(dest) == NULL){
-		pc_dbg("No memory!!(dest)\n");
+		_dprintf("No memory!!(dest)\n");
 		return NULL;
 	}
 
@@ -159,14 +160,14 @@ void print_event_list(pc_event_s *e_list){
 	i = 0;
 	for(follow_e = e_list; follow_e != NULL; follow_e = follow_e->next){
 		++i;
-		pc_dbg(" %3dth event:\n", i);
-		pc_dbg("      e_name: %s.\n", follow_e->e_name);
-		pc_dbg("   start_day: %d.\n", follow_e->start_day);
-		pc_dbg("     end_day: %d.\n", follow_e->end_day);
-		pc_dbg("  start_hour: %d.\n", follow_e->start_hour);
-		pc_dbg("    end_hour: %d.\n", follow_e->end_hour);
+		_dprintf(" %3dth event:\n", i);
+		_dprintf("      e_name: %s.\n", follow_e->e_name);
+		_dprintf("   start_day: %d.\n", follow_e->start_day);
+		_dprintf("     end_day: %d.\n", follow_e->end_day);
+		_dprintf("  start_hour: %d.\n", follow_e->start_hour);
+		_dprintf("    end_hour: %d.\n", follow_e->end_hour);
 		if(follow_e->next != NULL)
-			pc_dbg("------------------------------\n");
+			_dprintf("------------------------------\n");
 	}
 }
 
@@ -220,7 +221,7 @@ pc_s *get_all_pc_list(pc_s **pc_list){
 	follow_pc_list = pc_list;
 	foreach_62(word, nvram_safe_get("MULTIFILTER_ENABLE"), next_word){
 		if(initial_pc(follow_pc_list) == NULL){
-			pc_dbg("No memory!!(follow_pc_list)\n");
+			_dprintf("No memory!!(follow_pc_list)\n");
 			continue;
 		}
 
@@ -236,7 +237,7 @@ pc_s *get_all_pc_list(pc_s **pc_list){
 	foreach_62(word, nvram_safe_get("MULTIFILTER_DEVICENAME"), next_word){
 		++i;
 		if(follow_pc == NULL){
-			pc_dbg("*** %3dth Parental Control rule(DEVICENAME) had something wrong!\n", i);
+			_dprintf("*** %3dth Parental Control rule(DEVICENAME) had something wrong!\n", i);
 			return *pc_list;
 		}
 
@@ -250,7 +251,7 @@ pc_s *get_all_pc_list(pc_s **pc_list){
 	foreach_62(word, nvram_safe_get("MULTIFILTER_MAC"), next_word){
 		++i;
 		if(follow_pc == NULL){
-			pc_dbg("*** %3dth Parental Control rule(MAC) had something wrong!\n", i);
+			_dprintf("*** %3dth Parental Control rule(MAC) had something wrong!\n", i);
 			return *pc_list;
 		}
 
@@ -264,7 +265,7 @@ pc_s *get_all_pc_list(pc_s **pc_list){
 	foreach_62(word, nvram_safe_get("MULTIFILTER_MACFILTER_DAYTIME"), next_word){
 		++i;
 		if(follow_pc == NULL){
-			pc_dbg("*** %3dth Parental Control rule(DAYTIME) had something wrong!\n", i);
+			_dprintf("*** %3dth Parental Control rule(DAYTIME) had something wrong!\n", i);
 			return *pc_list;
 		}
 
@@ -280,7 +281,7 @@ pc_s *cp_pc(pc_s **dest, const pc_s *src){
 	pc_event_s *follow_e, **follow_e_list;
 
 	if(initial_pc(dest) == NULL){
-		pc_dbg("No memory!!(dest)\n");
+		_dprintf("No memory!!(dest)\n");
 		return NULL;
 	}
 
@@ -309,12 +310,12 @@ void print_pc_list(pc_s *pc_list){
 	i = 0;
 	for(follow_pc = pc_list; follow_pc != NULL; follow_pc = follow_pc->next){
 		++i;
-		pc_dbg("*** %3dth rule:\n", i);
-		pc_dbg("   enabled: %d.\n", follow_pc->enabled);
-		pc_dbg("    device: %s.\n", follow_pc->device);
-		pc_dbg("       mac: %s.\n", follow_pc->mac);
+		_dprintf("*** %3dth rule:\n", i);
+		_dprintf("   enabled: %d.\n", follow_pc->enabled);
+		_dprintf("    device: %s.\n", follow_pc->device);
+		_dprintf("       mac: %s.\n", follow_pc->mac);
 		print_event_list(follow_pc->events);
-		pc_dbg("******************************\n");
+		_dprintf("******************************\n");
 	}
 }
 
@@ -422,14 +423,14 @@ void config_daytime_string(FILE *fp, char *logaccept, char *logdrop)
 
 	follow_pc = get_all_pc_list(&pc_list);
 	if(follow_pc == NULL){
-		pc_dbg("Couldn't get the Parental-control rules correctly!\n");
+		_dprintf("Couldn't get the Parental-control rules correctly!\n");
 		return;
 	}
 
 	follow_pc = match_enabled_pc_list(pc_list, &enabled_list, 1);
 	free_pc_list(&pc_list);
 	if(follow_pc == NULL){
-		pc_dbg("Couldn't get the enabled rules of Parental-control correctly!\n");
+		_dprintf("Couldn't get the enabled rules of Parental-control correctly!\n");
 		return;
 	}
 
@@ -527,14 +528,14 @@ int count_pc_rules(void)
 
 	follow_pc = get_all_pc_list(&pc_list);
 	if(follow_pc == NULL){
-		pc_dbg("Couldn't get the Parental-control rules correctly!\n");
+		_dprintf("Couldn't get the Parental-control rules correctly!\n");
 		return 0;
 	}
 
 	follow_pc = match_enabled_pc_list(pc_list, &enabled_list, 1);
 	free_pc_list(&pc_list);
 	if(follow_pc == NULL){
-		pc_dbg("Couldn't get the enabled rules of Parental-control correctly!\n");
+		_dprintf("Couldn't get the enabled rules of Parental-control correctly!\n");
 		return 0;
 	}
 

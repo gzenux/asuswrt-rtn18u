@@ -39,7 +39,7 @@ function submitForm(){
 
 function validForm(){
                 if(document.form.dslx_annex[0].checked == false && document.form.dslx_annex[1].checked == false){
-                                alert("No selected Annex mode.");
+                                alert("<#QIS_chooseAnnex_yet#>");
                                 document.form.dslx_annex[0].focus();
                                 return false;
                 }
@@ -50,16 +50,6 @@ function redirect_page(redirect_flag){
 	document.form.action = "/qis/QIS_"+redirect_flag+".htm";
 	document.form.submit();
 }
-
-function gotoIndex(){
-	if (w_Setting == "0") {
-		alert("<#QIS_recommand_encryption#>");
-		redirect_page("wireless");
-	}
-	else
-		parent.location.href = '../index.asp';
-}
-
 
 </script>
 </head>  
@@ -81,9 +71,9 @@ function gotoIndex(){
 			<td align="left">
 				<span class="description_down"><#dslsetting_disc2_setting#></span>
 			</td>
-			<td align="right">
+			<!--td align="right">
 				<img onclick="gotoIndex();" style="cursor:pointer;" align="right" title="Go to Home" src="../images/backtohome.png" onMouseOver="this.src='../images/backtohomeclick.png'" onMouseOut="this.src='../images/backtohome.png'">
-			</td>
+			</td-->
 		</tr>
 	</table>
 </div>

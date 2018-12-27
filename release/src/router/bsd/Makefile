@@ -1,15 +1,9 @@
 #
 # Linux acsd Makefile
 #
-# Copyright (C) 2014, Broadcom Corporation
-# All Rights Reserved.
-# 
-# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
-# the contents of this file may not be disclosed to third parties, copied
-# or duplicated in any form, in whole or in part, without the prior
-# written permission of Broadcom Corporation.
+# $Copyright Broadcom Corporation$
 #
-# $Id: Makefile 401201 2013-05-09 03:06:42Z $
+# $Id: Makefile 401201 2013-05-09 03:06:42Z kenlo $
 #
 
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/common/include -Wall -Werror
@@ -20,6 +14,12 @@ LDFLAGS += -L$(TOP)/nvram$(BCMEX) -lnvram
 LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += -lgcc_s
 
+#ifdef BCMINTERNAL
+ifneq ($(NO_BCMINTERNAL), 1)
+CFLAGS	+= -DBCMINTERNAL
+endif
+CFLAGS	+= -DBCMDBG
+#endif
 
 vpath %.c $(SRCBASE)/shared $(WLAN_ComponentSrcDirs)
 
@@ -30,7 +30,7 @@ else
 all: bsd
 endif
 
-OBJS = bsd_main.o bsd.o bsd_util.o bsd_comm.o bcmwifi_channels.o
+OBJS = bsd_main.o bsd.o bsd_engine.o  bsd_util.o bsd_comm.o bcmwifi_channels.o bsd_default.o
 
 install: all
 	install -d $(INSTALLDIR)/usr/sbin/
@@ -44,3 +44,4 @@ ${OBJS}: bsd.h
 
 bsd: bcmutils.o ${OBJS}
 	$(CC) $(CFLAGS) $^ -o $@  $(LDFLAGS)
+

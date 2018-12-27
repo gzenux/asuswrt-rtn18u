@@ -50,7 +50,7 @@ function wl_chanspec_list_change(){
 												}else if(country == "TW" && parseInt(wl_channel_list_5g[i]) >= 56 && parseInt(wl_channel_list_5g[i]) <= 64){	// belong to 40MHz
 														wl_channel_list_5g[i] = wlextchannel_fourty(wl_channel_list_5g[i]);
 												}
-												else if(tmo_support && document.form.wl_nmode_x.value ==1){
+												else if(document.form.wl_nmode_x.value ==1){
 													wl_channel_list_5g[i] = wlextchannel_fourty(wl_channel_list_5g[i]);
 												}
 												else{	
@@ -85,15 +85,20 @@ function wl_chanspec_list_change(){
 										wl_channel_list_5g[i] = wl_channel_list_5g[i];
 									else
 										wl_channel_list_5g[i] = wlextchannel_fourty(wl_channel_list_5g[i]);	
-								}								
+								}		
+
+								if(country == "TW" && wl_channel_list_5g.indexOf("56u") != -1){			//remove channel 56, only for country code TW
+									var index = wl_channel_list_5g.indexOf("56u");
+									wl_channel_list_5g.splice(index, 1);
+								}
 	
-								if(wl_channel_list_5g.indexOf("116") != -1){			// remove channel 116, 
-									var index = wl_channel_list_5g.indexOf("116");
+								if(wl_channel_list_5g.indexOf("116l") != -1){			// remove channel 116, 
+									var index = wl_channel_list_5g.indexOf("116l");
 									wl_channel_list_5g.splice(index, 1);
 								}
 		
-								if(wl_channel_list_5g.indexOf("140") != -1){			// remove channel 140
-									index = wl_channel_list_5g.indexOf("140");
+								if(wl_channel_list_5g.indexOf("140l") != -1){			// remove channel 140
+									index = wl_channel_list_5g.indexOf("140l");
 									wl_channel_list_5g.splice(index, 1);
 								}
 						}
@@ -347,13 +352,13 @@ function wl_chanspec_list_change(){
 										wl_channel_list_5g_2[i] = wlextchannel_fourty(wl_channel_list_5g_2[i]);	
 								}								
 	
-								if(wl_channel_list_5g_2.indexOf("116") != -1){			// remove channel 116, 
-									var index = wl_channel_list_5g_2.indexOf("116");
+								if(wl_channel_list_5g_2.indexOf("116l") != -1){			// remove channel 116, 
+									var index = wl_channel_list_5g_2.indexOf("116l");
 									wl_channel_list_5g_2.splice(index, 1);
 								}
 		
-								if(wl_channel_list_5g_2.indexOf("140") != -1){			// remove channel 140
-									index = wl_channel_list_5g_2.indexOf("140");
+								if(wl_channel_list_5g_2.indexOf("140l") != -1){			// remove channel 140
+									index = wl_channel_list_5g_2.indexOf("140l");
 									wl_channel_list_5g_2.splice(index, 1);
 								}
 						}
@@ -374,18 +379,12 @@ function wl_chanspec_list_change(){
 
 	/* Reconstruct channel array from new chanspecs */
 	document.form.wl_channel.length = chanspecs.length;
-	if(band == 1){
+	if(band == 1 || band == 2){
 		for (var i in chanspecs){
-			if (chanspecs[i] == 0){
+			if (chanspecs[i] == 0)
 				document.form.wl_channel[i] = new Option("<#Auto#>", chanspecs[i]);
-			}
-			else{
-				if(band == "1")
-					document.form.wl_channel[i] = new Option(chanspecs[i].toString().replace("/80", "").replace("u", "").replace("l", ""), chanspecs[i]);
-				else
-					document.form.wl_channel[i] = new Option(chanspecs[i].toString(), chanspecs[i]);
-			}
-
+			else
+				document.form.wl_channel[i] = new Option(chanspecs[i].toString().replace("/80", "").replace("u", "").replace("l", ""), chanspecs[i]);
 			document.form.wl_channel[i].value = chanspecs[i];
 			if (chanspecs[i] == cur && bw_cap == '<% nvram_get("wl_bw"); %>'){
 				document.form.wl_channel[i].selected = true;
@@ -426,6 +425,7 @@ function wlextchannel_fourty(v){
 	return v;
 }
 
+var wl1_dfs = '<% nvram_get("wl1_dfs"); %>';
 function change_channel(obj){
 	var extend_channel = new Array();
 	var extend_channel_value = new Array();
@@ -481,7 +481,9 @@ function change_channel(obj){
 	
 	if(band == 1){
 		if(country == "EU"){		// for DFS channel
-			if((based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U")){
+			if(based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC69U" || based_modelid == "DSL-AC68U"
+			|| (based_modelid == "RT-AC66U" && wl1_dfs == "1")
+			|| based_modelid == "RT-N66U"){
 				if(document.form.wl_channel.value  == 0){
 					$('dfs_checkbox').style.display = "";
 					document.form.acs_dfs.disabled = false;

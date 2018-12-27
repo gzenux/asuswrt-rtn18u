@@ -77,25 +77,35 @@ function getWANStatus(){
 					++Redirect_count;
 					if(Redirect_count >= 24){
 						Redirect_count = 0;
+						++parent.autodet_annex_counter;
 						if(dsl_autodet_state == "up"){
-								if(extend_autodet == 1){ //(ATM)extend for another (24-9)*5=75 seconds for auto detection to finish, so max 195 seconds
-									extend_autodet = 0;
-									Redirect_count = 9;
-									getWANStatus();
+							if(extend_autodet == 1){ //(ATM)extend for another (24-9)*5=75 seconds for auto detection to finish, so max 195 seconds
+								extend_autodet = 0;
+								Redirect_count = 9;
+								getWANStatus();
+							}
+							else{
+								if(wan_type == "ATM"){
+									document.form.action = "QIS_manual_setting.htm";
 								}
 								else{
-									if(wan_type == "ATM"){
-										document.form.action = "QIS_manual_setting.htm";
-									}
-									else{
-										document.form.action = "QIS_PTM_manual_setting.htm";
-									}
-									document.form.submit();
-									return;
+									document.form.action = "QIS_PTM_manual_setting.htm";
 								}
+								document.form.submit();
+								return;
+							}
 						}
-						else
-								redirect_page("annex_setting");
+						else if(parent.autodet_annex_counter == 1){
+							if(document.redirectForm.dslx_annex.value == 4)
+								document.redirectForm.dslx_annex.value = 6;
+							else if(document.redirectForm.dslx_annex.value == 6)
+								document.redirectForm.dslx_annex.value = 4;
+							document.redirectForm.submit();							
+						}
+						else{
+							parent.autodet_annex_counter = 0;
+							redirect_page("annex_setting");
+						}
 				}
 				else{									
 					if(dsl_autodet_state == "down" || dsl_autodet_state == ""){
@@ -129,16 +139,6 @@ function redirect_page(redirect_flag){
 	document.form.submit();
 }
 
-function gotoIndex(){
-	if (w_Setting == "0") {
-		alert("<#QIS_recommand_encryption#>");	
-		location.href = '/qis/QIS_wireless.htm';
-	}
-	else {
-		parent.location.href = '/index.asp';
-	}
-}
-
 function gotoUserManualSet(){
 	location.href = '/qis/QIS_manual_setting.htm';
 }
@@ -162,11 +162,11 @@ function gotoUserManualSet(){
 						<span class="description_down"><#QKSet_detect_desc1#></span>
 					</td>
 				</tr>
-				<tr id="home_button">
+				<!--tr id="home_button">
 					<td align="right">
 						<img onclick="gotoIndex();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
 					</td>
-				</tr>
+				</tr-->
 			</table>
 		</div>
 		<div style="margin:5px;"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
@@ -195,9 +195,14 @@ function gotoUserManualSet(){
 </div>
 </form>
 
-<form method="post" name="redirectForm" action="">
-<input type="hidden" name="flag" value="">
-<input type="hidden" name="next_page" value="">
+<form method="post" name="redirectForm" action="/start_apply.htm" target="">
+<input type="hidden" name="flag" value="detect">
+<input type="hidden" name="current_page" value="/qis/QIS_detect.htm">
+<input type="hidden" name="next_page" value="/qis/QIS_detect.htm">
 <input type="hidden" name="prev_page" value="">
+<input type="hidden" name="action_mode" value="apply">
+<input type="hidden" name="action_script" value="restart_dsl_setting">
+<input type="hidden" name="action_wait" value="1">
+<input type="hidden" name="dslx_annex" value="<% nvram_get("dslx_annex"); %>">
 </form>
 </body>

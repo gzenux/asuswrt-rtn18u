@@ -1600,10 +1600,9 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit)
 	}
 
 #ifdef RTCONFIG_TMOBILE
-	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+	snprintf(prefix, sizeof(prefix), "wl%d.3_", unit);
 	if (nvram_match(strcat_r(prefix, "hs2en", tmp), "1")) {
 		snprintf(prefix, sizeof(prefix), "wl%d.3_", unit);
-		if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1")) {
 			ret += websWrite(wp, "\n");
 
 			ret += wl_status_hspot(eid, wp, argc, argv, unit);
@@ -1908,6 +1907,14 @@ ej_wl_channel_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 }
 #endif
 
+#ifdef RTAC3200
+int
+ej_wl_channel_list_5g_2(int eid, webs_t wp, int argc, char_t **argv)
+{
+	return ej_wl_channel_list(eid, wp, argc, argv, 2);
+}
+#endif
+
 static int ej_wl_rate(int eid, webs_t wp, int argc, char_t **argv, int unit)
 {
 	int retval = 0;
@@ -1996,6 +2003,14 @@ ej_wl_rate_5g(int eid, webs_t wp, int argc, char_t **argv)
 	return ej_wl_rate(eid, wp, argc, argv, 0);
 #endif
 }
+
+#ifdef RTAC3200
+int
+ej_wl_rate_5g_2(int eid, webs_t wp, int argc, char_t **argv)
+{
+	return ej_wl_rate(eid, wp, argc, argv, 2);
+}
+#endif
 
 static int wps_error_count = 0;
 
@@ -3459,6 +3474,15 @@ ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv)
 	return wl_sta_list(eid, wp, argc, argv, 0);
 #endif
 }
+
+#ifdef RTAC3200
+int
+ej_wl_sta_list_5g_2(int eid, webs_t wp, int argc, char_t **argv)
+{
+	return wl_sta_list(eid, wp, argc, argv, 2);
+}
+#endif
+
 #else
 extern int ej_wl_sta_list_5g(int eid, webs_t wp, int argc, char_t **argv);
 #endif
@@ -3826,6 +3850,14 @@ int
 ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
 	return wl_scan(eid, wp, argc, argv, 1);
+}
+#endif
+
+#ifdef RTAC3200
+int
+ej_wl_scan_5g_2(int eid, webs_t wp, int argc, char_t **argv)
+{
+	return wl_scan(eid, wp, argc, argv, 2);
 }
 #endif
 

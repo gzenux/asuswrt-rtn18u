@@ -865,7 +865,8 @@ static void calc(void)
 	qcsapi_unsigned_int l_counter_value;
 #endif
 
-
+	rx2 = 0;
+	tx2 = 0;
 	now = time(0);
 	exclude = nvram_safe_get("rstats_exclude");
 
@@ -923,7 +924,7 @@ loopagain:
 
 			tick = current_uptime - sp->utime;
 			n = tick / INTERVAL;
-
+	
 			sp->utime += (n * INTERVAL);
 			//_dprintf("%s: %s n=%d tick=%d\n", __FUNCTION__, ifname, n, tick);
 
@@ -931,7 +932,7 @@ loopagain:
 				c = counter[i];
 				sc = sp->last[i];
 				if (c < sc) {
-					diff = (0xFFFFFFFF - sc) + c;
+						diff = (0xFFFFFFFF - sc + 1) + c;
 					if (diff > MAX_ROLLOVER) diff = 0;
 				}
 				else {
@@ -999,6 +1000,16 @@ _dprintf("CUR MONTH Tx= %lu = %lu + %llu - %lu\n",month_tx,last_month_tx,(histor
 			strcpy(ifname_desc2, "");
 			goto loopagain;
 		}
+#else
+		if (strlen(ifname_desc2)) 
+		{
+			strcpy(ifname_desc, ifname_desc2);
+			counter[0] = rx2;
+			counter[1] = tx2;
+                        strcpy(ifname_desc2, "");
+                        goto loopagain;
+		}
+
 #endif
 	}			
 	fclose(f);

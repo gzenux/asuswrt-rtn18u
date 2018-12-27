@@ -4,7 +4,12 @@ CFLAGS = -O2 -Wall $(EXTRACFLAGS) -fPIC
 CFLAGS += -I$(TOP)/shared -I$(SRCBASE)/include -I.
 LDFLAGS += -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared
 
+ifeq ($(wildcard $(SRCBASE)/router/libnmp/*.c),)
+all:
+	-cp -f prebuilt/libnmp.so libnmp.so
+else
 all: libnmp.so
+endif
 
 libnmp.so: nmp.o
 	@echo " [libnmp] CC $@"

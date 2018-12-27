@@ -19,35 +19,38 @@ var accounts = [<% get_all_accounts(); %>];
 var ddns_enable = '<% nvram_get("ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get("ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get("ddns_hostname_x"); %>';
-var format_of_first_partition = parent.pool_types()[0]; //"ntfs";
+
 function initial(){
 	parent.hideLoading();
-	showdisklink();
 
 	if(FTP_mode == 1)
 		$("noFTP_Hint").style.display = "";
-}
 
-function showdisklink(){
-	if(detect_mount_status() == 0){ // No USB disk plug.
-		$("AiDiskWelcome_desp").style.display = 'none';
-		$("linkdiskbox").style.display = 'none';
-		$("Nodisk_hint").style.display = 'block';
-		$("gotonext").style.display = 'none';
-		return;
-	}
-	else if(dummyShareway != ""){  // Ever config aidisk wizard
-		$("AiDiskWelcome_desp").style.display = 'none';
-		$("linkdiskbox").style.display = 'block';
-		$("settingBtn").innerHTML = "<#CTL_Reset_OOB#>";
+ 	require(['/require/modules/diskList.js'], function(diskList){
+		var mount_num = 0;
+ 		var usbDevicesList = diskList.list();
 
-		show_share_link();
-	}
-	else{  // Never config aidisk wizard
-		$("linkdiskbox").style.display = 'none';
-//		$("AiDisk_scenerio").style.display = 'block';
-	}	
-	// access the disk from LAN
+		for(var i=0; i < usbDevicesList.length; ++i)
+			mount_num += usbDevicesList[i].mountNumber;
+
+		if(mount_num == 0){ // No USB disk plug.
+			$("AiDiskWelcome_desp").style.display = 'none';
+			$("linkdiskbox").style.display = 'none';
+			$("Nodisk_hint").style.display = 'block';
+			$("gotonext").style.display = 'none';
+			return;
+		}
+		else if(dummyShareway != ""){  // Ever config aidisk wizard
+			$("AiDiskWelcome_desp").style.display = 'none';
+			$("linkdiskbox").style.display = 'block';
+			$("settingBtn").innerHTML = "<#CTL_Reset_OOB#>";
+
+			show_share_link();
+		}
+		else{
+			$("linkdiskbox").style.display = 'none';
+		}	
+	});
 }
 
 function show_share_link(){
@@ -117,10 +120,6 @@ function show_share_link(){
 }
 
 function detect_mount_status(){
-	var mount_num = 0;
-	for(var i = 0; i < parent.foreign_disk_total_mounted_number().length; ++i)
-		mount_num += parent.foreign_disk_total_mounted_number()[i];
-	return mount_num;
 }
 
 function go_next_page(){
@@ -156,8 +155,8 @@ function go_next_page(){
 
 	<tr>
 		<td>
-			<div style="width:660px; line-height:180%;">
-	  		<div id="Nodisk_hint" class="alert_string" style="display:none;"><#no_usb_found#></div>
+			<div style="width:660px;line-height:180%;font-size:16px;margin-left:30px;">
+	  			<div id="Nodisk_hint" class="alert_string" style="display:none;"><#no_usb_found#></div>
 
 				<div id="AiDiskWelcome_desp">
 			  	<#AiDiskWelcome_desp#>
@@ -228,28 +227,28 @@ function go_next_page(){
 										var preferLang = parent.document.form.preferred_lang.value.toLowerCase();
 
 										if(preferLang == "cn")
-											document.getElementById("tosLink2").href = "http://www.asus.com.cn";
+											document.getElementById("tosLink2").href = "http://www.asus.com.cn/";
 										else if(preferLang == "ms")
-											document.getElementById("tosLink2").href = "http://www.asus.com/my";
+											document.getElementById("tosLink2").href = "http://www.asus.com/my/";
 										else if(preferLang == "en")
-											document.getElementById("tosLink2").href = "http://www.asus.com/us";
+											document.getElementById("tosLink2").href = "http://www.asus.com/us/";
 										else if(preferLang == "da")
-											document.getElementById("tosLink2").href = "http://www.asus.com/dk";
+											document.getElementById("tosLink2").href = "http://www.asus.com/dk/";
 										else if(preferLang == "sv")
-											document.getElementById("tosLink2").href = "http://www.asus.com/se";
+											document.getElementById("tosLink2").href = "http://www.asus.com/se/";
 										else if(preferLang == "uk")
-											document.getElementById("tosLink2").href = "http://www.asus.com/ua";
+											document.getElementById("tosLink2").href = "http://www.asus.com/ua/";
 										else if(
-											preferLang == "tw" || preferLang == "cz" || preferLang == "pl" || preferLang == "ro" ||
-											preferLang == "ru" || preferLang == "de" || preferLang == "fr" || preferLang == "hu" ||
-											preferLang == "tr" || preferLang == "th" || preferLang == "no" || preferLang == "it" ||
-											preferLang == "fi" || preferLang == "br" || preferLang == "jp" || preferLang == "es"
+											preferLang == "tw/" || preferLang == "cz/" || preferLang == "pl/" || preferLang == "ro/" ||
+											preferLang == "ru/" || preferLang == "de/" || preferLang == "fr/" || preferLang == "hu/" ||
+											preferLang == "tr/" || preferLang == "th/" || preferLang == "no/" || preferLang == "it/" ||
+											preferLang == "fi/" || preferLang == "br/" || preferLang == "jp/" || preferLang == "es/"
 										)
 											document.getElementById("tosLink2").href = "http://www.asus.com/" + preferLang;
 										else
-											document.getElementById("tosLink2").href = "http://www.asus.com/us";
+											document.getElementById("tosLink2").href = "http://www.asus.com/us/";
 
-										document.getElementById("tosLink2").href += "/Terms_of_Use_Notice_Privacy_Policy/Official_Site"
+										document.getElementById("tosLink2").href += "Terms_of_Use_Notice_Privacy_Policy/Official_Site"
 									})()
 								</script>
 							</li>	

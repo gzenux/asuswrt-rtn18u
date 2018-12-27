@@ -112,16 +112,6 @@ function redirect_page(redirect_flag){
 	document.form.submit();
 }
 
-function gotoIndex(){
-	if (w_Setting == "0") {
-		alert("<#QIS_recommand_encryption#>");	
-		location.href = '/qis/QIS_wireless.htm';
-	}
-	else {
-		parent.location.href = '/index.asp';
-	}
-}
-
 function gotoUserManualSet(){
 	location.href = '/qis/QIS_manual_setting.htm';
 }
@@ -145,11 +135,11 @@ function gotoUserManualSet(){
 						<span class="description_down"><#QKSet_detect_desc1#></span>
 					</td>
 				</tr>
-				<tr id="home_button">
+				<!--tr id="home_button">
 					<td align="right">
 						<img onclick="gotoIndex();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
 					</td>
-				</tr>
+				</tr-->
 			</table>
 		</div>
 		<div style="margin:5px;"><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>

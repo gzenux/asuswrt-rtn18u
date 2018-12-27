@@ -26,8 +26,9 @@ export CFLAGS += -DPROXYARP
 export CFLAGS += -DTRAFFIC_MGMT
 export CFLAGS += -DTRAFFIC_MGMT_RSSI_POLICY
 ifeq ($(RTCONFIG_BCMARM),y)
-#export CFLAGS += -DMFP
-#export CFLAGS += -D__CONFIG_MFP__
+export CFLAGS += -DMFP
+export CFLAGS += -D__CONFIG_MFP__
+export CLFAGS += -DWLWNM
 endif
 endif
 export CFLAGS += $(EXTRACFLAGS)
@@ -40,7 +41,9 @@ else
 MODEL = $(subst -,,$(subst +,P,$(BUILD_NAME)))
 endif
 export CFLAGS += -D$(MODEL)
-
+ifeq ($(BUILD_NAME),TM-AC1900)
+export CFLAGS += -DRTAC68U
+endif
 
 export OLD_SRC=$(SRCBASE)/../src
 ifeq ($(RTCONFIG_BCMARM),y)
@@ -109,7 +112,7 @@ export SRCBASE_FW  := $(SRCBASE)/../../43602/src
 
 PCIEFD_TARGETS_LIST	:= 43602a0-roml 43602a1-roml
 ifeq ($(WLTEST),1)
-PCIEFD_TARGET_NAME	:= pcie-ag-splitrx-fdap-mfgtest-seqcmds-phydbg-txbf-pktctx-amsdutx-ampduretry
+PCIEFD_TARGET_NAME	:= pcie-ag-splitrx-fdap-mbss-mfgtest-seqcmds-phydbg-txbf-pktctx-amsdutx-ampduretry
 else
 PCIEFD_TARGET_NAME	:= pcie-ag-splitrx-fdap-mbss-mfp-wl11k-wl11u-txbf-pktctx-amsdutx-ampduretry-proptxstatus
 endif
@@ -200,7 +203,7 @@ obj-y += ated
 obj-y += flash
 ifeq ($(or $(RTN14U),$(RTAC52U),$(RTAC51U),$(RTN11P),$(RTN54U)),y)
 else
-obj-y += hw_nat
+#obj-y += hw_nat
 endif
 endif
 endif
@@ -385,9 +388,9 @@ obj-$(RTCONFIG_CLOUDSYNC) += curl-7.21.7
 obj-$(RTCONFIG_CLOUDSYNC) += asuswebstorage
 obj-$(RTCONFIG_CLOUDSYNC) += inotify
 
-obj-$(RTCONFIG_SWEBDAVCLIENT) += zlib # for neon
-obj-$(RTCONFIG_SWEBDAVCLIENT) += neon
-obj-$(RTCONFIG_SWEBDAVCLIENT) += webdav_client
+obj-$(RTCONFIG_CLOUDSYNC) += zlib # for neon
+obj-$(RTCONFIG_CLOUDSYNC) += neon
+obj-$(RTCONFIG_CLOUDSYNC) += webdav_client
 obj-$(RTCONFIG_DROPBOXCLIENT) += dropbox_client
 
 obj-$(RTCONFIG_FTPCLIENT) += libiconv-1.14
@@ -410,12 +413,19 @@ endif
 
 #add for snmpd
 SNMPD_CFLAGS += -D$(BUILD_NAME)
-ifeq ($(BUILD_NAME), $(filter $(BUILD_NAME), RT-N66U RT-AC66U))
+ifeq ($(BUILD_NAME), $(filter $(BUILD_NAME), RT-N66U RT-AC66U RT-AC68U TM-AC1900))
 SNMPD_CFLAGS += -DDUAL_BAND
 endif
 obj-$(RTCONFIG_SNMPD) += openssl
-obj-$(RTCONFIG_SNMPD) += libnmp
+obj-$(RTCONFIG_BCMWL6) += libnmp
 obj-$(RTCONFIG_SNMPD) += net-snmp-5.7.2
+ifeq ($(RTCONFIG_SNMPD),y)
+ifeq ($(BUILD_NAME),TM-AC1900)
+export MIB_MODULE_PASSPOINT = asus-mib/passpoint
+else
+export MIB_MODULE_PASSPOINT =
+endif
+endif
 
 #
 # configurable packages
@@ -513,7 +523,7 @@ obj-y += asm1042
 endif
 
 ifeq ($(RTCONFIG_BCMARM),y)
-obj-prelibs =$(filter nvram$(BCMEX) libbcmcrypto shared netconf libupnp libz libbcm, $(obj-y))
+obj-prelibs =$(filter nvram$(BCMEX) libbcmcrypto shared netconf libupnp libz libbcm pciefd, $(obj-y))
 obj-postlibs := $(filter-out $(obj-prelibs), $(obj-y))
 endif
 
@@ -526,17 +536,11 @@ obj-$(RTCONFIG_TCPDUMP) += tcpdump-4.4.0
 
 obj-$(RTCONFIG_BONDING) += ifenslave
 
-ifeq ($(RTCONFIG_TMOBILE),y)
-obj-y += zlib
-obj-y += openssl
-obj-y += libxml2
-obj-y += curl-7.21.7
-obj-y += wb
-obj-y += email-3.1.3
-obj-y += radpd
-endif
-
 obj-$(RTCONFIG_GEOIP) += GeoIP-1.6.2
+
+#For TR-069 agent
+obj-$(RTCONFIG_TR069) += openssl
+obj-$(RTCONFIG_TR069) += tr069
 
 obj-clean := $(foreach obj, $(obj-y) $(obj-n) $(obj-), $(obj)-clean)
 obj-install := $(foreach obj,$(obj-y),$(obj)-install)
@@ -778,6 +782,9 @@ endif
 ifneq ($(RTCONFIG_L7),y)
 	rm -f $(TARGETDIR)/usr/lib/iptables/libipt_layer7.so
 endif
+ifneq ($(RTCONFIG_SNMPD),y)
+	rm -f $(TARGETDIR)/usr/lib/libnmp.so
+endif
 
 # uClibc
 	install $(LIBDIR)/ld-uClibc.so.0 $(TARGETDIR)/lib/
@@ -840,14 +847,16 @@ endif
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/usbserial.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/option.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/*acm.*o $(PLATFORMDIR)/extras/ || true
+	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/cdc-wdm.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/usbnet.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/asix.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/cdc_ether.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/rndis_host.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/cdc_ncm.*o $(PLATFORMDIR)/extras/ || true
-	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/cdc_wdm.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/qmi_wwan.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/cdc_mbim.*o $(PLATFORMDIR)/extras/ || true
+	$(if $(RTCONFIG_USB_MODEM),@cp -rf,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/hso* $(PLATFORMDIR)/extras/ || true
+	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/net/usb/ipheth.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_USB_MODEM),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/sierra.*o $(PLATFORMDIR)/extras/ || true
 
 	@mv $(TARGETDIR)/lib/modules/*/kernel/drivers/usb/usbkbd.*o $(PLATFORMDIR)/extras/ || true
@@ -916,11 +925,7 @@ endif
 	$(if $(RTCONFIG_L7),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/net/ipv4/netfilter/ipt_layer7.*o $(PLATFORMDIR)/extras/ || true
 	$(if $(RTCONFIG_L7),@cp -f,@mv) $(TARGETDIR)/lib/modules/*/kernel/net/netfilter/xt_layer7.*o $(PLATFORMDIR)/extras/ || true
 
-ifeq ($(RTCONFIG_TMOBILE),y)
-	@mkdir -p $(TARGETDIR)/T-Mobile
-else
 	@mkdir -p $(TARGETDIR)/asus_jffs
-endif
 	@mkdir -p $(PLATFORMDIR)/extras/apps
 	@mkdir -p $(PLATFORMDIR)/extras/lib
 
@@ -953,6 +958,11 @@ ifeq ($(RTCONFIG_QTN),y)
 	install -D qtnimage/tweak_qcomm $(TARGETDIR)/rom/qtn/tweak_qcomm
 endif
 ifeq ($(RTCONFIG_BWDPI),y)
+ifeq ($(RTCONFIG_BCM7),y)
+	cp $(TOP)/bwdpi_bin/bwdpi_bcm7/* $(TOP)/bwdpi_bin/
+else
+	cp $(TOP)/bwdpi_bin/bwdpi_bcm6/* $(TOP)/bwdpi_bin/
+endif
 	install -d $(TARGETDIR)/usr/bwdpi/
 	cp -f bwdpi_bin/*.so $(TARGETDIR)/usr/lib/
 	cp -f bwdpi_bin/*.so.0.1 $(TARGETDIR)/usr/lib/
@@ -1087,6 +1097,7 @@ busybox: dummy
 busybox-install:
 	rm -rf $(INSTALLDIR)/busybox
 	$(MAKE) -C busybox install EXTRA_CFLAGS="-fPIC $(EXTRACFLAGS)" CONFIG_PREFIX=$(INSTALLDIR)/busybox
+	chmod 4755 $(INSTALLDIR)/busybox/bin/busybox
 
 busybox-clean:
 	$(MAKE) -C busybox distclean
@@ -1231,7 +1242,7 @@ wb: openssl libxml2 curl-7.21.7
 
 push_log: wb
 
-rc: nvram$(BCMEX) shared libbcmcrypto libdisk $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_TMOBILE),libxml2 curl-7.21.7 wb) $(if $(RTCONFIG_BWDPI),bwdpi)
+rc: nvram$(BCMEX) shared libbcmcrypto libdisk $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_BWDPI),bwdpi)
 
 bridge/stamp-h1:
 	cd bridge && CFLAGS="-Os -g $(EXTRACFLAGS)" \
@@ -1361,7 +1372,8 @@ dnsmasq:
 	COPTS="-DHAVE_BROKEN_RTC -DHAVE_LEASEFILE_EXPIRE -DNO_AUTH -DNO_IPSET \
 		$(if $(RTCONFIG_IPV6),-DUSE_IPV6,-DNO_IPV6) \
 		$(if $(RTCONFIG_WIDEDHCP6),-DNO_DHCP6,) \
-		$(if $(RTCONFIG_USB_EXTRAS),,-DNO_SCRIPT -DNO_TFTP)" \
+		$(if $(RTCONFIG_USB_EXTRAS)||$(RTCONFIG_TR069),,-DNO_SCRIPT) \
+		$(if $(RTCONFIG_USB_EXTRAS),,-DNO_TFTP)" \
 	CFLAGS="-Os -ffunction-sections -fdata-sections $(EXTRACFLAGS)" \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections"
 
@@ -1791,7 +1803,9 @@ ndisc6-clean:
 
 ndisc6-install: ndisc6
 	install -D ndisc6/rdnssd/rdnssd $(INSTALLDIR)/ndisc6/usr/sbin/rdnssd
+	install -D ndisc6/src/rdisc6 $(INSTALLDIR)/ndisc6/usr/sbin/rdisc6
 	$(STRIP) $(INSTALLDIR)/ndisc6/usr/sbin/rdnssd
+	$(STRIP) $(INSTALLDIR)/ndisc6/usr/sbin/rdisc6
 ifneq ($(RTCONFIG_BCMWL6),y)
 	install -D $(shell dirname $(shell which $(CXX)))/../lib/librt.so.0 $(TARGETDIR)/lib/librt.so.0
 endif
@@ -1889,12 +1903,13 @@ vlan-install:
 	$(MAKE) -C vlan CROSS=$(CROSS_COMPILE) INSTALLDIR=$(INSTALLDIR) install	# STRIPTOOL=$(STRIP)
 	$(STRIP) $(INSTALLDIR)/vlan/usr/sbin/vconfig
 
-accel-pptpd: kernel_header pppd
-ifeq ($(RTCONFIG_BCMARM),y)
-	@$(MAKE) -C accel-pptpd server KDIR=$(KDIR)
-else
-	@$(MAKE) -C accel-pptpd server KDIR=$(TOP)/kernel_header
-endif
+accel-pptpd/stamp-h1: kernel_header 
+	cd accel-pptpd/pptpd-1.3.3  && CFLAGS="-g -O2 $(EXTRACFLAGS) -idirafter $(KDIR)/include" \
+	$(CONFIGURE) --prefix=/usr --enable-bcrelay KDIR=$(KDIR) PPPDIR=$(TOP)/pppd
+	touch $@
+
+accel-pptpd: pppd accel-pptpd/stamp-h1
+	@$(MAKE) -C accel-pptpd server
 
 accel-pptpd-clean:
 	-@$(MAKE) -C accel-pptpd distclean
@@ -1922,7 +1937,7 @@ pptpd-clean:
 	@rm -f pptpd/stamp-h1
 
 rp-pppoe/src/stamp-h1:
-	cd rp-pppoe/src && CFLAGS="-g -O2 $(EXTRACFLAGS)" \
+	cd rp-pppoe/src && CFLAGS="-g -O2 $(EXTRACFLAGS) -idirafter $(KDIR)/include" \
 	$(CONFIGURE) --prefix=/usr --enable-plugin=$(TOP)/pppd \
 	ac_cv_linux_kernel_pppoe=yes rpppoe_cv_pack_bitfields=rev --disable-debugging
 	touch $@
@@ -1941,7 +1956,7 @@ rp-pppoe-install: rp-pppoe
 	$(STRIP) $(INSTALLDIR)/rp-pppoe/usr/sbin/pppoe-relay
 
 rp-l2tp/stamp-h1: kernel_header
-	cd rp-l2tp && CFLAGS="-O2 -Wall -I$(TOP)/kernel_header/include $(EXTRACFLAGS) $(if $(RTCONFIG_VPNC), -DRTCONFIG_VPNC,)" \
+	cd rp-l2tp && CFLAGS="-O2 -Wall $(EXTRACFLAGS) -idirafter $(KDIR)/include $(if $(RTCONFIG_VPNC), -DRTCONFIG_VPNC,)" \
 	$(CONFIGURE) --prefix=/usr --sysconfdir=/tmp
 	touch $@
 
@@ -1973,13 +1988,8 @@ pptp-client-install:
 	$(STRIP) $(INSTALLDIR)/pptp-client/usr/sbin/pptp
 
 accel-pptp/stamp-h1: kernel_header $(LINUXDIR)/include/linux/version.h
-ifeq ($(RTCONFIG_BCMARM),y)
-	cd accel-pptp && CFLAGS="-g -O2 $(EXTRACFLAGS) $(if $(RTCONFIG_VPNC), -DRTCONFIG_VPNC,)" \
+	cd accel-pptp && CFLAGS="-g -O2 $(EXTRACFLAGS) -idirafter $(KDIR)/include $(if $(RTCONFIG_VPNC), -DRTCONFIG_VPNC,)" \
 	$(CONFIGURE) --prefix=/usr KDIR=$(KDIR) PPPDIR=$(TOP)/pppd
-else
-	cd accel-pptp && CFLAGS="-g -O2 $(EXTRACFLAGS) $(if $(RTCONFIG_VPNC), -DRTCONFIG_VPNC,)" \
-	$(CONFIGURE) --prefix=/usr KDIR=$(TOP)/kernel_header PPPDIR=$(TOP)/pppd
-endif
 	touch $@
 
 accel-pptp: pppd accel-pptp/stamp-h1
@@ -1993,13 +2003,14 @@ accel-pptp-install: accel-pptp
 	install -D accel-pptp/src/.libs/pptp.so $(INSTALLDIR)/accel-pptp/usr/lib/pppd/pptp.so
 	$(STRIP) $(INSTALLDIR)/accel-pptp/usr/lib/pppd/pptp.so
 
-pppd/stamp-h1:
+pppd/stamp-h1: kernel_header
 	cd pppd && $(CONFIGURE) --prefix=/usr --sysconfdir=/tmp
 	touch $@
 
 pppd: pppd/stamp-h1
 	@$(SEP)
-	@$(MAKE) -C pppd MFLAGS='$(if $(RTCONFIG_IPV6),HAVE_INET6=y,) EXTRACFLAGS="$(EXTRACFLAGS) $(if $(RTCONFIG_VPNC), -DRTCONFIG_VPNC,)"'
+	@$(MAKE) -C pppd MFLAGS='$(if $(RTCONFIG_IPV6),HAVE_INET6=y,) \
+	EXTRACFLAGS="$(EXTRACFLAGS) -idirafter $(KDIR)/include $(if $(RTCONFIG_VPNC),-DRTCONFIG_VPNC,)"'
 
 pppd-clean:
 	-@$(MAKE) -C pppd clean
@@ -2092,6 +2103,36 @@ wpa_supplicant-install: wpa_supplicant
 wpa_supplicant-clean:
 	-@$(MAKE) -C wpa_supplicant/wpa_supplicant clean
 
+tr069:
+	cp tr069/Makefile.ASUSWRT tr069/Makefile
+	$(MAKE) -C $@
+	$(MAKE) -C $@/test
+
+tr069-clean:
+	-$(MAKE) -C tr069 clean
+	-$(MAKE) -C tr069/test clean
+
+tr069-install: tr069
+	install -D tr069/build/bin/tr $(INSTALLDIR)/tr069/sbin/tr069
+	install -D tr069/test/sendtocli $(INSTALLDIR)/tr069/sbin/sendtocli
+	install -D tr069/test/notify $(INSTALLDIR)/tr069/sbin/notify
+	install -D tr069/test/udpclient $(INSTALLDIR)/tr069/sbin/udpclient
+ifeq ($(RTCONFIG_TR181),y)
+	install -D tr069/conf/ASUSWRT/tr_181.xml $(INSTALLDIR)/tr069/usr/tr/tr.xml
+ifeq ($(RTCONFIG_DSL),y)
+	install -D tr069/conf/ASUSWRT/tr_181.xml.dsl $(INSTALLDIR)/tr069/usr/tr/tr.xml
+else
+	install -D tr069/conf/ASUSWRT/tr_181.xml $(INSTALLDIR)/tr069/usr/tr/tr.xml
+endif
+else
+
+ifeq ($(RTCONFIG_DSL),y)
+	install -D tr069/conf/ASUSWRT/tr_98.xml.dsl $(INSTALLDIR)/tr069/usr/tr/tr.xml
+else
+	install -D tr069/conf/ASUSWRT/tr_98.xml $(INSTALLDIR)/tr069/usr/tr/tr.xml
+endif
+endif
+
 #	libnet:
 #		@$(SEP)
 #		@-mkdir -p libnet/lib
@@ -2136,6 +2177,7 @@ libqcsapi_client-install: libqcsapi_client
 	install -d $(INSTALLDIR)/libqcsapi_client/usr/sbin/
 	install -D libqcsapi_client/libqcsapi_client.so.1.0.1 $(INSTALLDIR)/libqcsapi_client/usr/lib/
 	install -D libqcsapi_client/qcsapi_sockrpc $(INSTALLDIR)/libqcsapi_client/usr/sbin/
+	install -D libqcsapi_client/qcsapi_sockraw $(INSTALLDIR)/libqcsapi_client/usr/sbin/
 	# install -D libqcsapi_client/c_rpc_qcsapi_sample $(INSTALLDIR)/libqcsapi_client/usr/sbin/
 	$(STRIP) $(INSTALLDIR)/libqcsapi_client/usr/lib/*.so.*
 	$(STRIP) $(INSTALLDIR)/libqcsapi_client/usr/sbin/*
@@ -2198,18 +2240,6 @@ ntpclient: nvram$(BCMEX) shared
 
 rstats: nvram$(BCMEX) shared
 
-ifeq ($(RTCONFIG_TMOBILE),y)
-radpd:
-	@$(MAKE) -C radpd all
-
-radpd-install: radpd
-	@mkdir -p $(TARGETDIR)/rom/etc/certs
-	install -D radpd/radpd $(INSTALLDIR)/radpd/usr/sbin/radpd
-
-radpd-clean:
-	@$(MAKE) -C radpd clean
-endif
-
 dropbear: dropbear/config.h
 	@$(SEP)
 	@$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey scp" MULTI=1
@@ -2245,7 +2275,7 @@ sqlite/stamp-h1:
 	CC=$(CC) CFLAGS="-Os $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		$(CONFIGURE) --prefix=/usr --enable-shared --enable-static \
-		--disable-readline --disable-dynamic-extensions --disable-threadsafe \
+		--disable-readline --disable-dynamic-extensions --enable-threadsafe \
 		--disable-dependency-tracking
 	touch $@
 
@@ -2701,7 +2731,7 @@ openpam-clean:
 	@[ ! -f openpam/Makefile ] || $(MAKE) -C openpam clean
 	@rm -f openpam/stamp-h1
 
-openvpn/stamp-h1: lzo
+openvpn/stamp-h1: lzo zlib
 	cd openvpn && ./autogen.sh && \
 	export OPENSSL_CRYPTO_CFLAGS="-I$(TOP)/openssl"; \
 	export OPENSSL_CRYPTO_LIBS="-L$(TOP)/openssl -lcrypto"; \
@@ -3036,7 +3066,7 @@ curl-7.21.7-clean:
 
 #snmp with asus mib and openssl 1.0.0
 net-snmp-5.7.2/stamp-h1:
-	cd $(TOP)/net-snmp-5.7.2 && $(CONFIGURE) --prefix=$(INSTALLDIR)/net-snmp-5.7.2/usr --disable-embedded-perl --with-perl-modules=no --disable-debugging --enable-mini-agent --with-transports=UDP --without-kmem-usage --disable-applications --disable-mib-loading --disable-scripts --disable-mibs --disable-manuals --with-openssl=$(TOP)/openssl --with-ldflags="-L$(TOP)/openssl -L$(TOP)/nvram$(BCMEX) -L$(TOP)/shared -L$(TOP)/libnmp" --with-libs="-lnvram -lshared -lnmp $(EXTRA_FLAG)" --with-cflags="$(SNMPD_CFLAGS) -I$(TOP)/libnmp" --with-default-snmp-version="3" --with-sys-location=Unknown --with-logfile=/var/log/snmpd.log --with-persistent-directory=/var/net-snmp --with-sys-contact=root@localhost --enable-static=no --with-mib-modules="asus-mib/wireless,asus-mib/passpoint,asus-mib/lan,asus-mib/wan,asus-mib/ipv6,asus-mib/vpn,asus-mib/firewall,asus-mib/administration,asus-mib/systemLog,asus-mib/guestNetwork,asus-mib/trafficManager,asus-mib/parentalControl,asus-mib/quickInternetSetup"
+	cd $(TOP)/net-snmp-5.7.2 && $(CONFIGURE) --prefix=$(INSTALLDIR)/net-snmp-5.7.2/usr --disable-embedded-perl --with-perl-modules=no --disable-debugging --enable-mini-agent --with-transports=UDP --without-kmem-usage --disable-applications --disable-mib-loading --disable-scripts --disable-mibs --disable-manuals --with-openssl=$(TOP)/openssl --with-ldflags="-L$(TOP)/openssl -L$(TOP)/nvram$(BCMEX) -L$(TOP)/shared -L$(TOP)/libnmp" --with-libs="-lnvram -lshared -lnmp $(EXTRA_FLAG)" --with-cflags="$(SNMPD_CFLAGS) -I$(TOP)/libnmp" --with-default-snmp-version="3" --with-sys-location=Unknown --with-logfile=/var/log/snmpd.log --with-persistent-directory=/var/net-snmp --with-sys-contact=root@localhost --enable-static=no --with-mib-modules="asus-mib/wireless,$(MIB_MODULE_PASSPOINT),asus-mib/lan,asus-mib/wan,asus-mib/ipv6,asus-mib/vpn,asus-mib/firewall,asus-mib/administration,asus-mib/systemLog,asus-mib/guestNetwork,asus-mib/trafficManager,asus-mib/parentalControl,asus-mib/quickInternetSetup"
 	@touch net-snmp-5.7.2/stamp-h1
 
 net-snmp-5.7.2: net-snmp-5.7.2/stamp-h1

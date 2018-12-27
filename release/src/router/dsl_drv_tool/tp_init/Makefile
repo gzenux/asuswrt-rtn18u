@@ -31,6 +31,7 @@ endif
 ifeq ($(RTCONFIG_BCMARM),y)
 CFLAGS += $(EXTRA_FLAG)
 CFLAGS += -I$(SRCBASE)/common/include
+CFLAGS += -DTYPEDEF_FLOAT_T
 endif
 
 CFLAGS += -Wall -O
@@ -48,6 +49,7 @@ LDFLAGS = -L$(TOP)/shared -lshared -L$(TOP)/nvram${BCMEX} -lnvram
 
 ifeq ($(RTCONFIG_DSL_TCLINUX),y)
 LDFLAGS += -lpthread
+LDFLAGS += -lm
 endif
 
 INSTALL = install
@@ -61,6 +63,7 @@ endif
 ifeq ($(RTCONFIG_DSL_TCLINUX),y)
 OBJS += dumptcc.o
 OBJS += runtcc.o
+OBJS += monitor.o dla.o
 endif
 
 ifneq ($(wildcard ./prebuild),)

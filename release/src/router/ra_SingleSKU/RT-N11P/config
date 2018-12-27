@@ -2,8 +2,11 @@
 SKU_2G_FCC  = "20131101_FCC_2.4GHz_SingleSKU.dat"
 SKU_2G_CE   = "20140718_SingleSKU_CE_2.4G_Final.dat"
 SKU_2G_SG   = "20130826_SG_2.4GHz_SingleSKU.dat"
+SKU_2G_NCC  = "20141112_SingleSKU_NCC_2.4G_Final.dat"
 SKU_5G_FCC  =
 SKU_5G_CE   =
 SKU_5G_SG   =
 SKU_2G_AU   =
 SKU_5G_AU   =
+SKU_2G_CN   = "20141219_SingleSKU_CN_SRRC_2.4G_Final.dat"
+SKU_5G_CN   =

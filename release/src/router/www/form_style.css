@@ -563,7 +563,7 @@
 	height:34px;
 	font-family:Verdana;
 	font-size:12px;
- 	width:150px;
+ 	width:155px;
   overflow:visible;
 	cursor:pointer;
 	outline: none; /* for Firefox */
@@ -576,7 +576,7 @@
 	height:34px;
 	font-family:Verdana;
 	font-size:12px;
- 	width:150px;
+ 	width:155px;
   overflow:visible;
 	cursor:pointer;
 	outline: none; /* for Firefox */
@@ -591,7 +591,7 @@
 	height:34px;
 	font-family:Verdana;
 	font-size:12px;
- 	width:150px; 	
+ 	width:155px; 	
   overflow:visible;
 	/*cursor:pointer;*/
 	outline: none; /* for Firefox */
@@ -604,7 +604,7 @@
 	height:34px;
 	font-family:Verdana;
 	font-size:12px;
- 	width:150px;
+ 	width:155px;
   overflow:visible;
 	/*cursor:pointer;*/
 	outline: none; /* for Firefox */
@@ -614,7 +614,7 @@
   color: #FFFFFF;
 	background:url(/images/New_ui/contentbt_over.png) no-repeat;
 	height:33px;
- 	width:150px;
+ 	width:155px;
  	padding:0 .70em 0 .70em;  
  	background-position:0px;
 	cursor:pointer;
@@ -1225,7 +1225,7 @@ div.tabclick {
 	margin-right:2px;
 	text-decoration: none;
 	text-align:center;
-	max-width:130px;
+	max-width:240px;
 }
 .tab_NW span {
 	cursor:pointer;
@@ -1258,7 +1258,7 @@ div.tabclick {
     margin-right:2px;
     text-align:center;
     text-decoration: none;
-	max-width:130px;
+	max-width:240px;
 }
 .tabclick_NW span {
 	cursor:pointer;
@@ -1631,19 +1631,25 @@ padding-top:1px;
 	cursor: pointer;
 }
 .notificationon{
+	position: absolute;
 	display:inline;
 	background-image:url(images/New_ui/notification.png);
 	background-repeat:no-repeat;	
 	background-position:2px 2px;
+	margin-top:-5px;
+	margin-top:3px \9;	/*IE*/
 	height:30px;
 	width:30px;
 	cursor: pointer;
 }
 .notificationoff{
+	position: absolute;
 	display:none;
 	background-image:url(images/New_ui/notification.png);
 	background-repeat:no-repeat;	
 	background-position:2px -48px;
+	margin-top:-5px;
+	margin-top:3px \9;	/*IE*/
 	height:30px;
 	width:30px;
 	cursor: pointer;
@@ -1863,8 +1869,8 @@ padding-top:1px;
 /*Folder Tree*/
 .folder_tree{
 	font-size:10pt;
-	margin:0px 0px 1px 30px;
-	height:339px;
+	margin:7px 0px 1px 30px;
+	height:332px;
 	overflow:auto;
 	overflow-x: hidden;
 	width:450px;
@@ -2080,14 +2086,12 @@ padding-top:1px;
 .single_wan_connected{
 	background-image:url(/images/New_ui/networkmap/line_dualwan.png);
 	background-repeat:no-repeat;
-	margin-left:160px;
 	height:40px;
 	width:20px;
 }
 .single_wan_disconnected{
 	background-image:url(/images/New_ui/networkmap/line_dualwan_disconnected.png);
 	background-repeat:no-repeat;
-	margin-left:160px;
 	height:40px;
 	width:20px;
 }
