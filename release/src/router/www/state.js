@@ -2020,6 +2020,12 @@ function show_footer(){
 			footer_code += "<td width=\"310\" id=\"bottom_help_link\" align=\"left\">&nbsp&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com"+ href_lang +"Networking/"+ model_name_supportsite + tracing_path_Manual +"\" target=\"_blank\"><#Manual#></a>&nbsp|&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com"+ href_lang +"Networking/" + model_name_supportsite + tracing_path_Utility +"\" target=\"_blank\"><#Utility#></a>";	
 		}
 	}
+	else if(based_modelid == "RT-N56UB1"){	//MODELDEP : RT-N56UB1
+		footer_code += "<td width=\"310\" id=\"bottom_help_link\" align=\"left\">&nbsp&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com/Networking/RTN56U_B1"+ tracing_path_Manual +"\" target=\"_blank\"><#Manual#></a>&nbsp|&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com/Networking/RTN56U_B1"+ tracing_path_Utility +"\" target=\"_blank\"><#Utility#></a>";
+	}
+	else if(based_modelid == "RT-N56UB2"){	//MODELDEP : RT-N56UB2
+		footer_code += "<td width=\"310\" id=\"bottom_help_link\" align=\"left\">&nbsp&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com/Networking/RTN56U_B2"+ tracing_path_Manual +"\" target=\"_blank\"><#Manual#></a>&nbsp|&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com/Networking/RTN56U_B2"+ tracing_path_Utility +"\" target=\"_blank\"><#Utility#></a>";
+	}
 	else if(based_modelid == "DSL-N55U"){	//MODELDEP : DSL-N55U
 		footer_code += "<td width=\"310\" id=\"bottom_help_link\" align=\"left\">&nbsp&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com/Networking/DSLN55U_Annex_A"+ tracing_path_Manual +"\" target=\"_blank\"><#Manual#></a>&nbsp|&nbsp<a style=\"font-weight: bolder;text-decoration:underline;cursor:pointer;\" href=\"http://www.asus.com/Networking/DSLN55U_Annex_A"+ tracing_path_Utility +"\" target=\"_blank\"><#Utility#></a>";
 	}

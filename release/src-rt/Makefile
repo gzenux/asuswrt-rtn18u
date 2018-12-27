@@ -221,7 +221,7 @@ ifeq ($(CONFIG_RALINK),y)
 	PAD2=`expr $${ISIZE} - $${KSIZE} - $${RSIZE}` ; \
 	RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
 	echo "PAD2: $${PAD2}" ; \
-	if [ "$(BUILD_NAME)" = "RT-N56UB1" ]; then \
+	if [ "$(BUILD_NAME)" = "RT-N56UB1" ] || [ "$(BUILD_NAME)" = "RT-N56UB2" ] ; then \
 		asustools/mkimage -A mips -O linux -T kernel -C lzma -a 80001000 -e $${ENTRY} -r $${RFSOFFSET} \
 		-n $(BUILD_NAME) -V "$(KERNEL_VER)" "$(FS_VER)" "0" "0" "0" "0" "0" "0" "0" "0" \
 		-d $(PLATFORMDIR)/zImage.img image/$(IMGNAME).trx ; \
@@ -590,10 +590,18 @@ define RouterOptions
 		echo "RTCONFIG_SFP=y" >>$(1); \
 		sed -i "/RTCONFIG_4M_SFP/d" $(1); \
 		echo "RTCONFIG_4M_SFP=y" >>$(1); \
+		sed -i "/RTCONFIG_UPNPC/d" $(1); \
+		echo "# RTCONFIG_UPNPC is not set" >>$(1); \
+		sed -i "/RTCONFIG_BONJOUR/d" $(1); \
+		echo "# RTCONFIG_BONJOUR is not set" >>$(1); \
 	fi; \
 	if [ "$(SFP8M)" = "y" ]; then \
 		sed -i "/RTCONFIG_8M_SFP/d" $(1); \
 		echo "RTCONFIG_8M_SFP=y" >>$(1); \
+		sed -i "/RTCONFIG_UPNPC/d" $(1); \
+		echo "# RTCONFIG_UPNPC is not set" >>$(1); \
+		sed -i "/RTCONFIG_BONJOUR/d" $(1); \
+		echo "# RTCONFIG_BONJOUR is not set" >>$(1); \
 	fi; \
 	if [ "$(SFPRAM16M)" = "y" ]; then \
 		sed -i "/RTCONFIG_16M_RAM_SFP/d" $(1); \
@@ -2373,7 +2381,7 @@ endif
 	$(call KernelConfig, $(LINUXDIR)/config_$(lowercase_B))
 	$(call BusyboxOptions, router/busybox/config_$(lowercase_B))
 ifeq ($(CONFIG_RALINK),y)
-	@if [ "$(BUILD_NAME)" = "RT-N56UB1" ] ; then \
+	@if [ "$(BUILD_NAME)" = "RT-N56UB1" ] || [ "$(BUILD_NAME)" = "RT-N56UB2" ]  ; then \
 		if [ "$(MT7603_EXTERNAL_PA_EXTERNAL_LNA)" = "y" ] ; then \
 			echo "build epa+elna fw" ; \
 			gcc -DCONFIG_MT7603E_EXTERNAL_PA_EXTERNAL_LNA -g $(LINUXDIR)/drivers/net/wireless/rlt_wifi_7603E/tools/bin2h.c \

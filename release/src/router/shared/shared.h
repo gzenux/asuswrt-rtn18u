@@ -167,9 +167,6 @@ extern int get_wan_proto(void);
 extern int get_ipv6_service(void);
 #define ipv6_enabled()	(get_ipv6_service() != IPV6_DISABLED)
 extern const char *ipv6_router_address(struct in6_addr *in6addr);
-#if 1 /* temporary till httpd route table redo */
-extern void ipv6_set_flags(char *flagstr, int flags);
-#endif
 extern const char *ipv6_gateway_address(void);
 #else
 #define ipv6_enabled()	(0)
@@ -254,6 +251,7 @@ enum {
 	MODEL_RTN54U,
 	MODEL_RTAC54U,
 	MODEL_RTN56UB1,
+	MODEL_RTN56UB2,
 	MODEL_RTAC1200HP,
 	MODEL_RTAC55U,
 	MODEL_RTAC55UHP,
@@ -998,11 +996,11 @@ static inline void enable_wifi_bled(char *ifname)
 #if defined(RTCONFIG_QCA)
 		v = LED_OFF;	/* WiFi not ready. Don't turn on WiFi LED here. */		
 #endif
-#if defined(RTAC1200HP) || defined(RTN56UB1)
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2)
 		if(!get_radio(1, 0) && unit==1) //*5G WiFi not ready. Don't turn on WiFi GPIO LED . */
 		 	v=LED_OFF;
 #endif		
-#if defined(RTN56UB1)
+#if defined(RTN56UB1) || defined(RTN56UB2)
 		if(!get_radio(0, 0) && unit==0) //*2G WiFi not ready. Don't turn on WiFi GPIO LED . */
 		 	v=LED_OFF;
 #endif		

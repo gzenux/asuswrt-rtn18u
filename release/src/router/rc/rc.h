@@ -51,7 +51,7 @@
 #else
 #endif
 
-#if defined(RTN56UB1) //for MT7621
+#if defined(RTN56UB1) || defined(RTN56UB2) //for MT7621
 #define USB20_MOD	"xhci-hcd"
 #else
 #define USB20_MOD	"ehci-hcd"
@@ -867,6 +867,14 @@ extern int start_wanduck(void);
 extern void stop_wanduck(void);
 extern void stop_ntpc(void);
 extern int start_ntpc(void);
+#ifdef RTCONFIG_UPNPC
+extern int start_miniupnpc(void);
+extern void stop_miniupnpc(void);
+#endif
+#ifdef RTCONFIG_BONJOUR
+extern int start_netmonitor(void);
+extern void stop_netmonitor(void);
+#endif
 extern void stop_networkmap(void);
 extern int start_networkmap(int bootwait);
 extern int stop_wps(void);

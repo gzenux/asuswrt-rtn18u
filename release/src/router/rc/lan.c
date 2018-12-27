@@ -1436,7 +1436,7 @@ void start_lan(void)
 
 #ifdef RTCONFIG_LED_ALL
 	led_control(LED_ALL, LED_ON);
-#if defined(RTAC1200HP) || defined(RTN56UB1)
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2)
 	led_control(LED_5G, LED_ON);
 	led_control(LED_2G, LED_ON);
 #endif
@@ -1445,27 +1445,6 @@ void start_lan(void)
 #ifdef CONFIG_BCMWL5
 	init_wl_compact();
 	wlconf_pre();
-
-	switch (get_model()) {
-	case MODEL_APN12HP:
-	case MODEL_DSLAC68U:
-	case MODEL_RPAC68U:
-	case MODEL_RTAC3200:
-	case MODEL_RTAC56S:
-	case MODEL_RTAC56U:
-	case MODEL_RTAC66U:
-	case MODEL_RTAC68U:
-	case MODEL_RTAC87U:
-	case MODEL_RTN12HP:
-	case MODEL_RTN18U:
-	case MODEL_RTN66U:
-	//case MODEL_RTAC5300:
-	//case MODEL_RTAC3100:
-	//case MODEL_RTAC88U:
-	//case MODEL_RTAC1200G:
-		set_wltxpower();
-		break;
-	}
 
 	if (0)
 	{
@@ -3446,27 +3425,6 @@ void start_lan_wl(void)
 #ifdef CONFIG_BCMWL5
 	init_wl_compact();
 	wlconf_pre();
-
-	switch (get_model()) {
-	case MODEL_APN12HP:
-	case MODEL_DSLAC68U:
-	case MODEL_RPAC68U:
-	case MODEL_RTAC3200:
-	case MODEL_RTAC56S:
-	case MODEL_RTAC56U:
-	case MODEL_RTAC66U:
-	case MODEL_RTAC68U:
-	case MODEL_RTAC87U:
-	case MODEL_RTN12HP:
-	case MODEL_RTN18U:
-	case MODEL_RTN66U:
-	//case MODEL_RTAC5300:
-	//case MODEL_RTAC3100:
-	//case MODEL_RTAC88U:
-	//case MODEL_RTAC1200G:
-		set_wltxpower();
-		break;
-	}
 
 	if (0)
 	{

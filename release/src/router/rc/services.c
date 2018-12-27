@@ -1274,13 +1274,15 @@ void start_dnsmasq(void)
 		/* Faster for moving clients, if authoritative */
 		if (nvram_get_int("dhcpd_auth") >= 0)
 			fprintf(fp, "dhcp-authoritative\n");
-
+#ifdef RTCONFIG_MULTICAST_IPTV
 		/* Rawny: Add vendor class ID and DNS info for Movistar IPTV */
-		if(nvram_match("switch_wantag", "movistar")) {
+		if (nvram_get_int("switch_stb_x") > 6 &&
+		    nvram_match("switch_wantag", "movistar")) {
 			fprintf(fp, "dhcp-vendorclass=ial,IAL\n");
 			fprintf(fp, "dhcp-option=ial,6,172.26.23.3\n");
 			fprintf(fp, "dhcp-option=ial,240,:::::239.0.2.10:22222:v6.0:239.0.2.30:22222\n");
 		}
+#endif
 	} else
 		fprintf(fp, "no-dhcp-interface=%s\n", lan_ifname);
 
@@ -1998,6 +2000,12 @@ int start_networkmap(int bootwait)
 	if (bootwait)
 		networkmap_argv[1] = "--bootwait";
 
+#ifdef RTCONFIG_UPNPC
+	start_miniupnpc();
+#endif
+#ifdef RTCONFIG_BONJOUR
+	start_netmonitor();
+#endif
 	_eval(networkmap_argv, NULL, 0, &pid);
 
 	return 0;
@@ -2008,17 +2016,12 @@ int start_networkmap(int bootwait)
 void stop_networkmap(void)
 {
 	killall_tk("networkmap");
-}
-
-int start_netmonitor(void)
-{
-_dprintf(">>>>>>>>> NetMonitor <<<<<<<<\n");
-        char *netmonitor_argv[] = {"mDNSNetMonitor", NULL};
-        pid_t pid;
-
-        _eval(netmonitor_argv, NULL, 0, &pid);
-
-        return 0;
+#ifdef RTCONFIG_BONJOUR
+	stop_netmonitor();
+#endif
+#ifdef RTCONFIG_UPNPC
+	stop_miniupnpc();
+#endif
 }
 
 #ifdef RTCONFIG_JFFS2USERICON
@@ -2042,23 +2045,42 @@ int start_lltdc(void)
 }
 #endif
 
+#ifdef RTCONFIG_UPNPC
 void stop_miniupnpc(void)
 {
-        if (pids("miniupnpc"))
-                killall_tk("miniupnpc");
+	if (pids("miniupnpc"))
+		killall_tk("miniupnpc");
 }
 
 int start_miniupnpc(void)
 {
-        pid_t pid;
-
-        if (pids("miniupnpc"))
+	if (pids("miniupnpc"))
 		return 0;
 
-	xstart("miniupnpc", "-m", "br0", "-t");
-
-        return 0;
+	return xstart("miniupnpc", "-m", "br0", "-t");
 }
+#endif
+
+#ifdef RTCONFIG_BONJOUR
+void stop_netmonitor(void)
+{
+	if (pids("mDNSNetMonitor"))
+		killall_tk("mDNSNetMonitor");
+}
+
+int start_netmonitor(void)
+{
+	char *netmonitor_argv[] = {"mDNSNetMonitor", NULL};
+	pid_t pid;
+
+	if (pids("mDNSNetMonitor"))
+		return 0;
+
+	_eval(netmonitor_argv, NULL, 0, &pid);
+
+	return 0;
+}
+#endif
 
 #ifdef RTCONFIG_LLDP
 int start_lldpd(void)
@@ -3693,11 +3715,9 @@ start_services(void)
 #endif
 	start_upnp();
 
-        start_netmonitor();
 #ifdef RTCONFIG_JFFS2USERICON
         start_lltdc();
 #endif
-	start_miniupnpc();
 	start_networkmap(1);
 
 #if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
@@ -4360,7 +4380,7 @@ again:
 			modprobe_r("wl_high");
 		}
 
-#if !defined(RTN56UB1)
+#if !(defined(RTN56UB1) || defined(RTN56UB2))
 		stop_usb();
 		stop_usbled();
 #endif		
@@ -4395,8 +4415,10 @@ again:
 			modprobe_r("wl_high");
 		}
 
+#if !defined(RTN56UB1) && !defined(RTN56UB2)
 		stop_usb();
 		stop_usbled();
+#endif		
 #endif
 		sleep(3);
 		nvram_set(ASUS_STOP_COMMIT, "1");
@@ -4460,7 +4482,7 @@ again:
 				modprobe_r("wl");
 			}
 
-#if !defined(RTN53) && !defined(RTN56UB1)
+#if !defined(RTN53) && !defined(RTN56UB1) && !defined(RTN56UB2)
 			stop_usb();
 			stop_usbled();
 			remove_storage_main(1);
@@ -6319,9 +6341,12 @@ _dprintf("test 2. turn off the USB power during %d seconds.\n", reset_seconds[re
                 if(action&RC_SERVICE_START) start_lltdc();
         }
 #endif
-        else if (strcmp(script, "miniupnpc") == 0) {
-                if(action&RC_SERVICE_START) start_miniupnpc();
-        }
+#ifdef RTCONFIG_UPNPC
+	else if (strcmp(script, "miniupnpc") == 0) {
+		if(action&RC_SERVICE_STOP) stop_miniupnpc();
+		if(action&RC_SERVICE_START) start_miniupnpc();
+	}
+#endif
 #ifdef RTCONFIG_TOR
 	else if (strcmp(script, "tor") == 0)
 	{

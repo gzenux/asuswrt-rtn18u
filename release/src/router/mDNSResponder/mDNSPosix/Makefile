@@ -472,7 +472,14 @@ CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_OS) $(CFLAGS_DEBUG)
 #############################################################################
 
 #all: setup Daemon libdns_sd Clients SAClient SAResponder SAProxyResponder Identify NetMonitor dnsextd $(OPTIONALTARG)
-all: SAProxyResponder NetMonitor Query 
+
+include ../../.config
+ifeq ($(RTCONFIG_BONJOUR), y)
+EXEC = SAProxyResponder NetMonitor Query 
+else
+EXEC = SAProxyResponder
+endif
+all: $(EXEC)
 
 install: setup InstalledDaemon InstalledStartup InstalledLib InstalledManPages InstalledClients $(OPTINSTALL)
 
@@ -787,8 +794,9 @@ romfs:
 	install -d $(INSTALLDIR)/usr/sbin
 	$(STRIP) build/prod/mDNSProxyResponderPosix 
 	install build/prod/mDNSProxyResponderPosix $(INSTALLDIR)/usr/sbin/mDNSResponder
+ifeq ($(RTCONFIG_BONJOUR), y)
 	$(STRIP) build/prod/mDNSNetMonitor
 	install build/prod/mDNSNetMonitor $(INSTALLDIR)/usr/sbin/mDNSNetMonitor
 	$(STRIP) build/prod/mDNSQuery
 	install build/prod/mDNSQuery $(INSTALLDIR)/usr/sbin/mDNSQuery
-
+endif

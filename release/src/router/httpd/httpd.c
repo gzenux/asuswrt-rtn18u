@@ -72,6 +72,7 @@ typedef unsigned int __u32;   // 1225 ham
 #include <sys/signal.h>
 #include <sys/wait.h>
 #include <shared.h>
+#include <shutils.h>
 
 #define ETCPHYRD	14
 #define SIOCGETCPHYRD   0x89FE
@@ -239,7 +240,10 @@ unsigned int login_ip_tmp=0; // the ip of the current session.
 unsigned int login_try=0;
 unsigned int last_login_ip = 0;	// the last logined ip 2008.08 magic
 /* limit login IP addr; 2012.03 Yau */
-unsigned int access_ip[4];
+struct {
+	struct in_addr ip;
+	struct in_addr netmask;
+} access_ip[4];
 unsigned int MAX_login;
 int lock_flag = 0;
 
@@ -1293,33 +1297,28 @@ void http_login_cache(usockaddr *u) {
 	temp_ip_str = inet_ntoa(temp_ip_addr);
 }
 
-void http_get_access_ip(void) {
-	struct in_addr tmp_access_addr;
-	char tmp_access_ip[32];
-	char *nv, *nvp, *b;
-	int i=0, p=0;
+void http_get_access_ip(void)
+{
+	struct in_addr addr4;
+	char *nv, *nvp, *b, *ip;
+	int i, size;
 
-	for(; i<ARRAY_SIZE(access_ip); i++)
-		access_ip[i]=0;
+	memset(&access_ip, 0, sizeof(access_ip));
 
 	nv = nvp = strdup(nvram_safe_get("http_clientlist"));
-
-	if (nv) {
-		while ((b = strsep(&nvp, "<")) != NULL) {
-			if (strlen(b)==0) continue;
-			sprintf(tmp_access_ip, "%s", b);
-			inet_aton(tmp_access_ip, &tmp_access_addr);
-
-			if (p >= ARRAY_SIZE(access_ip)) {
-				_dprintf("%s: access_ip out of range (p %d addr %x)!\n",
-					__func__, p, (unsigned int)tmp_access_addr.s_addr);
-				break;
-			}
-			access_ip[p] = (unsigned int)tmp_access_addr.s_addr;
-			p++;
+	i = 0;
+	while (nv && (b = strsep(&nvp, "<")) != NULL && i < ARRAY_SIZE(access_ip)) {
+		ip = strsep(&b, "/");
+		size = (b && *b) ? strtoul(b, NULL, 10) : 32;
+		if (inet_pton(AF_INET, ip, &addr4) > 0) {
+			if (size > 32)
+				size = 32;
+			access_ip[i].ip.s_addr = addr4.s_addr;
+			access_ip[i].netmask.s_addr = htonl(0xffffffffUL << (32 - size));
+			i++;
 		}
-		free(nv);
 	}
+	free(nv);
 }
 
 void http_login(unsigned int ip, char *url) {
@@ -1355,16 +1354,17 @@ void http_login(unsigned int ip, char *url) {
 	nvram_set("login_timestamp", login_timestampstr);
 }
 
-int http_client_ip_check(void) {
-
+int http_client_ip_check(void)
+{
 	int i = 0;
-	if(nvram_match("http_client", "1")) {
-		while(i<ARRAY_SIZE(access_ip)) {
-			if(access_ip[i]!=0) {
-				if(login_ip_tmp==access_ip[i])
-					return 1;
-			}
-			i++;
+
+	if (nvram_match("http_client", "1")) {
+		for (i = 0; i < ARRAY_SIZE(access_ip); i++) {
+			if (access_ip[i].ip.s_addr == INADDR_ANY)
+				continue;
+			if ((login_ip_tmp & access_ip[i].netmask.s_addr) ==
+			    (access_ip[i].ip.s_addr & access_ip[i].netmask.s_addr))
+				return 1;
 		}
 		return 0;
 	}

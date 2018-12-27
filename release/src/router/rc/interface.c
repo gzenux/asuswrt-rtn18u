@@ -516,7 +516,7 @@ int start_vlan(void)
 #elif defined(RTCONFIG_RALINK)
 #if defined(RTCONFIG_RALINK_MT7620) /* RT-N14U, RT-AC52U, RT-AC51U, RT-N11P, RT-N54U, RT-AC1200HP, RT-AC54U */
 		char *wan_base_if = "eth2";
-#elif defined(RTCONFIG_RALINK_MT7621) /* RT-N56UB1 */
+#elif defined(RTCONFIG_RALINK_MT7621) /* RT-N56UB1, RT-N56UB2 */
 		char *wan_base_if = "eth3";
 #endif
 #endif

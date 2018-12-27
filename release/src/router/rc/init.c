@@ -705,27 +705,24 @@ wan_defaults(void)
         }
 
 #ifdef RTCONFIG_MULTICAST_IPTV
-_dprintf("**** wan default: define MULTICAST_IPTV ***\n");
-	if( nvram_get_int("switch_stb_x") > 5 ) {
-	        unit = WAN_UNIT_IPTV;
-        	foreach (word, nvram_safe_get("iptv_wan_ifnames"), next) {
-                	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-	                nvram_set(strcat_r(prefix, "ifname", tmp), word);
-//Yaudbg
-_dprintf("*** Multicast IPTV defaults: nvram add: %s ****\n", word);
-			if(nvram_match("switch_wantag", "singtel"))
+	if (nvram_get_int("switch_stb_x") > 6) {
+		unit = WAN_UNIT_IPTV;
+		foreach (word, nvram_safe_get("iptv_wan_ifnames"), next) {
+			snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+			nvram_set(strcat_r(prefix, "ifname", tmp), word);
+			if (nvram_match("switch_wantag", "singtel"))
 				nvram_set(strcat_r(prefix, "vendorid", tmp),"S_iptvsys");
 
-	                for (t = router_defaults; t->name; t++) {
-        	                if(strncmp(t->name, "wan_", 4)!=0) continue;
+			for (t = router_defaults; t->name; t++) {
+				if (strncmp(t->name, "wan_", 4) != 0) continue;
 
-                	        if(!nvram_get(strcat_r(prefix, &t->name[4], tmp))){
-                        	        _dprintf("_set %s = %s\n", tmp, t->value);
-                                	nvram_set(tmp, t->value);
-	                        }
-        	        }
-                	++unit;
-        	}
+				if (!nvram_get(strcat_r(prefix, &t->name[4], tmp))) {
+					_dprintf("_set %s = %s\n", tmp, t->value);
+					nvram_set(tmp, t->value);
+				}
+			}
+			++unit;
+		}
 	}
 #endif
 }
@@ -1219,6 +1216,7 @@ restore_defaults(void)
 			nvram_set("reboot_time", "80");		// default is 70 sec
 			break;
 		case MODEL_RTN56UB1:
+		case MODEL_RTN56UB2:
 		case MODEL_RTN54U:
 		case MODEL_RTAC54U:
 		case MODEL_RTAC1200HP:
@@ -2220,8 +2218,9 @@ int init_nvram(void)
 		break;
 #endif	/* RTAC51U */
 
-#if defined(RTN56UB1)
+#if defined(RTN56UB1) || defined(RTN56UB2)
 	case MODEL_RTN56UB1:
+	case MODEL_RTN56UB2:
 		nvram_set("boardflags", "0x100"); // although it is not used in ralink driver, set for vlan
 		nvram_set("vlan1hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface
 		//nvram_set("vlan2hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface
@@ -2269,7 +2268,7 @@ int init_nvram(void)
 
 		break;
 
-#endif	/* RTN56UB1 */
+#endif	/* RTN56UB1 RTN56UB2 */ 
 #if defined(RTN54U) || defined(RTAC54U)
 	case MODEL_RTN54U:
 	case MODEL_RTAC54U:
@@ -4720,20 +4719,19 @@ int init_nvram(void)
 #endif
 
 #ifdef RTCONFIG_MULTICAST_IPTV
-        if(nvram_match("switch_wantag", "singtel")) {
-                nvram_set("iptv_wan_ifnames", "vlan30 vlan40");
-        }
-        else if(nvram_match("switch_wantag", "maxis_fiber_sp_iptv")) {
-                nvram_set("iptv_wan_ifnames", "vlan15");
-		nvram_set("iptv_ifname", "vlan15");
-        }
-        else if(nvram_match("switch_wantag", "maxis_fiber_iptv")) {
-                nvram_set("iptv_wan_ifnames", "vlan823");
-		nvram_set("iptv_ifname", "vlan823");
-        }
-	else if(nvram_match("switch_wantag", "movistar")) {
-		nvram_set("iptv_wan_ifnames", "vlan2 vlan3");
-		nvram_set("iptv_ifname", "vlan2");
+	if (nvram_get_int("switch_stb_x") > 6) {
+		if(nvram_match("switch_wantag", "singtel")) {
+			nvram_set("iptv_wan_ifnames", "vlan30 vlan40");
+		} else if(nvram_match("switch_wantag", "maxis_fiber_sp_iptv")) {
+			nvram_set("iptv_wan_ifnames", "vlan15");
+			nvram_set("iptv_ifname", "vlan15");
+		} else if(nvram_match("switch_wantag", "maxis_fiber_iptv")) {
+			nvram_set("iptv_wan_ifnames", "vlan823");
+			nvram_set("iptv_ifname", "vlan823");
+		} else if(nvram_match("switch_wantag", "movistar")) {
+			nvram_set("iptv_wan_ifnames", "vlan2 vlan3");
+			nvram_set("iptv_ifname", "vlan2");
+		}
 	}
 #endif
 
@@ -4764,26 +4762,42 @@ int init_nvram(void)
 	add_rc_support("PARENTAL2");
 #endif
 
+#ifdef RTCONFIG_TCODE
+	config_tcode();
+#endif
 #ifdef RTCONFIG_YANDEXDNS
-	/* 0: disable, 1: full, -1: partial without qis */
-	int yadns_support = 1;
-	switch (model) {
-	case MODEL_RTN11P:
-	case MODEL_RTN300:
-		yadns_support = nvram_match("reg_spec", "CE") && nvram_match("wl_reg_2g", "2G_CH13");	//for CE & RU area. (but IN could also be included)
-		break;
-	case MODEL_RTN12HP:
-	case MODEL_RTN12HP_B1:
-		yadns_support = (nvram_match("regulation_domain", "RU"));
-			//||(nvram_match("regulation_domain", "EU") && nvram_match("sb/1/regrev", "5"));
-		break;
+#ifdef RTCONFIG_TCODE
+	if (!nvram_contains_word("rc_support", "yadns") &&
+	    !nvram_contains_word("rc_support", "yadns_hideqis"))
+#endif
+	{
+		/* 0: disable, 1: full, -1: partial without qis */
+		int yadns_support;
+
+		switch (model) {
+		case MODEL_RTN11P:
+		case MODEL_RTN300:
+			yadns_support = nvram_match("reg_spec", "CE") && nvram_match("wl_reg_2g", "2G_CH13");	//for CE & RU area. (but IN could also be included)
+			break;
+#ifdef RTCONFIG_TCODE
+		case MODEL_RTN12D1:
+		case MODEL_RTN12HP_B1:
+		case MODEL_RTAC51U:
+			/* Only enabled by territory_code */
+			yadns_support = 0;
+			break;
+#endif
+		default:
+			/* Enabled by default since YANDEXDNS=y */
+			yadns_support = 1;
+		}
+		if (yadns_support == 0)
+			nvram_set_int("yadns_enable_x", 0);
+		else if (yadns_support < 0)
+			add_rc_support("yadns_hideqis");
+		else
+			add_rc_support("yadns");
 	}
-	if (yadns_support == 0)
-		nvram_set_int("yadns_enable_x", 0);
-	else if (yadns_support < 0)
-		add_rc_support("yadns_hideqis");
-	else
-		add_rc_support("yadns");
 #endif
 
 #ifdef RTCONFIG_DUALWAN // RTCONFIG_DUALWAN
@@ -5043,9 +5057,6 @@ int init_nvram(void)
 
 #ifdef RTCONFIG_GETREALIP
 	add_rc_support("realip");
-#endif
-#ifdef RTCONFIG_TCODE
-	config_tcode();
 #endif
 #ifdef RTCONFIG_LACP
 	add_rc_support("lacp");
@@ -5875,7 +5886,7 @@ static void sysinit(void)
 	// avoid the process like fsck to devour the memory.
 	// ex: when DUT ran fscking, restarting wireless would let DUT crash.
 	if ((model == MODEL_RTN56U) || (model == MODEL_DSLN55U) || (model == MODEL_RTAC52U) || (model == MODEL_RTAC51U)
-	      ||(model == MODEL_RTN14U) ||(model == MODEL_RTN54U) ||(model == MODEL_RTAC54U) ||(model == MODEL_RTAC1200HP) || (model == MODEL_RTN56UB1))
+	      ||(model == MODEL_RTN14U) ||(model == MODEL_RTN54U) ||(model == MODEL_RTAC54U) ||(model == MODEL_RTAC1200HP) || (model == MODEL_RTN56UB1) || (model == MODEL_RTN56UB2))
 		{
 			f_write_string("/proc/sys/vm/min_free_kbytes", "4096", 0, 0);
 			min_free_kbytes_check = 1;
@@ -6190,7 +6201,7 @@ int init_main(int argc, char *argv[])
 #ifdef RTCONFIG_USB
 				remove_storage_main(1);
 				if (!g_reboot) {
-#if !defined(RTN56UB1)
+#if !(defined(RTN56UB1) || defined(RTN56UB2)) 
 					stop_usb();
 					stop_usbled();
 #endif
@@ -6279,30 +6290,6 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 			if (restore_defaults_g)
 			{
 				restore_defaults_g = 0;
-
-				switch (get_model()) {
-				case MODEL_RTAC66U:
-				case MODEL_RTAC56S:
-				case MODEL_RTAC56U:
-				case MODEL_RTAC68U:
-				case MODEL_DSLAC68U:
-				case MODEL_RTAC87U:
-				case MODEL_RTN12HP:
-				case MODEL_RTN12HP_B1:
-				case MODEL_RTN66U:
-				case MODEL_RTN18U:
-				//case MODEL_RTAC5300:
-				//case MODEL_RTAC3100:
-				//case MODEL_RTAC88U:
-				//case MODEL_RTAC1200G:
-					set_wltxpower();
-					break;
-				default:
-					if (nvram_contains_word("rc_support", "pwrctrl"))
-						set_wltxpower();
-					break;
-				}
-
 				restart_wireless();
 #ifdef RTCONFIG_QTN
 				/* add here since tweak wireless-related flow */
@@ -6560,7 +6547,7 @@ int reboothalt_main(int argc, char *argv[])
 	_dprintf(reboot ? "Rebooting..." : "Shutting down...");
 	kill(1, reboot ? SIGTERM : SIGQUIT);
 
-#if defined(RTN14U) || defined(RTN65U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTCONFIG_QCA) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+#if defined(RTN14U) || defined(RTN65U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTCONFIG_QCA) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2) 
 	def_reset_wait = 50;
 #endif
 

@@ -55,9 +55,11 @@
 char *wlc_nvname(char *keyword);
 //#endif
 
-#if defined(RTAC52U) || defined(RTAC51U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+#if defined(RTAC52U) || defined(RTAC51U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2)
 #define VHT_SUPPORT /* 11AC */
 #endif
+
+#undef OLD_ACL  //for standalone acl policy
 
 #define xR_MAX	3
 typedef struct _roaming_info
@@ -585,7 +587,7 @@ void gen_macmode(int mac_filter[], int band)
 {
 	int i,j;
 	char temp[128], prefix_mssid[] = "wlXXXXXXXXXX_mssid_";
-
+#ifdef OLD_ACL
 	snprintf(temp, sizeof(temp), "wl%d_macmode", band);
 	mac_filter[0] = check_macmode(nvram_get(temp));
 	_dprintf("mac_filter[0] = %d\n", mac_filter[0]);
@@ -622,6 +624,21 @@ void gen_macmode(int mac_filter[], int band)
 			j++;
 		}
 	}
+#else
+	for (i = 0,j = 0; i < MAX_NO_MSSID; i++)
+	{
+		if (i)
+			sprintf(prefix_mssid, "wl%d.%d_", band, i);
+		else
+			sprintf(prefix_mssid, "wl%d_", band);
+
+		if (!nvram_match(strcat_r(prefix_mssid, "bss_enabled", temp), "1"))
+			continue;
+		
+		mac_filter[j] = check_macmode(nvram_safe_get(strcat_r(prefix_mssid, "macmode", temp)));
+		j++;
+	}
+#endif	
 }
 //Ren.E
 
@@ -741,6 +758,7 @@ int gen_ralink_config(int band, int is_iNIC)
 		{ // regular CE with 2G ch 1~13
 #endif
 		fprintf(fp, "CountryCode=FR\n");
+		fprintf(fp, "ED_MODE=1\n");
 		fprintf(fp, "EDCCA_AP_STA_TH=255\n");
 		fprintf(fp, "EDCCA_AP_AP_TH=255\n");
 		fprintf(fp, "EDCCA_FALSE_CCA_TH=3000\n");
@@ -1372,7 +1390,7 @@ int gen_ralink_config(int band, int is_iNIC)
 	{
 		fprintf(fp, "GreenAP=%d\n", 1);
 	}
-#elif defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+#elif defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2)
 	/// MT7620 GreenAP will impact TSSI, force to disable GreenAP here..
 	//  MT7620 GreenAP cause bad site survey result on RTAC52 2G.
 	{
@@ -2081,7 +2099,7 @@ int gen_ralink_config(int band, int is_iNIC)
 	if (str && strlen(str))
 	{   
 		fprintf(fp, "HT_GI=%d\n", atoi(str));
-#if defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+#if defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) ||defined(RTN56UB2)
 #if defined(VHT_SUPPORT)
 		fprintf(fp, "VHT_SGI=%d\n", atoi(str));
 #endif		
@@ -2091,14 +2109,14 @@ int gen_ralink_config(int band, int is_iNIC)
 	{
 		warning = 39;
 		fprintf(fp, "HT_GI=%d\n", 1);
-#if defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U)
+#if defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2)
 #if defined(VHT_SUPPORT)
 		fprintf(fp, "VHT_SGI=%d\n", 1);
 #endif		
 #endif		
 	}
 
-#if defined(RTN54U) || defined(RTAC1200HP) || defined(RTAC54U) || defined(RTN56UB1)
+#if defined(RTN54U) || defined(RTAC1200HP) || defined(RTAC54U) || defined(RTN56UB1) || defined(RTN56UB2)
 #if defined(VHT_SUPPORT)
 		fprintf(fp, "VHT_LDPC=%d\n",1);
 #endif		
@@ -2232,8 +2250,12 @@ int gen_ralink_config(int band, int is_iNIC)
 	fprintf(fp, "WscVendorPinCode=%s\n", nvram_safe_get("secret_code"));
 //	fprintf(fp, "ApCliWscPinCode=%s\n", nvram_safe_get("secret_code"));	// removed from SDK 3.3.0.0
 
+#if !defined(OLD_ACL)			
+	memset(mac_filter,0,sizeof(mac_filter));
+#endif	
 	//AccessPolicy0
 	gen_macmode(mac_filter, band); //Ren
+#ifdef OLD_ACL	
 	str = nvram_safe_get(strcat_r(prefix, "macmode", tmp));
 
 	if (str && strlen(str))
@@ -2273,30 +2295,66 @@ int gen_ralink_config(int band, int is_iNIC)
 		for (i = 0; i < ssid_num; i++)
 			fprintf(fp, "AccessPolicy%d=%d\n", i, 0);
 	}
+#else
+	for (i = 0; i < MAX_NO_MSSID; i++)
+		fprintf(fp, "AccessPolicy%d=%d\n", i, mac_filter[i]);
 
+#endif	 //OLD_ACL	
+
+#ifdef OLD_ACL
 	list[0]=0;
 	list[1]=0;
 	if (nvram_invmatch(strcat_r(prefix, "macmode", tmp), "disabled"))
 	{
 		nv = nvp = strdup(nvram_safe_get(strcat_r(prefix, "maclist_x", tmp)));
-		if (nv) {
-			while ((b = strsep(&nvp, "<")) != NULL) {
-				if (strlen(b)==0) continue;
-				if (list[0]==0)
-					sprintf(list, "%s", b);
-				else
-					sprintf(list, "%s;%s", list, b);
-			}
-			free(nv);
-		}
-	}
+#else
+	for (i = 0,j = 0; i < MAX_NO_MSSID; i++)
+	{
 
+		list[0]=0;
+		list[1]=0;
+		if (i)
+			sprintf(prefix_mssid, "wl%d.%d_", band, i);
+		else
+			sprintf(prefix_mssid, "wl%d_", band);
+
+
+		if (!nvram_match(strcat_r(prefix_mssid, "bss_enabled", temp), "1"))
+			continue;
+
+		if (nvram_invmatch(strcat_r(prefix_mssid, "macmode", tmp), "disabled"))
+		{
+			nv = nvp = strdup(nvram_safe_get(strcat_r(prefix_mssid, "maclist_x", tmp)));
+#endif //OLD_ACL	
+			if (nv) {
+				while ((b = strsep(&nvp, "<")) != NULL) {
+					if (strlen(b)==0) continue;
+					if (list[0]==0)
+						sprintf(list, "%s", b);
+					else
+						sprintf(list, "%s;%s", list, b);
+				}
+				free(nv);
+			}
+#ifdef OLD_ACL
+	}
 	// AccessControlLis0~3
 	for (i = 0; i < ssid_num; i++)
 		if(mac_filter[i] != 0)
 			fprintf(fp, "AccessControlList%d=%s\n", i, list);
 		else
 			fprintf(fp, "AccessControlList%d=%s\n", i, "");
+#else
+			fprintf(fp, "AccessControlList%d=%s\n", j, list);
+		}
+		else
+			fprintf(fp, "AccessControlList%d=%s\n", j, "");
+		j++;
+#endif		
+
+#if !defined(OLD_ACL)			
+	} //for loop
+#endif
 
 	if (sw_mode != SW_MODE_REPEATER && !nvram_match(strcat_r(prefix, "mode_x", tmp), "0"))
 	{

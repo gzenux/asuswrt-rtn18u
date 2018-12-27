@@ -252,7 +252,7 @@ ifeq ($(RTCONFIG_RALINK),y)
 #################################################################################
 obj-y += wireless_tools
 
-ifeq ($(or $(RTN14U),$(RTAC52U),$(RTAC51U),$(RTN11P),$(RTN300),$(RTN54U),$(RTAC1200HP),$(RTN56UB1),$(RTAC54U)),y)
+ifeq ($(or $(RTN14U),$(RTAC52U),$(RTAC51U),$(RTN11P),$(RTN300),$(RTN54U),$(RTAC1200HP),$(RTN56UB1),$(RTN56UB2),$(RTAC54U)),y)
 obj-y += reg
 endif
 
@@ -262,7 +262,7 @@ obj-y += rt2880_app
 else	#!ifneq ($(findstring linux-3.x,$(LINUXDIR)),)
 obj-y += ated
 obj-y += flash
-ifeq ($(or $(RTN14U),$(RTAC52U),$(RTAC51U),$(RTN11P),$(RTN300),$(RTN54U),$(RTAC1200HP),$(RTN56UB1),$(RTAC54U)),y)
+ifeq ($(or $(RTN14U),$(RTAC52U),$(RTAC51U),$(RTN11P),$(RTN300),$(RTN54U),$(RTAC1200HP),$(RTN56UB1),$(RTN56UB2),$(RTAC54U)),y)
 else
 obj-y += hw_nat
 endif
@@ -397,7 +397,7 @@ obj-$(RTCONFIG_USB_MODEM) += $(if $(RTCONFIG_QCA),,uqmi)
 endif
 
 ifneq ($(or $(findstring linux-2.6.36.x,$(LINUXDIR)),$(findstring linux-2.6.36,$(LINUXDIR)),$(findstring linux-3.x,$(LINUXDIR)),$(findstring linux-3.3.x,$(LINUXDIR))),)
-ifeq ($(or $(RTN65U),$(RTAC55U),$(RTAC55UHP),$(RTN56UB1)),y)
+ifeq ($(or $(RTN65U),$(RTAC55U),$(RTAC55UHP),$(RTN56UB1),$(RTN56UB2)),y)
 obj-$(RTCONFIG_USB_MODEM) += usbmodeswitch-1.2.3
 else
 ifneq ($(RTCONFIG_INTERNAL_GOBI),y)
@@ -571,7 +571,7 @@ obj-$(RTCONFIG_WEBDAV) += libexif
 obj-$(RTCONFIG_IXIAEP) += ixia_endpoint$(BCMEX)
 
 # Add for ASUS Components
-obj-y += miniupnpc
+obj-$(RTCONFIG_UPNPC) += miniupnpc
 obj-y += miniupnpd$(MUVER)
 obj-y += igmpproxy
 obj-y += snooper
@@ -1225,7 +1225,7 @@ roldconf: config/conf
 	config/conf -o $(CONFIG_IN)
 	$(MAKE) shared-clean libdisk-clean rc-clean nvram$(BCMEX)-clean httpd-clean prebuilt-clean libbcmcrypto-clean
 #	@$(MAKE) iptables-clean ebtables-clean pppd-clean zebra-clean openssl-clean mssl-clean mdu-clean pppd-clean
-	$(MAKE) dnsmasq-clean iproute2-clean
+	$(MAKE) dnsmasq-clean iproute2-clean networkmap-clean
 ifeq ($(RTCONFIG_BCMARM),y)
 	$(MAKE) compressed-clean
 endif
@@ -1437,6 +1437,8 @@ wb: openssl libxml2 curl-7.21.7
 push_log: wb
 
 rc: nvram$(BCMEX) shared libbcmcrypto libdisk $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_BWDPI),bwdpi)
+
+networkmap: shared
 
 bridge/stamp-h1:
 	cd bridge && CFLAGS="-Os -g $(EXTRACFLAGS)" \

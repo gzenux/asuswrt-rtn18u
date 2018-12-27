@@ -587,6 +587,7 @@ static void AppleModelCheck(char *model, char *name, int *type, char *shm_model)
 	return;
 }
 
+#ifdef RTCONFIG_UPNPC
 static int QuerymUPnPCInfo(P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab, int x)
 {
         unsigned char *a;
@@ -637,7 +638,9 @@ static int QuerymUPnPCInfo(P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab, 
 		fclose(fp);
 	}
 }
+#endif
 
+#ifdef RTCONFIG_BONJOUR
 static int QuerymDNSInfo(P_CLIENT_DETAIL_INFO_TABLE p_client_detail_info_tab, int x)
 {
 	unsigned char *a;
@@ -675,6 +678,7 @@ p_client_detail_info_tab->ip_addr[x][3]
 
 	return 0;
 }
+#endif
 
 void StringChk(char *chk_string)
 {
@@ -844,7 +848,9 @@ int main(int argc, char *argv[])
 		fullscan:
                 if(networkmap_fullscan == 1) { //Scan all IP address in the subnetwork
 		    if(scan_count == 0) { 
+#ifdef RTCONFIG_BONJOUR
 			eval("mDNSQuery");	//send mDNS service dicsovery
+#endif
 			eval("asusdiscovery");	//find asus device
 			// (re)-start from the begining
 			memset(scan_ipaddr, 0x00, 4);
@@ -1016,8 +1022,12 @@ int main(int argc, char *argv[])
                                 memcpy(p_client_detail_info_tab->mac_addr[p_client_detail_info_tab->ip_mac_num], 
 					arp_ptr->source_hwaddr, 6);
 				p_client_detail_info_tab->exist[p_client_detail_info_tab->ip_mac_num] = 1;
+#ifdef RTCONFIG_BONJOUR
 				query_ret = QuerymDNSInfo(p_client_detail_info_tab, i);
+#endif
+#ifdef RTCONFIG_UPNPC
 				query_ret = QuerymUPnPCInfo(p_client_detail_info_tab, i);
+#endif
 				#ifdef RTCONFIG_BWDPI
 				query_ret = QueryBwdpiInfo(p_client_detail_info_tab, i);
 				#endif

@@ -320,68 +320,6 @@ int with_ipv6_linklocal_addr(const char *ifname)
 	return (getifaddr((char *) ifname, AF_INET6, GIF_LINKLOCAL) != NULL);
 }
 
-#if 1 /* temporary till httpd route table redo */
-static const unsigned flagvals[] = { /* Must agree with flagchars[]. */
-	RTF_GATEWAY,
-	RTF_HOST,
-	RTF_REINSTATE,
-	RTF_DYNAMIC,
-	RTF_MODIFIED,
-	RTF_DEFAULT,
-	RTF_ADDRCONF,
-	RTF_CACHE
-};
-
-static const char flagchars[] =
-	"GHRDM"
-	"DAC"
-;
-const char str_default[] = "default";
-
-void ipv6_set_flags(char *flagstr, int flags)
-{
-	int i;
-
-	*flagstr++ = 'U';
-
-	for (i = 0; (*flagstr = flagchars[i]) != 0; i++) {
-		if (flags & flagvals[i]) {
-			++flagstr;
-		}
-	}
-}
-
-char* INET6_rresolve(struct sockaddr_in6 *sin6, int numeric)
-{
-	char name[128];
-	int s;
-
-	if (sin6->sin6_family != AF_INET6) {
-		fprintf(stderr, "rresolve: unsupported address family %d!",
-			sin6->sin6_family);
-		errno = EAFNOSUPPORT;
-		return NULL;
-	}
-	if (numeric & 0x7FFF) {
-		inet_ntop(AF_INET6, &sin6->sin6_addr, name, sizeof(name));
-		return strdup(name);
-	}
-	if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
-		if (numeric & 0x8000)
-			return strdup(str_default);
-		return strdup("*");
-	}
-
-	s = getnameinfo((struct sockaddr *) sin6, sizeof(struct sockaddr_in6),
-				name, sizeof(name), NULL, 0, 0);
-	if (s) {
-		perror("getnameinfo failed");
-		return NULL;
-	}
-	return strdup(name);
-}
-#endif
-
 static int ipv6_expand(char *buf, char *str, struct in6_addr *addr)
 {
 	char *dst = buf;

@@ -325,7 +325,7 @@ void start_usb(void)
 
 		/* if enabled, force USB2 before USB1.1 */
 		if (nvram_get_int("usb_usb2") == 1) {
-#if defined(RTN56UB1)		
+#if defined(RTN56UB1) || defined(RTN56UB2) 		 
 			modprobe(USB20_MOD);
 #else		   
 			i = nvram_get_int("usb_irq_thresh");
@@ -577,7 +577,7 @@ void stop_usb(void)
 	if (disabled || nvram_get_int("usb_uhci") != 1) modprobe_r(USBUHCI_MOD);
 	if (disabled || nvram_get_int("usb_usb2") != 1) modprobe_r(USB20_MOD);
 
-#if defined(RTN56UB1)		
+#if defined(RTN56UB1) ||  defined(RTN56UB2)		
 	modprobe_r(USB20_MOD);
 #endif		   
 

@@ -70,7 +70,7 @@ if((location.href.search('https://') >= 0) || (location.href.search('HTTPS://') 
 var http_clientlist_array = '<% nvram_get("http_clientlist"); %>';
 var accounts = [<% get_all_accounts(); %>];
 for(var i=0; i<accounts.length; i++){
-		accounts[i] = decodeURIComponent(accounts[i]);	
+	accounts[i] = decodeURIComponent(accounts[i]);	
 }
 if(accounts.length == 0)
 	accounts = ['<% nvram_get("http_username"); %>'];
@@ -122,12 +122,8 @@ function initial(){
 	if(!HTTPS_support){
 		document.getElementById("https_tr").style.display = "none";
 		document.getElementById("https_lanport").style.display = "none";
-		document.getElementById("http_client_tr").style.display = "none";
-		document.getElementById("http_client_table").style.display = "none";
-		document.getElementById("http_clientlist_Block").style.display = "none";
 	}
 	else{
-		setTimeout("showLANIPList();", 1000);
 		hide_https_lanport(document.form.http_enable.value);
 		hide_https_wanport(document.form.http_enable.value);
 	}	
@@ -852,7 +848,7 @@ function addRow(obj, upper){
 		obj.select();			
 		return false;
 	}
-	else if(validator.validIPForm(obj, 0) != true){
+	else if(validator.validIPForm(obj, 2) != true){
 		return false;
 	}
 	else{		
@@ -1019,12 +1015,13 @@ function check_sshd_enable(obj_value){
 
 function display_spec_IP(flag){
 	if(flag == 0){
-			document.getElementById("http_client_table").style.display = "none";
-			document.getElementById("http_clientlist_Block").style.display = "none";
+		document.getElementById("http_client_table").style.display = "none";
+		document.getElementById("http_clientlist_Block").style.display = "none";
 	}
 	else{
-			document.getElementById("http_client_table").style.display = "";
-			document.getElementById("http_clientlist_Block").style.display = "";
+		document.getElementById("http_client_table").style.display = "";
+		document.getElementById("http_clientlist_Block").style.display = "";
+		setTimeout("showLANIPList();", 1000);
 	}
 }
 
@@ -1365,7 +1362,7 @@ function paste_password(){
 					</td>
 				</tr>
 
-				<tr id="http_client_tr">
+				<tr>
 					<th><#System_login_specified_IP#></th>
 					<td>
 						<input type="radio" name="http_client" class="input" value="1" onclick="display_spec_IP(1);" <% nvram_match_x("", "http_client", "1", "checked"); %>><#checkbox_Yes#>
@@ -1389,7 +1386,7 @@ function paste_password(){
 				<tr>
 						<!-- client info -->
 					<td width="80%">
-						<input type="text" class="input_32_table" maxlength="15" name="http_client_ip_x_0"  onKeyPress="" onClick="hideClients_Block();" onblur="if(!over_var){hideClients_Block();}" autocorrect="off" autocapitalize="off">
+						<input type="text" class="input_32_table" maxlength="18" name="http_client_ip_x_0"  onKeyPress="" onClick="hideClients_Block();" onblur="if(!over_var){hideClients_Block();}" autocorrect="off" autocapitalize="off">
 						<img id="pull_arrow" height="14px;" src="/images/arrow-down.gif" style="position:absolute;*margin-left:-3px;*margin-top:1px;" onclick="pullLANIPList(this);" title="<#select_client#>" onmouseover="over_var=1;" onmouseout="over_var=0;">	
 						<div id="ClientList_Block_PC" class="ClientList_Block_PC"></div>	
 					 </td>

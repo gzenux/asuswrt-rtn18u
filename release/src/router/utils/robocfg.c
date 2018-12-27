@@ -824,9 +824,9 @@ main(int argc, char *argv[])
 			val32 = robo_read32(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_READ);
 			if ((val32 & (robo535x == 3 ? (1 << 24) : (1 << 20))) /* valid */) {
 				val16 = (robo535x == 3)
-					? ((val32 & 0xff000) >> 12)
-					: ((val32 & 0xff000) >> 12) << 4;
-				printf("%4d: vlan%d:", i, val16 | i);
+					? ((val32 & 0x00fff000) >> 12)
+					: (((val32 & 0xff000) >> 12) << 4) | i;
+				printf("%4d: vlan%d:", i, val16);
 				for (j = 0; j < 6; j++) {
 					if (val32 & (1 << j)) {
 						printf(" %d%s", j, (val32 & (1 << (j + 6))) ? 

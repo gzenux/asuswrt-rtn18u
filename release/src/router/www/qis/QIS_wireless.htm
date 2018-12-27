@@ -25,8 +25,9 @@ else
 	var smart_connect_tmp = '<% nvram_get("smart_connect_x"); %>';
 
 var wifi_Psk_orig = '<% nvram_get("wifi_psk"); %>';
-var IsDefPsk = 1;
+var IsDefPsk = 0;
 if( ( parent.document.QKform.sw_mode.value == 2 ) &&  ( wifi_Psk_orig != '' ) ) {
+	IsDefPsk = 1;
 	if ( wifi_Psk_orig != wl0_wpa_psk_orig )
 		IsDefPsk = 0; 
 	else if( band5g_support && wifi_Psk_orig != wl1_wpa_psk_orig )
@@ -1211,7 +1212,7 @@ function submitenter(myfield,e)
 }
 
 function RP_useParentSetting(){
-	if(document.getElementById('RP_parentSetting').checked == true){
+	if(document.getElementById('RP_parentSetting').checked == true || IsDefPsk == 1){
 		if(parent.document.QKform.wlc_band.value == 0){
 				document.form.wl0_ssid.value = decodeURIComponent(show_str_ssid(parent.document.QKform.wlc_ssid.value+'_RPT'));
 
@@ -1282,20 +1283,36 @@ function RP_useParentSetting(){
 				document.form.wl2_wpa_psk.value = parent.document.QKform.wlc_wpa_psk.value;		
 			
 		}
-		
-		document.getElementById('sync_with_2ghz').checked = false;
-		inputCtrl(document.form.wl0_ssid,0);
-		inputCtrl(document.form.wl0_wpa_psk,0);
-		if(band5g_support){				
-			inputCtrl(document.form.sync_with_2ghz,0);
-			inputCtrl(document.form.wl1_ssid,0);
-			inputCtrl(document.form.wl1_wpa_psk,0);
+
+		if (document.getElementById('RP_parentSetting').checked == true ){
+			document.getElementById('sync_with_2ghz').checked = false;
+			inputCtrl(document.form.wl0_ssid,0);
+			inputCtrl(document.form.wl0_wpa_psk,0);
+			if(band5g_support){
+				inputCtrl(document.form.sync_with_2ghz,0);
+				inputCtrl(document.form.wl1_ssid,0);
+				inputCtrl(document.form.wl1_wpa_psk,0);
+			}
+			if(wl_info.band5g_2_support){
+				document.getElementById('sync_with_5ghz').checked = false;
+				inputCtrl(document.form.sync_with_5ghz,0);
+				inputCtrl(document.form.wl2_ssid,0);
+				inputCtrl(document.form.wl2_wpa_psk,0);
+			}
 		}
-		if(wl_info.band5g_2_support){
-			document.getElementById('sync_with_5ghz').checked = false;
-			inputCtrl(document.form.sync_with_5ghz,0);
-			inputCtrl(document.form.wl2_ssid,0);
-			inputCtrl(document.form.wl2_wpa_psk,0);
+		else {
+			inputCtrl(document.form.wl0_ssid,1);
+			inputCtrl(document.form.wl0_wpa_psk,1);
+			if(band5g_support){
+				inputCtrl(document.form.sync_with_2ghz,1);
+				inputCtrl(document.form.wl1_ssid,1);
+				inputCtrl(document.form.wl1_wpa_psk,1);
+			}
+			if(wl_info.band5g_2_support){
+				inputCtrl(document.form.sync_with_5ghz,1);
+				inputCtrl(document.form.wl2_ssid,1);
+				inputCtrl(document.form.wl2_wpa_psk,1);
+			}
 		}
 	}	
 	else{
