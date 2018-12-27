@@ -61,7 +61,6 @@ LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 endif
 
 #UTILS := mii-tool robocfg ttcp
-UTILS := robocfg
 #ifneq ($(CONFIG_LINUX26),y)
 #CFLAGS += -U CONFIG_NVRAM_SIZE
 #endif
@@ -118,6 +117,11 @@ vpath %.c $(SRCBASE)/wl/exe $(SRCBASE)/shared
 endif
 endif
 
+ifeq ($(RTCONFIG_5301X),y)
+CFLAGS += -DBCM5301X
+endif
+UTILS += robocfg
+
 all: $(UTILS)
 
 ifeq ($(wildcard $(SRCBASE)/wl/exe/*.c),)
@@ -152,7 +156,12 @@ endif
 
 mii-tool: mii-tool.c mii.h
 
+ifeq ($(wildcard $(SRCBASE)/router/utils/robocfg.c),)
+robocfg:
+	-cp -f $(SRCBASE)/wl/exe/prebuilt/robocfg robocfg
+else
 robocfg: robocfg.c etc53xx.h
+endif
 
 ttcp: epi_ttcp.c
 	$(CC) $(CFLAGS) -o $@ $^

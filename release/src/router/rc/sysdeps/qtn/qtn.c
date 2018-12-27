@@ -24,7 +24,6 @@ extern int file_lock(char *tag);
 extern void file_unlock(int lockfd);
 extern void char_to_ascii(const char *output, const char *input);
 
-char cmd[32];
 #define	WIFINAME	"wifi0"
 #if 0
 void inc_mac(char *mac, int plus);
@@ -74,8 +73,12 @@ setCountryCode_5G_qtn(const char *cc)
 		return -1;
 	}
 
-	sprintf(cmd, "asuscfe1:ccode=%s", cc);
-	eval("nvram", "set", cmd );
+	if (!factory_debug_raw()) {
+		fprintf(stderr, "ATE command error\n");
+		return -1;
+	}
+
+	ATE_BRCM_SET("1:ccode", cc);
 	puts(nvram_safe_get("1:ccode"));
 
 	return 1;
@@ -84,7 +87,7 @@ setCountryCode_5G_qtn(const char *cc)
 int
 getCountryCode_5G_qtn(void)
 {
-	puts(nvram_safe_get("1:ccode"));
+	puts(cfe_nvram_safe_get_raw("1:ccode"));
 
 	return 0;
 }
@@ -112,9 +115,12 @@ int setRegrev_5G_qtn(const char *regrev)
 		return -1;
 	}
 
-	memset(cmd, 0, 32);
-	sprintf(cmd, "asuscfe1:regrev=%s", regrev);
-	eval("nvram", "set", cmd );
+	if (!factory_debug_raw()) {
+		fprintf(stderr, "ATE command error\n");
+		return -1;
+	}
+
+	ATE_BRCM_SET("1:regrev", regrev);
 	puts(nvram_safe_get("1:regrev"));
 	return 1;
 }
@@ -122,14 +128,13 @@ int setRegrev_5G_qtn(const char *regrev)
 int
 getRegrev_5G_qtn(void)
 {
-	puts(nvram_safe_get("1:regrev"));
+	puts(cfe_nvram_safe_get_raw("1:regrev"));
 	return 0;
 }
 
 int setMAC_5G_qtn(const char *mac)
 {
 	int ret;
-	char cmd_l[64];
 	char value[20] = {0};
 
 	if( mac==NULL || !isValidMacAddr(mac) )
@@ -159,9 +164,12 @@ int setMAC_5G_qtn(const char *mac)
 		return -1;
 	}
 
-	memset(cmd_l, 0, 64);
-	sprintf(cmd_l, "asuscfe1:macaddr=%s", mac);
-	eval("nvram", "set", cmd_l );
+	if (!factory_debug_raw()) {
+		fprintf(stderr, "ATE command error\n");
+		return -1;
+	}
+
+	ATE_BRCM_SET("1:macaddr", mac);
 	// puts(nvram_safe_get("1:macaddr"));
 
 	puts(value);
@@ -800,13 +808,15 @@ int gen_stateless_conf(void)
 	char key[130];
 	char real_key_str[130];
 	char ssid[65];
-	char region[5];
+	char region[5] = {0};
 	int channel = wf_chspec_ctlchan(wf_chspec_aton(nvram_safe_get("wl1_chanspec")));
 	int bw = atoi(nvram_safe_get("wl1_bw"));
 	uint32_t index = 0;
 
 	sprintf(ssid, "%s", nvram_safe_get("wl1_ssid"));
-	sprintf(region, "%s", nvram_safe_get("1:ccode"));
+	sprintf(region, "%s", nvram_safe_get("wl1_country_code"));
+	if(strlen(region) == 0)
+		sprintf(region, "%s", nvram_safe_get("1:ccode"));
 	dbg("[stateless] channel:[%d]\n", channel);
 	dbg("[stateless] bw:[%d]\n", bw);
 
@@ -902,7 +912,7 @@ int gen_stateless_conf(void)
 		region[l_len] = tolower(region[l_len]);
 	}
 	fprintf(fp, "wifi0_region=%s\n", region);
-	nvram_set("wl1_country_code", nvram_safe_get("1:ccode"));
+	// nvram_set("wl1_country_code", nvram_safe_get("1:ccode"));
 	fprintf(fp, "wifi0_vht=1\n");
 	if(bw==1) fprintf(fp, "wifi0_bw=20\n");
 	else if(bw==2) fprintf(fp, "wifi0_bw=40\n");
@@ -953,6 +963,7 @@ int runtime_config_qtn(int unit, int subunit)
 		return -1;
 	}
 	if ( unit == 1 && subunit == -1 ){
+#if 0
 		dbG("Global QTN settings\n");
 		if(nvram_get_int("wl1_itxbf") == 1 || nvram_get_int("wl1_txbf") == 1){
 			dbG("[bf] set_bf_on\n");
@@ -965,6 +976,7 @@ int runtime_config_qtn(int unit, int subunit)
 			ret = qcsapi_config_update_parameter(WIFINAME, "bf", "0");
 			if (ret < 0) dbG("qcsapi error\n");
 		}
+#endif
 		gen_stateless_conf();
 	}
 	rpc_parse_nvram_from_httpd(unit, subunit);

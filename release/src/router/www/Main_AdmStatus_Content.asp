@@ -11,11 +11,11 @@ function onSubmitCtrl(o, s) {
 	setTimeout("checkCmdRet();", 500);
 }
 
-var $j = jQuery.noConflict();
+
 var _responseLen;
 var noChange = 0;
 function checkCmdRet(){
-	$j.ajax({
+	$.ajax({
 		url: '/cmdRet_check.htm',
 		dataType: 'html',
 		
@@ -98,7 +98,7 @@ function checkCmdRet(){
 	<tbody>
 	<tr>
 		<td id="cmdTd">
-			<input type="text" width="90%" name="SystemCmd" value="" class="input_option" style="padding-left:3px">
+			<input type="text" width="90%" name="SystemCmd" value="" class="input_option" style="padding-left:3px" autocorrect="off" autocapitalize="off">
 			<input class="button_gen" id="cmdBtn" onClick="onSubmitCtrl(this, ' Refresh ')" type="submit" value="<#CTL_refresh#>" name="action">
 			<img id="loadingIcon" style="display:none;" src="/images/InternetScan.gif"></span>
 		</td>

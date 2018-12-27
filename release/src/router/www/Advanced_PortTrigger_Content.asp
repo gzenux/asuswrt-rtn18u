@@ -18,13 +18,16 @@
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/validator.js"></script>
 <script>
-var autofw_rulelist_array = "<% nvram_char_to_ascii("","autofw_rulelist"); %>";
+var autofw_rulelist_array = '<% nvram_char_to_ascii("","autofw_rulelist"); %>';
+var wans_mode ='<% nvram_get("wans_mode"); %>';
 
 function initial(){
-	show_menu(); 
-	well_known_apps(); 
+	show_menu();
+	well_known_apps();
 	showautofw_rulelist();
-	addOnlineHelp($("faq"), ["ASUSWRT", "port", "trigger"]);
+	addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "port", "trigger"]);
+	if(dualWAN_support && wans_mode == "lb")
+		document.getElementById("lb_note").style.display = "";
 }
 
 function well_known_apps(){
@@ -36,14 +39,14 @@ function well_known_apps(){
 	}
 }
 function applyRule(){
-	var rule_num = $('autofw_rulelist_table').rows.length;
-	var item_num = $('autofw_rulelist_table').rows[0].cells.length;
+	var rule_num = document.getElementById('autofw_rulelist_table').rows.length;
+	var item_num = document.getElementById('autofw_rulelist_table').rows[0].cells.length;
 	var tmp_value = "";
 
 	for(i=0; i<rule_num; i++){
 		tmp_value += "<"		
 		for(j=0; j<item_num-1; j++){	
-			tmp_value += $('autofw_rulelist_table').rows[i].cells[j].innerHTML;
+			tmp_value += document.getElementById('autofw_rulelist_table').rows[i].cells[j].innerHTML;
 			if(j != item_num-2)	
 				tmp_value += ">";
 		}
@@ -121,8 +124,8 @@ function addRow_Group(upper){
 		if('<% nvram_get("autofw_enable_x"); %>' != "1")
 			document.form.autofw_enable_x[0].checked = true;
 		
-		var rule_num = $('autofw_rulelist_table').rows.length;
-		var item_num = $('autofw_rulelist_table').rows[0].cells.length;		
+		var rule_num = document.getElementById('autofw_rulelist_table').rows.length;
+		var item_num = document.getElementById('autofw_rulelist_table').rows[0].cells.length;		
 		if(rule_num >= upper){
 			alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
 			return;
@@ -131,10 +134,10 @@ function addRow_Group(upper){
 		//Viz check same rule  //match(out port+out_proto+in port+in_proto) is not accepted
 		if(item_num >=2){
 			for(i=0; i<rule_num; i++){
-					if(document.form.autofw_outport_x_0.value == $('autofw_rulelist_table').rows[i].cells[1].innerHTML 
-						&& document.form.autofw_outproto_x_0.value == $('autofw_rulelist_table').rows[i].cells[2].innerHTML
-						&& document.form.autofw_inport_x_0.value == $('autofw_rulelist_table').rows[i].cells[3].innerHTML
-						&& document.form.autofw_inproto_x_0.value == $('autofw_rulelist_table').rows[i].cells[4].innerHTML){
+					if(document.form.autofw_outport_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[1].innerHTML 
+						&& document.form.autofw_outproto_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[2].innerHTML
+						&& document.form.autofw_inport_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[3].innerHTML
+						&& document.form.autofw_inproto_x_0.value == document.getElementById('autofw_rulelist_table').rows[i].cells[4].innerHTML){
 						alert("<#JS_duplicate#>");						
 						document.form.autofw_outport_x_0.focus();
 						document.form.autofw_outport_x_0.select();
@@ -157,27 +160,27 @@ function addRow_Group(upper){
 function edit_Row(r){ 	
 	var i=r.parentNode.parentNode.rowIndex;
   	
-	document.form.autofw_desc_x_0.value = $('autofw_rulelist_table').rows[i].cells[0].innerHTML;
-	document.form.autofw_outport_x_0.value = $('autofw_rulelist_table').rows[i].cells[1].innerHTML; 
-	document.form.autofw_outproto_x_0.value = $('autofw_rulelist_table').rows[i].cells[2].innerHTML; 
-	document.form.autofw_inport_x_0.value = $('autofw_rulelist_table').rows[i].cells[3].innerHTML;
-	document.form.autofw_inproto_x_0.value = $('autofw_rulelist_table').rows[i].cells[4].innerHTML;
+	document.form.autofw_desc_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[0].innerHTML;
+	document.form.autofw_outport_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[1].innerHTML; 
+	document.form.autofw_outproto_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[2].innerHTML; 
+	document.form.autofw_inport_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[3].innerHTML;
+	document.form.autofw_inproto_x_0.value = document.getElementById('autofw_rulelist_table').rows[i].cells[4].innerHTML;
 	
   del_Row(r);	
 }
 
 function del_Row(r){
   var i=r.parentNode.parentNode.rowIndex;
-  $('autofw_rulelist_table').deleteRow(i);
+  document.getElementById('autofw_rulelist_table').deleteRow(i);
   
   var autofw_rulelist_value = "";
-	for(k=0; k<$('autofw_rulelist_table').rows.length; k++){
-		for(j=0; j<$('autofw_rulelist_table').rows[k].cells.length-1; j++){
+	for(k=0; k<document.getElementById('autofw_rulelist_table').rows.length; k++){
+		for(j=0; j<document.getElementById('autofw_rulelist_table').rows[k].cells.length-1; j++){
 			if(j == 0)	
 				autofw_rulelist_value += "&#60";
 			else
 				autofw_rulelist_value += "&#62";
-			autofw_rulelist_value += $('autofw_rulelist_table').rows[k].cells[j].innerHTML;		
+			autofw_rulelist_value += document.getElementById('autofw_rulelist_table').rows[k].cells[j].innerHTML;		
 		}
 	}
 	
@@ -206,14 +209,14 @@ function showautofw_rulelist(){
 		}
 	}
   code +='</table>';
-	$("autofw_rulelist_Block").innerHTML = code;
+	document.getElementById("autofw_rulelist_Block").innerHTML = code;
 }
 
 function changeBgColor(obj, num){
 	if(obj.checked)
- 		$("row" + num).style.background='#FF9';
+ 		document.getElementById("row" + num).style.background='#FF9';
 	else
- 		$("row" + num).style.background='#FFF';
+ 		document.getElementById("row" + num).style.background='#FFF';
 }
 
 function trigger_validate_duplicate_noalert(o, v, l, off){
@@ -284,14 +287,15 @@ function trigger_validate_duplicate(o, v, l, off){
 		<div class="formfontdesc"><#IPConnection_porttrigger_sectiondesc#></div>
 		<div class="formfontdesc" style="margin-top:-10px;">
 			<a id="faq" href="" target="_blank" style="font-family:Lucida Console;text-decoration:underline;"><#menu5_3_3#>&nbspFAQ</a>
-		</div>			
-
-	    		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
+		</div>
+		<div class="formfontdesc" id="lb_note" style="color:#FFCC00; display:none;"><#lb_note_portTrigger#></div>
+	
+		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
 					  <thead>
 					  <tr>
 						<td colspan="6"><#t2BC#></td>
 					  </tr>
-					  </thead>		
+					  </thead>
 
           	<tr>
             	<th colspan="2"><#IPConnection_autofwEnable_itemname#></th>
@@ -329,10 +333,10 @@ function trigger_validate_duplicate(o, v, l, off){
           
 	          <tr>
           		<td width="22%">
-              		<input type="text" maxlength="18" class="input_15_table" name="autofw_desc_x_0" onKeyPress="return validator.isString(this, event)">
+              		<input type="text" maxlength="18" class="input_15_table" name="autofw_desc_x_0" onKeyPress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off">
             	</td>
             	<td width="21%">            		
-              		<input type="text" maxlength="11" class="input_12_table"  name="autofw_outport_x_0" onKeyPress="return validator.isPortRange(this,event)">
+              		<input type="text" maxlength="11" class="input_12_table"  name="autofw_outport_x_0" onKeyPress="return validator.isPortRange(this,event)" autocorrect="off" autocapitalize="off">
             	</td>
             	<td width="10%">
               		<select name="autofw_outproto_x_0" class="input_option">
@@ -342,7 +346,7 @@ function trigger_validate_duplicate(o, v, l, off){
               		</div>
             	</td>
             	<td width="21%">
-              		<input type="text" maxlength="11" class="input_12_table" name="autofw_inport_x_0" onKeyPress="return validator.isPortRange(this,event)">
+              		<input type="text" maxlength="11" class="input_12_table" name="autofw_inport_x_0" onKeyPress="return validator.isPortRange(this,event)" autocorrect="off" autocapitalize="off">
             	</td>
             	<td width="10%">
               		<select name="autofw_inproto_x_0" class="input_option">

@@ -18,12 +18,16 @@
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/jquery.js"></script>
 <script>
-var $j = jQuery.noConflict();
+
 
 function initial(){
 	show_menu();
 	if(adBlock_support)
 		document.getElementById("adBlock_field").style.display = "";
+	if(keyGuard_support){
+		document.getElementById("keyGuard_field_h").style.display = "";
+		document.getElementById("keyGuard_field").style.display = "";
+	}
 }
 
 </script>
@@ -62,7 +66,7 @@ function initial(){
 									<table width="730px">
 										<tr>
 											<td align="left">
-												<span class="formfonttitle">AiProtection</span>
+												<span class="formfonttitle"><#AiProtection_title#></span>
 											</td>
 										</tr>
 									</table>
@@ -91,7 +95,7 @@ function initial(){
 													<div class="app_name">
 														<a style="text-decoration: underline;" href="AiProtection_HomeProtection.asp"><#AiProtection_Home#></a>
 													</div>
-													<div class="app_desc" style="height:60px;">
+													<div class="app_desc" style="height:60px;white-space:nowrap;">
 														<li><#AiProtection_scan#></li>
 														<li><#AiProtection_sites_blocking#></li>
 														<li><#AiProtection_Vulnerability#></li>
@@ -130,7 +134,20 @@ function initial(){
 													</div>
 												</td>
 											</tr>
-											
+											<tr id="keyGuard_field_h" style="display:none" style="height:50px;"></tr>
+											<tr id="keyGuard_field" style="display:none">
+												<td align="center" class="app_table_radius_left" style="width:85px;">
+													<div style="text-align:center;background: url('/images/New_ui/Key-Guard.png');width:130px;height:85px;margin-left:30px;"></div>
+												</td>
+												<td class="app_table_radius_right" style="width:350px;height:120px;">
+													<div class="app_name">
+														<a style="text-decoration: underline;" href="AiProtection_Key_Guard.asp">Key Guard</a>
+													</div>
+													<div class="app_desc" style="height:60px;">
+														<li>Key Guard</li>
+													</div>
+												</td>
+											</tr>												
 										</tbody>
 									</table>
 								

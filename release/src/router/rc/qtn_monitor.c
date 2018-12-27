@@ -115,6 +115,7 @@ qtn_monitor_exit(int sig)
 
 void rpc_parse_nvram_from_httpd(int unit, int subunit)
 {
+	int ret = 0;
 	if (!rpc_qtn_ready())
 		return;
 
@@ -137,29 +138,26 @@ void rpc_parse_nvram_from_httpd(int unit, int subunit)
 		rpc_update_wds_psk(nvram_safe_get("wl1_wds_psk"));
 		rpc_update_ap_isolate(WIFINAME, atoi(nvram_safe_get("wl1_ap_isolate")));
 
-		if(nvram_get_int("wl1_80211h") == 1){
-			dbG("[80211h] set_80211h_on\n");
-			qcsapi_wifi_run_script("router_command.sh", "80211h_on");
+		if(nvram_get_int("wps_enable") == 1){
+			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 0);
+			if (ret < 0)
+				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
+
+			ret = qcsapi_wps_set_ap_pin(WIFINAME, nvram_safe_get("wps_device_pin"));
+			if (ret < 0)
+				dbG("qcsapi_wps_set_ap_pin %s error, return: %d\n", WIFINAME, ret);
+
+			ret = qcsapi_wps_registrar_set_pp_devname(WIFINAME, 0, (const char *) get_productid());
+			if (ret < 0)
+				dbG("qcsapi_wps_registrar_set_pp_devname %s error, return: %d\n", WIFINAME, ret);
+
 		}else{
-			dbG("[80211h] set_80211h_off\n");
-			qcsapi_wifi_run_script("router_command.sh", "80211h_off");
+			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 1);
+			if (ret < 0)
+				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
 		}
-		if(nvram_get_int("sw_mode") == SW_MODE_ROUTER ||
-			(nvram_get_int("sw_mode") == SW_MODE_AP &&
-				nvram_get_int("wlc_psta") == 0)){
-			if(nvram_get_int("wl1_chanspec") == 0){
-				if (nvram_match("1:ccode", "EU")){
-					if(nvram_get_int("acs_dfs") != 1){
-						dbG("[dfs] start nodfs scanning and selection\n");
-						start_nodfs_scan_qtn();
-					}
-				}else{
-					/* all country except EU */
-					dbG("[dfs] start nodfs scanning and selection\n");
-					start_nodfs_scan_qtn();
-				}
-			}
-		}
+
+
 	}else if (unit == 1 && subunit == 1){
 		if(nvram_get_int("wl1.1_bss_enabled") == 1){
 			rpc_update_mbss("wl1.1_ssid", nvram_safe_get("wl1.1_ssid"));
@@ -168,11 +166,16 @@ void rpc_parse_nvram_from_httpd(int unit, int subunit)
 			rpc_update_mbss("wl1.1_wpa_gtk_rekey", nvram_safe_get("wl1.1_wpa_gtk_rekey"));
 			rpc_update_mbss("wl1.1_auth_mode_x", nvram_safe_get("wl1.1_auth_mode_x"));
 			rpc_update_mbss("wl1.1_mbss", nvram_safe_get("wl1.1_mbss"));
-			if(nvram_match("wl1.1_lanaccess", "off") && !nvram_match("wl1.1_lanaccess", "")){
-				dbG("[lanaccess] wifi1 lanaccess off\n");
-				qcsapi_wifi_run_script("router_command.sh", "wifi1_lanaccess_off");
-			}else{
-				qcsapi_wifi_run_script("router_command.sh", "wifi1_lanaccess_on");
+			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+				if(nvram_match("wl1.1_lanaccess", "off") && !nvram_match("wl1.1_lanaccess", "")){
+					dbG("[lanaccess] wifi1 lanaccess off\n");
+					// libqcsapi_client/qtn/qtn_vlan.h
+					// QVLAN_VID_ALL: 0xffff
+					qcsapi_wifi_vlan_config("wifi0", e_qcsapi_vlan_enable, 0xffff /* QVLAN_VID_ALL */, 0);
+					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_bind, 4000 /* vid */, 0);
+				}else{
+					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_unbind, 4000 /* vid */, 0);
+				}
 			}
 		}
 		else{
@@ -186,11 +189,16 @@ void rpc_parse_nvram_from_httpd(int unit, int subunit)
 			rpc_update_mbss("wl1.2_wpa_gtk_rekey", nvram_safe_get("wl1.2_wpa_gtk_rekey"));
 			rpc_update_mbss("wl1.2_auth_mode_x", nvram_safe_get("wl1.2_auth_mode_x"));
 			rpc_update_mbss("wl1.2_mbss", nvram_safe_get("wl1.2_mbss"));
-			if(nvram_match("wl1.2_lanaccess", "off") && !nvram_match("wl1.2_lanaccess", "")){
-				dbG("[lanaccess] wifi2 lanaccess off\n");
-				qcsapi_wifi_run_script("router_command.sh", "wifi2_lanaccess_off");
-			}else{
-				qcsapi_wifi_run_script("router_command.sh", "wifi2_lanaccess_on");
+			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+				if(nvram_match("wl1.2_lanaccess", "off") && !nvram_match("wl1.2_lanaccess", "")){
+					dbG("[lanaccess] wifi2 lanaccess off\n");
+					// libqcsapi_client/qtn/qtn_vlan.h
+					// QVLAN_VID_ALL: 0xffff
+					qcsapi_wifi_vlan_config("wifi0", e_qcsapi_vlan_enable, 0xffff /* QVLAN_VID_ALL */, 0);
+					qcsapi_wifi_vlan_config("wifi2", e_qcsapi_vlan_bind, 4001 /* vid */, 0);
+				}else{
+					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_unbind, 4001 /* vid */, 0);
+				}
 			}
 		}
 		else{
@@ -204,18 +212,25 @@ void rpc_parse_nvram_from_httpd(int unit, int subunit)
 			rpc_update_mbss("wl1.3_wpa_gtk_rekey", nvram_safe_get("wl1.3_wpa_gtk_rekey"));
 			rpc_update_mbss("wl1.3_auth_mode_x", nvram_safe_get("wl1.3_auth_mode_x"));
 			rpc_update_mbss("wl1.3_mbss", nvram_safe_get("wl1.3_mbss"));
-			if(nvram_match("wl1.3_lanaccess", "off") && !nvram_match("wl1.3_lanaccess", "")){
-				dbG("[lanaccess] wifi3 lanaccess off\n");
-				qcsapi_wifi_run_script("router_command.sh", "wifi3_lanaccess_off");
-			}else{
-				qcsapi_wifi_run_script("router_command.sh", "wifi3_lanaccess_on");
+			if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+				if(nvram_match("wl1.3_lanaccess", "off") && !nvram_match("wl1.3_lanaccess", "")){
+					dbG("[lanaccess] wifi3 lanaccess off\n");
+					// libqcsapi_client/qtn/qtn_vlan.h
+					// QVLAN_VID_ALL: 0xffff
+					qcsapi_wifi_vlan_config("wifi0", e_qcsapi_vlan_enable, 0xffff /* QVLAN_VID_ALL */, 0);
+					qcsapi_wifi_vlan_config("wifi3", e_qcsapi_vlan_bind, 4002 /* vid */, 0);
+				}else{
+					qcsapi_wifi_vlan_config("wifi1", e_qcsapi_vlan_unbind, 4002 /* vid */, 0);
+				}
 			}
 		}
 		else{
 			qcsapi_wifi_remove_bss(wl_vifname_qtn(unit, subunit));
 		}
 	}
-	create_mbssid_vlan();
+	if(nvram_get_int("sw_mode") == SW_MODE_ROUTER){
+		create_mbssid_vlan();
+	}
 
 //	rpc_show_config();
 }
@@ -318,22 +333,36 @@ QTN_RESET:
 
 		rpc_update_wdslist();
 
-		ret = qcsapi_wps_set_ap_pin(WIFINAME, nvram_safe_get("wps_device_pin"));
-		if (ret < 0)
-			dbG("Qcsapi qcsapi_wps_set_ap_pin %s error, return: %d\n", WIFINAME, ret);
+		if(nvram_get_int("wps_enable") == 1){
+			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 0);
+			if (ret < 0)
+				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
 
-		ret = qcsapi_wps_registrar_set_pp_devname(WIFINAME, 0, (const char *) get_productid());
-		if (ret < 0)
-			dbG("Qcsapi qcsapi_wps_registrar_set_pp_devname %s error, return: %d\n", WIFINAME, ret);
+			ret = qcsapi_wps_set_ap_pin(WIFINAME, nvram_safe_get("wps_device_pin"));
+			if (ret < 0)
+				dbG("qcsapi_wps_set_ap_pin %s error, return: %d\n", WIFINAME, ret);
 
-		ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, !nvram_get_int("wps_enable"));
-		if (ret < 0)
-			dbG("Qcsapi rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
+			ret = qcsapi_wps_registrar_set_pp_devname(WIFINAME, 0, (const char *) get_productid());
+			if (ret < 0)
+				dbG("qcsapi_wps_registrar_set_pp_devname %s error, return: %d\n", WIFINAME, ret);
+		}else{
+			ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 1);
+			if (ret < 0)
+				dbG("rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
+		}
 
 		rpc_set_radio(1, 0, nvram_get_int("wl1_radio"));
 
 	}
 #endif
+
+	if(nvram_get_int("wl1_80211h") == 1){
+		dbG("[80211h] set_80211h_on\n");
+		qcsapi_wifi_run_script("router_command.sh", "80211h_on");
+	}else{
+		dbG("[80211h] set_80211h_off\n");
+		qcsapi_wifi_run_script("router_command.sh", "80211h_off");
+	}
 
 	if(nvram_get_int("sw_mode") == SW_MODE_ROUTER ||
 		(nvram_get_int("sw_mode") == SW_MODE_AP &&

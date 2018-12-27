@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -64,7 +65,7 @@ char *pwdec(const char *input)
 
 	char *output = unbase64((unsigned char*)input, strlen((char*)input));
 
-	char sourceStringTemp[MSG_LEN];
+	static char sourceStringTemp[MSG_LEN];
 	char dstStringTemp[MSG_LEN];
 	memset((char*)sourceStringTemp, 0 ,MSG_LEN);
 	memset((char*)dstStringTemp, 0 ,MSG_LEN);

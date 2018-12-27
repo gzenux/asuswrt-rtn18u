@@ -46,7 +46,7 @@ var coreTmp_5 = new Array();
 coreTmp_2 = [curr_coreTmp_2];
 coreTmp_5 = [curr_coreTmp_5];
 var wl_control_channel = <% wl_control_channel(); %>;
-var $j = jQuery.noConflict();
+
 var MaxTxPower_2;
 var MaxTxPower_5;
 var flag = 0;;
@@ -66,14 +66,14 @@ function initial(){
 		update_coretmp();
 
 	if(cookie.get("CoreTmpUnit") == 1){
-		$("unitDisplay1").innerHTML = "°F";
-		$("unitDisplay2").innerHTML = "°F";
+		document.getElementById("unitDisplay1").innerHTML = "°F";
+		document.getElementById("unitDisplay2").innerHTML = "°F";
 		document.form.fanctrl_fullspeed_temp.value = fanctrl_fullspeed_temp_orig_F;
 		document.form.fanctrl_period_temp.value = fanctrl_period_temp_orig_F;
 	}		
 	else{
-		$("unitDisplay1").innerHTML = "°C";
-		$("unitDisplay2").innerHTML = "°C";
+		document.getElementById("unitDisplay1").innerHTML = "°C";
+		document.getElementById("unitDisplay2").innerHTML = "°C";
 		document.form.fanctrl_fullspeed_temp.value = fanctrl_fullspeed_temp_orig;
 		document.form.fanctrl_period_temp.value = fanctrl_period_temp_orig;
 	}
@@ -88,24 +88,24 @@ function initial(){
 		document.form.selLED.onchange = function(){
 			document.form.btn_led_mode.value = 0;
 			document.form.selCLK.checked = false;
-			$j("#btnDescTr").fadeOut(100);
+			$("#btnDescTr").fadeOut(100);
 		}
 	
 		document.form.selCLK.onchange = function(){
 			document.form.btn_led_mode.value = 1;
 			document.form.selLED.checked = false;
-			$j("#btnDescTr").fadeIn(300);
+			$("#btnDescTr").fadeIn(300);
 			scrollTo(1000, 1000);
-			setTimeout('$("alertHint").style.visibility="hidden"', 500);
-			setTimeout('$("alertHint").style.visibility=""', 1000);
-			setTimeout('$("alertHint").style.visibility="hidden"', 1500);
-			setTimeout('$("alertHint").style.visibility=""', 2000);
-			setTimeout('$("alertHint").style.visibility="hidden"', 2500);
-			setTimeout('$("alertHint").style.visibility=""', 3000);
+			setTimeout('document.getElementById("alertHint").style.visibility="hidden"', 500);
+			setTimeout('document.getElementById("alertHint").style.visibility=""', 1000);
+			setTimeout('document.getElementById("alertHint").style.visibility="hidden"', 1500);
+			setTimeout('document.getElementById("alertHint").style.visibility=""', 2000);
+			setTimeout('document.getElementById("alertHint").style.visibility="hidden"', 2500);
+			setTimeout('document.getElementById("alertHint").style.visibility=""', 3000);
 		}
 	
-		$("btnCtrlTr").style.display = "";
-		$("btnDescTr").style.display = "";
+		document.getElementById("btnCtrlTr").style.display = "";
+		document.getElementById("btnDescTr").style.display = "";
 		if(document.form.btn_led_mode.value == 1)
 			document.form.selCLK.click();
 		else
@@ -114,7 +114,7 @@ function initial(){
 }
 
 function update_coretmp(e){
-  $j.ajax({
+  $.ajax({
     url: '/ajax_coretmp.asp',
     dataType: 'script', 
 	
@@ -140,18 +140,18 @@ function updateNum(_coreTmp_2, _coreTmp_5){
 	curr_coreTmp_2 = convertTemp(_coreTmp_2, _coreTmp_5, 0);
 
 	if(document.form.fanctrl_fullspeed_temp_unit.value == 1){
-		$("coreTemp_2").innerHTML = Math.round(_coreTmp_2*9/5+32) + " °F";
-		$("coreTemp_5").innerHTML = Math.round(_coreTmp_5*9/5+32) + " °F";
+		document.getElementById("coreTemp_2").innerHTML = Math.round(_coreTmp_2*9/5+32) + " °F";
+		document.getElementById("coreTemp_5").innerHTML = Math.round(_coreTmp_5*9/5+32) + " °F";
 	}
 	else{
-		$("coreTemp_2").innerHTML = _coreTmp_2 + " °C";
-		$("coreTemp_5").innerHTML = _coreTmp_5 + " °C";
+		document.getElementById("coreTemp_2").innerHTML = _coreTmp_2 + " °C";
+		document.getElementById("coreTemp_5").innerHTML = _coreTmp_5 + " °C";
 	}
 }
 
 function applyRule(){
 	if(parseInt(document.form.wl0_TxPower.value) > HW_MAX_LIMITATION_2){
-		$("TxPowerHint_2").style.display = "";
+		document.getElementById("TxPowerHint_2").style.display = "";
 		document.form.wl0_TxPower.focus();
 		return false;
 	}
@@ -163,28 +163,28 @@ function applyRule(){
 		HW_MAX_LIMITATION_5 = 251;
 
 	if(parseInt(document.form.wl1_TxPower.value) > HW_MAX_LIMITATION_5){
-		$("TxPowerHint_5").style.display = "";
+		document.getElementById("TxPowerHint_5").style.display = "";
 		document.form.wl1_TxPower.focus();
 		return false;
 	}
 
 	if(parseInt(document.form.wl0_TxPower.value) > 80 && flag < 2){
-		$("TxPowerHint_2").style.display = "";
+		document.getElementById("TxPowerHint_2").style.display = "";
 		document.form.wl0_TxPower.focus();
 		flag++;
 		return false;
 	}
 	else
-		$("TxPowerHint_2").style.display = "none";
+		document.getElementById("TxPowerHint_2").style.display = "none";
 		
 	if(parseInt(document.form.wl1_TxPower.value) > 80 && flag < 2){
-		$("TxPowerHint_5").style.display = "";
+		document.getElementById("TxPowerHint_5").style.display = "";
 		document.form.wl1_TxPower.focus();
 		flag++;
 		return false;
 	}
 	else
-		$("TxPowerHint_5").style.display = "none";
+		document.getElementById("TxPowerHint_5").style.display = "none";
 
 	if(parseInt(document.form.wl0_TxPower.value) > parseInt(document.form.wl0_TxPower_orig.value) 
 		|| parseInt(document.form.wl1_TxPower.value) > parseInt(document.form.wl1_TxPower_orig.value))
@@ -285,7 +285,7 @@ function changeTempUnit(num){
                 <tr bgcolor="#4D595D" style="height:10px">
 	                <td valign="top">
 									  <div>&nbsp;</div>
-									  <div class="formfonttitle"><#menu5_6_adv#> - Performance tuning</div>
+									  <div class="formfonttitle"><#menu5_6#> - Performance tuning</div>
 									  <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 									  <div class="formfontdesc">Fine tune the radio power to enhance/decrease the coverage and change the cooler spin mode.Please note: If the output power is increased for long distance signal transmission, the client also need to use high power card to get the best performance.</div>
 									</td>
@@ -356,7 +356,7 @@ function changeTempUnit(num){
 											<tr>
 												<th>2.4GHz Transmit radio power</th>
 												<td>
-													<input type="text" name="wl0_TxPower" maxlength="3" class="input_3_table" value="<% nvram_get("wl0_TxPower"); %>"> mW
+													<input type="text" name="wl0_TxPower" maxlength="3" class="input_3_table" value="<% nvram_get("wl0_TxPower"); %>" autocorrect="off" autocapitalize="off"> mW
 													<span id="TxPowerHint_2" style="margin-left:10px;display:none;">This value could not exceed 80</span>
 												</td>
 											</tr>
@@ -364,7 +364,7 @@ function changeTempUnit(num){
 											<tr>
 												<th>5GHz Transmit radio power</th>
 												<td>
-													<input type="text" name="wl1_TxPower" maxlength="3" class="input_3_table" value="<% nvram_get("wl1_TxPower"); %>"> mW
+													<input type="text" name="wl1_TxPower" maxlength="3" class="input_3_table" value="<% nvram_get("wl1_TxPower"); %>" autocorrect="off" autocapitalize="off"> mW
 													<span id="TxPowerHint_5" style="margin-left:10px;display:none;">This value could not exceed 80</span>
 												</td> 
 											</tr>
@@ -392,7 +392,7 @@ function changeTempUnit(num){
 											<tr style="display:none">
 												<th>Cooler full speed spin</th>
 												<td>Temperature over
-													<input type="text" name="fanctrl_fullspeed_temp" maxlength="3" class="input_3_table" value="<% nvram_get("fanctrl_fullspeed_temp"); %>">
+													<input type="text" name="fanctrl_fullspeed_temp" maxlength="3" class="input_3_table" value="<% nvram_get("fanctrl_fullspeed_temp"); %>" autocorrect="off" autocapitalize="off">
 													<span style="color:#FFF" id="unitDisplay1">°C</span>
 												</td>
 											</tr>
@@ -400,7 +400,7 @@ function changeTempUnit(num){
 											<tr style="display:none">
 												<th>Cooler periodically spin</th>
 												<td>Temperature over
-													<input type="text" name="fanctrl_period_temp" maxlength="3" class="input_3_table" value="<% nvram_get("fanctrl_period_temp"); %>">
+													<input type="text" name="fanctrl_period_temp" maxlength="3" class="input_3_table" value="<% nvram_get("fanctrl_period_temp"); %>" autocorrect="off" autocapitalize="off">
 													<span style="color:#FFF" id="unitDisplay2">°C</span>
 												</td>
 											</tr>

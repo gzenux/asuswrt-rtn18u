@@ -27,6 +27,9 @@ span{
 <script type="text/JavaScript" src="/jquery.js"></script>
 <script>
 <% wanlink(); %>
+var sw_mode = '<% nvram_get("sw_mode"); %>';
+if((sw_mode == 2 || sw_mode == 3) && '<% nvram_get("wlc_psta"); %>' == 1)
+	sw_mode = 4;
 var w_Setting = "<% nvram_get("w_Setting"); %>";
 var auth_mode2 = '<% nvram_get("wl0_auth_mode_x"); %>';
 var wep_x2 = '<% nvram_get("wl0_wep_x"); %>';
@@ -44,9 +47,9 @@ var transfer_mode = "<% nvram_get("dsltmp_transmode"); %>";
 function QKfinish_load_body(){
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";
 	parent.set_step("t3");
-	parent.$("LoadingBar").style.visibility = 'hidden';
+	parent.document.getElementById("LoadingBar").style.visibility = 'hidden';
 
-	if('<% nvram_get("sw_mode"); %>' == '2'){
+	if(sw_mode == "2"){
 		if('<% nvram_get("wlc_band"); %>' == 0){
 			auth_mode2 = '<% nvram_get("wl0.1_auth_mode_x"); %>';
 			wep_x2 = '<% nvram_get("wl0.1_wep_x"); %>';

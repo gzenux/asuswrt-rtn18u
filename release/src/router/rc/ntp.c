@@ -58,16 +58,6 @@ static void ntp_service()
 
 		if (is_routing_enabled())
 			notify_rc_and_period_wait("restart_upnp", 25);
-#ifdef RTCONFIG_IPV6
-#ifdef RTCONFIG_WIDEDHCP6
-/* switch to monotonic clock usage *//*
-		if (get_ipv6_service() != IPV6_DISABLED) {
-			notify_rc("restart_dhcp6s");
-			notify_rc("restart_radvd");
-		}
-*/
-#endif /* RTCONFIG_WIDEDHCP6 */
-#endif
 #ifdef RTCONFIG_DISK_MONITOR
 		notify_rc("restart_diskmon");
 #endif
@@ -79,6 +69,7 @@ static void set_alarm()
 	struct tm local;
 	time_t now;
 	int diff_sec;
+	unsigned int sec;
 
 	if (nvram_get_int("ntp_ready"))
 	{
@@ -98,16 +89,19 @@ static void set_alarm()
 				else if (diff_sec <= SECONDS_TO_WAIT)
 					diff_sec += 3600;
 //				dbg("diff_sec: %d \n", diff_sec);
-				alarm(diff_sec);
+				sec = diff_sec;
 			}
 			else
-				alarm(3600 - SECONDS_TO_WAIT);
+				sec = 3600 - SECONDS_TO_WAIT;
 		}
 		else	/* every 12 hours */
-			alarm(12 * 3600 - SECONDS_TO_WAIT);
+			sec = 12 * 3600 - SECONDS_TO_WAIT;
 	}
 	else
-		alarm(NTP_RETRY_INTERVAL - SECONDS_TO_WAIT);
+		sec = NTP_RETRY_INTERVAL - SECONDS_TO_WAIT;
+
+	//cprintf("## %s 4: sec(%u)\n", __func__, sec);
+	alarm(sec);
 }
 
 static void catch_sig(int sig)
@@ -123,12 +117,15 @@ static void catch_sig(int sig)
 		remove("/var/run/ntp.pid");
 		exit(0);
 	}
+	else if (sig == SIGCHLD)
+	{
+		chld_reap(sig);
+	}
 }
 
 int ntp_main(int argc, char *argv[])
 {
 	FILE *fp;
-	int ret;
 	pid_t pid;
 	char *args[] = {"ntpclient", "-h", server, "-i", "3", "-l", "-s", NULL};
 
@@ -145,9 +142,13 @@ int ntp_main(int argc, char *argv[])
 	signal(SIGTSTP, catch_sig);
 	signal(SIGALRM, catch_sig);
 	signal(SIGTERM, catch_sig);
-	signal(SIGCHLD, chld_reap);
+//	signal(SIGCHLD, chld_reap);
+	signal(SIGCHLD, catch_sig);
 
 	nvram_set("ntp_ready", "0");
+#ifdef RTCONFIG_QTN
+	nvram_set("qtn_ntp_ready", "0");
+#endif
 	nvram_set("svc_ready", "0");
 
 	while (1)
@@ -155,9 +156,13 @@ int ntp_main(int argc, char *argv[])
 		if (sig_cur == SIGTSTP)
 			;
 		else if (nvram_get_int("sw_mode") == SW_MODE_ROUTER &&
-			!nvram_match("link_internet", "1"))
+			!nvram_match("link_internet", "2"))
 		{
 			alarm(SECONDS_TO_WAIT);
+		}
+		else if (sig_cur == SIGCHLD && nvram_get_int("ntp_ready") != 0 )
+		{ //handle the delayed ntpclient process
+			set_alarm();
 		}
 		else
 		{
@@ -165,7 +170,7 @@ int ntp_main(int argc, char *argv[])
 
 			nvram_set("ntp_server_tried", server);
 			logmessage("ntp", "start NTP update");
-			ret = _eval(args, NULL, 0, &pid);
+			_eval(args, NULL, 0, &pid);
 			sleep(SECONDS_TO_WAIT);
 
 			if (strlen(nvram_safe_get("ntp_server0")))

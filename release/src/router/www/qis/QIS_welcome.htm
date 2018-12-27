@@ -19,14 +19,28 @@ var hw_ver = '<% nvram_get("hardware_version"); %>';
 var usb_flag = '<% nvram_get("ehci_ports"); %>';
 
 var odmpid = '<% nvram_get("odmpid"); %>';
+var ttc = '<% nvram_get("territory_code"); %>';
 var color = '<% nvram_get("color"); %>';
 color = color.toUpperCase();
-var MP_png_path = "/images/Model_product_"+ color +".png";
+var update_color = '';
+var MP_png_path = '';
 var wanstate = -1;
 var wansbstate = -1;
 var wanauxstate = -1;
+var plc_cnt = -1;
 <% wanstate(); %>
 <% wanlink(); %>
+
+var wans_dualwan = '<% nvram_get("wans_dualwan"); %>'.split(" ");
+if(wans_dualwan != ""){
+	var ewan_index = wans_dualwan.indexOf("wan");
+	var autodet_state = (ewan_index == 0)? '<% nvram_get("autodet_state"); %>': '<% nvram_get("autodet1_state"); %>';
+	var autodet_auxstate = (ewan_index == 0)? '<% nvram_get("autodet_auxstate"); %>': '<% nvram_get("autodet1_auxstate"); %>';
+}
+else{
+	var autodet_state = '<% nvram_get("autodet_state"); %>';
+	var autodet_auxstate = '<% nvram_get("autodet_auxstate"); %>';
+}
 
 function LinkCheck(url)
 {
@@ -46,6 +60,21 @@ function gotoPage(dst_url, flag, isParent){
 	document.redirectForm.submit();
 }
 
+
+/* MODELDEP by Territory Code */
+function assign_color(){		
+	if(based_modelid == "RT-AC87U"){		//MODELDEP: RT-AC87U
+		if(ttc == "JP/02" || ttc == "AP/02" || ttc == "SG/02")						
+			return "R";
+		else if(ttc == "JP/02")
+			return "W";
+		else
+			return color;
+	}
+	else
+		return color;
+}
+
 function QKinternettype_load_body(){
 	if(wanstate == 4 && wansbstate == 4){
 		gotoPage("/error_page.htm", "6", 1);
@@ -59,12 +88,19 @@ function QKinternettype_load_body(){
 	if(parent.psta_support){
 		document.getElementById("mediaBridge_title").style.display = "";
 	}
+
+	if(parent.wisp_support){
+                document.getElementById("wisp_title").style.display = "";
+        }
 	
 	parent.document.title = "<#Web_Title#> - Welcome!";
 	parent.set_step("t0");		
 
+	update_color = assign_color();
+	MP_png_path = "/images/Model_product_"+ update_color +".png";	
+
 	//load Product img
-	if(color.length > 0){
+	if(update_color.length > 0){
 		if(LinkCheck(MP_png_path))	//if file exist
 			document.getElementById("ModelPid_img").src=MP_png_path;
 		else
@@ -82,8 +118,6 @@ function QKinternettype_load_body(){
 	if(parent.ISMOBILE){
 		document.getElementById("QISmain").style.display = "none";
 		document.getElementById("QISmain_m").style.display = "";
-		if(based_modelid == "4G-AC55U")
-			document.getElementById("Productdesc_0_m").style.display = "";
 		return true;
 	}
 
@@ -128,12 +162,11 @@ function QKinternettype_load_body(){
 		document.getElementById("Productdesc_2").innerHTML = check_desc2;
 		document.getElementById("Productdesc_3").innerHTML = check_desc3;
 		document.getElementById("Productdesc_4").innerHTML = check_desc4;
-	}	
-	
+	}
+
 	if(based_modelid == "4G-AC55U"){
-		var check_desc0 = "<#QIS_welcome_feature0#>";	
-		document.getElementById("Productdesc_0").style.display = "";	
-		document.getElementById("Productdesc_0").innerHTML = check_desc0;
+		document.getElementById("main_manual").style.display = "none";
+		document.getElementById("lte_manual").style.display = "";
 	}
 	
 	document.getElementById("btn_next_step").focus();
@@ -169,9 +202,9 @@ function detect_if_wan_plug(flag){
 			detect_if_wan_plug();		
 		},
 		success: function(response){
-			if(autodet_state == 4){ // ethernet did not plug
+			if(autodet_state == "4"){// ethernet did not plug
 				if(based_modelid == "4G-AC55U"){
-					if( sim_state == -1)
+					if( sim_state == "-1")
 						redirect_page("unplug_ethsim");
 					else
 						submitForm(1);
@@ -203,11 +236,18 @@ function detect_if_wan_plug(flag){
 					document.getElementById("loadingIcon").style.display = "none";
 					changeiuiBackground(0);
 				}
-				setTimeout("update_wan_info(1);", 1000);
+				setTimeout("update_wan_info(1);", 2000);
 			}
-			else if(autodet_state == 0){
+			else if(autodet_state == "0"){
 				detect_if_wan_plug();
-				document.getElementById("loadingIcon").style.display = "";
+				changeiuiBackground(1);
+			}
+			else if(autodet_state == ""){
+				if(flag == null)
+					update_wan_info();
+				else
+					update_wan_info(1);
+
 				changeiuiBackground(1);
 			}
 			else
@@ -227,13 +267,70 @@ function update_wan_info(flag){
 			if(flag == null){
 				document.getElementById("loadingIcon").style.display = "";
 				changeiuiBackground(1);
-				setTimeout("detect_if_wan_plug();", 1000);
+				setTimeout("detect_if_wan_plug();", 2000);
 			}
 			else{
-				setTimeout("detect_if_wan_plug(1);", 1000);
+				setTimeout("detect_if_wan_plug(1);", 2000);
 			}
 		}
 	});	
+}
+
+function detect_if_plc_plug(flag){
+	$.ajax({
+		url: '/result_of_get_changed_status_QIS.asp',
+		dataType: 'script',
+		error: function(xhr){
+			detect_if_plc_plug();
+		},
+		success: function(response){
+			if(autodet_plc_state < 2){
+				if(flag == null){
+					document.getElementById("producticon").style.display = "none";
+					document.getElementById("wan_unplug").style.display = "";
+					document.getElementById("unplugImg1").style.display = "none"
+					document.getElementById("loadingIcon").style.display = "none";
+					changeiuiBackground(0);
+				}
+				setTimeout("update_plc_info(1);", 1000);
+			}
+			else
+				submitForm(1);
+		}
+	});
+}
+
+function update_plc_info(flag){
+	$.ajax({
+		url: '/start_plcdet.asp',
+		dataType: 'script',
+		error: function(xhr){
+			update_plc_info();
+		},
+		success: function(response){
+			if(flag == null){
+				document.getElementById("loadingIcon").style.display = "";
+				changeiuiBackground(1);
+				if(plc_cnt == 2){
+					alert("<#ConnectionFailed#>!!<#web_redirect_suggestion1#>");
+					submitForm(1);
+				}
+				else
+					setTimeout("detect_if_plc_plug();", 1000);
+			}
+			else{
+				setTimeout("detect_if_plc_plug(1);", 1000);
+				plc_cnt=2;
+			}
+		}
+	});
+}
+
+function startDetect(){
+	if(parent.powerline_support)
+		update_plc_info();
+	else
+		update_wan_info();
 }
 
 function skip(){
@@ -242,32 +339,44 @@ function skip(){
 }
 
 function startPoll(){
-	if(parent.ISMOBILE){	
-		if(document.getElementById("unplugImg1_m").style.display == "none"){
-			$("#unplugImg2_m").fadeOut(500);
-			setTimeout('$("#unplugImg1_m").fadeIn(500);', 500);	
+	if(parent.modem_support){
+		if(parent.ISMOBILE){
+			if(document.getElementById("unplugImg1_m").style.display == "none"){
+				$("#unplugImg2_m").fadeOut(500);
+				setTimeout('$("#unplugImg1_m").fadeIn(500);', 500);	
+			}
+			else{
+				$("#unplugImg1_m").fadeOut(500);	
+				setTimeout('$("#unplugImg2_m").fadeIn(500);', 500);	
+			}
 		}
 		else{
-			$("#unplugImg1_m").fadeOut(500);	
-			setTimeout('$("#unplugImg2_m").fadeIn(500);', 500);	
-		}
-	}
-	else{
-		if(usb_flag != "" && based_modelid != "RT-AC87U"){
-			if(document.getElementById("unplugImg1").style.display == "none"){
-				$("#unplugImg2").fadeOut(500);
-				setTimeout('$("#unplugImg1").fadeIn(500);', 500);	
+			if(usb_flag != "" && based_modelid != "RT-AC87U"){
+				if(document.getElementById("unplugImg1").style.display == "none"){
+					$("#unplugImg2").fadeOut(500);
+					setTimeout('$("#unplugImg1").fadeIn(500);', 500);	
+				}
+				else{
+					$("#unplugImg1").fadeOut(500);	
+					setTimeout('$("#unplugImg2").fadeIn(500);', 500);	
+				}
 			}
 			else{
 				$("#unplugImg1").fadeOut(500);	
-				setTimeout('$("#unplugImg2").fadeIn(500);', 500);	
+				setTimeout('$("#unplugImg1").fadeIn(500);', 500);			
 			}
+		}
+	}
+	else{
+		if(parent.ISMOBILE){
+			$("#unplugImg1_m").fadeOut(500);	
+			setTimeout('$("#unplugImg1_m").fadeIn(500);', 500);	
 		}
 		else{
 			$("#unplugImg1").fadeOut(500);	
-			setTimeout('$("#unplugImg1").fadeIn(500);', 500);			
+			setTimeout('$("#unplugImg1").fadeIn(500);', 500);	
 		}
-	}
+	}	
 
 	setTimeout("startPoll();", 2500);
 }
@@ -279,7 +388,7 @@ function submitenter(myfield,e){
 	else return true;
 
 	if (keycode == 13){
-		update_wan_info();
+		startDetect();
    	return false;
   }
 	else
@@ -335,11 +444,10 @@ function uploadSetting(){
 			<td>
 				<table style="margin-left:20px;" width="98%" border=0 align="center" cellpadding="5" cellspacing="0">
 					<tr>
-						<td width="55%" colspan="2">
+						<td id="desc_td" width="55%" colspan="2" >
 							<div id="productDesc" style="font-style:italic;">				
 								<p style="font-size:20px;font-weight:bolder;margin-bottom:15px;"><#statusTitle_System#></p>
-								<ul>		
-									<li style="line-height:25px; display:none" id="Productdesc_0"></li>								
+								<ul>							
 									<li style="line-height:25px;" id="Productdesc_1"></li>
 									<li style="line-height:25px;" id="Productdesc_2"></li>
 									<li style="line-height:25px;" id="Productdesc_3"></li>
@@ -347,9 +455,8 @@ function uploadSetting(){
 								</ul>	
 							</div>
 						</td>
-
-						<td width="45%" style="height:300px">
-							<div id="producticon"><img id="ModelPid_img" src=""></div>
+						<td id="product_td" width="45%" style="height:300px">
+							<div id="producticon" style="margin-bottom:-70px;"><img id="ModelPid_img" src=""></div>
 							<div id="wan_unplug" style="display:none;text-align:center;margin-top:-30px;*margin-top:25px;">
 								<img src="/images/qis/border.png">
 								<div style="margin-top:-330px">
@@ -365,8 +472,9 @@ function uploadSetting(){
 						</td>
 					</tr>
 					<tr>
-						<td colspan="3" align="center">
-							<input class="button_gen" id="btn_next_step" type="button" value="<#btn_go#>" onclick="update_wan_info();" style="margin-left:-80px;">
+						<td colspan="3" align="left">
+							<input class="button_gen_long" type="button" value="<#Manual_Setting_btn#>" onclick="submitForm(0);" style="margin-left:30px;">
+							<input class="button_gen_long" id="btn_next_step" type="button" value="<#btn_go#>" onclick="startDetect();" style="margin-left:50px;">
 							<img id="loadingIcon" style="display:none;" src="/images/InternetScan.gif">
 						</td>
 					</tr>
@@ -377,15 +485,18 @@ function uploadSetting(){
 			<td>
 				<div id="AreaHint" style="margin-top:25px;">
 					<div><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
-					<div style="padding-left:20px;margin-top:10px">
-						<span>You are a network expert and want to skip internet setup wizard? Click</span>
-						<a><span style="text-decoration:underline;cursor:pointer;font-weight:bold" onclick="submitForm(0)">Manual Setting</span></a>
-						<span>to setup Internet, wireless in advanced mode or configure <#Web_Title2#> as <#OP_AP_item#></span>
+					<div id="main_manual" style="padding-left:20px;margin-top:10px">
+						<span><#QKset_skip_setup#> </span>
+						<span><#QKset_setup_manual_1#> <#OP_AP_item#></span>
 						<span id="repeater_title" style="display:none">/ <#OP_RE_item#></span>
 						<span id="mediaBridge_title" style="display:none">/ Media Bridge</span>
-						<span>.&nbsp Click</span>
-						<a><label for="upload_setting_profile" style="text-decoration:underline;cursor:pointer;font-weight:bold" onclick="">Restore Setting</label></a>
-						<span>to load saved configuration settings.</span>
+						<span id="wisp_title" style="display:none">/ <#OP_WISP_item#></span>
+						<span>. </span>
+						<span><#QKset_restore_0#></span>
+					</div>	
+					<div id="lte_manual" style="padding-left:20px;margin-top:10px;display:none">
+						<span><#QKset_setup_manual_0#> </span>
+						<span><#QKset_restore_1#></span>
 					</div>
 					<div style="height:30px;display:none">
 						<input id="upload_setting_profile" type="file" name="file" class="input" style="color:#FFCC00;" onchange="uploadSetting();">
@@ -398,8 +509,7 @@ function uploadSetting(){
 
 <div style="display:none;" id="QISmain_m">
 	<div id="QISFeature" style="margin-left:-20px;">
-		<ul>		
-			<li style="line-height:25px; display:none" id="Productdesc_0_m"><#QIS_welcome_feature0#></li>				
+		<ul>			
 			<li style="line-height:25px;"><#QIS_welcome_feature1#></li>
 			<li style="line-height:25px;"><#QIS_welcome_feature2#></li>
 			<li style="line-height:25px;"><#QIS_welcome_feature3#></li>
@@ -415,7 +525,7 @@ function uploadSetting(){
 	</div><br>
 	<fieldset class="theFieldset">
 		<div id="nextBtn" class="row">
-			<a id="loadingIcon_iui" class="iuiA" onclick="update_wan_info();"><#CTL_next#></a>
+			<a id="loadingIcon_iui" class="iuiA" onclick="startDetect();"><#CTL_next#></a>
 		</div>
 		<div id="skipBtn" class="row">
 			<a id="loadingIcon_skip" class="iuiA" onclick="skip();"><#CTL_next#></a>

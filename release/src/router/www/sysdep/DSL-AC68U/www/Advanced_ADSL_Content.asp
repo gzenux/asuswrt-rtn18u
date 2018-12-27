@@ -42,11 +42,42 @@ function change_dla(enable){
 		document.form.dslx_snrm_offset.disabled = true;		
 		document.getElementById("dslx_snrm_offset_read").style.display = "";
 		document.getElementById("dslx_snrm_offset_read").innerHTML = get_snrm_offset();
+		document.getElementById("dslx_snrm_offset_read").title = "Auto configured by Dynamic Line Adjustment(DLA)";
+
+		document.form.dslx_adsl_rx_agc.style.display = "none";
+		document.form.dslx_adsl_rx_agc.disabled = true;
+		document.getElementById("dslx_adsl_rx_agc_read").style.display = "";
+		document.getElementById("dslx_adsl_rx_agc_read").innerHTML = "<%nvram_get("dslx_adsl_rx_agc");%>";
+		document.getElementById("dslx_adsl_rx_agc_read").title = "Auto configured by Dynamic Line Adjustment(DLA)";
+
+		document.form.dslx_vdsl_rx_agc.style.display = "none";
+		document.form.dslx_vdsl_rx_agc.disabled = true;
+		document.getElementById("dslx_vdsl_rx_agc_read").style.display = "";
+		document.getElementById("dslx_vdsl_rx_agc_read").innerHTML = get_vdsl_rx_agc();
+		document.getElementById("dslx_vdsl_rx_agc_read").title = "Auto configured by Dynamic Line Adjustment(DLA)";
+
+		document.form.dslx_vdsl_esnp.style.display = "none";
+		document.form.dslx_vdsl_esnp.disabled = true;
+		document.getElementById("dslx_vdsl_esnp_read").style.display = "";
+		document.getElementById("dslx_vdsl_esnp_read").innerHTML = get_vdsl_esnp();
+		document.getElementById("dslx_vdsl_esnp_read").title = "Auto configured by Dynamic Line Adjustment(DLA)";
 	}
 	else {
 		document.form.dslx_snrm_offset.style.display = "";
 		document.form.dslx_snrm_offset.disabled = false;
 		document.getElementById("dslx_snrm_offset_read").style.display = "none";
+
+		document.form.dslx_adsl_rx_agc.style.display = "";
+		document.form.dslx_adsl_rx_agc.disabled = false;
+		document.getElementById("dslx_adsl_rx_agc_read").style.display = "none";
+
+		document.form.dslx_vdsl_rx_agc.style.display = "";
+		document.form.dslx_vdsl_rx_agc.disabled = false;
+		document.getElementById("dslx_vdsl_rx_agc_read").style.display = "none";
+
+		document.form.dslx_vdsl_esnp.style.display = "";
+		document.form.dslx_vdsl_esnp.disabled = false;
+		document.getElementById("dslx_vdsl_esnp_read").style.display = "none";
 	}
 }
 
@@ -123,8 +154,33 @@ function get_snrm_offset(){
 
 }
 
+function get_vdsl_rx_agc(){
+	var dslx_vdsl_rx_agc="<%nvram_get("dslx_vdsl_rx_agc");%>";
+	switch(dslx_vdsl_rx_agc){
+		case "394":
+			return "Stable";
+		case "550":
+			return "High Performance";
+		case "65535":
+		default:
+			return "Default";
+	}
+}
+
+function get_vdsl_esnp(){
+	var dslx_vdsl_esnp="<%nvram_get("dslx_vdsl_esnp");%>";
+	switch(dslx_vdsl_esnp){
+		case "1":
+			return "Stable";
+		case "0":
+		default:
+			return "Default";
+	}
+}
+
+
 function hide_nonstd_vectoring(_value){
-$("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
+document.getElementById("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
 }
 
 </script>
@@ -185,7 +241,7 @@ $("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
 	<tr>
 		  <td bgcolor="#4D595D" valign="top"  >
 		  <div>&nbsp;</div>
-		  <div class="formfonttitle"><#menu5_6_adv#> - <#menu_dsl_setting#></div>
+		  <div class="formfonttitle"><#menu5_6#> - <#menu_dsl_setting#></div>
       <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
       <div class="formfontdesc"><#dslsetting_disc0#></div>
 
@@ -224,7 +280,7 @@ $("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
 			</tr>
 			<tr>
 				<th>
-					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,10);">Dynamic Line Adjustment (ADSL)</a>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,10);">Dynamic Line Adjustment (DLA)</a>
 				</th>
 				<td>
 					<select id="" class="input_option" name="dslx_dla_enable" onchange='change_dla(this.value);'>
@@ -270,7 +326,8 @@ $("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,13);">Rx AGC GAIN Adjustment (ADSL)</a>
 				</th>
 				<td>
-					<select id="" class="input_option" name="dslx_adsl_rx_agc">
+					<span id="dslx_adsl_rx_agc_read" name="adsl_rx_agc_read" style="display:none;color:#FFFFFF;"></span>
+					<select id="dslx_adsl_rx_agc" class="input_option" name="dslx_adsl_rx_agc">
 						<option value="Default" <% nvram_match("dslx_adsl_rx_agc", "Default", "selected"); %>>Default</option>
 						<option value="Stable" <% nvram_match("dslx_adsl_rx_agc", "Stable", "selected"); %>>Stable</option>
 						<option value="High Performance" <% nvram_match("dslx_adsl_rx_agc", "High Performance", "selected"); %>>High Performance</option>
@@ -344,7 +401,8 @@ $("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,6);">Rx AGC GAIN Adjustment (VDSL)</a>
 				</th>
 				<td>
-					<select id="" class="input_option" name="dslx_vdsl_rx_agc">
+					<span id="dslx_vdsl_rx_agc_read" name="vdsl_rx_agc_read" style="display:none;color:#FFFFFF;"></span>
+					<select id="dslx_vdsl_rx_agc" class="input_option" name="dslx_vdsl_rx_agc">
 						<option value="65535" <% nvram_match("dslx_vdsl_rx_agc", "65535", "selected"); %>>Default</option>
 						<option value="394" <% nvram_match("dslx_vdsl_rx_agc", "394", "selected"); %>>Stable</option>
 						<option value="476" <% nvram_match("dslx_vdsl_rx_agc", "476", "selected"); %>>Balance</option>
@@ -366,6 +424,20 @@ $("nonstd_vectoring").style.display = (_value == "0") ? "none" : "";
 					</select>
 				</td>
 			</tr>
+			
+			<tr>
+				<th>
+					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,16);">ESNP - Enhanced Sudden Noise Protection (VDSL)</a>
+				</th>
+				<td>
+					<span id="dslx_vdsl_esnp_read" name="dslx_vdsl_esnp_read" style="display:none;color:#FFFFFF;"></span>
+					<select id="dslx_vdsl_esnp" class="input_option" name="dslx_vdsl_esnp">
+						<option value="0" <% nvram_match("dslx_vdsl_esnp", "0", "selected"); %>>Default</option>
+						<option value="1" <% nvram_match("dslx_vdsl_esnp", "1", "selected"); %>>Stable</option>
+					</select>
+				</td>
+			</tr>
+			
 			<tr>
 				<th>
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(25,2);"><#dslsetting_SRA#></a>

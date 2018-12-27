@@ -49,7 +49,7 @@
 #define WL_OLPC_DEF_NPKTS 16
 #define WL_OLPC_PKT_LEN (sizeof(struct dot11_header)+1)
 #define WL_OLPC(args) WL_INFORM(args)
-#define WL_OLPC_DBG(args) WL_RATE(args)
+#define WL_OLPC_DBG(args) WL_INFORM(args)
 
 /* assume one bit per antenna, so ant 3 is 4 */
 #define WL_OLPC_MAX_NUM_CORES 3

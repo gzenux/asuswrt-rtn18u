@@ -34,6 +34,11 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 		dos2unix (or tofrodos)
 		xsltproc
 
+		If you are using Ubuntu amd64, you may need to install 32-bit packages listed below.
+			libc6-i386
+			lib32stdc++6
+			lib32z1
+
 	b. Fedora
 		sudo yum groupinstall "Development Tools"
 		sudo yum install gettext-devel libxml2-devel mtd-utils-ubi ncurses-devel zlib-devel intltool sharutils docbook-dtds docbook-style-xsl
@@ -117,6 +122,7 @@ Set Up Environment(Tested in Fedora 8/9 and Ubuntu)
 		( make rt-ac68u  )
 		( make rt-n18uhp )
 
-	f. rt-ac55u
+	f. rt-ac55u (/ rt-ac55uhp )
 		cd release/src-qca
 		make rt-ac55u
+		( make rt-ac55uhp )

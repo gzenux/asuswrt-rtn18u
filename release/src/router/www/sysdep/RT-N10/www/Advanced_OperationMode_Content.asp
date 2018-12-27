@@ -41,14 +41,14 @@ function initial(){
 	setScenerion(sw_mode);
 	Senario_shift();
 	if(!repeater_support)
-			$("repeaterMode").style.display = "none";
+			document.getElementById("repeaterMode").style.display = "none";
 }
 
 function Senario_shift(){
 	var isIE = navigator.userAgent.search("MSIE") > -1; 
 	if(isIE)
-		$("Senario").style.width = "700px";
-		$("Senario").style.marginLeft = "5px";
+		document.getElementById("Senario").style.width = "700px";
+		document.getElementById("Senario").style.marginLeft = "5px";
 }
 
 function saveMode(){
@@ -73,7 +73,7 @@ function saveMode(){
 		document.form.lan_ipaddr.value = document.form.lan_ipaddr_rt.value;
 		document.form.lan_netmask.value = document.form.lan_netmask_rt.value;
 		document.form.lan_gateway.value = document.form.lan_ipaddr_rt.value;
-		if('<% nvram_get("sw_mode"); %>' == '2'){
+		if(sw_mode == "2"){
 			close_guest_unit(0,1);
 			if(band5g_support)
 				close_guest_unit(1,1);
@@ -97,7 +97,7 @@ function done_validating(action){
 	refreshpage();
 }
 
-var $j = jQuery.noConflict();
+
 var id_WANunplungHint;
 
 function setScenerion(mode){
@@ -106,24 +106,24 @@ function setScenerion(mode){
 		document.getElementById("Senario1").style.display = "";
 		document.getElementById("Senario2").style.display = "none";
 		document.getElementById("Senario3").style.display = "none";
-		$j("#radio2").hide();
-		$j("#Internet_span").hide();
-		$j("#ap-line").css("display", "none");	
-		$j("#AP").html("<#Internet#>");
-		$j("#mode_desc").html("<#OP_GW_desc#>");
-		$j("#nextButton").attr("value","<#CTL_next#>");
+		$("#radio2").hide();
+		$("#Internet_span").hide();
+		$("#ap-line").css("display", "none");	
+		$("#AP").html("<#Internet#>");
+		$("#mode_desc").html("<#OP_GW_desc#>");
+		$("#nextButton").attr("value","<#CTL_next#>");
 	}	
 	else if(mode == '2'){
 		document.form.sw_mode.value = 2;
 		document.getElementById("Senario1").style.display = "none";
 		document.getElementById("Senario2").style.display = "";
 		document.getElementById("Senario3").style.display = "none";
-		$j("#radio2").css("display", "none");
-		$j("#Internet_span").css("display", "block");
-		$j("#ap-line").css("display", "none");
-		$j("#AP").html("<#Device_type_02_RT#>");
-		$j("#mode_desc").html("<#OP_RE_desc#><br/><span style=\"color:#FC0\"><#deviceDiscorvy2#></span>");
-		$j("#nextButton").attr("value","<#CTL_next#>");
+		$("#radio2").css("display", "none");
+		$("#Internet_span").css("display", "block");
+		$("#ap-line").css("display", "none");
+		$("#AP").html("<#Device_type_02_RT#>");
+		$("#mode_desc").html("<#OP_RE_desc#><br/><span style=\"color:#FC0\"><#deviceDiscorvy2#></span>");
+		$("#nextButton").attr("value","<#CTL_next#>");
 		clearTimeout(id_WANunplungHint);
 	}
 	else if(mode == '3'){
@@ -131,26 +131,26 @@ function setScenerion(mode){
 		document.getElementById("Senario1").style.display = "none";
 		document.getElementById("Senario2").style.display = "none";
 		document.getElementById("Senario3").style.display = "";
-		$j("#radio2").css("display", "none");
-		$j("#Internet_span").css("display", "block");
-		$j("#ap-line").css("display", "none");
-		$j("#AP").html("<#Device_type_02_RT#>");
-		$j("#mode_desc").html("<#OP_AP_desc#><br/><span style=\"color:#FC0\"><#deviceDiscorvy3#></span>");
-		$j("#nextButton").attr("value","<#CTL_next#>");
+		$("#radio2").css("display", "none");
+		$("#Internet_span").css("display", "block");
+		$("#ap-line").css("display", "none");
+		$("#AP").html("<#Device_type_02_RT#>");
+		$("#mode_desc").html("<#OP_AP_desc#><br/><span style=\"color:#FC0\"><#deviceDiscorvy3#></span>");
+		$("#nextButton").attr("value","<#CTL_next#>");
 		clearTimeout(id_WANunplungHint);
 	}
 	else{
 		document.form.sw_mode.value = 1;
-		//$j("#Senario").css("background","url(/images/New_ui/gw.png) center");
+		//$("#Senario").css("background","url(/images/New_ui/gw.png) center");
 		document.getElementById("Senario1").style.display = "";
 		document.getElementById("Senario2").style.display = "none";
 		document.getElementById("Senario3").style.display = "none";
-		$j("#radio2").hide();
-		$j("#Internet_span").hide();
-		$j("#ap-line").css("display", "none");	
-		$j("#AP").html("<#Internet#>");
-		$j("#mode_desc").html("<#OP_GW_desc#>");
-		$j("#nextButton").attr("value","<#CTL_next#>");
+		$("#radio2").hide();
+		$("#Internet_span").hide();
+		$("#ap-line").css("display", "none");	
+		$("#AP").html("<#Internet#>");
+		$("#mode_desc").html("<#OP_GW_desc#>");
+		$("#nextButton").attr("value","<#CTL_next#>");
 	}
 }
 </script>
@@ -217,7 +217,7 @@ function setScenerion(mode){
 	<tr bgcolor="#4D595D" valign="top" height="100px">
 	  	<td>
 	  		<div>&nbsp;</div>
-	  		<div class="formfonttitle"><#menu5_6_adv#> - <#menu5_6_1#></div>
+	  		<div class="formfonttitle"><#menu5_6#> - <#menu5_6_1#></div>
 	  		<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 		  	<div class="formfontdesc"><#OP_desc1#></div>
 

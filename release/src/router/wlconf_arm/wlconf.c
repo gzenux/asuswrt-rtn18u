@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: wlconf.c 454872 2014-02-12 02:49:54Z $
+ * $Id: wlconf.c 483004 2014-06-05 20:09:33Z $
  */
 
 #include <typedefs.h>
@@ -1180,6 +1180,7 @@ static void wlconf_set_txbf(char *name, char *prefix)
 	wlc_rev_info_t rev;
 	uint32 txbf_bfe_cap = 0;
 	uint32 txbf_bfr_cap = 0;
+	uint32 txbf_imp = 0;
 	int ret = 0;
 
 	WL_IOCTL(name, WLC_GET_REVINFO, &rev, sizeof(rev));
@@ -1204,6 +1205,12 @@ static void wlconf_set_txbf(char *name, char *prefix)
 		txbf_bfe_cap = atoi(str);
 
 		WL_IOVAR_SETINT(name, "txbf_bfe_cap", txbf_bfe_cap ? 1 : 0);
+	}
+
+	if ((str = nvram_get(strcat_r(prefix, "txbf_imp", tmp))) != NULL) {
+		txbf_imp = atoi(str);
+
+		WL_IOVAR_SETINT(name, "txbf_imp", txbf_imp);
 	}
 }
 
@@ -1943,6 +1950,12 @@ wlconf(char *name)
 	/* Set the Proxy STA or Repeater mode */
 	if (psta) {
 		WL_IOVAR_SETINT(name, "psta", PSTA_MODE_PROXY);
+		/* Set inactivity timer */
+		str = nvram_get(strcat_r(prefix, "psta_inact", tmp));
+		if (str) {
+			val = atoi(str);
+			WL_IOVAR_SETINT(name, "psta_inact", val);
+		}
 	} else if (psr) {
 		WL_IOVAR_SETINT(name, "psta", PSTA_MODE_REPEATER);
 		val = atoi(nvram_safe_get(strcat_r(prefix, "psr_mrpt", tmp)));

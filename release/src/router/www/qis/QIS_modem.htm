@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<link rel="stylesheet" type="text/css" href="/form_style.css">
+<link rel="stylesheet" type="text/css" href="../form_style.css">
 <style>
 #ClientList_Block_PC{
 	border:1px outset #999;
@@ -42,17 +42,15 @@
 	background-color:#3366FF;
 	color:#FFFFFF;
 	cursor:default;
-}	
-</style>	
-<script type="text/javascript" src="/qis/QISMobilePlugin.js"></script>
-<script type="text/JavaScript" src="/state.js"></script>
-<script type="text/JavaScript" src="/general.js"></script>
-<script type="text/javascript" src="/wcdma_list.js"></script>
-<script type="text/JavaScript" src="/help.js"></script>
-<script type="text/javaScript" src="/jquery.js"></script>
+}
+</style>
+<script type="text/javascript" src="QISMobilePlugin.js"></script>
+<script type="text/JavaScript" src="../state.js"></script>
+<script type="text/JavaScript" src="../general.js"></script>
+<script type="text/javascript" src="../wcdma_list.js"></script>
+<script type="text/JavaScript" src="../help.js"></script>
+<script type="text/javaScript" src="../jquery.js"></script>
 <script type="text/JavaScript">
-var $j = jQuery.noConflict();
-
 var modem = '<% nvram_get("Dev3G"); %>';
 var country = '<% nvram_get("modem_country"); %>';
 var isp = '<% nvram_get("modem_isp"); %>';
@@ -114,12 +112,12 @@ function QKInternet_load_body(){
 			
 	if(gobi_support){
 		document.getElementById("page_desc").innerHTML = "<#Mobile_apn_profile#>"
-    	document.getElementById("adapter_type").style.display = "none";	
-	}	
+    	document.getElementById("adapter_type").style.display = "none";
+	}
 }
 
 function check_dongle_status(){
-	 $j.ajax({
+	 $.ajax({
     	url: '/ajax_ddnscode.asp',
     	dataType: 'script', 
 
@@ -128,9 +126,9 @@ function check_dongle_status(){
     	},
     	success: function(response){
 			if(pin_status != "" && pin_status != "0")
-				$("pincode_status").style.display = "";
+				document.getElementById("pincode_status").style.display = "";
 			else	
-				$("pincode_status").style.display = "none";
+				document.getElementById("pincode_status").style.display = "none";
 				
 			setTimeout("check_dongle_status();",5000);
        }
@@ -156,23 +154,44 @@ function submitForm(){
 	document.getElementById("nextButton").style.display = "none";
 	document.getElementById("loadingIcon").style.display = "";
 	changeiuiBackground(1);
-	if(dualwan_set){
-		document.getElementById("loadingNote1m").style.display = "";			
+	/*if(dualwan_set){
+		document.getElementById("loadingNote1m").style.display = "";
 		document.form.action_wait.value	= 60;
 	}
 	else{
-		document.getElementById("loadingNote").style.display = "";		
+		document.getElementById("loadingNote").style.display = "";	
 		document.form.action_wait.value	= eval("<% get_default_reboot_time(); %> + 30");
-	}
+	}*/
 
 	if(document.form.modem_country.value == ""){
 		var valueStr = "";
-		document.form.modem_isp.disabled = false;;
+		document.form.modem_isp.disabled = false;
 		document.form.modem_isp.options.length = 1;
 		document.form.modem_isp.options[0] = new Option(valueStr, valueStr, false, true);
 	}
 
+	if(parent.based_modelid == "4G-AC55U"){
+		document.form.wans_dualwan.disabled = true;
+		document.form.action_script.disabled = false;
+		if(parent.flag_manual)
+			document.form.flag.value = "manual";
+	}
+
+	// move reboot to finish page
+	if(document.form.action_script.value == "reboot"){
+		var reboot_time = eval("<% get_default_reboot_time(); %> + 30");
+		document.form.action_script.value = "saveNvram";
+		document.form.action_wait.value = "0";
+		parent.sysReboot = true;
+		
+		if(reboot_time > parent.rebootTime)
+			parent.rebootTime = reboot_time;
+	}
+
 	document.form.submit();
+	setTimeout(function(){
+		location.href = "/qis/QIS_wireless.htm";
+	}, 500)
 }
 
 var wanstate;
@@ -180,11 +199,11 @@ var RetryCountDown_fail = 10;
 var link_wan_status;
 var link_wan1_status;
 function detect3GConn(){
-	$j.ajax({
+	$.ajax({
 		url: '/result_of_get_changed_status_QIS.asp',
 		dataType: 'script',
-		
-		error: function(xhr){
+
+		error: function(xhr, textStatus){
 			--RetryCountDown_fail;
 			if(RetryCountDown_fail < 1){
 				alert("<#Disconnected#>!");
@@ -221,7 +240,7 @@ function goWireless(){
 }
 
 function send_setting(){
-	$j.ajax({
+	$.ajax({
 		url: '/setting_lan.htm',
 		dataType: 'script',
 		
@@ -378,15 +397,15 @@ function show_3G_modem_list(){
 			, "ICON401"
 			);
 
-	free_options($("shown_modems"));
+	free_options(document.getElementById("shown_modems"));
 	for(var i = 0; i < modemlist.length; i++){
 		if(modemlist[i] == "AUTO")
-			$("shown_modems").options[i] = new Option("<#Auto#>", modemlist[i]);
+			document.getElementById("shown_modems").options[i] = new Option("<#Auto#>", modemlist[i]);
 		else	
-			$("shown_modems").options[i] = new Option(modemlist[i], modemlist[i]);
+			document.getElementById("shown_modems").options[i] = new Option(modemlist[i], modemlist[i]);
 			
 		if(modemlist[i] == modem)
-			$("shown_modems").options[i].selected = "1";
+			document.getElementById("shown_modems").options[i].selected = "1";
 	}
 }
 
@@ -397,14 +416,14 @@ function show_4G_modem_list(){
 			//, "Beceem BCMS250"
 			);
 
-	free_options($("shown_modems"));
+	free_options(document.getElementById("shown_modems"));
 	for(var i = 0; i < modemlist.length; i++){
 		if(modemlist[i] == "AUTO")
-			$("shown_modems").options[i] = new Option("<#Auto#>", modemlist[i]);
+			document.getElementById("shown_modems").options[i] = new Option("<#Auto#>", modemlist[i]);
 		else	
-			$("shown_modems").options[i] = new Option(modemlist[i], modemlist[i]);
+			document.getElementById("shown_modems").options[i] = new Option(modemlist[i], modemlist[i]);
 		if(modemlist[i] == modem)
-			$("shown_modems").options[i].selected = "1";
+			document.getElementById("shown_modems").options[i].selected = "1";
 	}
 }
 
@@ -413,7 +432,8 @@ function switch_modem_mode(mode){
 	show_modem_list(mode);
 
 	if(mode == "1"){ // WCDMA
-		//inputCtrl(document.form.Dev3G, 1);
+		if(!gobi_support)
+			inputCtrl(document.form.Dev3G, 1);
 		inputCtrl(document.form.modem_country, 1);
 		inputCtrl(document.form.modem_isp, 1);
 		inputCtrl(document.form.modem_apn, 1);
@@ -422,10 +442,11 @@ function switch_modem_mode(mode){
 		inputCtrl(document.form.modem_user, 1);
 		inputCtrl(document.form.modem_pass, 1);
 		inputCtrl(document.form.modem_ttlsid, 0);
-		//$("hsdpa_hint").style.display = "";
+		//document.getElementById("hsdpa_hint").style.display = "";
 	}
 	else if(mode == "2"){ // CDMA2000
-		//inputCtrl(document.form.Dev3G, 1);
+		if(!gobi_support)
+			inputCtrl(document.form.Dev3G, 1);
 		inputCtrl(document.form.modem_country, 1);
 		inputCtrl(document.form.modem_isp, 1);
 		inputCtrl(document.form.modem_apn, 1);
@@ -434,10 +455,11 @@ function switch_modem_mode(mode){
 		inputCtrl(document.form.modem_user, 1);
 		inputCtrl(document.form.modem_pass, 1);
 		inputCtrl(document.form.modem_ttlsid, 0);
-		//$("hsdpa_hint").style.display = "";
+		//document.getElementById("hsdpa_hint").style.display = "";
 	}
 	else if(mode == "3"){ // TD-SCDMA
-		//inputCtrl(document.form.Dev3G, 1);
+		if(!gobi_support)
+			inputCtrl(document.form.Dev3G, 1);
 		inputCtrl(document.form.modem_country, 1);
 		inputCtrl(document.form.modem_isp, 1);
 		inputCtrl(document.form.modem_apn, 1);
@@ -446,10 +468,11 @@ function switch_modem_mode(mode){
 		inputCtrl(document.form.modem_user, 1);
 		inputCtrl(document.form.modem_pass, 1);
 		inputCtrl(document.form.modem_ttlsid, 0);
-		//$("hsdpa_hint").style.display = "";
+		//document.getElementById("hsdpa_hint").style.display = "";
 	}
 	else if(mode == "4"){	// WiMAX
-		//inputCtrl(document.form.Dev3G, 1);
+		if(!gobi_support)
+			inputCtrl(document.form.Dev3G, 1);
 		inputCtrl(document.form.modem_country, 1);
 		inputCtrl(document.form.modem_isp, 1);
 		inputCtrl(document.form.modem_apn, 0);
@@ -458,10 +481,11 @@ function switch_modem_mode(mode){
 		inputCtrl(document.form.modem_user, 1);
 		inputCtrl(document.form.modem_pass, 1);
 		inputCtrl(document.form.modem_ttlsid, 1);
-		//$("hsdpa_hint").style.display = "";
+		//document.getElementById("hsdpa_hint").style.display = "";
 	}
 	else{	// Disable (mode == 0)
-		//inputCtrl(document.form.Dev3G, 0);
+		if(!gobi_support)
+			inputCtrl(document.form.Dev3G, 0);
 		inputCtrl(document.form.modem_enable_option, 0);
 		inputCtrl(document.form.modem_country, 0);
 		inputCtrl(document.form.modem_isp, 0);
@@ -471,7 +495,7 @@ function switch_modem_mode(mode){
 		inputCtrl(document.form.modem_user, 0);
 		inputCtrl(document.form.modem_pass, 0);
 		inputCtrl(document.form.modem_ttlsid, 0);
-		//$("hsdpa_hint").style.display = "none";
+		//document.getElementById("hsdpa_hint").style.display = "none";
 		document.form.modem_enable.value = "0";
 	}
 }
@@ -534,66 +558,66 @@ function show_APN_list(){
 	}
 
 	if(Countrylist == ""){
-		if('<% nvram_get("modem_enable"); %>' == $('modem_enable_option').value){
-			$("modem_apn").value = apn;
-			$("modem_dialnum").value = dialnum;
-			$("modem_user").value = user;
-			$("modem_pass").value = pass;
+		if('<% nvram_get("modem_enable"); %>' == document.getElementById('modem_enable_option').value){
+			document.getElementById("modem_apn").value = apn;
+			document.getElementById("modem_dialnum").value = dialnum;
+			document.getElementById("modem_user").value = user;
+			document.getElementById("modem_pass").value = pass;
 		}
 		else{
-			$("modem_apn").value = apnlist[isp_order];
-			$("modem_dialnum").value = daillist[isp_order];
-			$("modem_user").value = userlist[isp_order];
-			$("modem_pass").value = passlist[isp_order];
+			document.getElementById("modem_apn").value = apnlist[isp_order];
+			document.getElementById("modem_dialnum").value = daillist[isp_order];
+			document.getElementById("modem_user").value = userlist[isp_order];
+			document.getElementById("modem_pass").value = passlist[isp_order];
 		}
 	}
 	else if(protolist[isp_order] != "4"){
 		if(ISPlist == isp && Countrylist == country && (apn != "" || dialnum != "" || user != "" || pass != "")){
 			if(typeof(apnlist[isp_order]) == 'object' && apnlist[isp_order].constructor == Array){
-				$("pull_arrow").style.display = '';
-				$("modem_apn").className = "input_18_table";
+				document.getElementById("pull_arrow").style.display = '';
+				document.getElementById("modem_apn").className = "input_18_table";
 				showLANIPList(isp_order);
 			}
 			else{
-				$("pull_arrow").style.display = 'none';
-				$("modem_apn").className = "input_20_table";
-				$('ClientList_Block_PC').style.display = 'none';
+				document.getElementById("pull_arrow").style.display = 'none';
+				document.getElementById("modem_apn").className = "input_20_table";
+				document.getElementById('ClientList_Block_PC').style.display = 'none';
 			}
 
-			$("modem_apn").value = apn;
-			$("modem_dialnum").value = dialnum;
-			$("modem_user").value = user;
-			$("modem_pass").value = pass;
+			document.getElementById("modem_apn").value = apn;
+			document.getElementById("modem_dialnum").value = dialnum;
+			document.getElementById("modem_user").value = user;
+			document.getElementById("modem_pass").value = pass;
 		}
 		else{
 			if(typeof(apnlist[isp_order]) == 'object' && apnlist[isp_order].constructor == Array){
-				$("pull_arrow").style.display = '';
-				$("modem_apn").className = "input_18_table";
+				document.getElementById("pull_arrow").style.display = '';
+				document.getElementById("modem_apn").className = "input_18_table";
 				showLANIPList(isp_order);
 			}
 			else{
-				$("pull_arrow").style.display = 'none';
-				$("modem_apn").className = "input_20_table";
-				$('ClientList_Block_PC').style.display = 'none';
-				$("modem_apn").value = apnlist[isp_order];
+				document.getElementById("pull_arrow").style.display = 'none';
+				document.getElementById("modem_apn").className = "input_20_table";
+				document.getElementById('ClientList_Block_PC').style.display = 'none';
+				document.getElementById("modem_apn").value = apnlist[isp_order];
 			}
 
-			$("modem_dialnum").value = daillist[isp_order];
-			$("modem_user").value = userlist[isp_order];
-			$("modem_pass").value = passlist[isp_order];
+			document.getElementById("modem_dialnum").value = daillist[isp_order];
+			document.getElementById("modem_user").value = userlist[isp_order];
+			document.getElementById("modem_pass").value = passlist[isp_order];
 		}
 	}
 	else{
-		$("modem_apn").value = "";
-		$("modem_dialnum").value = "";
+		document.getElementById("modem_apn").value = "";
+		document.getElementById("modem_dialnum").value = "";
 
 		if(ISPlist == isp	&& (user != "" || pass != "")){
-			$("modem_user").value = user;
-			$("modem_pass").value = pass;
+			document.getElementById("modem_user").value = user;
+			document.getElementById("modem_pass").value = pass;
 		}
 		else{
-			$("modem_user").value = userlist[isp_order];
-			$("modem_pass").value = passlist[isp_order];
+			document.getElementById("modem_user").value = userlist[isp_order];
+			document.getElementById("modem_pass").value = passlist[isp_order];
 		}
 	}
 
@@ -622,13 +646,13 @@ function showLANIPList(isp_order){
 			document.form.modem_apn.value = apnlist_col[1];
 	}
 	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
-	$("ClientList_Block_PC").innerHTML = code;
+	document.getElementById("ClientList_Block_PC").innerHTML = code;
 }
 
 function pullLANIPList(obj){
 	if(isMenuopen == 0){		
 		obj.src = "/images/arrow-top.gif"
-		$("ClientList_Block_PC").style.display = 'block';		
+		document.getElementById("ClientList_Block_PC").style.display = 'block';		
 		document.form.modem_apn.focus();		
 		isMenuopen = 1;
 	}
@@ -639,8 +663,8 @@ function pullLANIPList(obj){
 var over_var = 0;
 var isMenuopen = 0;
 function hideClients_Block(){
-	$("pull_arrow").src = "/images/arrow-down.gif";
-	$('ClientList_Block_PC').style.display='none';
+	document.getElementById("pull_arrow").src = "/images/arrow-down.gif";
+	document.getElementById('ClientList_Block_PC').style.display='none';
 	isMenuopen = 0;
 }
 /*----------} Mouse event of fake LAN IP select menu-----------------*/
@@ -733,9 +757,6 @@ function inet_ntoa(ip_num){
 					<td align="left">
 						<div class="description_down" id="page_desc"><#menu5_4_4#></div>
 					</td>
-					<!--td align="right">
-						<img onclick="parent.gotoIndex();" style="cursor:pointer;" align="right" title="Go to Home" src="/images/backtohome.png" onMouseOver="this.src='/images/backtohomeclick.png'" onMouseOut="this.src='/images/backtohome.png'">
-					</td-->
 				</tr>
 			</table>
 		</div>
@@ -784,7 +805,7 @@ function inet_ntoa(ip_num){
 		 <tr>
 			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
 			<td>
-				<input id="modem_apn" type="text" value="" name="modem_apn" tabindex="6" class="input_20_table"/>
+				<input id="modem_apn" type="text" value="" name="modem_apn" tabindex="6" class="input_20_table" autocorrect="off" autocapitalize="off"/>
      			<img id="pull_arrow" height="14px;" src="/images/arrow-down.gif" style="display:none;position:absolute;*margin-left:-3px;*margin-top:1px;" onclick="pullLANIPList(this);" title="<#select_device_name#>" onmouseover="over_var=1;" onmouseout="over_var=0;">
 				<div id="ClientList_Block_PC" class="ClientList_Block_PC"></div>
 			</td>
@@ -793,14 +814,14 @@ function inet_ntoa(ip_num){
 		<tr>
 			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
 			<td>
-				<input id="modem_dialnum" name="modem_dialnum" tabindex="7" class="input_20_table" type="text" value=""/>
+				<input id="modem_dialnum" name="modem_dialnum" tabindex="7" class="input_20_table" type="text" value="" autocorrect="off" autocapitalize="off"/>
 			</td>
 		</tr>
 		
 		<tr style="display:none;">
 			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,2);"><#PIN_code#></a></th>
 			<td>
-				<input id="modem_pincode" name="modem_pincode" tabindex="8" class="input_20_table" type="password" maxLength="8" value="<% nvram_get("modem_pincode"); %>" autocapitalization="off" autocomplete="off"/>
+				<input id="modem_pincode" name="modem_pincode" tabindex="8" class="input_20_table" type="password" maxLength="8" value="<% nvram_get("modem_pincode"); %>" autocomplete="off" autocorrect="off" autocapitalize="off"/>
 				<br><span id="pincode_status" style="display:none;"><#pincode_wrong#></span>
 			</td>
 		</tr>
@@ -808,14 +829,14 @@ function inet_ntoa(ip_num){
 		<tr>
 			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,11);"><#HSDPAConfig_Username_itemname#></a></th>
 			<td>
-			<input id="modem_user" name="modem_user" tabindex="9" class="input_20_table" type="text" value="<% nvram_get("modem_user"); %>" autocapitalization="off" autocomplete="off"/>
+			<input id="modem_user" name="modem_user" tabindex="9" class="input_20_table" type="text" value="<% nvram_get("modem_user"); %>" autocomplete="off" autocorrect="off" autocapitalize="off"/>
 			</td>
 		</tr>
                           
 		<tr>
 			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,12);"><#PPPConnection_Password_itemname#></a></th>
 			<td>
-				<input id="modem_pass" name="modem_pass" tabindex="10" class="input_20_table" type="password" value="<% nvram_get("modem_pass"); %>" autocapitalization="off" autocomplete="off"/>
+				<input id="modem_pass" name="modem_pass" tabindex="10" class="input_20_table" type="password" value="<% nvram_get("modem_pass"); %>" autocomplete="off" autocorrect="off" autocapitalize="off"/>
 			</td>
 		</tr>
 
@@ -836,9 +857,9 @@ function inet_ntoa(ip_num){
 
 	<div id="applyBtn" class="apply_gen" style="margin-top:20px">
 		<input type="button" id="skipButton" value="<#CTL_Skip#>" class="button_gen" tabindex="13" onclick="goWireless();">
-		<input type="button" id="nextButton" value="<#CTL_Add_enrollee#>" tabindex="12" class="button_gen" onclick="submitForm();">
-		<img id="loadingIcon" style="display:none;" src="/images/InternetScan.gif">	
-		<span id="loadingNote" style="display:none;"><#Modem_connect_waiting#></span>	
+		<input type="button" id="nextButton" value="<#CTL_next#>" tabindex="12" class="button_gen" onclick="submitForm();">
+		<img id="loadingIcon" style="display:none;" src="/images/InternetScan.gif">
+		<span id="loadingNote" style="display:none;"><#Modem_connect_waiting#></span>
 		<span id="loadingNote1m" style="display:none;"><#Modem_connect_waiting_1m#></span>
 	</div>
 
@@ -864,7 +885,7 @@ function inet_ntoa(ip_num){
 <div id="Conn3GFail" style="display:none;">
 	<div>
 		<p class="QISGeneralFont" style="font-size:20px;line-height:30px;">
-			Unable to connect to the Internet, please re-enter the information, or double-check your account data with your ISP.		
+			<#HSDPAConfig_Conn3GFail#><!-- Unable to connect to the Internet, please re-enter the information, or double-check your account data with your ISP. -->
 		</p>
 	</div>
 	<div class="apply_gen" id="resetField" style="margin-top:30px">

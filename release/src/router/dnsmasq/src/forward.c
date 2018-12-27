@@ -253,6 +253,7 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
   void *hash = &crc;
 #endif
  unsigned int gotname = extract_request(header, plen, daemon->namebuff, NULL);
+ unsigned char *pheader;
 
  (void)do_bit;
 
@@ -261,19 +262,32 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
     forward = NULL;
   else if (forward || (hash && (forward = lookup_frec_by_sender(ntohs(header->id), udpaddr, hash))))
     {
+      /* If we didn't get an answer advertising a maximal packet in EDNS,
+	 fall back to 1280, which should work everywhere on IPv6.
+	 If that generates an answer, it will become the new default
+	 for this server */
+      forward->flags |= FREC_TEST_PKTSZ;
+      
 #ifdef HAVE_DNSSEC
       /* If we've already got an answer to this query, but we're awaiting keys for validation,
 	 there's no point retrying the query, retry the key query instead...... */
       if (forward->blocking_query)
 	{
 	  int fd;
-
+	  
+	  forward->flags &= ~FREC_TEST_PKTSZ;
+	  
 	  while (forward->blocking_query)
 	    forward = forward->blocking_query;
+	   
+	  forward->flags |= FREC_TEST_PKTSZ;
 	  
 	  blockdata_retrieve(forward->stash, forward->stash_len, (void *)header);
 	  plen = forward->stash_len;
 	  
+	  if (find_pseudoheader(header, plen, NULL, &pheader, NULL))
+	    PUTSHORT((forward->flags & FREC_TEST_PKTSZ) ? SAFE_PKTSZ : forward->sentto->edns_pktsz, pheader);
+
 	  if (forward->sentto->addr.sa.sa_family == AF_INET) 
 	    log_query(F_NOEXTRA | F_DNSSEC | F_IPV4, "retry", (struct all_addr *)&forward->sentto->addr.in.sin_addr, "dnssec");
 #ifdef HAVE_IPV6
@@ -417,7 +431,7 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 	  plen = new_plen;
 	}
 #endif
-
+      
       while (1)
 	{ 
 	  /* only send to servers dealing with our domain.
@@ -464,6 +478,9 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 		    }
 #endif
 		}
+
+	      if (find_pseudoheader(header, plen, NULL, &pheader, NULL))
+		PUTSHORT((forward->flags & FREC_TEST_PKTSZ) ? SAFE_PKTSZ : start->edns_pktsz, pheader);
 	      
 	      if (retry_send(sendto(fd, (char *)header, plen, 0,
 				    &start->addr.sa,
@@ -521,7 +538,8 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 }
 
 static size_t process_reply(struct dns_header *header, time_t now, struct server *server, size_t n, int check_rebind, 
-			    int no_cache, int cache_secure, int ad_reqd, int do_bit, int added_pheader, int check_subnet, union mysockaddr *query_source)
+			    int no_cache, int cache_secure, int bogusanswer, int ad_reqd, int do_bit, int added_pheader, 
+			    int check_subnet, union mysockaddr *query_source)
 {
   unsigned char *pheader, *sizep;
   char **sets = 0;
@@ -529,7 +547,8 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
   size_t plen; 
 
   (void)ad_reqd;
-  (void) do_bit;
+  (void)do_bit;
+  (void)bogusanswer;
 
 #ifdef HAVE_IPSET
   if (daemon->ipsets && extract_request(header, n, daemon->namebuff, NULL))
@@ -634,7 +653,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
     }
   
 #ifdef HAVE_DNSSEC
-  if (no_cache && !(header->hb4 & HB4_CD)) 
+  if (bogusanswer && !(header->hb4 & HB4_CD)) 
     {
       if (!option_bool(OPT_DNSSEC_DEBUG))
 	{
@@ -663,6 +682,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
       header->ancount = htons(0);
       header->nscount = htons(0);
       header->arcount = htons(0);
+      header->hb3 &= ~HB3_TC;
     }
   
   /* the bogus-nxdomain stuff, doctor and NXDOMAIN->NODATA munging can all elide
@@ -749,7 +769,8 @@ void reply_query(int fd, int family, time_t now)
 	  header->arcount = htons(0);
 	  if ((nn = resize_packet(header, (size_t)n, pheader, plen)))
 	    {
-	      header->hb3 &= ~(HB3_QR | HB3_TC);
+	      header->hb3 &= ~(HB3_QR | HB3_AA | HB3_TC);
+	      header->hb4 &= ~(HB4_RA | HB4_RCODE);
 	      forward_query(-1, NULL, NULL, 0, header, nn, now, forward, 0, 0);
 	      return;
 	    }
@@ -757,7 +778,6 @@ void reply_query(int fd, int family, time_t now)
     }   
    
   server = forward->sentto;
-  
   if ((forward->sentto->flags & SERV_TYPE) == 0)
     {
       if (RCODE(header) == REFUSED)
@@ -778,14 +798,21 @@ void reply_query(int fd, int family, time_t now)
       if (!option_bool(OPT_ALL_SERVERS))
 	daemon->last_server = server;
     }
-
+ 
+  /* We tried resending to this server with a smaller maximum size and got an answer.
+     Make that permanent. To avoid reduxing the packet size for an single dropped packet,
+     only do this when we get a truncated answer, or one larger than the safe size. */
+  if (server && (forward->flags & FREC_TEST_PKTSZ) && 
+      ((header->hb3 & HB3_TC) || n >= SAFE_PKTSZ))
+    server->edns_pktsz = SAFE_PKTSZ;
+  
   /* If the answer is an error, keep the forward record in place in case
      we get a good reply from another server. Kill it when we've
      had replies from all to avoid filling the forwarding table when
      everything is broken */
   if (forward->forwardall == 0 || --forward->forwardall == 1 || RCODE(header) != SERVFAIL)
     {
-      int check_rebind = 0, no_cache_dnssec = 0, cache_secure = 0;
+      int check_rebind = 0, no_cache_dnssec = 0, cache_secure = 0, bogusanswer = 0;
 
       if (option_bool(OPT_NO_REBIND))
 	check_rebind = !(forward->flags & FREC_NOREBIND);
@@ -818,7 +845,24 @@ void reply_query(int fd, int family, time_t now)
 	  else if (forward->flags & FREC_DS_QUERY)
 	    {
 	      status = dnssec_validate_ds(now, header, n, daemon->namebuff, daemon->keyname, forward->class);
-	      if (status == STAT_NO_DS || status == STAT_NO_NS)
+	      /* Provably no DS, everything below is insecure, even if signatures are offered */
+	      if (status == STAT_NO_DS)
+		/* We only cache sigs when we've validated a reply.
+		   Avoid caching a reply with sigs if there's a vaildated break in the 
+		   DS chain, so we don't return replies from cache missing sigs. */
+              	status = STAT_INSECURE_DS;
+	      else if (status == STAT_NO_SIG)
+                {
+                  if (option_bool(OPT_DNSSEC_NO_SIGN))
+                    {
+		      status = send_check_sign(forward, now, header, n, daemon->namebuff, daemon->keyname);
+		      if (status == STAT_INSECURE)
+			status = STAT_INSECURE_DS;
+		    }
+		  else
+		    status = STAT_INSECURE_DS;
+		}
+              else if (status == STAT_NO_NS)
 		status = STAT_BOGUS;
 	    }
 	  else if (forward->flags & FREC_CHECK_NOSIGN)
@@ -881,7 +925,7 @@ void reply_query(int fd, int family, time_t now)
 		    {
 		      new->flags |= FREC_DNSKEY_QUERY; 
 		      nn = dnssec_generate_query(header, ((char *) header) + daemon->packet_buff_sz,
-						 daemon->keyname, forward->class, T_DNSKEY, &server->addr);
+						 daemon->keyname, forward->class, T_DNSKEY, &server->addr, server->edns_pktsz);
 		    }
 		  else 
 		    {
@@ -890,7 +934,7 @@ void reply_query(int fd, int family, time_t now)
 		      else
 			new->flags |= FREC_DS_QUERY;
 		      nn = dnssec_generate_query(header,((char *) header) + daemon->packet_buff_sz,
-						 daemon->keyname, forward->class, T_DS, &server->addr);
+						 daemon->keyname, forward->class, T_DS, &server->addr, server->edns_pktsz);
 		    }
 		  if ((hash = hash_questions(header, nn, daemon->namebuff)))
 		    memcpy(new->hash, hash, HASH_SIZE);
@@ -958,8 +1002,25 @@ void reply_query(int fd, int family, time_t now)
 		  else if (forward->flags & FREC_DS_QUERY)
 		    {
 		      status = dnssec_validate_ds(now, header, n, daemon->namebuff, daemon->keyname, forward->class);
-		      if (status == STAT_NO_DS || status == STAT_NO_NS)
-			status = STAT_BOGUS;
+		       /* Provably no DS, everything below is insecure, even if signatures are offered */
+		      if (status == STAT_NO_DS)
+			/* We only cache sigs when we've validated a reply.
+			   Avoid caching a reply with sigs if there's a vaildated break in the 
+			   DS chain, so we don't return replies from cache missing sigs. */
+			status = STAT_INSECURE_DS;
+		       else if (status == STAT_NO_SIG)
+			 {
+			   if (option_bool(OPT_DNSSEC_NO_SIGN))
+			     {
+			       status = send_check_sign(forward, now, header, n, daemon->namebuff, daemon->keyname); 
+			       if (status == STAT_INSECURE)
+				 status = STAT_INSECURE_DS;
+			     }
+			   else
+			     status = STAT_INSECURE_DS;
+			 }
+		       else if (status == STAT_NO_NS)
+			 status = STAT_BOGUS;
 		    }
 		  else if (forward->flags & FREC_CHECK_NOSIGN)
 		    {
@@ -984,26 +1045,44 @@ void reply_query(int fd, int family, time_t now)
 		}
 	    }
 	  
+	  no_cache_dnssec = 0;
+
+	  if (status == STAT_INSECURE_DS)
+	    {
+	      /* We only cache sigs when we've validated a reply.
+		 Avoid caching a reply with sigs if there's a vaildated break in the 
+		 DS chain, so we don't return replies from cache missing sigs. */
+	      status = STAT_INSECURE;
+	      no_cache_dnssec = 1;
+	    }
+	  
 	  if (status == STAT_TRUNCATED)
 	    header->hb3 |= HB3_TC;
 	  else
 	    {
-	      char *result;
+	      char *result, *domain = "result";
 	      
 	      if (forward->work_counter == 0)
-		result = "ABANDONED";
+		{
+		  result = "ABANDONED";
+		  status = STAT_BOGUS;
+		}
 	      else
 		result = (status == STAT_SECURE ? "SECURE" : (status == STAT_INSECURE ? "INSECURE" : "BOGUS"));
 	      
-	      log_query(F_KEYTAG | F_SECSTAT, "result", NULL, result);
+	      if (status == STAT_BOGUS && extract_request(header, n, daemon->namebuff, NULL))
+		domain = daemon->namebuff;
+
+	      log_query(F_KEYTAG | F_SECSTAT, domain, NULL, result);
 	    }
-	  
-	  no_cache_dnssec = 0;
 	  
 	  if (status == STAT_SECURE)
 	    cache_secure = 1;
 	  else if (status == STAT_BOGUS)
-	    no_cache_dnssec = 1;
+	    {
+	      no_cache_dnssec = 1;
+	      bogusanswer = 1;
+	    }
 	}
 #endif     
       
@@ -1013,7 +1092,7 @@ void reply_query(int fd, int family, time_t now)
       else
 	header->hb4 &= ~HB4_CD;
       
-      if ((nn = process_reply(header, now, server, (size_t)n, check_rebind, no_cache_dnssec, cache_secure,
+      if ((nn = process_reply(header, now, server, (size_t)n, check_rebind, no_cache_dnssec, cache_secure, bogusanswer, 
 			      forward->flags & FREC_AD_QUESTION, forward->flags & FREC_DO_QUESTION, 
 			      forward->flags & FREC_ADDED_PHEADER, forward->flags & FREC_HAS_SUBNET, &forward->source)))
 	{
@@ -1361,7 +1440,7 @@ static int send_check_sign(struct frec *forward, time_t now, struct dns_header *
 static int do_check_sign(struct frec *forward, int status, time_t now, char *name, char *keyname)
 {
   /* get domain we're checking back from blockdata store, it's stored on the original query. */
-  while (forward->dependent)
+  while (forward->dependent && !forward->orig_domain)
     forward = forward->dependent;
 
   blockdata_retrieve(forward->orig_domain, forward->name_len, name);
@@ -1394,11 +1473,26 @@ static int do_check_sign(struct frec *forward, int status, time_t now, char *nam
       
       /* Have entered non-signed part of DNS tree. */ 
       if (status == STAT_NO_DS)
-	return STAT_INSECURE;
+	return forward->dependent ? STAT_INSECURE_DS : STAT_INSECURE;
 
       if (status == STAT_BOGUS)
 	return STAT_BOGUS;
 
+      if (status == STAT_NO_SIG && *keyname != 0)
+	{
+	  /* There is a validated CNAME chain that doesn't end in a DS record. Start 
+	     the search again in that domain. */
+	  blockdata_free(forward->orig_domain);
+	  forward->name_start = strlen(keyname);
+	  forward->name_len = forward->name_start + 1;
+	  if (!(forward->orig_domain = blockdata_alloc(keyname, forward->name_len)))
+	    return STAT_BOGUS;
+	  
+	  strcpy(name, keyname);
+	  status = 0; /* force to cache when we iterate. */
+	  continue;
+	}
+      
       /* There's a proven DS record, or we're within a zone, where there doesn't need
 	 to be a DS record. Add a name and try again. 
 	 If we've already tried the whole name, then fail */
@@ -1416,7 +1510,7 @@ static int do_check_sign(struct frec *forward, int status, time_t now, char *nam
     }
 }
 
-/* Move toward the root, until we find a signed non-existance of a DS, in which case
+/* Move down from the root, until we find a signed non-existance of a DS, in which case
    an unsigned answer is OK, or we find a signed DS, in which case there should be 
    a signature, and the answer is BOGUS */
 static int  tcp_check_for_unsigned_zone(time_t now, struct dns_header *header, size_t plen, int class, char *name, 
@@ -1493,7 +1587,7 @@ static int  tcp_check_for_unsigned_zone(time_t now, struct dns_header *header, s
       
       /* Can't find it in the cache, have to send a query */
 
-      m = dnssec_generate_query(header, ((char *) header) + 65536, name_start, class, T_DS, &server->addr);
+      m = dnssec_generate_query(header, ((char *) header) + 65536, name_start, class, T_DS, &server->addr, server->edns_pktsz);
       
       *length = htons(m);
       
@@ -1513,6 +1607,21 @@ static int  tcp_check_for_unsigned_zone(time_t now, struct dns_header *header, s
 	      free(packet);
 	      blockdata_free(block);
 	      return STAT_INSECURE;
+	    }
+	  
+	  if (status == STAT_NO_SIG && *keyname != 0)
+	    {
+	      /* There is a validated CNAME chain that doesn't end in a DS record. Start 
+		 the search again in that domain. */
+	      blockdata_free(block);
+	      name_len = strlen(keyname) + 1;
+	      name_start = name + name_len - 1;
+	      
+	      if (!(block = blockdata_alloc(keyname, name_len)))
+		return STAT_BOGUS;
+	      
+	      strcpy(name, keyname);
+	      continue;
 	    }
 	  
 	  if (status == STAT_BOGUS)
@@ -1566,8 +1675,24 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
   else if (status == STAT_NEED_DS || status == STAT_NEED_DS_NEG)
     {
       new_status = dnssec_validate_ds(now, header, n, name, keyname, class);
-      if (status == STAT_NEED_DS && (new_status == STAT_NO_DS || new_status == STAT_NO_NS))
-	new_status = STAT_BOGUS;
+      if (status == STAT_NEED_DS)
+	{
+	  if (new_status == STAT_NO_DS)
+	    new_status = STAT_INSECURE_DS;
+	  if (new_status == STAT_NO_SIG)
+	   {
+	     if (option_bool(OPT_DNSSEC_NO_SIGN))
+	       {
+		 new_status = tcp_check_for_unsigned_zone(now, header, n, class, name, keyname, server, keycount);
+		 if (new_status == STAT_INSECURE)
+		   new_status = STAT_INSECURE_DS;
+	       }
+	     else
+	       new_status = STAT_INSECURE_DS;
+	   }
+	  else if (new_status == STAT_NO_NS)
+	    new_status = STAT_BOGUS;
+	}
     }
   else if (status == STAT_CHASE_CNAME)
     new_status = dnssec_chase_cname(now, header, n, name, keyname);
@@ -1600,7 +1725,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 
     another_tcp_key:
       m = dnssec_generate_query(new_header, ((char *) new_header) + 65536, keyname, class, 
-				new_status == STAT_NEED_KEY ? T_DNSKEY : T_DS, &server->addr);
+				new_status == STAT_NEED_KEY ? T_DNSKEY : T_DS, &server->addr, server->edns_pktsz);
       
       *length = htons(m);
       
@@ -1626,8 +1751,24 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 	      else if (status == STAT_NEED_DS || status == STAT_NEED_DS_NEG)
 		{
 		  new_status = dnssec_validate_ds(now, header, n, name, keyname, class);
-		  if (status == STAT_NEED_DS  && (new_status == STAT_NO_DS || new_status == STAT_NO_NS))
-		    new_status = STAT_BOGUS; /* Validated no DS */
+		  if (status == STAT_NEED_DS)
+		    {
+		      if (new_status == STAT_NO_DS)
+			new_status = STAT_INSECURE_DS;
+		      else if (new_status == STAT_NO_SIG)
+			{
+			  if (option_bool(OPT_DNSSEC_NO_SIGN))
+			    {
+			      new_status = tcp_check_for_unsigned_zone(now, header, n, class, name, keyname, server, keycount); 
+			      if (new_status == STAT_INSECURE)
+				new_status = STAT_INSECURE_DS;
+			    }
+			  else
+			    new_status = STAT_INSECURE_DS;
+			}
+		      else if (new_status == STAT_NO_NS)
+			new_status = STAT_BOGUS;
+		    }
 		}
 	      else if (status == STAT_CHASE_CNAME)
 		new_status = dnssec_chase_cname(now, header, n, name, keyname);
@@ -1648,7 +1789,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 		goto another_tcp_key;
 	    }
 	}
-
+      
       free(packet);
     }
   return new_status;
@@ -1669,7 +1810,7 @@ unsigned char *tcp_request(int confd, time_t now,
   int local_auth = 0;
 #endif
   int checking_disabled, ad_question, do_bit, added_pheader = 0;
-  int check_subnet, no_cache_dnssec = 0, cache_secure = 0;
+  int check_subnet, no_cache_dnssec = 0, cache_secure = 0, bogusanswer = 0;
   size_t m;
   unsigned short qtype;
   unsigned int gotname;
@@ -1790,7 +1931,7 @@ unsigned char *tcp_request(int confd, time_t now,
 			     dst_addr_4, netmask, now, &ad_question, &do_bit);
 	  
 	  /* Do this by steam now we're not in the select() loop */
-	  check_log_writer(NULL); 
+	  check_log_writer(1); 
 	  
 	  if (m == 0)
 	    {
@@ -1935,18 +2076,36 @@ unsigned char *tcp_request(int confd, time_t now,
 			{
 			  int keycount = DNSSEC_WORK; /* Limit to number of DNSSEC questions, to catch loops and avoid filling cache. */
 			  int status = tcp_key_recurse(now, STAT_TRUNCATED, header, m, 0, daemon->namebuff, daemon->keyname, last_server, &keycount);
-			  char *result;
+			  char *result, *domain = "result";
 
+			  if (status == STAT_INSECURE_DS)
+			    {
+			      /* We only cache sigs when we've validated a reply.
+				 Avoid caching a reply with sigs if there's a vaildated break in the 
+				 DS chain, so we don't return replies from cache missing sigs. */
+			      status = STAT_INSECURE;
+			      no_cache_dnssec = 1;
+			    }
+			  
 			  if (keycount == 0)
-			    result = "ABANDONED";
+			    {
+			      result = "ABANDONED";
+			      status = STAT_BOGUS;
+			    }
 			  else
 			    result = (status == STAT_SECURE ? "SECURE" : (status == STAT_INSECURE ? "INSECURE" : "BOGUS"));
 			  
-			  log_query(F_KEYTAG | F_SECSTAT, "result", NULL, result);
+			  if (status == STAT_BOGUS && extract_request(header, m, daemon->namebuff, NULL))
+			    domain = daemon->namebuff;
+
+			  log_query(F_KEYTAG | F_SECSTAT, domain, NULL, result);
 			  
 			  if (status == STAT_BOGUS)
-			    no_cache_dnssec = 1;
-			  
+			    {
+			      no_cache_dnssec = 1;
+			      bogusanswer = 1;
+			    }
+
 			  if (status == STAT_SECURE)
 			    cache_secure = 1;
 			}
@@ -1980,8 +2139,8 @@ unsigned char *tcp_request(int confd, time_t now,
 #endif
 
 		      m = process_reply(header, now, last_server, (unsigned int)m, 
-					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec,
-					cache_secure, ad_question, do_bit, added_pheader, check_subnet, &peer_addr); 
+					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec, cache_secure, bogusanswer,
+					ad_question, do_bit, added_pheader, check_subnet, &peer_addr); 
 		      
 		      break;
 		    }
@@ -1993,7 +2152,7 @@ unsigned char *tcp_request(int confd, time_t now,
 	    }
 	}
 	  
-      check_log_writer(NULL);
+      check_log_writer(1);
       
       *length = htons(m);
            

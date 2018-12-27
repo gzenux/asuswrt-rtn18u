@@ -12,6 +12,9 @@
 
 CFLAGS = -g -D_FILE_OFFSET_BITS=64 -DHAVE_LIBSMBCLIENT_H -I/$(TOP)/samba-3.5.8/source3/include
 CFLAGS += -DNVRAM_ -I$(SRCBASE) -I$(SRCBASE)/include -I. -I$(TOP)/shared
+CFLAGS += $(if $(QCA),$(EXTRACFLAGS))
+
+CFLAGS += -Wall
 
 LDFLAGS = -L/$(TOP)/samba-3.5.8/source3/bin -L$(TOP)/nvram${BCMEX} -lnvram -L$(TOP)/shared -lshared
 LIBS = -lpthread -lsmbclient -lwbclient

@@ -1,12 +1,12 @@
-/* $Id: upnpglobalvars.h,v 1.22 2010/09/21 15:31:01 nanard Exp $ */
+/* $Id: upnpglobalvars.h,v 1.38 2014/03/10 11:04:53 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2010 Thomas Bernard 
+ * (c) 2006-2014 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
-#ifndef __UPNPGLOBALVARS_H__
-#define __UPNPGLOBALVARS_H__
+#ifndef UPNPGLOBALVARS_H_INCLUDED
+#define UPNPGLOBALVARS_H_INCLUDED
 
 #include <time.h>
 #include "upnppermissions.h"
@@ -32,6 +32,9 @@ extern unsigned long upstream_bitrate;
 /* statup time */
 extern time_t startup_time;
 
+extern unsigned long int min_lifetime;
+extern unsigned long int max_lifetime;
+
 /* runtime boolean flags */
 extern int runtime_flags;
 #define LOGPACKETSMASK		0x0001
@@ -47,14 +50,26 @@ extern int runtime_flags;
 #ifdef PF_ENABLE_FILTER_RULES
 #define PFNOQUICKRULESMASK	0x0040
 #endif
+#ifdef ENABLE_IPV6
+#define IPV6DISABLEDMASK	0x0080
+#endif
+#ifdef ENABLE_6FC_SERVICE
+#define IPV6FCFWDISABLEDMASK		0x0100
+#define IPV6FCINBOUNDDISALLOWEDMASK	0x0200
+#endif
+#ifdef ENABLE_PCP
+#define PCP_ALLOWTHIRDPARTYMASK	0x0400
+#endif
 
 #define SETFLAG(mask)	runtime_flags |= mask
-#define GETFLAG(mask)	runtime_flags & mask
+#define GETFLAG(mask)	(runtime_flags & mask)
 #define CLEARFLAG(mask)	runtime_flags &= ~mask
 
 extern const char * pidfilename;
 
-extern char uuidvalue[];
+extern char uuidvalue_igd[];	/* uuid of root device (IGD) */
+extern char uuidvalue_wan[];	/* uuid of WAN Device */
+extern char uuidvalue_wcd[];	/* uuid of WAN Connection Device */
 
 #define SERIALNUMBER_MAX_LEN (48)
 extern char serialnumber[];
@@ -62,24 +77,43 @@ extern char serialnumber[];
 #define MODELNUMBER_MAX_LEN (48)
 extern char modelnumber[];
 
-#define FRIENDLYNAME_MAX_LEN (64)
-extern char friendly_name[];
-
 #define PRESENTATIONURL_MAX_LEN (64)
 extern char presentationurl[];
+
+#ifdef ENABLE_MANUFACTURER_INFO_CONFIGURATION
+#define FRIENDLY_NAME_MAX_LEN (64)
+extern char friendly_name[];
+
+#define MANUFACTURER_NAME_MAX_LEN (64)
+extern char manufacturer_name[];
+
+#define MANUFACTURER_URL_MAX_LEN (64)
+extern char manufacturer_url[];
+
+#define MODEL_NAME_MAX_LEN (64)
+extern char model_name[];
+
+#define MODEL_DESCRIPTION_MAX_LEN (64)
+extern char model_description[];
+
+#define MODEL_URL_MAX_LEN (64)
+extern char model_url[];
+#endif
 
 /* UPnP permission rules : */
 extern struct upnpperm * upnppermlist;
 extern unsigned int num_upnpperm;
 
-#ifdef ENABLE_NATPMP
-/* NAT-PMP */
-extern unsigned int nextnatpmptoclean_timestamp;
-extern unsigned short nextnatpmptoclean_eport;
-extern unsigned short nextnatpmptoclean_proto;
+#ifdef PCP_SADSCP
+extern struct dscp_values* dscp_values_list;
+extern unsigned int num_dscp_values;
 #endif
 
+/* For automatic removal of expired rules (with LeaseDuration) */
+extern unsigned int nextruletoclean_timestamp;
+
 #ifdef USE_PF
+extern const char * anchor_name;
 /* queue and tag for PF rules */
 extern const char * queue;
 extern const char * tag;
@@ -87,7 +121,11 @@ extern const char * tag;
 
 #ifdef USE_NETFILTER
 extern const char * miniupnpd_nat_chain;
+extern const char * miniupnpd_peer_chain;
 extern const char * miniupnpd_forward_chain;
+#ifdef ENABLE_UPNPPINHOLE
+extern const char * miniupnpd_v6_filter_chain;
+#endif
 #endif
 
 #ifdef ENABLE_NFQUEUE
@@ -95,14 +133,24 @@ extern int nfqueue;
 extern int n_nfqix;
 extern unsigned nfqix[];
 #endif
-/* lan addresses */
-/* MAX_LAN_ADDR : maximum number of interfaces
- * to listen to SSDP traffic */
-#define MAX_LAN_ADDR (4)
-extern int n_lan_addr;
-extern struct lan_addr_s lan_addr[];
+
+/* lan addresses to listen to SSDP traffic */
+extern struct lan_addr_list lan_addrs;
+
+#ifdef ENABLE_IPV6
+/* ipv6 address used for HTTP */
+extern char ipv6_addr_for_http_with_brackets[64];
+
+/* address used to bind local services */
+extern struct in6_addr ipv6_bind_addr;
+
+#endif
 
 extern const char * minissdpdsocketpath;
+
+/* BOOTID.UPNP.ORG and CONFIGID.UPNP.ORG */
+extern unsigned int upnp_bootid;
+extern unsigned int upnp_configid;
 
 #endif
 

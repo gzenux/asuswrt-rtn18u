@@ -17,17 +17,25 @@
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
 <script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
 <script>
-var $j = jQuery.noConflict();
-var adsl_timestamp = parseInt("<% nvram_get("adsl_timestamp"); %>");
-var adsl_boottime = boottime - adsl_timestamp;
 
-var log_lineState = "<% nvram_get("dsltmp_adslsyncsts"); %>";
+var adsl_timestamp = parseInt("<% nvram_get("adsl_timestamp"); %>");
+var sync_status = "<% nvram_get("dsltmp_adslsyncsts"); %>";
+var adsl_timestamp_update = parseInt("<% nvram_get("adsl_timestamp"); %>");
+var sync_status_update = "<% nvram_get("dsltmp_adslsyncsts"); %>";
+var adsl_boottime = boottime - adsl_timestamp;
+var dsl_type = "<% nvram_get("dsllog_adsltype"); %>".replace("_", " ");
+
 var log_Opmode;
 var log_AdslType;
 var log_SNRMarginDown;
 var log_SNRMarginUp;
 var log_AttenDown;
 var log_AttenUp;
+var log_TCM;
+var log_PathModeDown;
+var log_IntDepthDown;
+var log_PathModeUp;
+var log_IntDepthUp;
 var log_WanListMode;
 var log_DataRateDown;
 var log_DataRateUp;
@@ -39,7 +47,7 @@ var log_CRCDown;
 var log_CRCUp;
 
 function update_log(){
-	$j.ajax({
+	$.ajax({
 		url: 'ajax_AdslStatus.asp',
 		dataType: 'script',
 		error: function(xhr){
@@ -47,14 +55,24 @@ function update_log(){
 			},
  	
 		success: function(){
-				document.getElementById("div_lineState").innerHTML = log_lineState;
+				if(adsl_timestamp_update != "" && sync_status != sync_status_update){
+					adsl_boottime = boottime - adsl_timestamp_update;
+					showadslbootTime();
+				}
+				
+				sync_status = sync_status_update;
+				document.getElementById("div_lineState").innerHTML = sync_status_update;
 				document.getElementById("up_modul").innerHTML = log_Opmode;
 				document.getElementById("up_annex").innerHTML = log_AdslType;
 				document.getElementById("up_SNR_down").innerHTML = log_SNRMarginDown;
 				document.getElementById("up_SNR_up").innerHTML = log_SNRMarginUp;
 				document.getElementById("up_Line_down").innerHTML = log_AttenDown;
 				document.getElementById("up_Line_up").innerHTML = log_AttenUp;
-				document.getElementById("up_wan_mode").innerHTML = log_WanListMode;
+				document.getElementById("div_TCM").innerHTML = log_TCM;
+				document.getElementById("div_PathModeDown").innerHTML = log_PathModeDown;
+				document.getElementById("div_IntDepthDown").innerHTML = log_IntDepthDown;
+				document.getElementById("div_PathModeUp").innerHTML = log_PathModeUp;
+				document.getElementById("div_IntDepthUp").innerHTML = log_IntDepthUp;
 				document.getElementById("up_rate_down").innerHTML = log_DataRateDown;
 				document.getElementById("up_rate_up").innerHTML = log_DataRateUp;
 				document.getElementById("up_maxrate_down").innerHTML = log_AttainDown;
@@ -73,12 +91,13 @@ function update_log(){
 function initial(){
 	show_menu();
 	showadslbootTime();
-	check_adsl_state_up();	
+	check_adsl_state_up();
+	document.getElementById("up_annex").innerHTML = dsl_type;
 	setTimeout("update_log();", 5000);
 }
 
 function check_adsl_state_up(){
-		if(log_lineState == "up"){
+		if(sync_status == "up"){
 				
 				document.getElementById("up_modul").style.display = "";				
 				document.getElementById("up_annex").style.display = "";
@@ -86,7 +105,11 @@ function check_adsl_state_up(){
 				document.getElementById("up_SNR_up").style.display = "";
 				document.getElementById("up_Line_down").style.display = "";
 				document.getElementById("up_Line_up").style.display = "";
-				document.getElementById("up_wan_mode").style.display = "";
+				document.getElementById("div_TCM").style.display = "";
+				document.getElementById("div_PathModeDown").style.display = "";
+				document.getElementById("div_IntDepthDown").style.display = "";
+				document.getElementById("div_PathModeUp").style.display = "";
+				document.getElementById("div_IntDepthUp").style.display = "";
 				document.getElementById("up_rate_down").style.display = "";
 				document.getElementById("up_rate_up").style.display = "";
 				document.getElementById("up_maxrate_down").style.display = "";
@@ -105,7 +128,11 @@ function check_adsl_state_up(){
 				document.getElementById("up_SNR_up").style.display = "none";
 				document.getElementById("up_Line_down").style.display = "none";
 				document.getElementById("up_Line_up").style.display = "none";
-				document.getElementById("up_wan_mode").style.display = "none";
+				document.getElementById("div_TCM").style.display = "none";
+				document.getElementById("div_PathModeDown").style.display = "none";
+				document.getElementById("div_IntDepthDown").style.display = "none";
+				document.getElementById("div_PathModeUp").style.display = "none";
+				document.getElementById("div_IntDepthUp").style.display = "none";
 				document.getElementById("up_rate_down").style.display = "none";
 				document.getElementById("up_rate_up").style.display = "none";
 				document.getElementById("up_maxrate_down").style.display = "none";
@@ -120,26 +147,28 @@ function check_adsl_state_up(){
 
 function showadslbootTime(){
 	
-	if(adsl_timestamp != "" && (log_lineState == "up"))
-	{
+	if(adsl_timestamp_update != "" && sync_status_update == "up"){
+		
+		if(adsl_boottime < 0)
+			adsl_boottime = boottime - adsl_timestamp_update;
 		Days = Math.floor(adsl_boottime / (60*60*24));
 		Hours = Math.floor((adsl_boottime / 3600) % 24);
 		Minutes = Math.floor(adsl_boottime % 3600 / 60);
 		Seconds = Math.floor(adsl_boottime % 60);
 
-		$("boot_days").innerHTML = Days;
-		$("boot_hours").innerHTML = Hours;
-		$("boot_minutes").innerHTML = Minutes;
-		$("boot_seconds").innerHTML = Seconds;
+		document.getElementById("boot_days").innerHTML = Days;
+		document.getElementById("boot_hours").innerHTML = Hours;
+		document.getElementById("boot_minutes").innerHTML = Minutes;
+		document.getElementById("boot_seconds").innerHTML = Seconds;
 		adsl_boottime += 1;
 		setTimeout("showadslbootTime()", 1000);
 	}
 	else
 	{
-		$("boot_days").innerHTML = "0";
-		$("boot_hours").innerHTML = "0";
-		$("boot_minutes").innerHTML = "0";
-		$("boot_seconds").innerHTML = "0";
+		document.getElementById("boot_days").innerHTML = "0";
+		document.getElementById("boot_hours").innerHTML = "0";
+		document.getElementById("boot_minutes").innerHTML = "0";
+		document.getElementById("boot_seconds").innerHTML = "0";
 		
 	}
 }
@@ -223,7 +252,7 @@ function showadslbootTime(){
 							<tr>
 								<th width="20%"><#dslsetting_disc2#></th>
 								<td>
-									<div id="up_annex"><% nvram_get("dsllog_adsltype"); %></div>
+									<div id="up_annex"></div>
 								</td>
 							</tr>
 							<tr>
@@ -251,9 +280,33 @@ function showadslbootTime(){
 								</td>
 							</tr>
 							<tr>
-								<th width="20%">Path Mode</th>
+								<th width="20%">TCM(Trellis Coded Modulation)</th>
 								<td>
-									<div id="up_wan_mode"><% nvram_get("dsllog_wanlistmode"); %></div>
+									<div id="div_TCM"><% nvram_get("dsllog_tcm"); %></div>
+								</td>
+							</tr>
+							<tr>
+								<th width="20%">Path Mode Down</th>
+								<td>
+									<div id="div_PathModeDown"><% nvram_get("dsllog_pathmodedown"); %></div>
+								</td>
+							</tr>
+							<tr>
+								<th width="20%">Interleave Depth Down</th>
+								<td>
+									<div id="div_IntDepthDown"><% nvram_get("dsllog_interleavedepthdown"); %></div>
+								</td>
+							</tr>
+							<tr>
+								<th width="20%">Path Mode Up</th>
+								<td>
+									<div id="div_PathModeUp"><% nvram_get("dsllog_pathmodeup"); %></div>
+								</td>
+							</tr>
+							<tr>
+								<th width="20%">Interleave Depth Up</th>
+								<td>
+									<div id="div_IntDepthUp"><% nvram_get("dsllog_interleavedepthup"); %></div>
 								</td>
 							</tr>
 							<tr>

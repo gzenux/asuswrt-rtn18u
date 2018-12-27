@@ -22,8 +22,9 @@ var usb_wansbstate = -1;
 var usb_wanauxstate = -1;
 var wans_dualwan = '<% nvram_get("wans_dualwan"); %>'.split(" ");
 var modem_autoapn = '<% nvram_get("modem_autoapn"); %>';
+var usb_modem_auto_lines = "";
 var usb_modem_auto_running = "";
-var usb_modem_auto_isp = "";
+var usb_modem_auto_spn = "";
 
 function initial(){
 	if(parent.ISMOBILE){
@@ -71,7 +72,7 @@ function getDualWANState(){
 }
 
 function redirect_page(redirect_flag){
-	document.redirectForm.action = "/qis/QIS_"+redirect_flag+".htm";
+	document.redirectForm.action = "/qis/QIS_"+redirect_flag+".htm?flag=sim";
 	document.redirectForm.submit();
 }
 
@@ -90,6 +91,8 @@ function submitenter(myfield,e)
    	return true;
 }
 
+var wait_autoisp = 2;
+var run_update_apn = 1;
 function detect_if_sim_plug(flag){
 	$.ajax({
 		url: '/result_of_get_changed_status_QIS.asp',
@@ -104,10 +107,37 @@ function detect_if_sim_plug(flag){
 				redirect_page("wireless");
 			}
 			else if(sim_state == 1){
-				if(modem_autoapn == "1" && usb_modem_auto_running != " " && usb_modem_auto_running != "1")
-					setTimeout('detect_if_sim_plug();', 3000);
-				else if(modem_autoapn == "1" && usb_modem_auto_running == "1" && usb_modem_auto_isp != "")
-					setTimeout('detect_if_sim_plug();', 1000);
+				if(modem_autoapn == "1"){
+					if(run_update_apn){
+						parent.update_apn_progress();
+						run_update_apn = 0;
+					}					
+
+					if(usb_modem_auto_spn.length != 0){
+						setTimeout('detect_if_sim_plug();', 1000);
+					}
+					else{
+						if(usb_modem_auto_running.length == 0 || usb_modem_auto_lines.length == 0){
+							setTimeout('detect_if_sim_plug();', 3000);
+						}
+						else{
+							if(usb_modem_auto_running != usb_modem_auto_lines)
+								setTimeout('detect_if_sim_plug();', 5000);
+							else{
+								if(wait_autoisp > 0 ){
+									setTimeout('detect_if_sim_plug();', 1000);
+									wait_autoisp--;
+								}
+								else{
+									redirect_page("modem");	
+								}
+							}
+						}
+					}
+				}
+				else{
+					redirect_page("modem");				
+				}
 			}
 			else if( sim_state == 2 || sim_state == 3){
 				redirect_page("detect");

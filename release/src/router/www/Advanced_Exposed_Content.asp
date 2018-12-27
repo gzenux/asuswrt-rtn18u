@@ -17,6 +17,9 @@
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/validator.js"></script>
 <script>
+
+var wans_mode ='<% nvram_get("wans_mode"); %>';
+
 function applyRule(){
 	if(validForm()){
 		showLoading();
@@ -50,9 +53,12 @@ function done_validating(action){
 }
 
 function initial(){
-	show_menu(); 
-	addOnlineHelp($("faq"), ["ASUSWRT", "DMZ"]);
+	show_menu();
+	addOnlineHelp(document.getElementById("faq"), ["ASUSWRT", "DMZ"]);
 	dmz_enable_check();
+
+	if(dualWAN_support && wans_mode == "lb")
+		document.getElementById("lb_note").style.display = "";
 }
 
 function dmz_enable_check(){
@@ -114,6 +120,7 @@ function dmz_on_off(){
 									<div class="formfontdesc" style="margin-top:-10px;">
 										<a id="faq" href="" target="_blank" style="font-family:Lucida Console;text-decoration:underline;">DMZ FAQ</a>
 									</div>
+									<div class="formfontdesc" id="lb_note" style="color:#FFCC00; display:none;"><#lb_note_dmz#></div>
 									<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 										<tr>
 											<th><#enable_dmz#></th>
@@ -125,7 +132,7 @@ function dmz_on_off(){
 										<tr id="dmz_ip_tr">
 											<th><#IPConnection_ExposedIP_itemname#></th>
 											<td>
-												<input type="text" maxlength="15" class="input_15_table" name="dmz_ip" value="<% nvram_get("dmz_ip"); %>" onkeypress="return validator.isIPAddr(this, event)"/>
+												<input type="text" maxlength="15" class="input_15_table" name="dmz_ip" value="<% nvram_get("dmz_ip"); %>" onkeypress="return validator.isIPAddr(this, event)" autocorrect="off" autocapitalize="off"/>
 											</td>
 										</tr>      		
 									</table>

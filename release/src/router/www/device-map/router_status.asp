@@ -81,11 +81,13 @@
 }
 </style>
 <script>
-var $j = jQuery.noConflict();
+if(parent.location.pathname.search("index") === -1) top.location.href = "../index.asp";
+
 /*Initialize array*/
 var cpu_info_old = new Array();
 var core_num = '<%cpu_core_num();%>';
 var cpu_usage_array = new Array();
+var array_size = 46;
 for(i=0;i<core_num;i++){
 	cpu_info_old[i] = {
 		total:0,
@@ -93,12 +95,12 @@ for(i=0;i<core_num;i++){
 	}
 	
 	cpu_usage_array[i] = new Array();
-	for(j=0;j<46;j++){
+	for(j=0;j<array_size;j++){
 		cpu_usage_array[i][j] = 101;
 	}
 }
-var ram_usage_array = new Array(31);
-for(i=0;i<31;i++){
+var ram_usage_array = new Array(array_size);
+for(i=0;i<array_size;i++){
 	ram_usage_array[i] = 101;
 }
 /*End*/
@@ -111,25 +113,33 @@ function initial(){
 		document.form.wl_subunit.value = -1;
 	
 	if(band5g_support){
-		$("t0").style.display = "";
-		$("t1").style.display = "";
+		document.getElementById("t0").style.display = "";
+		document.getElementById("t1").style.display = "";
+
 		if(wl_info.band5g_2_support)
 			tab_reset(0);
 
-	if(smart_connect_support && parent.sw_mode != 4)
-		change_smart_connect('<% nvram_get("smart_connect_x"); %>');	
+		if(smart_connect_support && parent.sw_mode != 4)
+			change_smart_connect('<% nvram_get("smart_connect_x"); %>');	
 		
 		// disallow to use the other band as a wireless AP
 		if(parent.sw_mode == 4 && !localAP_support){
 			for(var x=0; x<wl_info.wl_if_total;x++){
 				if(x != '<% nvram_get("wlc_band"); %>')
-					$('t'+parseInt(x)).style.display = 'none';			
+					document.getElementById('t'+parseInt(x)).style.display = 'none';			
 			}
 		}
 	}
 	else{
-		$("t0").style.display = "";
-	}	
+		document.getElementById("t0").style.display = "";
+	}
+
+	if(parent.wlc_express == '1' && parent.sw_mode == '2'){
+		document.getElementById("t0").style.display = "none";
+	}
+	else if(parent.wlc_express == '2' && parent.sw_mode == '2'){
+		document.getElementById("t1").style.display = "none";
+	}
 
 	detect_CPU_RAM();
 }
@@ -144,10 +154,13 @@ function tabclickhandler(wl_unit){
 		else
 			document.form.wl_subunit.value = -1;
 
+		if(parent.wlc_express != '0')
+			document.form.wl_subunit.value = 1;
+
 		document.form.wl_unit.value = wl_unit;
 		document.form.current_page.value = "device-map/router.asp";
 		FormActions("/apply.cgi", "change_wl_unit", "", "");
-		document.form.target = "";
+		document.form.target = "hidden_frame";
 		document.form.submit();
 	}
 }
@@ -161,23 +174,23 @@ function render_RAM(total, free, used){
 	free_MB = Math.round(free/1024);
 	used_MB = Math.round(used/1024);
 	
-	$('ram_total_info').innerHTML = total_MB + "MB";
-	$('ram_free_info').innerHTML = free_MB + "MB";
-	$('ram_used_info').innerHTML = used_MB + "MB";
+	document.getElementById('ram_total_info').innerHTML = total_MB + "MB";
+	document.getElementById('ram_free_info').innerHTML = free_MB + "MB";
+	document.getElementById('ram_used_info').innerHTML = used_MB + "MB";
 	
 	used_percentage = Math.round((used/total)*100);
-	$('ram_bar').style.width = used_percentage +"%";
-	$('ram_bar').style.width = used_percentage +"%";
-	$('ram_quantification').innerHTML = used_percentage +"%";
+	document.getElementById('ram_bar').style.width = used_percentage +"%";
+	document.getElementById('ram_bar').style.width = used_percentage +"%";
+	document.getElementById('ram_quantification').innerHTML = used_percentage +"%";
 	
 	ram_usage_array.push(100 - used_percentage);
 	ram_usage_array.splice(0,1);
 	
-	for(i=0;i<31;i++){
-		pt += i*9 +","+ ram_usage_array[i] + " ";
+	for(i=0;i<array_size;i++){
+		pt += i*6 +","+ ram_usage_array[i] + " ";
 	}
 
-	$('ram_graph').setAttribute('points', pt);
+	document.getElementById('ram_graph').setAttribute('points', pt);
 }
 
 function render_CPU(cpu_info_new){
@@ -196,15 +209,15 @@ function render_CPU(cpu_info_new){
 		else	
 			percentage = parseInt(100*usage_diff/total_diff);
 	
-		$('cpu'+i+'_bar').style.width = percentage +"%";
-		$('cpu'+i+'_quantification').innerHTML = percentage +"%"
+		document.getElementById('cpu'+i+'_bar').style.width = percentage +"%";
+		document.getElementById('cpu'+i+'_quantification').innerHTML = percentage +"%"
 		cpu_usage_array[i].push(100 - percentage);
 		cpu_usage_array[i].splice(0,1);
-		for(j=0;j<46;j++){
+		for(j=0;j<array_size;j++){
 			pt += j*6 +","+ cpu_usage_array[i][j] + " ";	
 		}
 
-		$('cpu'+i+'_graph').setAttribute('points', pt);
+		document.getElementById('cpu'+i+'_graph').setAttribute('points', pt);
 		cpu_info_old[i].total = cpu_info_new[i].total;
 		cpu_info_old[i].usage = cpu_info_new[i].usage;
 	}
@@ -212,7 +225,7 @@ function render_CPU(cpu_info_new){
 
 
 function detect_CPU_RAM(){
-	$j.ajax({
+	$.ajax({
     	url: '/cpu_ram_status.xml',
     	dataType: 'xml',
     	error: function(xhr){
@@ -260,25 +273,29 @@ function tab_reset(v){
 	}
 	
 	if(v == 0){
-		$("span0").innerHTML = "2.4GHz";
+		document.getElementById("span0").innerHTML = "2.4GHz";
 		if(wl_info.band5g_2_support){
-			$("span1").innerHTML = "5GHz-1";
-			$("span2").innerHTML = "5GHz-2";
+			document.getElementById("span1").innerHTML = "5GHz-1";
+			document.getElementById("span2").innerHTML = "5GHz-2";
 		}else{
-			$("span1").innerHTML = "5GHz";
-			$("t2").style.display = "none";
+			document.getElementById("span1").innerHTML = "5GHz";
+			document.getElementById("t2").style.display = "none";
 		}
 	}else if(v == 1){	//Smart Connect
-		$("span0").innerHTML = "Tri-band Smart Connect";
-		$("t1").style.display = "none";
-		$("t2").style.display = "none";				
-		$("t0").style.width = (tab_width*wl_info.wl_if_total) +'px';
+		if(based_modelid == "RT-AC5300")
+			document.getElementById("span0").innerHTML = "2.4GHz, 5GHz-1 and 5GHz-2";
+		else
+			document.getElementById("span0").innerHTML = "Tri-band Smart Connect";
+		document.getElementById("t1").style.display = "none";
+		document.getElementById("t2").style.display = "none";				
+		document.getElementById("t0").style.width = (tab_width*wl_info.wl_if_total+10) +'px';
 	}
 	else if(v == 2){ //5GHz Smart Connect
-		$("span0").innerHTML = "2.4GHz";
-		$("span1").innerHTML = "5GHz Smart Connect";
-		$("t2").style.display = "none";	
-		$("t1").style.width = "140px";
+		document.getElementById("span0").innerHTML = "2.4GHz";
+		document.getElementById("span1").innerHTML = "5GHz-1 and 5GHz-2";
+		document.getElementById("t2").style.display = "none";	
+		document.getElementById("t1").style.width = "143px";
+		document.getElementById("span1").style.padding = "5px 4px 5px 7px";
 	}
 }
 
@@ -317,7 +334,7 @@ function generate_cpu_field(){
 		code += "</table></div></td></tr>";
 		code += "</table></div></td></tr>";
 
-		$('cpu'+i+'_graph').style.display = "";
+		document.getElementById('cpu'+i+'_graph').style.display = "";
 	}
 
 	if(getBrowser_info().ie == "9.0")

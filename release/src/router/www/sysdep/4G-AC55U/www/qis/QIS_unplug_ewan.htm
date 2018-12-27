@@ -101,30 +101,45 @@ function detect_if_wan_plug(flag){
 			if(wan_wanstate == 2 && wan_wansbstate == 0 && wan_wanauxstate == 0){
 				redirect_page("wireless");
 			}
-			else if(autodet_state == 2){
-				redirect_page("internet");
+			else if(autodet_state == "1"){
+				setTimeout("detect_if_wan_plug(1);", 1000);
 			}
-			else{
+			else if(autodet_state == "4"){
 				if(flag == null){
 					document.getElementById("loadingIcon").style.display = "none";
 					document.getElementById("skipButton").style.display = "";
 				}
-				setTimeout("detect_if_wan_plug(1);", 1000);
+				setTimeout("detect_if_wan_plug(1);", 1000);				
+			}
+			else if(autodet_state == "" || autodet_state == "0"){
+				setTimeout('detect_if_wan_plug(1);', 500);
+			}
+			else{
+				redirect_page("internet_type");
 			}
 		}
 	});	
 }
 
 function update_wan_info(flag){
-	if(flag == null){
-		document.getElementById("skipButton").style.display = "none";
-		document.getElementById("loadingIcon").style.display = "";
-		changeiuiBackground(1);
-		setTimeout("detect_if_wan_plug();", 1000);
-	}
-	else{
-		setTimeout("detect_if_wan_plug(1);", 1000);
-	}
+	$.ajax({
+		url: '/start_autodet.asp',
+		dataType: 'script',
+		error: function(xhr){
+			update_wan_info();		
+		},
+		success: function(response){
+			if(flag == null){
+				document.getElementById("skipButton").style.display = "none";
+				document.getElementById("loadingIcon").style.display = "";
+				changeiuiBackground(1);
+				setTimeout("detect_if_wan_plug();", 1000);
+			}
+			else{
+				setTimeout("detect_if_wan_plug(1);", 1000);
+			}
+		}
+	});	
 }
 
 </script>

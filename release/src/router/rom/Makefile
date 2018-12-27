@@ -70,9 +70,7 @@ ifeq ($(RTCONFIG_USB),y)
 	install -m 0755 apps_scripts/app_*.sh $(INSTALLDIR)/usr/sbin
 	install -m 0755 apps_scripts/check_spectrum.sh $(INSTALLDIR)/usr/sbin
 ifeq ($(RTCONFIG_USB_MODEM),y)
-ifneq ($(RTCONFIG_USB_LESSMODEM),y)
-	install -m 0644 apn_*.dat $(INSTALLDIR)/rom
-endif
+	install -m 0644 spn_*.dat $(INSTALLDIR)/rom
 	install -m 0755 apps_scripts/find_modem_*.sh $(INSTALLDIR)/usr/sbin
 	install -m 0755 apps_scripts/modem_*.sh $(INSTALLDIR)/usr/sbin
 	install -m 0755 apps_scripts/3ginfo.sh $(INSTALLDIR)/usr/sbin
@@ -99,19 +97,13 @@ ifeq ($(RTCONFIG_HTTPS),y)
 else
 	cp -f webs_scripts/nozip_webs_upgrade.sh $(INSTALLDIR)/usr/sbin/webs_upgrade.sh
 endif
-ifeq ($(RTAC68U),y)
-ifeq ($(RTCONFIG_HTTPS),y)
-	cp -f webs_scripts/ssl_webs_update_ac68u.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
-else
-	cp -f webs_scripts/nozip_webs_update_ac68u.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
-endif	
-else
+
 ifeq ($(RTCONFIG_HTTPS),y)
 	cp -f webs_scripts/ssl_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
 else
 	cp -f webs_scripts/nozip_webs_update.sh $(INSTALLDIR)/usr/sbin/webs_update.sh
 endif
-endif
+
 ifeq ($(RTCONFIG_BWDPI),y)
 	cp -f webs_scripts/sig_upgrade.sh $(INSTALLDIR)/usr/sbin/sig_upgrade.sh
 	cp -f webs_scripts/sig_update.sh $(INSTALLDIR)/usr/sbin/sig_update.sh
@@ -119,10 +111,6 @@ endif
 ifeq ($(RTCONFIG_HTTPS),y)
 	cp -f webs_scripts/public.pem $(INSTALLDIR)/usr/sbin/public.pem
 endif
-endif
-
-ifeq ($(RTCONFIG_USB),y)
-	cp -f others/usbtest.sh $(INSTALLDIR)/usr/sbin/usbtest.sh
 endif
 
 	# remove comments, compress whitespace
@@ -150,7 +138,7 @@ endif
 
 ifeq ($(RTAC68U),y)
 	mkdir -p $(INSTALLDIR)/rom/cfe
-	cp -rf cfe/cfe_tmo_2.1.2.4.bin $(INSTALLDIR)/rom/cfe/
+	cp -rf cfe/cfe_tmo_2.1.2.6.bin $(INSTALLDIR)/rom/cfe/
 	cp -rf cfe/cfe_1.0.2.0.bin $(INSTALLDIR)/rom/cfe
 	cp -rf cfe/cfe_1.0.2.0_esmt.bin $(INSTALLDIR)/rom/cfe
 	cp -rf cfe/mtd-write $(INSTALLDIR)/rom/cfe/
@@ -158,32 +146,23 @@ endif
 
 ifeq ($(RTCONFIG_MEDIA_SERVER),y)
 	mkdir -p $(INSTALLDIR)/rom/dlna
-ifeq ($(RTAC3200),y)
-	cp -rf dlna/icon_sm.rtac3200.jpg $(INSTALLDIR)/rom/dlna/icon_sm.jpg
-	cp -rf dlna/icon_sm.rtac3200.png $(INSTALLDIR)/rom/dlna/icon_sm.png
-	cp -rf dlna/icon_lrg.rtac3200.jpg $(INSTALLDIR)/rom/dlna/icon_lrg.jpg
-	cp -rf dlna/icon_lrg.rtac3200.png $(INSTALLDIR)/rom/dlna/icon_lrg.png
-else ifeq ($(RTAC56U), y)
-	cp -rf dlna/icon_sm.rtac56u.jpg $(INSTALLDIR)/rom/dlna/icon_sm.jpg
-	cp -rf dlna/icon_sm.rtac56u.png $(INSTALLDIR)/rom/dlna/icon_sm.png
-	cp -rf dlna/icon_lrg.rtac56u.jpg $(INSTALLDIR)/rom/dlna/icon_lrg.jpg
-	cp -rf dlna/icon_lrg.rtac56u.png $(INSTALLDIR)/rom/dlna/icon_lrg.png
-else ifeq ($(RTAC87U), y)
-	cp -rf dlna/icon_sm.rtac87u.jpg $(INSTALLDIR)/rom/dlna/icon_sm.jpg
-	cp -rf dlna/icon_sm.rtac87u.png $(INSTALLDIR)/rom/dlna/icon_sm.png
-	cp -rf dlna/icon_lrg.rtac87u.jpg $(INSTALLDIR)/rom/dlna/icon_lrg.jpg
-	cp -rf dlna/icon_lrg.rtac87u.png $(INSTALLDIR)/rom/dlna/icon_lrg.png
-else ifeq ($(RTAC68U)$(DSLAC68U)$(RT4GAC55U),y)
-	cp -rf dlna/icon_sm.rtac68u.jpg $(INSTALLDIR)/rom/dlna/icon_sm.jpg
-	cp -rf dlna/icon_sm.rtac68u.png $(INSTALLDIR)/rom/dlna/icon_sm.png
-	cp -rf dlna/icon_lrg.rtac68u.jpg $(INSTALLDIR)/rom/dlna/icon_lrg.jpg
-	cp -rf dlna/icon_lrg.rtac68u.png $(INSTALLDIR)/rom/dlna/icon_lrg.png
+ifeq ($(DSLAC68U)$(RT4GAC55U),y)
+	cp -rf dlna/icon_sm.rt-ac68u.jpg $(INSTALLDIR)/rom/dlna/icon_sm.jpg
+	cp -rf dlna/icon_sm.rt-ac68u.png $(INSTALLDIR)/rom/dlna/icon_sm.png
+	cp -rf dlna/icon_lrg.rt-ac68u.jpg $(INSTALLDIR)/rom/dlna/icon_lrg.jpg
+	cp -rf dlna/icon_lrg.rt-ac68u.png $(INSTALLDIR)/rom/dlna/icon_lrg.png
 else
 ifeq ($(and $(LJPG),$(SJPG),$(LPNG),$(SPNG)),)
 	$(warning Add media server icon for $(BUILD_NAME) !!!!!!!!!!!!)
 else
-	$(foreach f, icon_sm icon_lrg, cp -rf dlna/$(f).$(LCMODELNAME).jpg $(INSTALLDIR)/rom/dlna/$(f).jpg; \
-		cp -rf dlna/$(f).$(LCMODELNAME).png $(INSTALLDIR)/rom/dlna/$(f).png;)
+	$(foreach f, icon_sm icon_lrg, install -D dlna/$(f).$(LCMODELNAME).jpg $(INSTALLDIR)/rom/dlna/$(f).jpg; \
+		install -D dlna/$(f).$(LCMODELNAME).png $(INSTALLDIR)/rom/dlna/$(f).png;)
 endif
 endif
 endif
+
+ifeq ($(RTCONFIG_GETREALIP),y)
+	mkdir -p $(INSTALLDIR)/usr/sbin
+	install -m 0755 apps_scripts/getrealip.sh $(INSTALLDIR)/usr/sbin/getrealip.sh
+endif
+

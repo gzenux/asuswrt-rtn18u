@@ -153,6 +153,7 @@ struct myoption {
 #define LOPT_DHOPT_INOTIFY 341
 #define LOPT_HOST_INOTIFY  342
 #define LOPT_DNSSEC_STAMP  343
+#define LOPT_TFTP_NO_FAIL  344
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -235,6 +236,7 @@ static const struct myoption opts[] =
     { "dhcp-ignore-names", 2, 0, LOPT_NO_NAMES },
     { "enable-tftp", 2, 0, LOPT_TFTP },
     { "tftp-secure", 0, 0, LOPT_SECURE },
+    { "tftp-no-fail", 0, 0, LOPT_TFTP_NO_FAIL },
     { "tftp-unique-root", 0, 0, LOPT_APREF },
     { "tftp-root", 1, 0, LOPT_PREFIX },
     { "tftp-max", 1, 0, LOPT_TFTP_MAX },
@@ -419,6 +421,7 @@ static struct {
   { LOPT_PREFIX, ARG_DUP, "<dir>[,<iface>]", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
   { LOPT_APREF, OPT_TFTP_APREF, NULL, gettext_noop("Add client IP address to tftp-root."), NULL },
   { LOPT_SECURE, OPT_TFTP_SECURE, NULL, gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
+  { LOPT_TFTP_NO_FAIL, OPT_TFTP_NO_FAIL, NULL, gettext_noop("Do not terminate the service if TFTP directories are inaccessible."), NULL },
   { LOPT_TFTP_MAX, ARG_ONE, "<integer>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
   { LOPT_NOBLOCK, OPT_TFTP_NOBLOCK, NULL, gettext_noop("Disable the TFTP blocksize extension."), NULL },
   { LOPT_TFTP_LC, OPT_TFTP_LC, NULL, gettext_noop("Convert TFTP filenames to lowercase"), NULL },
@@ -2696,6 +2699,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		  new->flags |= CONTEXT_RA_ROUTER | CONTEXT_RA;
 		else if (strcmp(a[leasepos], "ra-stateless") == 0)
 		  new->flags |= CONTEXT_RA_STATELESS | CONTEXT_DHCP | CONTEXT_RA;
+		else if (strcmp(a[leasepos], "off-link") == 0)
+		  new->flags |= CONTEXT_RA_OFF_LINK;
 		else if (leasepos == 1 && inet_pton(AF_INET6, a[leasepos], &new->end6))
 		  new->flags |= CONTEXT_DHCP; 
 		else if (strstr(a[leasepos], "constructor:") == a[leasepos])
@@ -4366,7 +4371,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
 {
   char *buff = opt_malloc(MAXDNAME);
   int option, conffile_opt = '7', testmode = 0;
-  char *arg, *conffile = NULL;
+  char *arg, *conffile = CONFFILE;
       
   opterr = 0;
 
@@ -4483,11 +4488,8 @@ void read_opts(int argc, char **argv, char *compile_opts)
   if (conffile)
     {
       one_file(conffile, conffile_opt);
-      free(conffile);
-    }
-  else
-    {
-      one_file(CONFFILE, conffile_opt);
+      if (conffile_opt == 0)
+	free(conffile);
     }
 
   /* port might not be known when the address is parsed - fill in here */
@@ -4495,15 +4497,19 @@ void read_opts(int argc, char **argv, char *compile_opts)
     {
       struct server *tmp;
       for (tmp = daemon->servers; tmp; tmp = tmp->next)
-	if (!(tmp->flags & SERV_HAS_SOURCE))
-	  {
-	    if (tmp->source_addr.sa.sa_family == AF_INET)
-	      tmp->source_addr.in.sin_port = htons(daemon->query_port);
+	{
+	  tmp->edns_pktsz = daemon->edns_pktsz;
+	 
+	  if (!(tmp->flags & SERV_HAS_SOURCE))
+	    {
+	      if (tmp->source_addr.sa.sa_family == AF_INET)
+		tmp->source_addr.in.sin_port = htons(daemon->query_port);
 #ifdef HAVE_IPV6
-	    else if (tmp->source_addr.sa.sa_family == AF_INET6)
-	      tmp->source_addr.in6.sin6_port = htons(daemon->query_port);
+	      else if (tmp->source_addr.sa.sa_family == AF_INET6)
+		tmp->source_addr.in6.sin6_port = htons(daemon->query_port);
 #endif 
-	  } 
+	    }
+	} 
     }
   
   if (daemon->if_addrs)

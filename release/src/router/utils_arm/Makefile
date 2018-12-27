@@ -92,6 +92,11 @@ vpath %.c $(SRCBASE)/wl/exe $(SRCBASE)/shared
 endif
 endif
 
+ifeq ($(RTCONFIG_5301X),y)
+CFLAGS += -DBCM5301X
+endif
+UTILS += robocfg
+
 all: $(UTILS)
 
 ifeq ($(wildcard $(SRCBASE)/wl/exe/*.c),)
@@ -122,6 +127,13 @@ $(SERVER_WIFI): $(WIFI_OBJS)
 wifi/%.o: %.c
 	@mkdir -p wifi
 	$(CC) -c $(CFLAGS) -DRWL_WIFI -o $@ $^
+endif
+
+ifeq ($(wildcard $(SRCBASE)/router/utils/robocfg.c),)
+robocfg:
+	-cp -f $(SRCBASE)/wl/exe/prebuilt/robocfg robocfg
+else
+robocfg: robocfg.c etc53xx.h
 endif
 
 clean:

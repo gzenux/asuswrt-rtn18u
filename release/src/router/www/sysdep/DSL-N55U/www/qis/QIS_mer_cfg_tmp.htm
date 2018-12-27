@@ -26,10 +26,10 @@ span{
 var vpi_val = "<% nvram_get("dsltmp_cfg_vpi"); %>";
 var vci_val = "<% nvram_get("dsltmp_cfg_vci"); %>";
 var encap_val = "<% nvram_get("dsltmp_cfg_encap"); %>";
+var vlanid_val = "<% nvram_get("dsltmp_cfg_vlanid"); %>";
 var ispname_str = "<% nvram_get("dsltmp_cfg_ispname"); %>";
 var country_str = "<% nvram_get("dsltmp_cfg_country"); %>";
 var transfer_mode = "<% nvram_get("dsltmp_transmode"); %>";
-var vlanid = "<% nvram_get("dsltmp_cfg_vlanid"); %>";
 var w_Setting = "<% nvram_get("w_Setting"); %>";
 var iptv_num_pvc_str = "";
 
@@ -67,11 +67,11 @@ function QKfinish_load_body(){
 	}
 
         if(transfer_mode == "atm"){
-		$("atm_info").style.display = "";
+		document.getElementById("atm_info").style.display = "";
                 document.form.prev_page.value = "/qis/QIS_manual_setting.htm";
         }
 	else{ //transmode "ptm"
-		$("ptm_info").style.display = "";
+		document.getElementById("ptm_info").style.display = "";
                 document.form.prev_page.value = "/qis/QIS_PTM_manual_setting.htm";
                 document.form.x_DHCPClient[0].disabled = true;
                 document.form.x_DHCPClient[1].disabled = true;
@@ -138,11 +138,11 @@ function get_result_of_all_IP(){
 }
 
 function remove_red_field(){
-	$("dsl_ipaddr_div").style.border = "2px inset #F4F4F4";
-	$("dsl_netmask_div").style.border = "2px inset #F4F4F4";
-	$("dsl_gateway_div").style.border = "2px inset #F4F4F4";
-	$("dsl_dns1_x_div").style.border = "2px inset #F4F4F4";
-	$("dsl_dns2_x_div").style.border = "2px inset #F4F4F4";
+	document.getElementById("dsl_ipaddr_div").style.border = "2px inset #F4F4F4";
+	document.getElementById("dsl_netmask_div").style.border = "2px inset #F4F4F4";
+	document.getElementById("dsl_gateway_div").style.border = "2px inset #F4F4F4";
+	document.getElementById("dsl_dns1_x_div").style.border = "2px inset #F4F4F4";
+	document.getElementById("dsl_dns2_x_div").style.border = "2px inset #F4F4F4";
 }
 
 function submitForm(){
@@ -281,12 +281,12 @@ function gotoHome() {
   <tr>
   	<td class="test_css">
 			<div id="atm_info" style="display:none;">
-				ADSL WAN (ATM),&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: MER, VPI/VCI: <% nvram_get("dsltmp_cfg_vpi"); %>/<% nvram_get("dsltmp_cfg_vci"); %><script>document.write(encap_str);</script><br>
+			<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">ADSL WAN (ATM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">MER</span>, VPI/VCI: <span class="cfg_val"><% nvram_get("dsltmp_cfg_vpi"); %>/<% nvram_get("dsltmp_cfg_vci"); %><script>document.write(encap_str);</script></span><script>if(vlanid_val.length > 0){document.write(", <#WANVLANIDText#>: <span class=\"cfg_val\">" + vlanid_val + "</span>");}</script><br>
 				<b><script>document.write(iptv_num_pvc_str);</script></b><br>
 			</div>
 
 			<div id="ptm_info" style="display:none;">
-				&nbsp;&nbsp;&nbsp;VDSL WAN (PTM),&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <#BOP_ctype_title1#>, <#WANVLANIDText#>: <script>document.write(vlanid);</script><br>
+				<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val">VDSL WAN (PTM)</span>,&nbsp;<#Layer3Forwarding_x_ConnectionType_itemname#>: <span class="cfg_val"><#BOP_ctype_title1#></span>, <#WANVLANIDText#>: <span class="cfg_val"><script>document.write(vlanid_val);</script></span><br>
 			</div>
 		</td>
   </tr>
@@ -517,7 +517,7 @@ function gotoHome() {
 		<th width="120"><span id="mac_addr1" style="display:none"><#BOP_isp_mac_item#></span></th>
 		<td>
 		  <span id="mac_addr2" style="display:none">
-		  <input type="text" name="dsltmp_qis_hwaddr" class="input_18_table" value="" tabindex="10" maxlength="17" size="17">&nbsp;e.g., 00:11:22:33:44:55
+		  <input type="text" name="dsltmp_qis_hwaddr" class="input_18_table" value="" tabindex="10" maxlength="17" size="17" autocorrect="off" autocapitalize="off">&nbsp;e.g., 00:11:22:33:44:55
 		  </span>
 		</td>
 	  </tr>
@@ -527,7 +527,7 @@ function gotoHome() {
 		<th width="120"><span id="ppp_username1" style="display:none">PPP <#HSDPAConfig_Username_itemname#>:</span></th>
 		<td>
 		  <span id="ppp_username2" style="display:none">
-		  <input type="text" name="ppp_username" class="input_32_table" value="" tabindex="11" maxlength="32" size="20" autocapitalization="off" autocomplete="off">
+		  <input type="text" name="ppp_username" class="input_32_table" value="" tabindex="11" maxlength="32" size="20" autocomplete="off" autocorrect="off" autocapitalize="off">
 		  </span>
 		</td>
 	  </tr>
@@ -535,7 +535,7 @@ function gotoHome() {
 		<th width="120"><span id="ppp_password1" style="display:none">PPP <#HSDPAConfig_Password_itemname#>:</span></th>
 		<td>
 		  <span id="ppp_password2" style="display:none">
-		  <input type="text" name="ppp_password" class="input_32_table" value="" tabindex="12" maxlength="32" size="20" autocapitalization="off" autocomplete="off">
+		  <input type="text" name="ppp_password" class="input_32_table" value="" tabindex="12" maxlength="32" size="20" autocomplete="off" autocorrect="off" autocapitalize="off">
 		  </span>
 		</td>
 	  </tr>
@@ -548,7 +548,7 @@ function gotoHome() {
 <!--
 		<input type="button" id="nextButton" value="Ethernet WAN" onclick="redirect_page('internet_type');" class="button_gen" >
 -->
-		<input type="button" id="nextButton" value="<#btn_next#>" tabindex="13" onclick="submitForm();" class="button_gen">
+		<input type="button" id="nextButton" value="<#CTL_next#>" tabindex="13" onclick="submitForm();" class="button_gen">
 	</div>
 
 </div>

@@ -82,7 +82,7 @@ typedef unsigned long long u64;
 #if defined(HAVE_SOLARIS_NETWORK)
 #  include <sys/sockio.h>
 #endif
-#include <sys/select.h>
+#include <sys/poll.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/un.h>
@@ -117,6 +117,7 @@ typedef unsigned long long u64;
 #include <sys/uio.h>
 #include <syslog.h>
 #include <dirent.h>
+#include <utime.h>
 #ifndef HAVE_LINUX_NETWORK
 #  include <net/if_dl.h>
 #endif
@@ -240,7 +241,8 @@ struct event_desc {
 #define OPT_LOCAL_SERVICE  49
 #define OPT_LOOP_DETECT    50
 #define OPT_EXTRALOG       51
-#define OPT_LAST           52
+#define OPT_TFTP_NO_FAIL   52
+#define OPT_LAST           53
 
 /* extra flags for my_syslog, we use a couple of facilities since they are known 
    not to occupy the same bits as priorities, no matter how syslog.h is set up. */
@@ -503,7 +505,7 @@ struct server {
   char interface[IF_NAMESIZE+1];
   struct serverfd *sfd; 
   char *domain; /* set if this server only handles a domain. */ 
-  int flags, tcpfd;
+  int flags, tcpfd, edns_pktsz;
   unsigned int queries, failed_queries;
 #ifdef HAVE_LOOP
   u32 uid;
@@ -582,6 +584,7 @@ struct hostsfile {
 #define STAT_NO_NS             10
 #define STAT_NEED_DS_NEG       11
 #define STAT_CHASE_CNAME       12
+#define STAT_INSECURE_DS       13
 
 #define FREC_NOREBIND           1
 #define FREC_CHECKING_DISABLED  2
@@ -592,6 +595,7 @@ struct hostsfile {
 #define FREC_DO_QUESTION       64
 #define FREC_ADDED_PHEADER    128
 #define FREC_CHECK_NOSIGN     256
+#define FREC_TEST_PKTSZ       512
 
 #ifdef HAVE_DNSSEC
 #define HASH_SIZE 20 /* SHA-1 digest size */
@@ -865,6 +869,7 @@ struct dhcp_context {
 #define CONTEXT_USED           (1u<<15)
 #define CONTEXT_OLD            (1u<<16)
 #define CONTEXT_V6             (1u<<17)
+#define CONTEXT_RA_OFF_LINK    (1u<<18)
 
 struct ping_result {
   struct in_addr addr;
@@ -901,6 +906,7 @@ struct addr_list {
 struct tftp_prefix {
   char *interface;
   char *prefix;
+  int missing;
   struct tftp_prefix *next;
 };
 
@@ -987,6 +993,7 @@ extern struct daemon {
 #endif
 #ifdef HAVE_DNSSEC
   struct ds_config *ds;
+  int back_to_the_future;
   char *timestamp_file;
 #endif
 
@@ -1145,7 +1152,7 @@ int in_zone(struct auth_zone *zone, char *name, char **cut);
 #endif
 
 /* dnssec.c */
-size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, int class, int type, union mysockaddr *addr);
+size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, int class, int type, union mysockaddr *addr, int edns_pktsz);
 int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t n, char *name, char *keyname, int class);
 int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int class);
 int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int *class, int *neganswer, int *nons);
@@ -1186,7 +1193,6 @@ int memcmp_masked(unsigned char *a, unsigned char *b, int len,
 		  unsigned int mask);
 int expand_buf(struct iovec *iov, size_t size);
 char *print_mac(char *buff, unsigned char *mac, int len);
-void bump_maxfd(int fd, int *max);
 int read_write(int fd, unsigned char *packet, int size, int rw);
 
 int wildcard_match(const char* wildcard, const char* match);
@@ -1197,8 +1203,8 @@ void die(char *message, char *arg1, int exit_code);
 int log_start(struct passwd *ent_pw, int errfd);
 int log_reopen(char *log_file);
 void my_syslog(int priority, const char *format, ...);
-void set_log_writer(fd_set *set, int *maxfdp);
-void check_log_writer(fd_set *set);
+void set_log_writer(void);
+void check_log_writer(int force);
 void flush_log(void);
 
 /* option.c */
@@ -1304,9 +1310,10 @@ void lease_update_slaac(time_t now);
 void lease_set_iaid(struct dhcp_lease *lease, int iaid);
 void lease_make_duid(time_t now);
 #endif
-void lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
-		      unsigned char *clid, int hw_len, int hw_type, int clid_len, time_t now, int force);
-void lease_set_hostname(struct dhcp_lease *lease, char *name, int auth, char *domain, char *config_domain);
+void lease_set_hwaddr(struct dhcp_lease *lease, const unsigned char *hwaddr,
+		      const unsigned char *clid, int hw_len, int hw_type,
+		      int clid_len, time_t now, int force);
+void lease_set_hostname(struct dhcp_lease *lease, const char *name, int auth, char *domain, char *config_domain);
 void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now);
 void lease_set_interface(struct dhcp_lease *lease, int interface, time_t now);
 struct dhcp_lease *lease_find_by_client(unsigned char *hwaddr, int hw_len, int hw_type,  
@@ -1363,8 +1370,8 @@ int iface_enumerate(int family, void *parm, int (callback)());
 /* dbus.c */
 #ifdef HAVE_DBUS
 char *dbus_init(void);
-void check_dbus_listeners(fd_set *rset, fd_set *wset, fd_set *eset);
-void set_dbus_listeners(int *maxfdp, fd_set *rset, fd_set *wset, fd_set *eset);
+void check_dbus_listeners(void);
+void set_dbus_listeners(void);
 #  ifdef HAVE_DHCP
 void emit_dbus_signal(int action, struct dhcp_lease *lease, char *hostname);
 #  endif
@@ -1391,7 +1398,7 @@ int helper_buf_empty(void);
 /* tftp.c */
 #ifdef HAVE_TFTP
 void tftp_request(struct listener *listen, time_t now);
-void check_tftp_listeners(fd_set *rset, time_t now);
+void check_tftp_listeners(time_t now);
 int do_tftp_script_run(void);
 #endif
 
@@ -1508,3 +1515,10 @@ void inotify_dnsmasq_init();
 int inotify_check(time_t now);
 void set_dynamic_inotify(int flag, int total_size, struct crec **rhash, int revhashsz);
 #endif
+
+/* poll.c */
+void poll_reset(void);
+int poll_check(int fd, short event);
+void poll_listen(int fd, short event);
+int do_poll(int timeout);
+

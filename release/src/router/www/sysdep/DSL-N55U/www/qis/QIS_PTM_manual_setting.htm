@@ -29,23 +29,6 @@ var ru_idx_start = 0;
 var x_Setting = "<% nvram_get("x_Setting"); %>";
 var w_Setting = "<% nvram_get("w_Setting"); %>";
 
-function $(){
-	var elements = new Array();
-
-	for(var i = 0; i < arguments.length; ++i){
-		var element = arguments[i];
-	if(typeof element == 'string')
-		element = document.getElementById(element);
-
-		if(arguments.length == 1)
-			return element;
-
-		elements.push(element);
-	}
-
-	return elements;
-}
-
 function setIptvNumPvc() {
 	var pvc_cnt = 0;
 	var tmp = document.form.dsltmp_cfg_iptv_idx.value;
@@ -79,7 +62,7 @@ function showCountryList(o){
 	code +="<option value='NO'><#Not_Listed#></option>";
 	code +="</select>";
 
-	$("CountryList").innerHTML = code;
+	document.getElementById("CountryList").innerHTML = code;
 }
 
 function showCityList(o){
@@ -94,7 +77,7 @@ function showCityList(o){
 	}
 	code +="</select>";
 
-	$("CityList").innerHTML = code;
+	document.getElementById("CityList").innerHTML = code;
 }
 
 function showNomoISPList(o){
@@ -115,7 +98,7 @@ function showNomoISPList(o){
 	}
 	code +="<option value='NO'><#Not_Listed#></option>";
 	code +="</select>";
-	$("ISPList").innerHTML = code;
+	document.getElementById("ISPList").innerHTML = code;
 }
 
 function showRussiaISPList(o){
@@ -144,7 +127,7 @@ function showRussiaISPList(o){
 	}
 	code +="<option value='NO'><#Not_Listed#></option>";
 	code +="</select>";
-	$("ISPList").innerHTML = code;
+	document.getElementById("ISPList").innerHTML = code;
 
 	showRussiaISPService(ISPlocatedCity, First_ISP);
 }
@@ -157,9 +140,9 @@ function showRussiaISPServiceByIdx(c, idx){
 		}
 	}
 	if (isp_str=="NO")
-      	    $("Service_tr").style.display="none";
+      	    document.getElementById("Service_tr").style.display="none";
    	else {
-      	    $("Service_tr").style.display="";
+      	    document.getElementById("Service_tr").style.display="";
 	var code = "";
 	code +="<select	id='ISPSVC' name='ISPSVC' class='input_option' tabindex='4' onChange='ChgSVC(this.value);'>";
 	var first_element = 0;
@@ -174,17 +157,17 @@ function showRussiaISPServiceByIdx(c, idx){
 		}
 	}
 	code +="</select>";
-	$("Service").innerHTML = code;
+	document.getElementById("Service").innerHTML = code;
 	}
 }
 
 function showRussiaISPService(c, o){
 //alert("City: "+c+", ISP: "+o);
 	if (o=="NO") {
-      	    $("Service_tr").style.display="none";
+      	    document.getElementById("Service_tr").style.display="none";
 	}
    	else {
-      	    $("Service_tr").style.display="";
+      	    document.getElementById("Service_tr").style.display="";
 	var code = "";
 	code +="<select	id='ISPSVC' name='ISPSVC' class='input_option' tabindex='4' onChange='ChgSVC(this.value);'>";
 	var first_element = 0;
@@ -199,7 +182,7 @@ function showRussiaISPService(c, o){
 		}
 	}
 	code +="</select>";
-	$("Service").innerHTML = code;
+	document.getElementById("Service").innerHTML = code;
 	}
 }
 
@@ -207,8 +190,8 @@ function showAllList(o){
 	selected_country = o;
 	
 	if(o == "Russia"){
-		$("City_tr").style.display="";
-		$("Service_tr").style.display="";
+		document.getElementById("City_tr").style.display="";
+		document.getElementById("Service_tr").style.display="";
 		hideCityList(0);
 		showCityList(o);
 		if (ru_idx_start == 0) {
@@ -223,8 +206,8 @@ function showAllList(o){
 		hidePVCInfo(1);
 	}
 	else{
-		$("City_tr").style.display="none";
-		$("Service_tr").style.display="none";
+		document.getElementById("City_tr").style.display="none";
+		document.getElementById("Service_tr").style.display="none";
 		hideCityList(1);
 		showNomoISPList(o);
 	}
@@ -512,7 +495,7 @@ function submit_detect(){
 
 	<div class="apply_gen" style="margin-top:10px">
 		<span id="bottom_btn1"><input type="button" value="<#CTL_Detect_Again#>" tabindex="8" onclick="submit_detect();" class="button_gen" ></span>
-		<input type="button" value="<#btn_next#>" tabindex="7" onclick="btnNext();" class="button_gen">
+		<input type="button" value="<#CTL_next#>" tabindex="7" onclick="btnNext();" class="button_gen">
 	</div>
 
 </div>

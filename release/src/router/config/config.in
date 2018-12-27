@@ -45,8 +45,16 @@ config RTCONFIG_BCM_794
 	bool "Bcm sdk 7_14_94_x"
 	default n
 
+config RTCONFIG_BCM_7114
+	bool "Bcm sdk 7_14_114_x"
+	default n
+
 config RTCONFIG_BCM10
 	bool "Bcm sdk 10_10_18_x"
+	default n
+
+config RTCONFIG_BCM9
+	bool "Bcm sdk 9_10_162_x"
 	default n
 
 config RTCONFIG_BUILDBCM7
@@ -57,12 +65,20 @@ config RTCONFIG_ROMCFE
 	bool "fw include cfe"
 	default n
 
+config RTCONFIG_ROMATECCODEFIX
+	bool "fix ccode error"
+	default n
+
 config RTCONFIG_NV128
 	bool "nvram size 128k"
 	default n
 
 config RTCONFIG_DHDAP
 	bool "Bcm7 dhdap"
+	default n
+
+config RTCONFIG_WLEXE
+	bool "dhd wl exe"
 	default n
 
 config RTCONFIG_DPSTA
@@ -120,7 +136,11 @@ config RTCONFIG_JFFSV1
 
 config RTCONFIG_ZEBRA
 	bool "Zebra"
-	default y
+	default n
+
+config RTCONFIG_QUAGGA
+	bool "Quagga"
+	default n
 
 config RTCONFIG_DDNS
 	bool "Dynamic DNS"
@@ -148,11 +168,6 @@ config RTCONFIG_OPENVPN
 config RTCONFIG_IPV6
 	bool "IPv6 Support"
 	default n
-
-config RTCONFIG_WIDEDHCP6
-	bool "IPv6 SLAAC & DHCPv6 Support with wide-dhcp6 & rdnssd"
-	depends on RTCONFIG_IPV6
-	default y
 
 config RTCONFIG_EBTABLES
 	bool "Ebtables"
@@ -215,6 +230,10 @@ config RTCONFIG_PROXYSTA
 	bool "Proxy STA"
 	default n
 
+config RTCONFIG_CONCURRENTREPEATER
+	bool "Concurrent Repeater"
+	default n
+
 config RTCONFIG_IXIAEP
 	bool "IXIA Performance Endpoint"
 	default n
@@ -259,7 +278,15 @@ config RTCONFIG_DUALWAN
 	bool "Dual WAN Support"
 	default n
 
+config RTCONFIG_HW_DUALWAN
+	bool "Dual WAN with Support"
+	default n
+
 config RTCONFIG_USER_LOW_RSSI
+	bool "User specified accepted min rssi"
+	default n
+
+config RTCONFIG_NEW_USER_LOW_RSSI
 	bool "User specified accepted min rssi"
 	default n
 
@@ -314,6 +341,11 @@ config RTCONFIG_FTPCLIENT
 
 config RTCONFIG_SAMBACLIENT
 	bool "SambaSync (samba Client)"
+	depends on RTCONFIG_CLOUDSYNC
+	default n
+
+config RTCONFIG_USBCLIENT
+	bool "UsbSync (usb Client)"
 	depends on RTCONFIG_CLOUDSYNC
 	default n
 
@@ -503,6 +535,34 @@ config RTCONFIG_QCA
 	bool "Qualcomm Atheros Chip Support"
 	default n
 
+config RTCONFIG_QCA953X
+	bool "Qualcomm Atheros QCA953X Chip Support"
+	default n
+
+config RTCONFIG_QCA955X
+	bool "Qualcomm Atheros QCA955X Chip Support"
+	default n
+
+config RTCONFIG_QCA956X
+	bool "Qualcomm Atheros QCA956X Chip Support"
+	default n
+
+config RTCONFIG_QCA_PLC_UTILS
+	bool "Qualcomm Atheros Powerline Toolkit Support"
+	default n
+
+config RTCONFIG_AR7420
+	bool "Qualcomm Atheros AR7420 Powerline Chip Support"
+	default n
+
+config RTCONFIG_QCA7500
+	bool "Qualcomm Atheros QCA7500 Powerline Chip Support"
+	default n
+
+config RTCONFIG_DEFAULT_AP_MODE
+	bool "Default is AP mode"
+	default n
+
 config RTCONFIG_ODMPID
 	bool "ODM Product ID"
 	default n
@@ -517,6 +577,23 @@ config RTCONFIG_MDNS
 
 config RTCONFIG_FINDASUS
 	bool "FINDASUS Support"
+	default n
+
+config RTCONFIG_REDIRECT_DNAME
+	bool "Redirect domain name Support"
+	default n
+
+config RTCONFIG_DHCP_OVERRIDE
+	bool "DHCP override for AP/Repeater mode"
+	depends on RTCONFIG_REDIRECT_DNAME
+	default n
+
+config RTCONFIG_MTK_TW_AUTO_BAND4
+	bool "Choose BAND4 for auto channel"
+	default n
+
+config RTCONFIG_QCA_TW_AUTO_BAND4
+	bool "Choose BAND4 for auto channel"
 	default n
 
 config RTCONFIG_LED_ALL
@@ -538,6 +615,15 @@ config CONFIG_LIBUPNP
 config RTCONFIG_WPS
 	bool "WPS Support"
 	default y
+
+config RTCONFIG_WPS_ENROLLEE
+	bool "WPS Enrolle Support"
+	default n
+
+config RTCONFIG_WIFI_CLONE
+	bool "WiFi Clone Support"
+	depends on RTCONFIG_WPS_ENROLLEE
+	default n
 
 config RTCONFIG_SHP
 	bool "Special Handler Process"
@@ -732,6 +818,10 @@ config RTCONFIG_WPSMULTIBAND
 	bool "Multi-band WPS"
 	default n
 
+config RTCONFIG_RALINK_DFS
+	bool "Rlink DFS support"
+	default n
+
 config RTCONFIG_ENGINEERING_MODE
 	bool "Engineering Mode"
 	default n
@@ -754,6 +844,14 @@ config RTCONFIG_ETRON_XHCI_USB3_LED
 
 config RTCONFIG_WPS_LED
 	bool "Individual WPS LED"
+	default n
+
+config RTCONFIG_MMC_LED
+	bool "Individual MMC LED"
+	default n
+
+config RTCONFIG_RESET_SWITCH
+	bool "reset switch"
 	default n
 
 config RTCONFIG_WANRED_LED
@@ -806,8 +904,20 @@ config RTCONFIG_BWDPI
 
 config RTCONFIG_ADBLOCK
 	bool "Streaming and Pop-Up window Ad Blocking "
-	default n		
+	default n
+
+config RTCONFIG_TRAFFIC_CONTROL
+	bool "Traffic control for alert limited traffic"
+	default n
+
+config RTCONFIG_CTF_PPTP_L2TP
+	bool "Speedup NAT for PPTP and L2TP"
+	default n
 	
+config RTCONFIG_BCM5301X_TRAFFIC_MONITOR
+	bool "read BCM5301x register for traffic monitor"
+	default n
+
 config RTCONFIG_SPEEDTEST
 	bool "BRCM Speedtest for detect upload / downlad bandwidth "
 	default n
@@ -834,7 +944,7 @@ config RTCONFIG_NOWL
 
 config RTCONFIG_TCODE
 	bool "Territory code"
-	default n
+	default y
 
 config RTCONFIG_ALLNOWL
 	bool "no load all wl module "
@@ -865,4 +975,36 @@ config RTCONFIG_TR181
 
 config RTCONFIG_STAINFO
 	bool "STA informtion support"
+	default n
+
+config RTCONFIG_CLOUDCHECK
+	bool "Cloudcheck support"
+	default n
+
+config RTCONFIG_GETREALIP
+	bool "Get external IP support"
+	default n
+
+config RTCONFIG_TUNNEL
+	bool "TUNNEL config"
+	default n
+
+config RTCONFIG_CFEZ
+	bool "compressed cfe"
+	default n
+
+config RTCONFIG_RESTRICT_GUI
+	bool "Restrict GUI"
+	default n
+
+config RTCONFIG_LACP
+	bool "LACP support"
+	default n
+
+config RTCONFIG_KEY_GUARD
+	bool "Key Guard support"
+	default n
+
+config RTCONFIG_RECVFILE
+	bool "Bcm recvfile support"
 	default n

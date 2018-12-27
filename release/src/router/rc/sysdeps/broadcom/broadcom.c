@@ -88,494 +88,8 @@ typedef u_int8_t __u8;
 char cmd[32];
 
 #ifdef RTCONFIG_EXT_RTL8365MB
-extern int ext_rtk_phyState(void);
+extern int ext_rtk_phyState(int v);
 #endif
-
-int
-setCommit(void)
-{
-	FILE *fp;
-	char line[32];
-	eval("rm", "-f", "/var/log/commit_ret");
-#ifdef RTCONFIG_CFE_NVRAM_CHK
-	eval("rm", "-f", "/var/log/cfecommit_ret");
-#endif
-	eval("nvram", "set", "asuscfecommit=");
-	eval("nvram", "commit");
-	sleep(1);
-#ifdef RTCONFIG_CFE_NVRAM_CHK
-	if((fp = fopen("/var/log/cfecommit_ret", "r"))!=NULL) {
-		puts("Illegal nvram format!");
-		fclose(fp);
-		return 1;
-	}
-#endif
-	if((fp = fopen("/var/log/commit_ret", "r"))!=NULL) {
-		while(fgets(line, sizeof(line), fp)){
-			if(strstr(line, "OK")) {
-				puts("1");
-				fclose(fp);
-				return 1;
-			}
-		}
-		fclose(fp);
-	}
-
-	puts("0");
-
-	return 1;
-}
-
-int
-setMAC_2G(const char *mac)
-{
-	char cmd_l[64];
-	int model;
-
-	if( mac==NULL || !isValidMacAddr(mac) )
-		return 0;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTN53:
-		case MODEL_RTN16:
-		case MODEL_RTN15U:
-		case MODEL_RTN12:
-		case MODEL_RTN12B1:
-		case MODEL_RTN12C1:
-		case MODEL_RTN12D1:
-		case MODEL_RTN12VP:
-		case MODEL_RTN12HP:
-		case MODEL_RTN12HP_B1:
-		case MODEL_APN12HP:
-		case MODEL_RTN14UHP:
-		case MODEL_RTN10U:
-		case MODEL_RTN10P:
-		case MODEL_RTN10D1:
-		case MODEL_RTN10PV2:
-		case MODEL_RTAC53U:
-		{
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfeet0macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			sprintf(cmd_l, "asuscfesb/1/macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("et0macaddr"));
- 			break;
-		}
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-		{
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfeet0macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			sprintf(cmd_l, "asuscfepci/1/1/macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("et0macaddr"));
- 			break;
-		}
-
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTN18U:
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfeet0macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			sprintf(cmd_l, "asuscfe0:macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("et0macaddr"));
-			break;
-
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			memset(cmd_l, 0, 64);
-                        sprintf(cmd_l, "asuscfeet0macaddr=%s", mac);
-                        eval("nvram", "set", cmd_l );
-                        sprintf(cmd_l, "asuscfe0:macaddr=%s", mac);
-                        eval("nvram", "set", cmd_l );
-                        puts(nvram_safe_get("et0macaddr"));
-                        break;
-
-		case MODEL_RTAC3200:
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfeet0macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			sprintf(cmd_l, "asuscfe1:macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("et0macaddr"));
-			break;
-
-		case MODEL_RTAC87U:
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfeet1macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			sprintf(cmd_l, "asuscfe0:macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("et1macaddr"));
-			break;
-	}
-	return 1;
-}
-
-int
-setMAC_5G(const char *mac)
-{
-	char cmd_l[64];
-	int model;
-
-	if( mac==NULL || !isValidMacAddr(mac) )
-		return 0;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTN53:
-		case MODEL_RTAC53U:
-		{
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfe0:macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("0:macaddr"));
- 			break;
-		}
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-		{
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfepci/2/1/macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("pci/2/1/macaddr"));
- 			break;
-		}
-
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_DSLAC68U:
-		{
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfe1:macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("1:macaddr"));
-			break;
-		}
-
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			memset(cmd_l, 0, 64);
-                        sprintf(cmd_l, "asuscfe1:macaddr=%s", mac);
-                        eval("nvram", "set", cmd_l );
-                        puts(nvram_safe_get("1:macaddr"));
-                        break;
-
-		case MODEL_RTAC3200:
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfe0:macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("0:macaddr"));
-			break;
-	}
-	return 1;
-}
-
-#ifdef RTAC3200
-int
-setMAC_5G_2(const char *mac)
-{
-	char cmd_l[64];
-	int model;
-
-	if( mac==NULL || !isValidMacAddr(mac) )
-		return 0;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTAC3200:
-		{
-			memset(cmd_l, 0, 64);
-			sprintf(cmd_l, "asuscfe2:macaddr=%s", mac);
-			eval("nvram", "set", cmd_l );
-			puts(nvram_safe_get("2:macaddr"));
-			break;
-		}
-	}
-	return 1;
-}
-#endif
-
-int
-setCountryCode_2G(const char *cc)
-{
-	int model;
-
-	if( cc==NULL || !isValidCountryCode(cc) )
-		return 0;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	memset(cmd, 0, 32);
-
-	switch(model) {
-		case MODEL_DSLAC68U:
-		case MODEL_RTAC87U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTN18U:
-			sprintf(cmd, "asuscfe0:ccode=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("0:ccode"));
-			break;
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			sprintf(cmd, "asuscfe0:ccode=%s", cc);
-                        eval("nvram", "set", cmd );
-                        puts(nvram_safe_get("0:ccode"));
-                        break;
-		case MODEL_RTAC3200:
-			sprintf(cmd, "asuscfe1:ccode=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("1:ccode"));
-			break;
-		case MODEL_RTAC53U:
-			sprintf(cmd, "asuscfesb/1/ccode=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("sb/1/ccode"));
-			break;
-		default:
-			sprintf(cmd, "asuscferegulation_domain=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("regulation_domain"));
-			break;
-	}
-	return 1;
-}
-
-int
-setCountryCode_5G(const char *cc)
-{
-	int model;
-
-	if( cc==NULL || !isValidCountryCode(cc) )
-		return 0;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	memset(cmd, 0, 32);
-
-	switch(model) {
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-			sprintf(cmd, "asuscfe1:ccode=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("1:ccode"));
-			break;
-
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			sprintf(cmd, "asuscfe1:ccode=%s", cc);
-                        eval("nvram", "set", cmd );
-                        puts(nvram_safe_get("1:ccode"));
-                        break;
-
-		case MODEL_RTAC3200:
-			sprintf(cmd, "asuscfe0:ccode=%s", cc);
-			eval("nvram", "set", cmd );
-			sprintf(cmd, "asuscfe2:ccode=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("0:ccode"));
-			break;
-
-		case MODEL_RTAC53U:
-			sprintf(cmd, "asuscfe0:ccode=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("0:ccode"));
-			break;
-		default:
-			sprintf(cmd, "asuscferegulation_domain_5G=%s", cc);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("regulation_domain_5G"));
-			break;
-	}
-	return 1;
-}
-
-int
-setRegrev_2G(const char *regrev)
-{
-	int model;
-
-	if( regrev==NULL || !isValidRegrev(regrev) )
-		return 0;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTN53:
-		case MODEL_RTN16:
-		case MODEL_RTN15U:
-		case MODEL_RTN12:
-		case MODEL_RTN12B1:
-		case MODEL_RTN12C1:
-		case MODEL_RTN12D1:
-		case MODEL_RTN12VP:
-		case MODEL_RTN12HP:
-		case MODEL_RTN12HP_B1:
-		case MODEL_APN12HP:
-		case MODEL_RTN14UHP:
-		case MODEL_RTN10U:
-		case MODEL_RTN10P:
-		case MODEL_RTN10D1:
-		case MODEL_RTN10PV2:
-		case MODEL_RTAC53U:
-		{
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfesb/1/regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("sb/1/regrev"));
-			break;
-		}
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-		{
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfepci/1/1/regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("pci/1/1/regrev"));
-			break;
-		}
-
-		case MODEL_DSLAC68U:
-		case MODEL_RTAC87U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTN18U:
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfe0:regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("0:regrev"));
-			break;
-
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			memset(cmd, 0, 32);
-                        sprintf(cmd, "asuscfe0:regrev=%s", regrev);
-                        eval("nvram", "set", cmd );
-                        puts(nvram_safe_get("0:regrev"));
-                        break;
-			
-
-		case MODEL_RTAC3200:
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfe1:regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("1:regrev"));
-			break;
-	}
-	return 1;
-}
-
-int
-setRegrev_5G(const char *regrev)
-{
-	int model;
-
-	if( regrev==NULL || !isValidRegrev(regrev) )
-		return 0;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTN53:
-		case MODEL_RTAC53U:
-		{
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfe0:regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("0:regrev"));
-			break;
-		}
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-		{
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfepci/2/1/regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("pci/2/1/regrev"));
-			break;
-		}
-
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfe1:regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("1:regrev"));
-			break;
-
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			memset(cmd, 0, 32);
-                        sprintf(cmd, "asuscfe1:regrev=%s", regrev);
-                        eval("nvram", "set", cmd );
-                        puts(nvram_safe_get("1:regrev"));
-                        break;
-
-		case MODEL_RTAC3200:
-			memset(cmd, 0, 32);
-			sprintf(cmd, "asuscfe0:regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			sprintf(cmd, "asuscfe2:regrev=%s", regrev);
-			eval("nvram", "set", cmd );
-			puts(nvram_safe_get("0:regrev"));
-			break;
-	}
-	return 1;
-}
-
-int
-setPIN(const char *pin)
-{
-	if( pin==NULL )
-		return 0;
-
-	if( pincheck(pin) )
-	{
-		memset(cmd, 0, 32);
-		sprintf(cmd, "asuscfesecret_code=%s", pin);
-		eval("nvram", "set", cmd );
-		puts(nvram_safe_get("secret_code"));
-		return 1;
-	}
-	else
-		return 0;
-}
 
 int
 set40M_Channel_2G(char *channel)
@@ -687,10 +201,13 @@ ResetDefault(void)
 }
 
 int
-GetPhyStatus(void)
+GetPhyStatus(int verbose)
 {
-	int ports[5], ext = 0;
-	int i, ret, model, mask;
+	int ports[5];
+#ifdef RTCONFIG_EXT_RTL8365MB
+	int ext = 0;
+#endif
+	int i, ret, lret=0, model, mask;
 	char out_buf[30];
 
 	model = get_model();
@@ -721,7 +238,13 @@ GetPhyStatus(void)
 		ports[0]=0; ports[1]=4; ports[2]=3, ports[3]=2; ports[4]=1;
 		break;
 	case MODEL_RTAC88U:
+	case MODEL_RTAC3100:
+		/* WAN L1 L2 L3 L4 */
+		ports[0]=4; ports[1]=3; ports[2]=2; ports[3]=1; ports[4]=0;
+#ifdef RTCONFIG_EXT_RTL8365MB
 		ext = 1;
+#endif
+		break;
 	case MODEL_RTAC56S:
 	case MODEL_RTAC56U:
 		/* WAN L1 L2 L3 L4 */
@@ -741,12 +264,17 @@ GetPhyStatus(void)
 	case MODEL_RTAC53U:
 	case MODEL_RTN66U:
 	case MODEL_RTAC66U:
+	case MODEL_RTAC1200G:
+	case MODEL_RTAC1200GP:
 		/* WAN L1 L2 L3 L4 */
 		ports[0]=0; ports[1]=1; ports[2]=2; ports[3]=3; ports[4]=4;
 		break;
 	case MODEL_RTAC5300:
 		/* WAN L1 L2 L3 L4 */
-		ports[0]=3; ports[1]=2; ports[2]=1; ports[3]=0; ports[4]=4;
+		ports[0]=0; ports[1]=1; ports[2]=2; ports[3]=3; ports[4]=4;
+#ifdef RTCONFIG_EXT_RTL8365MB
+		ext = 1;
+#endif
 		break;
 	}
 
@@ -767,8 +295,10 @@ GetPhyStatus(void)
 			ret>>=(ports[i]*2);
 			if(i==0)
 				sprintf(out_buf, "W0=%s;", (ret & 2)? "G":"M");
-			else
+			else {
+				lret = 1;
 				sprintf(out_buf, "%sL%d=%s;", out_buf, i, (ret & 2)? "G":"M");
+			}
 		}
 	}
 
@@ -786,13 +316,18 @@ GetPhyStatus(void)
 		}
 	}
 #endif
-	puts(out_buf);
+	if(verbose)
+#ifdef RTCONFIG_EXT_RTL8365MB
+		printf("%s", out_buf);
+#else
+		puts(out_buf);
+#endif
 
 #ifdef RTCONFIG_EXT_RTL8365MB
 	if(ext)
-		ext_rtk_phyState();
+		lret |= ext_rtk_phyState(verbose);
 #endif
-	return 1;
+	return lret;
 }
 
 #ifdef RTCONFIG_LAN4WAN_LED
@@ -882,7 +417,6 @@ setAllLedOn(void)
 			eval("wl", "ledbh", "10", "1");			// wl 2.4G
 			eval("wl", "-i", "eth2", "ledbh", "10", "1");	// wl 5G
 			/* 4360's fake 5g led */
-			gpio_write(LED_5G, 1);				// wl 5G
 			led_control(LED_5G, LED_ON);
 			eval("adslate", "led", "on");
 			break;
@@ -914,8 +448,9 @@ setAllLedOn(void)
 		case MODEL_RTAC3200:
 		case MODEL_RTAC5300:
 		case MODEL_RTAC88U:
+		case MODEL_RTAC3100:
 		{
-#ifdef RTAC68U
+#if defined(RTAC68U) || defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300)
 			led_control(LED_USB, LED_ON);
 			led_control(LED_USB3, LED_ON);
 #endif
@@ -924,19 +459,32 @@ setAllLedOn(void)
 #endif
 			eval("et", "robowr", "0", "0x18", "0x01ff");	// lan/wan ethernet/giga led
 			eval("et", "robowr", "0", "0x1a", "0x01e0");
-#ifndef RTAC3200
-			eval("wl", "ledbh", "10", "1");			// wl 2.4G
-			eval("wl", "-i", "eth2", "ledbh", "10", "1");	// wl 5G
-#else
+#if defined(RTAC3200)
 			eval("wl", "ledbh", "10", "1");			// wl 5G low
 			eval("wl", "-i", "eth2", "ledbh", "10", "1");	// wl 2.4G
 			eval("wl", "-i", "eth3", "ledbh", "10", "1");	// wl 5G high
+#elif defined(RTAC5300)
+			eval("wl", "ledbh", "9", "1");			// wl 5G low
+			eval("wl", "-i", "eth2", "ledbh", "9", "1");	// wl 2.4G
+			eval("wl", "-i", "eth3", "ledbh", "9", "1");	// wl 5G high
+#elif defined(RTAC88U) || defined(RTAC3100)
+			eval("wl", "ledbh", "9", "1");			// wl 2.4G
+			eval("wl", "-i", "eth2", "ledbh", "9", "1");	// wl 5G
+#else
+			eval("wl", "ledbh", "10", "1");			// wl 2.4G
+			eval("wl", "-i", "eth2", "ledbh", "10", "1");	// wl 5G
+#endif
+
+#if defined(RTAC3200)
 			led_control(LED_WPS, LED_ON);
 			led_control(LED_WAN, LED_ON);
+#elif defined (RTAC88U) || defined (RTAC3100) || defined (RTAC5300)
+			led_control(LED_WPS, LED_ON);
+			led_control(LED_WAN, LED_ON);
+			led_control(LED_LAN, LED_ON);
 #endif
 			/* 4360's fake 5g led */
 #ifdef RTAC68U
-			gpio_write(LED_5G, 1);				// wl 5G
 			led_control(LED_5G, LED_ON);
 #endif
 			break;
@@ -956,7 +504,6 @@ setAllLedOn(void)
 			eval("wl", "ledbh", "3", "1");			// wl 2.4G
 			eval("wl", "-i", "eth2","ledbh", "10", "1");
 			/* 4352's fake 5g led */
-			gpio_write(LED_5G, 1);
 			led_control(LED_5G, LED_ON);
 			break;
 		}
@@ -966,7 +513,6 @@ setAllLedOn(void)
 			eval("et", "robowr", "0", "0x18", "0x01ff");
 			eval("et", "robowr", "0", "0x1a", "0x01e0");
 			eval("radio", "on"); /* 2G led */
-			gpio_write(LED_5G, 1);
 			led_control(LED_5G, LED_ON);
 			led_control(LED_USB, LED_ON);
 			break;
@@ -1040,9 +586,7 @@ setAllLedOn(void)
 			//LAN, WAN Led On
 			led_control(LED_LAN, LED_ON);
 			led_control(LED_WAN, LED_ON);
-			gpio_write(LED_2G, 1);
 			led_control(LED_2G, LED_ON);
-			gpio_write(LED_5G, 1);
 			led_control(LED_5G, LED_ON);
 			break;
 		}
@@ -1055,6 +599,18 @@ setAllLedOn(void)
 			eval("wl", "-i", "eth1", "ledbh", "3", "1");	// wl 2.4G
 			eval("wl", "-i", "eth2", "ledbh", "9", "1");	// wl 5G
 			break;
+		}
+		case MODEL_RTAC1200G:
+		case MODEL_RTAC1200GP:
+		{
+			eval("et", "robowr", "0", "0x18", "0x01ff");	// lan/wan ethernet/giga led
+			eval("et", "robowr", "0", "0x1a", "0x01e0");
+			eval("wl", "-i", "eth2", "ledbh", "3", "1");	// wl 2.4G
+			eval("wl", "-i", "eth3", "ledbh", "11", "1");	// wl 5G
+			led_control(LED_WPS, LED_ON);
+			led_control(LED_USB, LED_ON);
+			break;
+	
 		}
 	}
 
@@ -1108,16 +664,26 @@ setWlOffLed(void)
 			}
 			break;
 
-		case MODEL_RTAC5300:
 		case MODEL_RTAC88U:
+		case MODEL_RTAC3100:
 			if (wlon_unit != 0) {
-                                eval("wl", "ledbh", "10", "0");                 // wl 2.4G
+                                eval("wl", "ledbh", "9", "0");                 // wl 2.4G
                         } else {
-                                eval("wl", "-i", "eth2", "ledbh", "10", "0");   // wl 5G
+                                eval("wl", "-i", "eth2", "ledbh", "9", "0");   // wl 5G
                                 led_control(LED_5G, LED_OFF);
                         }
                         break;
 
+		case MODEL_RTAC5300:
+		{
+			if (wlon_unit != 0 && wlon_unit_ex != 0)
+				eval("wl", "-i", "eth1", "ledbh", "9", "0");	// wl 2.4G
+			if (wlon_unit != 1 && wlon_unit_ex != 1)
+				eval("wl", "-i", "eth2", "ledbh", "9", "0");	// wl 5G low
+			if (wlon_unit != 2 && wlon_unit_ex != 2)
+				eval("wl", "-i", "eth3", "ledbh", "9", "0");	// wl 5G high
+			break;
+		}
 		case MODEL_RTAC3200:
 		{
 			if (wlon_unit != 0 && wlon_unit_ex != 0)
@@ -1135,6 +701,13 @@ setWlOffLed(void)
 			} else {
 				eval("wl", "-i", "eth2", "ledbh", "9", "0");	// wl 5G
 			}
+			break;
+		}
+		case MODEL_RTAC1200G:
+		case MODEL_RTAC1200GP:
+		{
+			eval("wl", "ledbh", "10", "0"); // wl 2.4G
+			led_control(LED_5G, LED_OFF);
 			break;
 		}
 	}
@@ -1173,7 +746,6 @@ setAllLedOff(void)
 			eval("wl", "ledbh", "3", "0");			// wl 2.4G
 			eval("wl", "-i", "eth2", "ledbh", "10", "0");
 			/* 4352's fake 5g led */
-			gpio_write(LED_5G, 1);
 			led_control(LED_5G, LED_OFF);
 			break;
 		}
@@ -1198,7 +770,6 @@ setAllLedOff(void)
 			eval("wl", "ledbh", "10", "0");			// wl 2.4G
 			eval("wl", "-i", "eth2", "ledbh", "10", "0");
 			/* 4360's fake 5g led */
-			gpio_write(LED_5G, 1);				// wl 5G
 			led_control(LED_5G, LED_OFF);
 			_eval(ledcmd_argv, NULL, 5, NULL);
 			break;
@@ -1230,8 +801,9 @@ setAllLedOff(void)
 		case MODEL_RTAC3200:
 		case MODEL_RTAC5300:
 		case MODEL_RTAC88U:
+		case MODEL_RTAC3100:
 		{
-#ifdef RTAC68U
+#if defined(RTAC68U) || defined(RTAC88U) || defined(RTAC3100) || defined(RTAC5300)
 			led_control(LED_USB, LED_OFF);
 			led_control(LED_USB3, LED_OFF);
 #endif
@@ -1240,20 +812,36 @@ setAllLedOff(void)
 #endif
 			eval("et", "robowr", "0", "0x18", "0x01e0");	// lan/wan ethernet/giga led
 			eval("et", "robowr", "0", "0x1a", "0x01e0");
-#ifndef RTAC3200
-			eval("wl", "ledbh", "10", "0");			// wl 2.4G
-			eval("wl", "-i", "eth2", "ledbh", "10", "0");	// wl 5G
-#else
+#if defined(RTAC3200)
 			eval("wl", "ledbh", "10", "0");			// wl 5G low
 			eval("wl", "-i", "eth2", "ledbh", "10", "0");	// wl 2.4G
 			eval("wl", "-i", "eth3", "ledbh", "10", "0");	// wl 5G high
+#elif defined (RTAC5300)
+			eval("wl", "ledbh", "9", "0");			// wl 5G low
+			eval("wl", "-i", "eth2", "ledbh", "9", "0");	// wl 2.4G
+			eval("wl", "-i", "eth3", "ledbh", "9", "0");	// wl 5G high
+#elif defined (RTAC88U) || defined (RTAC3100)
+			eval("wl", "ledbh", "9", "0");			// wl 2.4G
+			eval("wl", "-i", "eth2", "ledbh", "9", "0");	// wl 5G
+#else
+			eval("wl", "ledbh", "10", "0");			// wl 2.4G
+			eval("wl", "-i", "eth2", "ledbh", "10", "0");	// wl 5G
+#endif
+
+#if defined(RTAC3200)
 			led_control(LED_WPS, LED_OFF);
 			led_control(LED_WAN, LED_OFF);
+#elif defined (RTAC88U) || defined (RTAC3100) || defined (RTAC5300)
+			led_control(LED_WPS, LED_OFF);
+			led_control(LED_WAN, LED_OFF);
+			led_control(LED_LAN, LED_OFF);
 #endif
 			/* 4360's fake 5g led */
 #ifdef RTAC68U
-			gpio_write(LED_5G, 1);				// wl 5G
 			led_control(LED_5G, LED_OFF);
+#endif
+#ifdef RTCONFIG_FAKE_ETLAN_LED
+			led_control(LED_LAN, LED_OFF);
 #endif
 			break;
 		}
@@ -1263,7 +851,6 @@ setAllLedOff(void)
 			eval("et", "robowr", "0", "0x18", "0x01e0");
 			eval("et", "robowr", "0", "0x1a", "0x01e0");
 			eval("radio", "off"); /* 2G led*/
-			gpio_write(LED_5G, 1);
 			led_control(LED_5G, LED_OFF);
 			led_control(LED_USB, LED_OFF);
 			break;
@@ -1337,9 +924,7 @@ setAllLedOff(void)
 			//LAN, WAN Led Off
 			led_control(LED_LAN, LED_OFF);
 			led_control(LED_WAN, LED_OFF);
-			gpio_write(LED_2G, 1);
 			led_control(LED_2G, LED_OFF);
-			gpio_write(LED_5G, 1);
 			led_control(LED_5G, LED_OFF);
 			break;
 		}
@@ -1352,6 +937,18 @@ setAllLedOff(void)
 			eval("wl", "-i", "eth1", "ledbh", "3", "0");	// wl 2.4G
 			eval("wl", "-i", "eth2", "ledbh", "9", "0");	// wl 5G
 			break;
+		}
+		case MODEL_RTAC1200G:
+		case MODEL_RTAC1200GP:
+		{
+			eval("et", "robowr", "0", "0x18", "0x01e0");	// lan/wan ethernet/giga led
+			eval("et", "robowr", "0", "0x1a", "0x01e0");
+			eval("wl", "-i", "eth2", "ledbh", "3", "0");	// wl 2.4G
+			eval("wl", "-i", "eth3", "ledbh", "11", "0");    // wl 5G
+			led_control(LED_WPS, LED_OFF);
+			led_control(LED_USB, LED_OFF);
+			break;
+	
 		}
 	}
 
@@ -1405,20 +1002,40 @@ setATEModeLedOn(void){
 #endif
 			break;
 		}
-		case MODEL_RPAC68U:
 		case MODEL_RTAC68U:
 		case MODEL_RTAC3200:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
 		{
+			led_control(LED_WPS, LED_ON);
+                        led_control(LED_USB, LED_ON);
+                        led_control(LED_USB3, LED_ON);
+#ifdef RTCONFIG_TURBO
+                        led_control(LED_TURBO, LED_ON);
+#endif
+                        eval("et", "robowr", "0", "0x18", "0x01ff");    // lan/wan ethernet/giga led
+                        eval("et", "robowr", "0", "0x1a", "0x01e0");
+                        break;
+		}
+		//case MODEL_RPAC68U:
+		case MODEL_RTAC88U:
+		case MODEL_RTAC3100:
+		case MODEL_RTAC5300:
+		{
+                        led_control(LED_WPS, LED_ON);
+                        led_control(LED_WAN, LED_ON);
+                        led_control(LED_LAN, LED_ON);
 			led_control(LED_USB, LED_ON);
 			led_control(LED_USB3, LED_ON);
-#ifdef RTCONFIG_TURBO
-			led_control(LED_TURBO, LED_ON);
-#endif
+
 			eval("et", "robowr", "0", "0x18", "0x01ff");	// lan/wan ethernet/giga led
 			eval("et", "robowr", "0", "0x1a", "0x01e0");
-			led_control(LED_WPS, LED_ON);
+#if defined(RTAC5300)
+                        eval("wl", "ledbh", "9", "1");                  // wl 5G low
+                        eval("wl", "-i", "eth2", "ledbh", "9", "1");    // wl 2.4G
+                        eval("wl", "-i", "eth3", "ledbh", "9", "1");    // wl 5G high
+#elif defined(RTAC88U) || defined(RTAC3100)
+                        eval("wl", "ledbh", "9", "1");                  // wl 2.4G
+                        eval("wl", "-i", "eth2", "ledbh", "9", "1");    // wl 5G
+#endif
 			break;
 		}
 		case MODEL_RTAC56S:
@@ -1489,6 +1106,16 @@ setATEModeLedOn(void){
 			led_control(LED_USB, LED_ON);
 			break;
 		}
+		case MODEL_RTAC1200G:
+		case MODEL_RTAC1200GP:
+		{
+			eval("et", "robowr", "0", "0x18", "0x01ff");	// lan/wan ethernet/giga led
+			eval("et", "robowr", "0", "0x1a", "0x01e0");
+			led_control(LED_WPS, LED_ON);
+			led_control(LED_USB, LED_ON);
+			break;
+	
+		}
 	}
 
 	return 0;
@@ -1515,19 +1142,6 @@ setFanOff(void)
 		puts("ATE_ERROR");
 }
 #endif
-
-int
-setWaitTime(const char *wtime)
-{
-	if(wtime == NULL || !isNumber(wtime))
-		return 0;
-
-	memset(cmd, 0, 32);
-	sprintf(cmd, "asuscfewait_time=%s", wtime);
-	eval("nvram", "set", cmd );
-	puts(nvram_safe_get("wait_time"));
-	return 1;
-}
 
 int
 setWiFi2G(const char *act)
@@ -1587,333 +1201,6 @@ getWiFiStatus(const char *ifc)
 		ret = 0;
 
 	return ret;
-}
-
-int
-getMAC_2G(void)
-{
-#ifdef RTCONFIG_RGMII_BRCM5301X
-	puts(nvram_safe_get("et1macaddr"));
-#else
-	puts(nvram_safe_get("et0macaddr"));
-#endif
-	return 0;
-}
-
-int
-getMAC_5G(void)
-{
-	int model;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTAC3200:
-		case MODEL_RTN53:
-		case MODEL_RTAC53U:
-		{
-			puts(nvram_safe_get("0:macaddr"));
-			break;
-		}
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-		{
-			puts(nvram_safe_get("pci/2/1/macaddr"));
-			break;
-		}
-
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			puts(nvram_safe_get("1:macaddr"));
-			break;
-	}
-	return 0;
-}
-
-#ifdef RTAC3200
-int
-getMAC_5G_2(void)
-{
-	int model;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTAC3200:
-			puts(nvram_safe_get("2:macaddr"));
-			break;
-	}
-	return 0;
-}
-#endif
-
-int
-getBootVer(void)
-{
-	char buf[32];
-	switch(get_model()) {
-	case MODEL_RTN53:
-	case MODEL_RTN15U:
-	case MODEL_RTN14UHP:
-	case MODEL_RTN12B1:
-	case MODEL_RTN12C1:
-	case MODEL_RTN12D1:
-	case MODEL_RTN12VP:
-	case MODEL_RTN12HP:
-	case MODEL_RTN12HP_B1:
-	case MODEL_APN12HP:
-	case MODEL_RTN10U:
-	case MODEL_RTN10P:
-	case MODEL_RTN10D1:
-	case MODEL_RTN10PV2:
-		puts(nvram_safe_get("hardware_version"));
-		break;
-	default:
-		snprintf(buf, sizeof(buf), "%s-%s", get_productid(), nvram_safe_get("bl_version"));
-		puts(buf);
-		break;
-	}
-	return 0;
-}
-
-int
-getPIN(void)
-{
-	puts(nvram_safe_get("secret_code"));
-	return 0;
-}
-
-int
-getCountryCode_2G(void)
-{
-	int model;
-
-	/* generate nvram nvram according to system setting */
-	model = get_model();
-
-	switch(model) {
-		case MODEL_DSLAC68U:
-		case MODEL_RTAC87U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTN18U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			puts(nvram_safe_get("0:ccode"));
-			break;
-		case MODEL_RTAC3200:
-			puts(nvram_safe_get("1:ccode"));
-			break;
-		case MODEL_RTAC53U:
-			puts(nvram_safe_get("sb/1/ccode"));
-			break;
-		default:
-			puts(nvram_safe_get("regulation_domain"));
-			break;
-	}
-	return 0;
-}
-
-int
-getCountryCode_5G(void)
-{
-	int model;
-
-	/* generate nvram nvram according to system setting */
-	model = get_model();
-
-	switch(model) {
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			puts(nvram_safe_get("1:ccode"));
-			break;
-		case MODEL_RTAC3200:
-		case MODEL_RTAC53U:
-			puts(nvram_safe_get("0:ccode"));
-			break;
-		default:
-			puts(nvram_safe_get("regulation_domain_5G"));
-			break;
-	}
-	return 0;
-}
-
-int
-getRegrev_2G(void)
-{
-	int model;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTN53:
-		case MODEL_RTN16:
-		case MODEL_RTN15U:
-		case MODEL_RTN12:
-		case MODEL_RTN12B1:
-		case MODEL_RTN12C1:
-		case MODEL_RTN12D1:
-		case MODEL_RTN12VP:
-		case MODEL_RTN12HP:
-		case MODEL_RTN12HP_B1:
-		case MODEL_APN12HP:
-		case MODEL_RTN14UHP:
-		case MODEL_RTN10U:
-		case MODEL_RTN10P:
-		case MODEL_RTN10D1:
-		case MODEL_RTN10PV2:
-		case MODEL_RTAC53U:
-		{
-			puts(nvram_safe_get("sb/1/regrev"));
-			break;
-		}
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-		{
-			puts(nvram_safe_get("pci/1/1/regrev"));
-			break;
-		}
-
-		case MODEL_DSLAC68U:
-		case MODEL_RTAC87U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTN18U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			puts(nvram_safe_get("0:regrev"));
-			break;
-
-		case MODEL_RTAC3200:
-			puts(nvram_safe_get("1:regrev"));
-			break;
-	}
-	return 0;
-}
-
-int
-getRegrev_5G(void)
-{
-	int model;
-
-	// generate nvram nvram according to system setting
-	model = get_model();
-
-	switch(model) {
-		case MODEL_RTAC3200:
-		case MODEL_RTN53:
-		case MODEL_RTAC53U:
-		{
-			puts(nvram_safe_get("0:regrev"));
-			break;
-		}
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-		{
-			puts(nvram_safe_get("pci/2/1/regrev"));
-			break;
-		}
-
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			puts(nvram_safe_get("1:regrev"));
-			break;
-	}
-	return 0;
-}
-
-int setSN(const char *SN)
-{
-	char cmd_l[64];
-
-	if(SN==NULL || !isValidSN(SN))
-		return 0;
-
-	memset(cmd_l, 0, 64);
-	sprintf(cmd_l, "asuscfeserial_no=%s", SN);
-	eval("nvram", "set", cmd_l );
-	puts(nvram_safe_get("serial_no"));
-	return 1;
-}
-
-int getSN(void)
-{
-	puts(nvram_safe_get("serial_no"));
-	return 0;
-}
-#ifdef RTCONFIG_ODMPID
-int setMN(const char *MN)
-{
-	char cmd_l[64];
-
-	if(MN==NULL || !is_valid_hostname(MN))
-		return 0;
-
-	memset(cmd_l, 0, 64);
-	sprintf(cmd_l, "asuscfeodmpid=%s", MN);
-	eval("nvram", "set", cmd_l );
-	puts(nvram_safe_get("odmpid"));
-	return 1;
-}
-
-int getMN(void)
-{
-	puts(nvram_safe_get("odmpid"));
-	return 1;
-}
-#endif
-void
-Get_fail_ret(void)
-{
-	puts(nvram_safe_get("Ate_power_on_off_ret"));
-}
-
-void
-Get_fail_reboot_log(void)
-{
-	puts(nvram_safe_get("Ate_fail_reboot_log"));
-}
-
-void
-Get_fail_dev_log(void)
-{
-	puts(nvram_safe_get("Ate_fail_dev_log"));
-}
-
-
-void ate_commit_bootlog(char *err_code)
-{
-	nvram_set("Ate_power_on_off_enable", err_code);
-	nvram_commit();
-	nvram_set("asuscfeAte_power_on_off_ret", err_code);
-	//nvram_set("asuscfeAte_fail_reboot_log", nvram_get("Ate_reboot_log"));
-	//nvram_set("asuscfeAte_fail_dev_log", nvram_get("Ate_dev_log"));
-	nvram_set("asuscfecommit=", "1");
 }
 
 /* The below macro handle endian mis-matches between wl utility and wl driver. */
@@ -1982,7 +1269,7 @@ int Get_ChannelList_5G(void)
 #endif
 }
 
-#ifdef RTAC3200
+#if defined(RTAC3200) || defined(RTAC5300)
 int Get_ChannelList_5G_2(void)
 {
 	return Get_channel_list(2);
@@ -2643,19 +1930,25 @@ next_info:
 		if ((fp = fopen(ofile, "a")) == NULL){
 			printf("[wlcscan] Output %s error\n", ofile);
 		}else{
-#ifdef RTAC3200
+#if defined(RTAC3200) || defined(RTAC5300)
 			int unit = 0;
 			char prefix[] = "wlXXXXXXXXXX_", tmp[100];
 			wl_ioctl(wif, WLC_GET_INSTANCE, &unit, sizeof(unit));
 			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 #endif
 			for (i = 0; i < ap_count; i++){
-#ifdef RTAC3200
-				if (!nvram_match(strcat_r(prefix, "country_code", tmp), "EU")) {
-					if (!strcmp(wif, "eth1") && (apinfos[i].ctl_ch > 48))
-						continue;
-					else if (!strcmp(wif, "eth3") && (apinfos[i].ctl_ch < 149))
-						continue;
+#if defined(RTAC3200) || defined(RTAC5300)
+				if (!strcmp(wif, "eth1") && (apinfos[i].ctl_ch > 48))
+					continue;
+				if (!strcmp(wif, "eth3")) {
+					if (nvram_match(strcat_r(prefix, "country_code", tmp), "E0") ||
+					    nvram_match(strcat_r(prefix, "country_code", tmp), "JP")) {
+						if (apinfos[i].ctl_ch < 100)
+							continue;
+					} else {
+						if (apinfos[i].ctl_ch < 149)
+							continue;
+					}
 				}
 #endif
 				/*if(apinfos[i].ctl_ch < 0 ){
@@ -2996,215 +2289,6 @@ wl_phy_rssi_ant(char *ifname)
 }
 #endif
 
-#if 0
-void set_slave_cotuntry_setting(int unit)
-{
-	char tmp[256], tmp2[256], prefix[] = "wlXXXXXXXXXX_";
-
-	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
-#ifdef RTCONFIG_BCMWL6
-#ifdef RTCONFIG_PROXYSTA
-	if (is_psta(unit) || is_psr(unit)) {
-		if (nvram_match(strcat_r(prefix, "country_code", tmp), "Q2") &&
-		    nvram_match(strcat_r(prefix, "country_rev", tmp2), "96")) {
-			nvram_set(strcat_r(prefix, "country_code", tmp), "US");
-			nvram_set(strcat_r(prefix, "country_rev", tmp), "184");
-		}
-	}
-#endif
-#endif
-}
-#endif
-
-int
-reset_countrycode_2g(void)
-{
-	char country_code_str[32];
-
-	switch(get_model()) {
-		case MODEL_DSLAC68U:
-		case MODEL_RTAC87U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTN18U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			strcpy(country_code_str, "0:ccode");
-			break;
-
-		case MODEL_RTAC3200:
-			strcpy(country_code_str, "1:ccode");
-			break;
-
-		case MODEL_RTAC53U:
-			strcpy(country_code_str, "sb/1/ccode");
-			break;
-
-		default:
-			strcpy(country_code_str, "regulation_domain");
-			break;
-	}
-#ifndef RTAC3200_INTF_ORDER
-	doSystem("nvram set wl0_country_code=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_code_str);
-#else
-	doSystem("nvram set wl1_country_code=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_code_str);
-#endif
-	return 0;
-}
-
-int
-reset_countrycode_5g(void)
-{
-	char country_code_str[32];
-
-	switch(get_model()) {
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			strcpy(country_code_str, "1:ccode");
-			break;
-
-		case MODEL_RTAC3200:
-		case MODEL_RTAC53U:
-			strcpy(country_code_str, "0:ccode");
-			break;
-
-		default:
-			strcpy(country_code_str, "regulation_domain_5G");
-			break;
-	}
-#ifndef RTAC3200_INTF_ORDER
-	doSystem("nvram set wl1_country_code=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_code_str);
-#else
-	doSystem("nvram set wl0_country_code=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_code_str);
-#endif
-#ifdef RTAC3200
-	nvram_set("wl2_country_code", nvram_safe_get("wl0_country_code"));
-#endif
-	return 0;
-}
-
-int
-reset_countryrev_2g(void)
-{
-	char country_rev_str[32];
-
-	switch(get_model()) {
-		case MODEL_RTN53:
-		case MODEL_RTN16:
-		case MODEL_RTN15U:
-		case MODEL_RTN12:
-		case MODEL_RTN12B1:
-		case MODEL_RTN12C1:
-		case MODEL_RTN12D1:
-		case MODEL_RTN12VP:
-		case MODEL_RTN12HP:
-		case MODEL_RTN12HP_B1:
-		case MODEL_APN12HP:
-		case MODEL_RTN14UHP:
-		case MODEL_RTN10U:
-		case MODEL_RTN10P:
-		case MODEL_RTN10D1:
-		case MODEL_RTN10PV2:
-		case MODEL_RTAC53U:
-			strcpy(country_rev_str, "sb/1/regrev");
-			break;
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-			strcpy(country_rev_str, "pci/1/1/regrev");
-			break;
-
-		case MODEL_DSLAC68U:
-		case MODEL_RTAC87U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTN18U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			strcpy(country_rev_str, "0:regrev");
-			break;
-
-		case MODEL_RTAC3200:
-			strcpy(country_rev_str, "1:regrev");
-			break;
-	}
-#ifndef RTAC3200_INTF_ORDER
-	doSystem("nvram set wl0_country_rev=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_rev_str);
-#else
-	doSystem("nvram set wl1_country_rev=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_rev_str);
-#endif
-#if 0
-#ifdef RTAC3200
-#ifndef RTAC3200_INTF_ORDER
-	set_slave_cotuntry_setting(0);
-#else
-	set_slave_cotuntry_setting(1);
-#endif
-#endif
-#endif
-	return 0;
-}
-
-int
-reset_countryrev_5g(void)
-{
-	char country_rev_str[32];
-
-	switch(get_model()) {
-		case MODEL_RTAC3200:
-		case MODEL_RTN53:
-		case MODEL_RTAC53U:
-			strcpy(country_rev_str, "0:regrev");
-			break;
-
-		case MODEL_RTN66U:
-		case MODEL_RTAC66U:
-			strcpy(country_rev_str, "pci/2/1/regrev");
-			break;
-
-		case MODEL_DSLAC68U:
-		case MODEL_RPAC68U:
-		case MODEL_RTAC68U:
-		case MODEL_RTAC56S:
-		case MODEL_RTAC56U:
-		case MODEL_RTAC87U:
-		case MODEL_RTAC5300:
-		case MODEL_RTAC88U:
-			strcpy(country_rev_str, "1:regrev");
-			break;
-	}
-#ifndef RTAC3200_INTF_ORDER
-	doSystem("nvram set wl1_country_rev=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_rev_str);
-#else
-	doSystem("nvram set wl0_country_rev=`cat /dev/mtd0 | grep %s | cut -d \"=\" -f 2`", country_rev_str);
-#endif
-#ifdef RTAC66U
-	if (nvram_match("wl1_country_code", "EU") && nvram_match("wl1_dfs", "1"))
-		nvram_set("wl1_country_rev", "31");
-#endif
-#ifdef RTAC3200
-	nvram_set("wl2_country_rev", nvram_safe_get("wl0_country_rev"));
-#if 0
-#ifndef RTAC3200_INTF_ORDER
-	set_slave_cotuntry_setting(1);
-#else
-	set_slave_cotuntry_setting(0);
-#endif
-	set_slave_cotuntry_setting(2);
-#endif
-#endif
-	return 0;
-}
-
 #ifdef RTAC3200
 extern struct nvram_tuple router_defaults[];
 
@@ -3231,5 +2315,88 @@ bsd_defaults(void)
 	for (t = router_defaults; t->name; t++)
 		if (strstr(t->name, "bsd"))
 			nvram_set(t->name, t->value);
+}
+#endif
+
+#ifdef RTCONFIG_BCMWL6
+int
+wl_check_chanspec()
+{
+	wl_uint32_list_t *list;
+	chanspec_t c, chansp_40m;
+	int ret = 0, i, count;
+	char data_buf[WLC_IOCTL_MAXLEN];
+	char chanbuf[CHANSPEC_STR_LEN];
+	char word[256], *next;
+	char tmp[256], tmp2[256], prefix[] = "wlXXXXXXXXXX_";
+	int unit = 0;
+	int match;
+	int match_ctrl_ch;
+	int match_40m_ch;
+
+	foreach (word, nvram_safe_get("wl_ifnames"), next) {
+		snprintf(prefix, sizeof(prefix), "wl%d_", unit++);
+		c = 0;
+		chansp_40m = 0;
+		match = 0;
+		match_ctrl_ch = 0;
+		match_40m_ch = 0;
+
+		if (!nvram_get_int(strcat_r(prefix, "chanspec", tmp)))
+			continue;
+
+		memset(data_buf, 0, WLC_IOCTL_MAXLEN);
+		ret = wl_iovar_getbuf(word, "chanspecs", &c, sizeof(chanspec_t),
+			data_buf, WLC_IOCTL_MAXLEN);
+		if (ret < 0) {
+			dbg("failed to get valid chanspec list\n");
+			continue;
+		}
+
+		list = (wl_uint32_list_t *)data_buf;
+		count = dtoh32(list->count);
+
+		if (!count) {
+			dbg("number of valid chanspec is 0\n");
+			continue;
+		} else
+		for (i = 0; i < count; i++) {
+			c = (chanspec_t)dtoh32(list->element[i]);
+
+			if (!match &&
+			   (c == wf_chspec_aton(nvram_safe_get(strcat_r(prefix, "chanspec", tmp))))) {
+				match = 1;
+				break;
+			}
+
+			if (wf_chspec_ctlchan(c) == wf_chspec_ctlchan(wf_chspec_aton(nvram_safe_get(strcat_r(prefix, "chanspec", tmp))))) {
+				if (!match_ctrl_ch)
+					match_ctrl_ch = 1;
+
+				if (!match_40m_ch && CHSPEC_IS40(c)) {
+					match_40m_ch = 1;
+					chansp_40m = c;
+				}
+			}
+		}
+
+		if (!match) {
+			dbg("chanspec %s is invalid\n", nvram_safe_get(strcat_r(prefix, "chanspec", tmp)));
+
+			if (match_40m_ch) {
+				dbg("downgraded to 40M chanspec\n");
+				nvram_set(strcat_r(prefix, "chanspec", tmp), wf_chspec_ntoa(chansp_40m, chanbuf));
+			} else if (match_ctrl_ch) {
+				dbg("downgraded to 20M chanspec\n");
+				nvram_set_int(strcat_r(prefix, "chanspec", tmp), wf_chspec_ctlchan(wf_chspec_aton(nvram_safe_get(strcat_r(prefix, "chanspec", tmp2)))));
+			} else {
+				dbg("downgraded to auto chanspec\n");
+				nvram_set_int(strcat_r(prefix, "chanspec", tmp), 0);
+				nvram_set_int(strcat_r(prefix, "bw", tmp), 0);
+			}
+		}
+	}
+
+	return ret;
 }
 #endif

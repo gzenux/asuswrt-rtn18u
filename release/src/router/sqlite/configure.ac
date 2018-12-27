@@ -13,6 +13,7 @@ AC_CONFIG_SRCDIR([sqlite3.c])
 
 # Use automake.
 AM_INIT_AUTOMAKE([foreign])
+AM_MAINTAINER_MODE
 
 AC_SYS_LARGEFILE
 

@@ -381,7 +381,7 @@ devpath0=pci/1/1
 0:maxp2ga0=106
 0:maxp2ga1=106
 0:maxp2ga2=106
-0:pa2ga0=0xff4a,0x1cbc,0xfc9d
+0:pa2ga0=0xff4a,0x1c3c,0xfca8
 0:pa2ga1=0xff49,0x1c5a,0xfca1
 0:pa2ga2=0xff4e,0x1d0d,0xfc9e
 
@@ -541,7 +541,7 @@ devpath1=pci/2/1
 1:tempoffset=0
 
 # Bootloader version
-bl_version=2.0.0.1
+bl_version=2.0.0.3
 
 # for NAND flash
 bootflags=1

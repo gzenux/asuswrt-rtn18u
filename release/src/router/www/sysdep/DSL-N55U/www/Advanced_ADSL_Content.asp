@@ -149,7 +149,7 @@ function hideXDSLSetting(_value){
 	<tr>
 		  <td bgcolor="#4D595D" valign="top"  >
 		  <div>&nbsp;</div>
-		  <div class="formfonttitle"><#menu5_6_adv#> - <#menu_dsl_setting#></div>
+		  <div class="formfonttitle"><#menu5_6#> - <#menu_dsl_setting#></div>
       <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
       <div class="formfontdesc"><#dslsetting_disc0#></div>
 

@@ -1,6 +1,6 @@
-﻿define(["/jquery.js"], function($j){
-
+﻿define(["/jquery.js"], function(){
 	var $j = jQuery.noConflict();
+	
 	var diskList = function(){};
 	var usbDevicesList = new Array();
 

@@ -10,8 +10,7 @@ modem_vid=`nvram get usb_modem_act_vid`
 modem_autoapn=`nvram get modem_autoapn`
 modem_imsi=
 apps_local_space=`nvram get apps_local_space`
-dataf="$apps_local_space/apn_asus.dat"
-numf="$apps_local_space/apn_num.dat"
+dataf="$apps_local_space/spn_asus.dat"
 #modem_prefix="modem_"
 modem_prefix="test_modem_"
 
@@ -55,26 +54,22 @@ fi
 if [ "$1" == "set" ]; then
 	content=`grep "$modem_imsi," $dataf 2>/dev/null`
 else
-	modem_imsi_s=`echo $modem_imsi |cut -c 1-5 2>/dev/null`
-	data_num=`grep $modem_imsi_s $dataf |wc -l 2>/dev/null`
-
 	total_line=`wc -l $dataf |awk '{print $1}' 2>/dev/null`
-	line=1
-	content=`sed -n ${line}p $dataf 2>/dev/null`
-	while [ "$content" != "" ]; do
-		nvram set usb_modem_auto_running="$line/$total_line"
-		compare=`echo "$content" |awk '{FS=","; print $1}' 2>/dev/null`
-		len=${#compare}
-		target=`echo $modem_imsi |cut -c '1-'$len 2>/dev/null`
-
-		if [ "$compare" == "$target" ]; then
-			break
-		fi
-
-		line=$((line+1))
-		content=`sed -n ${line}p $dataf 2>/dev/null`
-	done
+	nvram set usb_modem_auto_lines=$total_line
 	nvram set usb_modem_auto_running=1
+
+	modem_imsi_s=`echo $modem_imsi |cut -c 1-6 2>/dev/null`
+	data_num=`grep "$modem_imsi_s," $dataf |wc -l 2>/dev/null`
+	if [ $data_num -eq 0 ]; then
+		modem_imsi_s=`echo $modem_imsi |cut -c 1-5 2>/dev/null`
+		data_num=`grep "$modem_imsi_s," $dataf |wc -l 2>/dev/null`
+	fi
+
+	if [ $data_num -ne 0 ]; then
+		content=`grep "$modem_imsi_s," $dataf 2>/dev/null`
+	fi
+
+	nvram set usb_modem_auto_running=$total_line
 fi
 
 if [ "$content" == "" ]; then
@@ -84,11 +79,11 @@ if [ "$content" == "" ]; then
 fi
 
 modem_isp=`echo "$content" |awk '{FS=","; print $2}' 2>/dev/null`
-modem_apn=`echo "$content" |awk '{FS=","; print $6}' 2>/dev/null`
 modem_spn=`echo "$content" |awk '{FS=","; print $7}' 2>/dev/null`
 if [ "$modem_spn" == "" ]; then
 	modem_spn=$modem_isp
 fi
+modem_apn=`echo "$content" |awk '{FS=","; print $6}' 2>/dev/null`
 modem_dial=`echo "$content" |awk '{FS=","; print $3}' 2>/dev/null`
 modem_user=`echo "$content" |awk '{FS=","; print $4}' 2>/dev/null`
 modem_pass=`echo "$content" |awk '{FS=","; print $5}' 2>/dev/null`
@@ -176,6 +171,8 @@ elif [ $modem_country_num -eq 310 ]; then
 	modem_country=US
 elif [ $modem_country_num -eq 452 ]; then
 	modem_country=VN
+elif [ $modem_country_num -eq 425 ]; then
+	modem_country=IL
 fi
 
 if [ "$1" == "console" ]; then
@@ -193,8 +190,8 @@ elif [ "$1" == "set" ]; then
 	nvram set modem_country="$modem_country"
 	modem_isp=`nvram get modem_roaming_isp`
 	nvram set modem_isp="$modem_isp"
-	nvram set modem_apn="$modem_apn"
 	nvram set modem_spn="$modem_spn"
+	nvram set modem_apn="$modem_apn"
 	nvram set modem_dialnum="$modem_dial"
 	nvram set modem_user="$modem_user"
 	nvram set modem_pass="$modem_pass"
@@ -202,8 +199,8 @@ else
 	nvram set usb_modem_auto_imsi="$compare"
 	nvram set usb_modem_auto_country="$modem_country"
 	nvram set usb_modem_auto_isp="$modem_isp"
-	nvram set usb_modem_auto_apn="$modem_apn"
 	nvram set usb_modem_auto_spn="$modem_spn"
+	nvram set usb_modem_auto_apn="$modem_apn"
 	nvram set usb_modem_auto_dialnum="$modem_dial"
 	nvram set usb_modem_auto_user="$modem_user"
 	nvram set usb_modem_auto_pass="$modem_pass"
@@ -211,8 +208,8 @@ else
 	if [ "$modem_autoapn" == "1" ]; then
 		nvram set modem_country="$modem_country"
 		nvram set modem_isp="$modem_isp"
-		nvram set modem_apn="$modem_apn"
 		nvram set modem_spn="$modem_spn"
+		nvram set modem_apn="$modem_apn"
 		nvram set modem_dialnum="$modem_dial"
 		nvram set modem_user="$modem_user"
 		nvram set modem_pass="$modem_pass"

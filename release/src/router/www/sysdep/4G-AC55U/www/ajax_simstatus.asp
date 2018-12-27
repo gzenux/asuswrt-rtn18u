@@ -12,3 +12,4 @@ tx_bytes = parseFloat('<% nvram_get("modem_bytes_tx"); %>');
 tx_rate = parseFloat('<% nvram_get("usb_modem_act_tx"); %>');
 rx_rate = parseFloat('<% nvram_get("usb_modem_act_rx"); %>');
 modemuptime = parseInt('<% get_modemuptime(); %>');
+modem_autoapn_imsi = '<% nvram_get("modem_autoapn_imsi"); %>';

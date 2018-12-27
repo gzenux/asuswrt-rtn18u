@@ -301,6 +301,9 @@ int main(int argc, char *argv[])
 #else
 	fprintf(fp, "use sendfile = yes\n");
 #endif
+#ifdef RTCONFIG_RECVFILE
+	fprintf(fp, "use recvfile = yes\n");
+#endif
 
 	fprintf(fp, "map archive = no\n");
 	fprintf(fp, "map hidden = no\n");

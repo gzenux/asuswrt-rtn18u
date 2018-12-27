@@ -19,7 +19,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
 <script>
-var $j = jQuery.noConflict();
 function initial(){
 	show_menu();
 	getWebHistory();
@@ -93,7 +92,7 @@ function getWebHistory(mac, page){
 	var page_count = page ? page : "1";
 	var client = mac ? ("?client=" + mac) : ("?page=" + page_count); 
 
-	$j.ajax({
+	$.ajax({
 		url: '/getWebHistory.asp' + client,
 		dataType: 'script',	
 		error: function(xhr){
@@ -199,7 +198,7 @@ function change_page(flag){
 							<tr>
 								<td bgcolor="#4D595D" colspan="3" valign="top">
 									<div>&nbsp;</div>
-									<div class="formfonttitle"><#Adaptive_QoS#> - Web Histroy</div>
+									<div class="formfonttitle">QoS - Web Histroy</div>
 									<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 									<div class="formfontdesc">
 										<#Adaptive_History_desc#>

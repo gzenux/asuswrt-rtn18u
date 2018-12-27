@@ -55,6 +55,14 @@
 #define	DEV_GPIO(arg)	"/dev/gpio/"#arg
 #endif
 
+#if defined(RTCONFIG_DEFAULT_AP_MODE)
+#define DUT_DOMAIN_NAME "ap.asus.com"
+#else
+#define DUT_DOMAIN_NAME "router.asus.com"
+#endif
+#define OLD_DUT_DOMAIN_NAME1 "www.asusnetwork.net"
+#define OLD_DUT_DOMAIN_NAME2 "www.asusrouter.com"
+
 //version.c
 extern const char *rt_version;
 extern const char *rt_serialno;
@@ -189,6 +197,8 @@ extern int foreach_wif(int include_vifs, void *param,
 extern void dbgprintf (const char * format, ...); //Ren
 extern void cprintf(const char *format, ...);
 extern int _eval(char *const argv[], const char *path, int timeout, int *ppid);
+extern char *enc_str(char *str, char *enc_buf);
+extern char *dec_str(char *ec_str, char *dec_buf);
 
 // usb.c
 #ifdef RTCONFIG_USB
@@ -234,6 +244,9 @@ enum {
 	MODEL_RTAC55U,
 	MODEL_RTAC55UHP,
 	MODEL_RT4GAC55U,
+	MODEL_PLN12,
+	MODEL_PLAC56,
+	MODEL_PLAC66U,
 	MODEL_RTN36U3,
 	MODEL_RTN56U,
 	MODEL_RTN65U,
@@ -261,12 +274,15 @@ enum {
 	MODEL_RTAC53U,
 	MODEL_RTAC3200,
 	MODEL_RTAC88U,
+	MODEL_RTAC3100,
 	MODEL_RTAC5300,
 	MODEL_RTN14UHP,
 	MODEL_RTN10U,
 	MODEL_RTN10P,
 	MODEL_RTN10D1,
 	MODEL_RTN10PV2,
+	MODEL_RTAC1200G,
+	MODEL_RTAC1200GP,
 	MODEL_GENERIC
 };
 
@@ -405,7 +421,27 @@ enum led_id {
 	LED_SIG2,
 	LED_SIG3,
 #endif
-
+#ifdef PLN12
+	LED_POWER_RED,
+	LED_2G_GREEN,
+	LED_2G_ORANGE,
+	LED_2G_RED,
+#endif
+#ifdef PLAC56
+	LED_2G_GREEN,
+	LED_2G_RED,
+	LED_5G_GREEN,
+	LED_5G_RED,
+#endif
+#ifdef RTCONFIG_MMC_LED
+	LED_MMC,
+#endif
+#ifdef RTCONFIG_RESET_SWITCH
+	LED_RESET_SWITCH,
+#endif
+#ifdef RTAC5300
+	RPM_FAN,	/* use to control FAN RPM (Hi/Lo) */
+#endif
 	LED_ID_MAX,	/* last item */
 };
 
@@ -434,6 +470,8 @@ static inline int have_usb3_led(int model)
 		case MODEL_DSLAC68U:
 		case MODEL_RTAC3200:
 		case MODEL_RTAC88U:
+		case MODEL_RTAC3100:
+		case MODEL_RTAC5300:
 			return 1;
 	}
 	return 0;
@@ -482,8 +520,19 @@ struct ifaces_stats {
 #define MAX_NR_WL_IF			1	/* Single 2G */
 #endif	/* ! RTCONFIG_HAS_5G */
 
+#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
+static inline int __access_point_mode(int sw_mode)
+{
+	return (sw_mode == SW_MODE_AP);
+}
+
+static inline int access_point_mode(void)
+{
+	return __access_point_mode(nvram_get_int("sw_mode"));
+}
+
 #if defined(RTCONFIG_WIRELESSREPEATER)
-static inline int __is_repeater_mode(int sw_mode)
+static inline int __repeater_mode(int sw_mode)
 {
 	return (sw_mode == SW_MODE_REPEATER
 #if defined(RTCONFIG_PROXYSTA)
@@ -491,28 +540,72 @@ static inline int __is_repeater_mode(int sw_mode)
 #endif
 		);
 }
-static inline int is_repeater_mode(void)
+static inline int repeater_mode(void)
 {
-	return __is_repeater_mode(nvram_get_int("sw_mode"));
+	return __repeater_mode(nvram_get_int("sw_mode"));
 }
 #else
-static inline int __is_repeater_mode(int sw_mode) { return 0; }
-static inline int is_repeater_mode(void) { return 0; }
+static inline int __repeater_mode(int sw_mode) { return 0; }
+static inline int repeater_mode(void) { return 0; }
 #endif
 
 #if defined(RTCONFIG_WIRELESSREPEATER) && defined(RTCONFIG_PROXYSTA)
-static inline int __is_mediabridge_mode(int sw_mode)
+static inline int __mediabridge_mode(int sw_mode)
 {
 	return (sw_mode == SW_MODE_REPEATER && nvram_get_int("wlc_psta") == 1);
 }
-static inline int is_mediabridge_mode(void)
+static inline int mediabridge_mode(void)
 {
-	return __is_mediabridge_mode(nvram_get_int("sw_mode"));
+	return __mediabridge_mode(nvram_get_int("sw_mode"));
 }
 #else
-static inline int __is_mediabridge_mode(int sw_mode) { return 0; }
-static inline int is_mediabridge_mode(void) { return 0; }
+static inline int __mediabridge_mode(int sw_mode) { return 0; }
+static inline int mediabridge_mode(void) { return 0; }
 #endif
+#else
+/* Should be Broadcom platform. */
+static inline int __access_point_mode(int sw_mode)
+{
+	return (sw_mode == SW_MODE_AP
+#if defined(RTCONFIG_PROXYSTA)
+		&& !nvram_get_int("wlc_psta")
+#endif
+		);
+}
+
+static inline int access_point_mode(void)
+{
+	return __access_point_mode(nvram_get_int("sw_mode"));
+}
+
+#if defined(RTCONFIG_WIRELESSREPEATER)
+static inline int __repeater_mode(int sw_mode)
+{
+	return (sw_mode == SW_MODE_REPEATER);
+}
+static inline int repeater_mode(void)
+{
+	return __repeater_mode(nvram_get_int("sw_mode"));
+}
+#else
+static inline int __repeater_mode(int sw_mode) { return 0; }
+static inline int repeater_mode(void) { return 0; }
+#endif
+
+#if defined(RTCONFIG_WIRELESSREPEATER) && defined(RTCONFIG_PROXYSTA)
+static inline int __mediabridge_mode(int sw_mode)
+{
+	return (sw_mode == SW_MODE_AP && nvram_get_int("wlc_psta") == 1);
+}
+static inline int mediabridge_mode(void)
+{
+	return __mediabridge_mode(nvram_get_int("sw_mode"));
+}
+#else
+static inline int __mediabridge_mode(int sw_mode) { return 0; }
+static inline int mediabridge_mode(void) { return 0; }
+#endif
+#endif	/* RTCONFIG_RALINK || RTCONFIG_QCA */
 
 static inline int get_wps_multiband(void)
 {
@@ -549,7 +642,7 @@ extern int get_primaryif_dualwan_unit(void);
 #else
 static inline int dualwan_unit__usbif(int unit)
 {
-#ifdef RTCONFIG_USB
+#ifdef RTCONFIG_USB_MODEM
 	return (unit == WAN_UNIT_SECOND);
 #else
 	return 0;
@@ -562,7 +655,7 @@ static inline int dualwan_unit__nonusbif(int unit)
 }
 static inline int get_usbif_dualwan_unit(void)
 {
-#ifdef RTCONFIG_USB
+#ifdef RTCONFIG_USB_MODEM
 	return WAN_UNIT_SECOND;
 #else
 	return -1;
@@ -723,14 +816,22 @@ extern char* INET6_rresolve(struct sockaddr_in6 *sin6, int numeric);
 extern const char *ipv6_gateway_address(void);
 #endif
 #ifdef RTCONFIG_OPENVPN
-extern char *get_parsed_crt(const char *name, char *buf);
+#if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS)
+#define OVPN_FS_PATH	"/jffs/openvpn"
+#define MAX_OVPN_CLIENT	5
+#else
+#define MAX_OVPN_CLIENT	1
+#endif
+extern char *get_parsed_crt(const char *name, char *buf, size_t buf_len);
 extern int set_crt_parsed(const char *name, char *file_path);
+extern int ovpn_crt_is_empty(const char *name);
 #endif
 extern int get_wifi_unit(char *wif);
 extern int is_psta(int unit);
 extern int is_psr(int unit);
 extern int psta_exist();
 extern int psta_exist_except(int unit);
+extern int psr_exist();
 extern int psr_exist_except(int unit);
 extern unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, unsigned long *tx, char *ifname_desc2, unsigned long *rx2, unsigned long *tx2);
 extern int check_bwdpi_nvram_setting();
@@ -775,7 +876,13 @@ extern int get_dualwan_primary(void);
 extern int get_dualwan_secondary(void) ;
 #else
 static inline int get_wans_dualwan(void) { return WANS_DUALWAN_IF_WAN; }
-static inline int get_dualwan_by_unit(int unit) { return ((unit == WAN_UNIT_SECOND)? WANS_DUALWAN_IF_USB:WANS_DUALWAN_IF_WAN); }
+static inline int get_dualwan_by_unit(int unit) {
+#ifdef RTCONFIG_USB_MODEM
+	return ((unit == WAN_UNIT_FIRST)? WANS_DUALWAN_IF_WAN:WANS_DUALWAN_IF_USB);
+#else
+	return ((unit == WAN_UNIT_FIRST)? WANS_DUALWAN_IF_WAN:WANS_DUALWAN_IF_NONE);
+#endif
+}
 #endif
 extern void set_lan_phy(char *phy);
 extern void add_lan_phy(char *phy);
@@ -835,6 +942,9 @@ static inline int wan_red_led_control(int onoff) { return 0; }
 #if defined(RTCONFIG_BLINK_LED)
 extern int __config_netdev_bled(const char *led_gpio, const char *ifname, unsigned int min_blink_speed, unsigned int interval);
 extern int config_netdev_bled(const char *led_gpio, const char *ifname);
+extern int set_bled_udef_pattern(const char *led_gpio, unsigned int interval, const char *pattern);
+extern int set_bled_normal_mode(const char *led_gpio);
+extern int set_bled_udef_pattern_mode(const char *led_gpio);
 extern int start_bled(unsigned int gpio_nr);
 extern int stop_bled(unsigned int gpio_nr);
 extern int del_bled(unsigned int gpio_nr);
@@ -844,6 +954,9 @@ extern int __config_swports_bled(const char *led_gpio, unsigned int port_mask, u
 extern int update_swports_bled(const char *led_gpio, unsigned int port_mask);
 extern int __config_usbbus_bled(const char *led_gpio, char *bus_list, unsigned int min_blink_speed, unsigned int interval);
 extern int is_swports_bled(const char *led_gpio);
+#if defined(PLN12)
+extern void set_wifiled(int mode);
+#endif
 
 static inline void enable_wifi_bled(char *ifname)
 {
@@ -861,8 +974,12 @@ static inline void enable_wifi_bled(char *ifname)
 #if defined(RTCONFIG_QCA)
 		v = LED_OFF;	/* WiFi not ready. Don't turn on WiFi LED here. */		
 #endif
-#if defined(RTAC1200HP)
+#if defined(RTAC1200HP) || defined(RTN56UB1)
 		if(!get_radio(1, 0) && unit==1) //*5G WiFi not ready. Don't turn on WiFi GPIO LED . */
+		 	v=LED_OFF;
+#endif		
+#if defined(RTN56UB1)
+		if(!get_radio(0, 0) && unit==0) //*2G WiFi not ready. Don't turn on WiFi GPIO LED . */
 		 	v=LED_OFF;
 #endif		
 		led_control((!unit)? LED_2G:LED_5G, v);
@@ -914,6 +1031,9 @@ static inline int config_usbbus_bled(const char *led_gpio, char *bus_list)
 #else	/* !RTCONFIG_BLINK_LED */
 static inline int __config_netdev_bled(const char *led_gpio, const char *ifname, unsigned int min_blink_speed, unsigned int interval) { return 0; }
 static inline int config_netdev_bled(const char *led_gpio, const char *ifname) { return 0; }
+static inline int set_bled_udef_pattern(const char *led_gpio, unsigned int interval, const char *pattern) { return 0; }
+static inline int set_bled_normal_mode(const char *led_gpio) { return 0; }
+static inline int set_bled_udef_pattern_mode(const char *led_gpio) { return 0; }
 static inline int start_bled(unsigned int gpio_nr) { return 0; }
 static inline int stop_bled(unsigned int gpio_nr) { return 0; }
 static inline int chg_bled_state(unsigned int gpio_nr) { return 0; }
@@ -955,5 +1075,38 @@ static inline int is_usb3_port(char *usb_node)
 	return 0;
 }
 #endif
+
+#ifdef RTCONFIG_BCM5301X_TRAFFIC_MONITOR
+
+#define MIB_P0_PAGE 0x20	/* port 0 */
+#define MIB_RX_REG 0x88
+#define MIB_TX_REG 0x00
+
+#if defined(RTN18U) || defined(RTAC56U) || defined(RTAC56S) || defined(RTAC68U) || defined(RTAC3200) || defined(DSL_AC68U)
+#define CPU_PORT "5"
+#define WAN0DEV "vlan2"
+#endif
+
+#ifdef RTAC5300
+#define CPU_PORT "7"
+#define WAN0DEV "vlan2"
+#endif
+
+#if defined(RTAC88U) || defined(RTAC3100)/* || defined(RTAC5300)*/
+#ifdef RTCONFIG_EXT_RTL8365MB
+#define CPU_PORT "7"
+#define WAN0DEV "vlan2"
+#else
+#define CPU_PORT "5"
+#define WAN0DEV "vlan2"
+#endif
+#endif
+
+#ifdef RTAC87U
+#define CPU_PORT "7"	/* RT-AC87U */
+#define RGMII_PORT "5"	/* RT-AC87U */
+#define WAN0DEV "vlan2"
+#endif
+#endif	/* RTCONFIG_BCM5301X_TRAFFIC_MONITOR */
 
 #endif	/* !__SHARED_H__ */

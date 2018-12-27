@@ -78,6 +78,7 @@
 #define PHY_RECONN	5
 #define SET_ETH_MODEM	6
 #define SET_PIN	7
+#define SET_USBSCAN	8
 
 #define CASE_NONE          0
 #define CASE_DISWAN        1
@@ -159,19 +160,23 @@ int sw_mode, isFirstUse;
 int boot_end;
 #ifdef RTCONFIG_DUALWAN
 char dualwan_mode[8];
-
+char dualwan_wans[16];
 char wandog_target[PATH_MAX];
 int wandog_delay, delay_detect;
 int WAN_FB_UNIT;
 #endif
 #ifdef RTCONFIG_USB_MODEM
 char modem_type[32];
+int sim_lock = 0;
+#ifdef RT4GAC55U
+char usb_if[16];
+#endif
 #endif
 
 int scan_interval;
 int wandog_enable, wandog_maxfail;
-int max_disconn_count;
-int max_wait_time;
+int max_disconn_count[WAN_UNIT_MAX];
+int max_wait_time[WAN_UNIT_MAX];
 int max_fb_count;
 int max_fb_wait_time;
 

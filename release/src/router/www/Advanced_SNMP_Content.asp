@@ -146,7 +146,7 @@ function change_v3_priv_type(type){
 	<tr>
 		  <td bgcolor="#4D595D" valign="top"  >
 		  <div>&nbsp;</div>
-		  <div class="formfonttitle"><#menu5_6_adv#> - SNMP</div>
+		  <div class="formfonttitle"><#menu5_6#> - SNMP</div>
 		  <div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
 		  <div class="formfontdesc"></div>
 
@@ -161,27 +161,27 @@ function change_v3_priv_type(type){
 
         <tr>
           <th>System Name</th>
-          <td><input type="text" maxlength="255" class="input_32_table" name="sysName" value="<% nvram_get("sysName"); %>" ></td>
+          <td><input type="text" maxlength="255" class="input_32_table" name="sysName" value="<% nvram_get("sysName"); %>" autocorrect="off" autocapitalize="off"></td>
         </tr>
 
         <tr>
           <th>System Location</th>
-          <td><input type="text" maxlength="255" class="input_32_table" name="sysLocation" value="<% nvram_get("sysLocation"); %>" ></td>
+          <td><input type="text" maxlength="255" class="input_32_table" name="sysLocation" value="<% nvram_get("sysLocation"); %>" autocorrect="off" autocapitalize="off"></td>
         </tr>
 
         <tr>
           <th>System Contact</th>
-          <td><input type="text" maxlength="255" class="input_32_table" name="sysContact" value="<% nvram_get("sysContact"); %>" ></td>
+          <td><input type="text" maxlength="255" class="input_32_table" name="sysContact" value="<% nvram_get("sysContact"); %>" autocorrect="off" autocapitalize="off"></td>
         </tr>
 
         <tr>
           <th>SNMP Get Community</th>
-          <td><input type="text" maxlength="32" class="input_32_table" name="roCommunity" value="<% nvram_get("roCommunity"); %>" ></td>
+          <td><input type="text" maxlength="32" class="input_32_table" name="roCommunity" value="<% nvram_get("roCommunity"); %>" autocorrect="off" autocapitalize="off"></td>
         </tr>
 
         <tr>
           <th>SNMP Set Community</th>
-          <td><input type="text" maxlength="32" class="input_32_table" name="rwCommunity" value="<% nvram_get("rwCommunity"); %>" ></td>
+          <td><input type="text" maxlength="32" class="input_32_table" name="rwCommunity" value="<% nvram_get("rwCommunity"); %>" autocorrect="off" autocapitalize="off"></td>
         </tr>
 
         <tr>
@@ -197,7 +197,7 @@ function change_v3_priv_type(type){
 
         <tr>
           <th>SNMPv3 Authentication Password</th>
-          <td><input type="text" maxlength="64" class="input_32_table" name="v3_auth_passwd" value="<% nvram_get("v3_auth_passwd"); %>" autocapitalization="off" autocomplete="off"></td>
+          <td><input type="text" maxlength="64" class="input_32_table" name="v3_auth_passwd" value="<% nvram_get("v3_auth_passwd"); %>" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
         </tr>
 
         <tr>
@@ -213,7 +213,7 @@ function change_v3_priv_type(type){
 
         <tr>
           <th>SNMPv3 Privacy Password</th>
-          <td><input type="text" maxlength="64" class="input_32_table" name="v3_priv_passwd" value="<% nvram_get("v3_priv_passwd"); %>" autocapitalization="off" autocomplete="off"></td>
+          <td><input type="text" maxlength="64" class="input_32_table" name="v3_priv_passwd" value="<% nvram_get("v3_priv_passwd"); %>" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
         </tr>
 
         </table>

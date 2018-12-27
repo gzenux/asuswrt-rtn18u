@@ -153,7 +153,8 @@ static int dhcp6_maybe_relay(struct state *state, void *inbuff, size_t sz,
 	  if (!state->context)
 	    {
 	      inet_ntop(AF_INET6, state->link_address, daemon->addrbuff, ADDRSTRLEN); 
-	      my_syslog(MS_DHCP | LOG_WARNING, 
+	      if (option_bool(OPT_LOG_OPTS))
+		my_syslog(MS_DHCP | LOG_WARNING, 
 			_("no address range available for DHCPv6 request from relay at %s"),
 			daemon->addrbuff);
 	      return 0;
@@ -162,7 +163,8 @@ static int dhcp6_maybe_relay(struct state *state, void *inbuff, size_t sz,
 	  
       if (!state->context)
 	{
-	  my_syslog(MS_DHCP | LOG_WARNING, 
+	  if (option_bool(OPT_LOG_OPTS))
+	    my_syslog(MS_DHCP | LOG_WARNING, 
 		    _("no address range available for DHCPv6 request via %s"), state->iface_name);
 	  return 0;
 	}
@@ -824,25 +826,21 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
 	  }
 	else
 	  { 
-	    /* Windows 8 always requests an address even if the Managed bit
-	       in RA is 0 and it keeps retrying if it receives a reply
-	       stating that no addresses are available. We solve this 
-	       by not replying at all if we're not configured to give any 
-	       addresses by DHCPv6. RFC 3315 17.2.1. appears to allow this. */
-	    
-	    for (c = state->context; c; c = c->current)
-	      if (!(c->flags & CONTEXT_RA_STATELESS))
-		break;
-	    
-	    if (!c)
-	      return 0;
-	    
 	    /* no address, return error */
 	    o1 = new_opt6(OPTION6_STATUS_CODE);
 	    put_opt6_short(DHCP6NOADDRS);
 	    put_opt6_string(_("no addresses available"));
 	    end_opt6(o1);
-	    log6_packet(state, state->lease_allocate ? "DHCPREPLY" : "DHCPADVERTISE", NULL, _("no addresses available"));
+
+	    /* Some clients will ask repeatedly when we're not giving
+	       out addresses because we're in stateless mode. Avoid spamming
+	       the log in that case. */
+	    for (c = state->context; c; c = c->current)
+	      if (!(c->flags & CONTEXT_RA_STATELESS))
+		{
+		  log6_packet(state, state->lease_allocate ? "DHCPREPLY" : "DHCPADVERTISE", NULL, _("no addresses available"));
+		  break;
+		}
 	  }
 
 	break;
@@ -1051,9 +1049,9 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
 		  {
 		    preferred_time = valid_time = 0;
 		    message = _("address invalid");
-		  }
+		  } 
 
-		if (message)
+		if (message && (message != state->hostname))
 		  log6_packet(state, "DHCPREPLY", req_addr, message);	
 		else
 		  log6_quiet(state, "DHCPREPLY", req_addr, message);
@@ -1093,7 +1091,7 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
 	      {
 		struct in6_addr *req_addr = opt6_ptr(ia_option, 0);
 		
-		if (!address6_available(state->context, req_addr, tagif, 1))
+		if (!address6_valid(state->context, req_addr, tagif, 1))
 		  {
 		    o1 = new_opt6(OPTION6_STATUS_CODE);
 		    put_opt6_short(DHCP6NOTONLINK);

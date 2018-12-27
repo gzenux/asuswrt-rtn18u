@@ -178,16 +178,9 @@ int wanlink_hook_dsl(int eid, webs_t wp, int argc, char_t **argv){
 //	    strcmp(wan_proto, "pptp") == 0 ||
 //	    strcmp(wan_proto, "l2tp") == 0) {
 //		int dhcpenable = nvram_get_int(strcat_r(prefix, "dhcpenable_x", tmp));
-//#if 1 /* TODO: tmporary change! remove after WEB UI support */
-//		if (strcmp(wan_proto, "pppoe") == 0 &&
-//		    dhcpenable && nvram_match(strcat_r(prefix, "vpndhcp", tmp), "0"))
-//			dhcpenable = 2;
-//#endif /* TODO: tmporary change! remove after WEB UI support */
-//
-//		if (dhcpenable == 0)
-//			xtype = "static";
-//		else if (dhcpenable != 2 || strcmp(wan_proto, "pppoe") != 0)
-//			xtype = "dhcp";
+//		xtype = (dhcpenable == 0) ? "static" :
+//			(strcmp(wan_proto, "pppoe") == 0 && nvram_match(strcat_r(prefix, "vpndhcp", tmp), "0")) ? "" : /* zeroconf */
+//			"dhcp";
 //		xip = nvram_safe_get(strcat_r(prefix, "xipaddr", tmp));
 //		xnetmask = nvram_safe_get(strcat_r(prefix, "xnetmask", tmp));
 //		xgateway = nvram_safe_get(strcat_r(prefix, "xgateway", tmp));
@@ -256,7 +249,11 @@ int ej_get_DSL_WAN_list(int eid, webs_t wp, int argc, char_t **argv){
 
 	if(nvram_match("dsltmp_transmode", "atm")) {
 		char *display_items[] = {"dsl_enable", "dsl_vpi", "dsl_vci","dsl_proto", "dsl_encap", 
-			"dsl_svc_cat", "dsl_pcr","dsl_scr","dsl_mbs",NULL};
+			"dsl_svc_cat", "dsl_pcr","dsl_scr","dsl_mbs",
+#ifdef RTCONFIG_DSL_TCLINUX
+			"dsl_dot1q", "dsl_vid", "dsl_dot1p",
+#endif
+			NULL};
 
 		for ( unit = 0; unit<8; unit++ ) {
 			snprintf(prefix, sizeof(prefix), "dsl%d_", unit);
@@ -288,7 +285,7 @@ int ej_get_DSL_WAN_list(int eid, webs_t wp, int argc, char_t **argv){
 		}
 	}
 	else {	//ptm
-		char *display_items[] = {"dsl_enable", "dsl_proto", "dsl_dot1q", "dsl_vid", NULL};
+		char *display_items[] = {"dsl_enable", "dsl_proto", "dsl_dot1q", "dsl_vid", "dsl_dot1p", NULL};
 
 		for ( unit = 0; unit<8; unit++ ) {
 			if(unit)

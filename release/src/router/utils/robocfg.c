@@ -59,6 +59,8 @@ typedef u_int8_t u8;
 #define SIOCGETCROBORD		(SIOCDEVPRIVATE + 14)
 #define SIOCSETCROBOWR		(SIOCDEVPRIVATE + 15)
 
+#define ROBO_DEVICE_ID		0x30
+
 typedef struct {
 	struct ifreq ifr;
 	int fd;
@@ -66,6 +68,7 @@ typedef struct {
 	u8 gmii;		/* gigabit mii */
 } robo_t;
 
+#ifndef BCM5301X
 static u16 __mdio_access(robo_t *robo, u16 phy_id, u8 reg, u16 val, u16 wr)
 {
 	static int __ioctl_args[2][3] = { {SIOCGETCPHYRD, SIOCGETCPHYRD2, SIOCGMIIREG},
@@ -145,62 +148,137 @@ static int robo_reg(robo_t *robo, u8 page, u8 reg, u8 op)
 
 	return 0;
 }
+#else
+
+static u16 robo_read16(robo_t *robo, u8 page, u8 reg);
+static u32 robo_read32(robo_t *robo, u8 page, u8 reg);
+static void robo_write16(robo_t *robo, u8 page, u8 reg, u16 val16);
+static void robo_write32(robo_t *robo, u8 page, u8 reg, u32 val32);
+
+static inline u16 mdio_read(robo_t *robo, u16 phy_id, u8 reg)
+{
+	return robo_read16(robo, 0x10 + phy_id, reg);
+}
+
+static inline void mdio_write(robo_t *robo, u16 phy_id, u8 reg, u16 val)
+{
+	robo_write16(robo, 0x10 + phy_id, reg, val);
+}
+
+static int _robo_reg(robo_t *robo, u8 page, u8 reg, u8 op)
+{
+	return 0;
+}
+#endif
 
 static void robo_read(robo_t *robo, u8 page, u8 reg, u16 *val, int count)
 {
+#ifdef BCM5301X
+	int args[5];
+
+	args[0] = (page << 16) | (reg & 0xffff);
+	args[1] = count * 2;
+	args[2] = 0;
+
+	robo->ifr.ifr_data = (caddr_t) args;
+
+	if (ioctl(robo->fd, SIOCGETCROBORD, (caddr_t)&robo->ifr) < 0)
+		return;
+
+	memcpy(val, &args[2], count * 2);
+#else
 	int i;
 	
 	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
 	
 	for (i = 0; i < count; i++)
 		val[i] = mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + i);
+#endif
 }
 
 static u16 robo_read16(robo_t *robo, u8 page, u8 reg)
 {
+#ifdef BCM5301X
+	u16 val16;
+
+	robo_read(robo, page, reg, &val16, 1);
+	return val16;
+#else
 	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
 	
 	return mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0);
+#endif
 }
 
 static u32 robo_read32(robo_t *robo, u8 page, u8 reg)
 {
+#ifdef BCM5301X
+	u32 val32;
+
+	robo_read(robo, page, reg, (u16 *) &val32, 2);
+	return val32;
+#else
 	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
 	
 	return ((u32 )mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0)) |
 		((u32 )mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + 1) << 16);
+#endif
 }
 
 static void robo_write(robo_t *robo, u8 page, u8 reg, u16 *val, int count)
 {
+#ifdef BCM5301X
+	int args[5];
+
+	args[0] = (page << 16) | (reg & 0xffff);
+	args[1] = count * 2;
+	memcpy(&args[2], val, count * 2);
+
+	robo->ifr.ifr_data = (caddr_t) args;
+
+	ioctl(robo->fd, SIOCSETCROBOWR, (caddr_t)&robo->ifr);
+#else
 	int i;
 
 	for (i = 0; i < count; i++)
 		mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + i, val[i]);
 
 	robo_reg(robo, page, reg, REG_MII_ADDR_WRITE);
+#endif
 }
 
 static void robo_write16(robo_t *robo, u8 page, u8 reg, u16 val16)
 {
+#ifdef BCM5301X
+	robo_write(robo, page, reg, &val16, 1);
+#else
 	/* write data */
 	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0, val16);
 
 	robo_reg(robo, page, reg, REG_MII_ADDR_WRITE);
+#endif
 }
 
 static void robo_write32(robo_t *robo, u8 page, u8 reg, u32 val32)
 {
+#ifdef BCM5301X
+	robo_write(robo, page, reg, (u16 *) &val32, 2);
+#else
 	/* write data */
 	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0, (u16 )(val32 & 0xFFFF));
 	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + 1, (u16 )(val32 >> 16));
 	
 	robo_reg(robo, page, reg, REG_MII_ADDR_WRITE);
+#endif
 }
 
-/* checks that attached switch is 5325/5352/5354/5356/5357/53115 */
+/* checks that attached switch is 5325/5352/5354/5356/5357/53115/5301x */
 static int robo_vlan535x(robo_t *robo, u32 phyid)
 {
+#ifdef BCM5301X
+	if ((robo_read32(robo, ROBO_MGMT_PAGE, ROBO_DEVICE_ID) & 0xfffffff0) == 0x53010)
+		return 5;
+#else
 	/* set vlan access id to 15 and read it back */
 	u16 val16 = 15;
 	robo_write16(robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
@@ -226,6 +304,7 @@ static int robo_vlan535x(robo_t *robo, u32 phyid)
 		return 3;
 	/* 5325/5352/5354*/
 	return 1;
+#endif
 }
 
 u8 port[9] = { 0, 1, 2, 3, 4, 8, 0, 0, 8};
@@ -305,7 +384,7 @@ main(int argc, char *argv[])
 	u32 val32;
 	u16 mac[3];
 	int i = 0, j;
-	int robo535x = 0; /* 0 - 5365, 1 - 5325/5352/5354, 3 - 5356, 4 - 53115 */
+	int robo535x = 0; /* 0 - 5365, 1 - 5325/5352/5354, 3 - 5356, 4 - 53115, 5 - 5301x */
 	u32 phyid;
 	
 	static robo_t robo;
@@ -326,7 +405,8 @@ main(int argc, char *argv[])
 		perror("SIOCETHTOOL: your ethernet module is either unsupported or outdated");
 		exit(1);
 	} else
-	if (strcmp(info.driver, "et0") && strcmp(info.driver, "b44")) {
+	if (strcmp(info.driver, "et0") && strcmp(info.driver, "et1") &&
+	    strcmp(info.driver, "b44")) {
 		fprintf(stderr, "No suitable module found for %s (managed by %s)\n", 
 			robo.ifr.ifr_name, info.driver);
 		exit(1);
@@ -377,13 +457,13 @@ main(int argc, char *argv[])
 				"VLAN  MAC                Type     Port\n"
 				"--------------------------------------\n");
 			robo_write16(&robo, ROBO_ARLIO_PAGE, ROBO_ARL_RW_CTRL, 0x81);
-			robo_write16(&robo, ROBO_ARLIO_PAGE, (robo535x == 4) ?
+			robo_write16(&robo, ROBO_ARLIO_PAGE, (robo535x >= 4) ?
 			    ROBO_ARL_SEARCH_CTRL_53115 : ROBO_ARL_SEARCH_CTRL, 0x80);
-			for (idx = 0; idx < ((robo535x == 4) ?
+			for (idx = 0; idx < ((robo535x >= 4) ?
 				NUM_ARL_TABLE_ENTRIES_53115 : robo535x ?
 				NUM_ARL_TABLE_ENTRIES_5350 : NUM_ARL_TABLE_ENTRIES); idx++)
 			{
-				if (robo535x == 4)
+				if (robo535x >= 4)
 				{
 					off = (idx & 0x01) << 4;
 					if (!off && (robo_read16(&robo, ROBO_ARLIO_PAGE,
@@ -395,19 +475,19 @@ main(int argc, char *argv[])
 				} else
 					robo_read(&robo, ROBO_ARLIO_PAGE, ROBO_ARL_SEARCH_RESULT, 
 					    buf, robo535x ? 4 : 5);
-				if ((robo535x == 4) ? (buf[5] & 0x01) : (buf[3] & 0x8000) /* valid */)
+				if ((robo535x >= 4) ? (buf[5] & 0x01) : (buf[3] & 0x8000) /* valid */)
 				{
 					printf("%04i  %02x:%02x:%02x:%02x:%02x:%02x  %7s  %c\n",
-						(base_vlan | (robo535x == 4) ?
+						(base_vlan | (robo535x >= 4) ?
 						    (base_vlan | (buf[3] & 0xfff)) :
 						    ((buf[3] >> 5) & 0x0f) |
 							(robo535x ? 0 : ((buf[4] & 0x0f) << 4))),
 						buf[2] >> 8, buf[2] & 255, 
 						buf[1] >> 8, buf[1] & 255,
 						buf[0] >> 8, buf[0] & 255,
-						((robo535x == 4 ?
+						((robo535x >= 4 ?
 						    (buf[4] & 0x8000) : (buf[3] & 0x4000)) ? "STATIC" : "DYNAMIC"),
-						((robo535x == 4) ?
+						((robo535x >= 4) ?
 						    '0'+(buf[4] & 0x0f) : ports[buf[3] & 0x0f])
 					);
 				}
@@ -443,7 +523,7 @@ main(int argc, char *argv[])
 				} else
 				if (strcasecmp(argv[i], "media") == 0 && ++i < argc) {
 					for (j = 0; j < 7 && strcasecmp(argv[i], media[j].name); j++);
-					if (j < ((robo535x == 4) ? 7 : 5)) {
+					if (j < ((robo535x >= 4) ? 7 : 5)) {
 						/* change media */
                                     		mdio_write(&robo, port[index], MII_BMCR, media[j].bmcr);
 					} else {
@@ -455,7 +535,7 @@ main(int argc, char *argv[])
 					for (j = 0; j < 3 && strcasecmp(argv[i], mdix[j].name); j++);
 					if (j < 3) {
 						/* change mdi-x */
-						if (robo535x == 4) {
+						if (robo535x >= 4) {
 							mdio_write(&robo, port[index], 0x10, mdix[j].value1 |
 							    (mdio_read(&robo, port[index], 0x10) & ~0x4000));
 							mdio_write(&robo, port[index], 0x18, 0x7007);
@@ -478,7 +558,7 @@ main(int argc, char *argv[])
 				} else
 				if (strcasecmp(argv[i], "jumbo") == 0 && ++i < argc) {
 					for (j = 0; j < 2 && strcasecmp(argv[i], jumbo[j]); j++);
-					if (robo535x == 4 && j < 2) {
+					if (robo535x >= 4 && j < 2) {
 						/* change jumbo frame feature */
 						robo_write32(&robo, ROBO_JUMBO_PAGE, ROBO_JUMBO_CTRL,
 							(robo_read32(&robo, ROBO_JUMBO_PAGE, ROBO_JUMBO_CTRL) &
@@ -524,7 +604,7 @@ main(int argc, char *argv[])
 					} else {
 						/* write config now */
 						val16 = (vid) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
-						if (robo535x == 4) {
+						if (robo535x >= 4) {
 							val32 = (untag << 9) | member;
 							/* entry */
 							robo_write32(&robo, ROBO_ARLIO_PAGE, ROBO_VTBL_ENTRY_5395, val32);
@@ -561,7 +641,7 @@ main(int argc, char *argv[])
 		{
 			while (++i < argc) {
 				if (strcasecmp(argv[i], "reset") == 0) {
-					if (robo535x == 4) {
+					if (robo535x >= 4) {
 						robo_write16(&robo, ROBO_ARLIO_PAGE, ROBO_VTBL_ACCESS_5395,
 									 (1 << 7) /* start */ | 2 /* flush */);
 					} else
@@ -683,11 +763,11 @@ main(int argc, char *argv[])
 	for (i = 0; i < 6; i++) {
 		printf(robo_read16(&robo, ROBO_STAT_PAGE, ROBO_LINK_STAT_SUMMARY) & (1 << port[i]) ?
 			"Port %d: %4s%s " : "Port %d:   DOWN ",
-			(robo535x == 4) ? port[i] : i,
-			speed[(robo535x == 4) ?
+			(robo535x >= 4) ? port[i] : i,
+			speed[(robo535x >= 4) ?
 				(robo_read32(&robo, ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY) >> port[i] * 2) & 3 :
 				(robo_read16(&robo, ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY) >> port[i]) & 1],
-			robo_read16(&robo, ROBO_STAT_PAGE, (robo535x == 4) ?
+			robo_read16(&robo, ROBO_STAT_PAGE, (robo535x >= 4) ?
 				ROBO_DUPLEX_STAT_SUMMARY_53115 : ROBO_DUPLEX_STAT_SUMMARY) & (1 << port[i]) ? "FD" : "HD");
 
 		val16 = robo_read16(&robo, ROBO_CTRL_PAGE, port[i]);
@@ -695,7 +775,7 @@ main(int argc, char *argv[])
 		printf("%s stp: %s vlan: %d ", rxtx[val16 & 3], stp[(val16 >> 5) & 7],
 			robo_read16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (i << 1)));
 
-		if (robo535x == 4)
+		if (robo535x >= 4)
 			printf("jumbo: %s ", jumbo[(robo_read32(&robo, ROBO_JUMBO_PAGE, ROBO_JUMBO_CTRL) >> port[i]) & 1]);
 
 		robo_read(&robo, ROBO_STAT_PAGE, ROBO_LSA_PORT0 + port[i] * 6, mac, 3);
@@ -707,19 +787,20 @@ main(int argc, char *argv[])
 	val16 = robo_read16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0);
 	
 	printf("VLANs: %s %sabled%s%s\n", 
+		(robo535x == 5) ? "BCM5301x" :
 		(robo535x == 4) ? "BCM53115" : (robo535x ? "BCM5325/535x" : "BCM536x"),
 		(val16 & (1 << 7)) ? "en" : "dis", 
 		(val16 & (1 << 6)) ? " mac_check" : "", 
 		(val16 & (1 << 5)) ? " mac_hash" : "");
 	
 	/* scan VLANs */
-	for (i = 0; i <= ((robo535x == 4) ? VLAN_ID_MAX5395 /* slow, needs rework, but how? */ :
+	for (i = 0; i <= ((robo535x >= 4) ? VLAN_ID_MAX5395 /* slow, needs rework, but how? */ :
 			  (robo535x ? VLAN_ID_MAX5350 : VLAN_ID_MAX)); i++)
 	{
 		/* issue read */
 		val16 = (i) /* vlan */ | (0 << 12) /* read */ | (1 << 13) /* enable */;
 		
-		if (robo535x == 4) {
+		if (robo535x >= 4) {
 			/* index */
 			robo_write16(&robo, ROBO_ARLIO_PAGE, ROBO_VTBL_INDX_5395, i);
 			/* access */

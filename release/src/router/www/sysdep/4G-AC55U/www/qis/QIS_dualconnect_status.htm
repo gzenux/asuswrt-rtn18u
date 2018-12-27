@@ -60,9 +60,9 @@ function initial(){
 			document.getElementById("success_img").style.display = "";
 			document.getElementById("success_desc").innerHTML = "<#QIS_dualconnect_desc1#>";
 			document.getElementById("success_desc").style.display = "";
-			hint_str = "<style style=\"text/css\"> a{text-decoration:none;font-weight: bold; font-style: italic; cursor: pointer;} a:hover{text-decoration:underline;}</style>";
-			hint_str += "Note: If you want to connect to the internet service via \"3G/4G network\", click <a onclick=\"redirect_page('unplug_sim');\">\"Configure Another WAN\"</a>.";
-			hint_str += " The following process will guide you to complete the setting of the 3G/4G internet.";
+			hint_str = "<style style=\"text/css\"> a{text-decoration:underline;font-weight: bold; font-style: italic; cursor: pointer;} a:hover{text-decoration:underline;}</style>";
+			hint_str += "<#QIS_dualconnect_hint11#>";
+			hint_str += "<#QIS_dualconnect_hint12#>";
 			document.getElementById("dualwan_hint").innerHTML = hint_str;
 			eth_wan = 1;
 		}
@@ -73,9 +73,9 @@ function initial(){
 			document.getElementById("success_img").style.display = "";
 			document.getElementById("success_desc").innerHTML = "<#QIS_dualconnect_desc3#>";
 			document.getElementById("success_desc").style.display = "";
-			hint_str = "<style style=\"text/css\"> a{text-decoration:none;font-weight: bold; font-style: italic; cursor: pointer;} a:hover{text-decoration:underline;}</style>";
-			hint_str += "Note: If you want to connect to the internet service via \"Ethernet WAN\", click <a onclick=\"redirect_page('unplug_ewan');\">\"Configure Another WAN\"</a>.";
-			hint_str += " The following process will guide you to complete the setting of the Ethernet WAN.";
+			hint_str = "<style style=\"text/css\"> a{text-decoration:underline;font-weight: bold; font-style: italic; cursor: pointer;} a:hover{text-decoration:underline;}</style>";
+			hint_str += "<#QIS_dualconnect_hint21#>";
+			hint_str += "<#QIS_dualconnect_hint22#>";
 			document.getElementById("dualwan_hint").innerHTML = hint_str;
 			sim_wan = 1;	
 		}		
@@ -224,7 +224,7 @@ function update_wan_info(flag){
 		<div class='apply_gen'>
 			<div id="fresharea">
 				<!--input type="button" id="detectAgain" class="button_gen_long" onclick="update_wan_info();" value="<#CTL_Detect_Again#>"-->
-				<input type="button" id="next" value="<#btn_next#>" onclick="redirect_page('wireless');" class="button_gen">
+				<input type="button" id="next" value="<#CTL_next#>" onclick="redirect_page('wireless');" class="button_gen">
 				<img id="loadingIcon" style="display:none;" src="/images/InternetScan.gif">
 			</div>
 		</div>

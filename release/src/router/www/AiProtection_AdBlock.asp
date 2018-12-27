@@ -40,11 +40,11 @@
 }
 </style>
 <script>
-var $j = jQuery.noConflict();
+
 
 function initial(){
 	show_menu();
-	document.getElementById("_AiProtection_HomeSecurity").innerHTML = '<table><tbody><tr><td><div class="_AiProtection_HomeSecurity"></div></td><td><div style="width:120px;">AiProtection</div></td></tr></tbody></table>';
+	document.getElementById("_AiProtection_HomeSecurity").innerHTML = '<table><tbody><tr><td><div class="_AiProtection_HomeSecurity"></div></td><td><div style="width:120px;"><#AiProtection_title#></div></td></tr></tbody></table>';
 	document.getElementById("_AiProtection_HomeSecurity").className = "menu_clicked";
 	register_event();
 }
@@ -108,7 +108,7 @@ function register_event(){
 									<table width="730px">
 										<tr>
 											<td align="left">
-												<div class="formfonttitle" style="width:400px">AiProtection - Ad Blocking</div>
+												<div class="formfonttitle" style="width:400px"><#AiProtection_title#> - Ad Blocking</div>
 											</td>
 										</tr>
 									</table>
@@ -136,7 +136,7 @@ function register_event(){
 											<div align="center" class="left" style="width:94px; float:left; cursor:pointer;" id="stream_ad_enable"></div>
 											<div class="iphone_switch_container" style="height:32px; width:74px; position: relative; overflow: hidden">
 												<script type="text/javascript">
-													$j('#stream_ad_enable').iphoneSwitch('<% nvram_get("wrs_adblock_stream"); %>',
+													$('#stream_ad_enable').iphoneSwitch('<% nvram_get("wrs_adblock_stream"); %>',
 														function(){
 															document.form.wrs_adblock_stream.value = 1;	
 															applyRule();
@@ -156,7 +156,7 @@ function register_event(){
 											<div align="center" class="left" style="width:94px; float:left; cursor:pointer;" id="pop_ad_enable"></div>
 											<div class="iphone_switch_container" style="height:32px; width:74px; position: relative; overflow: hidden">
 												<script type="text/javascript">
-													$j('#pop_ad_enable').iphoneSwitch('<% nvram_get("wrs_adblock_popup"); %>',
+													$('#pop_ad_enable').iphoneSwitch('<% nvram_get("wrs_adblock_popup"); %>',
 														function(){
 															document.form.wrs_adblock_popup.value = 1;
 															applyRule();

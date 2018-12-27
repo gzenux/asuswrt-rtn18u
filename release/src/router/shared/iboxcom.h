@@ -1,4 +1,8 @@
 /************************************************************/
+/*  Version 2.4     by Cheni      2015/5/27		    */
+/*  HW Control Info                                         */
+/************************************************************/
+/************************************************************/
 /*  Version 2.3     by Cheni      2014/01/15	            */
 /*  AAE and API Level Info                                  */
 /************************************************************/
@@ -215,6 +219,8 @@ typedef struct ws_info_t	{
 #define EXTEND_CAP_MEDIA		0x0004
 
 #define EXTEND_CAP_AAE_BASIC		0x0010
+#define EXTEND_CAP_HWCTRL		0x0020
+#define EXTEND_CAP_SWCTRL		0x0040
 
 #define EXTEND_WEBDAV_TYPE_HTTP		0x00
 #define EXTEND_WEBDAV_TYPE_HTTPS	0x01
@@ -238,11 +244,31 @@ typedef struct webdav_info_t {
 	WORD HttpsPort;
 } WEBDAV_INFO_T;
 
+typedef struct hwctrl_info_t {
+        BYTE EnableLed;
+        BYTE EnableBuzz;
+	BYTE Reserved[14];
+} HWCTRL_INFO_T;
+
+typedef struct swctrl_info_t {
+	BYTE ROGAPILevel;
+	BYTE AiHOMEAPILevel;
+	BYTE AiProtectionAPILevel;
+	BYTE Reserved[13];
+} SWCTRL_INFO_T;
+
+typedef struct device_info_t {
+	WEBDAV_INFO_T wt;
+	HWCTRL_INFO_T hw;
+	SWCTRL_INFO_T sw;
+} DEVICE_INFO_T;
+
 typedef struct storage_info_t {
 	WORD MagicWord;
 	WORD ExtendCap;
 	union {
 		WEBDAV_INFO_T wt;
+		DEVICE_INFO_T dev;
 		BYTE Reserved[128];
 	} u;
 	WORD AppHttpPort;      	/* Port for accessing app UI */
@@ -250,7 +276,6 @@ typedef struct storage_info_t {
 	BYTE EnableAAE;	
 	BYTE AAEDeviceID[64];
 } STORAGE_INFO_T;
-
 
 typedef struct PktGetInfoEx1
 {

@@ -939,14 +939,14 @@ find_in_list(const char *haystack, const char *needle)
 int
 remove_from_list(const char *name, char *list, int listsize)
 {
-	int listlen = 0;
+//	int listlen = 0;
 	int namelen = 0;
 	char *occurrence = list;
 
 	if (!list || !name || (listsize <= 0))
 		return EINVAL;
 
-	listlen = strlen(list);
+//	listlen = strlen(list);
 	namelen = strlen(name);
 
 	occurrence = find_in_list(occurrence, name);
@@ -1056,6 +1056,44 @@ remove_dups(char *inlist, int inlist_size)
 	free(outlist);
 	return inlist;
 
+}
+
+/* Initialization of strbuf structure */
+void
+str_binit(struct strbuf *b, char *buf, unsigned int size)
+{
+        b->origsize = b->size = size;
+        b->origbuf = b->buf = buf;
+}
+
+/* Buffer sprintf wrapper to guard against buffer overflow */
+int
+str_bprintf(struct strbuf *b, const char *fmt, ...) 
+{
+        va_list ap; 
+        int r;
+
+        va_start(ap, fmt);
+
+        r = vsnprintf(b->buf, b->size, fmt, ap);
+
+	/* Non Ansi C99 compliant returns -1,
+	 * Ansi compliant return r >= b->size,
+	 * bcmstdlib returns 0, handle all
+	 */
+	/* r == 0 is also the case when strlen(fmt) is zero.
+	 * typically the case when "" is passed as argument.
+	 */
+        if ((r == -1) || (r >= (int)b->size)) {
+                b->size = 0;
+        } else {
+                b->size -= r;
+                b->buf += r;
+        }
+
+        va_end(ap);
+
+        return r;
 }
 
 /*
@@ -1668,7 +1706,7 @@ void
 shortstr_encrypt(unsigned char *src, unsigned char *dst, unsigned char *shift)
 {
     unsigned char carry, temp, bytes, bits;
-    char i;
+    int i;
 
     bytes = (*shift % (DATA_WORDS_LEN - 1)) + 1;
     for(i=0; i<DATA_WORDS_LEN; i++) {
@@ -1693,7 +1731,7 @@ void
 shortstr_decrypt(unsigned char *src, unsigned char *dst, unsigned char shift)
 {
     unsigned char carry, temp, bytes, bits;
-    char i;
+    int i;
 
     for(i=0; i<DATA_WORDS_LEN; i++) {
         src[i] ^= ENC_XOR + i * 5;
@@ -1745,4 +1783,33 @@ char *dec_str(char *ec_str, char *dec_buf)
         shortstr_decrypt(buf, dec_buf, used_shift);
 
         return dec_buf;
+}
+
+int
+strArgs(int argc, char **argv, char *fmt, ...)
+{
+	va_list	ap;
+	int arg;
+	char *c;
+
+	if (!argv)
+		return 0;
+
+	va_start(ap, fmt);
+	for (arg = 0, c = fmt; c && *c && arg < argc;) {
+		if (*c++ != '%')
+			continue;
+		switch (*c) {
+		case 'd':
+			*(va_arg(ap, int *)) = atoi(argv[arg]);
+			break;
+		case 's':
+			*(va_arg(ap, char **)) = argv[arg];
+			break;
+		}
+		arg++;
+	}
+	va_end(ap);
+
+	return arg;
 }

@@ -44,19 +44,19 @@ function showadslbootTime(){
 		Minutes = Math.floor(adsl_boottime % 3600 / 60);
 		Seconds = Math.floor(adsl_boottime % 60);
 
-		$("boot_days").innerHTML = Days;
-		$("boot_hours").innerHTML = Hours;
-		$("boot_minutes").innerHTML = Minutes;
-		$("boot_seconds").innerHTML = Seconds;
+		document.getElementById("boot_days").innerHTML = Days;
+		document.getElementById("boot_hours").innerHTML = Hours;
+		document.getElementById("boot_minutes").innerHTML = Minutes;
+		document.getElementById("boot_seconds").innerHTML = Seconds;
 		adsl_boottime += 1;
 		setTimeout("showadslbootTime()", 1000);
 	}
 	else
 	{
-		$("boot_days").innerHTML = "0";
-		$("boot_hours").innerHTML = "0";
-		$("boot_minutes").innerHTML = "0";
-		$("boot_seconds").innerHTML = "0";
+		document.getElementById("boot_days").innerHTML = "0";
+		document.getElementById("boot_hours").innerHTML = "0";
+		document.getElementById("boot_minutes").innerHTML = "0";
+		document.getElementById("boot_seconds").innerHTML = "0";
 	}
 }
 

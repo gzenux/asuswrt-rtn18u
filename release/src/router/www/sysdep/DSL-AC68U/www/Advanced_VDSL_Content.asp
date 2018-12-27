@@ -123,12 +123,12 @@ function add_pvc() {
 
 	change_dsl_dhcp_enable();
 	change_dsl_dns_enable();
-	$("dslSettings").style.display = "";
+	document.getElementById("dslSettings").style.display = "";
 
-	$("IPsetting").style.display = "none";
-	$("DNSsetting").style.display = "none";
-	$("PPPsetting").style.display = "none";
-	$("vpn_server").style.display = "none";
+	document.getElementById("IPsetting").style.display = "none";
+	document.getElementById("DNSsetting").style.display = "none";
+	document.getElementById("PPPsetting").style.display = "none";
+	document.getElementById("vpn_server").style.display = "none";
 
 	change_dsl_type(document.form.dsl_proto.value);
 	fixed_change_dsl_type(document.form.dsl_proto.value);
@@ -302,7 +302,7 @@ function initial(){
 	change_wan_unit(document.form.wan_unit);
 
 	if(!dualWAN_support && !vdsl_support) {
-		$("WANscap").style.display = "none";
+		document.getElementById("WANscap").style.display = "none";
 	}
 
 	//change_dsl_type(document.form.dsl_proto.value);		//Viz add
@@ -319,9 +319,9 @@ function change_wan_unit(obj){
 		}
 
 		if(document.form.dsltmp_transmode.value == document.form.dslx_transmode.value)
-			$("active_dslmode").innerHTML = "( Active )";
+			document.getElementById("active_dslmode").innerHTML = "( Active )";
 		else
-			$("active_dslmode").innerHTML = "( Not Active )";
+			document.getElementById("active_dslmode").innerHTML = "( Not Active )";
 
 	}else if(document.form.dsltmp_transmode){
 		document.form.dsltmp_transmode.style.display = "none";
@@ -383,21 +383,22 @@ function change_dsl_unit_idx(idx,iptv_row){
 	document.form.dsl_proto.value = DSLWANList[iptv_row][1];
 	document.form.dsl_dot1q.value = DSLWANList[iptv_row][2];
 	document.form.dsl_vid.value = DSLWANList[iptv_row][3];
+	document.form.dsl_dot1p.value = DSLWANList[iptv_row][4];
 
 	change_dsl_dhcp_enable();
 	change_dsl_dns_enable();
-	$("dslSettings").style.display = "";
+	document.getElementById("dslSettings").style.display = "";
 	if (document.form.dsl_proto.value != "bridge") {
-		$("IPsetting").style.display = "";
-		$("DNSsetting").style.display = "";
-		$("PPPsetting").style.display = "";
-		$("vpn_server").style.display = "";
+		document.getElementById("IPsetting").style.display = "";
+		document.getElementById("DNSsetting").style.display = "";
+		document.getElementById("PPPsetting").style.display = "";
+		document.getElementById("vpn_server").style.display = "";
 	}
 	else {
-		$("IPsetting").style.display = "none";
-		$("DNSsetting").style.display = "none";
-		$("PPPsetting").style.display = "none";
-		$("vpn_server").style.display = "none";
+		document.getElementById("IPsetting").style.display = "none";
+		document.getElementById("DNSsetting").style.display = "none";
+		document.getElementById("PPPsetting").style.display = "none";
+		document.getElementById("vpn_server").style.display = "none";
 	}
 }
 
@@ -607,7 +608,7 @@ function validForm(){
 	}
 
 	if(document.form.dsl_proto.value == "pppoe"){
-		if(!validator.numberRange(document.form.dslx_pppoe_mtu, 576, 1492))
+		if(!validator.numberRange(document.form.dslx_pppoe_mtu, 128, 1492))
 			return false;
 
 		if(!validator.string(document.form.dslx_pppoe_service)
@@ -630,35 +631,35 @@ function done_validating(action){
 }
 
 function disable_pvc_summary() {
-	$("DSL_WAN_table").style.display = "none";
+	document.getElementById("DSL_WAN_table").style.display = "none";
 }
 
 function enable_pvc_summary() {
-	$("DSL_WAN_table").style.display = "";
+	document.getElementById("DSL_WAN_table").style.display = "";
 }
 
 function disable_all_ctrl() {
-	$("desc_default").style.display = "";
-	$("desc_edit").style.display = "none";
-	$("dslSettings").style.display = "none";
-	$("PPPsetting").style.display = "none";
-	$("DNSsetting").style.display = "none";
-	$("dot1q_setting").style.display = "none";
-	$("IPsetting").style.display = "none";
-	$("vpn_server").style.display = "none";
-	$("btn_apply").style.display = "none";
+	document.getElementById("desc_default").style.display = "";
+	document.getElementById("desc_edit").style.display = "none";
+	document.getElementById("dslSettings").style.display = "none";
+	document.getElementById("PPPsetting").style.display = "none";
+	document.getElementById("DNSsetting").style.display = "none";
+	document.getElementById("dot1q_setting").style.display = "none";
+	document.getElementById("IPsetting").style.display = "none";
+	document.getElementById("vpn_server").style.display = "none";
+	document.getElementById("btn_apply").style.display = "none";
 }
 
 function enable_all_ctrl() {
-	$("desc_default").style.display = "none";
-	$("desc_edit").style.display = "";
-	$("dslSettings").style.display = "";
-	$("PPPsetting").style.display = "";
-	$("DNSsetting").style.display = "";
-	$("dot1q_setting").style.display = "";
-	$("IPsetting").style.display = "";
-	$("vpn_server").style.display = "";
-	$("btn_apply").style.display = "";
+	document.getElementById("desc_default").style.display = "none";
+	document.getElementById("desc_edit").style.display = "";
+	document.getElementById("dslSettings").style.display = "";
+	document.getElementById("PPPsetting").style.display = "";
+	document.getElementById("DNSsetting").style.display = "";
+	document.getElementById("dot1q_setting").style.display = "";
+	document.getElementById("IPsetting").style.display = "";
+	document.getElementById("vpn_server").style.display = "";
+	document.getElementById("btn_apply").style.display = "";
 }
 
 function change_dsl_type(dsl_type){
@@ -784,7 +785,7 @@ function fixed_change_dsl_type(dsl_type){
 	else if(dsl_type == "dhcp"){
 		inputCtrl(document.form.dslx_DHCPClient_x[0], 0);
 		inputCtrl(document.form.dslx_DHCPClient_x[1], 0);
-		$("IPsetting").style.display = "none";
+		document.getElementById("IPsetting").style.display = "none";
 		inputCtrl(document.form.dslx_hwaddr, 1);
 		inputCtrl(document.form.dslx_link_enable[0], 1);
 		inputCtrl(document.form.dslx_link_enable[1], 1);
@@ -883,7 +884,7 @@ function change_dsl_dhcp_enable(){
 		inputCtrl(document.form.dslx_ipaddr, !wan_dhcpenable);
 		inputCtrl(document.form.dslx_netmask, !wan_dhcpenable);
 		inputCtrl(document.form.dslx_gateway, !wan_dhcpenable);
-		$("IPsetting").style.display = "";
+		document.getElementById("IPsetting").style.display = "";
 
 		if(document.form.dslx_DHCPClient_x[1].checked)
 		{
@@ -897,7 +898,7 @@ function change_dsl_dhcp_enable(){
 		inputCtrl(document.form.dslx_ipaddr, 0);
 		inputCtrl(document.form.dslx_netmask, 0);
 		inputCtrl(document.form.dslx_gateway, 0);
-		$("IPsetting").style.display = "none";
+		document.getElementById("IPsetting").style.display = "none";
 
 		if(document.form.dslx_dnsenable[1].checked)
 		{
@@ -913,7 +914,7 @@ function change_dsl_dhcp_enable(){
 		inputCtrl(document.form.dslx_ipaddr, 1);
 		inputCtrl(document.form.dslx_netmask, 1);
 		inputCtrl(document.form.dslx_gateway, 1);
-		$("IPsetting").style.display = "";
+		document.getElementById("IPsetting").style.display = "";
 	}
 	else{	// dsl_type == bridge
 		document.form.dslx_DHCPClient_x[0].checked = 1;
@@ -923,7 +924,7 @@ function change_dsl_dhcp_enable(){
 		inputCtrl(document.form.dslx_ipaddr, 0);
 		inputCtrl(document.form.dslx_netmask, 0);
 		inputCtrl(document.form.dslx_gateway, 0);
-		$("IPsetting").style.display = "none";
+		document.getElementById("IPsetting").style.display = "none";
 	}
 
 	if(document.form.dslx_DHCPClient_x[0].checked){
@@ -942,17 +943,17 @@ function change_dsl_dhcp_enable(){
 /*
 function changeDSLunit(){
 	if(document.form.dsl_unit.value == 0){
-		$("PPPsetting").style.display = "";
-		$("DNSsetting").style.display = "";
-		$("IPsetting").style.display = "";
-		$("vpn_server").style.display = "";
+		document.getElementById("PPPsetting").style.display = "";
+		document.getElementById("DNSsetting").style.display = "";
+		document.getElementById("IPsetting").style.display = "";
+		document.getElementById("vpn_server").style.display = "";
 		inputCtrl(document.form.dsl_enable, 0);
 	}
 	else{
-		$("PPPsetting").style.display = "none";
-		$("DNSsetting").style.display = "none";
-		$("IPsetting").style.display = "none";
-		$("vpn_server").style.display = "none";
+		document.getElementById("PPPsetting").style.display = "none";
+		document.getElementById("DNSsetting").style.display = "none";
+		document.getElementById("IPsetting").style.display = "none";
+		document.getElementById("vpn_server").style.display = "none";
 		inputCtrl(document.form.dsl_enable, 1);
 	}
 }
@@ -968,17 +969,17 @@ function check_macaddr(obj,flag){ //control hint of input mac address
 		childsel.setAttribute("id","check_mac");
 		childsel.style.color="#FFCC00";
 		obj.parentNode.appendChild(childsel);
-		$("check_mac").innerHTML="<#LANHostConfig_ManualDHCPMacaddr_itemdesc#>";
+		document.getElementById("check_mac").innerHTML="<#LANHostConfig_ManualDHCPMacaddr_itemdesc#>";
 		return false;
 	}else if(flag ==2){
 		var childsel=document.createElement("div");
 		childsel.setAttribute("id","check_mac");
 		childsel.style.color="#FFCC00";
 		obj.parentNode.appendChild(childsel);
-		$("check_mac").innerHTML="<#IPConnection_x_illegal_mac#>";
+		document.getElementById("check_mac").innerHTML="<#IPConnection_x_illegal_mac#>";
 		return false;
 	}else{
-		$("check_mac") ? $("check_mac").style.display="none" : true;
+		document.getElementById("check_mac") ? document.getElementById("check_mac").style.display="none" : true;
 		return true;
 	}
 }
@@ -1152,7 +1153,7 @@ function pass_checked(obj){
 										<tr>
 											<th>VLAN ID</th>
 											<td>
-												<input type="text" name="dsl_vid" maxlength="4" class="input_6_table" value="<% nvram_get("dsl_vid"); %>" onKeyPress="return validator.isNumber(this,event);"> 0 - 4095
+												<input type="text" name="dsl_vid" maxlength="4" class="input_6_table" value="<% nvram_get("dsl_vid"); %>" onKeyPress="return validator.isNumber(this,event);" autocorrect="off" autocapitalize="off"> 0 - 4095
 											</td>
 										</tr>
 										<tr>
@@ -1183,7 +1184,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,1);"><#IPConnection_ExternalIPAddress_itemname#></a>
 											</th>
 											<td>
-												<input type="text" name="dslx_ipaddr" maxlength="15" class="input_15_table" value="<% nvram_get("dslx_ipaddr"); %>" onKeyPress="return validator.isIPAddr(this,event);">
+												<input type="text" name="dslx_ipaddr" maxlength="15" class="input_15_table" value="<% nvram_get("dslx_ipaddr"); %>" onKeyPress="return validator.isIPAddr(this,event);" autocorrect="off" autocapitalize="off">
 											</td>
 										</tr>
 
@@ -1192,7 +1193,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,2);"><#IPConnection_x_ExternalSubnetMask_itemname#></a>
 											</th>
 											<td>
-												<input type="text" name="dslx_netmask" maxlength="15" class="input_15_table" value="<% nvram_get("dslx_netmask"); %>" onKeyPress="return validator.isIPAddr(this,event);">
+												<input type="text" name="dslx_netmask" maxlength="15" class="input_15_table" value="<% nvram_get("dslx_netmask"); %>" onKeyPress="return validator.isIPAddr(this,event);" autocorrect="off" autocapitalize="off">
 											</td>
 										</tr>
 
@@ -1201,7 +1202,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,3);"><#IPConnection_x_ExternalGateway_itemname#></a>
 											</th>
 											<td>
-												<input type="text" name="dslx_gateway" maxlength="15" class="input_15_table" value="<% nvram_get("dslx_gateway"); %>" onKeyPress="return validator.isIPAddr(this,event);">
+												<input type="text" name="dslx_gateway" maxlength="15" class="input_15_table" value="<% nvram_get("dslx_gateway"); %>" onKeyPress="return validator.isIPAddr(this,event);" autocorrect="off" autocapitalize="off">
 											</td>
 										</tr>
 									</table>
@@ -1226,7 +1227,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,13);"><#IPConnection_x_DNSServer1_itemname#></a>
 											</th>
 											<td>
-												<input type="text" maxlength="15" class="input_15_table" name="dslx_dns1" value="<% nvram_get("dslx_dns1"); %>" onkeypress="return validator.isIPAddr(this,event)" />
+												<input type="text" maxlength="15" class="input_15_table" name="dslx_dns1" value="<% nvram_get("dslx_dns1"); %>" onkeypress="return validator.isIPAddr(this,event)" autocorrect="off" autocapitalize="off"/>
 											</td>
 										</tr>
 										<tr>
@@ -1234,7 +1235,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,14);"><#IPConnection_x_DNSServer2_itemname#></a>
 											</th>
 											<td>
-												<input type="text" maxlength="15" class="input_15_table" name="dslx_dns2" value="<% nvram_get("dslx_dns2"); %>" onkeypress="return validator.isIPAddr(this,event)" />
+												<input type="text" maxlength="15" class="input_15_table" name="dslx_dns2" value="<% nvram_get("dslx_dns2"); %>" onkeypress="return validator.isIPAddr(this,event)" autocorrect="off" autocapitalize="off"/>
 											</td>
 										</tr>
 									</table>
@@ -1249,7 +1250,7 @@ function pass_checked(obj){
 											<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a>
 										</th>
 										<td>
-											<input type="text" maxlength="64" class="input_32_table" name="dslx_pppoe_username" value="<% nvram_get("dslx_pppoe_username"); %>" onkeypress="return validator.isString(this, event)" onblur="" autocapitalization="off" autocomplete="off">
+											<input type="text" maxlength="64" class="input_32_table" name="dslx_pppoe_username" value="<% nvram_get("dslx_pppoe_username"); %>" onkeypress="return validator.isString(this, event)" onblur="" autocomplete="off" autocorrect="off" autocapitalize="off">
 										</td>
 
 										<tr>
@@ -1257,7 +1258,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,5);"><#PPPConnection_Password_itemname#></a>
 											</th>
 											<td>
-												<div style="margin-top:2px;"><input type="password" maxlength="64" class="input_32_table" id="dslx_pppoe_passwd" name="dslx_pppoe_passwd" value="<% nvram_get("dslx_pppoe_passwd"); %>" autocapitalization="off" autocomplete="off"></div>
+												<div style="margin-top:2px;"><input type="password" maxlength="64" class="input_32_table" id="dslx_pppoe_passwd" name="dslx_pppoe_passwd" value="<% nvram_get("dslx_pppoe_passwd"); %>" autocomplete="off" autocorrect="off" autocapitalize="off"></div>
 												<div style="margin-top:1px;"><input type="checkbox" name="show_pass_1" onclick="pass_checked(document.form.dslx_pppoe_passwd);"><#QIS_show_pass#></div>
 											</td>
 										</tr>
@@ -1276,7 +1277,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,6);"><#PPPConnection_IdleDisconnectTime_itemname#></a>
 											</th>
 											<td>
-												<input type="text" maxlength="10" class="input_12_table" name="dslx_pppoe_idletime" value="<% nvram_get("dslx_pppoe_idletime"); %>" onkeypress="return validator.isNumber(this,event)" />&nbsp<#Second#>
+												<input type="text" maxlength="10" class="input_12_table" name="dslx_pppoe_idletime" value="<% nvram_get("dslx_pppoe_idletime"); %>" onkeypress="return validator.isNumber(this,event)" autocorrect="off" autocapitalize="off"/>&nbsp<#Second#>
 											</td>
 										</tr>
 										<tr>
@@ -1284,7 +1285,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a>
 											</th>
 											<td>
-												<input type="text" maxlength="5" name="dslx_pppoe_mtu" class="input_6_table" value="<% nvram_get("dslx_pppoe_mtu"); %>" onKeyPress="return validator.isNumber(this,event);"/>&nbsp;576 - 1492
+												<input type="text" maxlength="5" name="dslx_pppoe_mtu" class="input_6_table" value="<% nvram_get("dslx_pppoe_mtu"); %>" onKeyPress="return validator.isNumber(this,event);" autocorrect="off" autocapitalize="off"/>&nbsp;128 - 1492
 											</td>
 										</tr>
 										<tr>
@@ -1292,7 +1293,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,9);"><#PPPConnection_x_ServiceName_itemname#></a>
 											</th>
 											<td>
-												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_service" value="<% nvram_get("dslx_pppoe_service"); %>" onkeypress="return validator.isString(this, event)" onblur=""/>
+												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_service" value="<% nvram_get("dslx_pppoe_service"); %>" onkeypress="return validator.isString(this, event)" onblur="" autocorrect="off" autocapitalize="off"/>
 											</td>
 										</tr>
 										<tr>
@@ -1300,7 +1301,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,10);"><#PPPConnection_x_AccessConcentrator_itemname#></a>
 											</th>
 											<td>
-												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_ac" value="<% nvram_get("dslx_pppoe_ac"); %>" onkeypress="return validator.isString(this, event)"/>
+												<input type="text" maxlength="32" class="input_32_table" name="dslx_pppoe_ac" value="<% nvram_get("dslx_pppoe_ac"); %>" onkeypress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off"/>
 											</td>
 										</tr>
 										<!-- 2008.03 James. patch for Oleg's patch. { -->
@@ -1309,7 +1310,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,18);"><#PPPConnection_x_AdditionalOptions_itemname#></a>
 											</th>
 											<td>
-												<input type="text" name="dslx_pppoe_options" value="<% nvram_get("dslx_pppoe_options"); %>" class="input_32_table" maxlength="255" onKeyPress="return validator.isString(this, event)" onBlur="validator.string(this)">
+												<input type="text" name="dslx_pppoe_options" value="<% nvram_get("dslx_pppoe_options"); %>" class="input_32_table" maxlength="255" onKeyPress="return validator.isString(this, event)" onBlur="validator.string(this)" autocorrect="off" autocapitalize="off">
 											</td>
 										</tr>
 										<!-- 2008.03 James. patch for Oleg's patch. } -->
@@ -1326,7 +1327,7 @@ function pass_checked(obj){
 												<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,16);"><#PPPConnection_x_MacAddressForISP_itemname#></a>
 											</th>
 											<td>
-												<input type="text" name="dslx_hwaddr" class="input_20_table" maxlength="17" value="<% nvram_get("dslx_hwaddr"); %>" onKeyPress="return validator.isHWAddr(this,event)">
+												<input type="text" name="dslx_hwaddr" class="input_20_table" maxlength="17" value="<% nvram_get("dslx_hwaddr"); %>" onKeyPress="return validator.isHWAddr(this,event)" autocorrect="off" autocapitalize="off">
 												<input type="button" class="button_gen_long" onclick="showMAC();" value="<#BOP_isp_MACclone#>">
 											</td>
 										</tr>

@@ -27,7 +27,7 @@ typedef li_MD5_CTX MD5_CTX;
 #define MD5_Final li_MD5_Final
 #endif
 
-#define DBE 1
+#define DBE 0
 #define LIGHTTPD_ARPPING_PID_FILE_PATH	"/tmp/lighttpd/lighttpd-arpping.pid"
 
 int file_exist(const char *filepath)
@@ -3429,6 +3429,15 @@ int check_skip_folder_name(char* foldername){
 	}	
 
 	return 0;
+}
+
+int prefix_is(char* source, char* prefix){
+	if(source==NULL||prefix==NULL)
+		return -1;
+	
+	int index = strstr(source, prefix) - source;
+	Cdbg(DBE, "prefix_is: source=%s, prefix=%s, index=%d", source, prefix, index);
+	return (index==0) ? 1 : -1;
 }
 #if 0
 int is_utf8_file(const char* file){

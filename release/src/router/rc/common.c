@@ -532,7 +532,7 @@ static int endswith_filter(const struct dirent *entry)
 void run_userfile(char *folder, char *extension, const char *arg1, int wtime)
 {
 	unsigned char buf[PATH_MAX + 1];
-	char *argv[] = { buf, (char *)arg1, NULL };
+	char *argv[] = { (char *)buf, (char *)arg1, NULL };
 	struct dirent **namelist;
 	int i, n;
 
@@ -541,7 +541,7 @@ void run_userfile(char *folder, char *extension, const char *arg1, int wtime)
 	n = scandir(folder, &namelist, endswith_filter, alphasort);
 	if (n >= 0) {
 		for (i = 0; i < n; ++i) {
-			sprintf(buf, "%s/%s", folder, namelist[i]->d_name);
+			sprintf((char *) buf, "%s/%s", folder, namelist[i]->d_name);
 			execute_with_maxwait(argv,
 				strchr(namelist[i]->d_name, '&') ? 0 : wtime);
 			free(namelist[i]);
@@ -658,11 +658,11 @@ static void write_ct_timeout(const char *type, const char *name, unsigned int va
 	unsigned char buf[128];
 	char v[16];
 
-	sprintf(buf, "/proc/sys/net/ipv4/netfilter/ip_conntrack_%s_timeout%s%s",
+	sprintf((char *) buf, "/proc/sys/net/ipv4/netfilter/ip_conntrack_%s_timeout%s%s",
 		type, (name && name[0]) ? "_" : "", name ? name : "");
 	sprintf(v, "%u", val);
 
-	f_write_string(buf, v, 0, 0);
+	f_write_string((const char *) buf, v, 0, 0);
 }
 
 #ifndef write_tcp_timeout
@@ -679,9 +679,9 @@ static unsigned int read_ct_timeout(const char *type, const char *name)
 	unsigned int val = 0;
 	char v[16];
 
-	sprintf(buf, "/proc/sys/net/ipv4/netfilter/ip_conntrack_%s_timeout%s%s",
+	sprintf((char *) buf, "/proc/sys/net/ipv4/netfilter/ip_conntrack_%s_timeout%s%s",
 		type, (name && name[0]) ? "_" : "", name ? name : "");
-	if (f_read_string(buf, v, sizeof(v)) > 0)
+	if (f_read_string((const char *) buf, v, sizeof(v)) > 0)
 		val = atoi(v);
 
 	return val;
@@ -1304,7 +1304,7 @@ void
 setup_timezone(void)
 {
 #ifndef RC_BUILDTIME
-#define RC_BUILDTIME	1420070400	// Jan 1 00:00:00 GMT 2015
+#define RC_BUILDTIME	1438387200	// Aug 1 00:00:00 GMT 2015
 #endif
 	time_t now;
 	struct tm gm, local;

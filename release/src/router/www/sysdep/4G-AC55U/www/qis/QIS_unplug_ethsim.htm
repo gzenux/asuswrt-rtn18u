@@ -75,14 +75,23 @@ function detect_if_wan_plug(flag){
 }
 
 function update_wan_info(flag){
-	if(flag == null){
-		document.getElementById("skipButton").style.display = "none";
-		document.getElementById("loadingIcon").style.display = "";
-		setTimeout("detect_if_wan_plug();", 10000);
-	}
-	else{
-		setTimeout("detect_if_wan_plug(1);", 1000);
-	}	
+	$.ajax({
+		url: '/start_autodet.asp',
+		dataType: 'script',
+		error: function(xhr){
+			update_wan_info();		
+		},
+		success: function(response){
+			if(flag == null){
+				document.getElementById("skipButton").style.display = "none";
+				document.getElementById("loadingIcon").style.display = "";
+				setTimeout("detect_if_wan_plug();", 10000);
+			}
+			else{
+				setTimeout("detect_if_wan_plug(1);", 1000);
+			}
+		}
+	});
 }
 
 </script>

@@ -177,7 +177,7 @@ void gen_lan_ports(char *buf, const int sample[SWPORT_COUNT], int index, int ind
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-int _ifconfig(const char *name, int flags, const char *addr, const char *netmask, const char *dstaddr)
+int _ifconfig(const char *name, int flags, const char *addr, const char *netmask, const char *dstaddr, int mtu)
 {
 	int s;
 	struct ifreq ifr;
@@ -230,6 +230,13 @@ int _ifconfig(const char *name, int flags, const char *addr, const char *netmask
 			goto ERROR;
 	}
 
+	/* Set MTU */
+	if (mtu > 0) {
+		ifr.ifr_mtu = mtu;
+		if (ioctl(s, SIOCSIFMTU, &ifr) < 0)
+			goto ERROR;
+	}
+
 	close(s);
 	return 0;
 
@@ -237,6 +244,78 @@ int _ifconfig(const char *name, int flags, const char *addr, const char *netmask
 	close(s);
 	perror(name);
 	return errno;
+}
+
+int _ifconfig_get(const char *name, int *flags, char *addr, char *netmask, char *dstaddr, int *mtu)
+{
+	int s;
+	struct ifreq ifr;
+
+	_dprintf("%s: name=%s\n", __FUNCTION__, name);
+
+	/* Open a raw socket to the kernel */
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return errno;
+
+	/* Set interface name */
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ);
+
+	/* Get interface flags */
+	if (flags) {
+		if (ioctl(s, SIOCGIFFLAGS, &ifr) < 0)
+			goto ERROR;
+		*flags = ifr.ifr_flags;
+	}
+
+	/* Get IP address */
+	if (addr) {
+		ifr.ifr_addr.sa_family = AF_INET;
+		if (ioctl(s, SIOCGIFADDR, &ifr) < 0)
+			goto ERROR;
+		inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr), addr, sizeof("255.255.255.255"));
+	}
+
+	/* Get IP netmask and broadcast */
+	if (netmask) {
+		ifr.ifr_addr.sa_family = AF_INET;
+		if (ioctl(s, SIOCGIFNETMASK, &ifr) < 0)
+			goto ERROR;
+		inet_ntop(AF_INET, &sin_addr(&ifr.ifr_netmask), netmask, sizeof("255.255.255.255"));
+	}
+
+	/* Get IP dst or P-to-P peer address */
+	if (dstaddr) {
+		ifr.ifr_dstaddr.sa_family = AF_INET;
+		if (ioctl(s, SIOCGIFDSTADDR, &ifr) < 0)
+			goto ERROR;
+		inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr), dstaddr, sizeof("255.255.255.255"));
+	}
+
+	/* Get MTU */
+	if (mtu) {
+		if (ioctl(s, SIOCGIFMTU, &ifr) < 0)
+			goto ERROR;
+		*mtu = ifr.ifr_mtu;
+	}
+
+	close(s);
+	return 0;
+
+ ERROR:
+	close(s);
+	perror(name);
+	return errno;
+}
+
+int ifconfig_mtu(const char *name, int mtu)
+{
+	int ret, flags, old_mtu;
+
+	ret = _ifconfig_get(name, &flags, NULL, NULL, NULL, &old_mtu);
+	if (ret == 0 && mtu > 0 && mtu != old_mtu)
+		ret = _ifconfig(name, flags, NULL, NULL, NULL, mtu);
+
+	return ret ? -1 : old_mtu;
 }
 
 static int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask)
@@ -382,7 +461,7 @@ int start_vlan(void)
 		if (!(hwaddr = nvram_get(nvvar_name)))
 			continue;
 
-		ether_atoe(hwaddr, ea);
+		ether_atoe(hwaddr, (unsigned char *) ea);
 		/* find the interface name to which the address is assigned */
 		for (j = 1; j <= DEV_NUMIFS; j ++) {
 			ifr.ifr_ifindex = j;
@@ -440,11 +519,12 @@ int start_vlan(void)
 #endif
 #ifdef CONFIG_BCMWL5
 	if(!nvram_match("switch_wantag", "none")&&!nvram_match("switch_wantag", ""))
-		set_wan_tag(&ifr.ifr_name);
+		set_wan_tag((char *) &ifr.ifr_name);
 #endif
 #ifdef RTCONFIG_RGMII_BRCM5301X
 	switch (get_model()) {
 		case MODEL_RTAC88U:
+		case MODEL_RTAC3100:
 		case MODEL_RTAC5300:
 			break;
 		default:

@@ -356,9 +356,7 @@ struct sk_buff {
 	__u32			pktc_flags;
 #endif
 #ifdef HNDCTF
-#ifdef RTCONFIG_BWDPI
 	void			*ctf_ipc_txif;
-#endif
 #endif
 #ifdef BCMFA
 #define BCM_FA_INVALID_IDX_VAL	0xFFF00000
@@ -1464,7 +1462,12 @@ static inline int pskb_network_may_pull(struct sk_buff *skb, unsigned int len)
  * NET_IP_ALIGN(2) + ethernet_header(14) + IP_header(20/40) + ports(8)
  */
 #ifndef NET_SKB_PAD
+#if defined(CONFIG_PPTP) || defined(CONFIG_PPTP_MODULE) || \
+    defined(CONFIG_L2TP) || defined(CONFIG_L2TP_MODULE)
+#define NET_SKB_PAD	max(64, L1_CACHE_BYTES)
+#else
 #define NET_SKB_PAD	max(32, L1_CACHE_BYTES)
+#endif
 #endif
 
 extern int ___pskb_trim(struct sk_buff *skb, unsigned int len);
@@ -1586,25 +1589,48 @@ static inline struct sk_buff *netdev_alloc_skb(struct net_device *dev,
 	return __netdev_alloc_skb(dev, length, GFP_ATOMIC);
 }
 
-static inline struct sk_buff *netdev_alloc_skb_ip_align(struct net_device *dev,
-		unsigned int length)
+static inline struct sk_buff *__netdev_alloc_skb_ip_align(struct net_device *dev,
+		unsigned int length, gfp_t gfp)
 {
-	struct sk_buff *skb = netdev_alloc_skb(dev, length + NET_IP_ALIGN);
+	struct sk_buff *skb = __netdev_alloc_skb(dev, length + NET_IP_ALIGN, gfp);
 
 	if (NET_IP_ALIGN && skb)
 		skb_reserve(skb, NET_IP_ALIGN);
 	return skb;
 }
 
+static inline struct sk_buff *netdev_alloc_skb_ip_align(struct net_device *dev,
+		unsigned int length)
+{
+	return __netdev_alloc_skb_ip_align(dev, length, GFP_ATOMIC);
+}
+
 extern struct page *__netdev_alloc_page(struct net_device *dev, gfp_t gfp_mask);
+
+#if defined(CONFIG_BCM_RECVFILE)
+/**
+ * skb_frag_page - retrieve the page refered to by a paged fragment
+ * @frag: the paged fragment
+ *
+ * Returns the &struct page associated with @frag.
+ */
+static inline struct page *skb_frag_page(const skb_frag_t *frag)
+{
+	return frag->page;
+}
+
+extern int skb_copy_datagram_to_kernel_iovec(const struct sk_buff *from,
+					       int offset, struct iovec *to,
+					       int size);
+#endif /* CONFIG_BCM_RECVFILE */
 
 /**
  *	netdev_alloc_page - allocate a page for ps-rx on a specific device
  *	@dev: network device to receive on
  *
- * 	Allocate a new page node local to the specified device.
+ *	Allocate a new page node local to the specified device.
  *
- * 	%NULL is returned if there is no free memory.
+ *	%NULL is returned if there is no free memory.
  */
 static inline struct page *netdev_alloc_page(struct net_device *dev)
 {

@@ -58,6 +58,8 @@ int rtkswitch_ioctl(int val, int val2, int val3)
 	switch (val) {
 	/* w/ no options */
 	case INIT_SWITCH:
+	case INIT_SWITCH_UP:
+	case GET_EXT_TXRXDELAY:
 	case GET_LANPORTS_LINK_STATUS:
 	case BAD_ADDR_X:
 	case POWERUP_LANPORTS:
@@ -141,7 +143,7 @@ typedef struct {
 	unsigned int speed[4];
 } phyState;
 
-int ext_rtk_phyState(void)
+int ext_rtk_phyState(int verbose)
 {
 	int model;
 	char buf[32];
@@ -160,6 +162,17 @@ int ext_rtk_phyState(void)
 	pS.speed[0] = pS.speed[1] = pS.speed[2] = pS.speed[3] = 0;
 
         switch(model = get_model()) {
+        case MODEL_RTAC5300:
+		{
+		/* RTK_LAN  BRCM_LAN  WAN  POWER */
+		/* R0 R1 R2 R3 B4 B0 B1 B2 B3 */
+		/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
+		
+		const int porder[4] = {3,2,1,0};
+		o = porder;
+
+		break;
+		}
         case MODEL_RTAC88U:
 		{
 		/* RTK_LAN  BRCM_LAN  WAN  POWER */
@@ -194,9 +207,10 @@ int ext_rtk_phyState(void)
 		(pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M': 'X',
 		(pS.link[o[3]] == 1) ? (pS.speed[o[3]] == 2) ? 'G' : 'M': 'X');
 
-	puts(buf);
+	if(verbose)
+		printf("%s\n", buf);
 
-	return 0;
+	return (pS.link[o[0]] == 1)|(pS.link[o[1]] == 1)|(pS.link[o[2]] == 1)|(pS.link[o[3]] == 1);
 }
 
 void usage(char *cmd)

@@ -17,7 +17,7 @@
 </style>
 <script type="text/JavaScript" src="/jquery.js"></script>
 <script type="text/javascript">
-var $j = jQuery.noConflict();
+
 var Redirect_count = 0;
 var RetryCountDown_fail = 5;
 var extend_autodet = 1;
@@ -32,7 +32,7 @@ function QKDetect_load_body(){
 }
 
 function getWANStatus(){
-	$j.ajax({
+	$.ajax({
 		url: '/result_of_get_changed_status_QIS.asp',
 		dataType: 'script',
 

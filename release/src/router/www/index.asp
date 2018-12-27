@@ -21,15 +21,16 @@
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
 	border-radius: 5px;
-	z-index:20000;
+	z-index:200;
 	background-color:#2B373B;
 	display:block;
 	margin-left: 23%;
 	margin-top: 20px;
-	width:420px;
-	height:250px;
+	width:425px;
+	height:auto;
 	box-shadow: 3px 3px 10px #000;
 	display: none;
+	padding: 10px;
 }
 .contentM_usericon{
 	position:absolute;
@@ -59,17 +60,6 @@
 	width:740px;
 	box-shadow: 3px 3px 10px #000;
 }
-#client_image{
-	cursor: pointer;
-	width: 102px;
-	height: 77px;
-	background-image: url('/images/New_ui/networkmap/client-list.png');
-	background-repeat: no-repeat;
-	background-position:50% 61.10%;
-}
-#client_image:hover{
-	background-image: url('/images/New_ui/networkmap/client-listover.png');
-}
 #custom_image table{
 	border: 1px solid #000000;
 	border-collapse: collapse;
@@ -78,7 +68,7 @@
 	background-image:url('/images/New_ui/networkmap/client-list.png');
 	background-repeat:no-repeat;
 	height:55px;
-	width:55px;
+	width:60px;
 	cursor:pointer;
 	background-position:-21px 0%;
 }
@@ -89,77 +79,13 @@
 	border-radius: 7px;
 	background-color:#84C1FF;
 }
-.disabled{
-	background:#475a5f;
-	width:200px;
-	height:15px;
-	padding:5px 0px 5px 5px;
-	margin-left:2px;
-	border-radius:5px;
-}
-#ipLockIcon{
-	cursor: pointer;
-	margin-top:-2px;
-	background-repeat:no-repeat;
-	height: 25px;
-	width: 25px;
-}
-.dhcp{
-	background-image: url('/images/New_ui/networkmap/unlock.png');
-}
-.manual{
-	background-image: url('/images/New_ui/networkmap/lock.png');
-}
-#tdUserIcon:hover{
-	cursor: pointer;
-	background-color:#2B373B !important;
-}
-#divUserIcon{
-	cursor: pointer;
-	background-image:none !important;
-	border: 2px dashed #A1A99F;
-	width: 50px !important;
-	height: 50px !important;
-	text-align: center;
-	line-height: 50px;
-	color: #A1A99F;
-}
-#divUserIcon:hover{
-	cursor: pointer;
-	background-image:none !important;
-	border: 2px dashed #37CB0F;
-	width: 50px !important;
-	height: 50px !important;
-	text-align: center;
-	line-height: 50px;
-	color: #37CB0F;
-}
-#uploadIcon{
-	cursor: pointer;
-	display: block !important;
-	opacity: 0 !important;
-	overflow: hidden !important;
-	width: 55px !important;
-	height:55px !important;
-	margin-top: -52px;
-	margin-left: -2px;
-}
-#canvasUserIcon{
-	cursor: pointer;
-	position: relative; 
-	top: 6px;
-	left: 18px;
-	-webkit-border-radius: 5px;
-	-moz-border-radius: 5px;
-	border-radius: 5px;
-}
 .imgClientIcon{
 	position: relative; 
 	width: 52px;
 	height: 52px;
-	-webkit-border-radius: 5px;
-	-moz-border-radius: 5px;
-	border-radius: 5px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
 }
 </style>
 <script type="text/javascript" src="/md5.js"></script>
@@ -172,12 +98,17 @@
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script language="JavaScript" type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
+<script language="JavaScript" type="text/javascript" src="/form.js"></script>
+<script type="text/javascript" src="/jquery.xdomainajax.js"></script>
 <script>
-var $j = jQuery.noConflict();	
+	
 var userIconBase64 = "NoIcon";
+var verderIcon = "";
 var userIconHideFlag = false;
 var custom_usericon_del = "";
-var editClientImageFlag = false;
+var firstTimeOpenBlock = false;
+var ipBindingFlag = false;
+var timeSchedulingFlag = false;
 
 if(location.pathname == "/"){
 	if('<% nvram_get("x_Setting"); %>' == '0'){
@@ -199,7 +130,10 @@ var webs_state_info= '<% nvram_get("webs_state_info"); %>';
 
 
 // WAN
-<% wanlink(); %>var wanstate = -1;
+<% wanlink(); %>
+<% first_wanlink(); %>
+<% secondary_wanlink(); %>
+var wanstate = -1;
 var wansbstate = -1;
 var wanauxstate = -1;
 var Dev3G = '<% nvram_get("d3g"); %>';
@@ -208,7 +142,19 @@ var wan0_primary = '<% nvram_get("wan0_primary"); %>';
 var wan1_primary = '<% nvram_get("wan1_primary"); %>';
 var wans_dualwan_orig = '<% nvram_get("wans_dualwan"); %>';
 var wans_mode = '<%nvram_get("wans_mode");%>';
-var dhcp_staticlist_orig = decodeURIComponent('<% nvram_char_to_ascii("", "dhcp_staticlist"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<")
+var dhcp_staticlist_orig = decodeURIComponent('<% nvram_char_to_ascii("", "dhcp_staticlist"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<");
+var dhcp_staticlist_num = dhcp_staticlist_orig.split("<").length - 1;
+var MULTIFILTER_ENABLE_orig = decodeURIComponent('<% nvram_char_to_ascii("", "MULTIFILTER_ENABLE"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<");
+var MULTIFILTER_MAC_orig = decodeURIComponent('<% nvram_char_to_ascii("", "MULTIFILTER_MAC"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<");
+var MULTIFILTER_DEVICENAME_orig = decodeURIComponent('<% nvram_char_to_ascii("", "MULTIFILTER_DEVICENAME"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<");
+var MULTIFILTER_MACFILTER_DAYTIME_orig = decodeURIComponent('<% nvram_char_to_ascii("", "MULTIFILTER_MACFILTER_DAYTIME"); %>').replace(/&#62/g, ">").replace(/&#60/g, "<");
+var MULTIFILTER_num = (MULTIFILTER_MAC_orig == "") ? 0 : MULTIFILTER_ENABLE_orig.split(">").length;
+var wanlink_status = wanlink_statusstr();
+var wanlink_ipaddr = wanlink_ipaddr();
+var first_wanlink_status = first_wanlink_statusstr();
+var first_wanlink_ipaddr = first_wanlink_ipaddr();
+var secondary_wanlink_status = secondary_wanlink_statusstr();
+var secondary_wanlink_ipaddr = secondary_wanlink_ipaddr();
 
 if(wans_dualwan_orig.search(" ") == -1)
 	var wans_flag = 0;
@@ -223,10 +169,10 @@ var usbPorts = new Array();
 var wlc_band = '<% nvram_get("wlc_band"); %>';
 window.onresize = function() {
 	if(document.getElementById("edit_client_block").style.display == "block") {
-		cal_panel_block("edit_client_block");
+		cal_panel_block("edit_client_block", 0.23);
 	}
 	if(document.getElementById("edit_usericon_block").style.display == "block") {
-		cal_panel_block("edit_usericon_block");
+		cal_panel_block("edit_usericon_block", 0.15);
 	}
 } 
 
@@ -237,11 +183,17 @@ function initial(){
 		alert("<#ALERT_TO_CHANGE_BROWSER#>");
 	
 	if(dualWAN_support && sw_mode == 1){
-		check_dualwan(wans_flag);	
+		check_dualwan(wans_flag);
 	}
 	
-	if(sw_mode == 4)
-		show_middle_status('<% nvram_get("wlc_auth_mode"); %>', 0);		
+	if(sw_mode == 4){
+		var wlc_auth_mode = '<% nvram_get("wlc_auth_mode"); %>';
+		if(wlc_auth_mode == "") wlc_auth_mode = '<% nvram_get("wlc0_auth_mode"); %>';
+		if(wlc_auth_mode == "") wlc_auth_mode = '<% nvram_get("wlc1_auth_mode"); %>';
+		if(wlc_auth_mode == "") wlc_auth_mode = 'unknown';
+
+		show_middle_status(wlc_auth_mode, 0);
+	}
 	else
 		show_middle_status(document.form.wl_auth_mode_x.value, parseInt(document.form.wl_wep_x.value));
 
@@ -252,19 +204,19 @@ function initial(){
 	document.networkmapdRefresh.client_info_tmp.value = get_client_detail_info.replace(/\s/g, "");
 
 	if(!parent.usb_support || usbPortMax == 0){
-		$("line3_td").height = '40px';
-		$("line3_img").src = '/images/New_ui/networkmap/line_dualwan.png';
-		$("clients_td").colSpan = "3";
-		$("clients_td").width = '350';
-		$("clientspace_td").style.display = "none";
-		$("usb_td").style.display = "none";
+		document.getElementById("line3_td").height = '40px';
+		document.getElementById("line3_img").src = '/images/New_ui/networkmap/line_dualwan.png';
+		document.getElementById("clients_td").colSpan = "3";
+		document.getElementById("clients_td").width = '350';
+		document.getElementById("clientspace_td").style.display = "none";
+		document.getElementById("usb_td").style.display = "none";
 	}
 
 	for(var i=0; i<usbPortMax; i++){
 		var tmpDisk = new newDisk();
 		tmpDisk.usbPath = i+1;
 		show_USBDevice(tmpDisk);
-		$("usbPathContainer_"+parseInt(i+1)).style.display = "";
+		document.getElementById("usbPathContainer_"+parseInt(i+1)).style.display = "";
 	}
 	
 	if(document.getElementById('usbPathContainer_2').style.display == "none")
@@ -291,11 +243,11 @@ function initial(){
 				divUsbMountCount.innerHTML = usb_mount_count;
 				document.getElementById("deviceText_" + usbIndex).appendChild(divUsbMountCount);
 
-				$j(".usb_count_circle").mouseover(function(){
+				$(".usb_count_circle").mouseover(function(){
 					return overlib(this.innerHTML + " usb devices are plugged in <% nvram_get("productid"); %> through this port.");
 				});
 
-				$j(".usb_count_circle").mouseout(function(){
+				$(".usb_count_circle").mouseout(function(){
 					nd();
 				});
 			}
@@ -305,46 +257,50 @@ function initial(){
 	showMapWANStatus(sw_mode);
 
 	if(sw_mode != "1"){
-		$("wanIP_div").style.display = "none";
-		$("ddnsHostName_div").style.display = "none";
-		$("NM_connect_title").style.fontSize = "14px";
-		$("NM_connect_status").style.fontSize = "20px";
+		document.getElementById("wanIP_div").style.display = "none";
+		document.getElementById("ddnsHostName_div").style.display = "none";
+		document.getElementById("NM_connect_title").style.fontSize = "14px";
+		document.getElementById("NM_connect_status").style.fontSize = "20px";
 		if(sw_mode == 2 || sw_mode == 4){
-			$('wlc_band_div').style.display = "";
-			$('dataRate_div').style.display = "";
+			document.getElementById('wlc_band_div').style.display = "";
+			document.getElementById('dataRate_div').style.display = "";
 			if(wlc_band == 0)
-				$('wlc_band_status').innerHTML = "2.4GHz"; 
+				document.getElementById('wlc_band_status').innerHTML = "2.4GHz"; 
 			else	
-				$('wlc_band_status').innerHTML = "5GHz";
+				document.getElementById('wlc_band_status').innerHTML = "5GHz";
 		}
-		$('NM_connect_title').innerHTML = "<#parent_AP_status#> :";
-
-		document.getElementById("ipaddr_field").disabled = true;
-		document.getElementById("ipLockIcon").style.display = "none";
+		document.getElementById('NM_connect_title').innerHTML = "<#parent_AP_status#> :";
 	}
 	else{
-		$("index_status").innerHTML = '<span style="word-break:break-all;">' + wanlink_ipaddr() + '</span>'
-
-		setTimeout("show_ddns_status();", 2000);
+		document.getElementById("index_status").innerHTML = '<span style="word-break:break-all;">' + wanlink_ipaddr + '</span>'
+		setTimeout("show_ddns_status();", 1);
 		
-		if(wanlink_ipaddr() == '0.0.0.0' || wanlink_ipaddr() == '')
-			$("wanIP_div").style.display = "none";
+		if(wanlink_ipaddr == '0.0.0.0' || wanlink_ipaddr == '')
+			document.getElementById("wanIP_div").style.display = "none";
 	}
 
 	var NM_table_img = cookie.get("NM_table_img");
 	if(NM_table_img != "" && NM_table_img != null){
 		customize_NM_table(NM_table_img);
-		$("bgimg").options[NM_table_img[4]].selected = 1;
+		document.getElementById("bgimg").options[NM_table_img[4]].selected = 1;
 	}
 	update_wan_status();
 
 	if(smart_connect_support){
-		if(localAP_support && sw_mode != 2)
-		show_smart_connect_status();
+		if(localAP_support && sw_mode != 2){
+			if(based_modelid == "RT-AC5300" && '<% nvram_get("smart_connect_x"); %>' !=0)
+			show_smart_connect_status();
+		}
 	}
 
 
 	document.list_form.dhcp_staticlist.value = dhcp_staticlist_orig;
+	document.list_form.MULTIFILTER_ENABLE.value = MULTIFILTER_ENABLE_orig;
+	document.list_form.MULTIFILTER_MAC.value = MULTIFILTER_MAC_orig;
+	document.list_form.MULTIFILTER_DEVICENAME.value = MULTIFILTER_DEVICENAME_orig;
+	document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value = MULTIFILTER_MACFILTER_DAYTIME_orig;
+	setClientListOUI();
+	updateClientsCount();
 }
 
 function show_smart_connect_status(){
@@ -353,9 +309,9 @@ function show_smart_connect_status(){
 	var smart_connect_x = '<% nvram_get("smart_connect_x"); %>';
 
         if(smart_connect_x == '0')
-                $("SmartConnectStatus").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_Wireless_Content.asp">Off</a>';
+                document.getElementById("SmartConnectStatus").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_Wireless_Content.asp">Off</a>';
         else if(smart_connect_x == '1')
-                $("SmartConnectStatus").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_Wireless_Content.asp">On</a>';
+                document.getElementById("SmartConnectStatus").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_Wireless_Content.asp">On</a>';
 
 	setTimeout("show_smart_connect_status();", 2000);
 }
@@ -365,31 +321,32 @@ function show_ddns_status(){
 	var ddns_server_x = '<% nvram_get("ddns_server_x");%>';
 	var ddnsName = decodeURIComponent('<% nvram_char_to_ascii("", "ddns_hostname_x"); %>');
 
-	$("ddns_fail_hint").className = "notificationoff";
-        if( ddns_enable == '0')
-                $("ddnsHostName").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_ASUSDDNS_Content.asp?af=ddns_enable_x"><#btn_go#></a>';
-        else if(ddnsName == '')
-                $("ddnsHostName").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_ASUSDDNS_Content.asp?af=DDNSName">Sign up</a>';
-        else if(ddnsName == isMD5DDNSName())
-                $("ddnsHostName").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_ASUSDDNS_Content.asp?af=DDNSName">Sign up</a>';
-        else{
-                $("ddnsHostName").innerHTML = '<span>'+ ddnsName +'</span>';
-                if( ddns_enable == '1' ) {
-			if(!((link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")) ) //link down
-				$("ddns_fail_hint").className = "notificationon";
+	document.getElementById("ddns_fail_hint").className = "notificationoff";
+	if( ddns_enable == '0')
+        document.getElementById("ddnsHostName").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_ASUSDDNS_Content.asp?af=ddns_enable_x"><#btn_go#></a>';
+    else if(ddnsName == '')
+        document.getElementById("ddnsHostName").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_ASUSDDNS_Content.asp?af=DDNSName">Sign up</a>';
+    else if(ddnsName == isMD5DDNSName())
+        document.getElementById("ddnsHostName").innerHTML = '<a style="color:#FFF;text-decoration:underline;" href="/Advanced_ASUSDDNS_Content.asp?af=DDNSName">Sign up</a>';
+    else{
+        document.getElementById("ddnsHostName").innerHTML = '<span>'+ ddnsName +'</span>';
+        if(ddns_enable == '1'){
+			if((link_status != undefined || link_ausstatus != undefined) && !((link_status == "2" && link_auxstatus == "0") || (link_status == "2" && link_auxstatus == "2")) ) //link down
+				document.getElementById("ddns_fail_hint").className = "notificationon";
+					
 			if( ddns_server_x == 'WWW.ASUS.COM' ) { //ASUS DDNS
-			    if( (ddns_return_code.indexOf('200')==-1) && (ddns_return_code.indexOf('220')==-1) && (ddns_return_code.indexOf('230')==-1))
-				$("ddns_fail_hint").className = "notificationon";
+				if( (ddns_return_code.indexOf('200')==-1) && (ddns_return_code.indexOf('220')==-1) && (ddns_return_code.indexOf('230')==-1))
+					document.getElementById("ddns_fail_hint").className = "notificationon";
 			}
-			else { //Other ddns service
-			    if(ddns_updated != '1' || ddns_return_code=='unknown_error' || ddns_return_code=="auth_fail")
-                        	$("ddns_fail_hint").className = "notificationon";
+			else{ //Other ddns service
+				if(ddns_updated != '1' || ddns_return_code=='unknown_error' || ddns_return_code=="auth_fail")
+					document.getElementById("ddns_fail_hint").className = "notificationon";
 			}
-                }
+        }
 	}
+	
 	setTimeout("show_ddns_status();", 2000);
 }
-
 
 var isMD5DDNSName = function(){
 	var macAddr = '<% nvram_get("lan_hwaddr"); %>'.toUpperCase().replace(/:/g, "");
@@ -397,7 +354,12 @@ var isMD5DDNSName = function(){
 }
 
 function customize_NM_table(img){
-	$("NM_table").style.background = "url('/images/" + img +"')";
+	$("#NM_table").css({
+		"background": "url('/images/" + img +"')",
+		"background-repeat": "no-repeat",
+		"background-size": "cover"
+	});
+
 	cookie.set("NM_table_img", img, 365);
 }
 
@@ -405,19 +367,19 @@ function set_default_choice(){
 	var icon_name;
 	if(flag && flag.length > 0){
 		if(flag == "Internet"){
-			$("iconRouter").style.backgroundPosition = '0% 0%';
-			clickEvent($("iconInternet"));
+			document.getElementById("iconRouter").style.backgroundPosition = '0% 0%';
+			clickEvent(document.getElementById("iconInternet"));
 		}
 		else if(flag == "Client"){
-			$("iconRouter").style.backgroundPosition = '0% 0%';
-			clickEvent($("iconClient"));
+			document.getElementById("iconRouter").style.backgroundPosition = '0% 0%';
+			clickEvent(document.getElementById("iconClient"));
 		}
 		else if(flag == "USBdisk"){
-			$("iconRouter").style.backgroundPosition = '0% 0%';
-			clickEvent($("iconUSBdisk"));
+			document.getElementById("iconRouter").style.backgroundPosition = '0% 0%';
+			clickEvent(document.getElementById("iconUSBdisk"));
 		}
 		else{
-			clickEvent($("iconRouter"));
+			clickEvent(document.getElementById("iconRouter"));
 			return;
 		}
 
@@ -426,18 +388,18 @@ function set_default_choice(){
 		else
 			icon_name = "icon"+flag;
 
-		clickEvent($(icon_name));
+		clickEvent(document.getElementById(icon_name));
 	}
 	else
-		clickEvent($("iconRouter"));
+		clickEvent(document.getElementById("iconRouter"));
 }
 
 function showMapWANStatus(flag){
 	if(sw_mode == "3"){
-		showtext($("NM_connect_status"), "<div style='margin-top:10px;'><#WLANConfig11b_x_APMode_itemname#></div>");
+		showtext(document.getElementById("NM_connect_status"), "<div style='margin-top:10px;'><#WLANConfig11b_x_APMode_itemname#></div>");
 	}
 	else if(sw_mode == "2"){
-		showtext($("NM_connect_title"), "<div style='margin-top:10px;'><#statusTitle_AP#>:</div><br>");
+		showtext(document.getElementById("NM_connect_title"), "<div style='margin-top:10px;'><#statusTitle_AP#>:</div><br>");
 	}
 	else
 		return 0;
@@ -460,7 +422,7 @@ function show_middle_status(auth_mode, wl_wep_x){
 				break;
 		case "pskpsk2":
 				security_mode = "WPA-Auto-Personal";
-				$("wl_securitylevel_span").style.fontSize = "16px";
+				document.getElementById("wl_securitylevel_span").style.fontSize = "16px";
 				break;
 		case "wpa":
 				security_mode = "WPA-Enterprise";
@@ -470,26 +432,30 @@ function show_middle_status(auth_mode, wl_wep_x){
 				break;
 		case "wpawpa2":
 				security_mode = "WPA-Auto-Enterprise";
-				$("wl_securitylevel_span").style.fontSize = "16px";
+				document.getElementById("wl_securitylevel_span").style.fontSize = "16px";
 				break;
 		case "radius":
 				security_mode = "Radius with 802.1x";
-				$("wl_securitylevel_span").style.fontSize = "16px";
-				break;		
+				document.getElementById("wl_securitylevel_span").style.fontSize = "16px";
+				break;
+		case "unknown":
+				security_mode = "<#CTL_Disconnect#>";
+				break;
+				
 		default:
 				security_mode = "Unknown Auth";	
 	}
 	
-	$("wl_securitylevel_span").innerHTML = security_mode;
+	document.getElementById("wl_securitylevel_span").innerHTML = security_mode;
 
 	if(auth_mode == "open" && wl_wep_x == 0)
-		$("iflock").src = "images/New_ui/networkmap/unlock.png";
+		document.getElementById("iflock").src = "images/New_ui/networkmap/unlock.png";
 	else
-		$("iflock").src = "images/New_ui/networkmap/lock.png"
+		document.getElementById("iflock").src = "images/New_ui/networkmap/lock.png"
 }
 
 function show_client_status(num){
-	$("clientNumber").innerHTML = "<#Full_Clients#>: <span id='_clientNumber'>" + num + "</span>";
+	document.getElementById("clientNumber").innerHTML = "<#Full_Clients#>: <span id='_clientNumber'>" + num + "</span>";
 }
 
 function show_USBDevice(device){
@@ -527,7 +493,7 @@ function disk_html(device){
 	icon_html_code += '<div id="iconUSBdisk_'+device.usbPath+'" class="iconUSBdisk" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
 	icon_html_code += '<div id="ring_USBdisk_'+device.usbPath+'" class="iconUSBdisk" style="display:none;z-index:1;"></div>\n';
 	icon_html_code += '</a>\n';
-	$("deviceIcon_" + device.usbPath).innerHTML = icon_html_code;
+	document.getElementById("deviceIcon_" + device.usbPath).innerHTML = icon_html_code;
 
 	showDiskInfo(device);
 
@@ -553,7 +519,7 @@ function showDiskInfo(device){
 		dec_html_code += '<div class="style1"><strong id="diskUnmount'+ device.usbPath +'"><#DISK_UNMOUNTED#></strong></div>\n';
 	}
 
-	$("deviceDec_"+device.usbPath).innerHTML = dec_html_code;
+	document.getElementById("deviceDec_"+device.usbPath).innerHTML = dec_html_code;
 }
 
 function printer_html(device){
@@ -561,12 +527,12 @@ function printer_html(device){
 	icon_html_code += '<a href="device-map/printer.asp" target="statusframe">\n';
 	icon_html_code += '<div id="iconPrinter_' + device.usbPath + '" class="iconPrinter" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
-	$("deviceIcon_" + device.usbPath).innerHTML = icon_html_code;
+	document.getElementById("deviceIcon_" + device.usbPath).innerHTML = icon_html_code;
 
 	if(device.serialNum == '<% nvram_get("u2ec_serial"); %>')
-		$("deviceDec_" + device.usbPath).innerHTML = '<div style="margin:10px;"><#CTL_Enabled#></div>';
+		document.getElementById("deviceDec_" + device.usbPath).innerHTML = '<div style="margin:10px;"><#CTL_Enabled#></div>';
 	else
-		$("deviceDec_" + device.usbPath).innerHTML = '<div style="margin:10px;"><#CTL_Disabled#></div>';
+		document.getElementById("deviceDec_" + device.usbPath).innerHTML = '<div style="margin:10px;"><#CTL_Disabled#></div>';
 }
 
 function modem_html(device){
@@ -574,14 +540,14 @@ function modem_html(device){
 	icon_html_code += '<a href="device-map/modem.asp" target="statusframe">\n';
 	icon_html_code += '<div id="iconModem_' + device.usbPath + '" class="iconmodem" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
-	$("deviceIcon_" + device.usbPath).innerHTML = icon_html_code;
+	document.getElementById("deviceIcon_" + device.usbPath).innerHTML = icon_html_code;
 
-	$("deviceDec_" + device.usbPath).innerHTML = '<div style="margin:10px;">' + device.deviceName + '</div>';
+	document.getElementById("deviceDec_" + device.usbPath).innerHTML = '<div style="margin:10px;">' + device.deviceName + '</div>';
 }
 
 function no_device_html(device_seat){
-	var device_icon = $("deviceIcon_"+device_seat);
-	var device_dec = $("deviceDec_"+device_seat);
+	var device_icon = document.getElementById("deviceIcon_"+device_seat);
+	var device_dec = document.getElementById("deviceDec_"+device_seat);
 	var icon_html_code = '';
 	var dec_html_code = '';
 	
@@ -620,7 +586,7 @@ function clickEvent(obj){
 
 		icon = "iconInternet";
 		stitle = "<#statusTitle_Internet#>";
-		$("statusframe").src = "/device-map/internet.asp";
+		document.getElementById("statusframe").src = "/device-map/internet.asp";
 
 		if(parent.wans_flag){
 			if(obj.id.indexOf("primary") != -1)
@@ -648,7 +614,7 @@ function clickEvent(obj){
 		currentUsbPort = obj.id.slice(-1) - 1;
 		icon = "iconmodem";
 		stitle = "<#menu5_4_4#>";
-		$("statusframe").src = "/device-map/modem.asp";
+		document.getElementById("statusframe").src = "/device-map/modem.asp";
 	}
 	else if(obj.id.indexOf("Printer") > 0){
 		seat = obj.id.indexOf("Printer") + 7;
@@ -656,7 +622,7 @@ function clickEvent(obj){
 		currentUsbPort = obj.id.slice(-1) - 1;
 		icon = "iconPrinter";
 		stitle = "<#statusTitle_Printer#>";
-		$("statusframe").src = "/device-map/printer.asp";
+		document.getElementById("statusframe").src = "/device-map/printer.asp";
 	}
 	else if(obj.id.indexOf("No") > 0){
 		icon = "iconNo";
@@ -674,16 +640,16 @@ function clickEvent(obj){
 	if(obj.id.indexOf("USBdisk") > 0){	// To control USB icon outter ring's color
 		if(diskUtility_support){
 			if(!usbPorts[obj.id.slice(-1)-1].hasErrPart){
-				$("statusframe").src = "/device-map/disk.asp";	
+				document.getElementById("statusframe").src = "/device-map/disk.asp";	
 				obj.style.backgroundPosition = '0% -103px';
 			}
 			else{
-				$("statusframe").src = "/device-map/disk_utility.asp";
+				document.getElementById("statusframe").src = "/device-map/disk_utility.asp";
 				obj.style.backgroundPosition = '0% -202px';
 			}
 		}
 		else{
-			$("statusframe").src = "/device-map/disk.asp";	
+			document.getElementById("statusframe").src = "/device-map/disk.asp";	
 			obj.style.backgroundPosition = '0% -103px';
 		}		
 	}
@@ -691,7 +657,7 @@ function clickEvent(obj){
 		obj.style.backgroundPosition = '0% 101%';
 	}
 
-	$('helpname').innerHTML = stitle;	
+	document.getElementById('helpname').innerHTML = stitle;	
 	avoidkey = icon;
 	lastClicked = obj;
 	lastName = icon;
@@ -726,26 +692,26 @@ function mouseEvent(obj, key){
 }//end of mouseEvent
 
 function MapUnderAPmode(){// if under AP mode, disable the Internet icon and show hint when mouseover.
-		$("iconInternet").style.background = "url(/images/New_ui/networkmap/map-iconInternet-d.png) no-repeat";
-		$("iconInternet").style.cursor = "default";
+		document.getElementById("iconInternet").style.background = "url(/images/New_ui/networkmap/map-iconInternet-d.png) no-repeat";
+		document.getElementById("iconInternet").style.cursor = "default";
 		
-		$("iconInternet").onmouseover = function(){
+		document.getElementById("iconInternet").onmouseover = function(){
 			writetxt("<#underAPmode#>");
 		}
-		$("iconInternet").onmouseout = function(){
+		document.getElementById("iconInternet").onmouseout = function(){
 			writetxt(0);
 		}
-		$("iconInternet").onclick = function(){
+		document.getElementById("iconInternet").onclick = function(){
 			return false;
 		}
-		$("clientStatusLink").href = "javascript:void(0)";
-		$("clientStatusLink").style.cursor = "default";	
-		$("iconClient").style.background = "url(/images/New_ui/networkmap/map-iconClient-d.png) no-repeat";
-		$("iconClient").style.cursor = "default";
+		document.getElementById("clientStatusLink").href = "javascript:void(0)";
+		document.getElementById("clientStatusLink").style.cursor = "default";	
+		document.getElementById("iconClient").style.background = "url(/images/New_ui/networkmap/map-iconClient-d.png) no-repeat";
+		document.getElementById("iconClient").style.cursor = "default";
 }
 
 function showstausframe(page){
-	clickEvent($("icon"+page));
+	clickEvent(document.getElementById("icon"+page));
 	if(page == "Client")
 		page = "clients";
 	else if(page.indexOf('Internet') == 0){
@@ -843,31 +809,31 @@ function show_ddns_fail_hint() {
 
 function check_dualwan(flag){
 	if(flag == 0){		//single wan
-		$('single_wan_icon').style.display = "";
-		$('single_wan_status').style.display = "";
-		$('single_wan_line').style.display = "";
-		$('primary_wan_icon').style.display = "none";
-		$('secondary_wan_icon').style.display = "none";
-		$('primary_wan_line').style.display = "none";
-		$('secondary_wan_line').style.display = "none";
-		$('dual_wan_gap').style.display = "none";
+		document.getElementById('single_wan_icon').style.display = "";
+		document.getElementById('single_wan_status').style.display = "";
+		document.getElementById('single_wan_line').style.display = "";
+		document.getElementById('primary_wan_icon').style.display = "none";
+		document.getElementById('secondary_wan_icon').style.display = "none";
+		document.getElementById('primary_wan_line').style.display = "none";
+		document.getElementById('secondary_wan_line').style.display = "none";
+		document.getElementById('dual_wan_gap').style.display = "none";
 	}
 	else{
-		$('single_wan_icon').style.display = "none";
-		$('single_wan_status').style.display = "none";
-		$('single_wan_line').style.display = "none";
-		$('primary_wan_icon').style.display = "";
-		$('secondary_wan_icon').style.display = "";
-		$('primary_wan_line').style.display = "";
-		$('secondary_wan_line').style.display = "";
-		$('dual_wan_gap').style.display = "";
+		document.getElementById('single_wan_icon').style.display = "none";
+		document.getElementById('single_wan_status').style.display = "none";
+		document.getElementById('single_wan_line').style.display = "none";
+		document.getElementById('primary_wan_icon').style.display = "";
+		document.getElementById('secondary_wan_icon').style.display = "";
+		document.getElementById('primary_wan_line').style.display = "";
+		document.getElementById('secondary_wan_line').style.display = "";
+		document.getElementById('dual_wan_gap').style.display = "";
 	}
 }
 
 function update_wan_status(e) {
 	if(stopFlag == 1) return false;
 
-	$j.ajax({
+	$.ajax({
 		url: '/status.asp',
 		dataType: 'script', 
 
@@ -877,9 +843,11 @@ function update_wan_status(e) {
 		success: function(response) {
 			wanlink_status = wanlink_statusstr();
 			wanlink_ipaddr = wanlink_ipaddr();
+			first_wanlink_status = first_wanlink_statusstr();
+			first_wanlink_ipaddr = first_wanlink_ipaddr();
 			secondary_wanlink_status = secondary_wanlink_statusstr();
-			secondary_wanlink_ipaddr = secondary_wanlink_ipaddr();	
-			change_wan_state(wanlink_status,secondary_wanlink_status);
+			secondary_wanlink_ipaddr = secondary_wanlink_ipaddr();
+			change_wan_state(first_wanlink_status,secondary_wanlink_status);
 			setTimeout("update_wan_status();", 3000);
 		}
 	});
@@ -891,67 +859,67 @@ function change_wan_state(primary_status, secondary_status){
 
 	if(wans_mode == "fo" || wans_mode == "fb"){
 		if(wan_unit == 0){
-			$('primary_status').innerHTML = primary_status;
+			document.getElementById('primary_status').innerHTML = primary_status;
 			if(primary_status == "Disconnected"){				
-				$('primary_line').className = "primary_wan_disconnected";
+				document.getElementById('primary_line').className = "primary_wan_disconnected";
 			}	
 			else{
-				$('primary_line').className = "primary_wan_connected";
+				document.getElementById('primary_line').className = "primary_wan_connected";
 			}
 			
 			if(secondary_wanlink_ipaddr != '0.0.0.0' && secondary_status != 'Disconnected')
 				secondary_status = "Standby";	
 				
-			$('seconday_status').innerHTML = secondary_status;	
+			document.getElementById('seconday_status').innerHTML = secondary_status;	
 			if(secondary_status == 'Disconnected'){
-				$('secondary_line').className = "secondary_wan_disconnected";
+				document.getElementById('secondary_line').className = "secondary_wan_disconnected";
 			}	
 			else if(secondary_status == 'Standby'){
-				$('secondary_line').className = "secondary_wan_standby";
+				document.getElementById('secondary_line').className = "secondary_wan_standby";
 			}	
 			else{
-				$('secondary_line').className = "secondary_wan_connected";
+				document.getElementById('secondary_line').className = "secondary_wan_connected";
 			}
 		}
 		else{	//wan_unit : 1
-			if(wanlink_ipaddr != '0.0.0.0' && primary_status != 'Disconnected')
+			if(first_wanlink_ipaddr != '0.0.0.0' && primary_status != 'Disconnected')
 				primary_status = "Standby";
 				
-			$('primary_status').innerHTML = primary_status;
+			document.getElementById('primary_status').innerHTML = primary_status;
 			if(primary_status == 'Disconnected'){
-				$('primary_line').className = "primary_wan_disconnected";
+				document.getElementById('primary_line').className = "primary_wan_disconnected";
 			}	
 			else if(primary_status == 'Standby'){
-				$('primary_line').className = "primary_wan_standby";
+				document.getElementById('primary_line').className = "primary_wan_standby";
 			}	
 			else{
-				$('primary_line').className = "primary_wan_connected";
+				document.getElementById('primary_line').className = "primary_wan_connected";
 			}
 			
-			$('seconday_status').innerHTML = secondary_status;
+			document.getElementById('seconday_status').innerHTML = secondary_status;
 			if(secondary_status == "Disconnected"){
-				$('secondary_line').className = "secondary_wan_disconnected";
+				document.getElementById('secondary_line').className = "secondary_wan_disconnected";
 			}	
 			else{
-				$('secondary_line').className = "secondary_wan_connected";
+				document.getElementById('secondary_line').className = "secondary_wan_connected";
 			}
 		}	
 	}
 	else{	//lb
-		$('primary_status').innerHTML = primary_status;
-		$('seconday_status').innerHTML = secondary_status;
+		document.getElementById('primary_status').innerHTML = primary_status;
+		document.getElementById('seconday_status').innerHTML = secondary_status;
 		if(primary_status == "Disconnected"){				
-			$('primary_line').className = "primary_wan_disconnected";
+			document.getElementById('primary_line').className = "primary_wan_disconnected";
 		}	
 		else{
-			$('primary_line').className = "primary_wan_connected";
+			document.getElementById('primary_line').className = "primary_wan_connected";
 		}
 		
 		if(secondary_status == "Disconnected"){
-			$('secondary_line').className = "secondary_wan_disconnected";
+			document.getElementById('secondary_line').className = "secondary_wan_disconnected";
 		}	
 		else{
-			$('secondary_line').className = "secondary_wan_connected";
+			document.getElementById('secondary_line').className = "secondary_wan_connected";
 		}	
 	}
 }
@@ -981,8 +949,10 @@ function validForm(){
 		}
 
 		document.list_form.dhcp_staticlist.value.split("<").forEach(function(element, index){
-			if(element.indexOf(document.getElementById("ipaddr_field").value) != -1){
-				if(element.indexOf(document.getElementById("macaddr_field").value) == -1){
+			var existMac = element.split(">")[0];
+			var existIP = element.split(">")[1];
+			if(existIP == document.getElementById("ipaddr_field").value) {
+				if(existMac != document.getElementById("macaddr_field").value) {
 					alert("<#JS_duplicate#>");
 					ip_obj.value = document.getElementById("ipaddr_field_orig").value;
 					ip_obj.focus();
@@ -995,7 +965,7 @@ function validForm(){
 	}
 
 	if(validateIpRange(document.getElementById("ipaddr_field")) == true ){		
-		if(document.getElementById("ipLockIcon").className != "dhcp") {	// only ipLockIcon is lock then update dhcp_staticlist						
+		if(ipBindingFlag) {	// only ipLockIcon is lock then update dhcp_staticlist						
 			document.list_form.dhcp_staticlist.value.split("<").forEach(function(element, index){
 				if(element.indexOf(document.getElementById("macaddr_field").value) != -1){
 					var tmpArray = document.list_form.dhcp_staticlist.value.split("<")
@@ -1006,14 +976,47 @@ function validForm(){
 				}
 			});
 		}
+		//if time sheduling enable, retain the existing settings
+		if(timeSchedulingFlag) {
+			delFromBlockMacList(document.getElementById("macaddr_field").value);
+			if(document.list_form.MULTIFILTER_MAC.value.indexOf(document.getElementById("macaddr_field").value) == -1){
+				if(document.list_form.MULTIFILTER_MAC.value == "") {
+					document.list_form.MULTIFILTER_ENABLE.value += "1";
+					document.list_form.MULTIFILTER_MAC.value += document.getElementById("macaddr_field").value;
+					document.list_form.MULTIFILTER_DEVICENAME.value += document.getElementById("client_name").value.trim();
+					if(time_scheduling_array[document.getElementById("macaddr_field").value] != undefined) {
+						document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value += time_scheduling_array[document.getElementById("macaddr_field").value][1];
+					}
+					else {
+						document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value += "<";
+					}
+				}
+				else {
+					document.list_form.MULTIFILTER_ENABLE.value += ">";
+					document.list_form.MULTIFILTER_ENABLE.value += "1";
+					document.list_form.MULTIFILTER_MAC.value += ">";
+					document.list_form.MULTIFILTER_MAC.value += document.getElementById("macaddr_field").value;
+					document.list_form.MULTIFILTER_DEVICENAME.value += ">";
+					document.list_form.MULTIFILTER_DEVICENAME.value += document.getElementById("client_name").value.trim();
+					if(time_scheduling_array[document.getElementById("macaddr_field").value] != undefined) {
+						document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value += ">" + time_scheduling_array[document.getElementById("macaddr_field").value][1];
+					}
+					else {
+						document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value += "><";
+					}
+				}
+			}
+		}
 	}
 	else		
 		return false;
 
-	showtext($("alert_msg1"), "");
+	showtext(document.getElementById("alert_msg1"), "");
 
+	document.getElementById('client_name').value = document.getElementById('client_name').value.trim();
 	if(document.getElementById('client_name').value.length == 0){
 		alert("<#File_Pop_content_alert_desc1#>");
+		document.getElementById("client_name").style.display = "";
 		document.getElementById('client_name').focus();
 		document.getElementById('client_name').select();
 		return false;
@@ -1036,12 +1039,21 @@ function edit_confirm(){
 		// customize device name
 		var originalCustomListArray = new Array();
 		var onEditClient = new Array();
-
+		var clientTypeNum = "";
+		if(document.getElementById('client_image').className.search("venderIcon_no_hover") != -1) {
+			clientTypeNum = "0";
+		}
+		else {
+			clientTypeNum = document.getElementById('client_image').className.replace("clientIcon_no_hover type", "");
+			if(clientTypeNum == "0_viewMode") {
+				clientTypeNum = "0";
+			}
+		}
 		originalCustomListArray = custom_name.split('<');
 		onEditClient[0] = document.getElementById('client_name').value.trim();
 		onEditClient[1] = document.getElementById('macaddr_field').value;
 		onEditClient[2] = 0;
-		onEditClient[3] = document.getElementById('client_image').className.replace("type", "");
+		onEditClient[3] = clientTypeNum;
 		onEditClient[4] = "";
 		onEditClient[5] = "";
 
@@ -1075,6 +1087,44 @@ function edit_confirm(){
 			document.list_form.dhcp_static_x.disabled = false;
 		}
 
+		//  block Mac list
+		if(document.list_form.MULTIFILTER_MAC.value == MULTIFILTER_MAC_orig && document.list_form.MULTIFILTER_ENABLE.value == MULTIFILTER_ENABLE_orig && 
+			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value == MULTIFILTER_MACFILTER_DAYTIME_orig){
+			document.list_form.MULTIFILTER_ALL.disabled = true;
+			document.list_form.MULTIFILTER_ENABLE.disabled = true;
+			document.list_form.MULTIFILTER_MAC.disabled = true;
+			document.list_form.MULTIFILTER_DEVICENAME.disabled = true;
+			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.disabled = true;
+			MULTIFILTER_ENABLE_orig = document.list_form.MULTIFILTER_ENABLE.value;
+			MULTIFILTER_MAC_orig = document.list_form.MULTIFILTER_MAC.value;
+			MULTIFILTER_DEVICENAME_orig = document.list_form.MULTIFILTER_DEVICENAME.value;
+			MULTIFILTER_MACFILTER_DAYTIME_orig = document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value;
+		}
+		else {
+			document.list_form.flag.value = "";
+			if(document.list_form.action_script.value == "restart_net_and_phy") {
+				document.list_form.action_script.value += ";restart_firewall";
+				document.list_form.action_wait.value = "35";
+			}
+			else {
+				document.list_form.action_script.value = "restart_firewall";
+				if(timeSchedulingFlag) {
+					document.list_form.action_wait.value = "1";
+					document.list_form.flag.value = "background";
+				}
+				else {
+					document.list_form.action_wait.value = "5";
+				}
+			}
+			
+			document.list_form.MULTIFILTER_ALL.disabled = false;
+			document.list_form.MULTIFILTER_ALL.value = "1";
+			document.list_form.MULTIFILTER_ENABLE.disabled = false;
+			document.list_form.MULTIFILTER_MAC.disabled = false;
+			document.list_form.MULTIFILTER_DEVICENAME.disabled = false;
+			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.disabled = false;
+		}
+
 		// handle user image
 		document.list_form.custom_usericon.disabled = true;
 		if(usericon_support) {
@@ -1093,33 +1143,42 @@ function edit_confirm(){
 
 		// display waiting effect
 		if(document.list_form.flag.value == "background"){
-			$("loadingIcon").style.display = "";
+			document.getElementById("loadingIcon").style.display = "";
 			setTimeout(function(){
-				document.getElementById("statusframe").contentWindow.refreshpage();
+				if(timeSchedulingFlag && document.getElementById("internetTimeScheduling").style.display == "none") { //if the latest internetMode is not time mode, then redirect to ParentalControl
+					redirectTimeScheduling();
+				}
+				else {
+					document.getElementById("statusframe").contentWindow.refreshpage();
+				}
 			}, document.list_form.action_wait.value * 1000);
 		}
 		else{
 			hideEditBlock(); 
 			setTimeout(function(){
-				refreshpage();
+				if(timeSchedulingFlag && document.getElementById("internetTimeScheduling").style.display == "none") { //if the latest internetMode is not time mode, then redirect to ParentalControl
+					redirectTimeScheduling();
+				}
+				else {
+					refreshpage();
+				}
 			}, document.list_form.action_wait.value * 1000);
 		}
 	}		
 }
 
 function edit_cancel(){
-	$('edit_client_block').style.display = "none";
-	$("hiddenMask").style.visibility = "hidden";
-	$("dr_sweet_advise").style.display = "";
-	show_custom_image("cancel");
+	document.getElementById('edit_client_block').style.display = "none";
+	document.getElementById("hiddenMask").style.visibility = "hidden";
+	document.getElementById("dr_sweet_advise").style.display = "";
 
 	// disable event listener
-	$j(document).mouseup(function(e){});
-	$j("#statusframe").contents().mouseup(function(e){});
+	$(document).mouseup(function(e){});
+	$("#statusframe").contents().mouseup(function(e){});
 }
 
 function edit_delete(){
-	var target_mac = $('macaddr_field').value;
+	var target_mac = document.getElementById('macaddr_field').value;
 	var custom_name_row = custom_name.split('<');
 	var custom_name_row_temp = custom_name.split('<');
 	var custom_name_temp = "";
@@ -1148,58 +1207,57 @@ function edit_delete(){
 	if(match_delete_flag == 1){
 		document.list_form.custom_clientlist.value = custom_name_temp;
 		custom_name = custom_name_temp;
-		$("loadingIcon").style.display = "";
+		document.getElementById("loadingIcon").style.display = "";
 		document.list_form.submit();
 		document.getElementById("statusframe").contentWindow.refreshpage();
 
-		setTimeout("$('loadingIcon').style.display='none'", 3500);
-		setTimeout("$('deleteBtn').style.display='none'", 3500);
+		setTimeout("document.getElementById('loadingIcon').style.display='none'", 3500);
+		setTimeout("document.getElementById('deleteBtn').style.display='none'", 3500);
 	}
 }
 
-function show_custom_image(flag){
-	editClientImageFlag = true;
-	if(flag == "cancel"){	
-		$('edit_client_block').style.height = "220px";
-		$j('#custom_image').fadeOut(100);	
-	}	
-	else if($('custom_image').style.display == "none"){
-		$('edit_client_block').style.height = "400px";
-		$j('#custom_image').fadeIn(200);		
+function show_custom_image() {
+	var display_state = document.getElementById("custom_image").style.display;
+	if(display_state == "none") {
+		$("#custom_image").slideDown("slow");
+		document.getElementById("changeIconTitle").innerHTML = "<#CTL_close#>";
 	}
-	else{
-		$('edit_client_block').style.height = "220px";
-		$j('#custom_image').fadeOut(100);	
-	}	
-}
-
-function hide_custom_image(){
-	$('edit_client_block').style.height = "220px";
-	$j('#custom_image').fadeOut(100);	
+	else {
+		$("#custom_image").slideUp("slow");
+		document.getElementById("changeIconTitle").innerHTML = "Change";/*untranslated*/
+	}
 }
 
 function select_image(type){
 	var sequence = type.substring(4,type.length);
 	document.getElementById("client_image").style.display = "none";
 	document.getElementById("canvasUserIcon").style.display = "none";
-	$j('#custom_image').fadeOut(100);
-	$('edit_client_block').style.height = "220px";
-	document.getElementById('client_image').className = type;
+	var icon_type = type;
+	if(type == "type0" || type == "type6") {
+		icon_type = "type0_viewMode";
+	}
+	document.getElementById('client_image').className = "clientIcon_no_hover " + icon_type;
+	if(verderIcon != "" && (type == "type0" || type == "type6")) {
+		var venderIconClassName = getVenderIconClassName(verderIcon.toLowerCase());
+		if(venderIconClassName != "") {
+			document.getElementById('client_image').className = "venderIcon_no_hover " + venderIconClassName
+		}
+	}
 
 	var userImageFlag = false;
-	if(!editClientImageFlag) {
+	if(!firstTimeOpenBlock) {
 		if(usericon_support) {
 			var clientMac = document.getElementById('macaddr_field').value.replace(/\:/g, "");
 			userIconBase64 = getUploadIcon(clientMac);
 			if(userIconBase64 != "NoIcon") {
-				document.getElementById("client_image").style.display = "none";
-				document.getElementById("canvasUserIcon").style.display = "";
 				var img = document.createElement("img");
 				img.src = userIconBase64;
 				var canvas = document.getElementById("canvasUserIcon");
 				var ctx = canvas.getContext("2d");
-				ctx.clearRect(0,0,69,69);
-				ctx.drawImage(img, 0, 0, 69, 69);
+				ctx.clearRect(0,0,85,85);
+				document.getElementById("client_image").style.display = "none";
+				document.getElementById("canvasUserIcon").style.display = "";
+				ctx.drawImage(img, 0, 0, 85, 85);
 				userImageFlag = true;
 			}
 		}
@@ -1208,10 +1266,6 @@ function select_image(type){
 	if(!userImageFlag) {
 		userIconBase64 = "NoIcon";
 		document.getElementById("client_image").style.display = "";
-		if(type == "type0" || type == "type6")
-			document.getElementById('client_image').style.backgroundSize = "131px";
-		else
-			document.getElementById('client_image').style.backgroundSize = "130px";
 	}
 }
 
@@ -1223,76 +1277,56 @@ function hideEditBlock(){
 	document.getElementById('deleteBtn').style.display ='none';
 }
 
-//check user icon num is over 100 or not.
-function userIconNumLimit(mac) {
-	var flag = true;
-	var uploadIconMacList = getUploadIconList().replace(/\.log/g, "");
-	var selectMac = mac.replace(/\:/g, "");
-	var existFlag = (uploadIconMacList.search(selectMac) == -1) ? false : true;
-	//check mac exist or not
-	if(!existFlag) {
-		var userIconCount = getUploadIconCount();
-		if(userIconCount >= 100) {	//mac not exist, need check use icnon number whether over 100 or not.
-			flag = false;
+function oui_query(mac){
+	var tab = new Array();
+	tab = mac.split(mac.substr(2,1));
+	$.ajax({
+		url: 'http://standards.ieee.org/cgi-bin/ouisearch?'+ tab[0] + '-' + tab[1] + '-' + tab[2],
+		type: 'GET',
+		success: function(response) {
+			if(document.getElementById("edit_client_block").style.display == "none") return true;
+			if(response.responseText.search("Sorry!") == -1) {
+				var retData = response.responseText.split("pre")[1].split("(hex)")[1].split(tab[0] + tab[1] + tab[2])[0].split("&lt;/");
+				document.getElementById('manufacturer_field').value = retData[0].trim();
+				document.getElementById('manufacturer_field').title = "";
+				if(retData[0].trim().length > 28) {
+					document.getElementById('manufacturer_field').value = retData[0].trim().substring(0, 26) + "..";
+					document.getElementById('manufacturer_field').title = retData[0].trim();
+				}
+			}
 		}
-	}
-	return flag;
+	});
 }
 
 function popupEditBlock(clientObj){
-	document.getElementById("divUserIcon").style.display = "none";
-	//1.check rc_support
-	if(usericon_support) {
-		//2.check browswer support File Reader and Canvas or not.
-		if(isSupportFileReader() && isSupportCanvas()) {
-			document.getElementById("divUserIcon").style.display = "";
-			//Setting drop event
-			var holder = document.getElementById("divDropClientImage");
-			holder.ondragover = function () { return false; };
-			holder.ondragend = function () { return false; };
-			holder.ondrop = function (e) {
-				e.preventDefault();
-				var userIconLimitFlag = userIconNumLimit(document.getElementById("macaddr_field").value);
-				if(userIconLimitFlag) {	//not over 100	
-					var file = e.dataTransfer.files[0];
-					//check image
-					if(file.type.search("image") != -1) {
-						document.getElementById("client_image").style.display = "none";
-						document.getElementById("canvasUserIcon").style.display = "";
-						var reader = new FileReader();
-						reader.onload = function (event) {
-							var img = document.createElement("img");
-							img.src = event.target.result;
-							var canvas = document.getElementById("canvasUserIcon");
-							var ctx = canvas.getContext("2d");
-							ctx.clearRect(0,0,69,69);
-							setTimeout(function() {
-								ctx.drawImage(img, 0, 0, 69, 69);
-								var dataURL = canvas.toDataURL("image/jpeg");
-								userIconBase64 = dataURL;
-							}, 100); //for firefox FPS(Frames per Second) issue need delay
-						};
-						reader.readAsDataURL(file);
-						return false;
-					}
-					else {
-						alert("<#Setting_upload_hint#>");
-						return false;
-					}
-				}
-				else {	//over 100 then let usee select delete icon or nothing
-					showClientIconList();
-				}
-			};
-		} 
-	}
-
-	editClientImageFlag = false;
-
-	if(document.getElementById("edit_client_block").style.display != "none" && document.getElementById('client_name').value == clientObj.name){
-		$j("#edit_client_block").fadeOut(300);
+	firstTimeOpenBlock = false;
+	
+	var clientName = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
+	if(document.getElementById("edit_client_block").style.display != "none" && document.getElementById('client_name').value == clientName){
+		$("#edit_client_block").fadeOut(300);
 	}
 	else{
+		document.getElementById("uploadIcon").value = "";
+		document.list_form.dhcp_staticlist.value = dhcp_staticlist_orig;
+		document.list_form.MULTIFILTER_ENABLE.value = MULTIFILTER_ENABLE_orig;
+		document.list_form.MULTIFILTER_MAC.value = MULTIFILTER_MAC_orig;
+		document.list_form.MULTIFILTER_DEVICENAME.value = MULTIFILTER_DEVICENAME_orig;
+		document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value = MULTIFILTER_MACFILTER_DAYTIME_orig;
+		document.getElementById("divDropClientImage").ondrop = null;
+		document.getElementById("internetTimeScheduling").style.display = "none";
+		if(sw_mode == "1") {
+			document.getElementById('trBlockInternet').style.display = "";
+			document.getElementById('trTimeScheduling').style.display = "";
+			document.getElementById('trIPBinding').style.display = "";
+		}
+		else {
+			document.getElementById('trBlockInternet').style.display = "none";
+			document.getElementById('trTimeScheduling').style.display = "none";
+			document.getElementById('trIPBinding').style.display = "none";
+		}
+		document.getElementById("custom_image").style.display = "none";
+		document.getElementById("changeIconTitle").innerHTML = "Change";/*untranslated*/
+		
 		var convRSSI = function(val) {
 			if(val == "") return "wired";
 
@@ -1311,58 +1345,277 @@ function popupEditBlock(clientObj){
 			connectModeTip = "<#tm_wired#>";
 		}
 		else {
-			switch(rssi_t) {
-				case 1 :
-					connectModeTip = '<#PASS_score1#>';
+			switch (rssi_t) {
+				case 1:
+					connectModeTip = "<#Radio#>: <#PASS_score1#>\n";
 					break;
-				case 2 :
-					connectModeTip = '<#PASS_score2#>';
+				case 2:
+					connectModeTip = "<#Radio#>: <#PASS_score2#>\n";
 					break;
-				case 3 :
-					connectModeTip = '<#PASS_score3#>';
+				case 3:
+					connectModeTip = "<#Radio#>: <#PASS_score3#>\n";
 					break;
-				case 4 :
-					connectModeTip = '<#PASS_score4#>';
+				case 4:
+					connectModeTip = "<#Radio#>: <#PASS_score4#>\n";
 					break;
+			}
+			if(stainfo_support) {
+				if(clientObj.curTx != "")
+					connectModeTip += "Tx Rate: " + clientObj.curTx + "\n";
+				if(clientObj.curRx != "")
+					connectModeTip += "Rx Rate: " + clientObj.curRx + "\n";
+				connectModeTip += "<#Access_Time#>: " + clientObj.wlConnectTime + "";
 			}
 		}
 
 		if(sw_mode != 4){
 			clientIconHtml += '<div class="radioIcon radio_' + rssi_t +'" title="' + connectModeTip + '"></div>';
 			if(clientObj.isWL != 0) {
-				var bandClass = "band";
+				var bandClass = "band_txt";
 				if(navigator.userAgent.toUpperCase().match(/CHROME\/([\d.]+)/)){
-					bandClass = "band_chrome";
+					bandClass = "band_txt_chrome";
 				}
-				var bandName = [["Wired", "2.4G", "5G"], ["Wired", "2.4G", "5G-1", "5G-2"]];
-				var bandNameIndex = wl_info.band5g_2_support ? 1 : 0;
-				clientIconHtml += '<div class="' + bandClass + '">' + bandName[bandNameIndex][clientObj.isWL] + '</div>';
+				clientIconHtml += '<div class="band_block"><span class="' + bandClass + '">' + wl_nband_title[clientObj.isWL-1].replace("Hz", "") + '</span></div>';
 			}
-			document.getElementById('client_icon').innerHTML = clientIconHtml;
-			document.getElementById('client_icon').title = connectModeTip;
+			document.getElementById('client_interface').innerHTML = clientIconHtml;
+			document.getElementById('client_interface').title = connectModeTip;
 		}
 
-		document.getElementById('client_name').value = clientObj.name;
+		document.getElementById('client_ipMethod').style.display = "none";
+		document.getElementById('client_login').style.display = "none";
+		document.getElementById('client_printer').style.display = "none";
+		document.getElementById('client_iTunes').style.display = "none";
+		document.getElementById('client_opMode').style.display = "none";
+		if(sw_mode == "1") {
+			document.getElementById('client_ipMethod').style.display = "";
+			document.getElementById('client_ipMethod').innerHTML = clientObj.ipMethod;
+			document.getElementById('client_ipMethod').onmouseover = function() {return overlib(ipState[clientObj.ipMethod]);};
+			document.getElementById('client_ipMethod').onmouseout = function() {nd();};
+		}
+		if(clientObj.isLogin) {
+			document.getElementById('client_login').style.display = "";
+			document.getElementById('client_login').innerHTML = "logged-in-user";
+		}
+		if(clientObj.isPrinter) {
+			document.getElementById('client_printer').style.display = "";
+			document.getElementById('client_printer').innerHTML = "Printer";
+		}
+		if(clientObj.isITunes) {
+			document.getElementById('client_iTunes').style.display = "";
+			document.getElementById('client_iTunes').innerHTML = "iTunes";
+		}
+
+		if(clientObj.opMode != 0) {
+			var opModeDes = ["none", "<#wireless_router#>", "<#OP_RE_item#>", "<#OP_AP_item#>", "Media bridge"];
+			document.getElementById('client_opMode').style.display = "";
+			document.getElementById('client_opMode').innerHTML = opModeDes[clientObj.opMode];
+		}
+		
+		document.getElementById('client_name').value = clientName;
 		document.getElementById('ipaddr_field_orig').value = clientObj.ip;
 		document.getElementById('ipaddr_field').value = clientObj.ip;
+		document.getElementById("ipaddr_field").onkeypress = function() {
+			if(!ipBindingFlag) {
+				$('#radio_IPBinding_enable').click();
+				ipBindingFlag = true;
+			}			
+		}
+		document.getElementById("ipaddr_field").onblur = function() {
+			delFromList(document.getElementById("macaddr_field").value);
+			addToList(document.getElementById("macaddr_field").value);
+		}
 		document.getElementById('macaddr_field').value = clientObj.mac;
-		select_image("type" + parseInt(clientObj.type));
-		if(dhcp_staticlist_orig.search(clientObj.mac + ">" + clientObj.ip) != -1) { //check mac>ip is combination the the ipLockIcon is manual
-			document.getElementById("ipLockIcon").className = "manual";
+		var deviceTitle = (clientObj.dpiDevice == "") ? clientObj.dpiVender : clientObj.dpiDevice;
+		if(deviceTitle == undefined || deviceTitle == "") {
+			document.getElementById('manufacturer_field').value = "Loading manufacturer..";
+			setTimeout(function(){
+				if('<% nvram_get("x_Setting"); %>' == '1' && wanConnectStatus && clientObj.internetState) {
+					oui_query(clientObj.mac);
+				}
+			}, 1000);
 		}
 		else {
-			document.getElementById("ipLockIcon").className = "dhcp";
+			document.getElementById('manufacturer_field').value = deviceTitle;
+			document.getElementById('manufacturer_field').title = "";
+			if(deviceTitle.length > 28) {
+				document.getElementById('manufacturer_field').value = deviceTitle.substring(0, 26) + "..";
+				document.getElementById('manufacturer_field').title = deviceTitle;
+			}
+		}
+	
+		var setRadioIPBinding = function (state, mode, mac) {
+			switch (mode) {
+				case "ipBinding" :
+					$('#radio_IPBinding_enable').iphoneSwitch(state,
+						function(){
+							if(dhcp_staticlist_orig.search(mac) == -1) {
+								if(dhcp_staticlist_num == 64) {
+									if(confirm("The max limit is 64 rule. Please check your client list on DHCP server.")) { /*untranslated*/
+										location.href = "Advanced_DHCP_Content.asp" ;
+									}
+									else {
+										document.getElementById("ipaddr_field").value = document.getElementById("ipaddr_field_orig").value;
+										setRadioIPBinding(0, "ipBinding", mac);
+										ipBindingFlag = false;
+										return false;
+									}
+								}
+							}
+							delFromList(document.getElementById("macaddr_field").value);
+							addToList(document.getElementById("macaddr_field").value);
+							ipBindingFlag = true;
+						},
+						function(){
+							delFromList(document.getElementById("macaddr_field").value);
+							document.getElementById("ipaddr_field").value = document.getElementById("ipaddr_field_orig").value;
+							ipBindingFlag = false;
+						}
+					);
+					break;
+				case "blockInternet" :
+					$('#radio_BlockInternet_enable').iphoneSwitch(state,
+						function(){
+							if(MULTIFILTER_MAC_orig.search(mac) == -1) {
+								if(MULTIFILTER_num == 16) {
+									if(confirm("The max limit is 16 clients. Please check your client list on time scheduling.")) { /*untranslated*/
+										location.href = "ParentalControl.asp" ;
+									}
+									else {
+										setRadioIPBinding(0, "blockInternet", mac);
+										return false;
+									}
+								}
+							}
+							delFromBlockMacList(document.getElementById("macaddr_field").value);
+							addToBlockMacList(document.getElementById("macaddr_field").value);
+							setRadioIPBinding(0, "timeScheduling", mac);
+							timeSchedulingFlag = false;
+						},
+						function(){
+							delFromBlockMacList(document.getElementById("macaddr_field").value);
+						}
+					);
+					break;
+				case "timeScheduling" :
+					$('#radio_TimeScheduling_enable').iphoneSwitch(state,
+						function(){
+							if(MULTIFILTER_MAC_orig.search(mac) == -1) {
+								if(MULTIFILTER_num == 16) {
+									if(confirm("The max limit is 16 clients. Please check your client list on time scheduling.")) { /*untranslated*/
+										location.href = "ParentalControl.asp" ;
+									}
+									else {
+										setRadioIPBinding(0, "timeScheduling", mac);
+										return false;
+									}
+								}
+							}
+							delFromBlockMacList(document.getElementById("macaddr_field").value);
+							addToBlockMacList(document.getElementById("macaddr_field").value);
+							setRadioIPBinding(0, "blockInternet", mac);
+							timeSchedulingFlag = true;
+						},
+						function(){
+							delFromBlockMacList(document.getElementById("macaddr_field").value);
+							timeSchedulingFlag = false;
+						}
+					);
+					break;
+			}
+		};
+
+		if(dhcp_staticlist_orig.search(clientObj.mac + ">" + clientObj.ip) != -1) { //check mac>ip is combination the the radio_IPBinding_enable is manual
+			setRadioIPBinding(1, "ipBinding", clientObj.mac);
+			ipBindingFlag = true;
+		}
+		else {
+			setRadioIPBinding(0, "ipBinding", clientObj.mac);
+			ipBindingFlag = false;
 		}
 
+		switch(clientObj.internetMode) {
+			case "allow" :
+				setRadioIPBinding(0, "blockInternet", clientObj.mac);
+				setRadioIPBinding(0, "timeScheduling", clientObj.mac);
+				timeSchedulingFlag = false;
+				break;
+			case "block" :
+				setRadioIPBinding(1, "blockInternet", clientObj.mac);
+				setRadioIPBinding(0, "timeScheduling", clientObj.mac);
+				timeSchedulingFlag = false;
+				break;
+			case "time" :
+				setRadioIPBinding(0, "blockInternet", clientObj.mac);
+				setRadioIPBinding(1, "timeScheduling", clientObj.mac);
+				document.getElementById("internetTimeScheduling").style.display = "";
+				timeSchedulingFlag = true;
+				break;
+		}
+
+		verderIcon = clientObj.dpiVender;
+
+		select_image("type" + parseInt(clientObj.type));
+
+		//setting user upload icon attribute start.
+		//1.check rc_support
+		if(usericon_support) {
+			//2.check browswer support File Reader and Canvas or not.
+			if(isSupportFileReader() && isSupportCanvas()) {
+				document.getElementById("divUserIcon").style.display = "";
+				//Setting drop event
+				var holder = document.getElementById("divDropClientImage");
+				holder.ondragover = function () { return false; };
+				holder.ondragend = function () { return false; };
+				holder.ondrop = function (e) {
+					e.preventDefault();
+					var userIconLimitFlag = userIconNumLimit(document.getElementById("macaddr_field").value);
+					if(userIconLimitFlag) {	//not over 100	
+						var file = e.dataTransfer.files[0];
+						//check image
+						if(file.type.search("image") != -1) {
+							var reader = new FileReader();
+							reader.onload = function (event) {
+								var img = document.createElement("img");
+								img.src = event.target.result;
+								var mimeType = img.src.split(",")[0].split(":")[1].split(";")[0];
+								var canvas = document.getElementById("canvasUserIcon");
+								var ctx = canvas.getContext("2d");
+								ctx.clearRect(0,0,85,85);
+								document.getElementById("client_image").style.display = "none";
+								document.getElementById("canvasUserIcon").style.display = "";
+								setTimeout(function() {
+									ctx.drawImage(img, 0, 0, 85, 85);
+									var dataURL = canvas.toDataURL(mimeType);
+									userIconBase64 = dataURL;
+								}, 100); //for firefox FPS(Frames per Second) issue need delay
+							};
+							reader.readAsDataURL(file);
+							return false;
+						}
+						else {
+							alert("<#Setting_upload_hint#>");
+							return false;
+						}
+					}
+					else {	//over 100 then let usee select delete icon or nothing
+						showClientIconList();
+					}
+				};
+			} 
+		}
+		//setting user upload icon attribute end.
+		
 		// hide block btn
 		// document.getElementById("blockBtn").style.display = (clientObj.isWL && document.maclist_form.wl0_macmode.value != "allow") ? "" : "none";
-		cal_panel_block("edit_client_block");
-		$j("#edit_client_block").fadeIn(300);
+		cal_panel_block("edit_client_block", 0.23);
+		$("#edit_client_block").fadeIn(300);
 	}
+
+	firstTimeOpenBlock = true;
 
 	// hide client panel 
-	$j(document).mouseup(function(e){
-		if(!$j("#edit_client_block").is(e.target) && $j("#edit_client_block").has(e.target).length === 0 && !userIconHideFlag) {
+	$(document).mouseup(function(e){
+		if(!$("#edit_client_block").is(e.target) && $("#edit_client_block").has(e.target).length === 0 && !userIconHideFlag) {
 			setTimeout( function() {userIconHideFlag = false;}, 1000);
 			edit_cancel();
 		}
@@ -1370,8 +1623,8 @@ function popupEditBlock(clientObj){
 			setTimeout( function() {userIconHideFlag = false;}, 1000);
 		}
 	});
-	$j("#statusframe").contents().mouseup(function(e){
-		if(!$j("#edit_client_block").is(e.target) && $j("#edit_client_block").has(e.target).length === 0 && !userIconHideFlag) {
+	$("#statusframe").contents().mouseup(function(e){
+		if(!$("#edit_client_block").is(e.target) && $("#edit_client_block").has(e.target).length === 0 && !userIconHideFlag) {
 			setTimeout( function() {userIconHideFlag = false;}, 1000);
 			edit_cancel();
 		}
@@ -1379,33 +1632,10 @@ function popupEditBlock(clientObj){
 			setTimeout( function() {userIconHideFlag = false;}, 1000);
 		}
 	});
-}
-
-function cal_panel_block(obj){
-	var blockmarginLeft;
-	if (window.innerWidth)
-		winWidth = window.innerWidth;
-	else if ((document.body) && (document.body.clientWidth))
-		winWidth = document.body.clientWidth;
-		
-	if (document.documentElement  && document.documentElement.clientHeight && document.documentElement.clientWidth){
-		winWidth = document.documentElement.clientWidth;
-	}
-
-	if(winWidth >1020){	
-		winPadding = (winWidth-1020)/2;	
-		winWidth = 1040;
-		blockmarginLeft= (winWidth*0.23)+winPadding;
-	}
-	else if(winWidth <=1020){
-		blockmarginLeft= (winWidth)*0.23+document.body.scrollLeft;	
-	}
-
-	document.getElementById(obj).style.marginLeft = blockmarginLeft + "px";
 }
 
 function check_usb3(){
-	if(based_modelid == "DSL-AC68U" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC69U" || based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC56S" || based_modelid == "RT-AC56U" || based_modelid == "RT-AC55U" || based_modelid == "RT-AC55UHP" || based_modelid == "RT-N18U"){
+	if(based_modelid == "DSL-AC68U" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC69U" || based_modelid == "RT-AC68U" || based_modelid == "RT-AC68U_V2" || based_modelid == "RT-AC56S" || based_modelid == "RT-AC56U" || based_modelid == "RT-AC55U" || based_modelid == "RT-AC55UHP" || based_modelid == "RT-N18U" || based_modelid == "RT-AC88U" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC5300"){
 		document.getElementById('usb1_image').src = "images/New_ui/networkmap/USB3.png";
 	}
 	else if(based_modelid == "RT-N65U"){
@@ -1414,6 +1644,47 @@ function check_usb3(){
 	}
 }
 
+function addToBlockMacList(macAddr){
+	if(document.list_form.MULTIFILTER_MAC.value.indexOf(macAddr) == -1){
+		if(document.list_form.MULTIFILTER_MAC.value == "") {
+			document.list_form.MULTIFILTER_ENABLE.value += "1";
+			document.list_form.MULTIFILTER_MAC.value += macAddr;
+			document.list_form.MULTIFILTER_DEVICENAME.value += document.getElementById("client_name").value.trim();
+			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value += "<";
+		}
+		else {
+			document.list_form.MULTIFILTER_ENABLE.value += ">";
+			document.list_form.MULTIFILTER_ENABLE.value += "1";
+			document.list_form.MULTIFILTER_MAC.value += ">";
+			document.list_form.MULTIFILTER_MAC.value += macAddr;
+			document.list_form.MULTIFILTER_DEVICENAME.value += ">";
+			document.list_form.MULTIFILTER_DEVICENAME.value += document.getElementById("client_name").value.trim();
+			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value += "><";
+		}
+	}
+}
+
+function delFromBlockMacList(macAddr){
+	document.list_form.MULTIFILTER_MAC.value.split(">").forEach(function(element, index){
+		if(element.indexOf(macAddr) != -1){
+			var tmpArray = document.list_form.MULTIFILTER_ENABLE.value.split(">");
+			tmpArray.splice(index, 1);
+			document.list_form.MULTIFILTER_ENABLE.value = tmpArray.join(">");
+
+			tmpArray = document.list_form.MULTIFILTER_MAC.value.split(">");
+			tmpArray.splice(index, 1);
+			document.list_form.MULTIFILTER_MAC.value = tmpArray.join(">");
+
+			tmpArray = document.list_form.MULTIFILTER_DEVICENAME.value.split(">");
+			tmpArray.splice(index, 1);
+			document.list_form.MULTIFILTER_DEVICENAME.value = tmpArray.join(">");
+
+			tmpArray = document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value.split(">");
+			tmpArray.splice(index, 1);
+			document.list_form.MULTIFILTER_MACFILTER_DAYTIME.value = tmpArray.join(">");
+		}
+	})
+}
 
 function addToList(macAddr){
 	if(document.list_form.dhcp_staticlist.value.indexOf(macAddr) == -1){
@@ -1439,8 +1710,8 @@ function showClientIconList() {
 	confirmFlag = confirm("The client icon over upload limting, please remove at least one client icon then try to upload again.");
 	if(confirmFlag) {
 		edit_cancel();
-		$j("#edit_usericon_block").fadeIn(10);
-		cal_panel_block("edit_usericon_block");
+		$("#edit_usericon_block").fadeIn(10);
+		cal_panel_block("edit_usericon_block", 0.15);
 		showClientIcon();
 		document.getElementById("uploadIcon").value = "";
 		return false;
@@ -1472,7 +1743,7 @@ function showClientIcon() {
 				var clientObj = clientList[formatMac];
 				var clientName = "";
 				if(clientObj != undefined) {
-					clientName = clientObj.name;
+					clientName = (clientObj.nickName == "") ? clientObj.name : clientObj.nickName;
 				}
 				code +='<td width="45%">'+ clientName +'</td>';
 				code +='<td width="30%">'+ formatMac +'</td>';
@@ -1492,7 +1763,7 @@ function delClientIcon(rowdata) {
 	var delMac = rowdata.parentNode.parentNode.childNodes[1].innerHTML;
 	document.getElementById("usericon_table").deleteRow(delIdx);
 	custom_usericon_del += delMac + ">";
-	var trCount = $j( "#usericon_table tr" ).length;
+	var trCount = $( "#usericon_table tr" ).length;
 	document.getElementById('edit_usericon_block').style.height = (61 * (trCount + 1) + 50) + "px";
 	if(trCount == 0) {
 		var code = "";
@@ -1522,7 +1793,7 @@ function btUserIconEdit() {
 }
 function btUserIconCancel() {
 	custom_usericon_del = "";
-	$j("#edit_usericon_block").fadeOut(100);
+	$("#edit_usericon_block").fadeOut(100);
 }
 
 function previewImage(imageObj) {
@@ -1544,30 +1815,61 @@ function previewImage(imageObj) {
 		}
 		else {
 			//2.Re-drow image
-			document.getElementById("client_image").style.display = "none";
-			document.getElementById("canvasUserIcon").style.display = "";
 			var fileReader = new FileReader(); 
 			fileReader.onload = function (fileReader) {
 				var img = document.createElement("img");
 				img.src = fileReader.target.result;
+				var mimeType = img.src.split(",")[0].split(":")[1].split(";")[0];
 				var canvas = document.getElementById("canvasUserIcon");
 				var ctx = canvas.getContext("2d");
-				ctx.clearRect(0,0,69,69);
+				ctx.clearRect(0,0,85,85);
+				document.getElementById("client_image").style.display = "none";
+				document.getElementById("canvasUserIcon").style.display = "";
 				setTimeout(function() {
-					ctx.drawImage(img, 0, 0, 69, 69);
-					var dataURL = canvas.toDataURL("image/jpeg");
+					ctx.drawImage(img, 0, 0, 85, 85);
+					var dataURL = canvas.toDataURL(mimeType);
 					userIconBase64 = dataURL;
 				}, 100); //for firefox FPS(Frames per Second) issue need delay
 			}
 			fileReader.readAsDataURL(imageObj.files[0]);
-			$j('#custom_image').fadeOut(100);
 			userIconHideFlag = true;
-			document.getElementById('edit_client_block').style.height = "220px";
 		}
 	}
 	else {	//over 100 then let usee select delete icon or nothing
 		showClientIconList();
 	}
+}
+
+function redirectTimeScheduling() {
+	cookie.set("time_scheduling_mac", document.getElementById('macaddr_field').value, 1);
+	location.href = "ParentalControl.asp" ;
+}
+function updateClientsCount() {
+	$.ajax({
+		url: '/update_networkmapd.asp',
+		dataType: 'script', 
+		error: function(xhr) {
+			setTimeout("updateClientsCount();", 1000);
+		},
+		success: function(response){
+			//When not click iconClient and not click View Client List need update client count.
+			if(lastName != "iconClient") {
+				if(document.getElementById("clientlist_viewlist_content")) {
+					if(document.getElementById("clientlist_viewlist_content").style.display == "none") {
+						show_client_status(fromNetworkmapd.length - 1);
+					}
+				}
+				else {
+					show_client_status(fromNetworkmapd.length - 1);
+				}
+			}
+			setTimeout("updateClientsCount();", 3000);
+		}
+	});
+}
+function setDefaultIcon() {
+	var mac = document.getElementById("macaddr_field").value;
+	select_image("type" + parseInt(clientList[mac].defaultType));
 }
 </script>
 </head>
@@ -1590,9 +1892,9 @@ function previewImage(imageObj) {
 				<div id="disconnect_hint" style="display:none;"><#Main_alert_proceeding_desc2#></div>
 				<br>
 		    </div>
-			<div id="wireless_client_detect" style="margin-left:10px;position:absolute;display:none">
+			<div id="wireless_client_detect" style="margin-left:10px;position:absolute;display:none;width:400px">
 				<img src="images/loading.gif">
-				<div style="margin:-45px 0 0 75px;"><#QKSet_Internet_Setup_fail_method1#></div>
+				<div style="margin:-55px 0 0 75px;"><#QKSet_Internet_Setup_fail_method1#></div>
 			</div> 
 			<div class="drImg"><img src="images/alertImg.png"></div>
 			<div style="height:100px; "></div>
@@ -1634,6 +1936,11 @@ function previewImage(imageObj) {
 	<input type="hidden" name="dhcp_static_x" value='<% nvram_get("dhcp_static_x"); %>' disabled>
 	<input type="hidden" name="custom_usericon" value="">
 	<input type="hidden" name="custom_usericon_del" value="" disabled>
+	<input type="hidden" name="MULTIFILTER_ALL" value="" disabled>
+	<input type="hidden" name="MULTIFILTER_ENABLE" value="" disabled>
+	<input type="hidden" name="MULTIFILTER_MAC" value="" disabled>
+	<input type="hidden" name="MULTIFILTER_DEVICENAME" value="" disabled>
+	<input type="hidden" name="MULTIFILTER_MACFILTER_DAYTIME" value="" disabled>
 </form>
 
 <form method="post" name="maclist_form" id="maclist_form" action="/start_apply2.htm" target="hidden_frame">
@@ -1683,13 +1990,17 @@ function previewImage(imageObj) {
 	</div>	
 </div>
 <div id="edit_client_block" class="contentM_qis">
-	<div id="client_icon" style="width:30px;margin-top:5px;margin-bottom:-35px;margin-left:375px;"></div>
-	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0" style="margin-top: -30px;width: 99%;padding:5px 10px 0px 10px;">
+	<table class="QISform_wireless" border=0 align="center" cellpadding="5" cellspacing="0" style="width:100%;">
 		<tr>
 			<td colspan="2">
-				<div style="margin:5px 0px -5px 5px;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:bolder">
-					Client profile
+				<div id="divClientState" class="clientState">
+					<span id="client_ipMethod" class="ipMethodTag " ></span>
+					<span id="client_login" class="ipMethodTag " ></span>
+					<span id="client_printer" class="ipMethodTag " ></span>
+					<span id="client_iTunes" class="ipMethodTag " ></span>
+					<span id="client_opMode" class="ipMethodTag "></span>
 				</div>
+				<div id="client_interface" style="height:28px;width:28px;float:right;"></div>
 			</td>
 		</tr>
 		<tr>
@@ -1698,69 +2009,30 @@ function previewImage(imageObj) {
 			</td>
 		</tr>
 		<tr>
-			<td>
-				<div style="background-color:#172327;border-radius:10px;width:105px;height:87px;padding-top:7px;" id="divDropClientImage">
-					<div id="client_image" onclick="show_custom_image();"></div>
-					<canvas id="canvasUserIcon" width="69px" height="69px" onclick="show_custom_image();"></canvas>
+			<td style="text-align:center;vertical-align:top;">
+				<div id="divDropClientImage" class="client_preview_icon" title="Change client icon" onclick="show_custom_image();">
+					<div id="client_image" style="width:85px;height:85px;background-size:170%;margin:0 auto;"></div>
+					<canvas id="canvasUserIcon" class="client_canvasUserIcon" width="85px" height="85px"></canvas>
+				</div>
+				<div class="changeClientIcon">
+					<span title="Change to default client icon" onclick="setDefaultIcon();">Default</span><!--untranslated-->
+					<span id="changeIconTitle" title="Change client icon" style="margin-left:10px;" onclick="show_custom_image();">Change</span><!--untranslated-->
 				</div>
 			</td>
-			<td>
-				<div>
-					<table width="99%;"align="center" cellpadding="4" cellspacing="0">
-						<tr>
-							<td>
-								<input id="client_name" name="client_name" type="text" value="" class="input_32_table disabled" maxlength="32" style="float:left;width:200px;">							
-								<script>
-									document.getElementById("client_name").onclick = function(){
-										$j(this).removeClass("disabled");
-									}
-									document.getElementById("client_name").onblur = function(){
-										$j(this).addClass("disabled");
-									}
-								</script>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<input id="macaddr_field" type="text" value="" class="input_32_table disabled" style="float:left;width:200px;" disabled>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<input id="ipaddr_field_orig" type="hidden" value="" disabled="">
-								<input id="ipaddr_field" type="text" value="" class="input_32_table disabled" style="float:left;width:200px;" onkeypress="return validator.isIPAddr(this,event)">
-								<script>
-									document.getElementById("ipaddr_field").onclick = function(){
-										$j(this).removeClass("disabled");
-									}
-									document.getElementById("ipaddr_field").onblur = function(){
-										$j(this).addClass("disabled");
-									}
-									document.getElementById("ipaddr_field").onkeypress = function(){
-										document.getElementById("ipLockIcon").className = "manual";
-										delFromList(document.getElementById("macaddr_field").value);
-										addToList(document.getElementById("macaddr_field").value);
-									}
-								</script>
-
-								<div style="margin-top: 2px;margin-left: 215px;"><div id="ipLockIcon" class="dhcp" title="Binding IP and MAC Address"></div></div>
-								<script>
-									document.getElementById("ipLockIcon").onclick = function(){
-										if(this.className == "dhcp"){
-											this.className = "manual";
-											delFromList(document.getElementById("macaddr_field").value);
-											addToList(document.getElementById("macaddr_field").value);
-										}
-										else{
-											this.className = "dhcp";
-											delFromList(document.getElementById("macaddr_field").value);
-											document.getElementById("ipaddr_field").value = document.getElementById("ipaddr_field_orig").value;
-										}
-									}
-								</script>
-							</td>
-						</tr>
-					</table>
+			<td style="vertical-align:top;width:280px;">
+				<div>	
+					<input id="client_name" name="client_name" type="text" value="" class="input_32_table" maxlength="32" style="width:275px;" autocorrect="off" autocapitalize="off">
+				</div>
+				<div style="margin-top:10px;">				
+					<input id="ipaddr_field_orig" type="hidden" value="" disabled="">
+					<input id="ipaddr_field" type="text" value="" class="input_32_table" style="width:275px;" onkeypress="return validator.isIPAddr(this,event)" autocorrect="off" autocapitalize="off">
+				</div>
+					
+				<div style="margin-top:10px;">
+					<input id="macaddr_field" type="text" value="" class="input_32_table client_input_text_disabled" disabled autocorrect="off" autocapitalize="off">
+				</div>
+				<div style="margin-top:10px;">
+					<input id="manufacturer_field" type="text" value="" class="input_32_table client_input_text_disabled" disabled>
 				</div>
 			</td>
 		</tr>
@@ -1768,7 +2040,7 @@ function previewImage(imageObj) {
 		<tr>
 			<td colspan="2">
 				<div id="custom_image" style="display:none;">
-					<table width="99%;" border="1" align="center" cellpadding="4" cellspacing="0">
+					<table border="1" align="center" cellpadding="4" cellspacing="0" style="width:100%">
 						<tr>
 							<td>
 								<div class="type1" onclick="select_image(this.className);"></div>
@@ -1822,9 +2094,9 @@ function previewImage(imageObj) {
 							<td>
 								<div class="type18" onclick="select_image(this.className);"></div>
 							</td>
-							<td id="tdUserIcon">
-								<div id="divUserIcon">Upload
-									<input type="file" name="uploadIcon" id="uploadIcon" onchange="previewImage(this);" />
+							<td class="client_icon_list_td">
+								<div id="divUserIcon" class="client_upload_div" style="display:none;">+
+									<input type="file" name="uploadIcon" id="uploadIcon" class="client_upload_file" onchange="previewImage(this);" title="Upload client icon" /><!--untranslated-->
 								</div>
 							</td>
 							<td>
@@ -1834,40 +2106,61 @@ function previewImage(imageObj) {
 		 		</div>	
 			</td>
 		</tr>
-	</table>		
-	<div style="margin-top:5px;padding-bottom:10px;width:100%;text-align:center;">
-		<input class="button_gen" type="button" onclick="edit_delete();" id="deleteBtn" value="<#CTL_del#>" style="display:none;">
-		<input class="button_gen" type="button" id="blockBtn" value="<#Block#>" title="<#block_client#>" style="display:none;">
-		<script>
-			document.maclist_form.wl0_maclist_x.value = (function(){
-				var wl0_maclist_x_array = '<% nvram_get("wl0_maclist_x"); %>'.split("&#60");
+		<tr id="trBlockInternet" style="display:none;">
+			<td colspan="2">
+				<div style="width:65%;float:left;line-height:30px;" onmouseover="return overlib('Enable this button to block this device to access internet.');" onmouseout="return nd();">Block Internet Access<!--untranslated--></div>
+				<div class="left" style="cursor:pointer;float:right;" id="radio_BlockInternet_enable"></div>
+			</td>
+		</tr>
+		<tr id="trTimeScheduling" style="display:none;">
+			<td colspan="2">	
+				<div style="width:65%;float:left;line-height:30px;" onmouseover="return overlib('Time Scheduling allows you to set the time limit for a client\'s network usage.');" onmouseout="return nd();"><#Time_Scheduling#></div><!--untranslated-->
+				<div align="center" class="left" style="cursor:pointer;float:right;" id="radio_TimeScheduling_enable"></div>
+				<div id="internetTimeScheduling" class="internetTimeEdit" style="float:right;margin-right:10px;" title="Time Scheduling" onclick="redirectTimeScheduling();" ></div><!--untranslated-->
+			</td>
+		</tr>
+		<tr id="trIPBinding" style="display:none;">
+			<td colspan="2">
+				<div style="width:65%;float:left;line-height:30px;" onmouseover="return overlib('Enable this button to bind specific IP with MAC Address of this device.');" onmouseout="return nd();">MAC and IP address Binding<!--untranslated--></div>
+				<div align="center" class="left" style="cursor:pointer;float:right;" id="radio_IPBinding_enable" ></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2" style="text-align: center;">
+				<input class="button_gen" type="button" onclick="edit_delete();" id="deleteBtn" value="<#CTL_del#>" style="display:none;">
+				<input class="button_gen" type="button" id="blockBtn" value="<#Block#>" title="<#block_client#>" style="display:none;">
+				<script>
+					document.maclist_form.wl0_maclist_x.value = (function(){
+						var wl0_maclist_x_array = '<% nvram_get("wl0_maclist_x"); %>'.split("&#60");
 
-				if(wl_info.band5g_support){
-					'<% nvram_get("wl1_maclist_x"); %>'.split("&#60").forEach(function(element, index){
-						if(wl0_maclist_x_array.indexOf(element) == -1) wl0_maclist_x_array.push(element);
-					});
-				}
+						if(wl_info.band5g_support){
+							'<% nvram_get("wl1_maclist_x"); %>'.split("&#60").forEach(function(element, index){
+								if(wl0_maclist_x_array.indexOf(element) == -1) wl0_maclist_x_array.push(element);
+							});
+						}
 
-				if(wl_info.band5g_2_support){
-					'<% nvram_get("wl2_maclist_x"); %>'.split("&#60").forEach(function(element, index){
-						if(wl0_maclist_x_array.indexOf(element) == -1) wl0_maclist_x_array.push(element);
-					});
-				}
+						if(wl_info.band5g_2_support){
+							'<% nvram_get("wl2_maclist_x"); %>'.split("&#60").forEach(function(element, index){
+								if(wl0_maclist_x_array.indexOf(element) == -1) wl0_maclist_x_array.push(element);
+							});
+						}
 
-				return wl0_maclist_x_array.join("<");
-			})();
+						return wl0_maclist_x_array.join("<");
+					})();
 
-			document.getElementById("blockBtn").onclick = function(){
-				document.maclist_form.wl0_maclist_x.value = document.maclist_form.wl0_maclist_x.value + "<" + document.getElementById("macaddr_field").value;
-				document.maclist_form.wl1_maclist_x.value = document.maclist_form.wl0_maclist_x.value;
-				document.maclist_form.wl2_maclist_x.value = document.maclist_form.wl0_maclist_x.value;
-				document.maclist_form.submit();
-				hideEditBlock();
-			}
-		</script>
-		<input class="button_gen" type="button" onclick="edit_confirm();" value="<#CTL_ok#>">
-		<img id="loadingIcon" style="margin-left:5px;display:none;" src="/images/InternetScan.gif">
-	</div>	
+					document.getElementById("blockBtn").onclick = function(){
+						document.maclist_form.wl0_maclist_x.value = document.maclist_form.wl0_maclist_x.value + "<" + document.getElementById("macaddr_field").value;
+						document.maclist_form.wl1_maclist_x.value = document.maclist_form.wl0_maclist_x.value;
+						document.maclist_form.wl2_maclist_x.value = document.maclist_form.wl0_maclist_x.value;
+						document.maclist_form.submit();
+						hideEditBlock();
+					}
+				</script>
+				<input id="edit_confirm" class="button_gen" type="button" onclick="edit_confirm();" value="<#CTL_apply#>">
+				<img id="loadingIcon" style="margin-left:5px;display:none;" src="/images/InternetScan.gif">
+			</td>
+		</tr>
+	</table>
 </div>
 <!-- End for Editing client list-->	
 <table class="content" align="center" cellpadding="0" cellspacing="0">
@@ -1911,7 +2204,7 @@ function previewImage(imageObj) {
 						<div>
 							<span id="NM_connect_title" style="font-size:12px;font-family: Verdana, Arial, Helvetica, sans-serif;"><#statusTitle_Internet#>:</span>
 							<br>
-							<strong id="NM_connect_status" class="index_status" style="font-size:14px;"><#QKSet_Internet_Setup_fail_method1#>...</strong>
+							<strong id="NM_connect_status" class="index_status" style="font-size:14px;"><#QIS_step2#>...</strong>
 						</div>
 						<div id="wanIP_div" style="margin-top:5px;">
 							<span style="font-size:12px;font-family: Verdana, Arial, Helvetica, sans-serif;">WAN IP:</span>
@@ -1987,6 +2280,7 @@ function previewImage(imageObj) {
 							</a>
 							<div class="clients" id="clientNumber" style="cursor:pointer;"></div>
 						</div>
+						<input type="button" class="button_gen" value="View List" style="margin-top:15px;" onClick="pop_clientlist_listview(true)">
 						<!--div id="" onclick="">
 							<img style="margin-top:15px;width:150px;height:2px" src="/images/New_ui/networkmap/linetwo2.png">
 							<a id="" href="device-map/clients.asp" target="statusframe">
@@ -2038,7 +2332,7 @@ function previewImage(imageObj) {
 
 <script>
 	if(flag == "Internet" || flag == "Client")
-		$("statusframe").src = "";
+		document.getElementById("statusframe").src = "";
 
 	initial();
 

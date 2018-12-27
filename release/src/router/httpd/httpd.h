@@ -54,6 +54,32 @@ extern struct mime_handler mime_handlers[];
 #define MIME_EXCEPTION_NOAUTH_ALL 	1<<0
 #define MIME_EXCEPTION_NOAUTH_FIRST	1<<1
 #define MIME_EXCEPTION_NORESETTIME	1<<2
+#define MIME_EXCEPTION_MAINPAGE 	1<<3
+#define CHECK_REFERER	1
+
+#define SERVER_NAME "httpd/2.0"
+#define SERVER_PORT 80
+#define PROTOCOL "HTTP/1.0"
+#define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
+
+//asus token status for APP
+#define NOTOKEN		1
+#define AUTHFAIL	2
+#define ACCOUNTFAIL	3
+#define NOREFERER	4
+#define WEB_NOREFERER	5
+#define REFERERFAIL	6
+#define LOGINLOCK	7
+#define ISLOGOUT	8
+#define NOLOGIN		9
+
+/* image path for app */
+#define IMAGE_MODEL_PRODUCT	"/images/Model_product.png"
+#define IMAGE_WANUNPLUG		"/images/WANunplug.png"
+#define IMAGE_ROUTER_MODE	"/images/New_ui/rt.jpg"
+#define IMAGE_REPEATER_MODE	"/images/New_ui/re.jpg"
+#define IMAGE_AP_MODE		"/images/New_ui/ap.jpg"
+#define IMAGE_MEDIA_BRIDGE_MODE	"/images/New_ui/mb.jpg"
 
 /* Exception MIME handler */
 struct except_mime_handler {
@@ -62,6 +88,27 @@ struct except_mime_handler {
 };
 
 extern struct except_mime_handler except_mime_handlers[];
+
+/* MIME referer */
+struct mime_referer {
+	char *pattern;
+	int flag;
+};
+
+extern struct mime_referer mime_referers[];
+
+typedef struct asus_token_table asus_token_t;
+struct asus_token_table{
+	char useragent[1024];
+	char token[32];
+	char ipaddr[16];
+	char login_timestampstr[32];
+	char host[64];
+	asus_token_t *next;
+};
+
+asus_token_t *head;
+asus_token_t *curr;
 
 #define INC_ITEM        128
 #define REALLOC_VECTOR(p, len, size, item_size) {                               \
@@ -200,9 +247,10 @@ extern void set_cgi(char *name, char *value);
 /* httpd.c */
 extern void start_ssl(void);
 extern char *gethost(void);
-extern void http_logout(unsigned int ip);
+extern void http_logout(unsigned int ip, char *cookies, int fromapp_flag);
 extern int is_auth(void);
 extern int is_firsttime(void);
+extern char *generate_token(void);
 
 /* web.c */
 extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
@@ -214,6 +262,12 @@ extern int is_private_subnet(const char *ip);
 extern char* INET6_rresolve(struct sockaddr_in6 *sin6, int numeric);
 extern char *trim_r(char *str);
 extern int is_wlif_up(const char *ifname);
+extern void add_asus_token(char *token);
+extern int check_token_timeout_in_list(void);
+extern int get_token_list_length(void);
+extern asus_token_t* search_timeout_in_list(asus_token_t **prev, int fromapp_flag);
+extern asus_token_t* add_token_to_list(char *token, int add_to_end);
+extern asus_token_t* create_list(char *token);
 
 /* web-*.c */
 extern int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit);

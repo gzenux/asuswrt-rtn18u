@@ -20,6 +20,7 @@
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script language="JavaScript" type="text/javascript" src="/md5.js"></script>
+<script language="JavaScript" type="text/javascript" src="/form.js"></script>
 <style type="text/css">
 /* folder tree */
 .mask_bg{
@@ -121,7 +122,7 @@ sizingMethod='scale')";
 }
 </style>
 <script>
-var $j = jQuery.noConflict();
+
 <% wanlink(); %>
 <% get_AiDisk_status(); %>
 var cloud_status = "";
@@ -143,7 +144,14 @@ var lastClickedObj = 0;
 var _layer_order = "";
 var isNotIE = (navigator.userAgent.search("MSIE") == -1); 
 var PROTOCOL = "cifs";
-//window.onresize = cal_panel_block;
+window.onresize = function() {
+	if(document.getElementById("folderTree_panel").style.display == "block") {
+		cal_panel_block("folderTree_panel", 0.25);
+	}
+	if(document.getElementById("invitation_block").style.display == "block") {
+		cal_panel_block("invitation_block", 0.25);
+	}
+} 
 //var router_sync = '<% nvram_show_chinese_char("share_link_host"); %>';
 var router_sync =decodeURIComponent('<% nvram_char_to_ascii("","share_link_host"); %>');
 var router_synclist = '';
@@ -155,6 +163,7 @@ var router_synclist_captcha = new Array();
 var router_synclist_localfolder = new Array();
 var router_synclist_array = router_sync.replace(/>/g, "&#62").replace(/</g, "&#60");
 var based_modelid = '<% nvram_get("productid"); %>'; 
+var based_odmpid = '<% nvram_get("odmpid"); %>';
 var invitation_flag = 0;
 var ip_flag = 0;  // 0: public, 1: private
 var ddns_enable = '<% nvram_get("ddns_enable_x"); %>';
@@ -164,6 +173,8 @@ var host_macaddr = macAddr.split(':');
 var isMD5DDNSName = "A"+hexMD5(macAddr).toUpperCase()+".asuscomm.com";
 var webdav_aidisk = '<% nvram_get("webdav_aidisk"); %>';
 var webdav_proxy = '<% nvram_get("webdav_proxy"); %>';
+var webdav_http_port = '<% nvram_get("webdav_http_port"); %>';
+var webdav_https_port = '<% nvram_get("webdav_https_port"); %>';
 
 if(tmo_support)
         var theUrl = "cellspot.router"; 
@@ -191,12 +202,12 @@ function initial_dir(){
 	var type = "General";
 
 	url += "?motion=gettree&layer_order=" + __layer_order + "&t=" + Math.random();
-	$j.get(url,function(data){initial_dir_status(data);});
+	$.get(url,function(data){initial_dir_status(data);});
 }
 
 function initial_dir_status(data){
 	if(data == "" || data.length == 2){	
-		$("noUSB").style.display = "";
+		document.getElementById("noUSB").style.display = "";
 		disk_flag=1;
 	}
 }
@@ -212,8 +223,8 @@ function addRow(obj, head){
 }
 
 function addRow_Group(upper){ 
-	var rule_num = $('cloud_synclist_table').rows.length;
-	var item_num = $('cloud_synclist_table').rows[0].cells.length;
+	var rule_num = document.getElementById('cloud_synclist_table').rows.length;
+	var item_num = document.getElementById('cloud_synclist_table').rows[0].cells.length;
 	
 	if(rule_num >= upper){
 		alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
@@ -322,7 +333,7 @@ function showcloud_synclist(){
 		}
 	}
 	code +='</table>';
-	$("cloud_synclist_Block").innerHTML = code;
+	document.getElementById("cloud_synclist_Block").innerHTML = code;
 }
 
 function validform(){
@@ -356,12 +367,12 @@ function get_disk_tree(){
 		alert('<#no_usb_found#>');
 		return false;	
 	}
-	cal_panel_block('folderTree_panel');
-	$j("#folderTree_panel").fadeIn(300);
+	cal_panel_block("folderTree_panel", 0.25);
+	$("#folderTree_panel").fadeIn(300);
 	get_layer_items("0");
 }
 function get_layer_items(layer_order){
-	$j.ajax({
+	$.ajax({
     		url: '/gettree.asp?layer_order='+layer_order,
     		dataType: 'script',
     		error: function(xhr){
@@ -472,13 +483,13 @@ function BuildTree(){
 		TempObject +='<tr>';
 		// the line in the front.
 		TempObject +='<td class="vert_line">';
-		TempObject +='<img id="a'+ItemBarCode+'" onclick=\'$("d'+ItemBarCode+'").onclick();\' class="FdRead" src="/images/Tree/vert_line_'+isSubTree+'0.gif">';
+		TempObject +='<img id="a'+ItemBarCode+'" onclick=\'document.getElementById("d'+ItemBarCode+'").onclick();\' class="FdRead" src="/images/Tree/vert_line_'+isSubTree+'0.gif">';
 		TempObject +='</td>';
 	
 		if(layer == 3){
 			/*a: connect_line b: harddisc+name  c:harddisc  d:name e: next layer forder*/
 			TempObject +='<td>';		
-			TempObject +='<img id="c'+ItemBarCode+'" onclick=\'$("d'+ItemBarCode+'").onclick();\' src="/images/New_ui/advancesetting/'+ItemIcon+'.png">';
+			TempObject +='<img id="c'+ItemBarCode+'" onclick=\'document.getElementById("d'+ItemBarCode+'").onclick();\' src="/images/New_ui/advancesetting/'+ItemIcon+'.png">';
 			TempObject +='</td>';
 			TempObject +='<td>';
 			TempObject +='<span id="d'+ItemBarCode+'"'+SubClick+' title="'+ItemText+'">'+shown_ItemText+'</span>';
@@ -489,7 +500,7 @@ function BuildTree(){
 			TempObject +='<table class="tree_table">';
 			TempObject +='<tr>';
 			TempObject +='<td class="vert_line">';
-			TempObject +='<img id="c'+ItemBarCode+'" onclick=\'$("d'+ItemBarCode+'").onclick();\' src="/images/New_ui/advancesetting/'+ItemIcon+'.png">';
+			TempObject +='<img id="c'+ItemBarCode+'" onclick=\'document.getElementById("d'+ItemBarCode+'").onclick();\' src="/images/New_ui/advancesetting/'+ItemIcon+'.png">';
 			TempObject +='</td>';
 			TempObject +='<td class="FdText">';
 			TempObject +='<span id="d'+ItemBarCode+'"'+SubClick+' title="'+ItemText+'">'+shown_ItemText+'</span>';
@@ -506,7 +517,7 @@ function BuildTree(){
 			/*a: connect_line b: harddisc+name  c:harddisc  d:name e: next layer forder*/
 			TempObject +='<td>';
 			TempObject +='<table><tr><td>';
-			TempObject +='<img id="c'+ItemBarCode+'" onclick=\'$("d'+ItemBarCode+'").onclick();\' src="/images/New_ui/advancesetting/'+ItemIcon+'.png">';
+			TempObject +='<img id="c'+ItemBarCode+'" onclick=\'document.getElementById("d'+ItemBarCode+'").onclick();\' src="/images/New_ui/advancesetting/'+ItemIcon+'.png">';
 			TempObject +='</td><td>';
 			TempObject +='<span id="d'+ItemBarCode+'"'+SubClick+' title="'+ItemText+'">'+shown_ItemText+'</span>';
 			TempObject +='</td></tr></table>';
@@ -518,7 +529,7 @@ function BuildTree(){
 		TempObject +='</tr>';
 	}
 	TempObject +='</table>';
-	$("e"+this.FromObject).innerHTML = TempObject;
+	document.getElementById("e"+this.FromObject).innerHTML = TempObject;
 }
 
 function build_array(obj,layer){
@@ -527,15 +538,15 @@ function build_array(obj,layer){
 	var layer3_path ="";
 	if(obj.id.length>6){
 		if(layer ==3){
-			//layer3_path = "/" + $(obj.id).innerHTML;
+			//layer3_path = "/" + document.getElementById(obj.id).innerHTML;
 			layer3_path = "/" + obj.title;
 			while(layer3_path.indexOf("&nbsp;") != -1)
 				layer3_path = layer3_path.replace("&nbsp;"," ");
 				
 			if(obj.id.length >8)
-				layer2_path = "/" + $(obj.id.substring(0,obj.id.length-3)).innerHTML;
+				layer2_path = "/" + document.getElementById(obj.id.substring(0,obj.id.length-3)).innerHTML;
 			else
-				layer2_path = "/" + $(obj.id.substring(0,obj.id.length-2)).innerHTML;
+				layer2_path = "/" + document.getElementById(obj.id.substring(0,obj.id.length-2)).innerHTML;
 			
 			while(layer2_path.indexOf("&nbsp;") != -1)
 				layer2_path = layer2_path.replace("&nbsp;"," ");
@@ -543,7 +554,7 @@ function build_array(obj,layer){
 	}
 	if(obj.id.length>4 && obj.id.length<=6){
 		if(layer ==2){
-			//layer2_path = "/" + $(obj.id).innerHTML;
+			//layer2_path = "/" + document.getElementById(obj.id).innerHTML;
 			layer2_path = "/" + obj.title;
 			while(layer2_path.indexOf("&nbsp;") != -1)
 				layer2_path = layer2_path.replace("&nbsp;"," ");
@@ -564,23 +575,23 @@ function GetFolderItem(selectedObj, haveSubTree){
 		// chose Disk
 		setSelectedDiskOrder(selectedObj.id);
 		path_directory = build_array(selectedObj,layer);
-		$('createFolderBtn').className = "createFolderBtn";
-		$('deleteFolderBtn').className = "deleteFolderBtn";
-		$('modifyFolderBtn').className = "modifyFolderBtn";
-		$('createFolderBtn').onclick = function(){};
-		$('deleteFolderBtn').onclick = function(){};
-		$('modifyFolderBtn').onclick = function(){};
+		document.getElementById('createFolderBtn').className = "createFolderBtn";
+		document.getElementById('deleteFolderBtn').className = "deleteFolderBtn";
+		document.getElementById('modifyFolderBtn').className = "modifyFolderBtn";
+		document.getElementById('createFolderBtn').onclick = function(){};
+		document.getElementById('deleteFolderBtn').onclick = function(){};
+		document.getElementById('modifyFolderBtn').onclick = function(){};
 	}
 	else if(layer == 2){
 		// chose Partition
 		setSelectedPoolOrder(selectedObj.id);
 		path_directory = build_array(selectedObj,layer);
-		$('createFolderBtn').className = "createFolderBtn_add";
-		$('deleteFolderBtn').className = "deleteFolderBtn";
-		$('modifyFolderBtn').className = "modifyFolderBtn";
-		$('createFolderBtn').onclick = function(){popupWindow('OverlayMask','/aidisk/popCreateFolder.asp');};		
-		$('deleteFolderBtn').onclick = function(){};
-		$('modifyFolderBtn').onclick = function(){};
+		document.getElementById('createFolderBtn').className = "createFolderBtn_add";
+		document.getElementById('deleteFolderBtn').className = "deleteFolderBtn";
+		document.getElementById('modifyFolderBtn').className = "modifyFolderBtn";
+		document.getElementById('createFolderBtn').onclick = function(){popupWindow('OverlayMask','/aidisk/popCreateFolder.asp');};		
+		document.getElementById('deleteFolderBtn').onclick = function(){};
+		document.getElementById('modifyFolderBtn').onclick = function(){};
 		document.aidiskForm.layer_order.disabled = "disabled";
 		document.aidiskForm.layer_order.value = barcode;
 	}
@@ -588,12 +599,12 @@ function GetFolderItem(selectedObj, haveSubTree){
 		// chose Shared-Folder
 		setSelectedFolderOrder(selectedObj.id);
 		path_directory = build_array(selectedObj,layer);
-		$('createFolderBtn').className = "createFolderBtn";
-		$('deleteFolderBtn').className = "deleteFolderBtn_add";
-		$('modifyFolderBtn').className = "modifyFolderBtn_add";
-		$('createFolderBtn').onclick = function(){};		
-		$('deleteFolderBtn').onclick = function(){popupWindow('OverlayMask','/aidisk/popDeleteFolder.asp');};
-		$('modifyFolderBtn').onclick = function(){popupWindow('OverlayMask','/aidisk/popModifyFolder.asp');};
+		document.getElementById('createFolderBtn').className = "createFolderBtn";
+		document.getElementById('deleteFolderBtn').className = "deleteFolderBtn_add";
+		document.getElementById('modifyFolderBtn').className = "modifyFolderBtn_add";
+		document.getElementById('createFolderBtn').onclick = function(){};		
+		document.getElementById('deleteFolderBtn').onclick = function(){popupWindow('OverlayMask','/aidisk/popDeleteFolder.asp');};
+		document.getElementById('modifyFolderBtn').onclick = function(){popupWindow('OverlayMask','/aidisk/popModifyFolder.asp');};
 		document.aidiskForm.layer_order.disabled = "disabled";
 		document.aidiskForm.layer_order.value = barcode;
 	}
@@ -611,29 +622,29 @@ function showClickedObj(clickedObj){
 function GetTree(layer_order, v){
 	if(layer_order == "0"){
 		this.FromObject = layer_order;
-		$('d'+layer_order).innerHTML = '<span class="FdWait">. . . . . . . . . .</span>';
+		document.getElementById('d'+layer_order).innerHTML = '<span class="FdWait">. . . . . . . . . .</span>';
 		setTimeout('get_layer_items("'+layer_order+'", "gettree")', 1);		
 		return;
 	}
 	
-	if($('a'+layer_order).className == "FdRead"){
-		$('a'+layer_order).className = "FdOpen";
-		$('a'+layer_order).src = "/images/Tree/vert_line_s"+v+"1.gif";		
+	if(document.getElementById('a'+layer_order).className == "FdRead"){
+		document.getElementById('a'+layer_order).className = "FdOpen";
+		document.getElementById('a'+layer_order).src = "/images/Tree/vert_line_s"+v+"1.gif";		
 		this.FromObject = layer_order;		
-		$('e'+layer_order).innerHTML = '<img src="/images/Tree/folder_wait.gif">';
+		document.getElementById('e'+layer_order).innerHTML = '<img src="/images/Tree/folder_wait.gif">';
 		setTimeout('get_layer_items("'+layer_order+'", "gettree")', 1);
 	}
-	else if($('a'+layer_order).className == "FdOpen"){
-		$('a'+layer_order).className = "FdClose";
-		$('a'+layer_order).src = "/images/Tree/vert_line_s"+v+"0.gif";		
-		$('e'+layer_order).style.position = "absolute";
-		$('e'+layer_order).style.visibility = "hidden";
+	else if(document.getElementById('a'+layer_order).className == "FdOpen"){
+		document.getElementById('a'+layer_order).className = "FdClose";
+		document.getElementById('a'+layer_order).src = "/images/Tree/vert_line_s"+v+"0.gif";		
+		document.getElementById('e'+layer_order).style.position = "absolute";
+		document.getElementById('e'+layer_order).style.visibility = "hidden";
 	}
-	else if($('a'+layer_order).className == "FdClose"){
-		$('a'+layer_order).className = "FdOpen";
-		$('a'+layer_order).src = "/images/Tree/vert_line_s"+v+"1.gif";		
-		$('e'+layer_order).style.position = "";
-		$('e'+layer_order).style.visibility = "";
+	else if(document.getElementById('a'+layer_order).className == "FdClose"){
+		document.getElementById('a'+layer_order).className = "FdOpen";
+		document.getElementById('a'+layer_order).src = "/images/Tree/vert_line_s"+v+"1.gif";		
+		document.getElementById('e'+layer_order).style.position = "";
+		document.getElementById('e'+layer_order).style.visibility = "";
 	}
 	else
 		alert("Error when show the folder-tree!");
@@ -641,43 +652,20 @@ function GetTree(layer_order, v){
 
 function cancel_folderTree(){
 	this.FromObject ="0";
-	$j("#folderTree_panel").fadeOut(300);
+	$("#folderTree_panel").fadeOut(300);
 }
 
 function confirm_folderTree(){
-	$('PATH').value = path_directory ;
+	document.getElementById('PATH').value = path_directory ;
 	this.FromObject ="0";
-	$j("#folderTree_panel").fadeOut(300);
+	$("#folderTree_panel").fadeOut(300);
 }
 
-function cal_panel_block(obj_id){
-	var blockmarginLeft;
-	if (window.innerWidth)
-		winWidth = window.innerWidth;
-	else if ((document.body) && (document.body.clientWidth))
-		winWidth = document.body.clientWidth;
-		
-	if (document.documentElement  && document.documentElement.clientHeight && document.documentElement.clientWidth){
-		winWidth = document.documentElement.clientWidth;
-	}
-
-	if(winWidth >1050){	
-		winPadding = (winWidth-1050)/2;	
-		winWidth = 1105;
-		blockmarginLeft= (winWidth*0.25)+winPadding;
-	}
-	else if(winWidth <=1050){
-		blockmarginLeft= (winWidth)*0.25+document.body.scrollLeft;	
-
-	}
-	//$("folderTree_panel").style.marginLeft = blockmarginLeft+"px";
-	$(obj_id).style.marginLeft = blockmarginLeft+"px";
-}
 function show_invitation(share_link_url){
 	var invite_content = "";
 	var sync_rule_desc = "";
-	$('invite_desc').innerHTML = "Sync description: "+document.form.router_sync_desc.value;
-	$('invite_path').innerHTML = document.form.cloud_dir.value;
+	document.getElementById('invite_desc').innerHTML = "<#sync_router_Invit_desc2#>: "+document.form.router_sync_desc.value;	/*Sync description*/
+	document.getElementById('invite_path').innerHTML = document.form.cloud_dir.value;
 	if(document.form.router_sync_rule.value == 0)
 		sync_rule_desc = "Two way sync";
 	else if(document.form.router_sync_rule.value == 1)
@@ -685,32 +673,32 @@ function show_invitation(share_link_url){
 	else
 		sync_rule_desc = "Client to host";
 		
-	$('invite_rule').innerHTML = "Sync rule: "+sync_rule_desc;
-	//$('invite_share').innerHTML = url_name + "/" +share_link_url;
-	$('invite_share').innerHTML = "http://"+ theUrl +"/" + share_link_url;
-	$("mailto").innerHTML = appendMailTo();
+	document.getElementById('invite_rule').innerHTML = "<#sync_router_Invit_desc4#>: "+sync_rule_desc;	/*Sync rule*/
+	//document.getElementById('invite_share').innerHTML = url_name + "/" +share_link_url;
+	document.getElementById('invite_share').innerHTML = "http://"+ theUrl +"/" + share_link_url;
+	document.getElementById("mailto").innerHTML = appendMailTo();
 	
-	cal_panel_block('invitation_block');
+	cal_panel_block("invitation_block", 0.25);
 }
 
 function show_captcha_style(captcha){		// captcha display style
-	if( $('captcha_rule').value == 2){  
+	if( document.getElementById('captcha_rule').value == 2){  
 		var graph_content = "";
-		graph_content = "Security code: ";
+		graph_content = "<#routerSync_Security_code#>: ";
 		for(i=0;i<4;i++){
 			graph_content += '<img style="height:30px;" src="/images/cloudsync/captcha/'+captcha.charAt(i)+'.jpg">';
 		}
 
-		$('invite_captcha').innerHTML = graph_content;
+		document.getElementById('invite_captcha').innerHTML = graph_content;
 	}
-	else if( $('captcha_rule').value == 0)
-		$('invite_captcha').innerHTML = "Security code: None";
+	else if( document.getElementById('captcha_rule').value == 0)
+		document.getElementById('invite_captcha').innerHTML = "<#routerSync_Security_code#>: None";
 	else
-		$('invite_captcha').innerHTML = "Security code: "+captcha;
+		document.getElementById('invite_captcha').innerHTML = "<#routerSync_Security_code#>: "+captcha;
 }
 
 function close_invitation_block(){	
-	$j("#invitation_block").fadeOut(300);
+	$("#invitation_block").fadeOut(300);
 	if(invitation_flag == 0)
 		refreshpage();
 		
@@ -731,9 +719,9 @@ function applyRule(sharelink){
 				sharelink_folder = temp[i];
 		}
 		
-		if($('captcha_rule').value == 1)
-			captcha = $('captcha_inputfield').value;
-		else if($('captcha_rule').value == 2)	
+		if(document.getElementById('captcha_rule').value == 1)
+			captcha = document.getElementById('captcha_inputfield').value;
+		else if(document.getElementById('captcha_rule').value == 2)	
 			captcha = get_random();
 			
 		show_captcha_style(captcha);
@@ -757,9 +745,9 @@ function domain_name_select(){
 	if(!Block_chars(document.form.router_sync_desc, ["<", ">"]))
 		return false;
 
-	if(ip_flag == 1 && $('host_name').value == ""){
+	if(ip_flag == 1 && document.getElementById('host_name').value == ""){
 		alert("<#JS_fieldblank#>");
-		$('host_name').focus();
+		document.getElementById('host_name').focus();
 		return false;
 	}
 
@@ -776,12 +764,12 @@ function domain_name_select(){
 		return false;
 	}
 
-    $("update_scan").style.display = '';
-    $("applyButton").disabled = true;
+    document.getElementById("update_scan").style.display = '';
+    document.getElementById("applyButton").disabled = true;
 	var i;
 	if(ip_flag == 0){ // Public IP
 		if(ddns_enable == 1){
-			url_combined += "https://" + ddns_host_name;
+			url_combined += "https://" + ddns_host_name + ":" + webdav_https_port;
 			apply_sharelink();
 		}	
 		else{
@@ -793,15 +781,21 @@ function domain_name_select(){
 		}
 	}
 	else{ // Private IP
-		if($('protocol_type').value == 0)
+		if(document.getElementById('protocol_type').value == 0)
 			url_combined += "http://";
 		else		
 			url_combined += "https://";
 
-		url_combined += $('host_name').value;
+		url_combined += document.getElementById('host_name').value;
 			
-		if($('url_port').value != "")	
- 			url_combined += ":" + $('url_port').value;
+		if(document.getElementById('url_port').value != "")	
+ 			url_combined += ":" + document.getElementById('url_port').value;
+		else{
+			if(document.getElementById('protocol_type').value == 0)
+				url_combined += ":" + webdav_http_port;
+		    else        
+				url_combined +=  ":" + webdav_https_port;
+		}
 
 		apply_sharelink();
 	}
@@ -809,12 +803,16 @@ function domain_name_select(){
 function apply_sharelink(){
 	var sharelink_path = "";
 	var sharelink_folder = "";
-	var temp = $('PATH').value.split('/');
+	var temp = document.getElementById('PATH').value.split('/');
 
-	$("update_scan").style.display = '';
+	document.getElementById("update_scan").style.display = '';
 	for(var i=1; i< temp.length;i++){
-		if(i == 1 )
-			sharelink_path += "/"+based_modelid;
+		if(i == 1 ){
+			if(based_odmpid!="")
+			   sharelink_path += "/"+based_odmpid;
+			else
+			   sharelink_path += "/"+based_modelid;
+		}
 		else if( i== (temp.length-1) ) 	
 			sharelink_folder = temp[i];
 		else
@@ -830,7 +828,7 @@ function apply_sharelink(){
 
 function get_sharelink(){
 	var share_link = "";
-	$j.ajax({
+	$.ajax({
     	url: '/getsharelink.asp',
     	dataType: 'script',
     	error: function(xhr){
@@ -890,10 +888,10 @@ function show_view_info(obj_id){
 	hash_url = router_synclist_desc[j] + ">" + router_synclist_sharelink[j] + "/" + sharelink_folder + ">" + router_synclist_rule[j] + ">" + router_synclist_captcha[j];
 	share_link_hashed = f23.s52e(hash_url);
 
-	//$('invite_desc').innerHTML = "Sync description: "+document.form.router_sync_desc.value;
-	$('invite_desc').innerHTML = "Sync description: "+router_synclist_desc[j];
-	//$('invite_path').innerHTML = document.form.cloud_dir.value;	
-	$('invite_path').innerHTML = router_synclist_localfolder[j];	
+	//document.getElementById('invite_desc').innerHTML = "Sync description: "+document.form.router_sync_desc.value;
+	document.getElementById('invite_desc').innerHTML = "<#sync_router_Invit_desc2#>: "+router_synclist_desc[j];	/*Sync description*/
+	//document.getElementById('invite_path').innerHTML = document.form.cloud_dir.value;	
+	document.getElementById('invite_path').innerHTML = router_synclist_localfolder[j];	
 	if(router_synclist_rule[j] == 0)
 		sync_rule_desc = "Two way sync";
 	else if(router_synclist_rule[j] == 1)
@@ -901,13 +899,13 @@ function show_view_info(obj_id){
 	else
 		sync_rule_desc = "Client to host";	
 	
-	$('invite_rule').innerHTML = "Sync rule: "+sync_rule_desc;
-	$('invite_share').innerHTML = "http://"+ theUrl +"/"+share_link_hashed;	
-	$('invite_captcha').innerHTML = "Security code: "+ router_synclist_captcha[j];
-	$('invite_captcha').innerHTML += "<br><br>We strongly suggest you giving this code separately to your friends.";
-	$("mailto").innerHTML = appendMailTo();
-	cal_panel_block('invitation_block'); 
-	$j('#invitation_block').fadeIn(300);
+	document.getElementById('invite_rule').innerHTML = "<#sync_router_Invit_desc4#>: "+sync_rule_desc;	/*Sync rule*/
+	document.getElementById('invite_share').innerHTML = "http://"+ theUrl +"/"+share_link_hashed;	
+	document.getElementById('invite_captcha').innerHTML = "<#routerSync_Security_code#>: "+ router_synclist_captcha[j];
+	document.getElementById('invite_captcha').innerHTML += "<br><br>We strongly suggest you giving this code separately to your friends.";
+	document.getElementById("mailto").innerHTML = appendMailTo();
+	cal_panel_block("invitation_block", 0.25);
+	$('#invitation_block').fadeIn(300);
 }
 
 function appendMailTo(){
@@ -915,25 +913,25 @@ function appendMailTo(){
 	mailtoCode += "Hi,%0D%0A"; 
 	mailtoCode += "lets share our files with smart sync!"; 
 	mailtoCode += "%0D%0A%0D%0A"; 
-	mailtoCode += $('invite_desc').innerHTML.replace(/ /g, "%20") + "%0D%0A"; 
-	mailtoCode += "Sync%20path:%20" + $('invite_path').innerHTML.replace(/ /g, "%20") + "%0D%0A"; 
-	mailtoCode += $('invite_rule').innerHTML.replace(/ /g, "%20") + "%0D%0A%0D%0A"; 
-	mailtoCode += "Please connect your device to ASUS router through WiFi or ethernet and click the link below to reconfirm this invitation.%0D%0A".replace(/ /g, "%20");
-	mailtoCode += $('invite_share').innerHTML.replace(/ /g, "%20") + "%0D%0A"; 
-	// mailtoCode += $('invite_captcha').innerHTML; 
-	mailtoCode += '"><div onmouseover="" style="margin-right:15px;background-image:url(images/cloudsync/mail_send.png);background-repeat:no-repeat;width:64px;height:64px;"></div><div style="font-size:12px;margin-top:3px;margin-right:17px;">Send mail</div></a>';
+	mailtoCode += document.getElementById('invite_desc').innerHTML.replace(/ /g, "%20") + "%0D%0A"; 
+	mailtoCode += "Sync%20path:%20" + document.getElementById('invite_path').innerHTML.replace(/ /g, "%20") + "%0D%0A"; 
+	mailtoCode += document.getElementById('invite_rule').innerHTML.replace(/ /g, "%20") + "%0D%0A%0D%0A"; 
+	mailtoCode += "<#sync_router_Invit_desc5#>%0D%0A".replace(/ /g, "%20");
+	mailtoCode += document.getElementById('invite_share').innerHTML.replace(/ /g, "%20") + "%0D%0A"; 
+	// mailtoCode += document.getElementById('invite_captcha').innerHTML; 
+	mailtoCode += '"><div onmouseover="" style="margin-right:15px;background-image:url(images/cloudsync/mail_send.png);background-repeat:no-repeat;width:64px;height:64px;"></div><div style="font-size:12px;margin-top:3px;margin-right:17px;"><#Send_mail#></div></a>';
 	return mailtoCode;
 }
 
 function captcha_style(){
-	if( $('captcha_rule').value == 1 )
-		$('captcha_input').style.display = "";
+	if( document.getElementById('captcha_rule').value == 1 )
+		document.getElementById('captcha_input').style.display = "";
 	else	
-		$('captcha_input').style.display = "none";	
+		document.getElementById('captcha_input').style.display = "none";	
 }
 function show_block(){
-	$("update_scan").style.display = 'none';
-	$j('#invitation_block').fadeIn(300);
+	document.getElementById("update_scan").style.display = 'none';
+	$('#invitation_block').fadeIn(300);
 }
 
 function valid_wan_ip() {
@@ -970,16 +968,16 @@ function valid_wan_ip() {
 
 function check_aicloud(){
 	if(webdav_aidisk == 0 || webdav_proxy ==0){
-		$('title_desc_block').style.display = "none";
-		$('invite_block').style.display = "none";
-		$('list_block').style.display = "none";
-		$('aicloud_enable_hint').style.display = "";
+		document.getElementById('title_desc_block').style.display = "none";
+		document.getElementById('invite_block').style.display = "none";
+		document.getElementById('list_block').style.display = "none";
+		document.getElementById('aicloud_enable_hint').style.display = "";
 	}
 	else{
-		$('title_desc_block').style.display = "";
-		$('invite_block').style.display = "";
-		$('list_block').style.display = "";
-		$('aicloud_enable_hint').style.display = "none";	
+		document.getElementById('title_desc_block').style.display = "";
+		document.getElementById('invite_block').style.display = "";
+		document.getElementById('list_block').style.display = "";
+		document.getElementById('aicloud_enable_hint').style.display = "none";	
 	}
 }
 var hint_string = "";
@@ -988,7 +986,7 @@ hint_string += "<#routerSync_rule_StoC#><br><br>";
 hint_string += "<#routerSync_rule_CtoS#>";
 
 function checkDDNSReturnCode(){
-    $j.ajax({
+    $.ajax({
     	url: '/ajax_ddnscode.asp',
     	dataType: 'script', 
 
@@ -1056,19 +1054,19 @@ function checkDDNSReturnCode(){
 <!--div id="DM_mask" class="mask_bg"></div-->
 <div id="invitation_block" class="panel_folder" >
 	<table><tr><td>
-		<div class="machineName" style="width:200px;font-family:Microsoft JhengHei;font-size:12pt;font-weight:bolder; margin-top:20px;margin-left:30px;">Invitation</div>
+		<div class="machineName" style="width:200px;font-family:Microsoft JhengHei;font-size:12pt;font-weight:bolder; margin-top:20px;margin-left:30px;"><#Invitation#></div>
 	</td></tr></table>
 	<div style="overflow:auto;margin-top:0px;height:311px;padding:10px;width:485px;">
 		<table style="margin-left:20px;word-break:break-all;word-wrap:break-word;">
 			<tr >
 				<td>
-					<div>Hi, lets share our files with smart sync!</div>				
+					<div><#sync_router_Invit_desc1#><!--Hi, lets share our files with Smart Sync! --></div>
 				</td>
 			</tr>
 			<tr>
 				<td>
 					<div id="invite_desc" style="margin-top:10px;width:440px;"></div>
-					<div>Sync path:
+					<div><#sync_router_Invit_desc3#>:	<!-- Sync path -->
 						<span id="invite_path" style="text-decoration:underline;width:440px;"></span>
 					</div>
 					<div id="invite_rule"></div>
@@ -1076,7 +1074,7 @@ function checkDDNSReturnCode(){
 			</tr>
 			<tr>
 				<td>
-					<div style="margin-top:10px;width:440px;">Please connect your device to ASUS router through WiFi or ethernet and click the link below to reconfirm this invitation.</div>
+					<div style="margin-top:10px;width:440px;"><#sync_router_Invit_desc5#></div>	<!-- Please connect your device to ASUS router through WiFi or ethernet and click the link below to reconfirm this invitation. -->
 				</td>
 			</tr>
 			<tr>
@@ -1095,7 +1093,7 @@ function checkDDNSReturnCode(){
 		</table>
 	</div>
 	<div style="background-image:url(images/Tree/bg_02.png);background-repeat:no-repeat;height:90px;">		
-		<input class="button_gen" type="button"  onclick="close_invitation_block();" value="Close" style="margin-top:15px;margin-left:200px">
+		<input class="button_gen" type="button"  onclick="close_invitation_block();" value="<#CTL_close#>" style="margin-top:15px;margin-left:200px">
 	</div>
 </div>
 <div id="DM_mask_floder" class="mask_floder_bg"></div>
@@ -1195,7 +1193,7 @@ function checkDDNSReturnCode(){
 									<tr style="height:40px;">
 										<th width="25%"><#IPConnection_autofwDesc_itemname#></th>
 										<td>
-											<input name="router_sync_desc" type="text" class="input_32_table" maxlength="64" style="height:25px;font-size:13px;"  value="My new sync">
+											<input name="router_sync_desc" type="text" class="input_32_table" maxlength="64" style="height:25px;font-size:13px;"  value="My new sync" autocorrect="off" autocapitalize="off">
 										</td>
 									</tr>
 									<tr id="host_name_tr">
@@ -1205,8 +1203,8 @@ function checkDDNSReturnCode(){
 												<option value="0">Http</option>
 												<option value="1">Https</option>
 											</select>
-											<input id="host_name" type="text" maxlength="32"  class="input_32_table" style="height:25px;font-size:13px;"  onKeyPress="return validator.isString(this, event)">&nbsp:
-											<input type="text" maxlength="6" id="url_port" class="input_6_table" style="height:25px;font-size:13px;"  onKeyPress="return validator.isString(this, event)">
+											<input id="host_name" type="text" maxlength="32"  class="input_32_table" style="height:25px;font-size:13px;"  onKeyPress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off">&nbsp:
+											<input type="text" maxlength="6" id="url_port" class="input_6_table" style="height:25px;font-size:13px;"  onKeyPress="return validator.isString(this, event)" autocorrect="off" autocapitalize="off">
 										</td>
 									</tr>
 									<tr style="height:40px;">
@@ -1214,7 +1212,7 @@ function checkDDNSReturnCode(){
 											<div style="margin-top:5px;"><#sync_router_localfolder#></div>
 										</th>
 										<td>
-											<input type="text" id="PATH" class="input_25_table" style="height: 25px;" name="cloud_dir" value="" >
+											<input type="text" id="PATH" class="input_25_table" style="height: 25px;" name="cloud_dir" value="" autocorrect="off" autocapitalize="off">
 											<input name="button" type="button" class="button_gen_short" onclick="get_disk_tree();" value="<#Cloudsync_browser_folder#>"/>
 											<div id="noUSB" style="color:#FC0;display:none;margin-left:3px;font-size:12px;line-height:140%;"><#no_usb_found#></div>
 										</td>
@@ -1244,7 +1242,7 @@ function checkDDNSReturnCode(){
 													<option value="2"><#sync_router_generate#></option>
 												</select>
 												<span id="captcha_input" style="display:none;">											
-													<input id="captcha_inputfield" type="text" class="input_6_table" style="margin-left:10px;" maxlength="4" value="" onclick=""  onkeypress="return validator.isNumber(this,event);">
+													<input id="captcha_inputfield" type="text" class="input_6_table" style="margin-left:10px;" maxlength="4" value="" onclick=""  onkeypress="return validator.isNumber(this,event);" autocorrect="off" autocapitalize="off">
 												</span>
 											</div>
 										</td>				
