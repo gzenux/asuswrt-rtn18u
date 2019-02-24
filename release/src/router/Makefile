@@ -4083,14 +4083,13 @@ tor: openssl zlib libevent-2.0.21 tor/Makefile
 	$(MAKE) -C $@ $(PARALLEL_BUILD)
 
 tor/Makefile:
-	(cd tor ; autoreconf -i -f && $(CONFIGURE) --enable-static-libevent --with-libevent-dir=$(STAGEDIR)/usr \
-					--with-openssl-dir=$(TOP)/openssl \
-					--with-zlib-dir=$(TOP)/zlib \
-					--disable-asciidoc --disable-unittests \
-					--disable-tool-name-check)
+	(cd tor ; autoreconf -i -f && $(CONFIGURE) --with-libevent-dir=$(STAGEDIR)/usr \
+		--with-openssl-dir=$(TOP)/openssl --with-zlib-dir=$(TOP)/zlib \
+		--disable-asciidoc --disable-unittests \
+		--disable-tool-name-check)
 
 tor-install:
-	install -D tor/src/or/tor $(INSTALLDIR)/tor/usr/sbin/Tor
+	install -D tor/src/app/tor $(INSTALLDIR)/tor/usr/sbin/Tor
 	$(STRIP) $(INSTALLDIR)/tor/usr/sbin/Tor
 
 tor-clean:
