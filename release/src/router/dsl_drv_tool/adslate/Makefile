@@ -56,9 +56,9 @@ else
 OBJS += switch_control.o
 endif
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./$(PREBUILD)),)
 all:
-	@-cp -f ./prebuild/adslate .
+	@cp -f ./$(PREBUILD)/adslate .
 else
 all: adslate
 endif

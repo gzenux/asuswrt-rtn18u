@@ -20,7 +20,7 @@ LIB := libpms_sql.so
 
 ifeq ($(wildcard *.c),)
 all:
-	-cp -f prebuild/libpms_sql.so libpms_sql.so
+	cp -f $(PREBUILD)/libpms_sql.so libpms_sql.so
 else
 all: $(EXE) $(LIB)
 endif

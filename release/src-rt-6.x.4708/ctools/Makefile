@@ -11,9 +11,9 @@ endif
 
 all: trx_asus
 
-ifneq ($(wildcard ./prebuild/trx_asus),)
+ifneq ($(wildcard ./$(PREBUILD)/trx_asus),)
 trx_asus:
-	@-cp -f ./prebuild/trx_asus .
+	@cp -f ./$(PREBUILD)/trx_asus .
 else
 trx_asus: trx_asus.c
 	$(CC) $(CFLAGS) -o $@ $^

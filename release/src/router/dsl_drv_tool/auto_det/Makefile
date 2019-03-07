@@ -32,9 +32,9 @@ else
 OBJS = auto_det.o discover.o
 endif
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./$(PREBUILD)),)
 all:
-	@-cp -f ./prebuild/auto_det .
+	@cp -f ./$(PREBUILD)/auto_det .
 else
 all: auto_det
 endif

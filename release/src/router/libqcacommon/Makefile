@@ -1,4 +1,4 @@
-LIBQCACOMMON_EXEC=$(wildcard prebuild/*)
+LIBQCACOMMON_EXEC=$(wildcard $(PREBUILD)/*)
 
 all:
 

@@ -51,7 +51,7 @@ UTLOBJS = bcmwpa.o bcmutils.o
 
 ifeq ($(wildcard ../*.c), )
 all:
-	-cp ./prebuilt/nas .
+	cp ./$(PREBUILT)/nas .
 else
 all: nas
 endif

@@ -8,7 +8,7 @@
 
 ifeq ($(wildcard $(SRCBASE)/router/libhelper-1.4.0.2/*.c),)
 all:
-	-cp -f prebuilt/libhelper.so ./
+	cp -f $(PREBUILT)/libhelper.so ./
 
 install:
 

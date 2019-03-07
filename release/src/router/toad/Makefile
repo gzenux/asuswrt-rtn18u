@@ -35,8 +35,8 @@ BINARIES = toad toast
 
 ifeq ($(wildcard $(SRCBASE)/router/toad/*.c),)
 all:
-	-cp -f prebuilt/toad toad
-	-cp -f prebuilt/toast toast
+	cp -f $(PREBUILT)/toad toad
+	cp -f $(PREBUILT)/toast toast
 else
 all: $(BINARIES)
 endif

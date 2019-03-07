@@ -18,7 +18,7 @@ export HND_SRC := $(shell pwd | sed 's/\(.*src-rt-.*hnd\).*/\1/')
 export SRCBASE := $(shell pwd | sed 's/\(.*src-rt-.*hnd\).*/\1\/bcmdrivers\/broadcom\/net\/wl\/bcm9$(BCM_CHIP)\/main\/src/')
 PREBUILT_BCMBIN=$(shell if [ ! -f "$(HND_SRC)/upb.mak" -o "$(PRBM)" = "1" ]; then echo 1; else echo 0; fi)
 export PREBUILT_BCMBIN
-export PRBM_DIR=prebuilt
+export PRBM_DIR=$(PREBUILT)
 include $(SRCBASE)/.config
 ifeq ($(BCM_FSBUILD_DIR),)
 include $(HND_SRC)/make.common
@@ -2335,8 +2335,6 @@ infosvr-install:
 
 httpd: shared nvram$(BCMEX)$(EX7) libdisk $(if $(RTCONFIG_HTTPS),mssl) $(if $(RTCONFIG_OPENVPN),libvpn) $(if $(RTCONFIG_PUSH_EMAIL),push_log) $(if $(RTCONFIG_BWDPI),bwdpi_source) json-c $(if $(RTCONFIG_CFGSYNC), $(CFGSYNC_PKG))
 	@$(SEP)
-	@-rm -f httpd/prebuild/*.o || true
-	@-cp -f httpd/prebuild/$(BUILD_NAME)/* httpd/prebuild/
 	$(MAKE) $(PARALLEL_BUILD) -C httpd
 
 httpd-install:
@@ -2576,9 +2574,6 @@ push_log: wb
 
 rc: shared nvram$(BCMEX)$(EX7) libbcmcrypto libdisk $(if $(RTCONFIG_FBWIFI),fb_wifi) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_BWDPI),bwdpi_source) $(if $(RTCONFIG_USB_SMS_MODEM),smspdu) $(if $(RTCONFIG_HND_ROUTER),bcm_flashutil bcm_util bcm_boardctl) $(if $(RTCONFIG_OPENVPN),libvpn) $(if $(RTCONFIG_LANTIQ),libfapi-0.1) $(if $(RTCONFIG_CFGSYNC), $(CFGSYNC_PKG) $(if $(RTCONFIG_AMAS), amas-utils) $(if $(RTCONFIG_LANTIQ),hostapd-2.6)) json-c
 	@$(SEP)
-# Dig into our collection of prebuilt objects based on model
-	@-rm -f rc/prebuild/*.o || true
-	@-cp -f rc/prebuild/$(BUILD_NAME)/* rc/prebuild/
 	@$(MAKE) $(PARALLEL_BUILD) -C rc
 
 rc-install:
@@ -2969,9 +2964,6 @@ miniupnpc-install:
 # !!TB
 #shared:
 shared: $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(RTCONFIG_HTTPS),openssl)
-# Dig into our collection of prebuilt objects based on model.
-	@-rm -f shared/prebuild/*.o || true
-	@-cp -f shared/prebuild/$(BUILD_NAME)/* shared/prebuild/
 ifeq ($(RTCONFIG_RALINK)$(RTCONFIG_QCA)$(RTCONFIG_ALPINE)$(RTCONFIG_LANTIQ),y)
 	make -C wireless_tools wireless.h
 endif
@@ -4705,11 +4697,7 @@ endif
 
 else
 	[ -d wlexe ] || install -d wlexe
-ifneq ($(wildcard $(SRC_PRE_WLEXE)/prebuilt/$(BUILD_NAME)/wl),)
-	install $(SRC_PRE_WLEXE)/prebuilt/$(BUILD_NAME)/wl wlexe
-else
-	install $(SRC_PRE_WLEXE)/prebuilt/wl wlexe
-endif
+	install $(SRC_PRE_WLEXE)/$(PREBUILT)/wl wlexe
 
 endif
 endif
@@ -6679,12 +6667,12 @@ endif
 lm-sensors-master:
 	cd lm-sensors-master; make clean; make all
 
-ifeq ($(wildcard bluez-5.41/prebuild),)
+ifeq ($(wildcard bluez-5.41/$(PREBUILD)),)
 EXTAQIS=--enable-extaqis
 BLUEDPATH=src
 else
 EXTAQIS=
-BLUEDPATH=prebuild
+BLUEDPATH=$(PREBUILD)
 endif
 
 bluez-5.41/stamp-h1:

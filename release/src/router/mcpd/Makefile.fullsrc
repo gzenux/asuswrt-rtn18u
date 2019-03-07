@@ -97,7 +97,7 @@ CFLAGS += -I$(KERNEL_LINKS_DIR)
 # 
 ifeq ($(wildcard $(SRCBASE)/router/mcpd/*.c),)
 $(EXE):
-	-cp -f $(SRCBASE)/router/mcpd/prebuilt/mcpd mcpd
+	cp -f $(SRCBASE)/router/mcpd/$(PREBUILT)/mcpd mcpd
 else
 $(EXE): $(OBJS) 
 	$(CC) -o $@ $(OBJS) -Wl,-rpath,$(CMS_LIB_RPATH) $(CMS_LIB_PATH) $(LIBS)

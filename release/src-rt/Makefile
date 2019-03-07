@@ -235,6 +235,9 @@ ifeq ($(PBDIR),)
 export PBDIR   := ../../../asuswrt.prebuilt/$(BUILD_NAME).$(KERNEL_VER).$(FS_VER).$(SERIALNO).$(EXTENDNO)
 endif
 
+export PREBUILD := prebuild/$(BUILD_NAME)
+export PREBUILT := prebuilt/$(BUILD_NAME)
+
 # If platform specific software packages exist, PLATFORM_ROUTER should be defined in platform.mak
 export PLATFORM_ROUTER
 

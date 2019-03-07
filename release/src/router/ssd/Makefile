@@ -26,7 +26,7 @@ vpath %.c $(SRCBASE)/shared $(WLAN_ComponentSrcDirs)
 
 ifeq ($(wildcard $(SRCBASE)/router/ssd/*.c),)
 all:
-	-cp -f prebuilt/ssd ssd
+	cp -f $(PREBUILT)/ssd ssd
 else
 all: ssd
 endif

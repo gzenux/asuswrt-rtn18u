@@ -23,7 +23,7 @@ LDFLAGS += -lgcc_s
 
 ifeq ($(wildcard $(SRCBASE)/router/aspmd/*.c),)
 all:
-	-cp -f prebuilt/aspmd aspmd
+	cp -f $(PREBUILT)/aspmd aspmd
 else
 all: aspmd
 endif

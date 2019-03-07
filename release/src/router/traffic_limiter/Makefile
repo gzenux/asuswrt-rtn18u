@@ -34,8 +34,8 @@ endif
 
 ifeq ($(wildcard $(SRCBASE)/router/traffic_limiter/*.c),)
 all:
-	-cp -f prebuilt/traffic_limiter traffic_limiter
-	-cp -f prebuilt/libtraffic_limiter.so libtraffic_limiter.so 
+	cp -f $(PREBUILT)/traffic_limiter traffic_limiter
+	cp -f $(PREBUILT)/libtraffic_limiter.so libtraffic_limiter.so 
 else
 all: traffic_limiter libtraffic_limiter.so 
 endif

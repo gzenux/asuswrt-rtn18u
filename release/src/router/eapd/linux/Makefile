@@ -39,7 +39,7 @@ CFLAGS += -DBCM_WLCEVENTD
 
 ifeq ($(wildcard $(SRCBASE)/router/eapd/*.c),)
 all:
-	-cp prebuilt/eapd eapd
+	cp $(PREBUILT)/eapd eapd
 else
 all: eapd
 endif

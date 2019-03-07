@@ -8,9 +8,9 @@ LDFLAGS += -L. -lsmspdu
 
 ifeq ($(wildcard $(TOP)/smspdu/*.c),)
 all:
-	-cp -f $(TOP)/smspdu/prebuild/$(LIB) $(LIB)
-	-cp -f $(TOP)/smspdu/prebuild/pullsms pullsms
-	-cp -f $(TOP)/smspdu/prebuild/smspdu smspdu
+	cp -f $(TOP)/smspdu/$(PREBUILD)/$(LIB) $(LIB)
+	cp -f $(TOP)/smspdu/$(PREBUILD)/pullsms pullsms
+	cp -f $(TOP)/smspdu/$(PREBUILD)/smspdu smspdu
 else
 all: $(LIB) $(PROG)
 endif

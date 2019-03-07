@@ -122,7 +122,7 @@ CUSTOM_CFLAGS += -Werror -Wfatal-errors
 # 
 ifeq ($(wildcard $(SRCBASE)/router/mcpctl/*.c),)
 mcpctl:
-	-cp -f $(SRCBASE)/router/mcpctl/prebuilt/mcpctl mcpctl
+	cp -f $(SRCBASE)/router/mcpctl/$(PREBUILT)/mcpctl mcpctl
 else
 mcpctl: $(OBJS)
 	$(CC) -o $@ $(OBJS) -Wl,-rpath,$(CMS_LIB_RPATH) $(CMS_LIB_PATH) $(LIBS)

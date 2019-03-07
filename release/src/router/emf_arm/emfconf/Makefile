@@ -11,9 +11,9 @@ ALL_OBJS = emfu.o emfu_linux.o
 
 CCFLAGS = -Os -Wall -I$(SRCBASE)/include -I$(SRCBASE)/common/include -I$(SRCBASE)/shared -I$(SRCBASE)/include/emf/emf -I$(SRCBASE)/router/shared
 
-ifneq ($(wildcard ./prebuilt),)
+ifneq ($(wildcard ./$(PREBUILT)),)
 all:
-	-cp prebuilt/emf emf
+	cp $(PREBUILT)/emf emf
 else
 all: emf
 endif

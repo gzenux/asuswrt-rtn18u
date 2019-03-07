@@ -11,9 +11,9 @@ ALL_OBJS = igsu.o igsu_linux.o
 
 CCFLAGS = -Os -Wall -I$(SRCBASE)/include -I$(SRCBASE)/common/include -I$(SRCBASE)/shared -I$(SRCBASE)/include/emf/igs
 
-ifneq ($(wildcard ./prebuilt),)
+ifneq ($(wildcard ./$(PREBUILT)),)
 all:
-	-cp prebuilt/igs igs
+	cp $(PREBUILT)/igs igs
 else
 all: igs
 endif

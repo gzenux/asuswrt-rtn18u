@@ -2,7 +2,7 @@
 
 ifeq ($(wildcard $(SRCBASE)/router/fapi_wlan_common-1.0.0.1/*.c),)
 all:
-	-cp -f prebuilt/libfapiwlancommon.so ./
+	cp -f $(PREBUILT)/libfapiwlancommon.so ./
 
 install:
 

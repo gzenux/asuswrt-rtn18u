@@ -20,8 +20,8 @@ LIBRT=$(shell dirname $(shell which $(CXX)))/../lib/librt.so.0
 export GOBI_LIB_DIR
 
 ifeq ($(wildcard src),)
-GOBI_KO_DIR = prebuild
-GOBI_UTIL_DIR = prebuild
+GOBI_KO_DIR = $(PREBUILD)
+GOBI_UTIL_DIR = $(PREBUILD)
 GOBI_LIB_DIR = .
 else
 PWD = $(shell pwd)

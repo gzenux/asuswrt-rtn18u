@@ -286,7 +286,7 @@ ifeq ($(RTCONFIG_DSL),y)
 OBJS += init-ralink-dsl.o
 endif
 else ifeq ($(RTCONFIG_QCA),y)
-OBJS += init-qca.o wps-qca.o qca.o ate-qca.o $(if $(wildcard sysdeps/qca/ctl.c),ctl.obj,prebuild/ctl.obj)
+OBJS += init-qca.o wps-qca.o qca.o ate-qca.o $(if $(wildcard sysdeps/qca/ctl.c),ctl.obj,$(PREBUILD)/ctl.obj)
 ifeq ($(RTCONFIG_AMAS),y)
 OBJS += obd-qca.o
 endif
@@ -300,18 +300,18 @@ OBJS += obd-alpine.o
 endif
 else ifeq ($(RTCONFIG_LANTIQ),y)
 OBJS += init-lantiq.o lantiq.o ate-lantiq.o lantiq-wave.o
-OBJS += $(if $(wildcard sysdeps/wps-lantiq.c),wps-lantiq.o,prebuild/wps-lantiq.o)
+OBJS += $(if $(wildcard sysdeps/wps-lantiq.c),wps-lantiq.o,$(PREBUILD)/wps-lantiq.o)
 ifeq ($(RTCONFIG_AMAS),y)
-OBJS += $(if $(wildcard sysdeps/lantiq/obd-lantiq.c),obd-lantiq.o,prebuild/obd-lantiq.o)
+OBJS += $(if $(wildcard sysdeps/lantiq/obd-lantiq.c),obd-lantiq.o,$(PREBUILD)/obd-lantiq.o)
 endif
 endif
 
-OBJS += $(if $(wildcard private.c),private.o,prebuild/private.o)
-OBJS += $(if $(wildcard conn_diag.c),conn_diag.o,prebuild/conn_diag.o)
+OBJS += $(if $(wildcard private.c),private.o,$(PREBUILD)/private.o)
+OBJS += $(if $(wildcard conn_diag.c),conn_diag.o,$(PREBUILD)/conn_diag.o)
 
 # TODO, speedtest
 ifeq ($(RTCONFIG_SPEEDTEST),y)
-OBJS += $(if $(wildcard speedtest.c),speedtest.o,prebuild/speedtest.o)
+OBJS += $(if $(wildcard speedtest.c),speedtest.o,$(PREBUILD)/speedtest.o)
 endif
 
 OBJS += wanduck.o
@@ -403,7 +403,7 @@ endif
 ifeq ($(or $(RTCONFIG_BCMWL6),$(RTCONFIG_LANTIQ),$(RTCONFIG_QCA)),y)
 ifeq ($(RTCONFIG_PROXYSTA),y)
 ifeq ($(RTCONFIG_LANTIQ),y)
-OBJS += $(if $(wildcard psta_monitor.c),psta_monitor.o,prebuild/psta_monitor.o)
+OBJS += $(if $(wildcard psta_monitor.c),psta_monitor.o,$(PREBUILD)/psta_monitor.o)
 else
 OBJS += psta_monitor.o
 endif
@@ -1028,15 +1028,15 @@ size: rc
 	mipsel-uclibc-nm --print-size --size-sort rc
 
 # handle prebuilt object here
-ifneq ($(wildcard ./prebuild/dsl_fb.o),)
+ifneq ($(wildcard ./$(PREBUILD)/dsl_fb.o),)
 ifeq ($(RTCONFIG_PUSH_EMAIL),y)
 dsl_fb.o:
-	@-cp -f ./prebuild/dsl_fb.o .
+	@cp -f ./$(PREBUILD)/dsl_fb.o .
 endif
 ifeq ($(RTCONFIG_DSL),y)
 ifeq ($(RTCONFIG_DSL_TCLINUX),y)
 dsl_diag.o:
-	@-cp -f ./prebuild/dsl_diag.o .
+	@cp -f ./$(PREBUILD)/dsl_diag.o .
 endif
 endif
 else
@@ -1052,35 +1052,35 @@ endif
 endif
 endif
 
-ifneq ($(wildcard ./prebuild/bwdpi*.o),)
+ifneq ($(wildcard ./$(PREBUILD)/bwdpi*.o),)
 bwdpi.o:
-	@-cp -f ./prebuild/bwdpi.o .
+	@cp -f ./$(PREBUILD)/bwdpi.o .
 bwdpi_check.o:
-	@-cp -f ./prebuild/bwdpi_check.o .
+	@cp -f ./$(PREBUILD)/bwdpi_check.o .
 bwdpi_db_10.o:
-	@-cp -f ./prebuild/bwdpi_db_10.o .
+	@cp -f ./$(PREBUILD)/bwdpi_db_10.o .
 bwdpi_wred_alive.o:
-	@-cp -f ./prebuild/bwdpi_wred_alive.o .
+	@cp -f ./$(PREBUILD)/bwdpi_wred_alive.o .
 endif
 
-ifneq ($(wildcard ./prebuild/nt_mail.o),)
+ifneq ($(wildcard ./$(PREBUILD)/nt_mail.o),)
 nt_mail.o:
-	@-cp -f ./prebuild/nt_mail.o .
+	@cp -f ./$(PREBUILD)/nt_mail.o .
 endif
 
 # handle prebuilt object here
 ifeq ($(RTCONFIG_TAGGED_BASED_VLAN),y)
-ifneq ($(wildcard ./prebuild/tagged_based_vlan.o),)
+ifneq ($(wildcard ./$(PREBUILD)/tagged_based_vlan.o),)
 tagged_based_vlan.o:
-	@-cp -f ./prebuild/tagged_based_vlan.o .
+	@cp -f ./$(PREBUILD)/tagged_based_vlan.o .
 endif
 endif
 
 # asustest command is for DSL models only, debugging purpose.
 ifeq ($(RTCONFIG_DSL),y)
-ifneq ($(wildcard ./prebuild/asustest.o),)
+ifneq ($(wildcard ./$(PREBUILD)/asustest.o),)
 asustest.o:
-	@-cp -f ./prebuild/asustest.o .
+	@cp -f ./$(PREBUILD)/asustest.o .
 else
 asustest.o:asustest.c
 	@echo "compile asustest"
@@ -1090,235 +1090,235 @@ endif
 
 ifeq ($(RTCONFIG_HTTPS),y)
 ifeq ($(or $(RTCONFIG_PUSH_EMAIL),$(RTCONFIG_NOTIFICATION_CENTER)),y)
-ifneq ($(wildcard ./prebuild/pwdec.o),)
+ifneq ($(wildcard ./$(PREBUILD)/pwdec.o),)
 pwdec.o:
-	@-cp -f ./prebuild/pwdec.o .
+	@cp -f ./$(PREBUILD)/pwdec.o .
 endif
 endif
 endif
 
 ifeq ($(CONFIG_BCMWL5),y)
-ifneq ($(wildcard ./prebuild/ate-broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ate-broadcom.o),)
 ate-broadcom.o:
-	@-cp -f ./prebuild/ate-broadcom.o .
+	@cp -f ./$(PREBUILD)/ate-broadcom.o .
 endif
-ifneq ($(wildcard ./prebuild/ate.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ate.o),)
 ate.o:
-	@-cp -f ./prebuild/ate.o .
+	@cp -f ./$(PREBUILD)/ate.o .
 endif
 ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME),RT-AC68U RT-AC3200))
-ifneq ($(wildcard ./prebuild/cfe.o),)
+ifneq ($(wildcard ./$(PREBUILD)/cfe.o),)
 cfe.o:
-	@-cp -f ./prebuild/cfe.o .
+	@cp -f ./$(PREBUILD)/cfe.o .
 endif
 endif
 ifeq ($(RTCONFIG_ADTBW),y)
-ifneq ($(wildcard ./prebuild/adtbw-broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/adtbw-broadcom.o),)
 adtbw-broadcom.o:
-	@-cp -f ./prebuild/adtbw-broadcom.o .
+	@cp -f ./$(PREBUILD)/adtbw-broadcom.o .
 endif
 endif
 ifeq ($(and $(RTCONFIG_BCMWL6),$(RTCONFIG_PROXYSTA)),y)
-ifneq ($(wildcard ./prebuild/psta_monitor.o),)
+ifneq ($(wildcard ./$(PREBUILD)/psta_monitor.o),)
 psta_monitor.o:
-	@-cp -f ./prebuild/psta_monitor.o .
+	@cp -f ./$(PREBUILD)/psta_monitor.o .
 endif
 endif
-ifneq ($(wildcard ./prebuild/broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/broadcom.o),)
 broadcom.o:
-	@-cp -f ./prebuild/broadcom.o .
+	@cp -f ./$(PREBUILD)/broadcom.o .
 endif
 ifeq ($(RTCONFIG_AMAS),y)
-ifneq ($(wildcard ./prebuild/obd-broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd-broadcom.o),)
 obd-broadcom.o:
-	@-cp -f ./prebuild/obd-broadcom.o .
+	@cp -f ./$(PREBUILD)/obd-broadcom.o .
 endif
 endif
 endif
 
 ifeq ($(RTCONFIG_RALINK),y)
-ifneq ($(wildcard ./prebuild/ate-ralink.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ate-ralink.o),)
 ate-ralink.o:
-	@-cp -f ./prebuild/ate-ralink.o .
+	@cp -f ./$(PREBUILD)/ate-ralink.o .
 endif
-ifneq ($(wildcard ./prebuild/air_monitor.o),)
+ifneq ($(wildcard ./$(PREBUILD)/air_monitor.o),)
 air_monitor.o:
-	@-cp -f ./prebuild/air_monitor.o .
+	@cp -f ./$(PREBUILD)/air_monitor.o .
 endif
-ifneq ($(wildcard ./prebuild/ralink.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ralink.o),)
 ralink.o:
-	@-cp -f ./prebuild/ralink.o .
+	@cp -f ./$(PREBUILD)/ralink.o .
 endif
-ifneq ($(wildcard ./prebuild/roamast-ralink.o),)
+ifneq ($(wildcard ./$(PREBUILD)/roamast-ralink.o),)
 roamast-ralink.o:
-	@-cp -f ./prebuild/roamast-ralink.o .
+	@cp -f ./$(PREBUILD)/roamast-ralink.o .
 endif
 ifeq ($(RTCONFIG_AMAS),y)
-ifneq ($(wildcard ./prebuild/obd-ralink.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd-ralink.o),)
 obd-ralink.o:
-	@-cp -f ./prebuild/obd-ralink.o .
+	@cp -f ./$(PREBUILD)/obd-ralink.o .
 endif
 endif
 endif
 
 ifeq ($(RTCONFIG_QCA),y)
-ifneq ($(wildcard ./prebuild/ate-qca.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ate-qca.o),)
 ate-qca.o:
-	@-cp -f ./prebuild/ate-qca.o .
+	@cp -f ./$(PREBUILD)/ate-qca.o .
 endif
 ifeq ($(RTCONFIG_AMAS),y)
-ifneq ($(wildcard ./prebuild/obd-qca.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd-qca.o),)
 obd-qca.o:
-	@-cp -f ./prebuild/obd-qca.o .
+	@cp -f ./$(PREBUILD)/obd-qca.o .
 endif
 endif
 endif
 
 ifeq ($(RTCONFIG_REALTEK),y)
-ifneq ($(wildcard ./prebuild/ate-realtek.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ate-realtek.o),)
 ate-realtek.o:
-	@-cp -f ./prebuild/ate-realtek.o .
+	@cp -f ./$(PREBUILD)/ate-realtek.o .
 endif
-ifneq ($(wildcard ./prebuild/realtek.o),)
+ifneq ($(wildcard ./$(PREBUILD)/realtek.o),)
 realtek.o:
-	@-cp -f ./prebuild/realtek.o .
+	@cp -f ./$(PREBUILD)/realtek.o .
 endif
-ifneq ($(wildcard ./prebuild/rtk_wifi_drvmib.o),)
+ifneq ($(wildcard ./$(PREBUILD)/rtk_wifi_drvmib.o),)
 rtk_wifi_drvmib.o:
-	@-cp -f ./prebuild/rtk_wifi_drvmib.o .
+	@cp -f ./$(PREBUILD)/rtk_wifi_drvmib.o .
 endif
 ifeq ($(RTCONFIG_AMAS),y)
-ifneq ($(wildcard ./prebuild/obd-realtek.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd-realtek.o),)
 obd-realtek.o:
-	@-cp -f ./prebuild/obd-realtek.o .
+	@cp -f ./$(PREBUILD)/obd-realtek.o .
 endif
 endif
 endif
 
 ifeq ($(RTCONFIG_TCODE),y)
-ifneq ($(wildcard ./prebuild/tcode_rc.o),)
+ifneq ($(wildcard ./$(PREBUILD)/tcode_rc.o),)
 tcode_rc.o:
-	@-cp -f ./prebuild/tcode_rc.o .
+	@cp -f ./$(PREBUILD)/tcode_rc.o .
 endif
 ifeq ($(CONFIG_BCMWL5),y)
-ifneq ($(wildcard ./prebuild/tcode_brcm.o),)
+ifneq ($(wildcard ./$(PREBUILD)/tcode_brcm.o),)
 tcode_brcm.o:
-	@-cp -f ./prebuild/tcode_brcm.o .
+	@cp -f ./$(PREBUILD)/tcode_brcm.o .
 endif
 endif
 endif
 
 ifeq ($(RTCONFIG_LACP),y)
-ifneq ($(wildcard ./prebuild/agg_brcm.o),)
+ifneq ($(wildcard ./$(PREBUILD)/agg_brcm.o),)
 agg_brcm.o:
-	@-cp -f ./prebuild/agg_brcm.o .
+	@cp -f ./$(PREBUILD)/agg_brcm.o .
 endif
 endif
 
 ifeq ($(and $(CONFIG_BCMWL5),$(RTCONFIG_DUALWAN)),y)
-ifneq ($(wildcard ./prebuild/dualwan.o),)
+ifneq ($(wildcard ./$(PREBUILD)/dualwan.o),)
 dualwan.o:
-	@-cp -f ./prebuild/dualwan.o .
+	@cp -f ./$(PREBUILD)/dualwan.o .
 endif
 endif
 
 ifeq ($(RTCONFIG_ALPINE),y)
-ifneq ($(wildcard ./prebuild/init-alpine.o),)
+ifneq ($(wildcard ./$(PREBUILD)/init-alpine.o),)
 init-alpine.o:
-	@-cp -f ./prebuild/init-alpine.o .
+	@cp -f ./$(PREBUILD)/init-alpine.o .
 endif
-ifneq ($(wildcard ./prebuild/ate-alpine.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ate-alpine.o),)
 ate-alpine.o:
-	@-cp -f ./prebuild/ate-alpine.o .
+	@cp -f ./$(PREBUILD)/ate-alpine.o .
 endif
-ifneq ($(wildcard ./prebuild/alpine.o),)
+ifneq ($(wildcard ./$(PREBUILD)/alpine.o),)
 alpine.o:
-	@-cp -f ./prebuild/alpine.o .
+	@cp -f ./$(PREBUILD)/alpine.o .
 endif
-ifneq ($(wildcard ./prebuild/qsr10g.o),)
+ifneq ($(wildcard ./$(PREBUILD)/qsr10g.o),)
 qsr10g.o:
-	@-cp -f ./prebuild/qsr10g.o .
+	@cp -f ./$(PREBUILD)/qsr10g.o .
 endif
 endif
 
 ifeq ($(RTCONFIG_LANTIQ),y)
-ifneq ($(wildcard ./prebuild/lantiq.o),)
+ifneq ($(wildcard ./$(PREBUILD)/lantiq.o),)
 lantiq.o:
-	@-cp -f ./prebuild/lantiq.o .
+	@cp -f ./$(PREBUILD)/lantiq.o .
 endif
-ifneq ($(wildcard ./prebuild/ate-lantiq.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ate-lantiq.o),)
 ate-lantiq.o:
-	@-cp -f ./prebuild/ate-lantiq.o .
+	@cp -f ./$(PREBUILD)/ate-lantiq.o .
 endif
-ifneq ($(wildcard ./prebuild/init-lantiq.o),)
+ifneq ($(wildcard ./$(PREBUILD)/init-lantiq.o),)
 init-lantiq.o:
-	@-cp -f ./prebuild/init-lantiq.o .
+	@cp -f ./$(PREBUILD)/init-lantiq.o .
 endif
-ifneq ($(wildcard ./prebuild/lantiq-wave.o),)
+ifneq ($(wildcard ./$(PREBUILD)/lantiq-wave.o),)
 lantiq-wave.o:
-	@-cp -f ./prebuild/lantiq-wave.o .
+	@cp -f ./$(PREBUILD)/lantiq-wave.o .
 endif
-ifneq ($(wildcard ./prebuild/client.o),)
+ifneq ($(wildcard ./$(PREBUILD)/client.o),)
 client.o:
-	@-cp -f ./prebuild/client.o .
+	@cp -f ./$(PREBUILD)/client.o .
 endif
 ifeq ($(RTCONFIG_AMAS),y)
-ifneq ($(wildcard ./prebuild/obd-lantiq.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd-lantiq.o),)
 obd-lantiq.o:
-	@-cp -f ./prebuild/obd-lantiq.o .
+	@cp -f ./$(PREBUILD)/obd-lantiq.o .
 endif
 endif
 endif
 
-ifneq ($(wildcard ./prebuild/obd.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd.o),)
 obd.o:
-	@-cp -f ./prebuild/obd.o .
+	@cp -f ./$(PREBUILD)/obd.o .
 endif
 
-ifneq ($(wildcard ./prebuild/obd_eth.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd_eth.o),)
 obd_eth.o:
-	@-cp -f ./prebuild/obd_eth.o .
+	@cp -f ./$(PREBUILD)/obd_eth.o .
 endif
 
-ifneq ($(wildcard ./prebuild/obd_monitor.o),)
+ifneq ($(wildcard ./$(PREBUILD)/obd_monitor.o),)
 obd_monitor.o:
-	@-cp -f ./prebuild/obd_monitor.o .
+	@cp -f ./$(PREBUILD)/obd_monitor.o .
 endif
 
 ifeq ($(RTCONFIG_NEW_USER_LOW_RSSI),y)
-ifneq ($(wildcard ./prebuild/roamast.o),)
+ifneq ($(wildcard ./$(PREBUILD)/roamast.o),)
 roamast.o:
-	@-cp -f ./prebuild/roamast.o .
+	@cp -f ./$(PREBUILD)/roamast.o .
 endif
-ifneq ($(wildcard ./prebuild/roamast-broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/roamast-broadcom.o),)
 roamast-broadcom.o:
-	@-cp -f ./prebuild/roamast-broadcom.o .
+	@cp -f ./$(PREBUILD)/roamast-broadcom.o .
 endif
-ifneq ($(wildcard ./prebuild/roamast-lantiq.o),)
+ifneq ($(wildcard ./$(PREBUILD)/roamast-lantiq.o),)
 roamast-lantiq.o:
-	@-cp -f ./prebuild/roamast-lantiq.o .
+	@cp -f ./$(PREBUILD)/roamast-lantiq.o .
 endif
 endif
 
 ifeq ($(RTCONFIG_TR069),y)
-ifneq ($(wildcard ./prebuild/tr069.o),)
+ifneq ($(wildcard ./$(PREBUILD)/tr069.o),)
 tr069.o:
-	@-cp -f ./prebuild/tr069.o .
+	@cp -f ./$(PREBUILD)/tr069.o .
 endif
 endif
 
 ifeq ($(RTCONFIG_AMAS),y)
-ifneq ($(wildcard ./prebuild/amas_lanctrl.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_lanctrl.o),)
 amas_lanctrl.o:
-	@-cp -f ./prebuild/amas_lanctrl.o .
+	@cp -f ./$(PREBUILD)/amas_lanctrl.o .
 endif
-ifneq ($(wildcard ./prebuild/amas_bhctrl.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_bhctrl.o),)
 amas_bhctrl.o:
-	@-cp -f ./prebuild/amas_bhctrl.o .
+	@cp -f ./$(PREBUILD)/amas_bhctrl.o .
 endif
-ifneq ($(wildcard ./prebuild/amas_wlcconnect.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_wlcconnect.o),)
 amas_wlcconnect.o:
-	@-cp -f ./prebuild/amas_wlcconnect.o .
+	@cp -f ./$(PREBUILD)/amas_wlcconnect.o .
 endif
 endif
 

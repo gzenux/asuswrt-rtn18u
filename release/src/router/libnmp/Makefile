@@ -6,7 +6,7 @@ LDFLAGS += -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared
 
 ifeq ($(wildcard $(SRCBASE)/router/libnmp/*.c),)
 all:
-	-cp -f prebuilt/libnmp.so libnmp.so
+	cp -f $(PREBUILT)/libnmp.so libnmp.so
 else
 all: libnmp.so
 endif

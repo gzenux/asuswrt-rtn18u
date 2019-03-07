@@ -101,7 +101,7 @@ ifeq ($(or $(RTAC68A),$(RT4GAC68U)),y)
 CFLAGS += -DRTAC68U
 endif
 
-OBJS = $(if $(wildcard httpd.c), httpd.o, prebuild/httpd.o)
+OBJS = $(if $(wildcard httpd.c), httpd.o, $(PREBUILD)/httpd.o)
 OBJS += cgi.o ej.o 
 OBJS += web.o common.o nvram_f.o 
 OBJS += aspbw.o initial_web_hook.o
@@ -117,7 +117,7 @@ OBJS += web-qca.o
 else ifeq ($(CONFIG_ALPINE),y)
 OBJS += web-alpine.o
 else ifeq ($(CONFIG_LANTIQ),y)
-OBJS += $(if $(wildcard sysdeps/web-lantiq.c),web-lantiq.o,prebuild/web-lantiq.o)
+OBJS += $(if $(wildcard sysdeps/web-lantiq.c),web-lantiq.o,$(PREBUILD)/web-lantiq.o)
 else
 OBJS += web-broadcom.o
 ifeq ($(RTCONFIG_QTN),y)
@@ -148,7 +148,7 @@ ifeq ($(RTCONFIG_HTTPS),y)
 OBJS += pwenc.o
 endif
 
-OBJS += $(if $(wildcard web_hook.c), web_hook.o, prebuild/web_hook.o)
+OBJS += $(if $(wildcard web_hook.c), web_hook.o, $(PREBUILD)/web_hook.o)
 ifeq ($(RTN18U),y)
 # kludge to support missing funcitons in pre-built web_hook.o
 OBJS += web_rtn18u.o
@@ -310,13 +310,13 @@ size: httpd
 	mipsel-uclibc-nm --print-size --size-sort httpd
 
 # handle prebuilt object here
-ifneq ($(wildcard ./prebuild/),)
+ifneq ($(wildcard ./$(PREBUILD)/),)
 ifeq ($(RTCONFIG_HTTPS),y)
 pwenc.o:
-	@-cp -f ./prebuild/pwenc.o pwenc.o
+	@cp -f ./$(PREBUILD)/pwenc.o pwenc.o
 endif
 web_hook.o:
-	@-cp -f ./prebuild/web_hook.o web_hook.o
+	@cp -f ./$(PREBUILD)/web_hook.o web_hook.o
 endif
 
 %.o: %.c .%.depend

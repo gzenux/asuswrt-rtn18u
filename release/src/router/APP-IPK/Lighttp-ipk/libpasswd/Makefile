@@ -31,7 +31,7 @@ clean:
 	@echo " [libpasswd] CC $@"
 	@$(CC) $(CFLAGS_P) -o $@ -c $<
 
-%.o: prebuild/%.o
+%.o: $(PREBUILD)/%.o
 	@echo " [libpasswd] cp $@"
 	@cp -f $< $@
 

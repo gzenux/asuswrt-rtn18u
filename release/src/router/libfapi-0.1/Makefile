@@ -18,7 +18,7 @@ LDLIBS+= $(SYSLIBS)
 
 ifeq ($(wildcard $(SRCBASE)/router/libfapi-0.1/*.c),)
 all: 
-	-cp -f prebuilt/libfapi.so libfapi.so
+	cp -f $(PREBUILT)/libfapi.so libfapi.so
 else
 all: libfapi.so
 endif

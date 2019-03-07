@@ -27,7 +27,7 @@ vpath %.c $(SRCBASE)/shared/
 
 ifeq ($(wildcard $(SRCBASE)/router/eventd/*.c),)
 all:
-	-cp -f prebuilt/eventd eventd
+	cp -f $(PREBUILT)/eventd eventd
 else
 all: eventd
 endif

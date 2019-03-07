@@ -39,7 +39,7 @@ endif
 
 ifeq ($(wildcard $(SRCBASE)/wlconf/*.c),)
 all:
-	-cp -f $(SRCBASE)/router/wlconf/prebuilt/wlconf wlconf
+	cp -f $(SRCBASE)/router/wlconf/$(PREBUILT)/wlconf wlconf
 else
 all: wlconf
 endif

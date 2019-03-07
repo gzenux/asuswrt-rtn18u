@@ -9,7 +9,7 @@ ifeq ($(TRX),NEW)
 CFLAGS += -DTRX_NEW
 endif
 
-ifneq ($(wildcard ./prebuild/trx_asus),)
+ifneq ($(wildcard ./$(PREBUILD)/trx_asus),)
 all: trx_asus check_link
 
 check_link:
@@ -19,7 +19,7 @@ check_link:
 	@-[ -f trx ] || ln -sf ../../src/ctools/trx trx
 
 trx_asus:
-	@-cp -f ./prebuild/trx_asus .
+	@cp -f ./$(PREBUILD)/trx_asus .
 else
 all: trx_asus
 

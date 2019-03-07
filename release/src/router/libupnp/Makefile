@@ -46,7 +46,7 @@ OBJFILES = ${SRCFILES:.c=.o}
 
 ifeq ($(wildcard ./upnp),)
 all:
-	cp -f ./prebuilt/$(UPNPLIB_NAME) .
+	cp -f ./$(PREBUILT)/$(UPNPLIB_NAME) .
 else
 all: $(OBJFILES)
 	$(LD) -shared -o $(UPNPLIB_NAME) $^

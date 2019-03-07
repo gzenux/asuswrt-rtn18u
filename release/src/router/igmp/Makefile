@@ -18,9 +18,9 @@ ifeq ($(LINUX_VERSION),2_6_36)
 CCFLAGS += -DLINUX_2_6_36
 endif
 
-ifneq ($(wildcard ./prebuilt),)
+ifneq ($(wildcard ./$(PREBUILT)),)
 all:
-	-cp prebuilt/igmp igmp
+	cp $(PREBUILT)/igmp igmp
 else
 all: igmp
 endif

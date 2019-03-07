@@ -127,10 +127,10 @@ endif
 
 ifeq ($(wildcard $(SRCBASE)/router/cfg_mnt/*.c),)
 all:
-	-cp -f prebuild/$(BUILD_NAME)/cfg_server cfg_server
-	-cp -f prebuild/$(BUILD_NAME)/cfg_client cfg_client
-	-cp -f prebuild/$(BUILD_NAME)/cfg_reportstatus cfg_reportstatus
-	-cp -f prebuild/$(BUILD_NAME)/libcfgmnt.so libcfgmnt.so
+	cp -f $(PREBUILD)/cfg_server cfg_server
+	cp -f $(PREBUILD)/cfg_client cfg_client
+	cp -f $(PREBUILD)/cfg_reportstatus cfg_reportstatus
+	cp -f $(PREBUILD)/libcfgmnt.so libcfgmnt.so
 else
 all: cfg_server cfg_client cfg_reportstatus libcfgmnt.so
 endif

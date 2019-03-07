@@ -68,9 +68,9 @@ OBJS += monitor.o dla.o
 OBJS += ginptry.o
 endif
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./$(PREBUILD)),)
 all:
-	@-cp -f ./prebuild/tp_init .
+	@cp -f ./$(PREBUILD)/tp_init .
 else
 all: tp_init
 endif

@@ -10,12 +10,12 @@ MTR_OBJS = mtr.o mtr_api.o util.o
 CONF_H  = $(LINUXDIR)/include/linux/autoconf.h
 CFLAGS += -I$(LINUXDIR)/net/nat/hw_nat
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./$(PREBUILD)),)
 all:
-	-cp prebuild/hw_nat hw_nat
-#	-cp prebuild/acl acl
-#	-cp prebuild/ac ac
-#	-cp prebuild/mtr mtr
+	cp $(PREBUILD)/hw_nat hw_nat
+#	cp $(PREBUILD)/acl acl
+#	cp $(PREBUILD)/ac ac
+#	cp $(PREBUILD)/mtr mtr
 else
 all: $(EXEC)
 endif
@@ -44,5 +44,5 @@ install: all
 
 clean:
 	-rm -f $(EXEC) *.elf *.gdb *.o
-	-rm -rf prebuild
+	-rm -rf $(PREBUILD)
 

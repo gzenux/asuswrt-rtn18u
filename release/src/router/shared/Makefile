@@ -107,7 +107,7 @@ endif
 OBJS = shutils.o linux_timer.o defaults.o model.o rtstate.o boardapi.o
 OBJS += network_utility.o
 OBJS += misc.o version.o files.o strings.o process.o 
-OBJS += bin_sem_asus.o semaphore.o pids.o $(if $(wildcard notify_rc.c),notify_rc.o,prebuild/notify_rc.o)
+OBJS += bin_sem_asus.o semaphore.o pids.o $(if $(wildcard notify_rc.c),notify_rc.o,$(PREBUILD)/notify_rc.o)
 OBJS += discover.o
 OBJS += base64.o
 OBJS += nvparse.o
@@ -247,20 +247,20 @@ OBJS	+= bled.o
 endif
 
 ifeq ($(RTCONFIG_SAVEJFFS),y)
-OBJS	+= $(if $(wildcard jffs_cfgs.c),jffs_cfgs.o,prebuild/jffs_cfgs.o)
+OBJS	+= $(if $(wildcard jffs_cfgs.c),jffs_cfgs.o,$(PREBUILD)/jffs_cfgs.o)
 endif
 
 ifeq ($(RTCONFIG_QCA_PLC_UTILS),y)
-OBJS	+= $(if $(wildcard plc_utils.c),plc_utils.o,prebuild/plc_utils.o)
+OBJS	+= $(if $(wildcard plc_utils.c),plc_utils.o,$(PREBUILD)/plc_utils.o)
 endif
 
 ifeq ($(RTCONFIG_TCODE),y)
-OBJS	+= $(if $(wildcard tcode.c),tcode.o,prebuild/tcode.o)
+OBJS	+= $(if $(wildcard tcode.c),tcode.o,$(PREBUILD)/tcode.o)
 endif
 
-OBJS	+= $(if $(wildcard shutils_private.c),shutils_private.o,prebuild/shutils_private.o)
+OBJS	+= $(if $(wildcard shutils_private.c),shutils_private.o,$(PREBUILD)/shutils_private.o)
 
-OBJS += $(if $(wildcard spwenc.c), spwenc.o, prebuild/spwenc.o)
+OBJS += $(if $(wildcard spwenc.c), spwenc.o, $(PREBUILD)/spwenc.o)
 
 ifeq ($(CONFIG_BCMWL5),y)
 ifneq ($(RTCONFIG_DSL)$(HND_ROUTER),y)
@@ -301,15 +301,15 @@ OBJS += private.o
 vpath %.c sysdeps/ralink
 else ifeq ($(RTCONFIG_QCA),y)
 CFLAGS += $(if $(IPQ40XX),,-DTRX_NEW)
-OBJS += $(if $(wildcard sysdeps/qca/private.c),private.o,prebuild/private.o)
+OBJS += $(if $(wildcard sysdeps/qca/private.c),private.o,$(PREBUILD)/private.o)
 vpath %.c sysdeps/qca
 else ifeq ($(RTCONFIG_ALPINE),y)
 OBJS += private.o
 vpath %.c sysdeps sysdeps/alpine
 else ifeq ($(RTCONFIG_LANTIQ),y)
-OBJS	+= $(if $(wildcard sysdeps/api-lantiq.c),api-lantiq.o,prebuild/api-lantiq.o)
-OBJS	+= $(if $(wildcard sysdeps/lantiq/lantiq.c),lantiq.o,prebuild/lantiq.o)
-OBJS	+= $(if $(wildcard sysdeps/lantiq/private.c),private.o,prebuild/private.o)
+OBJS	+= $(if $(wildcard sysdeps/api-lantiq.c),api-lantiq.o,$(PREBUILD)/api-lantiq.o)
+OBJS	+= $(if $(wildcard sysdeps/lantiq/lantiq.c),lantiq.o,$(PREBUILD)/lantiq.o)
+OBJS	+= $(if $(wildcard sysdeps/lantiq/private.c),private.o,$(PREBUILD)/private.o)
 vpath %.c sysdeps/lantiq
 else ifeq ($(RTCONFIG_QTN),y)
 vpath %.c sysdeps sysdeps/broadcom sysdeps/qtn $(SRCBASE)/shared/ $(SRCBASE)/shared/bcmwifi/src $(WLAN_StdSrcDirsA) $(WLAN_ComponentSrcDirs) $(TOP)/libqcsapi_client/qcsapi_rpc_common/client  $(TOP)/libqcsapi_client/qcsapi_rpc_common/common
@@ -352,18 +352,18 @@ clean:
 	rm -f *.o *.so *.a .*.depend *.prep sysdeps/*.o sysdeps/broadcom/*.o sysdeps/ralink/*.o sysdeps/qtn/*.o
 
 private.o:
-ifneq ($(wildcard ./prebuild/private.o),)
-	@-cp -f ./prebuild/private.o .
+ifneq ($(wildcard ./$(PREBUILD)/private.o),)
+	@cp -f ./$(PREBUILD)/private.o .
 endif
 
 sw_auth.o:
 ifeq ($(wildcard $(SRCBASE)/router/sw-hw-auth/*.c),)
-	cp -f $(TOP)/sw-hw-auth/prebuild/$(BUILD_NAME)/sw_auth.o ./
+	cp -f $(TOP)/sw-hw-auth/$(PREBUILD)/sw_auth.o ./
 endif
 
 hw_auth.o:
 ifeq ($(wildcard $(SRCBASE)/router/sw-hw-auth/*.c),)
-	cp -f $(TOP)/sw-hw-auth/prebuild/$(BUILD_NAME)/hw_auth.o ./
+	cp -f $(TOP)/sw-hw-auth/$(PREBUILD)/hw_auth.o ./
 endif
 
 ifeq ($(RTCONFIG_USB),y)
@@ -382,7 +382,7 @@ $(patsubst %.o,.%.depend,$(notdir $(ID_OBJS))): .%.depend: %.c
 #	@$(LD) -r -e find_label_or_uuid --gc-sections -o $@ $(notdir $(ID_OBJS))
 endif
 
-prebuild/%.o:
+$(PREBUILD)/%.o:
 	#nothing to do...
 
 ifeq ($(RTCONFIG_USB),y)

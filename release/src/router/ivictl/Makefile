@@ -16,7 +16,7 @@ conditional_build: $(EXE)
 
 ifeq ($(wildcard $(SRCBASE)/router/$(EXE)/*.c),)
 $(EXE):
-	-cp -f $(SRCBASE)/router/$(EXE)/prebuilt/$(EXE) $(EXE)
+	cp -f $(SRCBASE)/router/$(EXE)/$(PREBUILT)/$(EXE) $(EXE)
 else
 $(EXE): $(OBJS)
 	$(CC) -o $@ $(OBJS)

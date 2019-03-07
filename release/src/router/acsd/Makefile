@@ -27,8 +27,8 @@ vpath %.c $(SRCBASE)/shared/ $(SRCBASE)/shared/bcmwifi/src
 
 ifeq ($(wildcard $(SRCBASE)/router/acsd/*.c),)
 all:
-	-cp -f prebuilt/acsd acsd
-#	-cp -f prebuilt/acs_cli acs_cli
+	cp -f $(PREBUILT)/acsd acsd
+#	cp -f $(PREBUILT)/acs_cli acs_cli
 else
 all: acsd #acs_cli
 endif

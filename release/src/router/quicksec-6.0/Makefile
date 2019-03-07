@@ -1,5 +1,5 @@
 INSTALLKMODDIR:=$(INSTALLDIR)/lib/modules/$(LINUX_KERNEL)/kernel/net
-PBBINS=$(wildcard prebuild/*)
+PBBINS=$(wildcard $(PREBUILD)/*)
 QUICKSEC_KMOD=$(filter %.ko,$(PBBINS))
 QUICKSEC_EXEC=$(filter-out %.ko,$(PBBINS))
 

@@ -58,9 +58,9 @@ OBJS += tcp_srv.o
 
 all: hspotap
 
-ifneq ($(wildcard ./prebuilt),)
+ifneq ($(wildcard ./$(PREBUILT)),)
 hspotap:
-	cp prebuilt/hspotap .
+	cp $(PREBUILT)/hspotap .
 else
 hspotap: $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)

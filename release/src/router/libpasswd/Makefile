@@ -28,7 +28,7 @@ clean:
 	@echo " [libpasswd] CC $@"
 	@$(CC) $(CFLAGS) -o $@ -c $<
 
-%.o: prebuild/%.o
+%.o: $(PREBUILD)/%.o
 	@echo " [libpasswd] cp $@"
 	@cp -f $< $@
 

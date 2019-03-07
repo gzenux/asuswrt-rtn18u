@@ -51,10 +51,10 @@ size: httpd_uam
 	mipsel-uclibc-nm --print-size --size-sort httpd_uam
 
 # handle prebuilt object here
-ifneq ($(wildcard, ./prebuild),)
+ifneq ($(wildcard, ./$(PREBUILD)),)
 ifeq ($(RTCONFIG_HTTPS),y)
 pwenc.o:
-	@-cp -f ./prebuild/pwenc.o .
+	@cp -f ./$(PREBUILD)/pwenc.o .
 endif
 endif
 

@@ -12,9 +12,9 @@ LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared 
 OBJS := et.o
 vpath %.c $(SRCBASE)/et/linux
 
-ifneq ($(wildcard ./prebuilt),)
+ifneq ($(wildcard ./$(PREBUILT)),)
 all:
-	-cp prebuilt/et et
+	cp $(PREBUILT)/et et
 else
 all: et
 endif

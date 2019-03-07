@@ -1,4 +1,4 @@
-PLCUTILS_EXEC=$(wildcard prebuild/*)
+PLCUTILS_EXEC=$(wildcard $(PREBUILD)/*)
 
 all:
 

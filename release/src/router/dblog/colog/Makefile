@@ -18,9 +18,9 @@ endif
 
 OBJS = main.o
 
-ifneq ($(wildcard ./prebuild),)
+ifneq ($(wildcard ./$(PREBUILD)),)
 all:
-	@-cp -f ./prebuild/colog .
+	@cp -f ./$(PREBUILD)/colog .
 else
 all: colog
 endif

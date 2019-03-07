@@ -30,8 +30,8 @@ SRC3_MAKE	= $(CC) $(CFLAGS) $(SRC3).c -o $(SRC3) $(LDFLAGS) -L. -lamas-utils $(L
 
 ifeq ($(wildcard $(SRCBASE)/router/amas-utils/*.c),)
 all:
-	-cp -f prebuild/$(BUILD_NAME)/amas-utils.h ./
-	-cp -f prebuild/$(BUILD_NAME)/libamas-utils.so ./
+	cp -f $(PREBUILD)/amas-utils.h ./
+	cp -f $(PREBUILD)/libamas-utils.so ./
 else
 all:	lib cli	
 endif

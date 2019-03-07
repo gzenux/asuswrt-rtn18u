@@ -1,5 +1,5 @@
 INSTALLKMODDIR:=$(INSTALLDIR)/lib/modules/$(LINUX_KERNEL)
-PBBINS=$(wildcard prebuild/*)
+PBBINS=$(wildcard $(PREBUILD)/*)
 SFE_KMOD=$(filter %.ko,$(PBBINS))
 
 all:
