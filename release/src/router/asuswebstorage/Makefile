@@ -28,7 +28,7 @@ endif
 
 ifeq ($(wildcard $(TOP)/asuswebstorage/*.c),)
 all:
-	-cp -f $(TOP)/asuswebstorage/prebuild$(BCMEX)$(EXHND)/asuswebstorage asuswebstorage
+	cp -f $(TOP)/asuswebstorage/$(PREBUILD)/asuswebstorage asuswebstorage
 else
 all: asuswebstorage
 endif

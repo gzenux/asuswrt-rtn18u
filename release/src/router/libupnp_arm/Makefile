@@ -32,11 +32,7 @@ LDFLAGS += -lgcc_s
 endif
 
 vpath %.c $(SRCPATH) $(UPNPLIB)/linux
-ifeq ($(RTCONFIG_BCMARM),y)
-vpath %.o $(UPNPLIB)/prebuilt.$(BCMEX)$(EX7)
-else
-vpath %.o $(UPNPLIB)/prebuilt.mipsel
-endif
+vpath %.o $(UPNPLIB)/$(PREBUILT)
 
 SRCFILES = upnp.c upnp_ssdp.c upnp_http.c upnp_gena.c upnp_soap.c \
 	upnp_description.c upnp_device.c upnp_util.c upnp_msg.c \

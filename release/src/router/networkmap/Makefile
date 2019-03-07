@@ -110,16 +110,16 @@ endif
 ifneq ($(AC2900),y)
 ifeq ($(wildcard $(SRCBASE)/router/networkmap/*.c),)
 all: 
-	-cp -f prebuild$(BCMEX)$(EX7)/networkmap networkmap
-	-cp -f prebuild$(BCMEX)$(EX7)/asusdiscovery asusdiscovery
-	-cp -f prebuild$(BCMEX)$(EX7)/arpstorm arpstorm
+	cp -f $(PREBUILD)/networkmap networkmap
+	cp -f $(PREBUILD)/asusdiscovery asusdiscovery
+	cp -f $(PREBUILD)/arpstorm arpstorm
 else
 all: $(EXEC) asusdiscovery arpstorm
 endif
 else
 ifeq ($(wildcard $(SRCBASE)/router/networkmap/*.c),)
 all: 
-	-cp -f prebuild$(BCMEX)$(EX7)/networkmap networkmap
+	cp -f $(PREBUILD)/networkmap networkmap
 else
 all: $(EXEC)
 endif

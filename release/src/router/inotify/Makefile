@@ -5,7 +5,7 @@
 #***********************************************************************
 
 all:
-	-cp prebuild$(BCMEX)$(EXHND)/inotify inotify
+	cp $(PREBUILD)/inotify inotify
 
 .PHONY: clean
 clean:

@@ -21,9 +21,9 @@ endif
 
 OBJS = dblog.o dblog_syslog.o dblog_wifi.o dblog_dm.o dblog_ms.o dblog_amas.o dblog_hyd.o respipc.o
 
-ifneq ($(wildcard ./prebuild$(BCMEX)$(EXHND)),)
+ifneq ($(wildcard ./$(PREBUILD)),)
 all:
-	@-cp -f ./prebuild$(BCMEX)$(EXHND)/dblog .
+	@cp -f ./$(PREBUILD)/dblog .
 else
 all: dblog
 endif

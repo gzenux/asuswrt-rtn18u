@@ -21,29 +21,7 @@ LDFLAGS += -L.
 
 
 vpath %.c $(SRCBASE)/bcmcrypto
-ifeq ($(RTCONFIG_BCMARM),y)
-ifeq ($(HND_ROUTER),y)
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.hnd
-else
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.arm
-endif
-else ifeq ($(RTCONFIG_RALINK),y)
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.mipsel
-else ifeq ($(RTCONFIG_QCA_ARM),y)
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.qca_arm
-else ifeq ($(RTCONFIG_QCA),y)
-ifeq ($(ARCH),arm)
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.qca.ipq806x
-else
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.qca
-endif
-else ifeq ($(RTCONFIG_ALPINE),y)
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.alpine
-else ifeq ($(RTCONFIG_LANTIQ),y)
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.lantiq
-else
-vpath %.o $(SRCBASE)/router/libbcmcrypto/prebuilt.mipsel
-endif
+vpath %.o $(SRCBASE)/router/libbcmcrypto/$(PREBUILT)
 
 OBJS := aes.o aeskeywrap.o rijndael-alg-fst.o dh.o bn.o sha1.o passhash.o prf.o md5.o hmac.o rc4.o random.o
 # For customer backwords compatibility, for now we keep CONFIG_WSCCMD here and can be removed when

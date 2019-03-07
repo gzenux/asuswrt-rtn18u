@@ -42,9 +42,9 @@ MDIRS = lib
 
 ifeq ($(wildcard $(SRCBASE)/router/protect_srv/*.c),)
 all: 
-	-cp -f prebuild$(BCMEX)$(EXHND)/protect_srv protect_srv
-	-cp -f prebuild$(BCMEX)$(EXHND)/Send_Event2ptcsrv Send_Event2ptcsrv
-	-cp -f lib/prebuild$(BCMEX)$(EXHND)/libptcsrv.so lib
+	cp -f $(PREBUILD)/protect_srv protect_srv
+	cp -f $(PREBUILD)/Send_Event2ptcsrv Send_Event2ptcsrv
+	cp -f lib/$(PREBUILD)/libptcsrv.so lib
 
 else
 all: ptcsrvdir Send_Event2ptcsrv protect_srv

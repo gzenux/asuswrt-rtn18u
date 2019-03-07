@@ -37,13 +37,13 @@ MDIRS = lib actMail
 
 ifeq ($(wildcard $(SRCBASE)/router/nt_center/*.c),)
 all:
-	-cp -f prebuild$(BCMEX)$(EXHND)/Notify_Event2NC Notify_Event2NC
-	-cp -f prebuild$(BCMEX)$(EXHND)/nt_center nt_center
-	-cp -f actMail/prebuild$(BCMEX)$(EXHND)/nt_actMail actMail
-	-cp -f prebuild$(BCMEX)$(EXHND)/nt_monitor nt_monitor
-	-cp -f lib/prebuild$(BCMEX)$(EXHND)/libnt.so lib
-	-cp -f lib/prebuild$(BCMEX)$(EXHND)/nt_db lib
-#	-cp -f lib/prebuild$(BCMEX)$(EXHND)/*.h lib
+	cp -f $(PREBUILD)/Notify_Event2NC Notify_Event2NC
+	cp -f $(PREBUILD)/nt_center nt_center
+	cp -f actMail/$(PREBUILD)/nt_actMail actMail
+	cp -f $(PREBUILD)/nt_monitor nt_monitor
+	cp -f lib/$(PREBUILD)/libnt.so lib
+	cp -f lib/$(PREBUILD)/nt_db lib
+#	cp -f lib/$(PREBUILD)/*.h lib
 
 else
 all: ntdir nt_center Notify_Event2NC  nt_monitor

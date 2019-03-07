@@ -1,5 +1,5 @@
 all:
-	@cp -f prebuild$(BCMEX)$(EXHND)/dropbox_client dropbox_client
+	@cp -f $(PREBUILD)/dropbox_client dropbox_client
 
 install:
 

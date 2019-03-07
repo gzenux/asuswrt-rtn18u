@@ -27,7 +27,7 @@ endif
 
 ifeq ($(wildcard $(TOP)/libasuslog/*.c),)
 all:
-	-cp -f $(TOP)/libasuslog/prebuild$(BCMEX)$(EXHND)/libasuslog.so libasuslog.so
+	cp -f $(TOP)/libasuslog/$(PREBUILD)/libasuslog.so libasuslog.so
 else
 all: $(PROGS)
 endif

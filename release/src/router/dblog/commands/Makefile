@@ -19,9 +19,9 @@ endif
 
 OBJS = dblogcmd.o
 
-ifneq ($(wildcard ./prebuild$(BCMEX)$(EXHND)),)
+ifneq ($(wildcard ./$(PREBUILD)),)
 all:
-	@-cp -f ./prebuild$(BCMEX)$(EXHND)/dblogcmd .
+	@cp -f ./$(PREBUILD)/dblogcmd .
 else
 all: dblogcmd
 endif

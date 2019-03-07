@@ -69,8 +69,8 @@ vpath %.c $(TOP)/bwdpi_source/src/tdts_udb_sample
 
 ifeq ($(wildcard $(SRCBASE)/router/bwdpi_source/asus/*.c),)
 all:
-	-cp -f prebuild$(BCMEX)$(EX7)/$(BUILD_NAME)/libbwdpi.so libbwdpi.so
-	-cp -f prebuild$(BCMEX)$(EX7)/hwinfo hwinfo
+	cp -f $(PREBUILD)/libbwdpi.so libbwdpi.so
+	cp -f $(PREBUILD)/hwinfo hwinfo
 else
 all: hwinfo libbwdpi.so dpi_support.prep
 endif

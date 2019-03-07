@@ -27,7 +27,7 @@ vpath %.c $(SRCBASE)/shared $(WLAN_ComponentSrcDirs)
 
 ifeq ($(wildcard $(SRCBASE)/router/bsd/*.c),)
 all:
-	-cp -f prebuilt$(BCMEX)$(EX7)/bsd bsd
+	cp -f $(PREBUILT)/bsd bsd
 else
 all: bsd
 endif

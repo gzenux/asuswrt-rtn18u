@@ -1,5 +1,5 @@
 all:
-	@cp -f prebuild$(BCMEX)$(EXHND)/sambaclient sambaclient
+	@cp -f $(PREBUILD)/sambaclient sambaclient
 
 install:
 
