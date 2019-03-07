@@ -112,7 +112,9 @@ ifeq ($(wildcard $(SRCBASE)/router/networkmap/*.c),)
 all: 
 	cp -f $(PREBUILD)/networkmap networkmap
 	cp -f $(PREBUILD)/asusdiscovery asusdiscovery
+ifneq ($(RTN18U),y)
 	cp -f $(PREBUILD)/arpstorm arpstorm
+endif
 else
 all: $(EXEC) asusdiscovery arpstorm
 endif
