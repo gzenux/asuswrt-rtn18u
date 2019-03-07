@@ -8875,10 +8875,10 @@ NO_USB_CAP:
 
 #ifdef RTCONFIG_TR069
 	add_rc_support("tr069");
+#endif
 
 #if defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2)
 	add_rc_support("jffs2");
-#endif
 #endif
 
 #ifdef RTCONFIG_WPS_ALLLED_BTN
