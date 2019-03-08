@@ -34,6 +34,8 @@ export HND_ROUTER := n
 endif
 
 include common.mak
+export PARALLEL_BUILD := -j$(shell grep -c '^processor' /proc/cpuinfo)
+
 ifneq ($(HND_ROUTER),y)
 include $(SRCBASE)/.config
 endif
