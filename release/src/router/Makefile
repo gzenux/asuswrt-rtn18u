@@ -2525,7 +2525,7 @@ openssl: openssl/Makefile fsbuild
 else
 openssl: openssl/Makefile
 endif
-	$(MAKE) -C openssl && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C openssl && $(MAKE) $@-stage
 
 openssl-clean:
 	[ ! -f openssl/Makefile ] || $(MAKE) -C openssl clean
@@ -2601,7 +2601,7 @@ endif
 
 bridge: bridge/stamp-h1
 	@$(SEP)
-	@$(MAKE) -C bridge
+	@$(MAKE) $(PARALLEL_BUILD) -C bridge
 
 bridge-clean:
 	-@$(MAKE) -C bridge clean
@@ -2998,7 +2998,7 @@ ifeq ($(RTCONFIG_FTP_SSL),y)
 else
 	-cp vsftpd-3.x/builddefs-nossl.h vsftpd-3.x/builddefs.h
 endif
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 vsftpd-3.x-install:
 	install -D vsftpd-3.x/vsftpd $(INSTALLDIR)/vsftpd-3.x/usr/sbin/vsftpd
@@ -3083,7 +3083,7 @@ libusb10/stamp-h1:
 	touch $@
 
 libusb10: libusb10/stamp-h1
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 libusb10-install: libusb10
 	install -D libusb10/libusb/.libs/libusb-1.0.so.0.0.0 $(INSTALLDIR)/libusb10/usr/lib/libusb-1.0.so.0
@@ -3106,7 +3106,7 @@ libusb/stamp-h1:
 	touch $@
 
 libusb: libusb10 libusb/stamp-h1
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 libusb-install: libusb
 	install -D libusb/libusb/.libs/libusb-0.1.so.4.4.4 $(INSTALLDIR)/libusb/usr/lib/libusb-0.1.so.4
@@ -3131,7 +3131,7 @@ usb-modeswitch-1.2.3-install: usb-modeswitch-1.2.3
 	@sed 's/#.*//g;s/[ \t]\+/ /g;s/^[ \t]*//;s/[ \t]*$$//;/^$$/d' < $(TOP)/usb-modeswitch-1.2.3/usb_modeswitch.conf > $(TARGETDIR)/rom/etc/usb_modeswitch.conf
 
 usb-modeswitch: libusb10
-	$(MAKE) -C $@ CC=$(CC) CFLAGS="-Os $(EXTRACFLAGS) -I$(TOP)/libusb10/libusb" LIBS="\
+	$(MAKE) $(PARALLEL_BUILD) -C $@ CC=$(CC) CFLAGS="-Os $(EXTRACFLAGS) -I$(TOP)/libusb10/libusb" LIBS="\
 		-Wl,-R/lib:/usr/lib:/opt/usr/lib:/usr/local/share -lpthread -ldl \
 		-L$(TOP)/libusb10/libusb/.libs -lusb-1.0"
 
@@ -3148,7 +3148,7 @@ usbmode/stamp-h1:
 	touch $@
 
 usbmode: json-c libubox usbmode/stamp-h1
-	$(MAKE) -C $@ EXTRACFLAGS="$(EXTRACFLAGS) -I$(TOP)/libubox"
+	$(MAKE) $(PARALLEL_BUILD) -C $@ EXTRACFLAGS="$(EXTRACFLAGS) -I$(TOP)/libubox"
 
 usbmode-install: usbmode
 	install -D $</$< $(INSTALLDIR)/$</usr/sbin/$<
@@ -3165,7 +3165,7 @@ libusb-0.1.12/stamp-h1:
 	touch $@
 
 libusb-0.1.12: libusb-0.1.12/stamp-h1
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 libusb-0.1.12-install: libusb-0.1.12
 #	install -D libusb-0.1.12/.libs/libusb-0.1.so.4.4.4 $(INSTALLDIR)/libusb-0.1.12/usr/lib/libusb-0.1.so.4.4.4
@@ -3201,7 +3201,7 @@ libdaemon/stamp-h1:
 	touch $@
 
 libdaemon: libdaemon/stamp-h1
-	$(MAKE) -C $@ && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C $@ && $(MAKE) $@-stage
 
 libdaemon-install: libdaemon
 	install -D libdaemon/libdaemon/.libs/libdaemon.so.0.5.0 $(INSTALLDIR)/libdaemon/usr/lib/libdaemon.so.0.5.0
@@ -3296,7 +3296,7 @@ odhcp6c: odhcp6c/Makefile
 	@EXT_CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC" \
 	EXT_LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	PREFIX="/usr" \
-	$(MAKE) -C odhcp6c
+	$(MAKE) $(PARALLEL_BUILD) -C odhcp6c
 
 odhcp6c-install: odhcp6c
 	install -D odhcp6c/src/odhcp6c $(INSTALLDIR)/odhcp6c/usr/sbin/odhcp6c
@@ -3309,7 +3309,7 @@ odhcp6c-clean:
 	@EXT_CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC" \
 	EXT_LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	PREFIX="/usr" \
-	$(MAKE) -C 6relayd
+	$(MAKE) $(PARALLEL_BUILD) -C 6relayd
 
 6relayd-install: 6relayd
 	install -D 6relayd/src/6relayd $(INSTALLDIR)/6relayd/usr/sbin/6relayd
@@ -3435,7 +3435,7 @@ vlan-install:
 	$(STRIP) $(INSTALLDIR)/vlan/usr/sbin/vconfig
 
 accel-pptpd: kernel_header pppd accel-pptpd/pptpd-1.3.3/Makefile
-	@$(MAKE) -C accel-pptpd server
+	@$(MAKE) $(PARALLEL_BUILD) -C accel-pptpd server
 
 accel-pptpd/pptpd-1.3.3/Makefile:
 	( cd accel-pptpd/pptpd-1.3.3 && CFLAGS="$(CFLAGS) -g -O2 $(EXTRACFLAGS) -idirafter $(KDIR)/include" \
@@ -3486,7 +3486,7 @@ else
 endif
 
 rp-pppoe: pppd rp-pppoe/src/stamp-h1
-	@$(MAKE) -C rp-pppoe/src pppoe-relay rp-pppoe.so
+	@$(MAKE) $(PARALLEL_BUILD) -C rp-pppoe/src pppoe-relay rp-pppoe.so
 
 rp-pppoe-clean:
 	-@$(MAKE) -C rp-pppoe/src clean
@@ -3504,7 +3504,7 @@ rp-l2tp/stamp-h1: kernel_header
 	touch $@
 
 rp-l2tp: pppd rp-l2tp/stamp-h1
-	$(MAKE) -C rp-l2tp
+	$(MAKE) $(PARALLEL_BUILD) -C rp-l2tp
 
 rp-l2tp-clean:
 	-@$(MAKE) -C rp-l2tp distclean
@@ -3549,7 +3549,7 @@ endif
 	touch $@
 
 accel-pptp: pppd accel-pptp/stamp-h1
-	@$(MAKE) -C accel-pptp
+	@$(MAKE) $(PARALLEL_BUILD) -C accel-pptp
 
 accel-pptp-clean:
 	-@$(MAKE) -C accel-pptp clean
@@ -3565,7 +3565,7 @@ pppd/stamp-h1: kernel_header
 
 pppd: pppd/stamp-h1
 	@$(SEP)
-	@$(MAKE) -C pppd MFLAGS='$(if $(RTCONFIG_IPV6),HAVE_INET6=y,) \
+	@$(MAKE) $(PARALLEL_BUILD) -C pppd MFLAGS='$(if $(RTCONFIG_IPV6),HAVE_INET6=y,) \
 	EXTRACFLAGS="$(EXTRACFLAGS) -idirafter $(KDIR)/include $(if $(RTCONFIG_VPNC),-DRTCONFIG_VPNC,)"'
 
 pppd-clean:
@@ -3680,7 +3680,7 @@ gctwimax-0.0.3rc4/stamp-h1:
 	touch $@
 
 gctwimax-0.0.3rc4: $@/stamp-h1
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 gctwimax-0.0.3rc4-install: gctwimax-0.0.3rc4
 	install -D gctwimax-0.0.3rc4/gctwimax $(INSTALLDIR)/gctwimax-0.0.3rc4/usr/sbin/gctwimax
@@ -3693,7 +3693,7 @@ gctwimax-0.0.3rc4-clean:
 	@rm -f gctwimax-0.0.3rc4/stamp-h1
 
 wpa_supplicant:
-	$(MAKE) -C $@/wpa_supplicant EXTRACFLAGS="-Os $(EXTRACFLAGS)"
+	$(MAKE) $(PARALLEL_BUILD) -C $@/wpa_supplicant EXTRACFLAGS="-Os $(EXTRACFLAGS)"
 
 wpa_supplicant-install: wpa_supplicant
 	install -D wpa_supplicant/wpa_supplicant/wpa_supplicant $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_supplicant
@@ -4206,7 +4206,7 @@ libogg/stamp-h1:
 	touch libogg/aclocal.m4
 
 libogg: libogg/stamp-h1
-	@$(MAKE) -C libogg all
+	@$(MAKE) $(PARALLEL_BUILD) -C libogg all
 
 libogg-clean:
 	-@$(MAKE) -C libogg clean
@@ -4412,7 +4412,7 @@ libgdbm/stamp-h1:
 	touch $@
 
 libgdbm: libgdbm/stamp-h1
-	@$(MAKE) -C libgdbm
+	@$(MAKE) $(PARALLEL_BUILD) -C libgdbm
 
 libgdbm-clean:
 	-@$(MAKE) -C libgdbm clean
@@ -4472,7 +4472,7 @@ igmpproxy/Makefile:
 
 igmpproxy: igmpproxy/Makefile
 	@$(SEP)
-	@$(MAKE) -C igmpproxy/src
+	@$(MAKE) $(PARALLEL_BUILD) -C igmpproxy/src
 
 igmpproxy-install: igmpproxy
 	install -D igmpproxy/src/igmpproxy $(INSTALLDIR)/igmpproxy/usr/sbin/igmpproxy
@@ -4490,7 +4490,7 @@ snooper:
 ifeq ($(or $(RTCONFIG_QCA),$(RTCONFIG_REALTEK),$(RTCONFIG_ALPINE),$(RTCONFIG_LANTIQ)),y)
 	@true
 else
-	$(MAKE) -C snooper EXTRACFLAGS="-I$(SRCBASE)/include $(EXTRACFLAGS)" \
+	$(MAKE) $(PARALLEL_BUILD) -C snooper EXTRACFLAGS="-I$(SRCBASE)/include $(EXTRACFLAGS)" \
 		SWITCH=$(if $(RTCONFIG_RALINK),ralink,broadcom)
 endif
 
@@ -4506,7 +4506,7 @@ snooper-clean:
 	$(MAKE) -C snooper clean
 
 udpxy:
-	$(MAKE) -C $@ release NO_UDPXREC=yes \
+	$(MAKE) $(PARALLEL_BUILD) -C $@ release NO_UDPXREC=yes \
 	CDEFS="-O2 -ffunction-sections -fdata-sections $(if $(RTCONFIG_REALTEK),-fno-strict-aliasing,) $(EXTRACFLAGS)" \
 	LDFLAGS="-Wl,--gc-sections"
 
@@ -4744,7 +4744,7 @@ endif
 endif
 
 udev:
-	$(MAKE) -C $@ CROSS_COMPILE=$(CROSS_COMPILE) EXTRACFLAGS="$(EXTRACFLAGS)" \
+	$(MAKE) $(PARALLEL_BUILD) -C $@ CROSS_COMPILE=$(CROSS_COMPILE) EXTRACFLAGS="$(EXTRACFLAGS)" \
 		PROGRAMS=udevtrigger
 
 udev-install: udev
@@ -4753,7 +4753,7 @@ udev-install: udev
 	$(MAKE) -C udev DESTDIR=$(INSTALLDIR) prefix=/udev install-udevtrigger
 
 hotplug2:
-	$(MAKE) -C $@ CROSS_COMPILE=$(CROSS_COMPILE) EXTRACFLAGS="$(EXTRACFLAGS)"
+	$(MAKE) $(PARALLEL_BUILD) -C $@ CROSS_COMPILE=$(CROSS_COMPILE) EXTRACFLAGS="$(EXTRACFLAGS)"
 
 hotplug2-install: hotplug2
 	$(MAKE) -C hotplug2 install PREFIX=$(INSTALLDIR)/hotplug2 SUBDIRS=""
@@ -4919,7 +4919,7 @@ openvpn-install:
 	fi
 
 sdparm-1.02: sdparm-1.02/Makefile
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 sdparm-1.02/Makefile: sdparm-1.02/configure
 	cd sdparm-1.02 && \
@@ -5107,6 +5107,8 @@ pcre-8.31/stamp-h1:
 	[ -d pcre-8.31/m4 ] || mkdir pcre-8.31/m4
 
 pcre-8.31: pcre-8.31/stamp-h1
+	@$(SEP)
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 pcre-8.31-install: pcre-8.31
 	@$(SEP)
@@ -5149,7 +5151,7 @@ libiconv-1.14/stamp-h1:
 	touch $@
 
 libiconv-1.14:libiconv-1.14/stamp-h1
-	@$(MAKE) -C $@ CFLAGS="$(CFLAGS) $(if $(filter-out y,$(HND_ROUTER)),-DHND_ROUTER,)" && $(MAKE) $@-stage
+	@$(MAKE) $(PARALLEL_BUILD) -C $@ CFLAGS="$(CFLAGS) $(if $(filter-out y,$(HND_ROUTER)),-DHND_ROUTER,)" && $(MAKE) $@-stage
 
 libiconv-1.14-install:
 	@$(SEP)
@@ -5328,7 +5330,7 @@ neon/stamp-h1 neon/config.h:
 	touch $@
 
 neon: libxml2 openssl neon/stamp-h1 neon/config.h
-	$(MAKE) -C neon && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C neon && $(MAKE) $@-stage
 
 neon-install:
 	@$(SEP)
@@ -5457,7 +5459,7 @@ net-snmp-5.7.2/stamp-h1:
 	@touch net-snmp-5.7.2/stamp-h1
 
 net-snmp-5.7.2: net-snmp-5.7.2/stamp-h1
-	@$(MAKE) -C net-snmp-5.7.2
+	@$(MAKE) $(PARALLEL_BUILD) -C net-snmp-5.7.2
 
 net-snmp-5.7.2-install:
 	@$(MAKE) -C net-snmp-5.7.2 install
@@ -5553,7 +5555,7 @@ libgpg-error-1.10/stamp-h1:
 
 libgpg-error-1.10: libgpg-error-1.10/stamp-h1
 	@$(SEP)
-	$(MAKE) -C libgpg-error-1.10
+	$(MAKE) $(PARALLEL_BUILD) -C libgpg-error-1.10
 
 libgpg-error-1.10-install:
 	install -D libgpg-error-1.10/src/.libs/libgpg-error.so.0.8.0 $(INSTALLDIR)/libgpg-error-1.10/usr/lib/libgpg-error.so.0.8.0
@@ -5573,7 +5575,7 @@ libgcrypt-1.5.1/stamp-h1: libgpg-error-1.10
 
 libgcrypt-1.5.1: libgcrypt-1.5.1/stamp-h1
 	@$(SEP)
-	@$(MAKE) -C libgcrypt-1.5.1
+	@$(MAKE) $(PARALLEL_BUILD) -C libgcrypt-1.5.1
 
 libgcrypt-1.5.1-install:
 	install -D libgcrypt-1.5.1/src/.libs/libgcrypt.so.11.8.0 $(INSTALLDIR)/libgcrypt-1.5.1/usr/lib/libgcrypt.so.11.8.0
@@ -5803,7 +5805,7 @@ madwimax-0.1.1/stamp-h1:
 
 madwimax-0.1.1: libusb10 madwimax-0.1.1/stamp-h1
 	@$(SEP)
-	@$(MAKE) -C madwimax-0.1.1 all
+	@$(MAKE) $(PARALLEL_BUILD) -C madwimax-0.1.1 all
 
 madwimax-0.1.1-install: madwimax-0.1.1
 	#install -D madwimax-0.1.1/scripts/events/event.sh $(INSTALLDIR)/madwimax-0.1.1/usr/sbin/event.sh
@@ -6284,7 +6286,7 @@ wget/Makefile: wget/Makefile.in
 		LDFLAGS="$(EXTRALDFLAGS) -Wl,--gc-sections -L$(TOP)/openssl -lssl -lcrypto -L$(TOP)/zlib -lz"
 
 wget: openssl zlib wget/Makefile
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 wget-clean:
 	[ ! -f wget/Makefile ] || $(MAKE) -C wget distclean
@@ -6878,7 +6880,7 @@ libconfuse/Makefile:
 
 libconfuse: libiconv-1.14 libconfuse/Makefile
 	@$(SEP)
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 libconfuse-install:
 	@$(SEP)
@@ -6907,7 +6909,7 @@ inadyn/Makefile:
 
 inadyn: shared nvram${BCMEX}$(EX7) libconfuse inadyn/Makefile
 	@$(SEP)
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 inadyn-install:
 	install -D inadyn/src/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
@@ -6974,7 +6976,7 @@ nano-install:
 
 nano: ncurses-6.0 nano/Makefile
 	@$(SEP)
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 nettle/stamp-h1:
 	@cd nettle && \
@@ -7018,7 +7020,7 @@ libnfnetlink/stamp-h1:
 
 libnfnetlink: libnfnetlink/stamp-h1
 	@$(SEP)
-	$(MAKE) -C libnfnetlink
+	$(MAKE) $(PARALLEL_BUILD) -C libnfnetlink
 
 libnfnetlink-clean:
 	-@$(MAKE) -C libnfnetlink distclean
@@ -7039,7 +7041,7 @@ libmnl/stamp-h1:
 	touch libmnl/stamp-h1
 
 libmnl: libmnl/stamp-h1
-	$(MAKE) -C libmnl
+	$(MAKE) $(PARALLEL_BUILD) -C libmnl
 	$(MAKE) -C libmnl DESTDIR=$(TOP)/libmnl/staged install
 
 libmnl-install: libmnl
@@ -7065,8 +7067,8 @@ ipset_arm/stamp-h1: libmnl
 	touch ipset_arm/stamp-h1
 
 ipset_arm: ipset_arm/stamp-h1
-	$(MAKE) -C ipset_arm
-	$(MAKE) -C ipset_arm modules
+	$(MAKE) $(PARALLEL_BUILD) -C ipset_arm
+	$(MAKE) $(PARALLEL_BUILD) -C ipset_arm modules
 
 ipset_arm-install:
 	install -D ipset_arm/src/ipset $(INSTALLDIR)/ipset_arm/usr/sbin/ipset
@@ -7113,7 +7115,7 @@ nfs-utils-1.3.4/stamp-h1:
 	@touch $@
 
 nfs-utils-1.3.4: nfs-utils-1.3.4/stamp-h1
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 nfs-utils-1.3.4-clean:
 	-@$(MAKE) -C nfs-utils distclean
@@ -7128,7 +7130,7 @@ nfs-utils-1.3.4-install:
 	$(STRIP) $(INSTALLDIR)/nfs-utils-1.3.4/usr/sbin/*
 
 portmap: portmap/Makefile
-	$(MAKE) -C $@  EXTRACFLAGS="$(EXTRACFLAGS) -Os" NO_TCP_WRAPPER=y RPCUSER=nobody
+	$(MAKE) $(PARALLEL_BUILD) -C $@  EXTRACFLAGS="$(EXTRACFLAGS) -Os" NO_TCP_WRAPPER=y RPCUSER=nobody
 
 portmap-install:
 	install -D portmap/portmap $(INSTALLDIR)/portmap/usr/sbin/portmap
@@ -7389,7 +7391,7 @@ else
 endif
 
 json-c: json-c/stamp-h1
-	$(MAKE) -C $@ && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C $@ && $(MAKE) $@-stage
 
 json-c-install:
 	install -D json-c/.libs/libjson-c.so.2.0.2 $(INSTALLDIR)/json-c/usr/lib/libjson-c.so.2.0.2
@@ -7418,7 +7420,7 @@ else
 endif
 
 phddns: phddns/stamp-h1
-	$(MAKE) -C phddns
+	$(MAKE) $(PARALLEL_BUILD) -C phddns
 
 phddns-install:
 	install -D phddns/src/phddns $(INSTALLDIR)/phddns/usr/sbin/phddns
@@ -7429,7 +7431,7 @@ phddns-clean:
 	@rm -f phddns/stamp-h1
 
 acme-client-portable:
-	$(MAKE) -C acme-client-portable
+	$(MAKE) $(PARALLEL_BUILD) -C acme-client-portable
 
 acme-client-portable-install: acme-client-portable
 	install -D acme-client-portable/acme-client $(INSTALLDIR)/acme-client-portable/usr/sbin/acme-client
