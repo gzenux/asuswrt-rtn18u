@@ -2017,6 +2017,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 	else if (!strcmp(command, "Get_IpAddr_Lan")) {
 		get_IpAddr_Lan();
 	}
+#if !defined(RTN18U)
 	else if (!strcmp(command, "Set_MRFLAG")) {
 		if(value == NULL || strlen(value) <= 0){
 			printf("ATE_ERROR_INCORRECT_PARAMETER\n");
@@ -2028,6 +2029,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 	else if (!strcmp(command, "Get_MRFLAG")) {
 		get_MRFLAG();
 	}
+#endif
 	else if (!strcmp(command, "Get_Default")) {
 		char *p = NULL;
 

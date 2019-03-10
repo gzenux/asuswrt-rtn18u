@@ -1657,7 +1657,9 @@ extern int with_non_dfs_chspec(char *wif);
 extern chanspec_t select_band1_chspec_with_same_bw(char *wif, chanspec_t chanspec);
 extern chanspec_t select_band4_chspec_with_same_bw(char *wif, chanspec_t chanspec);
 extern chanspec_t select_chspec_with_band_bw(char *wif, int band, int bw, chanspec_t chanspec);
+#if !defined(RTN18U)
 extern void wl_list_5g_chans(int unit, int band, char *buf, int len);
+#endif
 #endif
 #ifdef RTCONFIG_AMAS
 //extern char *get_pap_bssid(int unit, char bssid_str[]);

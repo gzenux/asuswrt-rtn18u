@@ -270,6 +270,9 @@ time_t last_login_timestamp_wan=0; // the timestamp of the current session.
 time_t auth_check_dt=0;
 unsigned int login_try_wan=0;
 int cur_login_ip_type = -1;	//0:LAN, 1:WAN, -1:ERROR
+#if defined(RTN18U)
+unsigned int MAX_login = DEFAULT_LOGIN_MAX_NUM;
+#endif
 int lock_flag = 0;
 
 // 2008.08 magic {

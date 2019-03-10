@@ -6937,17 +6937,23 @@ void set_acs_ifnames()
 #ifdef RTCONFIG_DPSTA
 	char wlvif[] = "wlxxxx";
 #endif
+#if !defined(RTN18U)
 	char list[1024], list_5g_band1_chans[1024], list_5g_band2_chans[1024], list_5g_band3_chans[1024];
+#endif
 
 	wl_check_5g_band_group();
 
+#if !defined(RTN18U)
 	memset(list, 0, sizeof(list));
+#endif
 	memset(acs_ifnames, 0, sizeof(acs_ifnames));
 	memset(acs_ifnames2, 0, sizeof(acs_ifnames2));
 
+#if !defined(RTN18U)
 	wl_list_5g_chans(1, 1, list_5g_band1_chans, sizeof(list_5g_band1_chans));
 	wl_list_5g_chans(1, 2, list_5g_band2_chans, sizeof(list_5g_band2_chans));
 	wl_list_5g_chans((num_of_wl_if() == 3) ? 2 : 1, 3, list_5g_band3_chans, sizeof(list_5g_band3_chans));
+#endif
 
 	foreach (word, nvram_safe_get("wl_ifnames"), next) {
 #ifdef RTCONFIG_QTN
@@ -7017,7 +7023,7 @@ void set_acs_ifnames()
 	else
 	/* exclude acsd from selecting chanspec 165 */
 	nvram_set("wl2_acs_excl_chans", (nvram_get_hex("wl2_band5grp") & WL_5G_BAND_4) ? "0xd0a5" : "");
-#else
+#elif !defined(RTN18U)
 	if (nvram_match("wl1_band5grp", "7")) {		// EU, JP, UA
 #ifdef RTAC66U
 		if (!nvram_match("wl1_dfs", "1"))
@@ -7053,9 +7059,11 @@ void set_acs_ifnames()
 #endif
 
 	nvram_set_int("wl0_acs_dfs", 0);
+#if !defined(RTN18U)
 	nvram_set_int("wl1_acs_dfs", nvram_match("wl1_reg_mode", "h") ? 2 : 0);
 #if defined(RTAC3200) || defined(RTAC5300) || defined(GTAC5300)
 	nvram_set_int("wl2_acs_dfs", nvram_match("wl2_reg_mode", "h") ? 2 : 0);
+#endif
 #endif
 }
 #endif

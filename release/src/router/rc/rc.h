@@ -280,8 +280,10 @@ extern int setCentralLedLv(int lv);
 extern int ate_get_fw_upgrade_state(void);
 extern void set_IpAddr_Lan(const char *);
 extern void get_IpAddr_Lan();
+#if !defined(RTN18U)
 extern void set_MRFLAG(const char *);
 extern void get_MRFLAG();
+#endif
 
 /* tcode_rc.c */
 #ifdef RTCONFIG_TCODE
@@ -437,7 +439,15 @@ extern int getEEPROM(unsigned char *outbuf, unsigned short *lenpt, char *area);
 extern void hexdump(unsigned char *pt, unsigned short len);
 extern void setCTL(const char *);
 extern int verify_ctl_table(void);
+#if defined(RTN18U)
+extern char *getStaMAC(void);
+#else
+#if defined(RTN18U)
+extern char *getStaMAC(void);
+#else
 extern char *getStaMAC(char *buf, int buflen);
+#endif
+#endif
 extern char *get_qca_iwpriv(char *name, char *command);
 extern unsigned int getPapState(int unit);
 extern unsigned int getStaXRssi(int unit);
@@ -491,7 +501,11 @@ extern int verify_ctl_table(void);
 extern int getForceU3(void);
 extern int setForceU3(const char *val);
 #endif
+#if defined(RTN18U)
+extern char *getStaMAC(void);
+#else
 extern char *getStaMAC(char *buf, int buflen);
+#endif
 extern unsigned int getPapState(int unit);
 typedef unsigned int	u_int;
 extern u_int ieee80211_mhz2ieee(u_int freq);
@@ -525,7 +539,11 @@ extern int verify_ctl_table(void);
 extern int getForceU3(void);
 extern int setForceU3(const char *val);
 #endif
+#if defined(RTN18U)
+extern char *getStaMAC(void);
+#else
 extern char *getStaMAC(char *buf, int buflen);
+#endif
 extern unsigned int getPapState(int unit);
 typedef unsigned int	u_int;
 extern u_int ieee80211_mhz2ieee(u_int freq);

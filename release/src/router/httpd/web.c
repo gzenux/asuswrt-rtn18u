@@ -11517,6 +11517,7 @@ do_lang_cgi(char *url, FILE *stream)
 	}
 }
 
+#if !defined(RTN18U)
 static void
 do_change_location_cgi(char *url, FILE *stream)
 {
@@ -11533,6 +11534,7 @@ do_change_location_cgi(char *url, FILE *stream)
 	websWrite(stream, "{\"statusCode\":\"%d\"}", (ret)?200:400);
 	json_object_put(root);
 }
+#endif
 
 /*doesn't be used any more*/
 static void
@@ -15904,7 +15906,9 @@ struct mime_handler mime_handlers[] = {
 	{ "wpad.dat", "application/x-ns-proxy-autoconfig", NULL, NULL, do_file, NULL },
 #ifdef TRANSLATE_ON_FLY
 	{ "change_lang.cgi*", "text/html", no_cache_IE7, do_lang_post, do_lang_cgi, do_auth },
+#if !defined(RTN18U)
 	{ "change_location.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_change_location_cgi, do_auth },
+#endif
 #endif //TRANSLATE_ON_FLY
 #if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
 	{ "backup_jffs.tar", "application/force-download", NULL, NULL, do_jffs_file, do_auth },
