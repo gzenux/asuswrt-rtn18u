@@ -49,7 +49,8 @@ sub excludelist {
 	if ($fn eq "jquery.js") { return 1; }
 	if ($fn eq "svg.js") { return 1; }
 	if ($fn eq "tablesorter.js") { return 1; }
-	if ($fn eq "jstz.min.js") { return 1; }	
+	if ($fn eq "jstz.min.js") { return 1; }
+	if ($fn eq "chart.min.js") { return 1; }
 	if ($fn eq "ASUS_DDNS_TOS.asp") { return 1; }
 	if ($fn eq "ext-all.js") { return 1; }
 	if ($fn eq "ext-base.js") { return 1; }
