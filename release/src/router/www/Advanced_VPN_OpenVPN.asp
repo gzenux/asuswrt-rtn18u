@@ -130,8 +130,6 @@ function initial(){
 	var currentdigest = "<% nvram_get("vpn_server_digest"); %>";
 
 	show_menu();
-	// https://www.asus.com/US/support/FAQ/1033906
-	httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");
 
 	//if support pptpd and openvpnd then show switch button
 	if(pptpd_support && openvpnd_support) {
@@ -184,13 +182,13 @@ function initial(){
 
 	//set FAQ URL
 	//	https://www.asus.com/support/FAQ/1004469
-	httpApi.faqURL("faq_windows", "1004469", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("1004469", function(url){document.getElementById("faq_windows").href=url;});
 	//	https://www.asus.com/support/FAQ/1004472
-	httpApi.faqURL("faq_macOS", "1004472", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("1004472", function(url){document.getElementById("faq_macOS").href=url;});
 	//	https://www.asus.com/support/FAQ/1004471
-	httpApi.faqURL("faq_iPhone", "1004471", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("1004471", function(url){document.getElementById("faq_iPhone").href=url;});
 	//	https://www.asus.com/support/FAQ/1004466
-	httpApi.faqURL("faq_android", "1004466", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("1004466", function(url){document.getElementById("faq_android").href=url;});
 
 	var cust2 = document.form.vpn_server_cust2.value;
 	if (isSupport("hnd")) {
@@ -219,16 +217,28 @@ function show_warning_message(){
 				setTimeout("get_real_ip();", 3000);
 		}
 		else if(realip_state != "2"){
-			if(validator.isPrivateIP(wanlink_ipaddr()))
+			if(validator.isPrivateIP(wanlink_ipaddr())){
+				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 				document.getElementById("privateIP_notes").style.display = "";
+				//      http://www.asus.com/support/FAQ/1033906
+				httpApi.faqURL("1033906", function(url){document.getElementById("faq_port_forwarding").href=url;});      //this id is include in string : #vpn_privateIP_hint#
+			}
 		}
 		else{
-			if(!external_ip)
+			if(!external_ip){
+				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 				document.getElementById("privateIP_notes").style.display = "";
+				//      http://www.asus.com/support/FAQ/1033906
+				httpApi.faqURL("1033906", function(url){document.getElementById("faq_port_forwarding").href=url;});	//this id is include in string : #vpn_privateIP_hint#
+			}
 		}
 	}
-	else if(validator.isPrivateIP(wanlink_ipaddr()))
+	else if(validator.isPrivateIP(wanlink_ipaddr())){
+		document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 		document.getElementById("privateIP_notes").style.display = "";
+		//      http://www.asus.com/support/FAQ/1033906
+		httpApi.faqURL("1033906", function(url){document.getElementById("faq_port_forwarding").href=url;});	//this id is include in string : #vpn_privateIP_hint#
+	}
 }
 
 function get_real_ip(){
@@ -249,7 +259,7 @@ function formShowAndHide(server_enable, server_type) {
 	if(server_enable == 1){
 		document.getElementById("trVPNServerMode").style.display = "";
 		document.getElementById("selSwitchMode").value = "1";
-		document.getElementById("trRSAEncryptionBasic").style.display = ("<% nvram_get("vpn_server_crypt"); %>" == "secret")?"none":"";
+		document.getElementById("trRSAEncryptionBasic").style.display = (("<% nvram_get("vpn_server_crypt"); %>" == "secret") || (service_state == 2)) ?"none":"";
 		document.getElementById("trClientWillUseVPNToAccess").style.display = "";
 		document.getElementById('openvpn_export').style.display = "";	
 		document.getElementById('OpenVPN_setting').style.display = "";
@@ -1346,7 +1356,7 @@ function callback_upload_cert(_flag) {
 									<div class="formfonttitle"><#BOP_isp_heart_item#> - OpenVPN</div>
 									<div id="divSwitchMenu" style="margin-top:-40px;float:right;"></div>
 									<div style="margin:10px 0 10px 5px;" class="splitLine"></div>
-									<div id="privateIP_notes" class="formfontdesc" style="display:none;color:#FFCC00;"><#vpn_privateIP_hint#></div>
+									<div id="privateIP_notes" class="formfontdesc" style="display:none;color:#FFCC00;"></div>
 									<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 										<thead>
 										<tr>

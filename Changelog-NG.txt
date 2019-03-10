@@ -1,6 +1,76 @@
 Asuswrt-Merlin 384/NG Changelog
 ===============================
 
+384.9 (2-Feb-2019)
+  - NEW: Temporarily reorganized code in separate branches, to handle
+         Asus's currently scattered firmware source code releases.
+         The GPL situation for this release is as follow:
+     o RT-AX88U: Merged GPL 384_5329
+     o Other models: Merged GPL 384_45149.
+     o Special binary blobs provided by Asus for the RT-AC87U
+       and RT-AC3200 (compatible with 384_45149).
+
+  - NEW: Added NFS client support (V2 and V3) to the
+         RT-AC86U and RT-AX88U (already present in older models)
+  - NEW: Report the number of spatial streams and the PHY type
+         used by wireless clients for models supporting it
+  - NEW: Display tracked connections on the QoS Stats page (now
+         relabeled "Classification").
+         Fields can be sorted by clicking on the column headers.
+         Thanks to FreshJr for his help in deciphering the packet
+         mark values.
+
+  - NEW: Implemented ipsec.postconf and strongswan.postconf scripts.
+  - KNOWN ISSUE: dcd process crashing on RT-AC86U (bug in Trend
+                 Micro's code, outside of my control).
+  - KNOWN ISSUE: IPv6s on Tracked Connections have their last
+                 two bytes set to 00 (bug in Trend Micro's
+                 code truncating the last two bytes).
+  - KNOWN ISSUE: No IPS events logged (bug in Asus's code,
+                 IPS should work, just fails to log hits)
+  - KNOWN ISSUE: Networkmap listing may be unreliable.
+                 (Bug in Asus's code)
+  - KNOWN ISSUE: Users failing to read changelogs will
+                 probably complain about the above issues.
+                 (Outside of my control).
+  - CHANGED: Updated wget to 1.20.
+  - CHANGED: Updated nano to 3.2.
+  - CHANGED: Updated curl to 7.62.0.
+  - CHANGED: Updated Chart.js to 2.7.3.
+  - CHANGED: Updated dnsmasq to 2.80-32-g28cfe36 (themiron)
+  - CHANGED: Optimized some JS files to reduce their size
+  - CHANGED: OpenVPN clients can now accept CNs up to 255 chars
+             when using it to validate the certificate.
+  - CHANGED: No longer reset the OpenVPN client's description,
+             policy mode and existing rules when uploading an
+             .ovpn config file.
+  - CHANGED: No longer accept any server-provided route
+             when OpenVPN client set to Policy (Strict).
+  - CHANGED: Clients bound to DNSFilter rules will no longer
+             bypass it by using DoT.  DNSFilter servers that
+             support DoT (like Quad9) will only allow filtered
+             clients to use that server
+  - FIXED: Firmware update checks would not run at boot time
+           on the RT-AX88U.
+  - FIXED: Name resolution issues for /etc/hosts entries on
+           HND models (themiron)
+  - FIXED: Syslog not properly copied to JFFS on reboot
+           (John Bacho)
+  - FIXED: Volumes not properly unmounted on HND platform
+           (John Bacho)
+  - FIXED: Added missing TEE Netfilter target on the RT-AC86U
+  - FIXED: SSH brute force protection didn't work in Dual WAN
+           load balancing mode.
+  - FIXED: httpd crashes on RT-AC86U (themiron)
+  - FIXED: DNSFilter clients could use a different nameserver
+           when using an IPv6 connection
+  - FIXED: USB disk idle config changes not applying without a
+           reboot.
+  - FIXED: "Strict" DNS mode wasn't working properly with OpenVPN
+           clients
+  - FIXED: Cannot upload JFFS backup on HND models
+
+
 384.8_2 (8-Dec-2018)
   - CHANGED: Updated miniupnpd to 20181205.
   - CHANGED: Push LAN domain to OpenVPN clients as DNS suffix

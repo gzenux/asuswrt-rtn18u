@@ -242,8 +242,14 @@ var notification = {
 				notification.array[1] = 'noti_upgrade';
 				notification.upgrade = 1;
 				notification.desc[1] = '<#ASUSGATE_note2#>';
-				notification.action_desc[1] = '<#ASUSGATE_act_update#>';
-				notification.clickCallBack[1] = "location.href = 'Advanced_FirmwareUpgrade_Content.asp?confirm_show="+current_firmware_path+"';"
+				if(!live_update_support || !HTTPS_support){
+					notification.action_desc[1] = '<a id="link_to_downlodpage" target="_blank" href="'+get_helplink()+'" style="color:#FFCC00;"><#ASUSGATE_act_update#></a>';
+					notification.clickCallBack[1] = "";
+				}
+				else{
+					notification.action_desc[1] = '<#ASUSGATE_act_update#>';
+					notification.clickCallBack[1] = "location.href = 'Advanced_FirmwareUpgrade_Content.asp?confirm_show="+current_firmware_path+"';"
+				}
 			}else
 				notification.upgrade = 0;
 		}

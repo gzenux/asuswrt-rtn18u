@@ -48,19 +48,19 @@
 extern struct nvram_tuple router_defaults[];
 
 
-void reset_ovpn_setting(ovpn_type_t type, int unit){
+void reset_ovpn_setting(ovpn_type_t type, int unit, int full){
         struct nvram_tuple *t;
         char prefix[]="vpn_serverX_", tmp[100];
-	char service[7];
+	char *service;
 	char start[12], remove[2];
 	char *cur;
 
 	if (type == OVPN_TYPE_SERVER) {
-		strcpy(service, "server");
+		service = "server";
 		strlcpy(start, nvram_safe_get("vpn_serverx_start"), sizeof(start));
 	}
 	else if (type == OVPN_TYPE_CLIENT) {
-		strcpy(service, "client");
+		service = "client";
 		strlcpy(start, nvram_safe_get("vpn_clientx_eas"), sizeof(start));
 	}
 	else
@@ -87,7 +87,14 @@ void reset_ovpn_setting(ovpn_type_t type, int unit){
 	snprintf(prefix, sizeof(prefix), "vpn_%s%d_", service, unit);
 
 	for (t = router_defaults; t->name; t++) {
-		if (strncmp(t->name, prefix, 12)==0) {
+		if (strncmp(t->name, prefix, 12)==0)
+		{
+			// Don't reset these settings unless asked to
+			if (!full && (!strcmp(t->name + 12, "desc") ||
+				      !strncmp(t->name + 12, "clientlist", 10) ||	/* handle clientlist1 through 5 */
+				      !strcmp(t->name + 12, "rgw") ||
+				      !strcmp(t->name + 12, "enforce")))
+				continue;
 			nvram_set(t->name, t->value);
 		}
 	}
@@ -120,30 +127,25 @@ void reset_ovpn_setting(ovpn_type_t type, int unit){
 	system(tmp);
 
 #else	// Delete
-	if (type == OVPN_TYPE_SERVER)  // server-only files
-	{
-		sprintf(tmp, "%s/vpn_crt_%s%d_ca_key", OVPN_FS_PATH, service, unit);
-		unlink(tmp);
-		sprintf(tmp, "%s/vpn_crt_%s%d_client_crt", OVPN_FS_PATH, service, unit);
-		unlink(tmp);
-		sprintf(tmp, "%s/vpn_crt_%s%d_client_key", OVPN_FS_PATH, service, unit);
-		unlink(tmp);
-		sprintf(tmp, "%s/vpn_crt_%s%d_dh", OVPN_FS_PATH, service, unit);
-		unlink(tmp);
+        if (type == OVPN_TYPE_SERVER)  // server-only files
+        {
+		set_ovpn_key(type, unit, OVPN_SERVER_CA_KEY, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_CLIENT_CERT, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_CLIENT_KEY, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_DH, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_STATIC, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_CA, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_CA_EXTRA, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_CERT, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_KEY, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_SERVER_CRL, NULL, NULL);
+	} else {
+		set_ovpn_key(type, unit, OVPN_CLIENT_STATIC, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_CLIENT_CA, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_CLIENT_CERT, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_CLIENT_KEY, NULL, NULL);
+		set_ovpn_key(type, unit, OVPN_CLIENT_CRL, NULL, NULL);
 	}
-
-	sprintf(tmp, "%s/vpn_crt_%s%d_ca", OVPN_FS_PATH, service, unit);
-	unlink(tmp);
-	sprintf(tmp, "%s/vpn_crt_%s%d_crt", OVPN_FS_PATH, service, unit);
-	unlink(tmp);
-	sprintf(tmp, "%s/vpn_crt_%s%d_key", OVPN_FS_PATH, service, unit);
-	unlink(tmp);
-	sprintf(tmp, "%s/vpn_crt_%s%d_crl", OVPN_FS_PATH, service, unit);
-	unlink(tmp);
-	sprintf(tmp, "%s/vpn_crt_%s%d_static", OVPN_FS_PATH, service, unit);
-	unlink(tmp);
-	sprintf(tmp, "%s/vpn_crt_%s%d_extra", OVPN_FS_PATH, service, unit);
-	unlink(tmp);
 #endif
 
 	nvram_commit();
@@ -262,10 +264,12 @@ int set_ovpn_key(ovpn_type_t type, int unit, ovpn_key_t key_type, char *buf, cha
 	FILE *fp;
 
 	get_ovpn_filename(type, unit, key_type, varname, sizeof (varname));
+	snprintf(filename, sizeof(filename), "%s/%s", OVPN_FS_PATH, varname);
 
 	if (path) {
 		return _set_crt_parsed(varname, path);
 	} else if (!buf) {
+		unlink(filename);
 		return -1;
 	}
 
@@ -278,7 +282,7 @@ int set_ovpn_key(ovpn_type_t type, int unit, ovpn_key_t key_type, char *buf, cha
 
 	if(!d_exists(OVPN_FS_PATH))
 		mkdir(OVPN_FS_PATH, S_IRWXU);
-	snprintf(filename, sizeof(filename), "%s/%s", OVPN_FS_PATH, varname);
+
 	fp = fopen(filename, "w");
 	if(fp) {
 		chmod(filename, S_IRUSR|S_IWUSR);
@@ -306,7 +310,7 @@ int _set_crt_parsed(const char *name, char *file_path)
 
 		data = strstr(buffer, PEM_START_TAG);
 		if (data) {
-			result = f_write(target_file_path, data, strlen(data), NULL, S_IRUSR|S_IWUSR);
+			result = f_write(target_file_path, data, strlen(data), 0, S_IRUSR|S_IWUSR);
 		} else {
 			result = -1;
 		}
@@ -384,7 +388,10 @@ char *get_ovpn_custom(ovpn_type_t type, int unit, char* buffer, int bufferlen)
 
 #ifdef HND_ROUTER
 	nvcontent = malloc(255 * 3 + 1);
-	if (nvcontent) nvram_split_get(varname, nvcontent, 255 * 3 + 1, 2);
+	if (nvcontent)
+		nvram_split_get(varname, nvcontent, 255 * 3 + 1, 2);
+	else
+		return buffer;
 #else
 	nvcontent = strdup(nvram_safe_get(varname));
 #endif
@@ -441,4 +448,103 @@ int set_ovpn_custom(ovpn_type_t type, int unit, char* buffer)
 	}
 
 	return -1;
+}
+
+// Determine how to handle dnsmasq server list based on
+// highest active dnsmode
+int get_max_dnsmode() {
+	int unit, maxlevel = 0, level;
+	char filename[40];
+	char varname[32];
+
+	for( unit = 1; unit <= OVPN_CLIENT_MAX; unit++ ) {
+		sprintf(filename, "/etc/openvpn/dns/client%d.resolv", unit);
+		if (f_exists(filename)) {
+			sprintf(varname, "vpn_client%d_", unit);
+			level = nvram_pf_get_int(varname, "adns");
+
+			// Ignore exclusive mode if policy mode is also enabled
+			if ((nvram_pf_get_int(varname, "rgw") >= OVPN_RGW_POLICY ) && (level == OVPN_DNSMODE_EXCLUSIVE))
+				continue;
+
+			// Only return the highest active level, so one exclusive client
+			// will override a relaxed client.
+			if (level > maxlevel) maxlevel = level;
+		}
+	}
+	return maxlevel;
+}
+
+
+void write_ovpn_dns(FILE* dnsmasq_conf) {
+	int unit;
+	char filename[40], prefix[16];
+	char *buffer;
+
+	vpnlog(VPN_LOG_EXTRA, "Adding DNS entries...");
+
+	for (unit = 1; unit <= OVPN_CLIENT_MAX; unit++) {
+		sprintf(filename, "/etc/openvpn/dns/client%d.resolv", unit);
+		if (f_exists(filename)) {
+			sprintf(prefix, "vpn_client%d_", unit);
+
+			// Don't add servers if policy routing is enabled and dns mode set to "Exclusive"
+			// Handled by iptables on a case-by-case basis
+			if ((nvram_pf_get_int(prefix, "rgw") >= OVPN_RGW_POLICY ) && (nvram_pf_get_int(prefix, "adns") == OVPN_DNSMODE_EXCLUSIVE))
+				continue;
+
+			vpnlog(VPN_LOG_INFO,"Adding DNS entries from %s", filename);
+
+			buffer = read_whole_file(filename);
+			if (buffer) {
+				fwrite(buffer, 1, strlen(buffer),dnsmasq_conf);
+				free(buffer);
+			}
+		}
+	}
+	vpnlog(VPN_LOG_EXTRA, "Done with DNS entries...");
+}
+
+
+void write_ovpn_dnsmasq_config(FILE* dnsmasq_conf) {
+	char prefix[16], filename[40], varname[32];
+	int unit, modeset = 0;
+	char *buffer;
+
+	// Add interfaces for servers that provide DNS services
+	for (unit = 1; unit <= OVPN_SERVER_MAX; unit++) {
+		sprintf(prefix, "vpn_server%d_", unit);
+		if (nvram_pf_get_int(prefix, "pdns") ) {
+			vpnlog(VPN_LOG_EXTRA, "Adding server %d interface to dns config", unit);
+			fprintf(dnsmasq_conf, "interface=%s%d\n", nvram_pf_safe_get(prefix, "if"), OVPN_SERVER_BASEIF + unit);
+		}
+	}
+
+	for (unit = 1; unit <= OVPN_CLIENT_MAX; unit++) {
+		// Add strict-order if any client is set to "strict" and we haven't done so yet
+		if (!modeset) {
+			sprintf(filename, "/etc/openvpn/dns/client%d.resolv", unit);
+			if (f_exists(filename)) {
+				vpnlog(VPN_LOG_EXTRA, "Checking ADNS settings for client %d", unit);
+				snprintf(varname, sizeof(varname), "vpn_client%d_adns", unit);
+				if (nvram_get_int(varname) == OVPN_DNSMODE_STRICT) {
+					vpnlog(VPN_LOG_INFO, "Adding strict-order to dnsmasq config for client %d", unit);
+					fprintf(dnsmasq_conf, "strict-order\n");
+					modeset = 1;
+				}
+			}
+
+		}
+
+		// Add WINS entries if any client provides it
+		sprintf(filename, "/etc/openvpn/dns/client%d.conf", unit);
+		if (f_exists(filename)) {
+			vpnlog(VPN_LOG_INFO, "Adding Dnsmasq config from %s", filename);
+			buffer = read_whole_file(filename);
+			if (buffer) {
+				fwrite(buffer, 1, strlen(buffer),dnsmasq_conf);
+				free(buffer);
+			}
+		}
+	}
 }
