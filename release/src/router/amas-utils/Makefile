@@ -32,7 +32,7 @@ ifeq ($(wildcard $(SRCBASE)/router/amas-utils/*.c),)
 all:
 	cp -f $(PREBUILD)/amas-utils.h ./
 	cp -f $(PREBUILD)/libamas-utils.so ./
-	-cp -f prebuild/$(BUILD_NAME)/amas-utils-cli ./
+	cp -f $(PREBUILD)/amas-utils-cli ./
 else
 all:	lib cli	
 endif

@@ -1328,9 +1328,9 @@ roamast-lantiq.o:
 	@cp -f ./$(PREBUILD)/roamast-lantiq.o .
 endif
 ifeq ($(RTCONFIG_CONNDIAG),y)
-ifneq ($(wildcard ./prebuild/conn_diag-broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/conn_diag-broadcom.o),)
 conn_diag-broadcom.o:
-	@-cp -f ./prebuild/conn_diag-broadcom.o .
+	@cp -f ./$(PREBUILD)/conn_diag-broadcom.o .
 endif
 endif
 endif
@@ -1355,9 +1355,9 @@ ifneq ($(wildcard ./$(PREBUILD)/amas_wlcconnect.o),)
 amas_wlcconnect.o:
 	@cp -f ./$(PREBUILD)/amas_wlcconnect.o .
 endif
-ifneq ($(wildcard ./prebuild/amas_lib.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_lib.o),)
 amas_lib.o:
-	@-cp -f ./prebuild/amas_lib.o .
+	@cp -f ./$(PREBUILD)/amas_lib.o .
 endif
 endif
 
