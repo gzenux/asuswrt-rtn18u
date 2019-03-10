@@ -704,7 +704,12 @@ ifneq ($(CONFIG_BCMWL5),)
 ifeq ($(FAKEHDR),y)
 	ctools/trx_asus -i image/linux-lzma.trx -r $(BUILD_NAME),$(KERNEL_VER).$(FS_VER),$(FORCE_SN),$(FORCE_EN),image/$(IMGNAME).trx
 else
+ifneq ($(RTN18U),)
+	# hard-coding tag to make compatible with updating checking from official stock firmware
+	ctools/trx_asus -i image/linux-lzma.trx -r $(BUILD_NAME),$(KERNEL_VER).$(FS_VER),999,99999,image/$(IMGNAME).trx
+else
 	ctools/trx_asus -i image/linux-lzma.trx -r $(BUILD_NAME),$(KERNEL_VER).$(FS_VER),$(SERIALNO),$(EXTENDNO),image/$(IMGNAME).trx
+endif
 endif
 else
 	ctools/trx_asus -i image/linux-lzma.trx -r $(BUILD_NAME),$(KERNEL_VER).$(FS_VER),image/$(IMGNAME).trx
