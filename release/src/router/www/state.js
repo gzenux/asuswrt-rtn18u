@@ -3616,6 +3616,55 @@ function checkIPConflict(CompareItem, sourceIP, sourceMask, compareIP, compareMa
 	return ipConflict;
 }
 
+/*
+ * Get the proper index of fwupdate channel path
+ * return index value: (same mapping as nvram variable 'firmware_path')
+ *   0:stable, 1:beta
+ *  -1:invalid webs_state_flag or any error
+ */
+function getUpdate_channel(){
+	if(webs_state_flag != 1)
+		return -1;
+
+	if(webs_state_info_beta != "") {
+		if(webs_state_info != "") {
+			// need to compare which firmware is newer
+			var stable_firmver = webs_state_info.split("_");
+			var beta_firmver = webs_state_info_beta.split("_");
+
+			if(typeof stable_firmver[0] !== "undefined" && typeof stable_firmver[1] !== "undefined" && typeof stable_firmver[2] !== "undefined" &&
+				typeof beta_firmver[0] !== "undefined" && typeof beta_firmver[1] !== "undefined" && typeof beta_firmver[2] !== "undefined")
+			{
+				var stable_firm = parseInt(stable_firmver[0]);
+				var stable_buildno = parseInt(stable_firmver[1]);
+				var stable_extendno = parseInt(stable_firmver[2].split("-g")[0].replace(/^[0-9]$/,"10$&").replace(/alpha/gi,"1").replace(/beta/gi,"5"));
+				var beta_firm = parseInt(beta_firmver[0]);
+				var beta_buildno = parseInt(beta_firmver[1]);
+				var beta_extendno = parseInt(beta_firmver[2].split("-g")[0].replace(/^[0-9]$/,"10$&").replace(/alpha/gi,"1").replace(/beta/gi,"5"));
+
+				if((stable_firm < beta_firm) ||
+					(stable_buildno < beta_buildno && stable_firm == beta_firm) ||
+					(stable_extendno < beta_extendno && stable_buildno == beta_buildno && stable_firm == beta_firm))
+				{
+					// beta
+					return 1;
+				} else {
+					// stable
+					return 0;
+				}
+			}
+		} else {
+			// beta
+			return 1;
+		}
+	} else if(webs_state_info != "") {
+		// stable
+		return 0;
+	}
+
+	return -1;
+}
+
 var isNewFW = function(FWVer, check_path, current_path){	//path> 0:stable, 1:beta
 	if (no_update_support) return false;
 

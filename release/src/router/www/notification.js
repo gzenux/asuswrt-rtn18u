@@ -243,7 +243,7 @@ var notification = {
 				notification.upgrade = 1;
 				notification.desc[1] = '<#ASUSGATE_note2#>';
 				notification.action_desc[1] = '<#ASUSGATE_act_update#>';
-				notification.clickCallBack[1] = "location.href = 'Advanced_FirmwareUpgrade_Content.asp?confirm_show="+current_firmware_path+"';"
+				notification.clickCallBack[1] = "location.href = 'Advanced_FirmwareUpgrade_Content.asp?confirm_show="+getUpdate_channel()+"';"
 			}else
 				notification.upgrade = 0;
 		}
