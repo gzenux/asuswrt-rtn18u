@@ -118,15 +118,6 @@ define(function(){
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
-			{
-				menuName: "Tools",
-				index: "menu_Tools",
-				tab: [
-					{url: "Tools_Sysinfo.asp", tabName: "Sysinfo"},
-					{url: "Tools_OtherSettings.asp", tabName: "Other Settings"},
-					{url: "NULL", tabName: "__INHERIT__"}
-				]
-			},
 			/* ============================================================================================================ */
 			{
 				menuName: "<#menu5#>",
@@ -222,6 +213,7 @@ define(function(){
 				tab: [
 					{url: "Advanced_OperationMode_Content.asp", tabName: "<#menu5_6_1#>"},
 					{url: "Advanced_System_Content.asp", tabName: "<#menu5_6_2#>"},
+					{url: "Tools_OtherSettings.asp", tabName: "Other Settings"},
 					{url: "Advanced_FirmwareUpgrade_Content.asp", tabName: "<#menu5_6_3#>"},
 					{url: "Advanced_SettingBackup_Content.asp", tabName: "<#menu5_6_4#>"},
 					{url: "Advanced_PerformanceTuning_Content.asp", tabName: "Temperature"},
@@ -238,6 +230,7 @@ define(function(){
 				menuName: "<#System_Log#>",
 				index: "menu_Log",
 				tab: [
+					{url: "Tools_Sysinfo.asp", tabName: "Sysinfo"},
 					{url: "Main_LogStatus_Content.asp", tabName: "<#menu5_7_2#>"},
 					{url: "Main_WStatus_Content.asp", tabName: "<#menu5_7_4#>"},
 					{url: "Main_DHCPStatus_Content.asp", tabName: "<#menu5_7_3#>"},
