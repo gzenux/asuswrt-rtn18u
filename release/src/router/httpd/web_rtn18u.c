@@ -331,7 +331,7 @@ static struct iptv_profile isp_profiles[] = {
 static unsigned int num_isp_profile = sizeof(isp_profiles)/sizeof(*isp_profiles);
 
 
-int ej_get_iptvSettings(int eid, webs_t wp, int argc, char **argv)
+int ej_get_iptvSettings(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int i;
 	struct iptv_profile *isp_profile = NULL;
