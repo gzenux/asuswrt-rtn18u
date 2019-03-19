@@ -16,3 +16,7 @@
  */
 
 extern int ej_show_sysinfo(int eid, webs_t wp, int argc, char_t **argv);
+
+#if defined(RTN18U)
+extern int ej_temperature_status(int eid, webs_t wp, int argc, char_t **argv);
+#endif
