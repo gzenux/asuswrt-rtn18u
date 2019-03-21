@@ -114,10 +114,20 @@ var ram_usage_array = new Array(array_size);
 for(i=0;i<array_size;i++){
 	ram_usage_array[i] = 101;
 }
+var tmp_unit;
+var tmp_item = {"cpu":{"color":"#00F000", "index":-1, "warn1":79, "warn2":89}, "wl2":{"color":"#FF44FF", "index":-1, "warn1":59, "warn2":69}};
+var tmp_status_array = new Array();
+for (i = 0; i < Object.keys(tmp_item).length; i++) {
+	tmp_status_array[i] = new Array();
+	for (j = 0; j < array_size; j++) {
+		tmp_status_array[i][j] = 101;
+	}
+}
 /*End*/
 
 function initial(){
 	generate_cpu_field();
+	generate_temperature_field();
 	if((parent.sw_mode == 2 || parent.sw_mode == 4) && '<% nvram_get("wlc_band"); %>' == '<% nvram_get("wl_unit"); %>')
 		document.form.wl_subunit.value = 1;
 	else
@@ -265,6 +275,39 @@ function render_CPU(cpu_info_new){
 	}
 }
 
+function render_Temperature(tmp_info, unit){
+	var i;
+	var pt;
+	var tmp_val;
+
+	for (var name in tmp_info) {
+		if (tmp_info[name].enabled) {
+			pt = "";
+			i = tmp_item[name].index;
+			tmp_status_array[i].push(110-tmp_info[name].value);
+			tmp_status_array[i].splice(0,1);
+			for (j = 0; j < array_size; j++) {
+				pt += j*6 +","+ tmp_status_array[tmp_item[name].index][j] + " ";
+			}
+			document.getElementById('tmp_'+name+'_graph').setAttribute('points', pt);
+
+			tmp_val = (unit?Math.round(tmp_info[name].value*1.8+32):tmp_info[name].value) + "&nbsp;" + tmp_unit;
+			if(tmp_info[name].value > tmp_item[name].warn2)
+				tmp_val='<b style="color:#BB2124;font-size:1.2em">'+tmp_val+'</b>'
+			else if(tmp_info[name].value > tmp_item[name].warn1)
+				tmp_val='<span style="color:#FFCC00;">'+tmp_val+'</span>'
+		} else {
+			tmp_val = '<i style="color:#FFCC00;">disabled</i>';
+		}
+		$('#tmp_info_'+name).html(tmp_val);
+	}
+}
+
+function changeTempUnit(num){
+	cookie.set("CoreTmpUnit", num, 365);
+	refreshpage();
+}
+
 function detect_CPU_RAM(){
 	if(parent.isIE8){
 		require(['/require/modules/makeRequest.js'], function(makeRequest){
@@ -283,6 +326,7 @@ function detect_CPU_RAM(){
 	    	success: function(data){			
 				render_CPU(cpuInfo);
 				render_RAM(memInfo.total, memInfo.free, memInfo.used);
+				render_Temperature(tmpInfo, $("#tmp_unit").prop("checked"));
 				setTimeout("detect_CPU_RAM();", 2000);
 			}
 		});
@@ -391,6 +435,46 @@ function generate_cpu_field(){
 		document.getElementById('cpu_field').outerHTML = code;
 	else
 		document.getElementById('cpu_field').innerHTML = code;
+}
+
+function generate_temperature_field(){
+	if (cookie.get("CoreTmpUnit") != 0) {
+		tmp_unit = "&deg;F";
+		$("#tmp_unit").prop("checked", true);
+		$("#tmp_top").html("230&nbsp;"+tmp_unit);
+		$("#tmp_half").html("140&nbsp;"+tmp_unit);
+		$("#tmp_bottom").html("50&nbsp;"+tmp_unit);
+	} else {
+		tmp_unit = "&deg;C";
+		$("#tmp_unit").prop("checked", false);
+		$("#tmp_top").html("110&nbsp;"+tmp_unit);
+		$("#tmp_half").html("60&nbsp;"+tmp_unit);
+		$("#tmp_bottom").html("10&nbsp;"+tmp_unit);
+	}
+
+	var i = 0;
+	for (var name in tmp_item) {
+		var color = tmp_item[name].color;
+		var legend_id = "#legend_svg_"+name;
+		var legend_line = legend_id+" polyline";
+
+		// draw legend line
+		$(legend_id).width("32px");
+		$(legend_id).height("10px");
+		$(legend_id).css("vertical-align", "middle");
+		$(legend_id).css("margin", "auto 1em auto auto");
+		$(legend_line).css("fill", "none");
+		$(legend_line).css("stroke", color);
+		$(legend_line).css("stroke-width", "3");
+		$(legend_line).attr("points", "0,5 32,5");
+
+		// set line color
+		$("#tmp_"+name+"_graph").css("stroke", color);
+
+		// tmp_status_array[] index mapping
+		tmp_item[name].index = i;
+		i++;
+	}
 }
 
 function get_ethernet_ports() {
@@ -649,6 +733,77 @@ function get_ethernet_ports() {
 		</div>
 	</td>
 </tr>
+
+<tr>
+	<td>
+		<div>
+			<table width="96%" border="1" align="center" cellpadding="4" cellspacing="0" class="table1px" style="margin: 0px 8px;">
+			<tr>
+				<td colspan="3" style="border-bottom:5px #2A3539 solid;padding:0px 10px 5px 10px;"></td>
+			</tr>
+			<tr>
+				<td colspan="3">
+					<div class="title">Temperature</div>
+					<div style="margin-top: 5px;*margin-top:-70px;" class="line_horizontal"></div>
+				</td>
+			</tr>
+			<tr class="ram_table">
+				<td align="right">
+					<div>
+						<svg id="legend_svg_cpu"><polyline /></svg>
+						<span>CPU</span>
+					</div><div style="margin: 5px auto 3px auto; font-size: 1.1em;"><span id="tmp_info_cpu"></span></div>
+				</td>
+				<td align="right">
+					<div>
+						<svg id="legend_svg_wl2"><polyline /></svg>
+						<span>2.4 GHz</span>
+					</div><div style="margin: 5px auto 3px auto; font-size: 1.1em;"><span id="tmp_info_wl2"></span></div>
+				</td>
+				<td align="right">
+					<div style="margin-right: 15px;font-size: 1.5em;"><span><input id="tmp_unit" type="checkbox" onclick="changeTempUnit((this.checked == true)?1:0)">&nbsp;&deg;F</span></div>
+				</td>
+			</tr>
+			<tr style="height:100px;" class="IE8HACK">
+				<td colspan="3">
+					<div style="margin:0px 11px 0px 11px;background-color:black;">
+						<svg width="270px" height="100px">
+							<g>
+								<line stroke-width="1" stroke-opacity="1" stroke="rgb(255,255,255)" x1="0" y1="0%" x2="100%" y2="0%" />
+								<line stroke-width="1" stroke-opacity="0.2" stroke="rgb(255,255,255)" x1="0" y1="25%" x2="100%" y2="25%" />
+								<line stroke-width="1" stroke-opacity="0.2" stroke="rgb(255,255,255)" x1="0" y1="50%" x2="100%" y2="50%" />
+								<line stroke-width="1" stroke-opacity="0.2" stroke="rgb(255,255,255)" x1="0" y1="75%" x2="100%" y2="75%" />
+								<line stroke-width="1" stroke-opacity="1" stroke="rgb(255,255,255)" x1="0" y1="100%" x2="100%" y2="100%" />
+							</g>
+
+							<g>
+								<text id="tmp_bottom" font-family="Verdana" fill="#FFFFFF" font-size="8" x="0" y="98%"></text>
+								<text id="tmp_half"   font-family="Verdana" fill="#FFFFFF" font-size="8" x="0" y="55%"></text>
+								<text id="tmp_top"    font-family="Verdana" fill="#FFFFFF" font-size="8" x="0" y="11%"></text>
+							</g>
+
+							<line stroke-width="1" stroke-opacity="1"   stroke="rgb(0,0,121)"   x1="0"   y1="0%" x2="0"   y2="100%" id="tick1" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="30"  y1="0%" x2="30"  y2="100%" id="tick2" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="60"  y1="0%" x2="60"  y2="100%" id="tick3" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="90"  y1="0%" x2="90"  y2="100%" id="tick4" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="120" y1="0%" x2="120" y2="100%" id="tick5" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="150" y1="0%" x2="150" y2="100%" id="tick6" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="180" y1="0%" x2="180" y2="100%" id="tick7" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="210" y1="0%" x2="210" y2="100%" id="tick8" />
+							<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="240" y1="0%" x2="240" y2="100%" id="tick9" />
+							<line stroke-width="1" stroke-opacity="1"   stroke="rgb(0,0,121)"   x1="270" y1="0%" x2="270" y2="100%" id="tick10" />
+
+							<polyline id="tmp_cpu_graph" style="fill:none;stroke:black;stroke-width:1;width:200px;"  points=""></polyline>
+							<polyline id="tmp_wl2_graph" style="fill:none;stroke:black;stroke-width:1;width:200px;"  points=""></polyline>
+						</svg>
+					</div>
+				</td>
+			</tr>
+			</table>
+		</div>
+	</td>
+</tr>
+
 <tr id="tr_ethernet_ports" style="display:none;">
 	<td> 
 		<div>
