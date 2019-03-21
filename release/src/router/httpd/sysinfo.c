@@ -553,19 +553,21 @@ unsigned int get_phy_temperature(int radio)
 	int ret = 0;
 	unsigned int *temp;
 	char buf[WLC_IOCTL_SMLEN];
-	char *interface;
+	char *interface, *wl_radio;
 
 	strcpy(buf, "phy_tempsense");
 
 	if (radio == 2) {
+		wl_radio = "wl0_radio";
 		interface = nvram_get("wl0_ifname");
 	} else if (radio == 5) {
+		wl_radio = "wl1_radio";
 		interface = nvram_get("wl1_ifname");
 	} else {
 		return 0;
 	}
 
-	if (!interface || (ret = wl_ioctl(interface, WLC_GET_VAR, buf, sizeof(buf)))) {
+	if (!interface || !nvram_match(wl_radio, "1") || (ret = wl_ioctl(interface, WLC_GET_VAR, buf, sizeof(buf)))) {
 		return 0;
 	} else {
 		temp = (unsigned int *)buf;
