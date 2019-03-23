@@ -216,7 +216,7 @@ define(function(){
 					{url: "Tools_OtherSettings.asp", tabName: "Other Settings"},
 					{url: "Advanced_FirmwareUpgrade_Content.asp", tabName: "<#menu5_6_3#>"},
 					{url: "Advanced_SettingBackup_Content.asp", tabName: "<#menu5_6_4#>"},
-					{url: "Advanced_PerformanceTuning_Content.asp", tabName: "Temperature"},
+//					{url: "Advanced_PerformanceTuning_Content.asp", tabName: "Temperature"},
 					{url: "Advanced_ADSL_Content.asp", tabName: "<#menu_dsl_setting#>"},
 					{url: "Advanced_Feedback.asp", tabName: "<#menu_feedback#>"},
 					{url: "Advanced_SNMP_Content.asp", tabName: "SNMP"},
