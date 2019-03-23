@@ -15,6 +15,52 @@ CAUTION:
        384.5-beta2 due to spwenc.o source replacement. Please do
        not restore the configuration exported from these versions.
 
+384.9-beta1
+  Changelog for RT-N18U:
+  - NOTE: The firmware version is not direct mapping to official
+          Asuswrt-Merlin release starting from now since there are
+          no available prebuilt binary and no more new features
+          introduced for this model in the recent codebase.
+
+  - NEW: Merge GPL 384_45149 from asuswrt-merlin.
+  - NEW: Show the CPU/Wireless temperature in home page.
+  - CHANGED: Merge asuswrt-merlin's Tools menu into existing menu:
+             - Tools_Sysinfo.asp moved into 'System Log' menu
+             - Tools_OtherSettings.asp moved into
+               'Administration' menu
+  - CHANGED: Remove the Temperature page since it's integrated
+             into the home page.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Report the number of spatial streams and the PHY type
+         used by wireless clients for models supporting it
+  - NEW: Display tracked connections on the QoS Stats page (now
+         relabeled "Classification").
+         Fields can be sorted by clicking on the column headers.
+         Thanks to FreshJr for his help in deciphering the packet
+         mark values.
+  - NEW: Implemented ipsec.postconf and strongswan.postconf scripts.
+  - CHANGED: Updated wget to 1.20.
+  - CHANGED: Updated nano to 3.2.
+  - CHANGED: Updated curl to 7.62.0.
+  - CHANGED: Updated Chart.js to 2.7.3.
+  - CHANGED: Updated dnsmasq to 2.80-32-g28cfe36 (themiron)
+  - CHANGED: Optimized some JS files to reduce their size
+  - CHANGED: OpenVPN clients can now accept CNs up to 255 chars
+             when using it to validate the certificate.
+  - CHANGED: No longer reset the OpenVPN client's description,
+             policy mode and existing rules when uploading an
+             .ovpn config file.
+  - CHANGED: No longer accept any server-provided route
+             when OpenVPN client set to Policy (Strict).
+  - CHANGED: Clients bound to DNSFilter rules will no longer
+             bypass it by using DoT.  DNSFilter servers that
+             support DoT (like Quad9) will only allow filtered
+             clients to use that server
+  - FIXED: DNSFilter clients could use a different nameserver
+           when using an IPv6 connection
+
+
 384.8_3
   Changelog for RT-N18U:
   - CHANGED: Update webui translations from GPL 384_45149
