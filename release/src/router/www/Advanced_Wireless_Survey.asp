@@ -53,7 +53,10 @@ function initial(){
 	if ((band5g_support) && (radio_5 == 0))
 		E("radio5warn").style.display = "";
 
-	update_site_info();
+	if (radio_2 || radio_5)
+		update_site_info();
+	else
+		wlc_scan_state = 5;
 	showSiteTable();
 
 }
@@ -162,8 +165,8 @@ function showSiteTable(){
 	}
 	else{ // show ap list
 
-		if ((aplist.length) && (aplist[0].length == 0)) {
-			htmlCode +='<tr><td style="text-align:center;font-size:12px; border-collapse: collapse;border:1;" colspan="4"><span style="color:#FFCC00;line-height:25px;"><#APSurvey_action_searching_noresult#></span>&nbsp;<img style="margin-top:10px;" src="/images/InternetScan.gif"></td></tr>';
+		if ((aplist.length) && (aplist[0].length == 0) || !(radio_2 || radio_5)) {
+			htmlCode +='<tr><td style="text-align:center;font-size:12px; border-collapse: collapse;border:1;" colspan="4"><span style="color:#FFCC00;line-height:25px;"><#APSurvey_action_searching_noresult#></span></td></tr>';
 		}
 		else{
 			for(var i = 0; i < aplist.length; i++){
@@ -201,8 +204,13 @@ function showSiteTable(){
 				htmlCode += '<td width="10%" style="text-align:center;"><span title="' + aplist[i][5] + '%"><div style="margin-left:13px;" id="radio_'+ Math.ceil(aplist[i][5]/25) +'"></div></span></td></tr>';
 
 			}
-			document.form.rescanButton.disabled = false;
-			document.form.rescanButton.className = "button_gen";
+			if (radio_2 || radio_5) {
+				document.form.rescanButton.disabled = false;
+				document.form.rescanButton.className = "button_gen";
+			} else {
+				document.form.rescanButton.disabled = true;
+				document.form.rescanButton.className = "button_gen_dis";
+			}
 		}
 	}
 	htmlCode +='</table>';
