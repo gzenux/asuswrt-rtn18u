@@ -42,8 +42,7 @@ libl2tp.a: $(OBJS)
 	@AR@ -rc $@ $^
 	@RANLIB@ $@ || true
 
-l2tpd: libl2tp.a libevent/libevent.a
-	$(MAKE) -C handlers
+l2tpd: libl2tp.a libevent/libevent.a handlers
 	@CC@ -o l2tpd -rdynamic $(OBJS) $(EXTRA_LIBS)
 
 libevent/libevent.a:
