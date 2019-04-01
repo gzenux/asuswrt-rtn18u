@@ -15,6 +15,9 @@ Options:
    -d|--detach
       start a container in detached mode
       default: $Detach
+   -n|--new
+      start a new dynamic named container (i.e. do not attach to the named container)
+      default: $NewInst
    -u|--update
       update/rebuild the docker image before run this image
       default: $Update
@@ -34,16 +37,18 @@ EOF
 
 # options
 Detach=false
+NewInst=false
 Update=false
 Force=false
 ReleaseUser=$USER
 ReleaseHome=$HOME
 Help=false
-Opts=$(getopt -o dufrt:h --long detach,update,force,release,tag:,help -- "$@") || { usage; exit 1; }
+Opts=$(getopt -o dnuft:rh --long detach,new,update,force,tag:,release,help -- "$@") || { usage; exit 1; }
 eval set -- "$Opts"
 while true; do
 	case "$1" in
 		-d|--detach) Detach=true; shift;;
+		-n|--new) NewInst=true; shift;;
 		-u|--update) Update=true; shift;;
 		-f|--force)  Update=true; Force=true; shift;;
 		-t|--tag)    ImageTag=$2; shift 2;;
@@ -73,11 +78,16 @@ MountDirOpts="-v $PWD:$WorkDir"
 
 # prepare docker run options
 [[ $Detach == true ]] && RunOpts="--rm -dit" || RunOpts="--rm -it"
-RunOpts="$RunOpts --name $ContainerName --hostname $HostName --workdir $WorkDir"
+[[ $NewInst == true ]] && {
+	IsRunning=false
+} || {
+	RunOpts="$RunOpts --name $ContainerName"
+	IsRunning=$(docker inspect -f '{{.State.Running}}' $ContainerName 2>/dev/null) || true
+}
+RunOpts="$RunOpts --hostname $HostName --workdir $WorkDir"
 RunOpts="$RunOpts --env UID=$UID --env USER=$ReleaseUser --env HOME=$ReleaseHome"
 
 # run docker container
-IsRunning=$(docker inspect -f '{{.State.Running}}' $ContainerName 2>/dev/null) || true
 [[ "$IsRunning" == true ]] && {
 	[[ "$@" == "" ]] && docker attach $ContainerName || {
 		echo "Err: cannot execute command '$@' as container '$ContainerName' already running!"
