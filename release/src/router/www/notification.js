@@ -238,9 +238,9 @@ var notification = {
 				notification.upgrade = 0;
 		}
 		else {
-			if(webs_state_flag == 1 || webs_state_flag == 2){
+			notification.upgrade = getUpdate_channel();
+			if(notification.upgrade != -1){
 				notification.array[1] = 'noti_upgrade';
-				notification.upgrade = 1;
 				notification.desc[1] = '<#ASUSGATE_note2#>';
 				if(!live_update_support || !HTTPS_support){
 					notification.action_desc[1] = '<a id="link_to_downlodpage" target="_blank" href="'+get_helplink()+'" style="color:#FFCC00;"><#ASUSGATE_act_update#></a>';
@@ -248,8 +248,9 @@ var notification = {
 				}
 				else{
 					notification.action_desc[1] = '<#ASUSGATE_act_update#>';
-					notification.clickCallBack[1] = "location.href = 'Advanced_FirmwareUpgrade_Content.asp?confirm_show="+getUpdate_channel()+"';"
+					notification.clickCallBack[1] = "location.href = 'Advanced_FirmwareUpgrade_Content.asp?confirm_show="+notification.upgrade+"';"
 				}
+				notification.upgrade = 1;
 			}else
 				notification.upgrade = 0;
 		}
@@ -418,7 +419,9 @@ var notification = {
 	reset: function(){
 		this.stat = "off";
 		this.flash = "off";
-		this.flashTimer = 100;
+		if(this.flashTimer)
+			clearInterval(this.flashTimer);
+		this.flashTimer = 0;
 		this.hoverText = "";
 		this.clickText = "";
 		this.upgrade = 0;

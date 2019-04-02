@@ -3582,7 +3582,7 @@ function checkIPConflict(CompareItem, sourceIP, sourceMask, compareIP, compareMa
  *  -1:invalid webs_state_flag or any error
  */
 function getUpdate_channel(){
-	if(webs_state_flag != 1)
+	if(webs_state_flag != 1 && webs_state_flag != 2)
 		return -1;
 
 	if(webs_state_info_beta != "") {

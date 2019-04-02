@@ -413,8 +413,8 @@ function detect_firmware(flag){
 					} else {
 						document.getElementById('update_states').innerHTML="";
 						do_show_confirm();
-						// update notification status
-						notification.run();
+						// reset the notification status
+						notification.reset();
 					}
 				}
 			}
