@@ -1694,6 +1694,10 @@ extern void dnsfilter_setup_dnsmasq(FILE *fp);
 #endif
 extern void dnsfilter_dot_rules(FILE *fp, char *lan_if);
 
+// ntpd.c
+extern void start_ntpd(void);
+extern void stop_ntpd(void);
+
 // lan.c
 #ifdef RTCONFIG_TIMEMACHINE
 extern int start_timemachine(void);
