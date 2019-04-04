@@ -1695,7 +1695,7 @@ extern void dnsfilter_setup_dnsmasq(FILE *fp);
 extern void dnsfilter_dot_rules(FILE *fp, char *lan_if);
 
 // ntpd.c
-extern void start_ntpd(void);
+extern int start_ntpd(void);
 extern void stop_ntpd(void);
 
 // lan.c
