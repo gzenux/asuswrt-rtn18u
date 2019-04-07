@@ -4885,6 +4885,9 @@ void refresh_ntpc(void)
 		start_ntpc();
 	else
 		kill_pidfile_s("/var/run/ntp.pid", SIGALRM);
+
+	stop_ntpd();
+	start_ntpd();
 }
 
 #ifdef RTCONFIG_BCMARM
@@ -8191,8 +8194,6 @@ start_services(void)
 #if defined(RTCONFIG_AMAS)
 	start_amas_lib();
 #endif
-
-	start_ntpd();
 
 	run_custom_script("services-start", NULL);
 
