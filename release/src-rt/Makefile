@@ -2510,6 +2510,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_DNSFILTER/d" $(1); \
 		echo "RTCONFIG_DNSFILTER=y" >>$(1); \
 	fi; \
+	if [ "$(NTPD)" = "y" ]; then \
+		sed -i "/RTCONFIG_NTPD/d" $(1); \
+		echo "RTCONFIG_NTPD=y" >>$(1); \
+	fi; \
 	if [ "$(WEBMON)" = "y" ]; then \
 		sed -i "/RTCONFIG_WEBMON/d" $(1); \
 		echo "RTCONFIG_WEBMON=y" >>$(1); \
@@ -3024,6 +3028,10 @@ define BusyboxOptions
 		echo "CONFIG_IPCRM=y" >>$(1); \
 		sed -i "/CONFIG_IPCS/d" $(1); \
 		echo "CONFIG_IPCS=y" >>$(1); \
+	fi; \
+	if [ "$(NTPD)" = "y" ]; then \
+		sed -i "/CONFIG_FEATURE_NTPD_NTP_ALIAS/d" $(1); \
+		echo "CONFIG_FEATURE_NTPD_NTP_ALIAS=y" >>$(1); \
 	fi; \
 	)
 	$(call platformBusyboxOptions, $(1))
