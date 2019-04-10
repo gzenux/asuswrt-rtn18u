@@ -4854,7 +4854,7 @@ void reload_upnp(void)
 int
 start_ntpc(void)
 {
-#if 0
+#ifndef RTCONFIG_NTPD
 	char *ntp_argv[] = {"ntp", NULL};
 	int pid;
 #endif
@@ -4862,29 +4862,36 @@ start_ntpc(void)
 
 	if(dualwan_unit__usbif(unit) && nvram_get_int("modem_pdp") == 2)
 		return 0;
-#if 0
+
+#ifdef RTCONFIG_NTPD
+	start_ntpd();
+#else
 	if (!pids("ntp"))
 		_eval(ntp_argv, NULL, 0, &pid);
 #endif
-	start_ntpd();
 	return 0;
 }
 
 void
 stop_ntpc(void)
 {
-#if 0
+#ifdef RTCONFIG_NTPD
+	stop_ntpd();
+#else
 	if (pids("ntpclient"))
 		killall_tk("ntpclient");
 #endif
-	stop_ntpd();
 }
 
 
 void refresh_ntpc(void)
 {
 	setup_timezone();
-#if 0
+
+#ifdef RTCONFIG_NTPD
+	stop_ntpd();
+	start_ntpd();
+#else
 	stop_ntpc();
 
 	if (!pids("ntp"))
@@ -4892,9 +4899,6 @@ void refresh_ntpc(void)
 	else
 		kill_pidfile_s("/var/run/ntp.pid", SIGALRM);
 #endif
-
-	stop_ntpd();
-	start_ntpd();
 }
 
 #ifdef RTCONFIG_BCMARM
