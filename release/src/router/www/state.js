@@ -3581,6 +3581,7 @@ function checkIPConflict(CompareItem, sourceIP, sourceMask, compareIP, compareMa
  *   0:stable, 1:beta
  *  -1:invalid webs_state_flag or any error
  */
+var firmware_path = '<% nvram_get("firmware_path"); %>';
 function getUpdate_channel(){
 	if(webs_state_flag != 1 && webs_state_flag != 2)
 		return -1;
@@ -3606,7 +3607,7 @@ function getUpdate_channel(){
 					(stable_extendno < beta_extendno && stable_buildno == beta_buildno && stable_firm == beta_firm))
 				{
 					// beta
-					return 1;
+					return (firmware_path == "1") ? 1 : 0;
 				} else {
 					// stable
 					return 0;
@@ -3614,7 +3615,8 @@ function getUpdate_channel(){
 			}
 		} else {
 			// beta
-			return 1;
+			if(firmware_path == "1")
+				return 1;
 		}
 	} else if(webs_state_info != "") {
 		// stable

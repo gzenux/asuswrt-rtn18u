@@ -102,7 +102,7 @@ var webs_state_REQinfo = '<% nvram_get("webs_state_REQinfo"); %>';
 //var webs_state_info_beta = '<% nvram_get("webs_state_info_beta"); %>';
 
 var firmware_check_enable = '<% nvram_get("firmware_check_enable"); %>';
-var firmware_path = '<% nvram_get("firmware_path"); %>';
+//var firmware_path = '<% nvram_get("firmware_path"); %>';
 var online_upgrade = '<% nvram_get("firmware_online_upgrade"); %>';
 var confirm_show = '<% get_parameter("confirm_show"); %>';
 var webs_release_note= "";
@@ -288,7 +288,7 @@ function initial(){
 		document.getElementById("beta_firmware_path").style.display = "none";
 	}
 	else{
-		if(!live_update_support || !HTTPS_support || ("<% nvram_get("firmware_check_enable"); %>" != "1")){
+		if(!live_update_support || !HTTPS_support){
 			document.getElementById("update_div").style.display = "none";
 			document.getElementById("fw_tr").style.display = "none";
 			document.getElementById("linkpage_div").style.display = "";
@@ -300,7 +300,7 @@ function initial(){
 		else{
 			document.getElementById("update_div").style.display = "";
 			document.getElementById("linkpage_div").style.display = "none";
-			document.getElementById("fwupgrade").style.display = (firmware_check_enable != "1") ? "none" : "";
+			document.getElementById("fwupgrade").style.display = "";
 			document.getElementById("beta_firmware_path").style.display = "";
 			if (confirm_show.length > 0) {
 				if(amesh_support && (confirm_show == 0) && (isSwMode("rt") || isSwMode("ap"))) {
@@ -429,18 +429,18 @@ function do_show_confirm(){
 		document.getElementById('update_states').innerHTML="<#is_latest#>";
 	} else {
 		var right_btn_title = "Visit download site";
-		var FWVer = webs_state_info;
+		var note_text = "Visit the download site to manually download and upgrade your router";
 
 		document.getElementById('update_states').style.display="none";
 
 		// confirm dialog overwritten
 		if (online_upgrade == "1") {
 			right_btn_title = "<#CTL_upgrade#>";
+			note_text = "<#Main_alert_proceeding_desc5#>";
 		}
 
 		if(update_path == 1) {
 			// beta path
-			FWVer = webs_state_info_beta;
 			var right_btn_callback = function(){
 				if (webs_state_info_beta.indexOf("alpha") != -1) {
 					window.open(download_url_alpha);
@@ -465,7 +465,7 @@ function do_show_confirm(){
 				ribbon: "ribbon-red",
 				ribbon_wrapper: "ribbon-wrapper-red",
 				contentA: "The beta firmware lets users try pre-release features. The feedback on quality and usability helps us identify issues and make firmware even better. Please note that beta firmware may contain errors or may not function as well as formally release firmware. Install only on devices that are not business critical. If you want to back to formally released version, please uncheck <b>get beta firmware</b> then click check button to get the formally released firmware. When changed to formally released firmware, some new features in beta firmware may lose.<br>",		/* untranslated */
-				contentC: "<br><#ADSL_FW_note#> <#Main_alert_proceeding_desc5#>",
+				contentC: "<br><#ADSL_FW_note#> " + note_text,
 				left_button: "<#CTL_Cancel#>",
 				left_button_callback: function(){confirm_cancel();},
 				left_button_args: {},
@@ -506,7 +506,7 @@ function do_show_confirm(){
 			confirm_asus({
 				title: "New Firmware Available",
 				contentA: "<#exist_new#><br>",
-				contentC: "<br><#ADSL_FW_note#> <#Main_alert_proceeding_desc5#>",
+				contentC: "<br><#ADSL_FW_note#> " + note_text,
 				left_button: "<#CTL_Cancel#>",
 				left_button_callback: function(){confirm_cancel();},
 				left_button_args: {},
@@ -1021,7 +1021,7 @@ function show_fw_relese_note(event) {
 	confirm_asus({
 		title: "New Firmware Available",
 		contentA: "<#exist_new#><br>",
-		contentC: "<br><#ADSL_FW_note#> <#Main_alert_proceeding_desc5#>",
+		contentC: "<br><#ADSL_FW_note#> " + note_text,
 		left_button: "",
 		left_button_callback: {},
 		left_button_args: {},
@@ -1143,24 +1143,33 @@ function check_AiMesh_fw_version(_fw) {
 }
 
 function toggle_fw_check(state) {
-	firmware_check_enable = state;
-	httpApi.nvramSet({
-			"firmware_check_enable" : state,
-			"action_mode": "apply"});
+	if(firmware_check_enable != state) {
+		firmware_check_enable = state;
+		httpApi.nvramSet({
+				"firmware_check_enable" : state,
+				"action_mode": "apply"});
+	}
 }
 
 function toggle_fw_upgrade(state) {
-	online_upgrade = state;
-	httpApi.nvramSet({
-			"firmware_online_upgrade" : state,
-			"action_mode": "apply"});
+	if(online_upgrade != state) {
+		online_upgrade = state;
+		httpApi.nvramSet({
+				"firmware_online_upgrade" : state,
+				"action_mode": "apply"});
+	}
 }
 
 function toggle_fw_beta(state) {
-	firmware_path = state;
-	httpApi.nvramSet({
-			"firmware_path" : state,
-			"action_mode": "apply"});
+	if(firmware_path != state) {
+		firmware_path = state;
+		httpApi.nvramSet({
+				"firmware_path" : state,
+				"action_mode": "apply"});
+
+		// reset the notification status
+		notification.reset();
+	}
 }
 
 </script>
