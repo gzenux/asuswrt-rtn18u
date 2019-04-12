@@ -94,13 +94,6 @@ function initial() {
 		hide_cstats_ip(getRadioValue(document.form.cstats_all));
 	}
 
-	if(!live_update_support) {
-		document.getElementById("fwupgrade").style.display="none";
-	} else {
-		if ("<% nvram_get("firmware_check_enable"); %>" != "1" )
-			document.getElementById("fwupgrade").style.display="none";
-	}
-
 	if ((machine_name.search("arm") != -1) || hnd_support) {
 		document.getElementById("ct_established_default").innerHTML = "Default: 2400";
 		if (!hnd_support) showhide("memory_mgmt_tr" ,1);
@@ -776,13 +769,6 @@ function done_validating(action){
 						<td>
 							<input type="radio" name="led_disable" class="input" value="1" <% nvram_match_x("", "led_disable", "1", "checked"); %>><#checkbox_Yes#>
 							<input type="radio" name="led_disable" class="input" value="0" <% nvram_match_x("", "led_disable", "0", "checked"); %>><#checkbox_No#>
-						</td>
-					</tr>
-					<tr id="fwupgrade">
-						<th>Allow online upgrade firmware</th>
-						<td>
-							<input type="radio" name="firmware_online_upgrade" class="input" value="1" <% nvram_match("firmware_online_upgrade", "1", "checked"); %>><#checkbox_Yes#>
-							<input type="radio" name="firmware_online_upgrade" class="input" value="0" <% nvram_match("firmware_online_upgrade", "0", "checked"); %>><#checkbox_No#>
 						</td>
 					</tr>
 				</table>

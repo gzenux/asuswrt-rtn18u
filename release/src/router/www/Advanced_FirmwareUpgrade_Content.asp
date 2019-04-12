@@ -103,6 +103,7 @@ var webs_state_REQinfo = '<% nvram_get("webs_state_REQinfo"); %>';
 
 var firmware_check_enable = '<% nvram_get("firmware_check_enable"); %>';
 var firmware_path = '<% nvram_get("firmware_path"); %>';
+var online_upgrade = '<% nvram_get("firmware_online_upgrade"); %>';
 var confirm_show = '<% get_parameter("confirm_show"); %>';
 var webs_release_note= "";
 
@@ -283,6 +284,7 @@ function initial(){
 		document.getElementById("update_div").style.display = "none";
 		document.getElementById("fw_tr").style.display = "none";
 		document.getElementById("linkpage_div").style.display = "none";
+		document.getElementById("fwupgrade").style.display = "none";
 		document.getElementById("beta_firmware_path").style.display = "none";
 	}
 	else{
@@ -290,6 +292,7 @@ function initial(){
 			document.getElementById("update_div").style.display = "none";
 			document.getElementById("fw_tr").style.display = "none";
 			document.getElementById("linkpage_div").style.display = "";
+			document.getElementById("fwupgrade").style.display = "none";
 			document.getElementById("beta_firmware_path").style.display = "none";
 			helplink = get_helplink();
 			document.getElementById("linkpage").href = helplink;
@@ -297,6 +300,7 @@ function initial(){
 		else{
 			document.getElementById("update_div").style.display = "";
 			document.getElementById("linkpage_div").style.display = "none";
+			document.getElementById("fwupgrade").style.display = (firmware_check_enable != "1") ? "none" : "";
 			document.getElementById("beta_firmware_path").style.display = "";
 			if (confirm_show.length > 0) {
 				if(amesh_support && (confirm_show == 0) && (isSwMode("rt") || isSwMode("ap"))) {
@@ -424,7 +428,6 @@ function do_show_confirm(){
 		document.getElementById('update_states').style.display="";
 		document.getElementById('update_states').innerHTML="<#is_latest#>";
 	} else {
-		var online_upgrade = "<% nvram_get("firmware_online_upgrade"); %>";
 		var right_btn_title = "Visit download site";
 		var FWVer = webs_state_info;
 
@@ -1146,6 +1149,13 @@ function toggle_fw_check(state) {
 			"action_mode": "apply"});
 }
 
+function toggle_fw_upgrade(state) {
+	online_upgrade = state;
+	httpApi.nvramSet({
+			"firmware_online_upgrade" : state,
+			"action_mode": "apply"});
+}
+
 function toggle_fw_beta(state) {
 	firmware_path = state;
 	httpApi.nvramSet({
@@ -1284,6 +1294,13 @@ function toggle_fw_beta(state) {
 						<td>
 							<input type="radio" onclick="toggle_fw_check(1);" name="firmware_check_enable" class="input" value="1" <% nvram_match("firmware_check_enable", "1", "checked"); %>><#checkbox_Yes#>
 							<input type="radio" onclick="toggle_fw_check(0);" name="firmware_check_enable" class="input" value="0" <% nvram_match("firmware_check_enable", "0", "checked"); %>><#checkbox_No#>
+						</td>
+					</tr>
+					<tr id="fwupgrade">
+						<th>Allow online upgrade firmware</th>
+						<td>
+							<input type="radio" onclick="toggle_fw_upgrade(1);" name="firmware_online_upgrade" class="input" value="1" <% nvram_match("firmware_online_upgrade", "1", "checked"); %>><#checkbox_Yes#>
+							<input type="radio" onclick="toggle_fw_upgrade(0);" name="firmware_online_upgrade" class="input" value="0" <% nvram_match("firmware_online_upgrade", "0", "checked"); %>><#checkbox_No#>
 						</td>
 					</tr>
 					<tr id="beta_firmware_path">
