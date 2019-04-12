@@ -408,6 +408,9 @@ var notification = {
 			tarObj1.onclick = this.notiClick;
 			tarObj.className = "notification_on";
 			tarObj1.className = "notification_on1";
+		} else {
+			tarObj1.onclick = null;
+			tarObj1.className = "notification_off";
 		}
 
 		if(this.flash == "on" && cookie.get("notification_history") != [notification.upgrade, notification.wifi_2g ,notification.wifi_5g ,notification.ftp ,notification.samba ,notification.loss_sync ,notification.experience_FB ,notification.notif_hint, notification.mobile_traffic, notification.send_debug_log, notification.sim_record, notification.pppoe_tw, notification.pppoe_tw_static, notification.ie_legacy].join()){
