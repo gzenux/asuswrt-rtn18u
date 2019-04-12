@@ -33,13 +33,12 @@
 	width: 83%;
 }
 #proceeding_img{
-	height:21px;
+ 	height:21px;
 	background: #D7E8F4;
 	background: -webkit-linear-gradient(#F2F7EB 0%, #E4E6EE 49%, #C8D3Db 50%, #BACEDA 51%, #D7E8F4 100%);
 	background: -o-linear-gradient(#F2F7EB 0%, #E4E6EE 49%, #C8D3Db 50%, #BACEDA 51%, #D7E8F4 100%);
 	background: linear-gradient(#F2F7EB 0%, #E4E6EE 49%, #C8D3Db 50%, #BACEDA 51%, #D7E8F4 100%);
 }
-
 .button_helplink{
 	font-weight: bolder;
 	text-shadow: 1px 1px 0px black;
@@ -71,10 +70,10 @@
 	background: -o-linear-gradient(#09639C 0%, #003047 100%);
 	background: linear-gradient(#09639C 0%, #003047 100%);
 	height:33px;
-	width:122px;
+ 	width:122px;
 	cursor:pointer;
 	outline: none; /* for Firefox */
-	hlbr:expression(this.onFocus=this.blur()); /* for IE */
+ 	hlbr:expression(this.onFocus=this.blur()); /* for IE */
 }
 </style>
 
@@ -102,6 +101,7 @@ var webs_state_REQinfo = '<% nvram_get("webs_state_REQinfo"); %>';
 //var webs_state_flag = '<% nvram_get("webs_state_flag"); %>'
 //var webs_state_info_beta = '<% nvram_get("webs_state_info_beta"); %>';
 
+var firmware_check_enable = '<% nvram_get("firmware_check_enable"); %>';
 var firmware_path = '<% nvram_get("firmware_path"); %>';
 var confirm_show = '<% get_parameter("confirm_show"); %>';
 var webs_release_note= "";
@@ -142,6 +142,7 @@ FWString = buildno;
 //	FWString += "rc"+rcno;
 if ((extendno != "") && (extendno != "0"))
 	FWString += "_"+extendno;
+
 
 function initial(){
 	show_menu();
@@ -282,20 +283,21 @@ function initial(){
 		document.getElementById("update_div").style.display = "none";
 		document.getElementById("fw_tr").style.display = "none";
 		document.getElementById("linkpage_div").style.display = "none";
+		document.getElementById("beta_firmware_path").style.display = "none";
 	}
 	else{
 		if(!live_update_support || !HTTPS_support || ("<% nvram_get("firmware_check_enable"); %>" != "1")){
 			document.getElementById("update_div").style.display = "none";
-			document.getElementById("linkpage_div").style.display = "";
-			document.getElementById("linkpage").style.display = "";
 			document.getElementById("fw_tr").style.display = "none";
-			document.getElementById("fw_check_link").style.display = "none";
-			helplink = download_url;
+			document.getElementById("linkpage_div").style.display = "";
+			document.getElementById("beta_firmware_path").style.display = "none";
+			helplink = get_helplink();
 			document.getElementById("linkpage").href = helplink;
 		} 
 		else{
 			document.getElementById("update_div").style.display = "";
 			document.getElementById("linkpage_div").style.display = "none";
+			document.getElementById("beta_firmware_path").style.display = "";
 			if (confirm_show.length > 0) {
 				if(amesh_support && (confirm_show == 0) && (isSwMode("rt") || isSwMode("ap"))) {
 					var interval = setInterval(function() {
@@ -330,10 +332,10 @@ function initial(){
 	}
 	*/
 
-	if(based_modelid == "RT-AC68R"){	//MODELDEP	//id: asus_link is in string tag #FW_desc0#
-		document.getElementById("asus_link").href = "http://www.asus.com/us/supportonly/RT-AC68R/";
-		document.getElementById("asus_link").innerHTML = "http://www.asus.com/us/supportonly/RT-AC68R/";
-	}
+//	if(based_modelid == "RT-AC68R"){	//MODELDEP	//id: asus_link is in string tag #FW_desc0#
+//		document.getElementById("asus_link").href = "http://www.asus.com/us/supportonly/RT-AC68R/";
+//		document.getElementById("asus_link").innerHTML = "http://www.asus.com/us/supportonly/RT-AC68R/";
+//	}
 
 	if(based_modelid == "RT-AC68A"){        //MODELDEP : Spec special fine tune
 		document.getElementById("fw_note2").style.display = "none";
@@ -346,8 +348,6 @@ function initial(){
 		inputCtrl(document.form.upload, 1);
 	}
 
-	document.getElementById("fw_note3").style.display = "none";
-
 	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
 		$("#manually_upgrade_tr").css("display", "none");
 		$("#productid_tr").css("display", "none");
@@ -355,7 +355,6 @@ function initial(){
 			submitForm();
 		}
 	}
-
 }
 
 var dead = 0;
@@ -383,12 +382,7 @@ function detect_firmware(flag){
 					document.getElementById('update_scan').style.display="none";
 					document.getElementById('update').disabled = false;
 					if (cfg_check == "2" || cfg_check == "3") {
-						if (firmware_path==1) {
-							//Beta Firmware not available yet
-							document.getElementById('update_states').innerHTML="No beta firmware available now.";	/* untranslated */
-						} else {
-							document.getElementById('update_states').innerHTML="<#connect_failed#>";
-						}
+						document.getElementById('update_states').innerHTML="<#connect_failed#>";
 					} else if (cfg_check == "7" || cfg_check == "9") {
 						document.getElementById('update_states').innerHTML="";
 						if(amesh_support && (isSwMode("rt") || isSwMode("ap")))
@@ -746,7 +740,7 @@ function sig_check_status(){
     		},
     	success: function(){
 			$("#sig_status").show();
-			if(sig_state_flag == 0 && sig_state_error == 0 && sig_state_update == 1){               // no need upgrade
+			if(sig_state_flag == 0 && sig_state_error == 0 && sig_state_update == 1){		// no need upgrade
 				$("#sig_status").html("Signature is up to date");	/* Untranslated */
 				document.getElementById("sig_update_scan").style.display = "none";
 				document.getElementById("sig_check").disabled = false;
@@ -754,11 +748,11 @@ function sig_check_status(){
 			else{
 				if(sig_state_error != 0){		// update error
 					$("#sig_status").html("Signature update failed");	/* Untranslated */
-					document.getElementById("sig_check").disabled = false;
 					document.getElementById("sig_update_scan").style.display = "none";
+					document.getElementById("sig_check").disabled = false;
 				}
 				else{
-					if(sig_state_flag == 1 && sig_state_update == 0 && sig_state_upgrade == 1){             //update complete
+					if(sig_state_flag == 1 && sig_state_update == 0 && sig_state_upgrade == 1){		//update complete						
 						update_sig_ver();
 					}
 					else{		//updating
@@ -773,20 +767,20 @@ function sig_check_status(){
 
 function update_sig_ver(){
 	$.ajax({
-	url: '/detect_firmware.asp',
-	dataType: 'script',
+    	url: '/detect_firmware.asp',
+    	dataType: 'script',
 		timeout: 3000,
-	error:	function(xhr){
-		setTimeout('update_sig_ver();', 1000);
-	},
-	success: function(){
-		document.getElementById("sig_update_date").innerHTML = "";
-		document.getElementById("sig_update_scan").style.display = "none";
-		document.getElementById("sig_check").disabled = false;
-		$("#sig_status").html("Signature update completely");   /* Untranslated */
-		$("#sig_ver_word").html(sig_ver);
-		}
-	});
+    	error:	function(xhr){
+    		setTimeout('update_sig_ver();', 1000);
+    	},
+    	success: function(){
+    		document.getElementById("sig_update_date").innerHTML = "";
+    		document.getElementById("sig_update_scan").style.display = "none";
+			document.getElementById("sig_check").disabled = false;
+    		$("#sig_status").html("Signature update completely");	/* Untranslated */
+    		$("#sig_ver_word").html(sig_ver);
+  		}
+  	});
 }
 
 function check_Timefield_checkbox(){	// To check Date checkbox checked or not and control Time field disabled or not
@@ -1144,6 +1138,21 @@ function check_AiMesh_fw_version(_fw) {
 	}
 	return manual_status
 }
+
+function toggle_fw_check(state) {
+	firmware_check_enable = state;
+	httpApi.nvramSet({
+			"firmware_check_enable" : state,
+			"action_mode": "apply"});
+}
+
+function toggle_fw_beta(state) {
+	firmware_path = state;
+	httpApi.nvramSet({
+			"firmware_path" : state,
+			"action_mode": "apply"});
+}
+
 </script>
 </head>
 <body onload="initial();">
@@ -1261,7 +1270,7 @@ function check_AiMesh_fw_version(_fw) {
 				<th><#sig_ver#></th>
 				<td >
 					<div style="height:33px;margin-top:5px;"><span id="sig_ver_word" style="color:#FFFFFF;"></span><span id="sig_update_date"></span></div>
-					<div style="margin-left:300px;margin-top:-38px;">
+					<div style="margin-left:200px;margin-top:-38px;">
 						<input type="button" id="sig_check" name="sig_check" class="button_gen" onclick="sig_version_check();" value="<#liveupdate#>">
 					</div>
 					<div>
@@ -1270,19 +1279,28 @@ function check_AiMesh_fw_version(_fw) {
 					</div>
 				</td>
 			</tr>
-
-			<tr id="fw_check_link">
-				<th>New firmware notification</th>
-				<td>Click <a href="Tools_OtherSettings.asp#fwcheck" style="text-decoration:underline;color:#FFCC00;">here</a> to configure settings.</td>
-			</tr>
+					<tr id="fwcheck">
+						<th><a name="fwcheck" id="fwcheck"></a><a class="hintstyle" href="javascript:void(0);" onClick="openHint(50,15);">Scheduled check for new firmware availability</a></th>
+						<td>
+							<input type="radio" onclick="toggle_fw_check(1);" name="firmware_check_enable" class="input" value="1" <% nvram_match("firmware_check_enable", "1", "checked"); %>><#checkbox_Yes#>
+							<input type="radio" onclick="toggle_fw_check(0);" name="firmware_check_enable" class="input" value="0" <% nvram_match("firmware_check_enable", "0", "checked"); %>><#checkbox_No#>
+						</td>
+					</tr>
+					<tr id="beta_firmware_path">
+						<th>Check for new beta firmware releases</th>
+						<td>
+							<input type="radio" onclick="toggle_fw_beta(1);" name="firmware_path" class="input" value="1" <% nvram_match("firmware_path", "1", "checked"); %>><#checkbox_Yes#>
+							<input type="radio" onclick="toggle_fw_beta(0);" name="firmware_path" class="input" value="0" <% nvram_match("firmware_path", "0", "checked"); %><% nvram_match("firmware_path", "", "checked"); %>><#checkbox_No#>
+						</td>
+					</tr>
 			<tr id="fw_version_tr">
 				<th><#FW_item2#></th>
 				<td>
 					<div id="FWString" style="height:33px;margin-top:5px;"></div>
-					<div id="update_div" style="margin-left:300px;margin-top:-38px;display:none;">
-						<input type="button" id="update" name="update" class="button_gen" onclick="detect_update();" value="<#liveupdate#>" />
+					<div id="update_div" style="margin-left:200px;margin-top:-38px;display:none;">
+						<input type="button" id="update" name="update" class="button_gen" onclick="detect_update();" value="<#liveupdate#>" />						
 					</div>
-					<div id="linkpage_div" class="button_helplink" style="margin-left:300px;margin-top:-38px;display:none;">
+					<div id="linkpage_div" class="button_helplink" style="margin-left:200px;margin-top:-38px;display:none;">
 						<a id="linkpage" target="_blank"><div style="padding-top:5px;"><#liveupdate#></div></a>
 					</div>
 					<div id="check_states">
@@ -1294,7 +1312,7 @@ function check_AiMesh_fw_version(_fw) {
 			<tr id="manually_upgrade_tr">
 				<th><#FW_item5#></th>
 				<td>
-					<input type="file" name="file" class="input" style="color:#FFCC00;*color:#000;width: 294px;">
+					<input type="file" name="file" class="input" style="color:#FFCC00;*color:#000;width: 194px;">
 					<input type="button" name="upload" class="button_gen" onclick="submitForm()" value="<#CTL_upload#>" />
 				</td>
 			</tr>			

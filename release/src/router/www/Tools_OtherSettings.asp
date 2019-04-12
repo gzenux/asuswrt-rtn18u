@@ -95,9 +95,7 @@ function initial() {
 	}
 
 	if(!live_update_support) {
-		document.getElementById("fwcheck").style.display="none";
 		document.getElementById("fwupgrade").style.display="none";
-		document.getElementById("beta_firmware_path").style.display="none";
 	} else {
 		if ("<% nvram_get("firmware_check_enable"); %>" != "1" )
 			document.getElementById("fwupgrade").style.display="none";
@@ -780,25 +778,11 @@ function done_validating(action){
 							<input type="radio" name="led_disable" class="input" value="0" <% nvram_match_x("", "led_disable", "0", "checked"); %>><#checkbox_No#>
 						</td>
 					</tr>
-					<tr id="fwcheck">
-						<th><a name="fwcheck" id="fwcheck"></a><a class="hintstyle" href="javascript:void(0);" onClick="openHint(50,15);">New firmware version check</a></th>
-						<td>
-							<input type="radio" name="firmware_check_enable" class="input" value="1" <% nvram_match("firmware_check_enable", "1", "checked"); %> onclick="showhide('fwupgrade', 1);"><#checkbox_Yes#>
-							<input type="radio" name="firmware_check_enable" class="input" value="0" <% nvram_match("firmware_check_enable", "0", "checked"); %> onclick="showhide('fwupgrade', 0);"><#checkbox_No#>
-						</td>
-					</tr>
 					<tr id="fwupgrade">
 						<th>Allow online upgrade firmware</th>
 						<td>
 							<input type="radio" name="firmware_online_upgrade" class="input" value="1" <% nvram_match("firmware_online_upgrade", "1", "checked"); %>><#checkbox_Yes#>
 							<input type="radio" name="firmware_online_upgrade" class="input" value="0" <% nvram_match("firmware_online_upgrade", "0", "checked"); %>><#checkbox_No#>
-						</td>
-					</tr>
-					<tr id="beta_firmware_path">
-						<th>Check for new beta firmware releases</th>
-						<td>
-							<input type="radio" name="firmware_path" class="input" value="1" <% nvram_match("firmware_path", "1", "checked"); %>><#checkbox_Yes#>
-							<input type="radio" name="firmware_path" class="input" value="0" <% nvram_match("firmware_path", "0", "checked"); %><% nvram_match("firmware_path", "", "checked"); %>><#checkbox_No#>
 						</td>
 					</tr>
 				</table>
