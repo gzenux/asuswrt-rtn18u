@@ -1,0 +1,104 @@
+Asuswrt-Merlin for RT-N18U Release Note
+===================================================================
+   NOTE: RT-N18U IS NOT OFFICIALLY SUPPORTED BY Asuswrt-Merlin.
+CAUTION:
+    1. If your device is running the stock firmware, please
+       upgrade to version 3.0.0.4.382.50624 first and then upload
+       this firmware via Web UI. Restore to default by hardware
+       button is required after the router is switched to
+       this firmware.
+    2. Upgrade to this firmware from earlier version (<= 384.4_2)
+       will cause the router being not accessible without
+       resetting by hardware button. Please backup the router
+       settings before upgrade the firmware.
+    3. The online upgrade feature is broken between 384.4_3 and
+       384.5-beta2 due to spwenc.o source replacement. Please do
+       not restore the configuration exported from these versions.
+
+384.9
+  Changelog for RT-N18U:
+  - NOTE: The firmware version is not direct mapping to official
+          Asuswrt-Merlin release starting from now since there are
+          no available prebuilt binary and no more new features
+          introduced for this model in recent codebase.
+
+  - NEW: Merge GPL 384_45149 from asuswrt-merlin.
+  - NEW: Show the CPU/Wireless temperature in home page.
+  - CHANGED: Merge asuswrt-merlin's Tools menu into existing menu:
+             - Tools_Sysinfo.asp moved into 'System Log' menu
+             - Tools_OtherSettings.asp moved into
+               'Administration' menu
+  - CHANGED: Update the translation in the wireless site survey
+             page.
+  - CHANGED: Do not automatically scan site (also disable
+             the rescan button) in the wireless site survey page
+             when the radio is not enabled.
+  - FIXED: The notification flashing interval is not reset after
+           checked the firmware update.
+  - REMOVED: Temperature page since it's integrated into
+             the home page.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Report the number of spatial streams and the PHY type
+         used by wireless clients for models supporting it
+  - NEW: Display tracked connections on the QoS Stats page (now
+         relabeled "Classification").
+         Fields can be sorted by clicking on the column headers.
+         Thanks to FreshJr for his help in deciphering the packet
+         mark values.
+  - NEW: Implemented lcp-ident option in PPP (required by some ISPs)
+         (Themiron).
+  - NEW: You can now choose between having your router do internal
+         DNS queries locally (through dnsmasq) or with your WAN
+         configured DNS (like stock firmware).  This does not
+         affect DNS lookups from your clients, only those made
+         by the router itself.  The option is under
+         Administration -> Other Settings.  (Themiron)
+  - CHANGED: Updated wget to 1.20.
+  - CHANGED: Updated nano to 3.2.
+  - CHANGED: Updated curl to 7.64.0.
+  - CHANGED: Updated OpenVPN to 2.4.7.
+  - CHANGED: Updated OpenSSL 1.0.x to 1.0.2r.
+  - CHANGED: Updated Tor to 0.3.5.8.
+  - CHANGED: Updated Chart.js to 2.7.3.
+  - CHANGED: Updated dnsmasq to 2.80-44-g608aa9f (Themiron)
+  - CHANGED: Optimized some JS files to reduce their size
+  - CHANGED: OpenVPN clients can now accept CNs up to 255 chars
+             when using it to validate the certificate.
+  - CHANGED: No longer reset the OpenVPN client's description,
+             policy mode and existing rules when uploading an
+             .ovpn config file.
+  - CHANGED: No longer accept any server-provided route
+             when OpenVPN client set to Policy (Strict).
+  - CHANGED: Clients bound to DNSFilter rules will no longer
+             bypass it by using DoT.  DNSFilter servers that
+             support DoT (like Quad9) will only allow filtered
+             clients to use that server
+  - CHANGED: Re-worked the Classification page.  New design
+             is much faster, allows filtering, and shows
+             additional info when hovering on a field.
+  - CHANGED: Reworked DNS WAN probe implementation (Themiron)
+  - CHANGED: Increased OpenVPN interface queue length from 100
+             to 1000 bytes, to reduce the amount of dropped
+             packets if router can't keep up.
+  - CHANGED: Updated CA bundle to January 23rd 2019 version
+  - FIXED: DNSFilter clients could use a different nameserver
+           when using an IPv6 connection
+  - FIXED: NFSv2 support
+  - FIXED: PPP host-uniq support (Themiron)
+  - FIXED: OpenVPN key/certs would sometime end up in nvram in
+           addition to in /jffs
+  - FIXED: Couldn't remove an existing OpenVPN key/cert by
+           clearing the field on the webui
+  - FIXED: Resetting OpenVPN client to Default values wasn't
+           removing any existing Extra CA certificate
+  - FIXED: Moviestar VLAN routes weren't properly configured
+           (broken quagga configuration)
+  - FIXED: Missing tooltip content for the new local DNS
+           resolution setting on the Tweak page
+  - FIXED: OpenVPN CA would be overwritten if there was no
+           server key or cert present - only generate them
+           if all three are missing.
+  - FIXED: Bandwidth Limiter not working properly in some
+           cases, as it failed to disable hardware acceleration
+  - REMOVED: CFB and OFB ciphers from OpenVPN client
