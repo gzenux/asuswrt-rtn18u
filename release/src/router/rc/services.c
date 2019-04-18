@@ -13586,6 +13586,8 @@ _dprintf("goto again(%d)...\n", getpid());
 	}
 #endif
 
+	run_custom_script("service-event-end", 0, actionstr, script);
+
 	nvram_set("rc_service", "");
 	nvram_set("rc_service_pid", "");
 _dprintf("handle_notifications() end\n");
