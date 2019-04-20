@@ -1996,6 +1996,7 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGCHLD, chld_reap);
+	signal(SIGUSR1, update_wlan_log);
 
 #ifdef RTCONFIG_HTTPS
 	//if (do_ssl)
