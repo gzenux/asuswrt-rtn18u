@@ -681,7 +681,7 @@ endif
 all: PB rc init.prep
 
 PB:
-	[ ! -d prebuild ] || cp prebuild/*.o ./
+	[ ! -d $(PREBUILD) ] || cp $(PREBUILD)/*.o ./
 
 rc: $(OBJS)
 	@echo " [rc] CC $@"
