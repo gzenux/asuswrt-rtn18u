@@ -1910,7 +1910,6 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 	gst.s_addr = htonl(dip);
 	strcpy(g_lan_ip, inet_ntoa(gst));
 #endif
-
 #ifdef RTCONFIG_TOR
 	char addr_new[32];
 	int addr_type;
