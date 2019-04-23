@@ -2581,7 +2581,7 @@ endif
 
 openssl-1.0.0q/Makefile:
 	cd openssl-1.0.0q && \
-	./Configure $(HOSTCONFIG) --prefix=/usr --openssldir=/etc --cross-compile-prefix=' ' \
+	./Configure $(HOSTCONFIG) --prefix=/usr --openssldir=/etc/ssl --cross-compile-prefix=' ' \
 	-ffunction-sections -fdata-sections -Wl,--gc-sections \
 	shared $(OPENSSL_CIPHERS)
 #	no-sha0 no-smime no-camellia no-krb5 no-rmd160 no-ripemd \
@@ -2617,7 +2617,7 @@ openssl-1.0.0q-stage:
 
 openssl/Makefile:
 	cd openssl && \
-	./Configure $(HOSTCONFIG) -O2 -DOPENSSL_NO_BUF_FREELISTS --prefix=/usr --openssldir=/etc --cross-compile-prefix=' ' \
+	./Configure $(HOSTCONFIG) -O2 -DOPENSSL_NO_BUF_FREELISTS --prefix=/usr --openssldir=/etc/ssl --cross-compile-prefix=' ' \
 	-ffunction-sections -fdata-sections -Wl,--gc-sections \
 	shared $(OPENSSL_CIPHERS) no-ssl2
 #	no-sha0 no-smime no-camellia no-krb5 no-rmd160 no-ripemd \
