@@ -2746,9 +2746,6 @@ gmac3_no_swbr:
 #if defined(RTCONFIG_SOC_IPQ40XX)
 	enable_jumbo_frame();
 #endif
-#if defined(RTCONFIG_SOC_IPQ40XX)
-	enable_jumbo_frame();
-#endif
 #endif
 
 	config_loopback();

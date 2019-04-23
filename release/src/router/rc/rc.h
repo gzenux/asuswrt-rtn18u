@@ -443,11 +443,7 @@ extern int verify_ctl_table(void);
 #if defined(RTN18U)
 extern char *getStaMAC(void);
 #else
-#if defined(RTN18U)
-extern char *getStaMAC(void);
-#else
 extern char *getStaMAC(char *buf, int buflen);
-#endif
 #endif
 extern char *get_qca_iwpriv(char *name, char *command);
 extern unsigned int getPapState(int unit);
@@ -1228,8 +1224,6 @@ extern int rand_seed_by_time(void);
 char *get_wpa_supplicant_pidfile(const char *ifname, char *buf, int size);
 void kill_wifi_wpa_supplicant(int unit);
 
-
-// ssh.c
 
 // usb.c
 #if defined(RTCONFIG_OPENPLUS_TFAT) \
@@ -2105,7 +2099,6 @@ enum LED_STATUS
 	LED_AP_WPS_START
 };
 #endif
-
 #ifdef RTCONFIG_TUNNEL
 extern void start_mastiff();
 extern void stop_mastiff();
