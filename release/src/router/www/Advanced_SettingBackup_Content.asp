@@ -41,6 +41,10 @@ function initial(){
 		uploadSetting();
 	};
 
+	document.form.file2.onchange = function() {
+		uploadJFFS();
+	};
+
 	if(!bwdpi_support){
 		$("#factorydefault_hint").attr("onclick", "").unbind("click");
 		$("#factorydefault_hint").attr("onclick", "openHint(19, 1);");
@@ -168,6 +172,9 @@ function detect_httpd(){
 }
 function selectSetting() {
 	document.form.file.click();
+}
+function selectJFFS() {
+	document.form.file2.click();
 }
 </script>
 </head>
@@ -338,10 +345,10 @@ function selectSetting() {
 														<table>
 															<tr>
 																<td style="border:0px">
-																	<input type="button" class="button_gen" onclick="uploadJFFS();" value="<#CTL_upload#>"/>
+																	<input type="button" class="button_gen" onclick="selectJFFS();" value="<#CTL_upload#>"/>
 																</td>
 																<td style="border:0px">
-																	<input id="jffsfile" type="file" name="file2" class="input" style="color:#FFCC00;"/>
+																	<input id="jffsfile" style="display:none;" type="file" name="file2" class="input" style="color:#FFCC00;"/>
 																	<span id="jffsstatus" style="display:none;"><img id="LoadingIcon" style="margin-left:5px;margin-right:5px;" src="/images/InternetScan.gif">Uploading, please wait...</span>
 																</td>
 															</tr>
