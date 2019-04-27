@@ -1998,7 +1998,7 @@ void start_stubby(void)
 	if (nv)
 		free(nv);
 
-	append_custom_config("stubby", fp);
+	append_custom_config("stubby.yml", fp);
 	fclose(fp);
 //	use_custom_config("stubby.yml", (char *)stubby_config);
 	run_postconf("stubby", (char *)stubby_config);
