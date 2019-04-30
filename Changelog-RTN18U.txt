@@ -70,14 +70,29 @@ CAUTION:
   - CHANGED: OpenSSL default dir moved to /etc/ssl/.  Allows
              programs to automatically locate the CA bundle
              without requiring explicit configuration.
-  - FIXED: Reboot scheduler would sometime get stuck or corrupt
-           plugged USB drives.  Now doing a more thorough
-           shutdown of services, should hopefully make it
-           more reliable.
   - FIXED: Client count on the Sysinfo page was missing
            Guest clients
   - FIXED: Miniupnpd sometimes sending ssdp notifies to
            the wrong interface (themiron)
+
+
+384.9_1
+  Changelog for RT-N18U:
+  - CHANGED: Do not restart entire network on a simple DHCP static
+             lease change on networkmap (backporting)
+  - CHANGED: Do not restart router's time service when issuing a
+             WoL request (backporting)
+  - CHANGED: Minor webui layout/rendering updates (backporting)
+  - FIXED: Duplicate code on System page preventing USB sleep
+           settings from applying (backporting)
+  - FIXED: The Download Master not show in USB applications menu
+          (backporting)
+
+  Changelog from Asuswrt-Merlin:
+  - FIXED: Reboot scheduler would sometime get stuck or corrupt
+           plugged USB drives.  Now doing a more thorough
+           shutdown of services, should hopefully make it
+           more reliable.
 
 
 384.9
