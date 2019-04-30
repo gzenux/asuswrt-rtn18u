@@ -284,6 +284,7 @@ function initial(){
 		document.getElementById("update_div").style.display = "none";
 		document.getElementById("fw_tr").style.display = "none";
 		document.getElementById("linkpage_div").style.display = "none";
+		document.getElementById("fwcheck_tr").style.display = "none";
 		document.getElementById("fwupgrade").style.display = "none";
 		document.getElementById("beta_firmware_path").style.display = "none";
 	}
@@ -1307,13 +1308,13 @@ function toggle_fw_beta(state) {
 					</div>
 				</td>
 			</tr>
-					<tr id="fwcheck">
-						<th><a name="fwcheck" id="fwcheck"></a><a class="hintstyle" href="javascript:void(0);" onClick="openHint(50,15);">Scheduled check for new firmware availability</a></th>
-						<td>
-							<input type="radio" onclick="toggle_fw_check(1);" name="firmware_check_enable" class="input" value="1" <% nvram_match("firmware_check_enable", "1", "checked"); %>><#checkbox_Yes#>
-							<input type="radio" onclick="toggle_fw_check(0);" name="firmware_check_enable" class="input" value="0" <% nvram_match("firmware_check_enable", "0", "checked"); %>><#checkbox_No#>
-						</td>
-					</tr>
+			<tr id="fwcheck_tr">
+				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(50,15);">Scheduled check for new firmware availability</a></th>
+				<td>
+					<input type="radio" onclick="toggle_fw_check(1);" name="firmware_check_enable" class="input" value="1" <% nvram_match("firmware_check_enable", "1", "checked"); %>><#checkbox_Yes#>
+					<input type="radio" onclick="toggle_fw_check(0);" name="firmware_check_enable" class="input" value="0" <% nvram_match("firmware_check_enable", "0", "checked"); %>><#checkbox_No#>
+				</td>
+			</tr>
 					<tr id="fwupgrade">
 						<th>Allow online upgrade firmware</th>
 						<td>
