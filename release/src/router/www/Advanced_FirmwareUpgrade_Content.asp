@@ -285,24 +285,24 @@ function initial(){
 		document.getElementById("fw_tr").style.display = "none";
 		document.getElementById("linkpage_div").style.display = "none";
 		document.getElementById("fwcheck_tr").style.display = "none";
-		document.getElementById("fwupgrade").style.display = "none";
-		document.getElementById("beta_firmware_path").style.display = "none";
+		document.getElementById("fwupgrade_tr").style.display = "none";
+		document.getElementById("beta_firmware_path_tr").style.display = "none";
 	}
 	else{
 		if(!live_update_support || !HTTPS_support){
 			document.getElementById("update_div").style.display = "none";
 			document.getElementById("fw_tr").style.display = "none";
 			document.getElementById("linkpage_div").style.display = "";
-			document.getElementById("fwupgrade").style.display = "none";
-			document.getElementById("beta_firmware_path").style.display = "none";
+			document.getElementById("fwupgrade_tr").style.display = "none";
+			document.getElementById("beta_firmware_path_tr").style.display = "none";
 			helplink = get_helplink();
 			document.getElementById("linkpage").href = helplink;
 		} 
 		else{
 			document.getElementById("update_div").style.display = "";
 			document.getElementById("linkpage_div").style.display = "none";
-			document.getElementById("fwupgrade").style.display = "";
-			document.getElementById("beta_firmware_path").style.display = "";
+			document.getElementById("fwupgrade_tr").style.display = "";
+			document.getElementById("beta_firmware_path_tr").style.display = "";
 			if (confirm_show.length > 0) {
 				if(amesh_support && (confirm_show == 0) && (isSwMode("rt") || isSwMode("ap"))) {
 					var interval = setInterval(function() {
@@ -1315,20 +1315,20 @@ function toggle_fw_beta(state) {
 					<input type="radio" onclick="toggle_fw_check(0);" name="firmware_check_enable" class="input" value="0" <% nvram_match("firmware_check_enable", "0", "checked"); %>><#checkbox_No#>
 				</td>
 			</tr>
-					<tr id="fwupgrade">
-						<th>Allow online upgrade firmware</th>
-						<td>
-							<input type="radio" onclick="toggle_fw_upgrade(1);" name="firmware_online_upgrade" class="input" value="1" <% nvram_match("firmware_online_upgrade", "1", "checked"); %>><#checkbox_Yes#>
-							<input type="radio" onclick="toggle_fw_upgrade(0);" name="firmware_online_upgrade" class="input" value="0" <% nvram_match("firmware_online_upgrade", "0", "checked"); %>><#checkbox_No#>
-						</td>
-					</tr>
-					<tr id="beta_firmware_path">
-						<th>Check for new beta firmware releases</th>
-						<td>
-							<input type="radio" onclick="toggle_fw_beta(1);" name="firmware_path" class="input" value="1" <% nvram_match("firmware_path", "1", "checked"); %>><#checkbox_Yes#>
-							<input type="radio" onclick="toggle_fw_beta(0);" name="firmware_path" class="input" value="0" <% nvram_match("firmware_path", "0", "checked"); %><% nvram_match("firmware_path", "", "checked"); %>><#checkbox_No#>
-						</td>
-					</tr>
+			<tr id="fwupgrade_tr">
+				<th>Allow online upgrade firmware</th>
+				<td>
+					<input type="radio" onclick="toggle_fw_upgrade(1);" name="firmware_online_upgrade" class="input" value="1" <% nvram_match("firmware_online_upgrade", "1", "checked"); %>><#checkbox_Yes#>
+					<input type="radio" onclick="toggle_fw_upgrade(0);" name="firmware_online_upgrade" class="input" value="0" <% nvram_match("firmware_online_upgrade", "0", "checked"); %>><#checkbox_No#>
+				</td>
+			</tr>
+			<tr id="beta_firmware_path_tr">
+				<th>Check for new beta firmware releases</th>
+				<td>
+					<input type="radio" onclick="toggle_fw_beta(1);" name="firmware_path" class="input" value="1" <% nvram_match("firmware_path", "1", "checked"); %>><#checkbox_Yes#>
+					<input type="radio" onclick="toggle_fw_beta(0);" name="firmware_path" class="input" value="0" <% nvram_match("firmware_path", "0", "checked"); %><% nvram_match("firmware_path", "", "checked"); %>><#checkbox_No#>
+				</td>
+			</tr>
 			<tr id="fw_version_tr">
 				<th><#FW_item2#></th>
 				<td>
