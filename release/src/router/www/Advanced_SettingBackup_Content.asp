@@ -29,6 +29,8 @@ function initial(){
 	show_menu();
 	if(ddns_enable == 1 && ddns_server == "WWW.ASUS.COM")
 		document.getElementById("transfer_ddns_field").style.display = "";
+	else
+		document.getElementById("transfer_ddns_field").style.display = "none";
 
 	if ('<% nvram_get("jffs2_enable"); %>' != '1') {
 		document.getElementById("jffsrestore").style.display = "none";
@@ -37,6 +39,10 @@ function initial(){
 
 	document.form.file.onchange = function() {
 		uploadSetting();
+	};
+
+	document.form.file2.onchange = function() {
+		uploadJFFS();
 	};
 
 	if(!bwdpi_support){
@@ -75,14 +81,16 @@ function restoreRule(_flag){
 
 function saveSetting(mode){
 	var flag = 0;
+	var remove_passwd = 0;
 	if(ddns_enable == 1 && ddns_server != "WWW.ASUS.COM"){
 		flag = 1;
 	}
 	else{	//ASUS DDNS
 		flag = document.getElementById("transfer_ddns").checked ? 1 : 0;
 	}
+	remove_passwd = document.getElementById("remove_passwd").checked ? 1 : 0;
 
-	location.href='Settings_'+productid+'.CFG?path=' + flag;
+	location.href='Settings_'+productid+'.CFG?path=' + flag+'&remove_passwd='+remove_passwd;
 }
 
 function uploadSetting(){
@@ -164,6 +172,9 @@ function detect_httpd(){
 }
 function selectSetting() {
 	document.form.file.click();
+}
+function selectJFFS() {
+	document.form.file2.click();
 }
 </script>
 </head>
@@ -267,12 +278,29 @@ function selectSetting() {
 												<th align="right" style="border-bottom:none">
 													<a class="hintstyle"  href="javascript:void(0);" onclick="openHint(19,2)"><#Setting_save_itemname#></a>
 												</th>
-												<td><input class="button_gen" onclick="saveSetting('Router');" type="button" value="<#CTL_onlysave#>" name="action2" /><span id="transfer_ddns_field" style="display:none;margin-left:5px;"><input id="transfer_ddns" type="checkbox"><#DDNS_transfer#></span>
+												<td>
+													<div style="float:left;display:table-cell">
+														<input class="button_gen" onclick="saveSetting('Router');" type="button" value="<#Setting_save_itemname#>" name="action2" />
+													</div>
+													<div style="display:table-cell">
+														<div id="remove_passwd_field" style="display:table-row">
+															<div style="float:left;margin-left:5px;">
+																<input id="remove_passwd" type="checkbox">
+															</div>
+															<div style="float:left;width:80%;">
+																<span><label for="remove_passwd"><#Setting_remove_passwd#></span></label>
+															</div>
+														</div>
+														<div id="transfer_ddns_field" style="display:table-row">
+															<div style="float:left;margin-left:5px;">
+																<input id="transfer_ddns" type="checkbox">
+															</div>
+															<div style="float:left;width:80%;">
+																<span><label for="transfer_ddns"><#DDNS_transfer#></span></label>
+															</div>
+														</div>
+													</div>
 												</td>
-											</tr>
-											<tr id="transfer_ddns_field" style="display:none">
-												<th align="right" style="border-top:none;height:10px;padding:0px">
-												<td colspan = "4" style="border:none;padding:0px;padding-left:14px"><span><input id="transfer_ddns" type="checkbox">Transfer ASUS DDNS name</span></td>
 											</tr>
 											<tr>
 												<th align="right">
@@ -317,10 +345,10 @@ function selectSetting() {
 														<table>
 															<tr>
 																<td style="border:0px">
-																	<input type="button" class="button_gen" onclick="uploadJFFS();" value="<#CTL_upload#>"/>
+																	<input type="button" class="button_gen" onclick="selectJFFS();" value="<#CTL_upload#>"/>
 																</td>
 																<td style="border:0px">
-																	<input id="jffsfile" type="file" name="file2" class="input" style="color:#FFCC00;"/>
+																	<input id="jffsfile" style="display:none;" type="file" name="file2" class="input" style="color:#FFCC00;"/>
 																	<span id="jffsstatus" style="display:none;"><img id="LoadingIcon" style="margin-left:5px;margin-right:5px;" src="/images/InternetScan.gif">Uploading, please wait...</span>
 																</td>
 															</tr>

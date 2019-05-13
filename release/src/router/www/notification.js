@@ -241,7 +241,8 @@ var notification = {
 			notification.upgrade = getUpdate_channel();
 			if(notification.upgrade != -1){
 				notification.array[1] = 'noti_upgrade';
-				notification.desc[1] = '<#ASUSGATE_note2#>';
+				var state_info = notification.upgrade ? webs_state_info_beta : webs_state_info;
+				notification.desc[1] = '<#ASUSGATE_note2#> ('+state_info.replace('_','.').replace('_0','').replace('_beta','-beta').replace('_alpha','-alpha')+')';
 				if(!live_update_support || !HTTPS_support){
 					notification.action_desc[1] = '<a id="link_to_downlodpage" target="_blank" href="'+get_helplink()+'" style="color:#FFCC00;"><#ASUSGATE_act_update#></a>';
 					notification.clickCallBack[1] = "";
@@ -407,6 +408,9 @@ var notification = {
 			tarObj1.onclick = this.notiClick;
 			tarObj.className = "notification_on";
 			tarObj1.className = "notification_on1";
+		} else {
+			tarObj1.onclick = null;
+			tarObj1.className = "notification_off";
 		}
 
 		if(this.flash == "on" && cookie.get("notification_history") != [notification.upgrade, notification.wifi_2g ,notification.wifi_5g ,notification.ftp ,notification.samba ,notification.loss_sync ,notification.experience_FB ,notification.notif_hint, notification.mobile_traffic, notification.send_debug_log, notification.sim_record, notification.pppoe_tw, notification.pppoe_tw_static, notification.ie_legacy].join()){
