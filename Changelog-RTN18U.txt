@@ -15,7 +15,7 @@ CAUTION:
        384.5-beta2 due to spwenc.o source replacement. Please do
        not restore the configuration exported from these versions.
 
-384.10-beta1
+384.10-beta2
   Changelog for RT-N18U:
   - NEW: Merge GPL 384_45713 from asuswrt-merlin.
   - CHANGED: Moved online upgrade option to firmware upgrade page
@@ -32,6 +32,25 @@ CAUTION:
              the new firmware notification popup.
 
   Changelog from Asuswrt-Merlin:
+  - NEW: Added OpenSSL 1.1.1b in parallel to 1.0.2.  Some services
+         like AiCloud are still linked against 1.0.2 because they
+         would require Asus to recompile them against 1.1.1.
+
+         Main services that currently use OpenSSL 1.1.1:
+         httpd (webui), OpenVPN, wget, net-snmp, Tor, inadyn,
+         vsftpd, avahi.
+
+         Models that lack AES acceleration will prioritize the use
+         of CHACHA20 over AES-256-GCM, for a small performance
+         improvement (for instance with the webui).
+
+         Note that OpenVPN 2.4.7's support is still limited.
+         TLS 1.3 is supported, but CHACHA20 support is
+         only expected with OpenVPN 2.5.0.
+
+         The 1.0.2 userspace tool is still named "openssl", while
+         the 1.1.x version is named "openssl11".
+
   - NEW: Added DNS Privacy feature, with support for
          DNS-over-TLS (also known as DoT).
          You can configure it on the WAN -> Internet Connection
@@ -78,6 +97,8 @@ CAUTION:
   - CHANGED: Replaced Network Analysis and Netstat pages (under
              Network Tools) with new versions based on Asus's
              Netool daemon (RT-AC86U, RT-N18U)
+  - FIXED: CVE-2019-1543 issue with Chacha20-poly1305 in
+           OpenSSL 1.1 (themiron)
   - FIXED: Client count on the Sysinfo page was missing
            Guest clients
   - FIXED: Miniupnpd sometimes sending ssdp notifies to
