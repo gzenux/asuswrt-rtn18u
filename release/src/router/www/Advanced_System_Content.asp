@@ -1975,6 +1975,12 @@ function pullPingTargetList(obj){
 						</div>
 					</td>
 				</tr>
+				<tr>
+					<th>Secondary NTP Server</th>
+					<td>
+						<input type="text" maxlength="31" class="input_32_table" name="ntp_server1" value="<% nvram_get("ntp_server1"); %>" onKeyPress="return validator.isString(this, event);" autocorrect="off" autocapitalize="off">
+					</td>
+				</tr>
 				<tr id="network_monitor_tr">
 					<th><#Network_Monitoring#></th>
 					<td>

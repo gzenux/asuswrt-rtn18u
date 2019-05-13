@@ -2532,10 +2532,6 @@ define RouterOptions
 		sed -i "/RTCONFIG_DNSFILTER/d" $(1); \
 		echo "RTCONFIG_DNSFILTER=y" >>$(1); \
 	fi; \
-	if [ "$(OPENSSL11)" = "y" ]; then \
-		sed -i "/RTCONFIG_OPENSSL11/d" $(1); \
-		echo "RTCONFIG_OPENSSL11=y" >>$(1); \
-	fi; \
 	if [ "$(NTPD)" = "y" ]; then \
 		sed -i "/RTCONFIG_NTPD/d" $(1); \
 		echo "RTCONFIG_NTPD=y" >>$(1); \

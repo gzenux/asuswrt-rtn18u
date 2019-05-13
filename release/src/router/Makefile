@@ -1247,7 +1247,7 @@ ifeq ($(RTCONFIG_OPENSSL11),y)
 obj-$(RTCONFIG_OPENSSL11) += openssl-1.1.x
 OPENSSLDIR=openssl-1.1.x
 else
-OPENSSLDIR=openssl
+OPENSSLDIR=openssl-1.0
 endif
 
 ifneq ($(HND_ROUTER),y)
@@ -7267,7 +7267,7 @@ portmap-install:
 
 openssl-1.1.x/Makefile:
 	cd openssl-1.1.x && \
-	./Configure $(HOSTCONFIG) --prefix=/usr --openssldir=/etc --cross-compile-prefix=' ' \
+	./Configure $(HOSTCONFIG) --prefix=/usr --openssldir=/etc/ssl --cross-compile-prefix=' ' \
 	-O2 -ffunction-sections -fdata-sections -Wl,--gc-sections \
 	shared $(OPENSSL_CIPHERS) no-err no-async --api=1.0.0 \
 	no-aria no-sm2 no-sm3 no-sm4 \

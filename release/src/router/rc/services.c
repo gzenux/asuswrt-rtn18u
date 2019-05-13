@@ -8419,6 +8419,8 @@ stop_services(void)
 #if defined(RTCONFIG_AMAS)
 	stop_amas_lib();
 #endif
+	stop_ntpd();
+
 #ifdef RTCONFIG_ADTBW
 	stop_adtbw();
 #endif
