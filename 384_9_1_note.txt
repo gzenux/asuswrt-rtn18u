@@ -17,8 +17,6 @@ CAUTION:
 
 384.9_1
   Changelog for RT-N18U:
-  - CHANGED: Do not restart entire network on a simple DHCP static
-             lease change on networkmap (backporting)
   - CHANGED: Do not restart router's time service when issuing a
              WoL request (backporting)
   - CHANGED: Minor webui layout/rendering updates (backporting)
@@ -28,7 +26,9 @@ CAUTION:
           (backporting)
 
   Changelog from Asuswrt-Merlin:
-  - FIXED: Reboot scheduler would sometime get stuck or corrupt
+  - CHANGED: Do not restart whole network whenever changing an IP
+             reservation on the Networkmap card.
+  - FIXED: Reboot scheduler would sometime get stuck, or corrupt
            plugged USB drives.  Now doing a more thorough
            shutdown of services, should hopefully make it
            more reliable.
