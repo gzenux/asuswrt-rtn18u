@@ -15,7 +15,7 @@ CAUTION:
        384.5-beta2 due to spwenc.o source replacement. Please do
        not restore the configuration exported from these versions.
 
-384.10-alpha1
+384.10-beta1
   Changelog for RT-N18U:
   - NEW: Merge GPL 384_45713 from asuswrt-merlin.
   - CHANGED: Moved online upgrade option to firmware upgrade page
@@ -82,7 +82,6 @@ CAUTION:
            Guest clients
   - FIXED: Miniupnpd sometimes sending ssdp notifies to
            the wrong interface (themiron)
-  - FIXED: udpxy not working when using the Movistar IPTV profile.
 
 
 384.9_1
