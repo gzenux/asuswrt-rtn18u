@@ -132,8 +132,15 @@ function manifest_parse()
 	if(gFwObj.beta.firmver == null || gFwObj.beta.buildno == null || gFwObj.beta.firmver == "0.0")
 		gFwObj.beta = null; // reset invalid beta release
 
-	if(gFwObj.stable != null && gFwObj.beta != null && (parseFloat(gFwObj.beta.firmver) <= parseFloat(gFwObj.stable.firmver)))
-		gFwObj.beta = null;
+	if(gFwObj.stable != null && gFwObj.beta != null) {
+		var stable_firmver = gFwObj.stable.firmver.split('.');
+		var beta_firmver = gFwObj.beta.firmver.split('.');
+		if(typeof stable_firmver[0] !== "undefined" && typeof stable_firmver[1] !== "undefined" &&
+		   typeof beta_firmver[0] !== "undefined" && typeof beta_firmver[1] !== "undefined") {
+			if(parseInt(beta_firmver[0]) <= parseInt(stable_firmver[0]) && parseInt(beta_firmver[1]) <= parseInt(stable_firmver[1]))
+				gFwObj.beta = null;
+		}
+	}
 
 	return (gFwObj.stable != null || gFwObj.beta != null);
 }
