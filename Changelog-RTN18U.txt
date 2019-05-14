@@ -65,6 +65,8 @@ CAUTION:
          as service-event, but is a non-blocking script.
   - NEW: Added sqlite3 CLI command, to allow script authors to
          create/manage their own sqlite3 database
+  - NEW: Implemented source/destination IP filtering
+         for the Netool version of Netstat web page.
   - UPDATED: Nano 4.0.
   - UPDATED: Curl 7.64.1.
   - UPDATED: Dropbear 2019.78.
@@ -97,6 +99,10 @@ CAUTION:
   - CHANGED: Replaced Network Analysis and Netstat pages (under
              Network Tools) with new versions based on Asus's
              Netool daemon (RT-AC86U, RT-N18U)
+  - CHANGED: Backported multiple fixes and improvements
+             for ntpd from upstream, improving handling
+             of failed server hostname resolution, and better
+             clock sync discipline.
   - FIXED: CVE-2019-1543 issue with Chacha20-poly1305 in
            OpenSSL 1.1 (themiron)
   - FIXED: Client count on the Sysinfo page was missing
