@@ -3,15 +3,12 @@ var base_url = "";
 var manifest_url = base_url + "manifest.txt";
 var gFwObj = { model: "RT-N18U", stable: null, beta: null };
 
-// release note used
-var gStableLoadStatus = -1;
-var gBetaLoadStatus = -1;
-
 $(function()
 {
 	$("#manifest_txt").load(manifest_url , manifest_get);
 	$("#release_stable_nonote_warning").attr('style', 'display:none');
 	$("#release_beta_nonote_warning").attr('style', 'display:none');
+	$("#install_note_accordion").accordion({collapsible: true, active: false});
 });
 
 function manifest_get(response, status, xhr)
@@ -30,16 +27,11 @@ function manifest_get(response, status, xhr)
 				gFwObj.stable.note_url = (base_url != "") ? base_url + "/" : "";
 				gFwObj.stable.note_url += gFwObj.stable.firmver.replace(".", "_") + "_" + gFwObj.stable.buildno + "_note.txt";
 
-				gStableLoadStatus = 0;
 				$("#release_note_stable_txt").html("Loading...");
 				$("#release_note_stable_txt").load(gFwObj.stable.note_url , function (response, status, xhr) {
 					if (status == "success") {
-						gStableLoadStatus = 1;
-						if(gBetaLoadStatus == 1)
-							$("#release_note_beta").accordion({collapsible: true, active: false});
-						$("#release_note_stable").accordion({collapsible: true, active: 0});
+						$("#release_note_stable").accordion({collapsible: true, active: false});
 					} else {
-						gStableLoadStatus = -1;
 						$("#release_note_stable_txt").attr('style', 'display:none');
 						$("#release_stable_nonote_warning").attr('style', 'display:inline');
 						$("#release_note_stable").accordion({collapsible: true, active: 0});
@@ -63,18 +55,11 @@ function manifest_get(response, status, xhr)
 				gFwObj.beta.note_url = (base_url != "") ? base_url + "/" : "";
 				gFwObj.beta.note_url += gFwObj.beta.firmver.replace(".", "_") + "_" + gFwObj.beta.buildno + "_note.txt";
 
-				gBetaLoadStatus = 0;
 				$("#release_note_beta_txt").html("Loading...");
 				$("#release_note_beta_txt").load(gFwObj.beta.note_url , function (response, status, xhr) {
 					if (status == "success") {
-						gBetaLoadStatus = 1;
-						if(gStableLoadStatus == 1) {
-							$("#release_note_beta").accordion({collapsible: true, active: false});
-						} else if(gStableLoadStatus == -1) {
-							$("#release_note_beta").accordion({collapsible: true, active: 0});
-						}
+						$("#release_note_beta").accordion({collapsible: true, active: false});
 					} else {
-						gBetaLoadStatus = -1;
 						$("#release_note_beta_txt").attr('style', 'display:none');
 						$("#release_beta_nonote_warning").attr('style', 'display:inline');
 						$("#release_note_beta").accordion({collapsible: true, active: 0});

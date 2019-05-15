@@ -2,6 +2,17 @@ body {
     font: 16px/1.4 "proxima-nova", "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
 
+a {
+    color: #329894;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a:hover {
+    /*font-style: italic;*/
+    text-decoration: underline;
+}
+
 .container {
     margin: 0 auto;
     width: 800px;
@@ -85,7 +96,7 @@ body {
     padding: 30px 0;
 }
 
-.subtagline {
+.subtagline, #install_note_accordion .subtagline {
     color: #329894;
     font-size: 24px;
     font-weight: 600;
