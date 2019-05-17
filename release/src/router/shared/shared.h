@@ -2283,6 +2283,13 @@ static inline int is_m2ssd_port(__attribute__ ((unused)) char *usb_node) { retur
 
 #ifdef RTCONFIG_BCM5301X_TRAFFIC_MONITOR
 
+#ifdef RTN18U
+#define MIB_P0_PAGE 0x20	/* port 0 */
+#define MIB_RX_REG 0x88
+#define MIB_TX_REG 0x00
+#define CPU_PORT "5"
+#endif
+
 #if defined(RTN18U) || defined(RTAC56U) || defined(RTAC56S) || defined(RTAC68U) || defined(RTAC3200) || defined(DSL_AC68U)
 #define WAN0DEV "vlan2"
 #endif
