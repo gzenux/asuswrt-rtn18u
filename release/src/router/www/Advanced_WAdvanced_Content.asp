@@ -743,7 +743,7 @@ function applyRule(){
 			document.form.action_wait.value = "5";
 		}
 
-		if(Bcmwifi_support &&  wl_txpower_orig != document.form.wl_txpower.value){
+		if(no_finiwl_support &&  wl_txpower_orig != document.form.wl_txpower.value){
 			FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");
 		}
 
