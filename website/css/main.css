@@ -3,13 +3,10 @@ body {
 }
 
 a {
-    color: #329894;
-    font-weight: bold;
     text-decoration: none;
 }
 
 a:hover {
-    /*font-style: italic;*/
     text-decoration: underline;
 }
 
@@ -113,9 +110,18 @@ a:hover {
 }
 
 .tbl_fw_num {
+    font-weight: bold;
+}
+
+.tbl_fw_num, .tbl_fw_chksum {
     color: #ff0;
     padding: 0 0 0 10px;
     text-align: left;
+}
+
+.tbl_fw_chksum a {
+    color: #fff;
+    font-style: italic;
 }
 
 .features {
@@ -132,9 +138,13 @@ a:hover {
     padding-top: 50px;
 }
 
+.main a {
+    color: #329894;
+    font-weight: bold;
+}
+
 .main .cta a {
     border: 3px solid;
-    color: #329894;
 }
 
 .main .cta a:hover {

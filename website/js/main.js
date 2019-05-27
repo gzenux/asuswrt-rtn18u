@@ -40,11 +40,13 @@ function manifest_get(response, status, xhr)
 				$("#release_note_stable_version").html(gFwObj.stable.trx_name);
 
 				$("#txt_stable_version").html(gFwObj.stable.trx_name);
+				$("#txt_stable_checksum").attr({target: "_blank", href: gFwObj.stable.trx_url + ".sha256"});
 				$(".cta > .stable_hidden").attr("href", gFwObj.stable.trx_url);
 				$(".stable_hidden").removeClass("stable_hidden");
 			} else {
 				// stable release not available
 				$("#txt_stable_version").html("N/A");
+				$("#txt_stable_checksum").hide();
 			}
 			if(gFwObj.beta != null) {
 				str = gFwObj.beta.firmver;
@@ -68,11 +70,13 @@ function manifest_get(response, status, xhr)
 				$("#release_note_beta_version").html(gFwObj.beta.trx_name);
 
 				$("#txt_beta_version").html(gFwObj.beta.trx_name);
+				$("#txt_beta_checksum").attr({target: "_blank", href: gFwObj.beta.trx_url + ".sha256"});
 				$(".cta > .beta_hidden").attr("href", gFwObj.beta.trx_url);
 				$(".beta_hidden").removeClass("beta_hidden");
 			} else {
 				// beta release not available
 				$("#txt_beta_version").html("N/A");
+				$("#txt_beta_checksum").hide();
 			}
 		}
 	}
