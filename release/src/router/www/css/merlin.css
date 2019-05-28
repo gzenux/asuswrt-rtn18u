@@ -1,0 +1,59 @@
+#merlin_logo {
+  margin-top: 0px;
+  margin-left: 25px;
+  width: 160px;
+  height: 52px;
+  float: left;
+  text-align: left;
+}
+
+#merlin_logo:hover {
+  cursor:pointer;
+  cursor:hand;
+}
+
+#merlin_logo img {
+  border: 0;
+}
+
+#merlin_url {
+  z-index: 1;
+  margin: 0px;
+  padding: 0px;
+  width: 200px;
+  font-size: 1em;
+  background: #3A4042;
+  list-style: none;
+  text-align: center;
+  position: relative;
+  float: left;
+  text-shadow: 1px 1px 0px black;
+  box-shadow: 5px 5px 8px 0px black;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+}
+
+#merlin_url li {
+  padding: 0px;
+}
+
+#merlin_url span {
+  display: block;
+  padding: 5px;
+}
+
+#merlin_url a {
+  color: #fff;
+  display: block;
+  padding: 5px;
+  text-decoration: none;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+}
+
+#merlin_url a:hover {
+  text-shadow: none;
+  background: #376C9B;
+}

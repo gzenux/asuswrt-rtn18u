@@ -1,7 +1,9 @@
 document.write('<script type="text/javascript" src="/require/require.min.js"></script>');
+document.write('<script type="text/javascript" src="/js/merlin.js"></script>');
 document.write('<script type="text/javascript" src="/js/support_site.js"></script>');
 document.write('<script type="text/javascript" src="/notification.js"></script>');
 document.write('<link rel="stylesheet" type="text/css" href="/notification.css"></link>');
+document.write('<link rel="stylesheet" type="text/css" href="/css/merlin.css"></link>');
 
 /* String splice function */
 String.prototype.splice = function( idx, rem, s ) {
@@ -800,7 +802,8 @@ function show_banner(L3){// L3 = The third Level of Menu
 	else{
 		banner_code +='<div class="banner1" align="center"><img src="images/New_ui/asustitle.png" width="218" height="54" align="left">\n';
 		banner_code +='<div style="margin-top:13px;margin-left:-90px;*margin-top:0px;*margin-left:0px;" align="center"><span id="modelName_top" onclick="this.focus();" class="modelName_top"><#Web_Title2#></span></div>';
-		banner_code +='<div style="margin-left:25px;width:160px;height:52px;margin-top:0px;float:left;" align="left"><span><a href="https://asuswrt.lostrealm.ca/" target="_blank"><img src="images/merlin-logo.png" style="border: 0;"></span></div>';
+		//banner_code +='<div style="margin-left:25px;width:160px;height:52px;margin-top:0px;float:left;" align="left"><span><a href="https://asuswrt.lostrealm.ca/" target="_blank"><img src="images/merlin-logo.png" style="border: 0;"></span></div>';
+		banner_code += merlin_logo();
 
 		// logout, reboot
 		banner_code +='<a href="javascript:logout();"><div style="margin-top:13px;margin-left:25px; *width:136px;" class="titlebtn" align="center"><span><#t1Logout#></span></div></a>\n';
