@@ -45,7 +45,7 @@ bool dbghdr( int level, const char *location, const char *func);
  * Redefine DEBUGLEVEL because so we don't have to change every source file
  * that *unnecessarily* references it.
  */
-#define DEBUGLEVEL 0
+#define DEBUGLEVEL DEBUGLEVEL_CLASS[DBGC_ALL]
 
 /*
  * Define all new debug classes here. A class is represented by an entry in

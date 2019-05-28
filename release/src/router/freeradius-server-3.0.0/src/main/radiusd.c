@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id$
+ * Version:	$Id: 8e346c98244c23eb8baa71c92a3d7d199acccd6c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 8e346c98244c23eb8baa71c92a3d7d199acccd6c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

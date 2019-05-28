@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 6a94d92423ca0a62ba6c59205dbc5d538ed32c9d $
  * @file rlm_smsotp.c
  * @brief Supports OTP authentication using SMS.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2009  Siemens AG, Holger Wolff holger.wolff@siemens.com
  */
-RCSID("$Id$")
+RCSID("$Id: 6a94d92423ca0a62ba6c59205dbc5d538ed32c9d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

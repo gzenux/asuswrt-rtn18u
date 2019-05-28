@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 6e3470bbcb53f023b9d0b66873df02017bf6fb19 $
  * @file rlm_example.c
  * @brief Example module code.
  *
  * @copyright 2013 The FreeRADIUS server project
  * @copyright 2013 your name \<your address\>
  */
-RCSID("$Id$")
+RCSID("$Id: 6e3470bbcb53f023b9d0b66873df02017bf6fb19 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

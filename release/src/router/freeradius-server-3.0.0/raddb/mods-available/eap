@@ -2,7 +2,7 @@
 ##
 ##  eap.conf -- Configuration for EAP types (PEAP, TTLS, etc.)
 ##
-##	$Id$
+##	$Id: 4ad2c5d97f9b4555dc1707c8d4dcc94f2d24c032 $
 
 #######################################################################
 #

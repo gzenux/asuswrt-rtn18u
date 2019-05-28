@@ -134,7 +134,7 @@ typedef struct _WLANCONFIG_LIST {
          unsigned int chan;
          char txrate[6];
          char rxrate[6];
-         unsigned int rssi;
+         int rssi;
          unsigned int idle;
          unsigned int txseq;
          unsigned int rcseq;
@@ -270,9 +270,11 @@ extern int sched_getaffinity (__pid_t __pid, size_t __cpusetsize,
 extern int Set_RAST_CPU(void);
 
 /* MAC list modes from src-rt/include/wlioctl.h (BCM platform's header) */
+#ifndef CONFIG_BCMWL5
 #define WLC_MACMODE_DISABLED    0       /* MAC list disabled */
 #define WLC_MACMODE_DENY        2      /* Deny specified (i.e. allow unspecified) */
 #define WLC_MACMODE_ALLOW       1      /* Allow specified (i.e. deny unspecified) */
+#endif
 
 /* For ioctls that take a list of MAC addresses from src-rt/include/wlioctl.h (BCM platform's header) */
 

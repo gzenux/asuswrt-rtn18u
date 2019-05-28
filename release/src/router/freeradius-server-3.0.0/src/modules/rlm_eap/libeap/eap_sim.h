@@ -1,7 +1,7 @@
 /*
  * eap_sim.h    Header file containing the EAP-SIM types
  *
- * Version:     $Id$
+ * Version:     $Id: 68e2cb8c2175b2dffaf4fc7cd4de627c3a75fccd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_SIM_H
 #define _EAP_SIM_H
 
-RCSIDH(eap_sim_h, "$Id$")
+RCSIDH(eap_sim_h, "$Id: 68e2cb8c2175b2dffaf4fc7cd4de627c3a75fccd $")
 
 #include "eap_types.h"
 

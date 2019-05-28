@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: 63fc03e4aeeb9d03afdfa3d12d094fee35726971 $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2013  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id$")
+RCSIDH(other_h, "$Id: 63fc03e4aeeb9d03afdfa3d12d094fee35726971 $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"

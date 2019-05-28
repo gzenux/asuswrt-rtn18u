@@ -89,17 +89,21 @@ int RSA_padding_add_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
     }
 
     if (PKCS1_MGF1(dbmask, emlen - mdlen, seed, mdlen, mgf1md) < 0)
-        return 0;
+        goto err;
     for (i = 0; i < emlen - mdlen; i++)
         db[i] ^= dbmask[i];
 
     if (PKCS1_MGF1(seedmask, mdlen, db, emlen - mdlen, mgf1md) < 0)
-        return 0;
+        goto err;
     for (i = 0; i < mdlen; i++)
         seed[i] ^= seedmask[i];
 
     OPENSSL_free(dbmask);
     return 1;
+
+ err:
+    OPENSSL_free(dbmask);
+    return 0;
 }
 
 int RSA_padding_check_PKCS1_OAEP(unsigned char *to, int tlen,
@@ -116,8 +120,8 @@ int RSA_padding_check_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
                                       int plen, const EVP_MD *md,
                                       const EVP_MD *mgf1md)
 {
-    int i, dblen, mlen = -1, one_index = 0, msg_index;
-    unsigned int good, found_one_byte;
+    int i, dblen = 0, mlen = -1, one_index = 0, msg_index;
+    unsigned int good = 0, found_one_byte, mask;
     const unsigned char *maskedseed, *maskeddb;
     /*
      * |em| is the encoded message, zero-padded to exactly |num| bytes: em =
@@ -144,37 +148,49 @@ int RSA_padding_check_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
      * the ciphertext, see PKCS #1 v2.2, section 7.1.2.
      * This does not leak any side-channel information.
      */
-    if (num < flen || num < 2 * mdlen + 2)
-        goto decoding_err;
+    if (num < flen || num < 2 * mdlen + 2) {
+        RSAerr(RSA_F_RSA_PADDING_CHECK_PKCS1_OAEP_MGF1,
+               RSA_R_OAEP_DECODING_ERROR);
+        return -1;
+    }
 
     dblen = num - mdlen - 1;
     db = OPENSSL_malloc(dblen);
-    em = OPENSSL_malloc(num);
-    if (db == NULL || em == NULL) {
+    if (db == NULL) {
         RSAerr(RSA_F_RSA_PADDING_CHECK_PKCS1_OAEP_MGF1, ERR_R_MALLOC_FAILURE);
         goto cleanup;
     }
 
+    em = OPENSSL_malloc(num);
+    if (em == NULL) {
+        RSAerr(RSA_F_RSA_PADDING_CHECK_PKCS1_OAEP_MGF1,
+               ERR_R_MALLOC_FAILURE);
+        goto cleanup;
+    }
+
     /*
-     * Always do this zero-padding copy (even when num == flen) to avoid
-     * leaking that information. The copy still leaks some side-channel
-     * information, but it's impossible to have a fixed  memory access
-     * pattern since we can't read out of the bounds of |from|.
-     *
-     * TODO(emilia): Consider porting BN_bn2bin_padded from BoringSSL.
+     * Caller is encouraged to pass zero-padded message created with
+     * BN_bn2binpad. Trouble is that since we can't read out of |from|'s
+     * bounds, it's impossible to have an invariant memory access pattern
+     * in case |from| was not zero-padded in advance.
      */
-    memset(em, 0, num);
-    memcpy(em + num - flen, from, flen);
+    for (from += flen, em += num, i = 0; i < num; i++) {
+        mask = ~constant_time_is_zero(flen);
+        flen -= 1 & mask;
+        from -= 1 & mask;
+        *--em = *from & mask;
+    }
+    from = em;
 
     /*
      * The first byte must be zero, however we must not leak if this is
      * true. See James H. Manger, "A Chosen Ciphertext  Attack on RSA
      * Optimal Asymmetric Encryption Padding (OAEP) [...]", CRYPTO 2001).
      */
-    good = constant_time_is_zero(em[0]);
+    good = constant_time_is_zero(from[0]);
 
-    maskedseed = em + 1;
-    maskeddb = em + 1 + mdlen;
+    maskedseed = from + 1;
+    maskeddb = from + 1 + mdlen;
 
     if (PKCS1_MGF1(seed, mdlen, maskeddb, dblen, mgf1md))
         goto cleanup;
@@ -211,33 +227,50 @@ int RSA_padding_check_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
      * so plaintext-awareness ensures timing side-channels are no longer a
      * concern.
      */
-    if (!good)
-        goto decoding_err;
-
     msg_index = one_index + 1;
     mlen = dblen - msg_index;
 
-    if (tlen < mlen) {
-        RSAerr(RSA_F_RSA_PADDING_CHECK_PKCS1_OAEP_MGF1, RSA_R_DATA_TOO_LARGE);
-        mlen = -1;
-    } else {
-        memcpy(to, db + msg_index, mlen);
-        goto cleanup;
+    /*
+     * For good measure, do this check in constant tine as well.
+     */
+    good &= constant_time_ge(tlen, mlen);
+
+    /*
+     * Even though we can't fake result's length, we can pretend copying
+     * |tlen| bytes where |mlen| bytes would be real. Last |tlen| of |dblen|
+     * bytes are viewed as circular buffer with start at |tlen|-|mlen'|,
+     * where |mlen'| is "saturated" |mlen| value. Deducing information
+     * about failure or |mlen| would take attacker's ability to observe
+     * memory access pattern with byte granularity *as it occurs*. It
+     * should be noted that failure is indistinguishable from normal
+     * operation if |tlen| is fixed by protocol.
+     */
+    tlen = constant_time_select_int(constant_time_lt(dblen, tlen), dblen, tlen);
+    msg_index = constant_time_select_int(good, msg_index, dblen - tlen);
+    mlen = dblen - msg_index;
+    for (from = db + msg_index, mask = good, i = 0; i < tlen; i++) {
+        unsigned int equals = constant_time_eq(i, mlen);
+
+        from -= dblen & equals; /* if (i == dblen) rewind   */
+        mask &= mask ^ equals;  /* if (i == dblen) mask = 0 */
+        to[i] = constant_time_select_8(mask, from[i], to[i]);
     }
 
- decoding_err:
     /*
      * To avoid chosen ciphertext attacks, the error message should not
      * reveal which kind of decoding error happened.
      */
     RSAerr(RSA_F_RSA_PADDING_CHECK_PKCS1_OAEP_MGF1,
            RSA_R_OAEP_DECODING_ERROR);
+    err_clear_last_constant_time(1 & good);
  cleanup:
-    if (db != NULL)
-        OPENSSL_free(db);
-    if (em != NULL)
-        OPENSSL_free(em);
-    return mlen;
+    OPENSSL_cleanse(seed, sizeof(seed));
+    OPENSSL_cleanse(db, dblen);
+    OPENSSL_free(db);
+    OPENSSL_cleanse(em, num);
+    OPENSSL_free(em);
+
+    return constant_time_select_int(good, mlen, -1);
 }
 
 int PKCS1_MGF1(unsigned char *mask, long len,

@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 81feeab765a9062f9223410f78ded4606d34cc05 $
  * @file rlm_otp.c
  * @brief One time password implementation.
  *
@@ -23,7 +23,7 @@
  * @copyright 2005-2007 TRI-D Systems, Inc.
  * @copyright 2001,2002  Google, Inc.
  */
-RCSID("$Id$")
+RCSID("$Id: 81feeab765a9062f9223410f78ded4606d34cc05 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

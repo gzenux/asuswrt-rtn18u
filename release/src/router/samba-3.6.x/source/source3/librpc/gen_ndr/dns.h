@@ -236,7 +236,7 @@ struct dns_res_rec {
 	uint16_t length;
 	union dns_rdata rdata;/* [switch_is(rr_type)] */
 	DATA_BLOB unexpected;
-}/* [flag(LIBNDR_PRINT_ARRAY_HEX|LIBNDR_FLAG_NOALIGN),nopull,nopush] */;
+}/* [nopush,flag(LIBNDR_PRINT_ARRAY_HEX|LIBNDR_FLAG_NOALIGN),nopull] */;
 
 struct dns_name_packet {
 	uint16_t id;

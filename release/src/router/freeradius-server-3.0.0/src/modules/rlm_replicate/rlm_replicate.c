@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: e4363fd1ba717ece50b09e9e7fd1d785cf87103a $
  * @file rlm_replicate.c
  * @brief Duplicate RADIUS requests.
  *
  * @copyright 2011-2013  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: e4363fd1ba717ece50b09e9e7fd1d785cf87103a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

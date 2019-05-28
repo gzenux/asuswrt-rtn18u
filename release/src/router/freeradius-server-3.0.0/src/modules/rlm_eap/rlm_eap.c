@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 03ce13a88e2e14e89402eb7bebb4039ea350ffa9 $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -22,7 +22,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id$")
+RCSID("$Id: 03ce13a88e2e14e89402eb7bebb4039ea350ffa9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: ecbf9ab744e92d44d588c24a3e83aacb6acd7dc8 $
  * @file clients.c
  * @brief LDAP module dynamic clients.
  *

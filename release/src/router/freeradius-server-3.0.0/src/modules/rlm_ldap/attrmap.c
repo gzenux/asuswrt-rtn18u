@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 66d554120bd87a3bf59b608fbfa2ccf0bb2880af $
  * @file ldap.c
  * @brief Functions for mapping between LDAP and FreeRADIUS attributes.
  *

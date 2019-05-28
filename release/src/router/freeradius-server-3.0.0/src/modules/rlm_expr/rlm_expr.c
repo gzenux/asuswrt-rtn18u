@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 5c55035bb78f009f4d6a8d94f07a34ef49bec016 $
  * @file rlm_expr.c
  * @brief Register many xlat expansions including the expr expansion.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id$")
+RCSID("$Id: 5c55035bb78f009f4d6a8d94f07a34ef49bec016 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>

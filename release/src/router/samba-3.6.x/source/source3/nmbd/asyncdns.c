@@ -85,7 +85,7 @@ static void asyncdns_process(void)
 	struct query_record r;
 	unstring qname;
 
-	DEBUGLEVEL_CLASS[DBGC_ALL] = -1;
+	DEBUGLEVEL = -1;
 
 	while (1) {
 		NTSTATUS status;

@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: a40ee88d02346671ae85deba0bd8b013aebb7d9b $
  * @file rlm_sqlcounter.c
  * @brief Tracks data usage and other counters using SQL.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2001  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id$")
+RCSID("$Id: a40ee88d02346671ae85deba0bd8b013aebb7d9b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

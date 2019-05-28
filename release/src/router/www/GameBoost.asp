@@ -15,6 +15,9 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/form.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/asus_eula.js"></script>
 <style>
 body{
 	margin: 0;
@@ -88,22 +91,58 @@ body{
 var ctf_disable = '<% nvram_get("ctf_disable"); %>';
 var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';
 var bwdpi_app_rulelist = "<% nvram_get("bwdpi_app_rulelist"); %>".replace(/&#60/g, "<");
+var redeem_code = [httpApi.hookGet("get_redeem_code")][0];
 function initial(){
 	show_menu();
+	//wtfast
+	if(wtfast_support){
+		document.getElementById("wtfast_title").style.display = "";
+		document.getElementById("wtfast_line").style.display = "";
+		document.getElementById("wtfast_desc").style.display = "";
+	}
+	//wtf_redeem
+	if(wtf_redeem_support){
+		document.getElementById("wtf_redeem_title").style.display = "";
+		document.getElementById("wtf_redeem_line").style.display = "";
+		document.getElementById("wtf_redeem_desc").style.display = "";
+		//document.getElementById("wtf_redeem_key").innerHTML = httpApi.hookGet("get_redeem_code");
+		document.getElementById("redeem_btn").onclick = function(){
+			window.open('https://www.wtfast.com/Account/Create?partnercode='+redeem_code);
+		}
+	}
+	//Game_Boost_lan
 	if((document.form.qos_enable.value == '1') && (document.form.qos_type.value == '1') && (bwdpi_app_rulelist.indexOf('game') != -1)){
 		document.getElementById("game_boost_enable").checked = true;
 	}
 	else{
 		document.getElementById("game_boost_enable").checked = false;
 	}
+	//Game_Boost_AiProtection
+	if(bwdpi_support){
+		document.getElementById("AiProtection_title").style.display = "";
+		document.getElementById("AiProtection_line").style.display = "";
+		document.getElementById("AiProtection_desc").style.display = "";
+	}
 
+	if(!ASUS_EULA.status("tm"))
+		ASUS_EULA.config(eula_confirm, cancel);
 }
-function check_game_boost(){
+
+function sign_eula(){
 	if(document.getElementById("game_boost_enable").checked){
-		if(!reset_wan_to_fo(document.form, 1)) {
+		if(!reset_wan_to_fo.check_status()) {
 			document.getElementById("game_boost_enable").checked = false;
 			return false;
 		}
+	}
+
+	if(ASUS_EULA.check("tm")){
+		check_game_boost();
+	}
+}
+
+function check_game_boost(){
+	if(document.getElementById("game_boost_enable").checked){
 		document.form.qos_enable.value = '1';
 		document.form.qos_type.value = '1';
 		document.form.bwdpi_app_rulelist.disabled = false;
@@ -129,21 +168,11 @@ function check_game_boost(){
 			}
 		}
 	}
-	
+
+	if(reset_wan_to_fo.change_status)
+		reset_wan_to_fo.change_wan_mode(document.form);
+
 	document.form.submit();
-}
-
-function show_tm_eula(){
-	$.get("tm_eula.htm", function(data){
-		document.getElementById('agreement_panel').innerHTML= data;
-		var url = "https://www.asus.com/Microsite/networks/Trend_Micro_EULA/";
-		$("#eula_url").attr("href",url);
-		adjust_TM_eula_height("agreement_panel");
-	});
-
-	dr_advise();
-	cal_panel_block("agreement_panel", 0.25);
-	$("#agreement_panel").fadeIn(300);
 }
 
 function eula_confirm(){
@@ -160,7 +189,10 @@ function cancel(){
 <body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-
+<div id="hiddenMask" class="popup_bg" style="z-index:999;">
+	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center"></table>
+	<!--[if lte IE 6.5.]><script>alert("<#ALERT_TO_CHANGE_BROWSER#>");</script><![endif]-->
+</div>
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0" scrolling="no"></iframe>
 <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="current_page" value="GameBoost.asp">
@@ -211,7 +243,8 @@ function cancel(){
 								<div>
 									<table style="border-collapse:collapse;width:100%">
 										<tbody>
-											<tr>
+											<!-- wtfast  -->
+											<tr id="wtfast_title" style="display:none;">
 												<td style="width:200px">
 													<div style="padding: 5px 0;font-size:20px;"><#Game_Boost_internet#></div>
 												</td>
@@ -219,12 +252,12 @@ function cancel(){
 													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66">WTFast GPN</div>
 												</td>
 											</tr>
-											<tr>
+											<tr id="wtfast_line" style="display:none;">
 												<td colspan="3">
 													<div style="width:100%;height:1px;background-color:#D30606"></div>
 												</td>
 											</tr>
-											<tr>
+											<tr id="wtfast_desc" style="display:none;">
 												<td align="center" style="width:85px">
 													<img style="padding-right:10px;;" src="/images/New_ui/GameBoost_WTFast.png" >
 												</td>
@@ -237,8 +270,41 @@ function cancel(){
 													<div class="btn" style="margin:auto;width:100px;height:40px;text-align:center;line-height:40px;font-size:18px;cursor:pointer;border-radius:5px;" onclick="location.href='Advanced_WTFast_Content.asp';"><#btn_go#></div>
 												</td>
 											</tr>
+
+											<!-- wtf_redeem -->
 											<tr style="height:50px;"></tr>
-											<tr>
+											<tr id="wtf_redeem_title" style="display:none;">
+												<td style="width:200px">
+													<div style="padding: 5px 0;font-size:20px;"><#Game_Boost_internet#></div>
+												</td>
+												<td colspan="2">
+													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66">WTFast GPN</div>
+												</td>
+											</tr>
+											<tr id="wtf_redeem_line" style="display:none;">
+												<td colspan="3">
+													<div style="width:100%;height:1px;background-color:#D30606"></div>
+												</td>
+											</tr>
+											<tr id="wtf_redeem_desc" style="display:none;">
+												<td align="center" style="width:85px">
+													<img style="padding-right:10px;;" src="/images/New_ui/GameBoost_WTFast.png" >
+												</td>
+												<td style="width:400px;height:120px;">
+													<div style="font-size:16px;color:#949393;padding-left:10px;">
+														<#Game_Boost_desc#>
+														<br><br>
+														WTFast provides each <#Web_Title2#> owner 4 weeks free trial PC version.<!-- Untranslated -->
+														<!-- Redeem key: span id="wtf_redeem_key"></span -->
+													</div>
+												</td>
+												<td>
+													<div id="redeem_btn" class="btn" style="margin:auto;width:100px;height:40px;text-align:center;line-height:40px;font-size:18px;cursor:pointer;border-radius:5px;">Redeem</div><!-- Untranslated -->
+												</td>
+											</tr>
+											<!-- Game_Boost_lan -->
+											<tr style="height:50px;"></tr>
+											<tr id="Game_Boost_lan_title">
 												<td>
 													<div style="padding: 5px 0;font-size:20px;"><#Game_Boost_lan#></div>
 												</td>
@@ -246,12 +312,12 @@ function cancel(){
 													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66;"><#Game_Boost_lan_title#></div>
 												</td>
 											</tr>
-											<tr>
+											<tr id="Game_Boost_lan_line">
 												<td colspan="3">
 													<div style="width:100%;height:1px;background-color:#D30606"></div>
 												</td>
 											</tr>
-											<tr>
+											<tr id="Game_Boost_lan_desc">
 												<td align="center" style="width:85px;">
 													<div style="width:97px;height:71px;background:url('images/New_ui/GameBoost_QoS.png');no-repeat"></div>
 												</td>
@@ -277,8 +343,9 @@ function cancel(){
 												</td>
 											</tr>
 
+											<!-- Game_Boost_AiProtection -->
 											<tr style="height:50px;"></tr>
-											<tr>
+											<tr id="AiProtection_title" style="display:none;">
 												<td>
 													<div style="padding: 5px 0;font-size:20px;"><#Game_Boost_AiProtection#></div>
 												</td>
@@ -286,12 +353,12 @@ function cancel(){
 													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66;"><#AiProtection_title#></div>
 												</td>
 											</tr>
-											<tr>
+											<tr id="AiProtection_line" style="display:none;">
 												<td colspan="3">
 													<div style="width:100%;height:1px;background-color:#D30606"></div>
 												</td>
 											</tr>
-											<tr>
+											<tr id="AiProtection_desc" style="display:none;">
 												<td align="center" style="width:85px;">
 													<div style="background:url('/images/New_ui/GameBoost_AiProtection.png')no-repeat;width:97px;height:71px;"></div>
 												</td>

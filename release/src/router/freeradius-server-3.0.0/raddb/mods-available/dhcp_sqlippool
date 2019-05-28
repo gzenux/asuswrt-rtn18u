@@ -2,7 +2,7 @@
 ##
 ##  See sqlippool.conf for common configuration explanation
 ##
-##  $Id$
+##  $Id: 12ec296c54b6ef4ca214f2ed14f7dc9b55f249c1 $
 
 sqlippool dhcp_sqlippool {
 	sql_instance_name = "sql"

@@ -503,8 +503,7 @@ bound(void)
 	logmessage("dhcp client", "bound %s via %s during %d seconds.",
 		nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
 		nvram_safe_get(strcat_r(prefix, "gateway", tmp)),
-		nvram_get_int(strcat_r(prefix, "lease", tmp))
-		);
+		nvram_get_int(strcat_r(prefix, "lease", tmp)));
 
 	_dprintf("udhcpc:: %s done\n", __FUNCTION__);
 	return 0;
@@ -578,7 +577,7 @@ renew(void)
 		if ((value = getenv("search")) && *value) {
 			char *domain, *result;
 			if ((domain = getenv("domain")) && *domain &&
-					find_word(value, trim_r(domain)) == NULL) {
+			    find_word(value, trim_r(domain)) == NULL) {
 				result = alloca(strlen(domain) + strlen(value) + 2);
 				sprintf(result, "%s %s", domain, value);
 				value = result;
@@ -702,12 +701,6 @@ start_udhcpc(char *wan_ifname, int unit, pid_t *ppid)
 
 	/* Stop zcip to avoid races */
 	stop_zcip(unit);
-
-#ifdef RTCONFIG_INTERNAL_GOBI
-	/* Skip dhcp for IPv6-only USB modem */
-	if (dualwan_unit__usbif(unit) && nvram_get_int("modem_pdp") == 2)
-		return start_zcip(wan_ifname, unit, ppid);
-#endif
 
 	/* Skip dhcp and start zcip for pppoe, if desired */
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") &&
@@ -868,6 +861,7 @@ config(void)
 		changed = !nvram_match(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
 		nvram_set(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
 	}
+
 	nvram_set(strcat_r(prefix, "netmask", tmp), "255.255.0.0");
 	nvram_set(strcat_r(prefix, "gateway", tmp), "");
 	if (nvram_get_int(strcat_r(wanprefix, "dnsenable_x", tmp)))
@@ -888,12 +882,14 @@ config(void)
 	nvram_unset("vivso");
 #endif
 #endif
+
 	/* Clean nat conntrack for this interface,
 	 * but skip physical VPN subinterface for PPTP/L2TP */
 	if (changed && !(unit < 0 &&
 	    (nvram_match(strcat_r(wanprefix, "proto", tmp), "l2tp") ||
 	     nvram_match(strcat_r(wanprefix, "proto", tmp), "pptp"))))
 		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
+
 	ifconfig(wan_ifname, IFUP,
 		 nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
 		 nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
@@ -1094,7 +1090,7 @@ _dprintf("%s: IFUP.\n", __FUNCTION__);
 #endif
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 		|| psr_mode() || mediabridge_mode()
-#elif defined(RTCONFIG_REALTEK)
+#elif defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
 		|| (mediabridge_mode())
 #endif
 	     ) && nvram_get_int("wlc_mode") == 0) {
@@ -1378,6 +1374,13 @@ start_dhcp6c(void)
 	char duid_arg[sizeof(duid)*2+1];
 	char prefix_arg[sizeof("128:xxxxxxxx")];
 	int service;
+
+#ifndef RT4GAC68U
+	if (getpid() != 1) {
+		notify_rc("start_dhcp6c");
+		return 0;
+	}
+#endif
 
 	/* Check if enabled */
 	service = get_ipv6_service();

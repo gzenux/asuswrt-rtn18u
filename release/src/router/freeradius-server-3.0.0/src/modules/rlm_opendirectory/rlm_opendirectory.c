@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: b842e896b5dae0d6c3e1d8be34fa542c1ed899d3 $
  * @file rlm_opendirectory.c
  * @brief Allows authentication against OpenDirectory and enforces ACLS.
  *

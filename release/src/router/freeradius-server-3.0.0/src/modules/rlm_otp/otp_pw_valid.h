@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 25df9032dfc012a03e3d61045e5f9adf9ff2a8ad $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #ifndef OTP_PW_VALID_H
 #define OTP_PW_VALID_H
 
-RCSIDH(otp_pw_valid_h, "$Id$")
+RCSIDH(otp_pw_valid_h, "$Id: 25df9032dfc012a03e3d61045e5f9adf9ff2a8ad $")
 
 #include <pthread.h>
 #include <sys/types.h>

@@ -1,5 +1,5 @@
 #
-# Version:	$Id$
+# Version:	$Id: a2c4ec5b8ca80fa22befe12ef6bda706d135e841 $
 #
 
 HEADERS	= conf.h conffile.h detail.h event.h features.h hash.h heap.h \

@@ -1,7 +1,7 @@
 /*
  * sql_iodbc.c	iODBC support for FreeRadius
  *
- * Version:	$Id$
+ * Version:	$Id: 9a22d532961a220b47c7701b56f0cac673cc9137 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 9a22d532961a220b47c7701b56f0cac673cc9137 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>

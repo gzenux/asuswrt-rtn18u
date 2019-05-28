@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id$
+ * Version:	$Id: 7ed4f4d4b8abc88e0785906df6d621dc938a9d28 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 7ed4f4d4b8abc88e0785906df6d621dc938a9d28 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

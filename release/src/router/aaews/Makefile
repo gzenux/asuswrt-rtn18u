@@ -29,7 +29,7 @@ OUTPUT := $(WB_DIR)/output
 
 SRC=$(wildcard *.c)
 OBJS=$(patsubst %.c, %.o, $(SRC))
-OBJS_MAIN=$(filter-out $(DOG).o cmd_handler.o, $(OBJS))
+OBJS_MAIN=$(filter-out $(DOG).o, $(OBJS))
 WSLIB_OBJS := $(WS_SOURCES:%.c=$(OUTPUT)/%.o)
 
 ifeq ($(wildcard $(TOP)/aaews/*.c),)
@@ -77,7 +77,7 @@ CFLAGS += $(ASUSNATNL_CFLAGS)
 CFLAGS += $(AICAM_CFLAGS)
 CFLAGS += $(ROUTER_CFLAGS)
 
-LIBS = -lcurl -lssl -lcrypto -lxml2 -ljson-c -ldl -pthread -lrt $(ROUTER_LIBS) -lws
+LIBS = -lcurl -lssl -lcrypto -lxml2 -ljson-c -ldl -pthread -lrt $(ROUTER_LIBS) -lws -lgcc_s
 LDFLAGS = -L$(OPENSSL_DIR) -L$(CURL_DIR)/lib/.libs -L$(XML2_DIR)/.libs -L$(JSON_C_DIR)/.libs -L. $(ROUTER_LDFLAGS) -L$(WS_SRC) -L$(WB_DIR) -L$(WB_DIR)/output
 ifeq ($(RTCONFIG_QCA),y)
 LDFLAGS += -L$(LIBDIR) -lm
@@ -85,7 +85,11 @@ endif
 
 ifeq ($(HND_ROUTER),y)
 CFLAGS += -DPTHREAD_STACK_SIZE=0x51200
-LDFLAGS += -L$(TOP)/wlcsm -lwlcsm -lgcc_s
+LDFLAGS += -L$(TOP)/wlcsm -lwlcsm
+endif
+
+ifeq ($(RTCONFIG_BCMARM),y)
+CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include -DTYPEDEF_FLOAT_T
 endif
 
 ifeq ($(RTCONFIG_SW_HW_AUTH),y)
@@ -96,7 +100,7 @@ ifeq ($(wildcard $(TOP)/aaews/*.c),)
 $(DOG):
 	-cp -f $(TOP)/aaews/prebuild/mastiff mastiff
 else
-$(DOG): $(DOG).o nat_nvram.o  ws_caller.o nw_util.o natapi.o $(WSLIB_OBJS) cmd_handler.o info_report.o
+$(DOG): $(DOG).o nat_nvram.o  ws_caller.o nw_util.o natapi.o $(WSLIB_OBJS) info_report.o
 	$(CC) -fPIC $(CFLAGS) $(LDFLAGS) $(LIBS) $(ROUTER_LDFLAGS) $(ROUTER_LIBS) -o $@ $^ 
 #	mipsel-uclibc-gcc -c $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^ 
 endif
@@ -106,7 +110,7 @@ ifeq ($(wildcard $(TOP)/aaews/*.c),)
 router:
 	-cp -f $(TOP)/aaews/prebuild/aaews aaews
 else
-router: $(WSLIB) $(TARGET)
+router: $(WSLIB) $(TARGET) $(DOG)
 endif
 $(WSLIB):
 	cd $(WB_DIR) && \

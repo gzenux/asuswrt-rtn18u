@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: 3348d34b7ff7965179ba5ebe3d0eb15468c03a79 $
  * @file rlm_sometimes.c
  * @brief Switches between retuning different return codes.
  *
  * @copyright 2012 The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: 3348d34b7ff7965179ba5ebe3d0eb15468c03a79 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

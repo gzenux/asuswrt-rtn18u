@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id$
+ * Version:	$Id: dac7c7c575e7f879efa160d298dab9e2fdc8cc24 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: dac7c7c575e7f879efa160d298dab9e2fdc8cc24 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>

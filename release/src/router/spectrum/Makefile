@@ -8,6 +8,10 @@ ifeq ($(RTCONFIG_BCMARM),y)
 CFLAGS += -I$(SRCBASE)/common/include
 endif
 
+ifeq ($(RTCONFIG_BCMWL6),y)
+CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include
+endif
+
 ifeq ($(RTCONFIG_DSL_TCLINUX),y)
 OBJS = spectrum-tclinux.o
 else

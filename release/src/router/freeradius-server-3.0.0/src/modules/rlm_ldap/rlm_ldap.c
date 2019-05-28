@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: d650aec54f0e89889fd4dfa5fb747e0c7c456fda $
  * @file rlm_ldap.c
  * @brief LDAP authorization and authentication module.
  *
@@ -26,7 +26,7 @@
  * @copyright 2012 Alan DeKok <aland@freeradius.org>
  * @copyright 1999-2013 The FreeRADIUS Server Project.
  */
-RCSID("$Id$")
+RCSID("$Id: d650aec54f0e89889fd4dfa5fb747e0c7c456fda $")
 
 #include	<freeradius-devel/rad_assert.h>
 

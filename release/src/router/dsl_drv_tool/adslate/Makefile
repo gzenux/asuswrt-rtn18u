@@ -32,6 +32,9 @@ ifeq ($(RTCONFIG_BCMARM),y)
 CFLAGS += $(EXTRA_FLAG)
 CFLAGS += -I$(SRCBASE)/common/include
 endif
+ifeq ($(RTCONFIG_BCMWL6),y)
+CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include
+endif
 
 CFLAGS += -Wall -O
 CFLAGS += -DASUS

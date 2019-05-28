@@ -1,19 +1,38 @@
 # Convert asuswrt build environment variable to samba-3.6.x
--include ../.config
-TARGET_CFLAGS = $(EXTRACFLAGS) -Os -pipe -fhonour-copts -msoft-float -ffunction-sections -fdata-sections
-ifeq ($(RTCONFIG_QCA),y)
-TARGET_CFLAGS += -Wl,-z,relro,-z,now -Wno-error=unused-but-set-variable
-TARGET_CFLAGS += $(if $(RTCONFIG_SOC_IPQ8064),-mfloat-abi=softfp)
-endif
-TARGET_LDFLAGS = -ffunction-sections -fdata-sections
-CONFIGURE_VARS =
-CONFIGURE_ARGS =
+include ../common.mak
+
+
 PKG_BUILD_DIR=$(shell pwd)/source
 
-# Define variables for samba-3.6.x
-CONFIG_PACKAGE_SAMBA_MAX_DEBUG_LEVEL=-1
-TARGET_CFLAGS += -DMAX_DEBUG_LEVEL=$(CONFIG_PACKAGE_SAMBA_MAX_DEBUG_LEVEL) -D__location__=\\\"\\\" -ffunction-sections -fdata-sections
-TARGET_LDFLAGS += -Wl,--gc-sections
+SMBCFLAGS = $(EXTRACFLAGS) -Os -ffunction-sections -fdata-sections
+SMBLDFLAGS = -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+ifneq ($(CONFIG_LINUX26),y)
+SMBCFLAGS += -DMAX_DEBUG_LEVEL="-1"
+endif
+
+ifeq ($(RTCONFIG_BCMWL6), y)
+ifeq ($(RTCONFIG_BCMARM), y)
+SMBLDFLAGS += -lgcc_s
+HOST = arm
+
+ifeq ($(HND_ROUTER),y)
+LIB_RESOLV="yes"
+else
+DEF_FCNTL="-Dfcntl=fcntl64"
+LIB_RESOLV="no"
+endif
+else
+HOST = mips
+endif
+endif
+
+ifeq ($(RTCONFIG_QCA),y)
+SMBCFLAGS += -Wl,-z,relro,-z,now -Wno-error=unused-but-set-variable
+SMBCFLAGS += $(if $(RTCONFIG_SOC_IPQ8064),-mfloat-abi=softfp)
+endif
+CONFIGURE_VARS =
+CONFIGURE_ARGS =
 
 CONFIGURE_VARS += \
 	ac_cv_lib_attr_getxattr=no \
@@ -90,33 +109,167 @@ CONFIGURE_ARGS += \
 	--without-libaddns \
 	--with-shared-modules=pdb_tdbsam,pdb_wbc_sam,idmap_nss,nss_info_template,auth_winbind,auth_wbc,auth_domain
 
-MAKE_FLAGS += DYNEXP= PICFLAG= MODULES=
 
 all: $(PKG_BUILD_DIR)/source3/Makefile
-	$(MAKE) -C $(PKG_BUILD_DIR)/source3 include/proto.h && $(MAKE) -j 8 -C $(PKG_BUILD_DIR)/source3 $(MAKE_FLAGS)
+	$(MAKE) -C $(PKG_BUILD_DIR)/source3 include/proto.h && $(MAKE) -j 8 -C $(PKG_BUILD_DIR)/source3 all
 
 $(PKG_BUILD_DIR)/source3/Makefile:
-	$(MAKE) configure
-
-configure:
-	( cd $(PKG_BUILD_DIR)/source3 && \
-		$(CONFIGURE_VARS) \
-		CPPFLAGS="-DNDEBUG" \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CXXFLAGS="$(TARGET_CFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS)" \
-		$(CONFIGURE) $(CONFIGURE_ARGS) \
-	)
-
+	cd $(PKG_BUILD_DIR)/source3 && \
+	export samba_cv_CC_NEGATIVE_ENUM_VALUES=yes ; \
+	export libreplace_cv_READDIR_GETDIRENTRIES=no ; \
+	export libreplace_cv_READDIR_GETDENTS=no ; \
+	export libreplace_cv_HAVE_GETADDRINFO=no ; \
+	export linux_getgrouplist_ok=no ; \
+	export samba_cv_REPLACE_READDIR=no ; \
+	export samba_cv_HAVE_WRFILE_KEYTAB=yes ; \
+	export samba_cv_HAVE_KERNEL_OPLOCKS_LINUX=yes ; \
+	export samba_cv_HAVE_KERNEL_CHANGE_NOTIF=yes ; \
+	export samba_cv_HAVE_KERNEL_SHARE_MODES=yes ; \
+	export samba_cv_HAVE_IFACE_IFCONF=yes ; \
+	export samba_cv_USE_SETRESUID=yes ; \
+	export samba_cv_have_longlong=yes ; \
+	ac_cv_file__proc_sys_kernel_core_pattern=yes \
+	ac_cv_lib_resolv___dn_expand=$(LIB_RESOLV) \
+	ac_cv_lib_resolv_dn_expand=$(LIB_RESOLV) \
+	ac_cv_header_uuid_uuid_h=no \
+	ac_cv_func_uuid_generate=no \
+	ac_cv_func_prctl=no \
+	samba_cv_HAVE_INO64_T=yes \
+	samba_cv_HAVE_OFF64_T=yes \
+	samba_cv_HAVE_STRUCT_FLOCK64=yes \
+	samba_cv_SIZEOF_OFF_T=yes \
+	samba_cv_HAVE_MMAP=yes \
+	samba_cv_HAVE_FTRUNCATE_EXTEND=yes \
+	samba_cv_HAVE_BROKEN_LINUX_SENDFILE=no \
+	samba_cv_have_setresgid=yes \
+	samba_cv_have_setresuid=yes \
+	samba_cv_USE_SETREUID=yes \
+	samba_cv_REALPATH_TAKES_NULL=no \
+	samba_cv_HAVE_FCNTL_LOCK=yes \
+	samba_cv_HAVE_SECURE_MKSTEMP=yes \
+	samba_cv_HAVE_NATIVE_ICONV=no \
+	samba_cv_HAVE_BROKEN_FCNTL64_LOCKS=no \
+	samba_cv_HAVE_BROKEN_GETGROUPS=no \
+	samba_cv_HAVE_BROKEN_READDIR_NAME=no \
+	samba_cv_HAVE_C99_VSNPRINTF=yes \
+	samba_cv_HAVE_DEV64_T=no \
+	samba_cv_HAVE_DEVICE_MAJOR_FN=yes \
+	samba_cv_HAVE_DEVICE_MINOR_FN=yes \
+	samba_cv_HAVE_IFACE_AIX=no \
+	samba_cv_HAVE_KERNEL_CHANGE_NOTIFY=yes \
+	samba_cv_HAVE_MAKEDEV=yes \
+	samba_cv_HAVE_TRUNCATED_SALT=no \
+	samba_cv_HAVE_UNSIGNED_CHAR=no \
+	samba_cv_HAVE_WORKING_AF_LOCAL=yes \
+	samba_cv_HAVE_Werror=yes \
+	samba_cv_REPLACE_INET_NTOA=no \
+	samba_cv_SIZEOF_DEV_T=yes \
+	samba_cv_SIZEOF_INO_T=yes \
+	samba_cv_SIZEOF_TIME_T=no \
+	CPPFLAGS="-DNDEBUG -DSHMEM_SIZE=524288 $(DEF_FCNTL) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_LARGE_FILES=1" \
+	CFLAGS="$(SMBCFLAGS)" LDFLAGS="$(SMBLDFLAGS)" CC=$(CC) LD=$(LD) AR=$(AR) RANLIB=$(RANLIB) \
+	$(CONFIGURE) \
+		--prefix=/usr \
+		--bindir=/usr/bin \
+		--sbindir=/usr/sbin \
+		--libdir=/etc \
+		--localstatedir=/var \
+		--host=$(HOST)-linux \
+		--with-configdir=/etc \
+		--with-rootsbindir=/usr/sbin \
+		--with-piddir=/var/run/samba \
+		--with-privatedir=/etc/samba \
+		--with-lockdir=/var/lock \
+		--with-included-popt=no \
+		--with-krb5=no \
+		--with-shared-modules=MODULES \
+		--enable-shared \
+		--disable-static \
+		--disable-cups \
+		--disable-iprint \
+		--disable-pie \
+		--disable-fam \
+		--disable-dmalloc \
+		--disable-krb5developer \
+		--disable-developer \
+		--disable-debug \
+		--without-ads \
+		--without-acl-support \
+		--without-ldap \
+		--without-cluster-support \
+		--without-utmp \
+		--without-winbind \
+		--without-quotas \
+		--without-sys-quotas
 
 install:
-	install -D $(PKG_BUILD_DIR)/source3/bin/samba_multicall $(INSTALLDIR)/usr/sbin/samba_multicall
-	$(STRIP) $(INSTALLDIR)/usr/sbin/samba_multicall
-	ln -sf samba_multicall $(INSTALLDIR)/usr/sbin/smbd
-	ln -sf samba_multicall $(INSTALLDIR)/usr/sbin/nmbd
-	ln -sf samba_multicall $(INSTALLDIR)/usr/sbin/smbpasswd
+	install -D $(PKG_BUILD_DIR)/source3/bin/smbd $(INSTALLDIR)/usr/sbin/smbd
+	$(STRIP) $(INSTALLDIR)/usr/sbin/smbd
+	install -D $(PKG_BUILD_DIR)/source3/bin/nmbd $(INSTALLDIR)/usr/sbin/nmbd
+	$(STRIP) $(INSTALLDIR)/usr/sbin/nmbd
+	install -D $(PKG_BUILD_DIR)/source3/bin/smbpasswd $(INSTALLDIR)/usr/sbin/smbpasswd
+	$(STRIP) $(INSTALLDIR)/usr/sbin/smbpasswd
 	install -D $(PKG_BUILD_DIR)/codepages/lowcase.dat $(INSTALLDIR)/usr/share/samba/codepages/lowcase.dat
 	install -D $(PKG_BUILD_DIR)/codepages/upcase.dat $(INSTALLDIR)/usr/share/samba/codepages/upcase.dat
+	install -D $(PKG_BUILD_DIR)/codepages/valid.dat $(INSTALLDIR)/usr/share/samba/codepages/valid.dat
+ifeq ($(HND_ROUTER),y)
+	install -D $(TOOLCHAIN)/arm-buildroot-linux-gnueabi/sysroot/lib/libresolv.so.2 $(INSTALLDIR)/usr/lib/libresolv.so.2
+else
+	install -D $(shell dirname $(shell which $(CXX)))/../lib/libresolv.so.0 $(INSTALLDIR)/usr/lib/libresolv.so.0
+endif
+	install -D $(PKG_BUILD_DIR)/source3/bin/acl_tdb.so $(INSTALLDIR)/usr/lib/acl_tdb.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/acl_xattr.so $(INSTALLDIR)/usr/lib/acl_xattr.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/audit.so $(INSTALLDIR)/usr/lib/audit.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/autorid.so $(INSTALLDIR)/usr/lib/autorid.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/cap.so $(INSTALLDIR)/usr/lib/cap.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/catia.so $(INSTALLDIR)/usr/lib/catia.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/CP437.so $(INSTALLDIR)/usr/lib/CP437.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/CP850.so $(INSTALLDIR)/usr/lib/CP850.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/crossrename.so $(INSTALLDIR)/usr/lib/crossrename.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/default_quota.so $(INSTALLDIR)/usr/lib/default_quota.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/dirsort.so $(INSTALLDIR)/usr/lib/dirsort.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/expand_msdfs.so $(INSTALLDIR)/usr/lib/expand_msdfs.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/extd_audit.so $(INSTALLDIR)/usr/lib/extd_audit.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/fake_perms.so $(INSTALLDIR)/usr/lib/fake_perms.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/full_audit.so $(INSTALLDIR)/usr/lib/full_audit.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/libnetapi.so $(INSTALLDIR)/usr/lib/libnetapi.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/libnetapi.so.0 $(INSTALLDIR)/usr/lib/libnetapi.so.0
+	install -D $(PKG_BUILD_DIR)/source3/bin/libsmbclient.so $(INSTALLDIR)/usr/lib/libsmbclient.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/libsmbclient.so.0 $(INSTALLDIR)/usr/lib/libsmbclient.so.0
+	install -D $(PKG_BUILD_DIR)/source3/bin/libsmbsharemodes.so $(INSTALLDIR)/usr/lib/libsmbsharemodes.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/libsmbsharemodes.so.0 $(INSTALLDIR)/usr/lib/libsmbsharemodes.so.0
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtalloc.so $(INSTALLDIR)/usr/lib/libtalloc.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtalloc.so.2 $(INSTALLDIR)/usr/lib/libtalloc.so.2
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtalloc.so.2.0.5 $(INSTALLDIR)/usr/lib/libtalloc.so.2.0.5
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtdb.so $(INSTALLDIR)/usr/lib/libtdb.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtdb.so.1 $(INSTALLDIR)/usr/lib/libtdb.so.1
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtdb.so.1.2.9 $(INSTALLDIR)/usr/lib/libtdb.so.1.2.9
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtevent.so $(INSTALLDIR)/usr/lib/libtevent.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtevent.so.0 $(INSTALLDIR)/usr/lib/libtevent.so.0
+	install -D $(PKG_BUILD_DIR)/source3/bin/libtevent.so.0.9.11 $(INSTALLDIR)/usr/lib/libtevent.so.0.9.11
+	install -D $(PKG_BUILD_DIR)/source3/bin/linux_xfs_sgid.so $(INSTALLDIR)/usr/lib/linux_xfs_sgid.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/netatalk.so $(INSTALLDIR)/usr/lib/netatalk.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/preopen.so $(INSTALLDIR)/usr/lib/preopen.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/readahead.so $(INSTALLDIR)/usr/lib/readahead.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/readonly.so $(INSTALLDIR)/usr/lib/readonly.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/recycle.so $(INSTALLDIR)/usr/lib/recycle.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/scannedonly.so $(INSTALLDIR)/usr/lib/scannedonly.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/script.so $(INSTALLDIR)/usr/lib/script.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/shadow_copy2.so $(INSTALLDIR)/usr/lib/shadow_copy2.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/shadow_copy.so $(INSTALLDIR)/usr/lib/shadow_copy.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/smb_traffic_analyzer.so $(INSTALLDIR)/usr/lib/smb_traffic_analyzer.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/streams_depot.so $(INSTALLDIR)/usr/lib/streams_depot.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/streams_xattr.so $(INSTALLDIR)/usr/lib/streams_xattr.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/syncops.so $(INSTALLDIR)/usr/lib/syncops.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/time_audit.so $(INSTALLDIR)/usr/lib/time_audit.so
+	install -D $(PKG_BUILD_DIR)/source3/bin/xattr_tdb.so $(INSTALLDIR)/usr/lib/xattr_tdb.so
 
 clean:
 	[ ! -f $(PKG_BUILD_DIR)/source3/Makefile ] || $(MAKE) -C $(PKG_BUILD_DIR)/source3 distclean
+	rm -f $(PKG_BUILD_DIR)/source3/Makefile
+
+distclean: clean
+	@find $(PKG_BUILD_DIR)/source3 -name config.h | xargs rm -f
+	@find $(PKG_BUILD_DIR)/source3 -name Makefile | xargs rm -f
+	@find $(PKG_BUILD_DIR)/source3 -name config.status | xargs rm -f
+	@find $(PKG_BUILD_DIR)/source3 -name config.cache | xargs rm -f

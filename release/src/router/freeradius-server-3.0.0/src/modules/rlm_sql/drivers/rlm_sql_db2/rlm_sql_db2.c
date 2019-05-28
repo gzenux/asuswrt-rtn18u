@@ -1,7 +1,7 @@
 /*
  * sql_db2.c		IBM DB2 rlm_sql driver
  *
- * Version:	$Id$
+ * Version:	$Id: 77824886927802e2a11e50cd1c49603b03b0e38e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  * by Joerg Wendland <wendland@scan-plus.de>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 77824886927802e2a11e50cd1c49603b03b0e38e $")
 
 #include <freeradius-devel/radiusd.h>
 

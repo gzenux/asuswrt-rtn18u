@@ -1460,7 +1460,7 @@ function ppp_echo_control(flag){
 										</tr>
 										</thead>
 										<th>
-											<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a>
+											<a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#Username#></a>
 										</th>
 										<td>
 											<input type="text" maxlength="64" class="input_32_table" name="dslx_pppoe_username" value="<% nvram_get("dslx_pppoe_username"); %>" onkeypress="return validator.isString(this, event)" onblur="" autocapitalize="off" autocomplete="off">

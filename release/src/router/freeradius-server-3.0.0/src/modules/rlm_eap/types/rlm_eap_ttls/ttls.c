@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: 859b0e4042a487ec7a910ec704a374b9a0360d63 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 859b0e4042a487ec7a910ec704a374b9a0360d63 $")
 
 #include "eap_ttls.h"
 

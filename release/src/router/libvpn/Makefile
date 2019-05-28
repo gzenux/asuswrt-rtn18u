@@ -7,6 +7,9 @@ CFLAGS += -I$(TOP)/openssl/include
 ifeq ($(HND_ROUTER),y)
 CFLAGS += -DHND_ROUTER
 endif
+ifeq ($(RTCONFIG_BCMARM),y)
+CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include -DTYPEDEF_FLOAT_T
+endif
 LDFLAGS += $(EXTRALDFLAGS) -L$(TOP)/nvram${BCMEX}${EX7} -lnvram -L$(TOP)/shared -lshared
 LDFLAGS += -lcrypt
 LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl

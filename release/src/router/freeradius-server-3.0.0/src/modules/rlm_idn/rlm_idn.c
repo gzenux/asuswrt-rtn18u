@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: 7d70eadbe941e6a2f7aaa141e8ac9fa90f181948 $
  * @file rlm_idn.c
  * @brief Internationalized Domain Name encoding for DNS aka IDNA aka RFC3490
  *
  * @copyright 2013  Brian S. Julin <bjulin@clarku.edu>
  */
-RCSID("$Id$")
+RCSID("$Id: 7d70eadbe941e6a2f7aaa141e8ac9fa90f181948 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

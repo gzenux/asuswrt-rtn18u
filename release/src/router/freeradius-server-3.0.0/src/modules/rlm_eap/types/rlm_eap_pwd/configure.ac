@@ -1,7 +1,7 @@
 #
 # Autoconf input file.
 #
-# Version:	$Id$
+# Version:	$Id: 18f89a85634ea0b085857193d22a6e408bedfcbf $
 #
 
 AC_PREREQ([2.53])

@@ -1,7 +1,7 @@
 /* modpriv.h: Stuff needed by both modules.c and modcall.c, but should not be
  * accessed from anywhere else.
  *
- * Version: $Id$ */
+ * Version: $Id: 5e3e8f022ddb356eef721120b7b9f6e4a6f2b09b $ */
 #ifndef FR_MODPRIV_H
 #define FR_MODPRIV_H
 

@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id$
+ * Version:     $Id: 067d053482c8df6f5dddc88813b8a9bc23012b3d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 067d053482c8df6f5dddc88813b8a9bc23012b3d $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"

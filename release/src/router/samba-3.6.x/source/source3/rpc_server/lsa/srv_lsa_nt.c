@@ -817,7 +817,7 @@ NTSTATUS _lsa_QueryInfoPolicy2(struct pipes_struct *p,
 	struct lsa_QueryInfoPolicy r;
 
 	if ((pdb_capabilities() & PDB_CAP_ADS) == 0) {
-		p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+		p->rng_fault_state = True;
 		return NT_STATUS_NOT_IMPLEMENTED;
 	}
 
@@ -3210,88 +3210,88 @@ NTSTATUS _lsa_Delete(struct pipes_struct *p,
 
 NTSTATUS _lsa_SetSecObj(struct pipes_struct *p, struct lsa_SetSecObj *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_ChangePassword(struct pipes_struct *p,
 			     struct lsa_ChangePassword *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_SetInfoPolicy(struct pipes_struct *p, struct lsa_SetInfoPolicy *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_ClearAuditLog(struct pipes_struct *p, struct lsa_ClearAuditLog *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_GetQuotasForAccount(struct pipes_struct *p,
 				  struct lsa_GetQuotasForAccount *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_SetQuotasForAccount(struct pipes_struct *p,
 				  struct lsa_SetQuotasForAccount *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_SetInformationTrustedDomain(struct pipes_struct *p,
 					  struct lsa_SetInformationTrustedDomain *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_QuerySecret(struct pipes_struct *p, struct lsa_QuerySecret *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_SetTrustedDomainInfo(struct pipes_struct *p,
 				   struct lsa_SetTrustedDomainInfo *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_StorePrivateData(struct pipes_struct *p,
 			       struct lsa_StorePrivateData *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_RetrievePrivateData(struct pipes_struct *p,
 				  struct lsa_RetrievePrivateData *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_SetInfoPolicy2(struct pipes_struct *p,
 			     struct lsa_SetInfoPolicy2 *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_SetTrustedDomainInfoByName(struct pipes_struct *p,
 					 struct lsa_SetTrustedDomainInfoByName *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
@@ -3310,7 +3310,7 @@ NTSTATUS _lsa_EnumTrustedDomainsEx(struct pipes_struct *p,
 	 * _lsa_EnumTrustedDomains() afterwards - gd */
 
 	if (!(pdb_capabilities() & PDB_CAP_TRUSTED_DOMAINS_EX)) {
-		p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+		p->rng_fault_state = True;
 		return NT_STATUS_NOT_IMPLEMENTED;
 	}
 
@@ -3379,107 +3379,107 @@ NTSTATUS _lsa_EnumTrustedDomainsEx(struct pipes_struct *p,
 NTSTATUS _lsa_QueryDomainInformationPolicy(struct pipes_struct *p,
 					   struct lsa_QueryDomainInformationPolicy *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_SetDomainInformationPolicy(struct pipes_struct *p,
 					 struct lsa_SetDomainInformationPolicy *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_TestCall(struct pipes_struct *p, struct lsa_TestCall *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRWRITE(struct pipes_struct *p, struct lsa_CREDRWRITE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRREAD(struct pipes_struct *p, struct lsa_CREDRREAD *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRENUMERATE(struct pipes_struct *p, struct lsa_CREDRENUMERATE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRWRITEDOMAINCREDENTIALS(struct pipes_struct *p,
 					  struct lsa_CREDRWRITEDOMAINCREDENTIALS *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRREADDOMAINCREDENTIALS(struct pipes_struct *p,
 					 struct lsa_CREDRREADDOMAINCREDENTIALS *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRDELETE(struct pipes_struct *p, struct lsa_CREDRDELETE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRGETTARGETINFO(struct pipes_struct *p,
 				 struct lsa_CREDRGETTARGETINFO *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRPROFILELOADED(struct pipes_struct *p,
 				 struct lsa_CREDRPROFILELOADED *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_CREDRGETSESSIONTYPES(struct pipes_struct *p,
 				   struct lsa_CREDRGETSESSIONTYPES *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_LSARREGISTERAUDITEVENT(struct pipes_struct *p,
 				     struct lsa_LSARREGISTERAUDITEVENT *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_LSARGENAUDITEVENT(struct pipes_struct *p,
 				struct lsa_LSARGENAUDITEVENT *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_LSARUNREGISTERAUDITEVENT(struct pipes_struct *p,
 				       struct lsa_LSARUNREGISTERAUDITEVENT *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_lsaRQueryForestTrustInformation(struct pipes_struct *p,
 					      struct lsa_lsaRQueryForestTrustInformation *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
@@ -3992,34 +3992,34 @@ NTSTATUS _lsa_lsaRSetForestTrustInformation(struct pipes_struct *p,
 NTSTATUS _lsa_CREDRRENAME(struct pipes_struct *p,
 			  struct lsa_CREDRRENAME *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_LSAROPENPOLICYSCE(struct pipes_struct *p,
 				struct lsa_LSAROPENPOLICYSCE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_LSARADTREGISTERSECURITYEVENTSOURCE(struct pipes_struct *p,
 						 struct lsa_LSARADTREGISTERSECURITYEVENTSOURCE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_LSARADTUNREGISTERSECURITYEVENTSOURCE(struct pipes_struct *p,
 						   struct lsa_LSARADTUNREGISTERSECURITYEVENTSOURCE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _lsa_LSARADTREPORTSECURITYEVENT(struct pipes_struct *p,
 					 struct lsa_LSARADTREPORTSECURITYEVENT *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }

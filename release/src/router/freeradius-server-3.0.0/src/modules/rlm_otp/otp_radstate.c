@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: e842a5393811e8752bcf95850ab9c5347e35c5dd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * Copyright 2005,2006 TRI-D Systems, Inc.
  */
 
-RCSID("$Id$")
+RCSID("$Id: e842a5393811e8752bcf95850ab9c5347e35c5dd $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 /* avoid inclusion of these FR headers which conflict w/ OpenSSL */

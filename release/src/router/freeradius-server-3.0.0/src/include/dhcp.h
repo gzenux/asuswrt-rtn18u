@@ -6,7 +6,7 @@
  *		Why DHCP in a RADIUS server?
  *		Why not?
  *
- * Version:	$Id$
+ * Version:	$Id: f360475f0b54ad6d09f0485f431321186969d5b0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2008 The FreeRADIUS server project
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
-RCSIDH(dhcp_h, "$Id$")
+RCSIDH(dhcp_h, "$Id: f360475f0b54ad6d09f0485f431321186969d5b0 $")
 
 #ifdef __cplusplus
 extern "C" {

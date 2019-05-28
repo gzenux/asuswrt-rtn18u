@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: 54aadf6c41a46d5a6a8c3a89a7cda56d58cddf26 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 54aadf6c41a46d5a6a8c3a89a7cda56d58cddf26 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>

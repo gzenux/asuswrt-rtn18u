@@ -1,12 +1,12 @@
 #ifndef UDPFROMTO_H
 #define UDPFROMTO_H
 /*
- * $Id$
+ * $Id: 7b029cd6227d60281bbf36f9e165f47dc1894c31 $
  *
  * @file udpfromto.h
  */
 
-RCSIDH(udpfromtoh, "$Id$")
+RCSIDH(udpfromtoh, "$Id: 7b029cd6227d60281bbf36f9e165f47dc1894c31 $")
 
 #include <freeradius-devel/libradius.h>
 

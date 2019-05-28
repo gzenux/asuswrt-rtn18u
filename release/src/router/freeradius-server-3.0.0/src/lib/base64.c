@@ -22,7 +22,7 @@
  * @author Simon Josefsson.
  * @see RFC 3548 <http://www.ietf.org/rfc/rfc3548.txt>.
  */
-RCSID("$Id$")
+RCSID("$Id: b35217126e2da049e49f4ded457b3b5f7212b5ee $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/base64.h>

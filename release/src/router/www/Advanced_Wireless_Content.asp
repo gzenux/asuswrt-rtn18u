@@ -155,7 +155,7 @@ function initial(){
 		inputCtrl(document.form.wl_nctrlsb, 0);
 	}
 	
-	if(!Rawifi_support && document.form.wl_channel.value  == '0' && cur_control_channel){
+	if(document.form.wl_channel.value == '0' && cur_control_channel){
 		document.getElementById("auto_channel").style.display = "";
 		document.getElementById("auto_channel").innerHTML = "Current control channel: " + cur_control_channel[wl_unit_value];
 	}
@@ -517,8 +517,12 @@ function applyRule(){
 		if(isSwMode("re") || isSwMode("mb"))
 			document.form.action_wait.value = "5";
 
-		if (Qcawifi_support)
+		if (Qcawifi_support) {
 			document.form.action_wait.value = "30";
+		}
+		else if (Rawifi_support) {
+			document.form.action_wait.value = "20";
+		}
 
 		document.form.submit();
 	}

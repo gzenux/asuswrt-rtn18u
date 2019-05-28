@@ -27,7 +27,7 @@
 
 typedef uint32_t __u32;
 
-#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) ||defined(RTAC54U) || defined(RTAC51UP)|| defined(RTAC53) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC1200) || defined(RTN11P_B1) || defined(RPAC87) || defined(RTAC85U) || defined(RTAC65U) || defined(RTN800HP)
+#if defined(RTN14U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) ||defined(RTAC54U) || defined(RTAC51UP)|| defined(RTAC53) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC1200) || defined(RTN11P_B1) || defined(RPAC87) || defined(RTAC85U) || defined(RTAC85P) || defined(RTAC65U) || defined(RTN800HP) || defined(RTACRH26)
 const char WIF_5G[]	= "rai0";
 const char WIF_2G[]	= "ra0";
 const char WDSIF_5G[]	= "wdsi";
@@ -181,7 +181,7 @@ void set_radio(int on, int unit, int subunit)
 		doSystem("iwpriv %s set RadioOn=%d", WIF_2G, on);
 	else doSystem("iwpriv %s set RadioOn=%d", WIF_5G, on);
 
-#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC65U)  || defined(RTN800HP) //5G:7612E 2G:7603E
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P) || defined(RTAC65U)  || defined(RTN800HP)  || defined(RTACRH26) //5G:7612E 2G:7603E
 	led_onoff(unit);
 #endif	
 }
@@ -237,6 +237,27 @@ int get_channel_list_via_driver(int unit, char *buffer, int len)
 	return wrq.u.data.length;
 }
 
+int get_mtk_wifi_driver_version(char *buffer, int len)
+{
+	struct iwreq wrq;
+	char tmp[128], prefix[] = "wlXXXXXXXXXX_", *ifname;
+	int unit = 0;
+
+	if (buffer == NULL || len <= 0)
+		return -1;
+	memset(buffer, 0, len);
+	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+	ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+	memset(&wrq, 0, sizeof(wrq));
+	wrq.u.data.pointer = buffer;
+	wrq.u.data.length  = len;
+	wrq.u.data.flags   = ASUS_SUBCMD_DRIVERVER;
+	if (wl_ioctl(ifname, RTPRIV_IOCTL_ASUSCMD, &wrq) < 0)
+		return -1;
+
+	return wrq.u.data.length;
+}
+
 /* get channel list via value of countryCode */
 unsigned char A_BAND_REGION_0_CHANNEL_LIST[]={36, 40, 44, 48, 149, 153, 157, 161, 165};
 unsigned char A_BAND_REGION_1_CHANNEL_LIST[]={36, 40, 44, 48};
@@ -274,6 +295,7 @@ unsigned char A_BAND_REGION_19_CHANNEL_LIST[]={56, 60, 64, 100, 104, 108, 112, 1
 unsigned char A_BAND_REGION_20_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 149, 153, 157, 161};
 unsigned char A_BAND_REGION_21_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161};
 unsigned char A_BAND_REGION_22_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 132, 136, 140, 149, 153, 157, 161 ,165};
+unsigned char A_BAND_REGION_24_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 132, 136, 140, 144, 149, 153, 157, 161 ,165};
 
 unsigned char G_BAND_REGION_0_CHANNEL_LIST[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 unsigned char G_BAND_REGION_1_CHANNEL_LIST[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
@@ -302,6 +324,7 @@ unsigned char G_BAND_REGION_5_CHANNEL_LIST[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 #define A_BAND_REGION_20			20
 #define A_BAND_REGION_21			21
 #define A_BAND_REGION_22			22
+#define A_BAND_REGION_24			24
 
 #define G_BAND_REGION_0				0
 #define G_BAND_REGION_1				1
@@ -455,7 +478,11 @@ COUNTRY_CODE_TO_COUNTRY_REGION allCountry[] = {
 	{"RU", A_BAND_REGION_6, G_BAND_REGION_1},
 #else
 	{"RO", A_BAND_REGION_0, G_BAND_REGION_1},
+#if defined(RTAC85P)
+	{"RU", A_BAND_REGION_24, G_BAND_REGION_1},
+#else
 	{"RU", A_BAND_REGION_0, G_BAND_REGION_1},
+#endif
 #endif
 	{"SA", A_BAND_REGION_0, G_BAND_REGION_1},
 	{"SG", A_BAND_REGION_0, G_BAND_REGION_1},
@@ -618,6 +645,10 @@ int get_channel_list_via_country(int unit, const char *country_code, char *buffe
 			num = sizeof(A_BAND_REGION_22_CHANNEL_LIST)/sizeof(unsigned char);
 			pChannelListTemp = A_BAND_REGION_22_CHANNEL_LIST;
 			break;
+		case A_BAND_REGION_24:
+			num = sizeof(A_BAND_REGION_24_CHANNEL_LIST)/sizeof(unsigned char);
+			pChannelListTemp = A_BAND_REGION_24_CHANNEL_LIST;
+			break;
 		default:	// Error. should never happen
 			dbg("countryregionA=%d not support", allCountry[index].RegDomainNum11A);
 			break;
@@ -664,7 +695,7 @@ int get_channel_list_via_country(int unit, const char *country_code, char *buffe
 }
 
 
-#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC65U) || defined(RTN800HP)
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P) || defined(RTAC65U) || defined(RTN800HP) || defined(RTACRH26)
 void led_onoff(int unit)
 {   
 #if defined(RTAC1200HP)

@@ -784,10 +784,6 @@ static bool api_DosPrintQGetInfo(struct smbd_server_connection *sconn,
 	union spoolss_JobInfo *job_info = NULL;
 	union spoolss_PrinterInfo printer_info;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -1002,10 +998,6 @@ static bool api_DosPrintQEnum(struct smbd_server_connection *sconn,
 	union spoolss_PrinterInfo *printer_info;
 	union spoolss_DriverInfo *driver_info;
 	union spoolss_JobInfo **job_info;
-
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
 
 	if (!param_format || !output_format1 || !p) {
 		return False;
@@ -2197,10 +2189,6 @@ static bool api_RNetShareAdd(struct smbd_server_connection *sconn,
 	struct srvsvc_NetShareInfo2 info2;
 	struct dcerpc_binding_handle *b;
 
-#ifndef SRVSVC_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -2356,10 +2344,6 @@ static bool api_RNetGroupEnum(struct smbd_server_connection *sconn,
 	struct policy_handle samr_handle, domain_handle;
 	NTSTATUS status, result;
 	struct dcerpc_binding_handle *b;
-
-#ifndef SAMR_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !p) {
 		return False;
@@ -2548,10 +2532,6 @@ static bool api_NetUserGetGroups(struct smbd_server_connection *sconn,
 	struct samr_RidWithAttributeArray *rids;
 	NTSTATUS status, result;
 	struct dcerpc_binding_handle *b;
-
-#ifndef SAMR_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !UserName || !p) {
 		return False;
@@ -2752,10 +2732,6 @@ static bool api_RNetUserEnum(struct smbd_server_connection *sconn,
 	char *endp = NULL;
 
 	struct dcerpc_binding_handle *b;
-
-#ifndef SAMR_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !p) {
 		return False;
@@ -2995,10 +2971,6 @@ static bool api_SamOEMChangePassword(struct smbd_server_connection *sconn,
 	int bufsize;
 	struct dcerpc_binding_handle *b;
 
-#ifndef SAMR_SUPPORT
-	return False;
-#endif
-
 	*rparam_len = 4;
 	*rparam = smb_realloc_limit(*rparam,*rparam_len);
 	if (!*rparam) {
@@ -3133,10 +3105,6 @@ static bool api_RDosPrintJobDel(struct smbd_server_connection *sconn,
 	struct spoolss_DevmodeContainer devmode_ctr;
 	enum spoolss_JobControl command;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -3269,10 +3237,6 @@ static bool api_WPrintQueueCtrl(struct smbd_server_connection *sconn,
 	struct spoolss_DevmodeContainer devmode_ctr;
 	struct sec_desc_buf secdesc_ctr;
 	enum spoolss_PrinterControl command;
-
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !QueueName) {
 		return False;
@@ -3440,10 +3404,6 @@ static bool api_PrintJobInfo(struct smbd_server_connection *sconn,
 	union spoolss_JobInfo info;
 	struct spoolss_SetJobInfo1 info1;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -3593,7 +3553,10 @@ static bool api_RNetServerGetInfo(struct smbd_server_connection *sconn,
 	NTSTATUS status;
 	WERROR werr;
 	TALLOC_CTX *mem_ctx = talloc_tos();
+	struct rpc_pipe_client *cli = NULL;
+	union srvsvc_NetSrvInfo info;
 	int errcode;
+	struct dcerpc_binding_handle *b;
 
 	if (!str1 || !str2 || !p) {
 		return False;
@@ -3656,16 +3619,66 @@ static bool api_RNetServerGetInfo(struct smbd_server_connection *sconn,
 	p = *rdata;
 	p2 = p + struct_len;
 
-	if (uLevel != 20) {
-		srvstr_push(NULL, 0, p, global_myname(), 16,
-			STR_ASCII|STR_UPPER|STR_TERMINATE);
+	status = rpc_pipe_open_interface(mem_ctx, &ndr_table_srvsvc.syntax_id,
+					conn->session_info,
+					&conn->sconn->client_id,
+					conn->sconn->msg_ctx,
+					&cli);
+	if (!NT_STATUS_IS_OK(status)) {
+		DEBUG(0,("api_RNetServerGetInfo: could not connect to srvsvc: %s\n",
+			  nt_errstr(status)));
+		errcode = W_ERROR_V(ntstatus_to_werror(status));
+		goto out;
 	}
+
+	b = cli->binding_handle;
+
+	status = dcerpc_srvsvc_NetSrvGetInfo(b, mem_ctx,
+					     NULL,
+					     101,
+					     &info,
+					     &werr);
+	if (!NT_STATUS_IS_OK(status)) {
+		errcode = W_ERROR_V(ntstatus_to_werror(status));
+		goto out;
+	}
+	if (!W_ERROR_IS_OK(werr)) {
+		errcode = W_ERROR_V(werr);
+		goto out;
+	}
+
+	if (info.info101 == NULL) {
+		errcode = W_ERROR_V(WERR_INVALID_PARAM);
+		goto out;
+	}
+
+	if (uLevel != 20) {
+		srvstr_push(NULL, 0, p, info.info101->server_name, 16,
+			STR_ASCII|STR_UPPER|STR_TERMINATE);
+  	}
 	p += 16;
 	if (uLevel > 0) {
-		SCVAL(p,0,lp_major_announce_version());
-		SCVAL(p,1,lp_minor_announce_version());
-		SIVAL(p,2,lp_default_server_announce());
-		SIVAL(p,6,0);
+		SCVAL(p,0,info.info101->version_major);
+		SCVAL(p,1,info.info101->version_minor);
+		SIVAL(p,2,info.info101->server_type);
+
+		if (mdrcnt == struct_len) {
+			SIVAL(p,6,0);
+		} else {
+			SIVAL(p,6,PTR_DIFF(p2,*rdata));
+			if (mdrcnt - struct_len <= 0) {
+				return false;
+			}
+			push_ascii(p2,
+				info.info101->comment,
+				MIN(mdrcnt - struct_len,
+					MAX_SERVER_STRING_LENGTH),
+				STR_TERMINATE);
+			p2 = skip_string(*rdata,*rdata_len,p2);
+			if (!p2) {
+				return False;
+			}
+		}
 	}
 
 	if (uLevel > 1) {
@@ -3986,10 +3999,6 @@ static bool api_RNetUserGetInfo(struct smbd_server_connection *sconn,
 	uint32_t rid;
 	union samr_UserInfo *info;
 	struct dcerpc_binding_handle *b = NULL;
-
-#ifndef SAMR_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !UserName || !p) {
 		return False;
@@ -4538,10 +4547,6 @@ static bool api_WPrintJobGetInfo(struct smbd_server_connection *sconn,
 	struct spoolss_DevmodeContainer devmode_ctr;
 	union spoolss_JobInfo info;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -4679,10 +4684,6 @@ static bool api_WPrintJobEnumerate(struct smbd_server_connection *sconn,
 	struct spoolss_DevmodeContainer devmode_ctr;
 	uint32_t count = 0;
 	union spoolss_JobInfo *info;
-
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !p) {
 		return False;
@@ -4889,10 +4890,6 @@ static bool api_WPrintDestGetInfo(struct smbd_server_connection *sconn,
 	struct spoolss_DevmodeContainer devmode_ctr;
 	union spoolss_PrinterInfo info;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -5029,10 +5026,6 @@ static bool api_WPrintDestEnum(struct smbd_server_connection *sconn,
 	union spoolss_PrinterInfo *info;
 	uint32_t count;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -5136,10 +5129,6 @@ static bool api_WPrintDriverEnum(struct smbd_server_connection *sconn,
 	int succnt;
 	struct pack_desc desc;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -5204,10 +5193,6 @@ static bool api_WPrintQProcEnum(struct smbd_server_connection *sconn,
 	int succnt;
 	struct pack_desc desc;
 
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
-
 	if (!str1 || !str2 || !p) {
 		return False;
 	}
@@ -5271,10 +5256,6 @@ static bool api_WPrintPortEnum(struct smbd_server_connection *sconn,
 	int uLevel;
 	int succnt;
 	struct pack_desc desc;
-
-#ifndef PRINTER_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !p) {
 		return False;
@@ -5355,10 +5336,6 @@ static bool api_RNetSessionEnum(struct smbd_server_connection *sconn,
 	struct srvsvc_NetSessInfoCtr info_ctr;
 	uint32_t totalentries, resume_handle = 0;
 	uint32_t count = 0;
-
-#ifndef SRVSVC_SUPPORT
-	return False;
-#endif
 
 	if (!str1 || !str2 || !p) {
 		return False;

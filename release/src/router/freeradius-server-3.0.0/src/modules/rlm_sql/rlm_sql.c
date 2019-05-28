@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 90ee22e852e1ca2e0908c52b922606f76a7786d2 $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -23,7 +23,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id$")
+RCSID("$Id: 90ee22e852e1ca2e0908c52b922606f76a7786d2 $")
 
 #include <ctype.h>
 

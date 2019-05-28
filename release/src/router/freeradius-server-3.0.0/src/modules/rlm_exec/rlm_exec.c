@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 0d8149d40995ddf0d502f7189ec0f1fad0f7a5c0 $
  * @file rlm_exec.c
  * @brief Execute commands and parse the results.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id$")
+RCSID("$Id: 0d8149d40995ddf0d502f7189ec0f1fad0f7a5c0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

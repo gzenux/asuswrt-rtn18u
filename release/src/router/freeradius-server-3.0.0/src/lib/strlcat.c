@@ -1,7 +1,7 @@
 /*
  *  strlcat.c	Concatenate strings.
  *
- *  Version:	$Id$
+ *  Version:	$Id: b44720604df4f7798242b7f25067b33fdbaa57fb $
  *
  */
 
@@ -23,7 +23,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: b44720604df4f7798242b7f25067b33fdbaa57fb $")
 
 #ifndef HAVE_STRLCAT
 

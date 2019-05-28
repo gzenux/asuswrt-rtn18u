@@ -388,6 +388,7 @@ page_default_redirect(int fromapp_flag, char* url)
 void
 send_login_page(int fromapp_flag, int error_status, char* url, char* file, int lock_time, int logintry)
 {
+	HTTPD_DBG("error_status = %d\n", error_status);
 	char inviteCode[256]={0};
 	char buf[128] = {0};
 	//char url_tmp[64]={0};
@@ -812,7 +813,6 @@ int wave_handle_flag(char *url)
 }
 #endif
 
-int auto_set_lang = 0; //Prevent to check language every request
 static void
 handle_request(void)
 {
@@ -875,7 +875,7 @@ handle_request(void)
 		}
 #ifdef TRANSLATE_ON_FLY
 		else if ( strncasecmp( cur, "Accept-Language:", 16) == 0 ) {
-			if(change_preferred_lang()){
+			if(change_preferred_lang(0)){
 				char *p;
 				struct language_table *pLang;
 				char lang_buf[256];
@@ -926,7 +926,7 @@ handle_request(void)
 					nvram_set("preferred_lang", Accept_Language);
 				}
 
-				auto_set_lang = 1; //Prevent to check language every request
+				change_preferred_lang(1);
 			}
 
 			#ifdef RTCONFIG_DSL_TCLINUX
@@ -966,6 +966,7 @@ handle_request(void)
 			cp += strspn( cp, " \t" );
 			useragent = cp;
 			cur = cp + strlen(cp) + 1;
+			HTTPD_DBG("useragent: %s\n", useragent);
 		}
 		else if ( strncasecmp( cur, "Cookie:", 7 ) == 0 )
 		{
@@ -1030,7 +1031,7 @@ handle_request(void)
 	}
 
 //2008.08 magic{
-	if (file[0] == '\0' || file[len-1] == '/'){
+	if (file[0] == '\0' || (index(file, '?') == NULL && file[len-1] == '/')){
 		if (is_firsttime()
 #ifdef RTCONFIG_FINDASUS
 		    && !isDeviceDiscovery
@@ -1046,7 +1047,6 @@ handle_request(void)
 			file = INDEXPAGE;
 	}
 
-// 2007.11 James. {
 	char *query;
 	int file_len;
 
@@ -1063,7 +1063,6 @@ handle_request(void)
 	{
 		strncpy(url, file, sizeof(url)-1);
 	}
-// 2007.11 James. }
 
 	if( (strstr(url, ".asp") || strstr(url, ".htm")) && !strstr(url, "update_networkmapd.asp") && !strstr(url, "update_clients.asp") && !strstr(url, "update_customList.asp") ) {
 		memset(current_page_name, 0, sizeof(current_page_name));
@@ -1106,6 +1105,7 @@ handle_request(void)
 // _dprintf("[httpd] file: %s\n", file);
         }
 #endif
+        HTTPD_DBG("file = %s\n", file);
 	mime_exception = 0;
 	do_referer = 0;
 
@@ -1216,6 +1216,7 @@ handle_request(void)
 				else {
 					if(do_referer&CHECK_REFERER){
 						referer_result = referer_check(referer, fromapp);
+						HTTPD_DBG("referer_result = %d\n", referer_result);
 						if(referer_result != 0){
 							if(strcasecmp(method, "post") == 0 && handler->input)	//response post request
 								while (cl--) (void)fgetc(conn_fp);
@@ -1227,6 +1228,7 @@ handle_request(void)
 					}
 					handler->auth(auth_userid, auth_passwd, auth_realm);
 					auth_result = auth_check(auth_realm, authorization, url, file, cookies, fromapp);
+					HTTPD_DBG("auth_result = %d\n", auth_result);
 					if (auth_result != 0)
 					{
 						if(strcasecmp(method, "post") == 0 && handler->input)	//response post request
@@ -1908,6 +1910,10 @@ int main(int argc, char **argv)
 	do_ssl = 0; // default
 	char log_filename[128] = {0};
 
+#if defined(RTCONFIG_UIDEBUG)
+	eval("touch", HTTPD_DEBUG);
+#endif
+
 #if defined(RTCONFIG_SW_HW_AUTH)
 	//if(!httpd_sw_hw_check()) return 0;
 #endif
@@ -1966,6 +1972,7 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGCHLD, reapchild);	// 0527 add
+	signal(SIGUSR1, update_wlan_log);
 
 #ifdef RTCONFIG_HTTPS
 	//if (do_ssl)
@@ -2097,6 +2104,11 @@ int main(int argc, char **argv)
 				}
 
 				http_login_cache(&item->usa);
+#if defined(RTCONFIG_UIDEBUG)
+				struct in_addr req_ip;
+				req_ip.s_addr = login_ip_tmp;
+				HTTPD_DBG("Log ip address: %s\n", inet_ntoa(req_ip));
+#endif
 				handle_request();
 				fflush(conn_fp);
 #ifdef RTCONFIG_HTTPS

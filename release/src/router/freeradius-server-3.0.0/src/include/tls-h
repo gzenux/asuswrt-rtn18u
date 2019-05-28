@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /*
- * $Id$
+ * $Id: b5281053cb9552708104fdd966b3787b632e0a4c $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id$")
+RCSIDH(tls_h, "$Id: b5281053cb9552708104fdd966b3787b632e0a4c $")
 
 #include <freeradius-devel/conffile.h>
 

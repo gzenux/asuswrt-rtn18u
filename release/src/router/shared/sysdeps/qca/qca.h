@@ -281,7 +281,7 @@ enum ASUS_IOCTL_SUBCMD {
  * associated with parallel NOR Flash and SPI Flash.
  */
 
-#if defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
+#if defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X)
 #define ETH0_MAC_OFFSET			0x1002
 #define ETH1_MAC_OFFSET			0x5006
 #elif defined(RTCONFIG_SOC_IPQ8064)
@@ -322,7 +322,7 @@ enum ASUS_IOCTL_SUBCMD {
 #define OFFSET_RTAG2			(MTD_FACTORY_BASE_ADDRESS + 0x0D1AC)	/* 4 bytes */
 #endif
 
-#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
+#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X)
 /* WAN: eth0
  * LAN: eth1
  * 2G: follow WAN
@@ -332,9 +332,9 @@ enum ASUS_IOCTL_SUBCMD {
 #define OFFSET_MAC_ADDR			(MTD_FACTORY_BASE_ADDRESS + ETH1_MAC_OFFSET)	/* FIXME: How to map 2G/5G to eth0/1? */
 #define	QCA9557_EEPROM_SIZE		1088
 #define	QCA9557_EEPROM_MAC_OFFSET	(OFFSET_MAC_ADDR_2G & 0xFFF) // 2
-#if defined(RPAC51)
+#if defined(RTCONFIG_PCIE_QCA9888)
 #define	QC98XX_EEPROM_SIZE_LARGEST	12064 // sync with driver
-#else
+#else /* RTCONFIG_PCIE_AR9888 */
 #define	QC98XX_EEPROM_SIZE_LARGEST	2116 // sync with driver
 #endif
 #define	QC98XX_EEPROM_MAC_OFFSET	(OFFSET_MAC_ADDR & 0xFFF) // 6
@@ -429,8 +429,12 @@ enum ASUS_IOCTL_SUBCMD {
 /*
  * interface of CPU to LAN
  */
-#if defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA956X)
+#if defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X)
+#if defined(RTN19)
+#define MII_IFNAME	"eth1"
+#else
 #define MII_IFNAME	"eth0"
+#endif
 #elif defined(RTCONFIG_SOC_IPQ8064)
 #define MII_IFNAME	"switch0"
 #elif defined(RTCONFIG_QCA953X) || defined(RTCONFIG_SOC_IPQ40XX)
@@ -507,9 +511,16 @@ typedef struct {
 #define BD_5G_HW_DIR	"hw.1"
 #define BD_5G2_CHIP_DIR	"QCA9984"
 #define BD_5G2_HW_DIR	"hw.1"
+#elif defined(RTAC59U)
+#define BD_5G_PREFIX	"boardData_2_0_QCA9888_5G_Y9484"
+#define BD_5G_CHIP_DIR	"QCA9888"
+#define BD_5G_HW_DIR	"hw.2"
 #elif defined(RPAC51)
 #define BD_5G_PREFIX	"boardData_2_0_QCA9888_5G_Y9484"
 #define BD_5G_CHIP_DIR	"QCA9888"
 #define BD_5G_HW_DIR	"hw.2"
 #endif
+
+#define QCA_DEFAULT_NOISE_FLOOR (-96)	/* via QCA case #03626623 */
+
 #endif	/* _QCA_H_ */

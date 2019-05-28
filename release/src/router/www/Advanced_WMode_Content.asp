@@ -174,7 +174,7 @@ function addRow(obj, upper){
 		obj.focus();
 		obj.select();
 		return false;
-	}else if (!check_macaddr(obj, check_hwaddr_flag(obj))){
+	}else if (!check_macaddr(obj, check_hwaddr_flag(obj, 'inner'))){
 		obj.focus();
 		obj.select();		
 		return false;
@@ -224,17 +224,13 @@ function applyRule(){
 		inputRCtrl2(document.form.wl_wdsapply_x, 1);
 	}
 	
-	if(document.form.wl_mode_x.value == "1"){
-		document.form.wl_wdsapply_x.value = "1";
-	}
-		
 	if(wl6_support){
 		document.form.action_wait.value = 8;
 	}
 	else{
 		document.form.action_wait.value = 3;
 	}
-		
+
 	showLoading();	
 	document.form.submit();
 }

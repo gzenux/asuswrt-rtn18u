@@ -1,7 +1,7 @@
 /*
  * radius.h  Constants of the radius protocol.
  *
- * Version:  $Id$
+ * Version:  $Id: 00bf4d1ba1cc414b514da3bceab4040026087c60 $
  *
  */
 

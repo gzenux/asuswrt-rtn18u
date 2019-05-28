@@ -3,7 +3,7 @@
 ## Makefile -- Build and run tests for the server.
 ##
 ##	http://www.freeradius.org/
-##	$Id$
+##	$Id: 7f6306a07cf0654c66481620f89c084704faeaa6 $
 ##
 #
 include ../../Make.inc

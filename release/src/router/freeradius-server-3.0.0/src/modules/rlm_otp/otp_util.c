@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 05e2940d761ce1652b81644f675097224147b043 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * Copyright 2005,2006 TRI-D Systems, Inc.
  */
 
-RCSID("$Id$")
+RCSID("$Id: 05e2940d761ce1652b81644f675097224147b043 $")
 
 #include "extern.h"
 

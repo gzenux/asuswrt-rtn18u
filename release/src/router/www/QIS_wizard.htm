@@ -82,12 +82,12 @@
 var isFirst = ('<% nvram_get("x_Setting"); %>' == '1') ? false : true;
 var header_info = [<% get_header_info(); %>][0];
 var ROUTERHOSTNAME = '<% nvram_get("local_domain"); %>';
-var domainNameUrl = ((header_info.host.split(":").length==2)?"https":"http")+"://"+header_info.host.replace(header_info.host.split(":")[0], ROUTERHOSTNAME);
+var domainNameUrl = header_info.protocol+"://"+ROUTERHOSTNAME+":"+header_info.port;
 var chdom = function(){window.location.href=domainNameUrl};
 (function(){
 	if(ROUTERHOSTNAME !== header_info.host && ROUTERHOSTNAME != "" && isFirst){
 		setTimeout(function(){
-			var s=document.createElement("script");s.type="text/javascript";s.src=domainNameUrl+"/chdom.json?hostname="+header_info.host.split(":")[0];var h=document.getElementsByTagName("script")[0];h.parentNode.insertBefore(s,h);
+			var s=document.createElement("script");s.type="text/javascript";s.src=domainNameUrl+"/chdom.json?hostname="+header_info.host;var h=document.getElementsByTagName("script")[0];h.parentNode.insertBefore(s,h);
 		}, 1);
 	}
 })();
@@ -145,6 +145,7 @@ var current_buildno = "";
 var current_extendno = "";
 var liveUpdateFinish = false;
 var new_FW = false;
+var new_FW_type = 0;
 var retry = 0;
 var isStatic = false;
 var staticIP = false;
@@ -255,7 +256,8 @@ function detect_firmware(){
 			}
 			else{
 				if(webs_state_error == 0){
-					if(isNewFW(webs_state_info, current_firmware_path, current_firmware_path) && exist_firmver[0] != 9){
+					new_FW_type = webs_state_flag;
+					if(webs_state_flag==1 || webs_state_flag==2){	// && exist_firmver[0] != 9
 						new_FW = true;
 					}
 				}
@@ -630,7 +632,7 @@ function gotoIndex(){
 		location.href = '/QIS_wizard.htm?flag=wireless';
 	}
 	else
-		location.href = "<% abs_index_page(); %>";
+		location.href = "/";
 }
 
 function check_DUT(){
@@ -669,7 +671,7 @@ function detect_httpd(){
     	},
     	success: function(){
     		setTimeout("hideLoadingBar();",1000);
-      		location.href = "<% abs_index_page(); %>";
+		location.href = "/";
   		}
   	});
 }

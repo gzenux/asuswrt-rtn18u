@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 6572.
 #	http://www.ietf.org/rfc/rfc6572.txt
 #
-#	$Id$
+#	$Id: d30f328522d1db8521b17f4348599b467f955ea2 $
 #
 
 ATTRIBUTE	Mobile-Node-Identifier			145	octets

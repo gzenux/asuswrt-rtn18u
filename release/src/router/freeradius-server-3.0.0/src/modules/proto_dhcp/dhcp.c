@@ -1,7 +1,7 @@
 /*
  * dhcp.c	Functions to send/receive dhcp packets.
  *
- * Version:	$Id$
+ * Version:	$Id: c4a59ec2d8859281d6e8f05199c074738e7bb61a $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: c4a59ec2d8859281d6e8f05199c074738e7bb61a $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/udpfromto.h>

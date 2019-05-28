@@ -4,7 +4,7 @@
 /*
  * process.h	State machine for a server to process packets.
  *
- * Version:	$Id$
+ * Version:	$Id: 97a3fdfce702016775c98a90e80b0c2165e2828d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2012 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(process_h, "$Id$")
+RCSIDH(process_h, "$Id: 97a3fdfce702016775c98a90e80b0c2165e2828d $")
 
 #ifdef __cplusplus
 extern "C" {

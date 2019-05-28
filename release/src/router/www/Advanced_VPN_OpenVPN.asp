@@ -175,14 +175,14 @@ function initial(){
 	setTimeout("show_warning_message();", 100);
 
 	//set FAQ URL
-	//	https://www.asus.com/support/FAQ/1033576
-	httpApi.faqURL("faq_windows", "1033576", "https://www.asus.com", "/support/FAQ/");
-	//	https://www.asus.com/support/FAQ/1033575
-	httpApi.faqURL("faq_macOS", "1033575", "https://www.asus.com", "/support/FAQ/");
-	//	https://www.asus.com/support/FAQ/1033574
-	httpApi.faqURL("faq_iPhone", "1033574", "https://www.asus.com", "/support/FAQ/");
-	//	https://www.asus.com/support/FAQ/1033572
-	httpApi.faqURL("faq_android", "1033572", "https://www.asus.com", "/support/FAQ/");	
+	//	https://www.asus.com/support/FAQ/1004469
+	httpApi.faqURL("1004469", function(url){document.getElementById("faq_windows").href=url;});
+	//	https://www.asus.com/support/FAQ/1004472
+	httpApi.faqURL("1004472", function(url){document.getElementById("faq_macOS").href=url;});
+	//	https://www.asus.com/support/FAQ/1004471
+	httpApi.faqURL("1004471", function(url){document.getElementById("faq_iPhone").href=url;});
+	//	https://www.asus.com/support/FAQ/1004466
+	httpApi.faqURL("1004466", function(url){document.getElementById("faq_android").href=url;});	
 
 	updateVpnServerClientAccess();
 }
@@ -201,24 +201,24 @@ function show_warning_message(){
 			if(validator.isPrivateIP(wanlink_ipaddr())){
 				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 				document.getElementById("privateIP_notes").style.display = "";
-				//	http://www.asus.com/support/FAQ/1033906
-				httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");	//this id is include in string : #vpn_privateIP_hint#
+				//	https://www.asus.com/support/FAQ/1033906
+				httpApi.faqURL("1033906", function(url){document.getElementById("faq_port_forwarding").href=url;});	//this id is include in string : #vpn_privateIP_hint#
 			}
 		}
 		else{
 			if(!external_ip){
 				document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 				document.getElementById("privateIP_notes").style.display = "";
-				//	http://www.asus.com/support/FAQ/1033906
-				httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");	//this id is include in string : #vpn_privateIP_hint#
+				//	https://www.asus.com/support/FAQ/1033906
+				httpApi.faqURL("1033906", function(url){document.getElementById("faq_port_forwarding").href=url;});	//this id is include in string : #vpn_privateIP_hint#
 			}
 		}
 	}
 	else if(validator.isPrivateIP(wanlink_ipaddr())){
 		document.getElementById("privateIP_notes").innerHTML = "<#vpn_privateIP_hint#>";
 		document.getElementById("privateIP_notes").style.display = "";
-		//	http://www.asus.com/support/FAQ/1033906
-		httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");	//this id is include in string : #vpn_privateIP_hint#
+		//	https://www.asus.com/support/FAQ/1033906
+		httpApi.faqURL("1033906", function(url){document.getElementById("faq_port_forwarding").href=url;});	//this id is include in string : #vpn_privateIP_hint#
 	}
 }
 
@@ -656,9 +656,9 @@ function del_Row(rowdata){
 			if(j == 1)
 				vpn_server_clientlist_value += "<";
 			else {
-				vpn_server_clientlist_value += document.getElementById("openvpnd_clientlist_table").rows[k].cells[1].innerHTML;
+				vpn_server_clientlist_value += document.getElementById("openvpnd_clientlist_table").rows[k].cells[1].title;
 				vpn_server_clientlist_value += ">";
-				vpn_server_clientlist_value += document.getElementById("openvpnd_clientlist_table").rows[k].cells[2].innerHTML;
+				vpn_server_clientlist_value += document.getElementById("openvpnd_clientlist_table").rows[k].cells[2].title;
 			}
 		}
 	}
@@ -1080,7 +1080,7 @@ function enable_server_igncrt(flag){
 	update_visibility();
 	document.getElementById("Hint_fixed_tls_crypto").style.display = (flag==1)?"":"none";
 	document.getElementById("Fixed_tls_crypto").style.display = (flag==1)?"":"none";
-	document.getElementById("allowed_client_name").innerHTML = (flag==1)?"<#HSDPAConfig_Username_itemname#>":"Common Name(CN)";
+	document.getElementById("allowed_client_name").innerHTML = (flag==1)?"<#Username#>":"Common Name(CN)";
 }
 
 function vpnServerTlsKeysize(_obj) {
@@ -1393,6 +1393,18 @@ function updateVpnServerClientAccess() {
               									<div id="openvpn_error_message" style="display:none;margin-left:5px;"></div>	
             								</td>
           								</tr>
+										<tr id="openvpn_export_cert" style="display:none;">
+											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(32,27);"><#vpn_export_cert#></a></th>
+											<td>
+												<input id="exportCertToLocal" class="button_gen" type="button" value="<#btn_Export#>" onClick="exportCert();"/>
+											</td>
+										</tr>
+										<tr id="openvpn_import_cert" style="display:none;">
+											<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(32,28);"><#vpn_import_cert#></a></th>
+											<td>
+												<input class="button_gen" type="button" value="<#CTL_upload#>" onClick="selectImportFile();"/>
+											</td>
+										</tr>
 									</table>
 									<div id="OpenVPN_setting" style="display:none;margin-top:8px;">
 										<div class="formfontdesc">
@@ -1412,7 +1424,7 @@ function updateVpnServerClientAccess() {
 											</thead>								
 											<tr>
 												<th><#PPPConnection_x_WANLink_itemname#></th>
-												<th><#HSDPAConfig_Username_itemname#></th>
+												<th><#Username#></th>
 												<th><#HSDPAConfig_Password_itemname#></th>
 												<th><#list_add_delete#></th>
 											</tr>			  
@@ -1699,7 +1711,7 @@ function updateVpnServerClientAccess() {
 											</tr>
 											</thead>
 											<tr>
-												<th width="36%"><a id="allowed_client_name" class="hintstyle" href="javascript:void(0);" onClick="openHint(32,22);">Common Name(CN)</a></th>	<!-- #HSDPAConfig_Username_itemname# -->
+												<th width="36%"><a id="allowed_client_name" class="hintstyle" href="javascript:void(0);" onClick="openHint(32,22);">Common Name(CN)</a></th>	<!-- #Username# -->
 												<th width="20%"><a id="allowed_client_name" class="hintstyle" href="javascript:void(0);" onClick="openHint(32,23);"><#Subnet#></a></th>
 												<th width="20%"><a id="allowed_client_name" class="hintstyle" href="javascript:void(0);" onClick="openHint(32,24);">Mask</a></th>
 												<th width="12%"><a id="allowed_client_name" class="hintstyle" href="javascript:void(0);" onClick="openHint(32,25);"><#Push#></a></th>

@@ -776,7 +776,6 @@ int get_tx_power_qtn(void)
 	return 23;
 }
 
-typedef uint16 chanspec_t;
 extern uint8 wf_chspec_ctlchan(chanspec_t chspec);
 extern chanspec_t wf_chspec_aton(const char *a);
 

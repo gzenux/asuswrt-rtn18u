@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id$
+ * $Id: 81ef4d901c5ff2cf34be063d40deed5bc4016dec $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2008 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id$")
+RCSIDH(libradius_h, "$Id: 81ef4d901c5ff2cf34be063d40deed5bc4016dec $")
 
 #include <freeradius-devel/missing.h>
 

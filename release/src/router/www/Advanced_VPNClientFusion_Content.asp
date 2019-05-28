@@ -289,7 +289,7 @@ function initial(){
 	gen_exception_list_table();
 
 	//	https://www.asus.com/support/FAQ/1033909
-	httpApi.faqURL("faq1", "1033909", "https://www.asus.com", "/support/FAQ/");	//this id is include in string : #VPN_Fusion_FAQ#	
+	httpApi.faqURL("1033909", function(url){document.getElementById("faq1").href=url;});	//this id is include in string : #VPN_Fusion_FAQ#	
 }
 function gen_exception_list_table() {
 	//set table Struct
@@ -2655,7 +2655,7 @@ function del_exception_list_confirm(_parArray) {
 						</td>
 					</tr>  		
 					<tr>
-						<th><#HSDPAConfig_Username_itemname#></th>
+						<th><#Username#></th>
 						<td>
 							<input type="text" maxlength="64" name="vpnc_account_edit" value="" class="input_32_table" style="float:left;" autocomplete="off" autocorrect="off" autocapitalize="off"></input>
 						</td>
@@ -3162,7 +3162,7 @@ function del_exception_list_confirm(_parArray) {
 							</td>
 						</tr>  			
 						<tr>
-							<th><#HSDPAConfig_Username_itemname#> (option)</th>
+							<th><#Username#> (option)</th>
 							<td>
 								<input type="text" maxlength="64" name="vpnc_openvpn_username" value="" class="input_32_table" style="float:left;" autocomplete="off" autocorrect="off" autocapitalize="off"></input>
 							</td>

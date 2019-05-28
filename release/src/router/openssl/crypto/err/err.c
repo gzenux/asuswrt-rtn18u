@@ -118,6 +118,7 @@
 #include <openssl/buffer.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include "constant_time_locl.h"
 
 DECLARE_LHASH_OF(ERR_STRING_DATA);
 DECLARE_LHASH_OF(ERR_STATE);
@@ -172,6 +173,7 @@ static ERR_STRING_DATA ERR_str_functs[] = {
 # endif
     {ERR_PACK(0, SYS_F_OPENDIR, 0), "opendir"},
     {ERR_PACK(0, SYS_F_FREAD, 0), "fread"},
+    {ERR_PACK(0, SYS_F_FFLUSH, 0), "fflush"},
     {0, NULL},
 };
 
@@ -601,8 +603,8 @@ static void build_SYS_str_reasons(void)
             char (*dest)[LEN_SYS_STR_REASON] = &(strerror_tab[i - 1]);
             char *src = strerror(i);
             if (src != NULL) {
-                strncpy(*dest, src, sizeof *dest);
-                (*dest)[sizeof *dest - 1] = '\0';
+                strncpy(*dest, src, sizeof(*dest));
+                (*dest)[sizeof(*dest) - 1] = '\0';
                 str->string = *dest;
             }
         }
@@ -724,6 +726,8 @@ void ERR_put_error(int lib, int func, int reason, const char *file, int line)
     }
 #endif
     es = ERR_get_state();
+    if (es == NULL)
+        return;
 
     es->top = (es->top + 1) % ERR_NUM_ERRORS;
     if (es->top == es->bottom)
@@ -741,6 +745,8 @@ void ERR_clear_error(void)
     ERR_STATE *es;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return;
 
     for (i = 0; i < ERR_NUM_ERRORS; i++) {
         err_clear(es, i);
@@ -805,6 +811,8 @@ static unsigned long get_error_values(int inc, int top, const char **file,
     unsigned long ret;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return 0;
 
     if (inc && top) {
         if (file)
@@ -867,6 +875,9 @@ void ERR_error_string_n(unsigned long e, char *buf, size_t len)
     char lsbuf[64], fsbuf[64], rsbuf[64];
     const char *ls, *fs, *rs;
     unsigned long l, f, r;
+
+    if (len == 0)
+        return;
 
     l = ERR_GET_LIB(e);
     f = ERR_GET_FUNC(e);
@@ -1012,7 +1023,6 @@ void ERR_remove_state(unsigned long pid)
 
 ERR_STATE *ERR_get_state(void)
 {
-    static ERR_STATE fallback;
     ERR_STATE *ret, tmp, *tmpp = NULL;
     int i;
     CRYPTO_THREADID tid;
@@ -1026,7 +1036,7 @@ ERR_STATE *ERR_get_state(void)
     if (ret == NULL) {
         ret = (ERR_STATE *)OPENSSL_malloc(sizeof(ERR_STATE));
         if (ret == NULL)
-            return (&fallback);
+            return NULL;
         CRYPTO_THREADID_cpy(&ret->tid, &tid);
         ret->top = 0;
         ret->bottom = 0;
@@ -1038,7 +1048,7 @@ ERR_STATE *ERR_get_state(void)
         /* To check if insertion failed, do a get. */
         if (ERRFN(thread_get_item) (ret) != ret) {
             ERR_STATE_free(ret); /* could not insert it */
-            return (&fallback);
+            return NULL;
         }
         /*
          * If a race occured in this function and we came second, tmpp is the
@@ -1062,10 +1072,10 @@ void ERR_set_error_data(char *data, int flags)
     int i;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return;
 
     i = es->top;
-    if (i == 0)
-        i = ERR_NUM_ERRORS - 1;
 
     err_clear_data(es, i);
     es->err_data[i] = data;
@@ -1117,6 +1127,8 @@ int ERR_set_mark(void)
     ERR_STATE *es;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return 0;
 
     if (es->bottom == es->top)
         return 0;
@@ -1129,6 +1141,8 @@ int ERR_pop_to_mark(void)
     ERR_STATE *es;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return 0;
 
     while (es->bottom != es->top
            && (es->err_flags[es->top] & ERR_FLAG_MARK) == 0) {
@@ -1142,4 +1156,41 @@ int ERR_pop_to_mark(void)
         return 0;
     es->err_flags[es->top] &= ~ERR_FLAG_MARK;
     return 1;
+}
+
+#ifdef UINTPTR_T
+# undef UINTPTR_T
+#endif
+/*
+ * uintptr_t is the answer, but unformtunately we can't assume that all
+ * compilers supported by 1.0.2 have it :-(
+ */
+#if defined(OPENSSL_SYS_VMS) && __INITIAL_POINTER_SIZE==64
+/*
+ * But we can't use size_t on VMS, because it adheres to sizeof(size_t)==4
+ * even in 64-bit builds, which means that it won't work as mask.
+ */
+# define UINTPTR_T unsigned long long
+#else
+# define UINTPTR_T size_t
+#endif
+
+void err_clear_last_constant_time(int clear)
+{
+    ERR_STATE *es;
+    int top;
+
+    es = ERR_get_state();
+    if (es == NULL)
+        return;
+
+    top = es->top;
+
+    es->err_flags[top] &= ~(0 - clear);
+    es->err_buffer[top] &= ~(0UL - clear);
+    es->err_file[top] = (const char *)((UINTPTR_T)es->err_file[top] &
+                                       ~((UINTPTR_T)0 - clear));
+    es->err_line[top] |= 0 - clear;
+
+    es->top = (top + ERR_NUM_ERRORS - clear) % ERR_NUM_ERRORS;
 }

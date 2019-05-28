@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id$
+ * Version:	$Id: a23897a7473ad67ad7f35c76ebee29a1b9eb686f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2012   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: a23897a7473ad67ad7f35c76ebee29a1b9eb686f $")
 
 #include <freeradius-devel/radiusd.h>
 

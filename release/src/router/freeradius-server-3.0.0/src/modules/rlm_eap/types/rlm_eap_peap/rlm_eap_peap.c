@@ -1,7 +1,7 @@
 /*
  * rlm_eap_peap.c  contains the interfaces that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: 5973b303a581c26edb1e0d81a32c63792616f3af $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 5973b303a581c26edb1e0d81a32c63792616f3af $")
 
 #include "eap_peap.h"
 

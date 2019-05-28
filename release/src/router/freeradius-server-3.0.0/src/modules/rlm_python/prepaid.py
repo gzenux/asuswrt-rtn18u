@@ -17,7 +17,7 @@
 # Copyright 2002 Miguel A.L. Paraz <mparaz@mparaz.com>
 # Copyright 2002 Imperium Technology, Inc.
 #
-# $Id$
+# $Id: c08876ab4a77dbb1c29ff977745e860eb96c6318 $
 
 import radiusd
 import MySQLdb

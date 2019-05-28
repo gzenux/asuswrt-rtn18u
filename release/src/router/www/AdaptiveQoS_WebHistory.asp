@@ -21,6 +21,7 @@
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/js/httpApi.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/asus_eula.js"></script>
 <style>
 .transition_style{
 	-webkit-transition: all 0.2s ease-in-out;
@@ -30,11 +31,6 @@
 }
 </style>
 <script>
-window.onresize = function() {
-	if(document.getElementById("agreement_panel").style.display == "block") {
-		cal_panel_block("agreement_panel", 0.25);
-	}
-}
 function initial(){
 	show_menu();
 	if(document.form.bwdpi_wh_enable.value == 1){
@@ -45,6 +41,8 @@ function initial(){
 	else{
 		document.getElementById("log_field").style.display = "none";
 	}
+	if(!ASUS_EULA.status("tm"))
+		ASUS_EULA.config(eula_confirm, cancel);
 }
 
 var htmlEnDeCode = (function() {
@@ -129,9 +127,9 @@ function parsingAjaxResult(rawData){
 
 	var code = "";
 	code += "<tr>";
-	code += "<th style='width:20%;text-align:left'>Access Time</th>";
+	code += "<th style='width:20%;text-align:left'><#Access_Time#></th>";
 	code += "<th style='width:30%;text-align:left'><#PPPConnection_x_MacAddressForISP_itemname#> / <#Client_Name#></th>";
-	code += "<th style='width:50%;text-align:left'>Domain Name</th>";
+	code += "<th style='width:50%;text-align:left'><#Domain_Name#></th>";
 	code += "</tr>";
 	for(var i=0; i<data_array.length; i++){
 		var thisLog = {
@@ -253,26 +251,45 @@ function change_page(flag, target){
 		getWebHistory(target, page);
 	}
 }
+function applyRule(){
+	if(reset_wan_to_fo.change_status)
+		reset_wan_to_fo.change_wan_mode(document.form);
+
+	if(document.form.bwdpi_wh_enable.value == 1) {
+		var t = new Date();
+		var timestamp = t.getTime().toString().substring(0,10);
+		document.form.bwdpi_wh_stamp.value = timestamp;
+	}
+	document.form.submit();
+}
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	document.form.bwdpi_wh_enable.value = 1;
-	if(reset_wan_to_fo(document.form, document.form.bwdpi_wh_enable.value)) {
-		document.form.action_wait.value = "15";
-		document.form.submit();
-	}
-	else {
-		cancel();
-	}
+	document.form.action_wait.value = "15";
+	applyRule();
 }
 
 function cancel(){
 	curState = 0;
-	document.form.bwdpi_wh_enable.value = 1;
 	$('#iphone_switch').animate({backgroundPosition: -37}, "slow", function() {});
-	$("#agreement_panel").fadeOut(100);
-	document.getElementById("hiddenMask").style.visibility = "hidden";
-	htmlbodyforIE = parent.document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
-	htmlbodyforIE[0].style.overflow = "scroll";	  //hidden the Y-scrollbar for preventing from user scroll it.
+	document.form.action_wait.value = "3";
+	document.form.action_script.value = "restart_qos;restart_firewall";
+}
+function switch_control(_status){
+	if(_status) {
+		if(reset_wan_to_fo.check_status()) {
+			if(ASUS_EULA.check("tm")){
+				document.form.bwdpi_wh_enable.value = 1;
+				applyRule();
+			}
+		}
+		else
+			cancel();
+	}
+	else {
+		document.form.bwdpi_wh_enable.value = 0;
+		applyRule();
+	}
 }
 function cal_panel_block(obj){
 	var blockmarginLeft;
@@ -309,7 +326,6 @@ function updateWebHistory() {
 <body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="eula_panel_container"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center"></table>
 	<!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
@@ -356,52 +372,10 @@ function updateWebHistory() {
 															<script type="text/javascript">
 																$('#bwdpi_wh_enable').iphoneSwitch('<% nvram_get("bwdpi_wh_enable"); %>',
 																	function(){
-																		if(document.form.TM_EULA.value == 0){
-																			var adjust_TM_eula_height = function(_objID) {
-																				var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-																				document.getElementById(_objID).style.top = (scrollTop + 10) + "px";
-																				var visiable_height = document.documentElement.clientHeight;
-																				var tm_eula_container_height = parseInt(document.getElementById(_objID).offsetHeight);
-																				var tm_eula_visiable_height = visiable_height - tm_eula_container_height;
-																				if(tm_eula_visiable_height < 0) {
-																					var tm_eula_content_height = parseInt(document.getElementById("tm_eula_content").style.height);
-																					document.getElementById("tm_eula_content").style.height = (tm_eula_content_height - Math.abs(tm_eula_visiable_height) - 20) + "px"; //content height - overflow height - margin top and margin bottom
-																				}
-																			};
-
-																			$.get("tm_eula.htm", function(data){
-																				document.getElementById('agreement_panel').innerHTML= data;
-																				var url = "https://www.asus.com/Microsite/networks/Trend_Micro_EULA/";
-																				$("#eula_url").attr("href",url);
-																				url = "https://www.trendmicro.com/en_us/about/legal/privacy-policy-product.html"
-																				$("#tm_eula_url").attr("href",url);
-																				url = "https://success.trendmicro.com/data-collection-disclosure";
-																				$("#tm_disclosure_url").attr("href",url);
-																				adjust_TM_eula_height("agreement_panel");
-																			});
-
-																			dr_advise();
-																			cal_panel_block("agreement_panel", 0.25);
-																			$("#agreement_panel").fadeIn(300);
-																			return false;
-																		}
-																			var t = new Date();
-																			var timestamp = t.getTime().toString().substring(0,10);
-
-																			document.form.bwdpi_wh_stamp.value = timestamp;
-																			document.form.bwdpi_wh_enable.value = 1;
-																			if(reset_wan_to_fo(document.form, document.form.bwdpi_wh_enable.value)) {
-																				document.form.submit();
-																			}
-																			else {
-																				curState = 0;
-																				document.form.bwdpi_wh_enable.value = 0;
-																				$('#bwdpi_wh_enable').find('.iphone_switch').animate({backgroundPosition: -37}, "slow");
-																			}
+																		switch_control(1);
 																	},
 																	function(){
-																		document.form.bwdpi_wh_enable.value = 0;
-																		document.form.submit();
+																		switch_control(0);
 																	}
 																);
 															</script>

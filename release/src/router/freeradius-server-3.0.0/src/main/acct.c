@@ -1,7 +1,7 @@
 /*
  * acct.c	Accounting routines.
  *
- * Version:	$Id$
+ * Version:	$Id: 6845b23f17eac260242d46ca2a0ba0c6680707f7 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 6845b23f17eac260242d46ca2a0ba0c6680707f7 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

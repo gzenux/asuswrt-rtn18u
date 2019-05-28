@@ -3,7 +3,7 @@
 /*
  * rad_assert.h	  Debug assertions, with logging.
  *
- * Version:	$Id$
+ * Version:	$Id: 4a2c37333dbff8851253fa951b54ce1550c4894e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000,2001,2006  The FreeRADIUS server project
  */
 
-RCSIDH(rad_assert_h, "$Id$")
+RCSIDH(rad_assert_h, "$Id: 4a2c37333dbff8851253fa951b54ce1550c4894e $")
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,7 +1,7 @@
 /*
  * evaluate.c	Evaluate complex conditions
  *
- * Version:	$Id$
+ * Version:	$Id: c50a85f2138e03ba1e57c2e572b781a31e76bbf8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: c50a85f2138e03ba1e57c2e572b781a31e76bbf8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

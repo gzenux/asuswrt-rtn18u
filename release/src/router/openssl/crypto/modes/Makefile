@@ -106,7 +106,7 @@ dclean:
 	mv -f Makefile.new $(MAKEFILE)
 
 clean:
-	rm -f *.s *.o */*.o *.obj lib tags core .pure .nfs* *.old *.bak fluff
+	rm -f *.s *.S *.o */*.o *.obj lib tags core .pure .nfs* *.old *.bak fluff
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
@@ -139,7 +139,7 @@ gcm128.o: ../../include/openssl/crypto.h ../../include/openssl/e_os2.h
 gcm128.o: ../../include/openssl/modes.h ../../include/openssl/opensslconf.h
 gcm128.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 gcm128.o: ../../include/openssl/safestack.h ../../include/openssl/stack.h
-gcm128.o: ../../include/openssl/symhacks.h gcm128.c modes_lcl.h
+gcm128.o: ../../include/openssl/symhacks.h ../arm_arch.h gcm128.c modes_lcl.h
 ofb128.o: ../../include/openssl/crypto.h ../../include/openssl/e_os2.h
 ofb128.o: ../../include/openssl/modes.h ../../include/openssl/opensslconf.h
 ofb128.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h

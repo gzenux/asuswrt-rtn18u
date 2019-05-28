@@ -10,7 +10,7 @@ MODIFIED:
 ------------------------------------------------------------------------------
 */
 
-RCSID("$Id$")
+RCSID("$Id: fff1a35d89a7d1bcf98c34bd1e44f85eda2388c6 $")
 
 #include <freeradius-devel/libradius.h>
 

@@ -20,7 +20,7 @@
    Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 69c1e0fd49eca3a2599906dd8f8538556138bd42 $")
 
 #include	<freeradius-devel/libradius.h>
 #include	<freeradius-devel/md4.h>

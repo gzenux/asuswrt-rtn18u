@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 3aaee1723f434178354a62a56eaebfdac67cea4c $
  * @file rlm_preprocess.c
  * @brief Fixes up requests, and processes huntgroups/hints files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id$")
+RCSID("$Id: 3aaee1723f434178354a62a56eaebfdac67cea4c $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

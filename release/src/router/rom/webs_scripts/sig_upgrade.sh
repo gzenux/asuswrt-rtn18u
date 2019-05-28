@@ -76,8 +76,8 @@ else
 			mv /tmp/rule.trf /jffs/signature/rule.trf
 		fi
 		if [ "$1" == "" ];then
+			nvram set sig_update_t=`date +%s`   #set timestamp for download signature and restart_wrs
 			rc rc_service restart_wrs
-			nvram set sig_update_t=`date +%s`	#set timestamp for download signature and restart_wrs
 		else
 			echo "do nothing..."	
 		fi

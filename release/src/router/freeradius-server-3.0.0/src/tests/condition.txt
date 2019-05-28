@@ -1,7 +1,7 @@
 #
 #  Tests for parsing conditional expressions.
 #
-#  $Id$
+#  $Id: 460bf1f8c7277915e850b2a51948a25ebe1d65ea $
 #
 
 condition a == b

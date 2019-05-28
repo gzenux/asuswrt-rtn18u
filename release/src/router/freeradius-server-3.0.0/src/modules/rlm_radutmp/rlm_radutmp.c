@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: 81f3cfde90fda553183d238b50e3a79f8c718e62 $
  * @file rlm_radutmp.c
  * @brief Tracks sessions.
  *
  * @copyright 2000-2013  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: 81f3cfde90fda553183d238b50e3a79f8c718e62 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/radutmp.h>

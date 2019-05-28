@@ -1,7 +1,7 @@
 /*
  * misc.c	Various miscellaneous functions.
  *
- * Version:	$Id$
+ * Version:	$Id: 90b269d336105aba3cb4da1eaef804e939da1e06 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 90b269d336105aba3cb4da1eaef804e939da1e06 $")
 
 #include	<freeradius-devel/libradius.h>
 

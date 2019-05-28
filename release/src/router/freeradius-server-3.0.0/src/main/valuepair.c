@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: b9a017976700cdf6fdbbc493b9d3a925f56d9285 $
  *
  * @brief Valuepair functions that are radiusd-specific and as such do not
  * 	  belong in the library.
@@ -27,7 +27,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: b9a017976700cdf6fdbbc493b9d3a925f56d9285 $")
 
 #include <ctype.h>
 

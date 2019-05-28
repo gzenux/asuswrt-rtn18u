@@ -640,7 +640,7 @@ function scenario() {
 	description += "<br>";
 	description += "2. Make sure your AiMesh node is up to date. (Firmware version need to support AiMesh)";/* untranslated */
 	description += "<br>";
-	description += "<a style='font-weight:bolder;text-decoration:underline;color:#FC0;' href='http://www.asus.com/support/' target='_blank'>Find supported firmware</a>";/* untranslated */
+	description += "<a style='font-weight:bolder;text-decoration:underline;color:#FC0;' href='https://www.asus.com/support/' target='_blank'><#AiMesh_Desc3_note#></a>";
 	gen_each_step_content(description, 3);
 
 	interval = setInterval(set_slider, 15000);

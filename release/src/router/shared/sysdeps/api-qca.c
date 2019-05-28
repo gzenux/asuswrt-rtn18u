@@ -81,7 +81,7 @@ ieee80211_mhz2ieee(u_int freq)
 }
 /////////////
 
-#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_SOC_IPQ40XX)
+#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X) || defined(RTCONFIG_SOC_IPQ40XX)
 const char WIF_5G[] = "ath1";
 const char WIF_2G[] = "ath0";
 const char STA_5G[] = "sta1";
@@ -389,7 +389,10 @@ void set_radio(int on, int unit, int subunit)
 		sub++;
 	} while (subunit < 0 && sub <= 3);
 
-	led_control(led, onoff);
+#if defined(RTCONFIG_WPS_ALLLED_BTN)
+	if (nvram_match("AllLED", "1"))
+#endif
+		led_control(led, onoff);
 }
 
 char *wif_to_vif(char *wif)

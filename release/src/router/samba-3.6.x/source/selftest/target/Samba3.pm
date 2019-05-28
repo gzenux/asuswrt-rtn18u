@@ -127,7 +127,6 @@ sub setup_dc($$)
 	domain master = yes
 	domain logons = yes
 	lanman auth = yes
-	raw NTLMv2 auth = yes
 ";
 
 	my $vars = $self->provision($path,
@@ -231,7 +230,6 @@ sub setup_secserver($$$)
 	my $secserver_options = "
 	security = server
         password server = $s3dcvars->{SERVER_IP}
-	client ntlmv2 auth = no
 ";
 
 	my $ret = $self->provision($prefix,

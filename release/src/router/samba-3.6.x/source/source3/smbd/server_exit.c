@@ -132,39 +132,23 @@ static void exit_server_common(enum server_exit_reason how,
 
 	if (am_parent) {
 		rpc_wkssvc_shutdown();
-#ifdef ACTIVE_DIRECTORY
 		rpc_dssetup_shutdown();
-#endif
 #ifdef DEVELOPER
 		rpc_rpcecho_shutdown();
 #endif
-#ifdef DFS_SUPPORT
 		rpc_netdfs_shutdown();
-#endif
 		rpc_initshutdown_shutdown();
-#ifdef EXTRA_SERVICES
 		rpc_eventlog_shutdown();
-		rpc_svcctl_shutdown();
 		rpc_ntsvcs_shutdown();
-#endif
-#ifdef PRINTER_SUPPORT
+		rpc_svcctl_shutdown();
 		rpc_spoolss_shutdown();
-#endif
 
 		rpc_srvsvc_shutdown();
-#ifdef WINREG_SUPPORT
 		rpc_winreg_shutdown();
-#endif
 
-#ifdef NETLOGON_SUPPORT
 		rpc_netlogon_shutdown();
-#endif
-#ifdef SAMR_SUPPORT
 		rpc_samr_shutdown();
-#endif
-#ifdef LSA_SUPPORT
 		rpc_lsarpc_shutdown();
-#endif
 	}
 
 	/*

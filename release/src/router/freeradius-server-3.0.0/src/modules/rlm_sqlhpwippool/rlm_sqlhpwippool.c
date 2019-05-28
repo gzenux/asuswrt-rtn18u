@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 01f8293a020d9b9f0cc29fe6e892e913f67bca0d $
  * @file rlm_sqlhpwippool.c
  * @brief Allocates an IPv4 address from pools defined in ASN Netvim.
  *
@@ -47,7 +47,7 @@
 #define RLM_NETVIM_MAX_ROWS 1000000
 #define RLM_NETVIM_TMP_PREFIX "auth-tmp-"
 
-static char const rcsid[] = "$Id$";
+static char const rcsid[] = "$Id: 01f8293a020d9b9f0cc29fe6e892e913f67bca0d $";
 
 typedef struct rlm_sqlhpwippool_t {
 	char const *myname;	 /* name of this instance */

@@ -1,7 +1,7 @@
 /*
  *  strlcpy.c	Copy strings.
  *
- *  Version:	$Id$
+ *  Version:	$Id: 689df5da2dd1f56db684a1f8ffb40b6386d68ce1 $
  *
  */
 
@@ -23,7 +23,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 689df5da2dd1f56db684a1f8ffb40b6386d68ce1 $")
 
 #ifndef HAVE_STRLCPY
 

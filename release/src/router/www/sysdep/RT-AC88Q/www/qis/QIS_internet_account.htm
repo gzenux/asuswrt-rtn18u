@@ -1010,7 +1010,7 @@ function pass_checked_iptv(obj){
 		<div id="pppoe_fail_desc" style="font-size:14px;margin:0 0 10px 10px;color:#FC0;display:none"><#QKSet_Internet_Setup_fail_reason2#></div>
 		<table id="tblsetting_1" class="QISform" style="width:380px;" border="0" align="center" cellpadding="5" cellspacing="0">
 		<tr>
-			<th width="180"><span onmouseout="return nd();" onclick="openHint(7, 27);" style="cursor:help;"><#HSDPAConfig_Username_itemname#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="../images/New_ui/helpicon.png"></span></th>
+			<th width="180"><span onmouseout="return nd();" onclick="openHint(7, 27);" style="cursor:help;"><#Username#><img align="right" style="cursor:pointer;margin-top:-14px\9;" src="../images/New_ui/helpicon.png"></span></th>
 			<td class="QISformtd">
 				<input type="text" name="wan_pppoe_username" maxlength="64" value="" tabindex="1" onkeypress="return validator.isString(this, event);" class="input_18_table" size="36" autocapitalization="off" autocomplete="off"/>
 			</td>
@@ -1222,7 +1222,7 @@ function pass_checked_iptv(obj){
 							</td>
 						</tr>
 		            	<tr id="tr_pppoe_username" style="display:none;">
-		             	 	<th style="color:#6CF;"><#HSDPAConfig_Username_itemname#>: </th>
+		             	 	<th style="color:#6CF;"><#Username#>: </th>
 		              		<td style="text-align:left;"><input type="text" maxlength="64" class="input_15_table" name="wan10_pppoe_username" value="<% nvram_get("wan10_pppoe_username"); %>" onkeypress="return validator.isString(this, event)"></td>
 		            	</tr>
 		            	<tr id="tr_pppoe_password" style="display:none;">
@@ -1244,7 +1244,7 @@ function pass_checked_iptv(obj){
 	<fieldset>
 		<div id="DNSDiv">
 			<div class="row">
-				<label><#PPPConnection_UserName_itemname#></label>
+				<label><#Username#></label>
 				<input type="text" name="wan_pppoe_username_m" placeholder="" maxlength="64" value="" autocapitalization="off" autocomplete="off"/>
 			</div>
 			<div class="row">

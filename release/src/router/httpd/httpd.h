@@ -32,6 +32,18 @@
 #endif
 #include <rtconfig.h>
 
+/* DEBUG DEFINE */
+#define HTTPD_DEBUG             "/tmp/HTTPD_DEBUG"
+
+/* DEBUG FUNCTION */
+
+#define HTTPD_DBG(fmt,args...) \
+        if(f_exists(HTTPD_DEBUG) > 0) { \
+                char info[1024]; \
+                snprintf(info, sizeof(info), "echo \"[HTTPD][%s:(%d)]"fmt"\" >> /tmp/HTTPD_DEBUG.log", __FUNCTION__, __LINE__, ##args); \
+                system(info); \
+        }
+
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
 
@@ -255,7 +267,7 @@ extern int check_lang_support(char *lang);
 extern int load_dictionary (char *lang, pkw_t pkw);
 extern void release_dictionary (pkw_t pkw);
 extern char* search_desc (pkw_t pkw, char *name);
-extern int change_preferred_lang();
+extern int change_preferred_lang(int finish);
 extern int get_lang_num();
 //extern char Accept_Language[16];
 #else
@@ -377,6 +389,11 @@ extern void page_default_redirect(int fromapp_flag, char* url);
 extern int wave_app_flag;
 extern int wave_handle_app_flag(char *name, int wave_app_flag);
 #endif
-extern int auto_set_lang;
-
+#ifdef RTCONFIG_TCODE
+extern int change_location(char *lang);
+#endif
+#ifdef RTCONFIG_WTF_REDEEM
+extern void wtfast_gen_partnercode(char *str, size_t size);
+#endif
+extern void update_wlan_log(int sig);
 #endif /* _httpd_h_ */

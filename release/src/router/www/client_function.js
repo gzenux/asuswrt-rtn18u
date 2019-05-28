@@ -146,7 +146,7 @@ function genClientList(){
 			if(typeof clientList[thisClientMacAddr] == "undefined"){
 				clientList.push(thisClientMacAddr);
 				clientList[thisClientMacAddr] = new setClientAttr();
-				clientList[thisClientMacAddr].from = "networkmapd";
+				clientList[thisClientMacAddr].from = thisClient.from;
 			}
 			else{
 				clientList[thisClientMacAddr].macRepeat++;
@@ -258,7 +258,7 @@ function genClientList(){
 
 				clientList.push(thisClientMacAddr);
 				clientList[thisClientMacAddr] = new setClientAttr();
-				clientList[thisClientMacAddr].from = "nmpClient";
+				clientList[thisClientMacAddr].from = thisClient.from;
 				if(!downsize_4m_support) {
 					clientList[thisClientMacAddr].type = thisClientType;
 					clientList[thisClientMacAddr].defaultType = thisClientDefaultType;
@@ -270,7 +270,7 @@ function genClientList(){
 				nmpCount++;
 			}
 			else if(!clientList[thisClientMacAddr].isOnline) {
-				clientList[thisClientMacAddr].from = "nmpClient";
+				clientList[thisClientMacAddr].from = thisClient.from;
 				nmpCount++;
 			}
 		}
@@ -290,7 +290,7 @@ function getUploadIcon(clientMac) {
 			setTimeout("getUploadIcon('" + clientMac + "');", 1000);
 		},
 		success: function(response){
-			result = upload_icon;
+			result = htmlEnDeCode.htmlEncode(upload_icon);
 		}
 	});
 	return result
@@ -554,10 +554,14 @@ function popClientListEditTable(event) {
 	//build device icon list start
 	var clientListIconArray = [["Windows device", "1"], ["Router", "2"], ["NAS/Server", "4"], ["IP Cam", "5"], ["Macbook", "6"], ["Game Console", "7"], ["Android Phone", "9"], ["iPhone", "10"], 
 	["Apple TV", "11"], ["Set-top Box", "12"], ["iMac", "14"], ["ROG", "15"], ["Printer", "18"], ["Windows Phone", "19"], ["Android Tablet", "20"], ["iPad", "21"], ["Linux Device", "22"], 
-	["Smart TV", "23"], ["Repeater", "24"], ["Kindle", "25"], ["Scanner", "26"], ["Chromecast", "27"], ["ASUS smartphone", "28"], ["ASUS Pad", "29"], ["Windows", "30"], ["Android", "31"], ["Mac OS", "32"]];
+	["Smart TV", "23"], ["Repeater", "24"], ["Kindle", "25"], ["Scanner", "26"], ["Chromecast", "27"], ["ASUS smartphone", "28"], ["ASUS Pad", "29"], ["Windows", "30"], ["Android", "31"], ["Mac OS", "32"],
+	["Windows laptop", "35"]];
 
 	var eachColCount = 7;
-	var colCount = parseInt(clientListIconArray.length / eachColCount) + 1;
+	var colCount = parseInt(clientListIconArray.length / eachColCount);
+	if(usericon_support)
+		colCount++;
+
 	for(var rowIndex = 0; rowIndex < colCount; rowIndex += 1) {
 		var row = document.getElementById("tbCardClientListIcon").insertRow(rowIndex);
 		row.id = "trCardClientListIcon" + rowIndex;
@@ -575,6 +579,7 @@ function popClientListEditTable(event) {
 						cell.className = "client_icon_list_td";
 						cell.innerHTML = '<div id="divCardUserIcon" class="client_upload_div" style="display:none;">+' +
 						'<input type="file" name="cardUploadIcon" id="cardUploadIcon" class="client_upload_file" onchange="previewCardUploadIcon(this);" title="Upload client icon" /></div>';/*untranslated*/
+						break;
 					}
 				}
 			}

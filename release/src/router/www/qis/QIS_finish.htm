@@ -10,7 +10,7 @@ span{
 	border:0px solid #FFFFFF;
 	color:#FFFFFF;
 	font-size:12px;
-	font-family:Arial, Helvetica, sans-serif;
+	font-family: Arial, Helvetica, MS UI Gothic, MS P Gothic, sans-serif;
 	/*width:27px;*/
 	text-align:right;
 	margin:0px auto;
@@ -206,17 +206,8 @@ if(parent.yadns_support){
 	var yadns_mode = '<% nvram_get("yadns_mode"); %>';
 }
 
-var get_protocol = function() {
-	var protocol = "http:";
-	if(window.location.protocol == "http:" || window.location.protocol == "https:") {
-		protocol = window.location.protocol;
-		return protocol;
-	}
-
-	return protocol;
-};
 var header_info = [<% get_header_info(); %>];
-var location_org = get_protocol() + "//" + header_info[0].host;
+var location_org = header_info[0].protocol + "://" + header_info.host + ":" + header_info.port;
 
 var isWLclient = function(){  //detect login client is by wireless or wired
 	<% login_state_hook(); %>
@@ -246,18 +237,6 @@ function yadns_change(need_apply){
 	yadns_update.submit();
 }
 
-var get_protocol = function() {
-	var protocol = "http:";
-	if(window.location.protocol == "http:" || window.location.protocol == "https:") {
-		protocol = window.location.protocol;
-		return protocol;
-	}
-
-	return protocol;
-};
-var header_info = [<% get_header_info(); %>];
-var location_org = get_protocol() + "//" + header_info[0].host;
-
 /* Live update */
 function doLiveUpdate(_do){
 	if(_do){
@@ -269,12 +248,15 @@ function doLiveUpdate(_do){
 		document.start_update.submit();
 	}
 	else{
-		setTimeout("parent.location.href='<% abs_index_page(); %>'", 3000);
+		setTimeout("parent.location.href='/'", 3000);
 	}
 }
 
 function showCancel(){
 	document.getElementById("newFWCancel").style.display = "";
+	if(parent.new_FW_type==2){
+		document.getElementById("newFWCancelDesc").innerHTML = "<#exist_new_force#>";
+	}
  	document.getElementById("newFWDetected").style.display = "none";
 }
 
@@ -455,11 +437,11 @@ function checkIsNewFirmware(){
 
 		document.getElementById("QISmain").style.display = "none";
 		document.getElementById("liveUpdate_div").style.display = "";
-
-		//force_upgrade_support : rc_support with "fupgrade"
-		if(!parent.is_CN && parent.force_upgrade_support){
-			doLiveUpdate(true);
+		if(parent.new_FW_type==2){
+			document.getElementById("liveUpdate_div_leftbutton").value = "<#CTL_UpgradeNight#>";
+			document.getElementById("liveUpdate_div_rightbutton").value = "<#CTL_UpgradeNow#>";
 		}
+
 	}
 	else{
 		if(parent.sysReboot || isWLclient())
@@ -472,7 +454,7 @@ function checkIsNewFirmware(){
 		else
 		{
 			setTimeout(function(){
-				parent.location.href = '<% abs_index_page(); %>';
+				parent.location.href = '/';
 			}, delayTimeout);
 		}
 	}
@@ -586,7 +568,9 @@ function QKfinish_load_body(){
 	var shown_str;
 
 	// disable click button for low-end HW SPEC
-	if(document.restartForm.productid.value == "RT-AC51U+"){
+	if(document.restartForm.productid.value == "RT-AC51U+"
+	|| document.restartForm.productid.value == "RT-ACRH26"
+	|| document.restartForm.productid.value == "RT-AC85P"){
 		$("#nextButton").hide();
 		$("#loadingIcon").show();
 
@@ -594,11 +578,6 @@ function QKfinish_load_body(){
 			$("#nextButton").show();
 			$("#loadingIcon").hide();
 		}, 6000);
-	}
-
-	/* MODELDEP */
-	if(document.restartForm.productid.value == "AC2900"){	//MODELDEP: AC2900(RT-AC86U)
-		$("#main_manual")[0].style.display = "none";
 	}
 
 	parent.detect_firmware();
@@ -1381,6 +1360,10 @@ function QKfinish_load_body(){
 		if(parent.new_FW){
 			document.getElementById("mainDiv_finish").style.display = "none";
 			document.getElementById("liveUpdate_div").style.display = "";
+			if(parent.new_FW_type==2){
+				document.getElementById("liveUpdate_div_leftbutton").value = "<#CTL_UpgradeNight#>";
+				document.getElementById("liveUpdate_div_rightbutton").value = "<#CTL_UpgradeNow#>";
+			}
 			document.getElementById("liveUpdateTitle").style.display = "none";
 			$("#currentFW")[0].innerHTML = parent.exist_firmver + "_" + parent.current_buildno + "_" + parent.current_extendno;
 			$("#latestFW")[0].innerHTML = "" 
@@ -1406,6 +1389,7 @@ function QKfinish_load_body(){
 	}
 
 	if(!isWLclient() && !parent.sysReboot) setTimeout(function(){
+		if(parent.isFirst) parent.restartWireless = true;
 		restartService();
 	}, 1000);
 }
@@ -1663,7 +1647,7 @@ var startQuery = function(){
 	<div class="itemTitle"><#menu5_2#></div>
 	<fieldset>
 		<div class="row">
-			<label><#LAN IP#></label>
+			<label><#LAN_IP#></label>
 			<div id="lanip_m"></div>
 		</div>
 		<div class="row_end">
@@ -1674,7 +1658,7 @@ var startQuery = function(){
 	<br />
 	
 	<fieldset>
-		<div class="row_end"><a class="iuiA" onclick="parent.location.href='<% abs_index_page(); %>';"><#menu5#></a></div>
+		<div class="row_end"><a class="iuiA" onclick="parent.location.href='/';"><#menu5#></a></div>
 	</fieldset>
 	<br />
 	<fieldset>
@@ -1728,8 +1712,8 @@ var startQuery = function(){
 		<br>
 		<br>
 		<div class="apply_gen" style="margin-top:5px">
-			<input type="button" value="<#CTL_Cancel#>" onclick="showCancel();" class="button_gen">
-			<input type="button" value="<#checkbox_Yes#>" onclick="doLiveUpdate(true);" class="button_gen">
+			<input type="button" id="liveUpdate_div_leftbutton" value="<#CTL_Cancel#>" onclick="showCancel();" class="button_gen">
+			<input type="button" id="liveUpdate_div_rightbutton" value="<#checkbox_Yes#>" onclick="doLiveUpdate(true);" class="button_gen">
 		</div>
 	</div>
 		
@@ -1854,7 +1838,7 @@ var startQuery = function(){
 <form method="post" name="restartForm" action="/start_apply2.htm" target="hidden_frame">
 	<input type="hidden" name="productid" value="<% nvram_get("productid"); %>">
 	<input type="hidden" name="flag" value="finishQIS">
-	<input type="hidden" name="current_page" value="<% abs_index_page(); %>">
+	<input type="hidden" name="current_page" value="/">
 	<input type="hidden" name="next_page" value="<% abs_index_page(); %>">
 	<input type="hidden" name="action_mode" value="apply">
 	<input type="hidden" name="action_script" value="">

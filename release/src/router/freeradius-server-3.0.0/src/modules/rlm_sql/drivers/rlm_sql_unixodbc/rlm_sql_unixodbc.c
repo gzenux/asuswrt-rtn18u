@@ -19,7 +19,7 @@
  * Copyright 2000  Dmitri Ageev <d_ageev@ortcc.ru>
  */
 
-RCSID("$Id$")
+RCSID("$Id: edc092cd87ce5054d24c43fdeab854015b7ae612 $")
 
 #include <freeradius-devel/radiusd.h>
 

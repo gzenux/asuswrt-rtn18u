@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id$
+# Version:	$Id: f143483e6a306d53d4ef701b5067ef7cd1301cd8 $
 #
 
 $(if $(wildcard Make.inc),,$(error Missing 'Make.inc' Run './configure [options]' and retry")) 

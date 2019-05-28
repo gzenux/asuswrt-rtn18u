@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: 2acada5fca14572e60da4ea38cb27568de3b8a90 $
  *
  * @brief map / template functions
  * @file main/map.c
@@ -26,7 +26,7 @@
  * @copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 2acada5fca14572e60da4ea38cb27568de3b8a90 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

@@ -43,7 +43,7 @@ define(function(){
 				]
 			}, 
 			{
-				menuName: "Game IPS",
+				menuName: "<#AiProtection_title#>",
 				index: "menu_AiProtection", 
 				tab: [
 					{url: "AiProtection_HomeSecurity.asp", tabName: "__HIDE__"},
@@ -73,7 +73,7 @@ define(function(){
 				] 
 			},
 			{
-				menuName: "Game Private Network",
+				menuName: "<#Game_Boost_Title#>",
 				index: "menu_Wtfast",
 				tab: [
 					{url: "Advanced_WTFast_Content.asp", tabName: "<#Game_Boost#>"},
@@ -88,7 +88,7 @@ define(function(){
 				] 
 			},
 			{
-				menuName: "Game Radar",
+				menuName: "<#AiProtection_title_Radar#>",
 				index: "menu_GameRadar", 
 				tab: [
 					{url: "Main_GameServer_Content.asp", tabName: "Game Radar"},
@@ -155,7 +155,7 @@ define(function(){
 					{url: "Advanced_ACL_Content.asp", tabName: "<#menu5_1_4#>"},
 					{url: "Advanced_WSecurity_Content.asp", tabName: "<#menu5_1_5#>"},
 					{url: "Advanced_WAdvanced_Content.asp", tabName: "<#menu5_1_6#>"},
-					{url: "Advanced_WProxy_Content.asp", tabName: "Wi-Fi Proxy"},
+					{url: "Advanced_WProxy_Content.asp", tabName: "<#WiFi_Proxy_item#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
@@ -270,7 +270,7 @@ define(function(){
 					{url: "Advanced_SNMP_Content.asp", tabName: "SNMP"},
 					{url: "Advanced_TR069_Content.asp", tabName: "TR-069"},
 					{url: "Advanced_Notification_Content.asp", tabName: "Notification"},
-					{url: "Advanced_Privacy.asp", tabName: "Privacy"},
+					{url: "Advanced_Privacy.asp", tabName: "<#menu_privacy#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				]
 			},

@@ -1,7 +1,7 @@
 /*
  * rlm_eap_md5.c    Handles that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: f2bbf2650be32e109cc5acba35285709aa2fdf86 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: f2bbf2650be32e109cc5acba35285709aa2fdf86 $")
 
 #include <stdio.h>
 #include <stdlib.h>

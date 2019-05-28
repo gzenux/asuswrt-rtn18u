@@ -486,10 +486,7 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 		info = FILE_WAS_OPENED;
 	} else if (CAN_PRINT(smb1req->conn)) {
 		status = file_new(smb1req, smb1req->conn, &result);
-#ifdef PRINTER_SUPPORT
-		if(!NT_STATUS_IS_OK(status))
-#endif
-		{
+		if(!NT_STATUS_IS_OK(status)) {
 			tevent_req_nterror(req, status);
 			return tevent_req_post(req, ev);
 		}

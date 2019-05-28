@@ -340,3 +340,17 @@ void trim_space(char *str)
 			break;
 	}
 }
+
+void toLowerCase(char *str) {
+	char *p;
+
+	for(p = str; *p != '\0'; p++)
+		if(*p >= 'A' && *p <='Z') *p += 32;
+}
+
+void toUpperCase(char *str) {
+	char *p;
+
+	for(p = str; *p != '\0'; p++)
+		if(*p >= 'a' && *p <='z') *p -= 32;
+}

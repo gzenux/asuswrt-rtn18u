@@ -1,7 +1,7 @@
 #ifndef _EAP_LEAP_H
 #define _EAP_LEAP_H
 
-RCSIDH(eap_leap_h, "$Id$")
+RCSIDH(eap_leap_h, "$Id: 886063fb09d1e6efb6056bd979dc03b4f01e6f91 $")
 
 #include "eap.h"
 

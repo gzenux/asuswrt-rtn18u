@@ -1,7 +1,7 @@
 /*
  * rlm_eap_mschapv2.c    Handles that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: 45da585c91d6913b4223f1dafc3e0efb96866db4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 45da585c91d6913b4223f1dafc3e0efb96866db4 $")
 
 #include <stdio.h>
 #include <stdlib.h>

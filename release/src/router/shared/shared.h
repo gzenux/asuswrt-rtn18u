@@ -14,6 +14,10 @@
 #include <rtstate.h>
 #include <stdarg.h>
 
+#ifdef RTCONFIG_BCMWL6
+#include "bcmwifi_channels.h"
+#endif
+
 #ifdef RTCONFIG_REALTEK
 #include "realtek_common.h"
 #include <time.h>
@@ -295,7 +299,8 @@ enum {
 #define GIF_PREFIXLEN  0x0002  /* return prefix length */
 #define GIF_PREFIX     0x0004  /* return prefix, not addr */
 
-#define EXTEND_AIHOME_API_LEVEL		15
+#define EXTEND_AIHOME_API_LEVEL		19
+
 #define EXTEND_HTTPD_AIHOME_VER		0
 
 #define EXTEND_ASSIA_API_LEVEL		1
@@ -541,6 +546,8 @@ extern int nvram_pf_match(char *prefix, char *name, char *match);
 extern int nvram_pf_invmatch(char *prefix, char *name, char *invmatch);
 extern double nvram_get_double(const char *key);
 extern int nvram_set_double(const char *key, double value);
+extern int nvram_get_hex(const char *key);
+extern int nvram_set_hex(const char *key, int value);
 
 //	extern long nvram_xget_long(const char *name, long min, long max, long def);
 extern int nvram_contains_word(const char *key, const char *word);
@@ -613,6 +620,8 @@ enum {
 	MODEL_RTAC55U,
 	MODEL_RTAC55UHP,
 	MODEL_RT4GAC55U,
+	MODEL_RTN19,
+	MODEL_RTAC59U,
 	MODEL_PLN12,
 	MODEL_PLAC56,
 	MODEL_PLAC66U,
@@ -671,6 +680,8 @@ enum {
 	MODEL_RTN11P_B1,
 	MODEL_RPAC87,
 	MODEL_RTAC85U,
+	MODEL_RTAC85P,
+	MODEL_RTACRH26,
 	MODEL_RTN800HP,
 	MODEL_RTAC88N,
 	MODEL_BRTAC828,
@@ -1074,6 +1085,33 @@ enum wl_band_id {
 	WL_NR_BANDS				/* Maximum number of Wireless bands of all models. */
 };
 
+static inline int absent_band(enum wl_band_id band)
+{
+	if (band < WL_2G_BAND || band >= WL_NR_BANDS)
+		return 1;
+#if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
+	if (band >= MAX_NR_WL_IF)
+		return 1;
+#if !defined(RTCONFIG_HAS_5G)
+	if (band == WL_5G_BAND)
+		return 1;
+#if !defined(RTCONFIG_HAS_5G_2)
+	if (band == WL_5G_2_BAND)
+		return 1;
+#endif	/* RTCONFIG_HAS_5G_2 */
+#endif	/* RTCONFIG_HAS_5G */
+#endif	/* RTCONFIG_RALINK || RTCONFIG_QCA */
+#if !defined(RTCONFIG_WIGIG)
+	if (band == WL_60G_BAND)
+		return 1;
+#endif
+
+	if (!nvram_get(wl_nvname("nband", band, 0)))
+		return 1;
+
+	return 0;
+}
+
 #define SKIP_ABSENT_FAKE_IFACE(iface)		if (!strncmp(iface, "FAKE", 4)) { continue; }
 #define SKIP_ABSENT_BAND(u)			if (!nvram_get(wl_nvname("nband", u, 0))) { continue; }
 #define SKIP_ABSENT_BAND_AND_INC_UNIT(u)	if (!nvram_get(wl_nvname("nband", u, 0))) { ++u; continue; }
@@ -1382,6 +1420,9 @@ extern int get_channel(const char *ifname);
 #endif
 extern char *get_wlifname(int unit, int subunit, int subunit_x, char *buf);
 extern char *get_wlxy_ifname(int x, int y, char *buf);
+#ifdef CONFIG_BCMWL5
+extern char *wl_ifname(int unit, int subunit, char *buf);
+#endif
 #if defined(RTCONFIG_RALINK_MT7620)
 extern int get_mt7620_wan_unit_bytecount(int unit, unsigned long *tx, unsigned long *rx);
 #elif defined(RTCONFIG_RALINK_MT7621)
@@ -1475,6 +1516,7 @@ extern int config_rtkswitch(int argc, char *argv[]);
 extern int config_mtkswitch(int argc, char *argv[]);
 extern int get_channel_list_via_driver(int unit, char *buffer, int len);
 extern int get_channel_list_via_country(int unit, const char *country_code, char *buffer, int len);
+extern int get_mtk_wifi_driver_version(char *buffer, int len);
 #if defined(RTCONFIG_RALINK_MT7620)
 extern int __mt7620_wan_bytecount(int unit, unsigned long *tx, unsigned long *rx);
 #elif defined(RTCONFIG_RALINK_MT7620)
@@ -1545,6 +1587,12 @@ extern uint32_t hnd_get_phy_speed(int port, int offs, unsigned int regv, unsigne
 extern int hnd_ethswctl(ecmd_t act, unsigned int val, int len, int wr, unsigned long long regdata);
 extern uint32_t set_ex53134_ctrl(uint32_t portmask, int ctrl);
 #endif
+extern int with_non_dfs_chspec(char *wif);
+extern chanspec_t select_band1_chspec_with_same_bw(char *wif, chanspec_t chanspec);
+extern chanspec_t select_band4_chspec_with_same_bw(char *wif, chanspec_t chanspec);
+extern chanspec_t select_chspec_with_band_bw(char *wif, int band, int bw, chanspec_t chanspec);
+extern void wl_list_5g_chans(int unit, int band, char *buf, int len);
+extern int wl_cap(int unit, char *cap_check);
 #endif
 #ifdef RTCONFIG_AMAS
 //extern char *get_pap_bssid(int unit);
@@ -1586,6 +1634,8 @@ extern void ascii_to_char(const char *output, const char *input);
 extern const char *find_word(const char *buffer, const char *word);
 extern int remove_word(char *buffer, const char *word);
 extern void trim_space(char *str);
+extern void toLowerCase(char *str);
+extern void toUpperCase(char *str);
 
 // file.c
 extern int check_if_file_exist(const char *file);
@@ -1632,7 +1682,7 @@ extern int illegal_ipv4_address(char *addr);
 extern int illegal_ipv4_netmask(char *netmask);
 extern int test_and_get_free_uint_network(int t_class, uint32_t *exp_ip, uint32_t exp_cidr, uint32_t excl);
 extern int test_and_get_free_char_network(int t_class, char *ip_cidr_str, uint32_t excl);
-extern enum wan_unit_e get_first_configured_connected_wan_unit(void);
+extern enum wan_unit_e get_first_connected_public_wan_unit(void);
 #ifdef RTCONFIG_IPV6
 extern const char *get_wan6face(void);
 extern const char *ipv6_address(const char *ipaddr6);
@@ -1732,6 +1782,9 @@ extern struct vlan_rules_s *get_vlan_rules(void);
 #if defined(HND_ROUTER) && defined(RTCONFIG_BONDING)
 extern int get_bonding_status();
 #endif
+extern int isValidMacAddress(const char* mac);
+extern int isValidEnableOption(const char* option, int range);
+extern int isValid_digit_string(const char *string);
 
 /* mt7620.c */
 #if defined(RTCONFIG_RALINK_MT7620)
@@ -1938,7 +1991,7 @@ extern void set_wifiled(int mode);
 #define RGBLED_3ON3OFF			0x80
 #define RGBLED_BLINK_MESK		RGBLED_SBLINK | RGBLED_3ON1OFF | RGBLED_ATE_MODE | RGBLED_3ON3OFF
 /* color+blink */
-#define RGBLED_BLUE_3ON1OFF		RGBLED_BLUE | RGBLED_3ON1OFF
+#define RGBLED_GREEN_3ON1OFF		RGBLED_GREEN | RGBLED_3ON1OFF
 #define RGBLED_BLUE_3ON3OFF		RGBLED_BLUE | RGBLED_3ON3OFF
 #define RGBLED_PURPLE_3ON1OFF		RGBLED_PURPLE | RGBLED_3ON1OFF
 #define RGBLED_WHITE_SBLINK		RGBLED_WHITE | RGBLED_SBLINK
@@ -1962,11 +2015,11 @@ static inline void enable_wifi_bled(char *ifname)
 #if defined(RTCONFIG_QCA)
 		v = LED_OFF;	/* WiFi not ready. Don't turn on WiFi LED here. */		
 #endif
-#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U)
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 		if(!get_radio(1, 0) && unit==1) //*5G WiFi not ready. Don't turn on WiFi GPIO LED . */
 		 	v=LED_OFF;
 #endif		
-#if defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTN800HP)
+#if defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P) || defined(RTN800HP) || defined(RTACRH26)
 		if(!get_radio(0, 0) && unit==0) //*2G WiFi not ready. Don't turn on WiFi GPIO LED . */
 		 	v=LED_OFF;
 #endif		
@@ -2295,4 +2348,6 @@ static inline int get_sw_mode(void)
 	return UI_SW_MODE_NONE;
 }
 
+extern int get_discovery_ssid(char *ssid_g, int size);
+extern int get_chance_to_control(void);
 #endif	/* !__SHARED_H__ */

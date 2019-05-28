@@ -7,7 +7,6 @@ var Untranslated = {
 	JS_validclientname : "Client device name only accept alphanumeric characters, under line and dash symbol. The first character cannot be dash \"-\" or under line \"_\".",
 	ASUSGATE_act_feedback : "Feedback now",
 	ASUSGATE_DSL_setting : "Go setting DSL",
-	period_time_validation : 'The value of check period can\'t be less than',
 	filter_lw_date_valid : 'Please select at least one day or disable this feature.',
 	ctf_fa_hint : 'System will reboot automatically after enable AiProtection for function working fine. Please click apply to enable this function or click cancel to back to page.'
 };
@@ -309,7 +308,7 @@ function overHint(itemNum){
 	
 	//for AiProtection-Router Security Assessment
 	if(itemNum == 25)
-		statusmenu += "<span>Disable Wi-Fi Protected Setup to avoid attacker to obtain the keys via an intelligent brute force </span>";
+		statusmenu += "<span><#AiProtection_scan_note24#></span>";
 	else if(itemNum == 23)		
 		statusmenu += "<span><#AiProtection_scan_note23#></span>";
 	else if(itemNum == 22)		
@@ -341,7 +340,7 @@ function overHint(itemNum){
 	
 	//Reboot
 	if(itemNum == 26)
-		statusmenu += "<span>Reboot the System</span>";
+		statusmenu += "<span><#RebootSystem#></span>";
 
 	// Viz add 2015.07 bwdpi : Adpative QoS mode start
 	if(itemNum == "A"){
@@ -1008,8 +1007,8 @@ function openHint(hint_array_id, hint_show_id, flag){
 			_caption = "System Diagnostic capture";
 		}
 		else if(hint_show_id == 9){	//2015.07 Viz add for bwdpi : Adaptive QoS mode
-			statusmenu = "<span class='StatusClickHint' onclick='priority_change();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>Change priority mode</span><br>";	/* untranslated */
-			statusmenu += "<span class='StatusClickHint' onclick='qos_disable();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'>Disable QoS</span>";	/* untranslated */
+			statusmenu = "<span class='StatusClickHint' onclick='priority_change();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#Adaptive_ChangeMode#></span><br>";
+			statusmenu += "<span class='StatusClickHint' onclick='qos_disable();' onmouseout='this.className=\"StatusClickHint\"' onmouseover='this.className=\"StatusClickHint_mouseover\"'><#EzQoS_disable#></span>";
 			_caption = "<#Adaptive_QoS#>";
 		}
 		else if(hint_show_id == 8){	//2014.10 Viz add for dsl dslx_diag_state
@@ -1394,7 +1393,7 @@ var docRoot = 'document.body';
 if (olNs4) {
 	var oW = window.innerWidth;
 	var oH = window.innerHeight;
-	window.onresize = function() { if (oW != window.innerWidth || oH != window.innerHeight) location.reload(); }
+	window.onresize = function() { if (oW != window.innerWidth || oH != window.innerHeight) location.href = location.href; }
 }
 
 // Microsoft Stupidity Check(tm).

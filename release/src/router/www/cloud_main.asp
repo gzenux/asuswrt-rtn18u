@@ -165,7 +165,6 @@ function initial(){
 var wans_mode ='<% nvram_get("wans_mode"); %>';
 var MAX_RETRY_NUM = 5;
 var external_ip_retry_cnt = MAX_RETRY_NUM;
-var privateIP_notes_str = "The wireless router currently uses a private WAN IP address.<p>This router may be in the multiple-NAT environment, and accessing AiCloud from WAN cannot work in this environment." /*untranslated*/
 function show_warning_message(){
 	if(realip_support && wans_mode != "lb"){
 		if(realip_state != "2" && external_ip_retry_cnt > 0){
@@ -176,19 +175,19 @@ function show_warning_message(){
 		}
 		else if(realip_state != "2"){
 			if(validator.isPrivateIP(wanlink_ipaddr())){
-				document.getElementById("privateIP_notes").innerHTML = privateIP_notes_str;
+				document.getElementById("privateIP_notes").innerHTML = "<#AiCloud_privateIP_notes#>";
 				document.getElementById("privateIP_notes").style.display = "";
 			}
 		}
 		else{
 			if(!external_ip){
-				document.getElementById("privateIP_notes").innerHTML = privateIP_notes_str;
+				document.getElementById("privateIP_notes").innerHTML = "<#AiCloud_privateIP_notes#>";
 				document.getElementById("privateIP_notes").style.display = "";
 			}
 		}
 	}
 	else if(validator.isPrivateIP(wanlink_ipaddr())){
-		document.getElementById("privateIP_notes").innerHTML = privateIP_notes_str;
+		document.getElementById("privateIP_notes").innerHTML = "<#AiCloud_privateIP_notes#>";
 		document.getElementById("privateIP_notes").style.display = "";
 	}
 }
@@ -692,12 +691,9 @@ function update_applist(e){
   										<tr>
    												<td><div class="formfontdesc" id="usbHint"><#AiCloud_maintext_note#></div></td> 
   										</tr>
-											<tr>
-   												<td><div class="formfontdesc" id="usbHint2"><#Learn_more#> : <a href="http://www.asus.com/search/results.aspx?SearchKey=AiCloud&SearchType=FAQ&IsSupport=True&Page=1" target="_blank" style="color:#FC0;text-decoration: underline; font-family:Lucida Console;">GO</a></div></td> 
-  										</tr>  
-  										<!--tr>
-   												<td valign="top"><div id="cloud_movie" style="box-shadow: 2px 2px 15px #222;margin-top: 50px;width:400px;height:241px;margin-left:165px;background:url(images/movie.jpg) no-repeat center;cursor:pointer" onClick="window.open('http://www.youtube.com/watch?v=MgIAfG5ZhPs')"></div></td>
-  										</tr-->  	   
+										<tr>
+   												<td><div class="formfontdesc" id="usbHint2"><#Learn_more#> : <a href="https://www.asus.com/search/results.aspx?SearchKey=AiCloud&SearchType=FAQ&IsSupport=True&Page=1" target="_blank" style="color:#FC0;text-decoration: underline; font-family:Lucida Console;">GO</a></div></td> 
+  										</tr>  	   
   										<tr>
    												<td align="center" width="740px" height="60px">
 													<div id="gotonext">
@@ -726,19 +722,19 @@ function update_applist(e){
 																 	<div id="accessMethod"></div>
 																 	</li>
 																	<li style="margin-top:-5px;">
-																	 <#FAQ_Find#> <a style="font-weight: bolder;text-decoration: underline;" href="http://www.asus.com/search/results.aspx?SearchKey=AiCloud&SearchType=FAQ&IsSupport=True&Page=1" target="_blank">GO</a>
+																	 <#FAQ_Find#> <a style="font-weight: bolder;text-decoration: underline;" href="https://www.asus.com/search/results.aspx?SearchKey=AiCloud&SearchType=FAQ&IsSupport=True&Page=1" target="_blank">GO</a>
 																	</li>
 																</ul>
 															</td>
 															<td>							
 																<a id="googleplay" href="https://play.google.com/store/apps/details?id=com.asustek.aicloud" target="_blank">
-																	<div style="width:172px;height:51px;background:url('images/cloudsync/googleplay.png') no-repeat;background-size:75%;"></div>
+																	<div style="width:172px;height:51px;background:url('images/googleplay.png') no-repeat;background-size:75%;"></div>
 																</a>												
 																<a id="wandoujia" href="http://www.wandoujia.com/apps/com.asus.aihome" target="_blank" style="display:none">
 																	<div style="width:130px;height:51px;text-align: center;line-height:51px;line-height: 51px;font-size: 20px;font-weight: bold;text-decoration: underline;">豌豆荚</div>
 																</a>			
 																<a href="https://itunes.apple.com/us/app/aicloud-lite/id527118674" target="_blank">
-																	<div style="width:172px;height:51px;background:url('images/cloudsync/AppStore.png') no-repeat;background-size:75%;"></div>
+																	<div style="width:172px;height:51px;background:url('images/AppStore.png') no-repeat;background-size:75%;"></div>
 																</a>	
 															</td>
 														</tr>

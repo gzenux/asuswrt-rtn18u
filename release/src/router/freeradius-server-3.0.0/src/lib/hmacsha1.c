@@ -8,7 +8,7 @@
 ** Function: hmac_sha1
 */
 
-RCSID("$Id$")
+RCSID("$Id: e81645610e2b02a3b823709af040b15013c7e000 $")
 
 #include <freeradius-devel/libradius.h>
 
