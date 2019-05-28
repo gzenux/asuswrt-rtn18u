@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: bb11101e6e2645a951d6a3527caed6eca51d4045 $
  * @file comp128.c
  * @brief Implementations of comp128v1, comp128v2, comp128v3 algorithms
  *

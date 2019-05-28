@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 403965d4cbec8a24e2deeb3e78ce8efa2497c5c7 $
  *
  * @brief Source control functions
  *

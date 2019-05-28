@@ -5,7 +5,7 @@
  * functions to build the tree from the config file, and to call it by
  * feeding it REQUESTs.
  *
- * Version: $Id$ */
+ * Version: $Id: 7a34eda9ad22fddf5c921fb86837e7b6ade94e86 $ */
 
 #include <freeradius-devel/conffile.h> /* Need CONF_* definitions */
 #include <freeradius-devel/modules.h>

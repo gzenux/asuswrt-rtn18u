@@ -1,7 +1,7 @@
 /*
  * md4.h	Structures and prototypes for md4.
  *
- * Version:     $Id$
+ * Version:     $Id: 006dcf209a59b3f22a67870606e4d2d41b8d0e1f $
  * License:		LGPL, but largely derived from a public domain source.
  *
  */
@@ -9,7 +9,7 @@
 #ifndef _FR_MD4_H
 #define _FR_MD4_H
 
-RCSIDH(md4_h, "$Id$")
+RCSIDH(md4_h, "$Id: 006dcf209a59b3f22a67870606e4d2d41b8d0e1f $")
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>

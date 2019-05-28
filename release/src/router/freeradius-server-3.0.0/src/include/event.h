@@ -4,7 +4,7 @@
 /*
  * event.h	Simple event queue
  *
- * Version:	$Id$
+ * Version:	$Id: 9e567f2e2e0ed51042c352aabd9be4767cbe6aff $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(event_h, "$Id$")
+RCSIDH(event_h, "$Id: 9e567f2e2e0ed51042c352aabd9be4767cbe6aff $")
 
 #ifdef __cplusplus
 extern "C" {

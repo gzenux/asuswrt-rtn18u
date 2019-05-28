@@ -1,7 +1,7 @@
 /*
  * sql_null.c		SQL Module
  *
- * Version:	$Id$
+ * Version:	$Id: 6ef3874b939d209f4e3352c2dd2917c5d9c80cf2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2012  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 6ef3874b939d209f4e3352c2dd2917c5d9c80cf2 $")
 
 #include <freeradius-devel/radiusd.h>
 

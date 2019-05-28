@@ -18,7 +18,7 @@
  * Copyright 2007  The FreeRADIUS server project
  * Copyright 2007  Alan DeKok <aland@ox.org>
  */
-RCSIDH(rlm_expr_h, "$Id$")
+RCSIDH(rlm_expr_h, "$Id: 7c0fa8a13a9b36c8d57e9df66c84a6238663e4e4 $")
 
 void pair_builtincompare_add(void *instance);
 

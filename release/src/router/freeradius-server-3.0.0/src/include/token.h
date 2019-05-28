@@ -17,7 +17,7 @@
 #define FR_TOKEN_H
 
 /*
- * $Id$
+ * $Id: ea967f689483f3c7829cce9f1defa54e06f10abd $
  *
  * @file token.h
  * @brief Tokenisation code and constants.
@@ -25,7 +25,7 @@
  * @copyright 2001,2006  The FreeRADIUS server project
  */
 
-RCSIDH(token_h, "$Id$")
+RCSIDH(token_h, "$Id: ea967f689483f3c7829cce9f1defa54e06f10abd $")
 
 #ifdef __cplusplus
 extern "C" {

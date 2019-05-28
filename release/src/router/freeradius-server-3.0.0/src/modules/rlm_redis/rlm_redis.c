@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: b2e8c79f23d0d3a3fffb563a5c9b3d4000c983a9 $
  * @file rlm_redis.c
  * @brief Driver for the REDIS noSQL key value stores.
  *
@@ -22,7 +22,7 @@
  * @copyright 2011  TekSavvy Solutions <gabe@teksavvy.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: b2e8c79f23d0d3a3fffb563a5c9b3d4000c983a9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -3,7 +3,7 @@
 
 /*
  * heap.h	Structures and prototypes for binary heaps.
- * Version:	$Id$
+ * Version:	$Id: d980adb5292ba3d19c81e5d774db32b81bc398b0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2007 Alan DeKok
  */
 
-RCSIDH(heap_h, "$Id$")
+RCSIDH(heap_h, "$Id: d980adb5292ba3d19c81e5d774db32b81bc398b0 $")
 
 #ifdef __cplusplus
 extern "C" {

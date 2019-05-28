@@ -1,6 +1,6 @@
 /* crypto/evp/evp_err.c */
 /* ====================================================================
- * Copyright (c) 1999-2013 The OpenSSL Project.  All rights reserved.
+ * Copyright (c) 1999-2019 The OpenSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -92,8 +92,10 @@ static ERR_STRING_DATA EVP_str_functs[] = {
     {ERR_FUNC(EVP_F_EVP_CIPHER_CTX_SET_KEY_LENGTH),
      "EVP_CIPHER_CTX_set_key_length"},
     {ERR_FUNC(EVP_F_EVP_DECRYPTFINAL_EX), "EVP_DecryptFinal_ex"},
+    {ERR_FUNC(EVP_F_EVP_DECRYPTUPDATE), "EVP_DecryptUpdate"},
     {ERR_FUNC(EVP_F_EVP_DIGESTINIT_EX), "EVP_DigestInit_ex"},
     {ERR_FUNC(EVP_F_EVP_ENCRYPTFINAL_EX), "EVP_EncryptFinal_ex"},
+    {ERR_FUNC(EVP_F_EVP_ENCRYPTUPDATE), "EVP_EncryptUpdate"},
     {ERR_FUNC(EVP_F_EVP_MD_CTX_COPY_EX), "EVP_MD_CTX_copy_ex"},
     {ERR_FUNC(EVP_F_EVP_MD_SIZE), "EVP_MD_size"},
     {ERR_FUNC(EVP_F_EVP_OPENINIT), "EVP_OpenInit"},
@@ -192,6 +194,7 @@ static ERR_STRING_DATA EVP_str_reasons[] = {
     {ERR_REASON(EVP_R_INPUT_NOT_INITIALIZED), "input not initialized"},
     {ERR_REASON(EVP_R_INVALID_DIGEST), "invalid digest"},
     {ERR_REASON(EVP_R_INVALID_FIPS_MODE), "invalid fips mode"},
+    {ERR_REASON(EVP_R_INVALID_KEY), "invalid key"},
     {ERR_REASON(EVP_R_INVALID_KEY_LENGTH), "invalid key length"},
     {ERR_REASON(EVP_R_INVALID_OPERATION), "invalid operation"},
     {ERR_REASON(EVP_R_IV_TOO_LARGE), "iv too large"},

@@ -200,7 +200,7 @@ static void getWPSConfig(int unit, WPS_CONFIGURED_VALUE *result)
 	char buf[128];
 	FILE *fp;
 
-	memset(result, 0, sizeof(result));
+	memset(result, 0, sizeof(WPS_CONFIGURED_VALUE));
 
 	sprintf(buf, "hostapd_cli -i%s get_config", get_wifname(unit));
 	fp = popen(buf, "r");
@@ -597,14 +597,14 @@ ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        A
 					sscanf(l3, "IEEE80211_MODE_%s %d", r->mode, &r->u_psmode);
 				}
 				*(l2 - 1) = '\0';
-				sscanf(line_buf, "%s%u%u%s%s%u%u%u%u%[^\n]",
+				sscanf(line_buf, "%17s%u%u%9s%6s%u%u%u%u%[^\n]",
 					r->addr, &r->aid, &r->chan, r->txrate,
 					r->rxrate, &r->rssi, &r->idle, &r->txseq,
 					&r->rxseq, r->caps);
-				sscanf(l2, "%u%x%u%s%s%[^\n]",
+				sscanf(l2, "%u%x%u%11s%31s%[^\n]",
 					&r->u_acaps, &r->u_erp, &r->u_state_maxrate, r->htcaps, r->conn_time, r->ie);
 				if (strlen(r->rxrate) >= 6)
-					strcpy(r->rxrate, "0M");
+					strlcpy(r->rxrate, "0M", sizeof(r->rxrate));
 #if 0
 				dbg("[%s][%u][%u][%s][%s][%u][%u][%u][%u][%s]"
 					"[%u][%u][%x][%s][%s][%s][%d]\n",

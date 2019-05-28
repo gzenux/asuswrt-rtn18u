@@ -27,7 +27,7 @@
 #	the server will add only one new client per second.  This CANNOT
 #	be changed, and is NOT configurable.
 #
-#	$Id$
+#	$Id: 78ad9061de30659f709aaa30acf7da9709cb38e7 $
 #
 ######################################################################
 

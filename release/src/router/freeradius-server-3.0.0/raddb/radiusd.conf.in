@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file - @RADIUSD_VERSION_STRING@
 ##
 ##	http://www.freeradius.org/
-##	$Id$
+##	$Id: b7f9120d3e528450080a8fdc759cf34db53c33a5 $
 ##
 
 ######################################################################

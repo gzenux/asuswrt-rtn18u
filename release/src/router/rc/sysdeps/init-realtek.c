@@ -80,6 +80,30 @@ void init_igmpsnooping()
     //_dprintf("init_igmpsnooping: command = %s\n", command);
     system(command);
 }
+
+
+/**
+ * @brief      Check if the nvram value is normal.
+ *
+ * @return     Values are normal, return 0. Values are unusual, return 1.
+ */
+int rtk_check_nvram_partation(void)
+{
+	char buf[MAX_NVRAM_SPACE] = {0};
+	char *name = NULL;
+	int i = 0;
+	nvram_getall(buf, sizeof(buf));
+
+	for (name = buf; *name; name += strlen(name) + 1) {
+		for (i = 0; i < strlen(name) + 1; i++) {
+			if (*(name + i) == 0xffffffff) {
+				printf("\nInvalid nvram...Restore default\n");
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
 #endif
 
 void init_switch()

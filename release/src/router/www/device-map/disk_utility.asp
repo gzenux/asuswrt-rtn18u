@@ -34,7 +34,7 @@ a:active {
 	background-repeat: repeat-x;
 }
 .font_style{
-	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-family: Verdana, Arial, Helvetica, MS UI Gothic, MS P Gothic, sans-serif;
 }
 </style>
 <script type="text/javascript" src="/require/require.min.js"></script>

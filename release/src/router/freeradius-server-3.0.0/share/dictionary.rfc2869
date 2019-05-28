@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 2869.
 #	http://www.ietf.org/rfc/rfc2869.txt
 #
-#	$Id$
+#	$Id: 1554fab354073f3c783f41a6b3c8404cf33122d0 $
 #
 ATTRIBUTE	Acct-Input-Gigawords			52	integer
 ATTRIBUTE	Acct-Output-Gigawords			53	integer

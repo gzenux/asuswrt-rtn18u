@@ -86,7 +86,7 @@ struct CreateInstance {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		struct MInterfacePointer *ppv;/* [iid_is(riid),unique] */
+		struct MInterfacePointer *ppv;/* [unique,iid_is(riid)] */
 		WERROR result;
 	} out;
 
@@ -159,7 +159,7 @@ struct RemQueryInterface {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		struct MInterfacePointer *ip;/* [size_is(cIids),unique] */
+		struct MInterfacePointer *ip;/* [unique,size_is(cIids)] */
 		WERROR result;
 	} out;
 
@@ -175,7 +175,7 @@ struct RemAddRef {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		WERROR *pResults;/* [unique,size_is(cInterfaceRefs)] */
+		WERROR *pResults;/* [size_is(cInterfaceRefs),unique] */
 		WERROR result;
 	} out;
 
@@ -290,7 +290,7 @@ struct RemQueryInterface2 {
 		struct ORPCTHIS ORPCthis;
 		struct GUID *ripid;/* [unique] */
 		uint16_t cIids;
-		struct GUID *iids;/* [unique,size_is(cIids)] */
+		struct GUID *iids;/* [size_is(cIids),unique] */
 	} in;
 
 	struct {
@@ -364,7 +364,7 @@ struct GetIDsOfNames {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		uint32_t *rgDispId;/* [size_is(cNames),unique] */
+		uint32_t *rgDispId;/* [unique,size_is(cNames)] */
 		WERROR result;
 	} out;
 
@@ -430,7 +430,7 @@ struct UnMarshalInterface {
 struct MakeCoffee {
 	struct {
 		struct ORPCTHIS ORPCthis;
-		const char *flavor;/* [charset(UTF16),ref] */
+		const char *flavor;/* [ref,charset(UTF16)] */
 	} in;
 
 	struct {
@@ -454,7 +454,7 @@ struct Read {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		uint8_t *pv;/* [size_is(num_requested),length_is(*num_read)] */
+		uint8_t *pv;/* [length_is(*num_read),size_is(num_requested)] */
 		uint32_t *num_read;/* [ref] */
 		WERROR result;
 	} out;

@@ -103,7 +103,7 @@ else
 ifneq ($(EXTENDTYPE),)
 EXSTRING="-$(EXTENDTYPE)"
 else
-EXSTRING=""
+EXSTRING=
 endif
 export EXTENDNO := $(shell expr $(EXTENDNO1) + $(RC_EXT_NO))-g$(shell git log --pretty=format:'%h' -n 1|sed -e "s,\([0-9a-z]\{7\}\)[0-9a-z]*,\1,")$(EXSTRING)
 endif
@@ -531,7 +531,7 @@ ifeq ($(CONFIG_RALINK),y)
 	PAD2=`expr $${ISIZE} - $${KSIZE} - $${RSIZE}` ; \
 	RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
 	echo "PAD2: $${PAD2}" ; \
-	if [ "$(BUILD_NAME)" = "RT-N56UB1" ] || [ "$(BUILD_NAME)" = "RT-N56UB2" ] || [ "$(BUILD_NAME)" = "RT-AC1200GA1" ] || [ "$(BUILD_NAME)" = "RT-AC1200GU" ] || [ "$(BUILD_NAME)" = "RP-AC56" ] || [ "$(BUILD_NAME)" = "RP-AC87" ] || [ "$(BUILD_NAME)" = "RT-AC85U" ] || [ "$(BUILD_NAME)" = "RT-AC65U" ] || [ "$(BUILD_NAME)" = "RT-N800HP" ]; then \
+	if [ "$(BUILD_NAME)" = "RT-N56UB1" ] || [ "$(BUILD_NAME)" = "RT-N56UB2" ] || [ "$(BUILD_NAME)" = "RT-AC1200GA1" ] || [ "$(BUILD_NAME)" = "RT-AC1200GU" ] || [ "$(BUILD_NAME)" = "RP-AC56" ] || [ "$(BUILD_NAME)" = "RP-AC87" ] || [ "$(BUILD_NAME)" = "RT-AC85U" ] || [ "$(BUILD_NAME)" = "RT-AC85P" ] || [ "$(BUILD_NAME)" = "RT-AC65U" ] || [ "$(BUILD_NAME)" = "RT-N800HP" ] || [ "$(BUILD_NAME)" = "RT-ACRH26" ]; then \
 		asustools/mkimage -A mips -O linux -T kernel -C lzma -a 80001000 -e $${ENTRY} -r $${RFSOFFSET} \
 		-n $(BUILD_NAME) -V "$(KERNEL_VER)" "$(FS_VER)"  "$(SERIALNO)" "$(EXTENDNO)" "0" "0" "0" "0" "0" "0"  \
 		-d $(PLATFORMDIR)/zImage.img image/$(IMGNAME).trx ; \
@@ -1007,6 +1007,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_BCMWL6A/d" $(1); \
 		echo "RTCONFIG_BCMWL6A=y" >>$(1); \
 	fi; \
+	if [ "$(BCM4708)" = "y" ]; then \
+		sed -i "/RTCONFIG_BCM4708/d" $(1); \
+		echo "RTCONFIG_BCM4708=y" >>$(1); \
+	fi; \
 	if [ "$(ARM)" = "y" ]; then \
 		sed -i "/RTCONFIG_BCMARM/d" $(1); \
 		echo "RTCONFIG_BCMARM=y" >>$(1); \
@@ -1154,6 +1158,10 @@ define RouterOptions
 	if [ "$(NEWSSID_REV2)" = "y" ]; then \
 		sed -i "/RTCONFIG_NEWSSID_REV2/d" $(1); \
 		echo "RTCONFIG_NEWSSID_REV2=y" >>$(1); \
+	fi; \
+	if [ "$(NEWSSID_REV4)" = "y" ]; then \
+		sed -i "/RTCONFIG_NEWSSID_REV4/d" $(1); \
+		echo "RTCONFIG_NEWSSID_REV4=y" >>$(1); \
 	fi; \
 	if [ "$(NEW_APP_ARM)" = "y" ]; then \
 		sed -i "/RTCONFIG_NEW_APP_ARM/d" $(1); \
@@ -1373,10 +1381,10 @@ define RouterOptions
 			sed -i "/RTCONFIG_EXT4FS/d" $(1); \
 			echo "RTCONFIG_EXT4FS=y" >>$(1); \
 		fi; \
-		if [ "$(TFAT)" != "" ]; then \
+		if [ "$(TFAT)" != "" -a "$(TFAT)" != "n" ]; then \
 			sed -i "/RTCONFIG_TFAT/d" $(1); \
 			echo "RTCONFIG_TFAT=y" >>$(1); \
-			if [ "$(findstring open, $(TFAT))" = "open" ]; then \
+			if [ "$(TFAT)" != "y" ]; then \
 				sed -i "/RTCONFIG_OPENPLUS_TFAT/d" $(1); \
 				echo "RTCONFIG_OPENPLUS_TFAT=y" >>$(1); \
 			fi; \
@@ -2420,6 +2428,18 @@ define RouterOptions
 	if [ "$(LAN50)" = "y" ]; then \
 		sed -i "/RTCONFIG_DEFLAN50/d" $(1); \
 		echo "RTCONFIG_DEFLAN50=y" >>$(1); \
+		sed -i "/RTCONFIG_ALL_DEF_LAN50/d" $(1); \
+		echo "# RTCONFIG_ALL_DEF_LAN50 is not set" >>$(1); \
+	elif [ "$(LAN50)" = "all" ] ; then \
+		sed -i "/RTCONFIG_DEFLAN50/d" $(1); \
+		echo "# RTCONFIG_DEFLAN50 is not set" >>$(1); \
+		sed -i "/RTCONFIG_ALL_DEF_LAN50/d" $(1); \
+		echo "RTCONFIG_ALL_DEF_LAN50=y" >>$(1); \
+	else \
+		sed -i "/RTCONFIG_DEFLAN50/d" $(1); \
+		echo "# RTCONFIG_DEFLAN50 is not set" >>$(1); \
+		sed -i "/RTCONFIG_ALL_DEF_LAN50/d" $(1); \
+		echo "# RTCONFIG_ALL_DEF_LAN50 is not set" >>$(1); \
 	fi; \
 	if [ "$(PERMISSION_MANAGEMENT)" = "y" ]; then \
 		sed -i "/RTCONFIG_PERMISSION_MANAGEMENT/d" $(1); \
@@ -2581,6 +2601,10 @@ define RouterOptions
 	if [ "$(PORT2_DEVICE)" = "y" ]; then \
 		sed -i "/RTCONFIG_PORT2_DEVICE/d" $(1); \
 		echo "RTCONFIG_PORT2_DEVICE=y" >>$(1); \
+	fi; \
+	if [ "$(WTF_REDEEM)" = "y" ]; then \
+		sed -i "/RTCONFIG_WTF_REDEEM/d" $(1); \
+		echo "RTCONFIG_WTF_REDEEM=y" >>$(1); \
 	fi; \
 	)
 	$(call platformRouterOptions, $(1))
@@ -3007,6 +3031,10 @@ if [ "$(TUNEK)" != "n" ]; then \
 		echo "# CONFIG_FAT_FS is not set" >>$(1); \
 		sed -i "/CONFIG_VFAT_FS/d" $(1); \
 		echo "# CONFIG_VFAT_FS is not set" >>$(1); \
+		sed -i "/CONFIG_HFS_FS/d" $(1); \
+		echo "# CONFIG_HFS_FS is not set" >>$(1); \
+		sed -i "/CONFIG_HFSPLUS_FS/d" $(1); \
+		echo "# CONFIG_HFSPLUS_FS is not set" >>$(1); \
 		sed -i "/CONFIG_REISERFS_FS/d" $(1); \
 		echo "# CONFIG_REISERFS_FS is not set" >>$(1); \
 		sed -i "/CONFIG_JFFS2_FS/d" $(1); \
@@ -3028,7 +3056,7 @@ if [ "$(TUNEK)" != "n" ]; then \
 		sed -i "/CONFIG_BUG/d" $(1); \
 		echo "# CONFIG_BUG is not set" >>$(1); \
 	fi; \
-	if [ "$(PLN12)" = "y" ] || [ "$(PLAC56)" = "y" ] || [ "$(RPAC66)" = "y" ] || [ "$(RPAC51)" = "y" ] ; then \
+	if [ "$(RTN19)" = "y" ] || [ "$(PLN12)" = "y" ] || [ "$(PLAC56)" = "y" ] || [ "$(RPAC66)" = "y" ] || [ "$(RPAC51)" = "y" ] ; then \
 		sed -i "/CONFIG_USB/d" $(1); \
 		echo "# CONFIG_USB is not set" >>$(1); \
 		sed -i "/CONFIG_USB_SUPPORT/d" $(1); \
@@ -3051,6 +3079,10 @@ if [ "$(TUNEK)" != "n" ]; then \
 		echo "# CONFIG_FAT_FS is not set" >>$(1); \
 		sed -i "/CONFIG_VFAT_FS/d" $(1); \
 		echo "# CONFIG_VFAT_FS is not set" >>$(1); \
+		sed -i "/CONFIG_HFS_FS/d" $(1); \
+		echo "# CONFIG_HFS_FS is not set" >>$(1); \
+		sed -i "/CONFIG_HFSPLUS_FS/d" $(1); \
+		echo "# CONFIG_HFSPLUS_FS is not set" >>$(1); \
 		sed -i "/CONFIG_REISERFS_FS/d" $(1); \
 		echo "# CONFIG_REISERFS_FS is not set" >>$(1); \
 		sed -i "/CONFIG_JFFS2_FS/d" $(1); \
@@ -3264,6 +3296,8 @@ fi; \
 		echo "# CONFIG_MSDOS_PARTITION is not set" >>$(1); \
 		sed -i "/CONFIG_EFI_PARTITION/d" $(1); \
 		echo "# CONFIG_EFI_PARTITION is not set" >>$(1); \
+		sed -i "/CONFIG_MAC_PARTITION/d" $(1); \
+		echo "# CONFIG_MAC_PARTITION is not set" >>$(1); \
 	else \
 		if [ "$(PRINTER)" != "y" ]; then \
 			sed -i "/CONFIG_USB_PRINTER/d" $(1); \
@@ -3613,13 +3647,11 @@ fi; \
 		sed -i "/CONFIG_VFAT_FS/d" $(1); \
 		echo "# CONFIG_VFAT_FS is not set" >>$(1); \
 	fi; \
-	if [ "$(HFS)" = "open" ]; then \
+	if [ "$(HFS)" = "paragon" ] || [ "$(HFS)" = "tuxera" ]; then \
 		sed -i "/CONFIG_HFS_FS/d" $(1); \
-		echo "CONFIG_HFS_FS=y" >>$(1); \
+		echo "# CONFIG_HFS_FS is not set" >>$(1); \
 		sed -i "/CONFIG_HFSPLUS_FS/d" $(1); \
-		echo "CONFIG_HFSPLUS_FS=y" >>$(1); \
-		sed -i "/CONFIG_MAC_PARTITION/d" $(1); \
-		echo "CONFIG_MAC_PARTITION=y" >>$(1); \
+		echo "# CONFIG_HFSPLUS_FS is not set" >>$(1); \
 	fi; \
 	if [ "$(BLINK_LED)" = "y" ]; then \
 		sed -i "/CONFIG_USB_BUS_STATS/d" $(1); \

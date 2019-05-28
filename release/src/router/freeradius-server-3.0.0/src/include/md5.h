@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: dc902d81207febd1598e6880c8c4a1f0d750f0ee $
  *
  * @file md5.h
  * @brief Structures and prototypes for md5.
@@ -10,7 +10,7 @@
 #ifndef _FR_MD5_H
 #define _FR_MD5_H
 
-RCSIDH(md5_h, "$Id$")
+RCSIDH(md5_h, "$Id: dc902d81207febd1598e6880c8c4a1f0d750f0ee $")
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>

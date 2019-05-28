@@ -1,7 +1,7 @@
 /*
  * mem.c  Memory allocation, deallocation stuff.
  *
- * Version:     $Id$
+ * Version:     $Id: 94af4ca908200b0807bb1a542ece2cba5efca09a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 94af4ca908200b0807bb1a542ece2cba5efca09a $")
 
 #include <stdio.h>
 #include "rlm_eap.h"

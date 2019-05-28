@@ -1,7 +1,7 @@
 /*
  * filters.c	Routines to parse Ascend's filter attributes.
  *
- * Version:	$Id$
+ * Version:	$Id: bc5415938f926da8ffe2edb404926c78a0324eae $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: bc5415938f926da8ffe2edb404926c78a0324eae $")
 
 #include <freeradius-devel/libradius.h>
 

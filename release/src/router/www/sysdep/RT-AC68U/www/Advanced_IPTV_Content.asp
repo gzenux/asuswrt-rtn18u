@@ -145,19 +145,19 @@ function load_ISP_profile(){
 		setting_value = [["500", "0"], ["", "0"], ["", "0"], "0"];
 	}
 	else if(document.form.switch_wantag.value == "singtel_mio"){
-		setting_value = [["10", "0"], ["20", "4"], ["30", "4"], "6"]; 
+		setting_value = [["10", "0"], ["20", "4"], ["30", "4"], "6"];
 	}
 	else if(document.form.switch_wantag.value == "singtel_others"){
-		setting_value = [["10", "0"], ["20", "4"], ["", "0"], "4"];  
+		setting_value = [["10", "0"], ["20", "4"], ["", "0"], "4"];
 	}
 	else if(document.form.switch_wantag.value == "m1_fiber"){
-		setting_value = [["1103", "1"], ["", "0"], ["1107", "1"], "3"]; 
+		setting_value = [["1103", "1"], ["", "0"], ["1107", "1"], "3"];
 	}
 	else if(document.form.switch_wantag.value == "maxis_fiber_sp"){
 		setting_value = [["11", "0"], ["", "0"], ["14", "0"], "3"];
 	}
 	else if(document.form.switch_wantag.value == "maxis_fiber"){
-		setting_value = [["621", "0"], ["", "0"], ["821,822", "0"], "3"]; 
+		setting_value = [["621", "0"], ["", "0"], ["821,822", "0"], "3"];
 	}
 	else if(document.form.switch_wantag.value == "maxis_fiber_sp_iptv"){
 		setting_value = [["11", "0"], ["15", "0"], ["14", "0"], "7"];
@@ -166,21 +166,31 @@ function load_ISP_profile(){
 		setting_value = [["621", "0"], ["823", "0"], ["821,822", "0"], "7"];
 	}
 	else if(document.form.switch_wantag.value == "movistar") {
-		setting_value = [["6", "0"], ["2", "0"], ["3", "0"], "8"]; 
+		setting_value = [["6", "0"], ["2", "0"], ["3", "0"], "8"];
 	}
 	else if(document.form.switch_wantag.value == "meo") {
-		setting_value = [["12", "0"], ["12", "0"], ["", "0"], "4"]; 
+		setting_value = [["12", "0"], ["12", "0"], ["", "0"], "4"];
 	}
         else if(document.form.switch_wantag.value == "vodafone") {
-                setting_value = [["100", "1"], ["", "0"], ["105", "1"], "3"]; 
+		setting_value = [["100", "1"], ["", "0"], ["105", "1"], "3"];
         }
         else if(document.form.switch_wantag.value == "hinet") {
-                setting_value = [["", "0"], ["", "0"], ["", "0"], "4"]; 
+		setting_value = [["", "0"], ["", "0"], ["", "0"], "4"];
         }
-	else if(document.form.switch_wantag.value == "stuff_fibre"){
+    else if(document.form.switch_wantag.value == "stuff_fibre") {
 		setting_value = [["10", "0"], ["", "0"], ["", "0"], "0"];
 	}
-	
+	else if(document.form.switch_wantag.value == "spark" || document.form.switch_wantag.value == "2degrees" ||
+	document.form.switch_wantag.value == "slingshot" || document.form.switch_wantag.value == "orcon" || document.form.switch_wantag.value == "voda_nz" || document.form.switch_wantag.value == "iinet"){
+		setting_value = [["10", "0"], ["", "0"], ["", "0"], "0"];
+	}
+	else if(document.form.switch_wantag.value == "tpg" || document.form.switch_wantag.value == "aapt" || document.form.switch_wantag.value == "intronode"){
+		setting_value = [["2", "0"], ["", "0"], ["", "0"], "0"];
+	}
+	else if(document.form.switch_wantag.value == "amaysim" || document.form.switch_wantag.value == "dodo" || document.form.switch_wantag.value == "iprimus"){
+		setting_value = [["100", "0"], ["", "0"], ["", "0"], "0"];
+	}
+
 	if(setting_value.length == 4){
 		document.form.switch_wan0tagid.value = setting_value[0][0];
 		document.form.switch_wan0prio.value = setting_value[0][1];
@@ -225,6 +235,7 @@ function ISP_Profile_Selection(isp){
 			wan_voip_port3_x.style.display,
 			switch_stb_x.value,
 			mr_enable_field.style.display,
+			enable_eff_multicast_forward.style.display,
 			iptv_settings_btn.style.display,
 			voip_settings_btn".style.display
 	];*/
@@ -235,7 +246,8 @@ function ISP_Profile_Selection(isp){
 	else if(isp == "unifi_home" || isp == "singtel_others" || isp == "meo" || isp == "hinet"){
 		ISP_setting = ["none", "", "none", "none", "none", "none", "4", "", "", "none", "none"];
 	}
-	else if(isp == "unifi_biz"){
+	else if(isp == "unifi_biz" || isp == "stuff_fibre" || isp == "spark" || isp == "2degrees" || isp == "slingshot" || isp == "orcon" || isp == "voda_nz" ||
+			isp == "tpg" || isp == "iinet" || isp == "aapt" || isp == "intronode" || isp == "amaysim" || isp == "dodo" || isp == "iprimus"){
 		ISP_setting = ["none", "none", "none", "none", "none", "none", "0", "", "", "none", "none"];
 	}
 	else if(isp == "singtel_mio"){
@@ -252,9 +264,6 @@ function ISP_Profile_Selection(isp){
 	}
 	else if(isp == "vodafone"){
 		ISP_setting = ["none", "", "", "none", "none", "none", "3", "", "", "none", "none"];
-	}
-	else if(isp == "stuff_fibre"){
-		ISP_setting = ["none", "none", "none", "none", "none", "none", "0", "", "", "none", "none"];
 	}
 	else if(isp == "manual"){
 		ISP_setting = ["none", "none", "none", "", "", "", "6", "", "", "none", "none"];
@@ -889,7 +898,7 @@ function change_wan_type(wan_type){
 	}
 	else{	// Automatic IP or 802.11 MD or ""
 		document.form.wan_dhcpenable_x_now.value = "1";
-		document.getElementById('IPsetting').style.display = "none";		
+		document.getElementById('IPsetting').style.display = "none";
 		inputCtrl(document.form.wan_ipaddr_x_now, 0);
 		inputCtrl(document.form.wan_netmask_x_now, 0);
 		inputCtrl(document.form.wan_gateway_x_now, 0);
@@ -1372,14 +1381,22 @@ function change_mr_enable(switch_stb){
 					<option value="maxis_fiber_sp" <% nvram_match("switch_wantag", "maxis_fiber_sp", "selected"); %>>Maxis-Fiber-Special</option>
 					<option id="movistarOption" value="movistar" <% nvram_match("switch_wantag", "movistar", "selected"); %>>Movistar Triple VLAN</option>
 					<option id="meoOption" value="meo" <% nvram_match("switch_wantag", "meo", "selected"); %>>Meo</option>
-					<option id="vodafoneOption" value="vodafone" <% nvram_match("switch_wantag", "vodafone", "selected"); %>>Vodafone</option>
+					<option id="vodafoneOption" value="vodafone" <% nvram_match("switch_wantag", "vodafone", "selected"); %>>Vodafone(Portugal)</option>
 					<option value="hinet" <% nvram_match("switch_wantag", "hinet", "selected"); %>>Hinet MOD</option>
-					<option id="sfOption" value="stuff_fibre" <% nvram_match("switch_wantag", "stuff_fibre", "selected"); %>>Stuff-Fibre</option>
-	<!--
-					<option value="maxis_fiber_iptv" <% nvram_match("switch_wantag", "maxis_fiber_iptv", "selected"); %>>Maxis-Fiber-IPTV</option>
-					<option value="maxis_fiber_sp_iptv" <% nvram_match("switch_wantag", "maxis_fiber_sp_iptv", "selected"); %>>Maxis-Fiber-Special-IPTV</option>
-	-->
-					<option value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
+					<option value="stuff_fibre" <% nvram_match("switch_wantag", "stuff_fibre", "selected"); %>>Stuff-Fibre</option>
+					<option value="spark" <% nvram_match("switch_wantag", "spark", "selected"); %>>Spark</option>
+					<option value="2degrees" <% nvram_match("switch_wantag", "2degrees", "selected"); %>>2degrees</option>
+					<option value="slingshot" <% nvram_match("switch_wantag", "slingshot", "selected"); %>>Slingshot</option>
+					<option value="orcon" <% nvram_match("switch_wantag", "orcon", "selected"); %>>Orcon</option>
+					<option value="voda_nz" <% nvram_match("switch_wantag", "voda_nz", "selected"); %>>Vodafone(New Zealand)</option>
+					<option value="tpg" <% nvram_match("switch_wantag", "tpg", "selected"); %>>TPG</option>
+					<option value="iinet" <% nvram_match("switch_wantag", "iinet", "selected"); %>>iiNET</option>
+					<option value="aapt" <% nvram_match("switch_wantag", "aapt", "selected"); %>>AAPT</option>
+					<option value="intronode" <% nvram_match("switch_wantag", "intronode", "selected"); %>>Intronode</option>
+					<option value="amaysim" <% nvram_match("switch_wantag", "amaysim", "selected"); %>>Amaysim</option>
+					<option value="dodo" <% nvram_match("switch_wantag", "dodo", "selected"); %>>Dodo</option>
+					<option value="iprimus" <% nvram_match("switch_wantag", "iprimus", "selected"); %>>Iprimus</option>
+					<option id="manualOption" value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
 				</select>
 			</td>
 		</tr>

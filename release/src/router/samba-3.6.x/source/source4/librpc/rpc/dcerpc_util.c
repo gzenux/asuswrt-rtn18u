@@ -593,15 +593,15 @@ struct composite_context *dcerpc_pipe_auth_send(struct dcerpc_pipe *p,
 
 	/* Perform an authenticated DCE-RPC bind
 	 */
-	if (!(conn->flags & (DCERPC_CONNECT|DCERPC_SEAL))) {
+	if (!(conn->flags & (DCERPC_SIGN|DCERPC_SEAL))) {
 		/*
 		  we are doing an authenticated connection,
-		  which needs to use [connect], [sign] or [seal].
-		  If nothing is specified, we default to [sign] now.
-		  This give roughly the same protection as
-		  ncacn_np with smb signing.
+		  but not using sign or seal. We must force
+		  the CONNECT dcerpc auth type as a NONE auth
+		  type doesn't allow authentication
+		  information to be passed.
 		*/
-		conn->flags |= DCERPC_SIGN;
+		conn->flags |= DCERPC_CONNECT;
 	}
 
 	if (s->binding->flags & DCERPC_AUTH_SPNEGO) {

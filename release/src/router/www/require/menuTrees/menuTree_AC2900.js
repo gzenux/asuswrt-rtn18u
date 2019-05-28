@@ -119,7 +119,7 @@ define(function(){
 					{url: "Advanced_WMode_Content.asp", tabName: "WDS"},
 					{url: "Advanced_ACL_Content.asp", tabName: "<#menu5_1_4#>"},
 					{url: "Advanced_WAdvanced_Content.asp", tabName: "<#menu5_1_6#>"},
-					{url: "Advanced_WProxy_Content.asp", tabName: "Wi-Fi Proxy"},
+					{url: "Advanced_WProxy_Content.asp", tabName: "<#WiFi_Proxy_item#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},

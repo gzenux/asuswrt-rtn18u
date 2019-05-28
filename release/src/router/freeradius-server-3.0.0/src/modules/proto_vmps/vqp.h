@@ -17,7 +17,7 @@
 #define FR_VQP_H
 
 /*
- * $Id$
+ * $Id: bbd2cacfa06b83e8034fdb2741c656fbc259ab51 $
  *
  * @file vqp.h
  * @brief Structures and prototypes for Cisco's VLAN Query Protocol
@@ -26,7 +26,7 @@
  * @copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(vqp_h, "$Id$")
+RCSIDH(vqp_h, "$Id: bbd2cacfa06b83e8034fdb2741c656fbc259ab51 $")
 
 #ifdef __cplusplus
 extern "C" {

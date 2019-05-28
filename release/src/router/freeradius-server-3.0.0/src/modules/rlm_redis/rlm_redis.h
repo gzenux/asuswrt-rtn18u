@@ -1,7 +1,7 @@
 /*
  * rlm_redis.h
  *
- * Version:	$Id$
+ * Version:	$Id: c42b1984be9f6b1a4c786d88b9eeebdbae74500a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef RLM_REDIS_H
 #define	RLM_REDIS_H
 
-RCSIDH(rlm_redis_h, "$Id$")
+RCSIDH(rlm_redis_h, "$Id: c42b1984be9f6b1a4c786d88b9eeebdbae74500a $")
 
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>

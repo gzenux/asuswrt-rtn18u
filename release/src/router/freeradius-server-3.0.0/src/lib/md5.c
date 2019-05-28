@@ -1,13 +1,13 @@
 /*
  *  md5.c	MD5 message-digest algorithm
  *
- *  Version:	$Id$
+ *  Version:	$Id: 654e6c5699a203dd017935fd8a9a1da6a35013a7 $
  *
  *  This file is licensed under the LGPL, but is largely derived
  *  from public domain source code.
  */
 
-RCSID("$Id$")
+RCSID("$Id: 654e6c5699a203dd017935fd8a9a1da6a35013a7 $")
 
 #include <freeradius-devel/libradius.h>
 

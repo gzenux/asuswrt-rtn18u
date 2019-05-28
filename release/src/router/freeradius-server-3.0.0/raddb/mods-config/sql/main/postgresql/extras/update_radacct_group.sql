@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 945bafbdeef9a84f4297b35d3d335bc74119d209 $
  *
  * OPTIONAL Postgresql trigger for FreeRADIUS
  *

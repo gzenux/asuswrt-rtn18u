@@ -1512,7 +1512,7 @@ function switchMode(mode) {
 	var faq_text = ipsec_vpn_type_faq_array[$("select[name=ipsec_vpn_type]").val()][0];
 	var faq_num = ipsec_vpn_type_faq_array[$("select[name=ipsec_vpn_type]").val()][1];
 	$("#ipsec_vpn_type_faq").html(faq_text);
-	httpApi.faqURL("ipsec_vpn_type_faq", faq_num, "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL(faq_num, function(url){document.getElementById("ipsec_vpn_type_faq").href=url;});
 
 	showhide("tr_SettingsMode", 1);
 	document.getElementById("selSwitchMode").value = "1";
@@ -2658,7 +2658,7 @@ function changeExchangeMode() {
 		</tr>
 		</thead>
 		<tr>
-			<th><#HSDPAConfig_Username_itemname#></th>
+			<th><#Username#></th>
 			<th><#HSDPAConfig_Password_itemname#></th>
 			<th><#list_add_delete#></th>
 		</tr>

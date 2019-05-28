@@ -1,7 +1,7 @@
 /*
  * eap_leap.c  EAP LEAP functionality.
  *
- * Version:     $Id$
+ * Version:     $Id: 6c9e19f495214e68b6102f30388cc761f57dbb40 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
  *  The LEAP type (0x11) is *not* included in the type data...
  */
 
-RCSID("$Id$")
+RCSID("$Id: 6c9e19f495214e68b6102f30388cc761f57dbb40 $")
 
 #include <stdio.h>
 #include <stdlib.h>

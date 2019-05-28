@@ -49,7 +49,7 @@
 
 */
 
-RCSID("$Id$")
+RCSID("$Id: 67387433c897aeceee0ff534bad565e89aaa29e5 $")
 
 #include "snprintf.h"
 

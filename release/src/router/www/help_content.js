@@ -74,7 +74,7 @@ helpcontent[3] = new Array("",
 							"<#WLANConfig11b_x_roamingassit_desc#>",	//31
 							"<#WLANConfig11b_x_Airtime_Fairness_itemdesc#>",
 							"<#WLANConfig11b_x_Auto#>",
-							"Enable/Disable Bluetooth Coexisistence. Data rate 1Mbps and 2 Mbps are not allowed in Pre-emptive mode. TX Bursting is also not allowed in Pre-emptive mode."
+							"<#WLANConfig11b_x_BTCoexistence_itemdesc#>"
 							 );
 
 helpcontent[4] = new Array("",
@@ -221,7 +221,9 @@ helpcontent[18] = new Array("",
 helpcontent[19] = new Array("",
 							"<#Setting_factorydefault_itemdesc#>",
 							"<#Setting_save_itemdesc#>",
-							"<#Setting_upload_itemdesc#>");
+							"<#Setting_upload_itemdesc#>",
+							"<#Setting_factorydefault_itemdesc_dpi#>"
+							);
 // QoS
 helpcontent[20] = new Array("",
 							"",
@@ -373,5 +375,6 @@ helpcontent[33] = new Array("",
 
 //Feedback
 helpcontent[34] = new Array("",
-							"This feature allows system to capture diagnostic System debug log in the background, duration depends on the “Diagnostic debug log capture duration” option, depends on the option selected, system might transmit single debug log automatically to ASUS Support Team for analysis after capture completed or transmit multiple debug logs over a period of time. Click on the yellow System icon could cancel the debug log capture."/*untranslated*/
+							"This feature allows system to capture diagnostic System debug log in the background, duration depends on the “Diagnostic debug log capture duration” option, depends on the option selected, system might transmit single debug log automatically to ASUS Support Team for analysis after capture completed or transmit multiple debug logs over a period of time. Click on the yellow System icon could cancel the debug log capture.",/*untranslated*/
+							"<#Feedback_case_No_desc#>"
 							);

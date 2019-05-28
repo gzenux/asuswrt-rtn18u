@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 3dbe219fa042935de5722f9ddf7c079fa4c59c7e $
  * @file rlm_yubikey.c
  * @brief Authentication for yubikey OTP tokens.
  *
@@ -22,7 +22,7 @@
  * @copyright 2013 The FreeRADIUS server project
  * @copyright 2013 Network RADIUS <info@networkradius.com>
  */
-RCSID("$Id$")
+RCSID("$Id: 3dbe219fa042935de5722f9ddf7c079fa4c59c7e $")
 
 #include "rlm_yubikey.h"
 

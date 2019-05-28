@@ -4,7 +4,7 @@
 /*
  * stats.h	Structures and functions for statistics.
  *
- * Version:	$Id$
+ * Version:	$Id: c59f79a31418464e8382f1a1ccd2c239de14ed4d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2005,2006,2007,2008  The FreeRADIUS server project
  */
 
-RCSIDH(stats_h, "$Id$")
+RCSIDH(stats_h, "$Id: c59f79a31418464e8382f1a1ccd2c239de14ed4d $")
 
 #ifdef __cplusplus
 extern "C" {

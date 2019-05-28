@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 6076ce69bf8822f5134901dccdb0bbba88a01d0a $
  * @file udpfromto.c
  * @brief Like recvfrom, but also stores the destination IP address. Useful on multihomed hosts.
  *
  * @copyright 2007 Alan DeKok <aland@deployingradius.com>
  * @copyright 2002 Miquel van Smoorenburg
  */
-RCSID("$Id$")
+RCSID("$Id: 6076ce69bf8822f5134901dccdb0bbba88a01d0a $")
 
 #include <freeradius-devel/udpfromto.h>
 

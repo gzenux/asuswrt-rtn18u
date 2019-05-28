@@ -6,7 +6,7 @@
  *
  * code common to EAP-SIM clients and to servers.
  *
- * Version:     $Id$
+ * Version:     $Id: bafb329fbff7e9ae75653ad5874f08179ef03cde $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
  *
  */
 
-RCSID("$Id$")
+RCSID("$Id: bafb329fbff7e9ae75653ad5874f08179ef03cde $")
 
 #include <freeradius-devel/libradius.h>
 #include "eap_types.h"

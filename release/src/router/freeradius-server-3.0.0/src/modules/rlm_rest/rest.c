@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: 3d524d97f1d3f2bf5894bb153279f3ad14f809b3 $
  *
  * @brief Functions and datatypes for the REST (HTTP) transport.
  * @file rest.c
@@ -23,7 +23,7 @@
  * @copyright 2012-2013  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 3d524d97f1d3f2bf5894bb153279f3ad14f809b3 $")
 
 #include <assert.h>
 #include <ctype.h>

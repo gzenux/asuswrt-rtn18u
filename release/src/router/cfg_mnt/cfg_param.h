@@ -368,6 +368,7 @@ struct param_mapping_s param_mapping_list[] = {
 	/* feedback */
 	{ "fb_email_dbg", 	FT_FEEDBACK,		SUBFT_FEEDBACK},
 	{ "fb_email", 	FT_FEEDBACK,		SUBFT_FEEDBACK},
+	{ "fb_serviceno", 	FT_FEEDBACK,		SUBFT_FEEDBACK},
 	{ "fb_ptype", 	FT_FEEDBACK,		SUBFT_FEEDBACK},
 	{ "fb_pdesc", 	FT_FEEDBACK,		SUBFT_FEEDBACK},
 	{ "fb_country", 	FT_FEEDBACK,		SUBFT_FEEDBACK},

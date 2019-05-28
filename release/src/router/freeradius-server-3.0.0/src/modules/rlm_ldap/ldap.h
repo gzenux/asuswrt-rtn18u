@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: f337dc2d914e527928b1651e85c5ae8ed208de33 $
  * @file ldap.h
  * @brief LDAP authorization and authentication module headers.
  *

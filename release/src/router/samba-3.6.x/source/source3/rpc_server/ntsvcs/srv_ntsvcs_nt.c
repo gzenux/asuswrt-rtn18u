@@ -227,7 +227,7 @@ WERROR _PNP_HwProfFlags(struct pipes_struct *p,
 WERROR _PNP_Disconnect(struct pipes_struct *p,
 		       struct PNP_Disconnect *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -237,7 +237,7 @@ WERROR _PNP_Disconnect(struct pipes_struct *p,
 WERROR _PNP_Connect(struct pipes_struct *p,
 		    struct PNP_Connect *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -247,7 +247,7 @@ WERROR _PNP_Connect(struct pipes_struct *p,
 WERROR _PNP_GetGlobalState(struct pipes_struct *p,
 			   struct PNP_GetGlobalState *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -257,7 +257,7 @@ WERROR _PNP_GetGlobalState(struct pipes_struct *p,
 WERROR _PNP_InitDetection(struct pipes_struct *p,
 			  struct PNP_InitDetection *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -267,7 +267,7 @@ WERROR _PNP_InitDetection(struct pipes_struct *p,
 WERROR _PNP_ReportLogOn(struct pipes_struct *p,
 			struct PNP_ReportLogOn *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -277,7 +277,7 @@ WERROR _PNP_ReportLogOn(struct pipes_struct *p,
 WERROR _PNP_GetRootDeviceInstance(struct pipes_struct *p,
 				  struct PNP_GetRootDeviceInstance *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -287,7 +287,7 @@ WERROR _PNP_GetRootDeviceInstance(struct pipes_struct *p,
 WERROR _PNP_GetRelatedDeviceInstance(struct pipes_struct *p,
 				     struct PNP_GetRelatedDeviceInstance *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -297,7 +297,7 @@ WERROR _PNP_GetRelatedDeviceInstance(struct pipes_struct *p,
 WERROR _PNP_EnumerateSubKeys(struct pipes_struct *p,
 			     struct PNP_EnumerateSubKeys *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -307,7 +307,7 @@ WERROR _PNP_EnumerateSubKeys(struct pipes_struct *p,
 WERROR _PNP_GetDepth(struct pipes_struct *p,
 		     struct PNP_GetDepth *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -317,7 +317,7 @@ WERROR _PNP_GetDepth(struct pipes_struct *p,
 WERROR _PNP_SetDeviceRegProp(struct pipes_struct *p,
 			     struct PNP_SetDeviceRegProp *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -327,7 +327,7 @@ WERROR _PNP_SetDeviceRegProp(struct pipes_struct *p,
 WERROR _PNP_GetClassInstance(struct pipes_struct *p,
 			     struct PNP_GetClassInstance *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -337,7 +337,7 @@ WERROR _PNP_GetClassInstance(struct pipes_struct *p,
 WERROR _PNP_CreateKey(struct pipes_struct *p,
 		      struct PNP_CreateKey *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -347,7 +347,7 @@ WERROR _PNP_CreateKey(struct pipes_struct *p,
 WERROR _PNP_DeleteRegistryKey(struct pipes_struct *p,
 			      struct PNP_DeleteRegistryKey *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -357,7 +357,7 @@ WERROR _PNP_DeleteRegistryKey(struct pipes_struct *p,
 WERROR _PNP_GetClassCount(struct pipes_struct *p,
 			  struct PNP_GetClassCount *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -367,7 +367,7 @@ WERROR _PNP_GetClassCount(struct pipes_struct *p,
 WERROR _PNP_GetClassName(struct pipes_struct *p,
 			 struct PNP_GetClassName *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -377,7 +377,7 @@ WERROR _PNP_GetClassName(struct pipes_struct *p,
 WERROR _PNP_DeleteClassKey(struct pipes_struct *p,
 			   struct PNP_DeleteClassKey *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -387,7 +387,7 @@ WERROR _PNP_DeleteClassKey(struct pipes_struct *p,
 WERROR _PNP_GetInterfaceDeviceAlias(struct pipes_struct *p,
 				    struct PNP_GetInterfaceDeviceAlias *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -397,7 +397,7 @@ WERROR _PNP_GetInterfaceDeviceAlias(struct pipes_struct *p,
 WERROR _PNP_GetInterfaceDeviceList(struct pipes_struct *p,
 				   struct PNP_GetInterfaceDeviceList *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -407,7 +407,7 @@ WERROR _PNP_GetInterfaceDeviceList(struct pipes_struct *p,
 WERROR _PNP_GetInterfaceDeviceListSize(struct pipes_struct *p,
 				       struct PNP_GetInterfaceDeviceListSize *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -417,7 +417,7 @@ WERROR _PNP_GetInterfaceDeviceListSize(struct pipes_struct *p,
 WERROR _PNP_RegisterDeviceClassAssociation(struct pipes_struct *p,
 					   struct PNP_RegisterDeviceClassAssociation *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -427,7 +427,7 @@ WERROR _PNP_RegisterDeviceClassAssociation(struct pipes_struct *p,
 WERROR _PNP_UnregisterDeviceClassAssociation(struct pipes_struct *p,
 					     struct PNP_UnregisterDeviceClassAssociation *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -437,7 +437,7 @@ WERROR _PNP_UnregisterDeviceClassAssociation(struct pipes_struct *p,
 WERROR _PNP_GetClassRegProp(struct pipes_struct *p,
 			    struct PNP_GetClassRegProp *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -447,7 +447,7 @@ WERROR _PNP_GetClassRegProp(struct pipes_struct *p,
 WERROR _PNP_SetClassRegProp(struct pipes_struct *p,
 			    struct PNP_SetClassRegProp *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -457,7 +457,7 @@ WERROR _PNP_SetClassRegProp(struct pipes_struct *p,
 WERROR _PNP_CreateDevInst(struct pipes_struct *p,
 			  struct PNP_CreateDevInst *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -467,7 +467,7 @@ WERROR _PNP_CreateDevInst(struct pipes_struct *p,
 WERROR _PNP_DeviceInstanceAction(struct pipes_struct *p,
 				 struct PNP_DeviceInstanceAction *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -477,7 +477,7 @@ WERROR _PNP_DeviceInstanceAction(struct pipes_struct *p,
 WERROR _PNP_GetDeviceStatus(struct pipes_struct *p,
 			    struct PNP_GetDeviceStatus *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -487,7 +487,7 @@ WERROR _PNP_GetDeviceStatus(struct pipes_struct *p,
 WERROR _PNP_SetDeviceProblem(struct pipes_struct *p,
 			     struct PNP_SetDeviceProblem *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -497,7 +497,7 @@ WERROR _PNP_SetDeviceProblem(struct pipes_struct *p,
 WERROR _PNP_DisableDevInst(struct pipes_struct *p,
 			   struct PNP_DisableDevInst *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -507,7 +507,7 @@ WERROR _PNP_DisableDevInst(struct pipes_struct *p,
 WERROR _PNP_UninstallDevInst(struct pipes_struct *p,
 			     struct PNP_UninstallDevInst *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -517,7 +517,7 @@ WERROR _PNP_UninstallDevInst(struct pipes_struct *p,
 WERROR _PNP_AddID(struct pipes_struct *p,
 		  struct PNP_AddID *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -527,7 +527,7 @@ WERROR _PNP_AddID(struct pipes_struct *p,
 WERROR _PNP_RegisterDriver(struct pipes_struct *p,
 			   struct PNP_RegisterDriver *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -537,7 +537,7 @@ WERROR _PNP_RegisterDriver(struct pipes_struct *p,
 WERROR _PNP_QueryRemove(struct pipes_struct *p,
 			struct PNP_QueryRemove *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -547,7 +547,7 @@ WERROR _PNP_QueryRemove(struct pipes_struct *p,
 WERROR _PNP_RequestDeviceEject(struct pipes_struct *p,
 			       struct PNP_RequestDeviceEject *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -557,7 +557,7 @@ WERROR _PNP_RequestDeviceEject(struct pipes_struct *p,
 WERROR _PNP_IsDockStationPresent(struct pipes_struct *p,
 				 struct PNP_IsDockStationPresent *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -567,7 +567,7 @@ WERROR _PNP_IsDockStationPresent(struct pipes_struct *p,
 WERROR _PNP_RequestEjectPC(struct pipes_struct *p,
 			   struct PNP_RequestEjectPC *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -577,7 +577,7 @@ WERROR _PNP_RequestEjectPC(struct pipes_struct *p,
 WERROR _PNP_AddEmptyLogConf(struct pipes_struct *p,
 			    struct PNP_AddEmptyLogConf *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -587,7 +587,7 @@ WERROR _PNP_AddEmptyLogConf(struct pipes_struct *p,
 WERROR _PNP_FreeLogConf(struct pipes_struct *p,
 			struct PNP_FreeLogConf *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -597,7 +597,7 @@ WERROR _PNP_FreeLogConf(struct pipes_struct *p,
 WERROR _PNP_GetFirstLogConf(struct pipes_struct *p,
 			    struct PNP_GetFirstLogConf *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -607,7 +607,7 @@ WERROR _PNP_GetFirstLogConf(struct pipes_struct *p,
 WERROR _PNP_GetNextLogConf(struct pipes_struct *p,
 			   struct PNP_GetNextLogConf *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -617,7 +617,7 @@ WERROR _PNP_GetNextLogConf(struct pipes_struct *p,
 WERROR _PNP_GetLogConfPriority(struct pipes_struct *p,
 			       struct PNP_GetLogConfPriority *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -627,7 +627,7 @@ WERROR _PNP_GetLogConfPriority(struct pipes_struct *p,
 WERROR _PNP_AddResDes(struct pipes_struct *p,
 		      struct PNP_AddResDes *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -637,7 +637,7 @@ WERROR _PNP_AddResDes(struct pipes_struct *p,
 WERROR _PNP_FreeResDes(struct pipes_struct *p,
 		       struct PNP_FreeResDes *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -647,7 +647,7 @@ WERROR _PNP_FreeResDes(struct pipes_struct *p,
 WERROR _PNP_GetNextResDes(struct pipes_struct *p,
 			  struct PNP_GetNextResDes *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -657,7 +657,7 @@ WERROR _PNP_GetNextResDes(struct pipes_struct *p,
 WERROR _PNP_GetResDesData(struct pipes_struct *p,
 			  struct PNP_GetResDesData *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -667,7 +667,7 @@ WERROR _PNP_GetResDesData(struct pipes_struct *p,
 WERROR _PNP_GetResDesDataSize(struct pipes_struct *p,
 			      struct PNP_GetResDesDataSize *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -677,7 +677,7 @@ WERROR _PNP_GetResDesDataSize(struct pipes_struct *p,
 WERROR _PNP_ModifyResDes(struct pipes_struct *p,
 			 struct PNP_ModifyResDes *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -687,7 +687,7 @@ WERROR _PNP_ModifyResDes(struct pipes_struct *p,
 WERROR _PNP_DetectResourceLimit(struct pipes_struct *p,
 				struct PNP_DetectResourceLimit *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -697,7 +697,7 @@ WERROR _PNP_DetectResourceLimit(struct pipes_struct *p,
 WERROR _PNP_QueryResConfList(struct pipes_struct *p,
 			     struct PNP_QueryResConfList *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -707,7 +707,7 @@ WERROR _PNP_QueryResConfList(struct pipes_struct *p,
 WERROR _PNP_SetHwProf(struct pipes_struct *p,
 		      struct PNP_SetHwProf *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -717,7 +717,7 @@ WERROR _PNP_SetHwProf(struct pipes_struct *p,
 WERROR _PNP_QueryArbitratorFreeData(struct pipes_struct *p,
 				    struct PNP_QueryArbitratorFreeData *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -727,7 +727,7 @@ WERROR _PNP_QueryArbitratorFreeData(struct pipes_struct *p,
 WERROR _PNP_QueryArbitratorFreeSize(struct pipes_struct *p,
 				    struct PNP_QueryArbitratorFreeSize *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -737,7 +737,7 @@ WERROR _PNP_QueryArbitratorFreeSize(struct pipes_struct *p,
 WERROR _PNP_RunDetection(struct pipes_struct *p,
 			 struct PNP_RunDetection *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -747,7 +747,7 @@ WERROR _PNP_RunDetection(struct pipes_struct *p,
 WERROR _PNP_RegisterNotification(struct pipes_struct *p,
 				 struct PNP_RegisterNotification *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -757,7 +757,7 @@ WERROR _PNP_RegisterNotification(struct pipes_struct *p,
 WERROR _PNP_UnregisterNotification(struct pipes_struct *p,
 				   struct PNP_UnregisterNotification *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -767,7 +767,7 @@ WERROR _PNP_UnregisterNotification(struct pipes_struct *p,
 WERROR _PNP_GetCustomDevProp(struct pipes_struct *p,
 			     struct PNP_GetCustomDevProp *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -777,7 +777,7 @@ WERROR _PNP_GetCustomDevProp(struct pipes_struct *p,
 WERROR _PNP_GetVersionInternal(struct pipes_struct *p,
 			       struct PNP_GetVersionInternal *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -787,7 +787,7 @@ WERROR _PNP_GetVersionInternal(struct pipes_struct *p,
 WERROR _PNP_GetBlockedDriverInfo(struct pipes_struct *p,
 				 struct PNP_GetBlockedDriverInfo *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }
 
@@ -797,6 +797,6 @@ WERROR _PNP_GetBlockedDriverInfo(struct pipes_struct *p,
 WERROR _PNP_GetServerSideDeviceInstallFlags(struct pipes_struct *p,
 					    struct PNP_GetServerSideDeviceInstallFlags *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = true;
 	return WERR_NOT_SUPPORTED;
 }

@@ -11,6 +11,7 @@
 #include <net/if.h>
 #include <sys/socket.h>
 #include <linux/sockios.h>
+#include <ctype.h>
 #include <wlutils.h>
 #include <linux_gpio.h>
 #include <etioctl.h>
@@ -1245,31 +1246,56 @@ char *get_wan_mac_name(void)
 	return "et0macaddr";
 }
 
+static char* mac_str_toupper(char *str)
+{
+	char *c;
+	static char buf[18];
+
+	strncpy(buf, str, sizeof(buf) - 1);
+	for (c = buf; *c; ++c)
+		*c = toupper(*c);
+
+	return buf;
+}
+
 char *get_label_mac()
 {
-	return get_2g_hwaddr();
+	return mac_str_toupper(get_2g_hwaddr());
 }
 
 char *get_lan_hwaddr(void)
 {
-	return nvram_safe_get(get_lan_mac_name());
+	return mac_str_toupper(nvram_safe_get(get_lan_mac_name()));
 }
 
 char *get_2g_hwaddr(void)
 {
-	return nvram_safe_get(get_lan_mac_name());
+	return mac_str_toupper(nvram_safe_get(get_lan_mac_name()));
 }
 
 char *get_wan_hwaddr(void)
 {
-	return nvram_safe_get(get_wan_mac_name());
+	return mac_str_toupper(nvram_safe_get(get_wan_mac_name()));
 }
 
 char *get_wlifname(int unit, int subunit, int subunit_x, char *buf)
 {
-	sprintf(buf, "wl%d.%d", unit, subunit);
+	char wifnv[12];
+
+	if (!subunit)
+	{
+		snprintf(wifnv, sizeof(wifnv), "wl%d_ifname", unit);
+		sprintf(buf, nvram_safe_get(wifnv));
+	}
+	else
+		sprintf(buf, "wl%d.%d", unit, subunit);
 
 	return buf;
+}
+
+char *wl_ifname(int unit, int subunit, char *buf)
+{
+	return get_wlifname(unit, subunit, -1, buf);
 }
 
 /**

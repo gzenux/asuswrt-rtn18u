@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 452af3368d73b6538be53f45037f2c45288148eb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #ifndef EXTERN_H
 #define EXTERN_H
 
-RCSIDH(extern_h, "$Id$")
+RCSIDH(extern_h, "$Id: 452af3368d73b6538be53f45037f2c45288148eb $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

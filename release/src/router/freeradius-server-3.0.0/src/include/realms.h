@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id$
+ * Version:	$Id: 68827df408595dbb461817bb2545228e739df4e7 $
  *
  */
 
-RCSIDH(realms_h, "$Id$")
+RCSIDH(realms_h, "$Id: 68827df408595dbb461817bb2545228e739df4e7 $")
 
 #ifdef __cplusplus
 extern "C" {

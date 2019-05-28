@@ -642,7 +642,7 @@ typedef struct _WLANCONFIG_LIST {
 	unsigned int chan;
 	char txrate[10];
 	char rxrate[10];
-	unsigned int rssi;
+	int rssi;
 	unsigned int idle;
 	unsigned int txseq;
 	unsigned int rxseq;
@@ -690,23 +690,16 @@ typedef struct _WIFI_STA_TABLE {
 static int __getSTAInfo(int unit, WIFI_STA_TABLE *sta_info, char *ifname, char id)
 {
 	FILE *fp;
-	int l2_offset, subunit;
-	char *l2, *l3;
+	int l2_offset, subunit, channf, ax2he = 0, have_vhtcaps = 0;
+	unsigned char tmac[6], *tm = &tmac[0];
+	char *l2, *l3, *p;
 	char line_buf[300]; // max 14x
 	char subunit_str[4] = "0", wlif[sizeof("wlX.Yxxx")];
 
-	if (unit < 0 || unit >= MAX_NR_WL_IF)
+	if (absent_band(unit))
 		return -1;
 	if (!ifname || *ifname == '\0')
 		return -1;
-#if !defined(RTCONFIG_HAS_5G_2)
-	if (unit == 2)
-		return -1;
-#endif
-#if !defined(RTCONFIG_WIGIG)
-	if (unit == 3)
-		return -1;
-#endif
 
 	subunit = get_wlsubnet(unit, ifname);
 	if (subunit < 0)
@@ -715,6 +708,12 @@ static int __getSTAInfo(int unit, WIFI_STA_TABLE *sta_info, char *ifname, char i
 		dbg("%s: invalid subunit %d\n", __func__, subunit);
 		return -2;
 	}
+
+#if defined(RTCONFIG_WIFI_QCN5024_QCN5054)
+	if (!find_word(nvram_safe_get("rc_support"), "11AX"))
+		ax2he = 1;
+#endif
+	channf = QCA_DEFAULT_NOISE_FLOOR;
 
 	snprintf(wlif, sizeof(wlif), "wl%d.%d", unit, subunit);
 	if (subunit >= 0 && subunit < MAX_NO_MSSID)
@@ -725,40 +724,79 @@ static int __getSTAInfo(int unit, WIFI_STA_TABLE *sta_info, char *ifname, char i
 	doSystem("wlanconfig %s list > %s", ifname, STA_INFO_PATH);
 	fp = fopen(STA_INFO_PATH, "r");
 	if (fp) {
-/* wlanconfig ath1 list
-ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS ASSOCTIME    IEs   MODE PSMODE
-00:10:18:55:cc:08    1  149  55M   1299M   63    0      0   65535               0        807              0              Q 00:10:33 IEEE80211_MODE_11A  0
-08:60:6e:8f:1e:e6    2  149 159M    866M   44    0      0   65535     E         0          b              0           WPSM 00:13:32 WME IEEE80211_MODE_11AC_VHT80  0
-08:60:6e:8f:1e:e8    1  157 526M    526M   51 4320      0   65535    EP         0          b              0          AWPSM 00:00:10 RSN WME IEEE80211_MODE_11AC_VHT80 0
-*/
+/* ILQ3.1 example:
+ * wlanconfig ath1 list
+ * ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS ASSOCTIME    IEs   MODE PSMODE
+ * 00:10:18:55:cc:08    1  149  55M   1299M   63    0      0   65535               0        807              0              Q 00:10:33 IEEE80211_MODE_11A  0
+ * 08:60:6e:8f:1e:e6    2  149 159M    866M   44    0      0   65535     E         0          b              0           WPSM 00:13:32 WME IEEE80211_MODE_11AC_VHT80  0
+ * 08:60:6e:8f:1e:e8    1  157 526M    526M   51 4320      0   65535    EP         0          b              0          AWPSM 00:00:10 RSN WME IEEE80211_MODE_11AC_VHT80 0
+ *
+ * SPF8 CSU2 QSDK example:
+ * admin@RT-AX89U:/tmp/home/root# wlanconfig ath0 list
+ * ADDR               AID CHAN TXRATE RXRATE RSSI MINRSSI MAXRSSI IDLE  TXSEQ  RXSEQ  CAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS ASSOCTIME    IEs   MODE                   PSMODE
+ * 12:9d:92:4e:85:bc    1  104 2882M   3026M   73       0      74    0      0   65535   EPs         0          b              0           AWPSM 00:00:35     RSN WME IEEE80211_MODE_11AXA_HE80   0
+ * 14:dd:a9:3d:68:65    2  104 433M    433M   69       0      79    0      0   65535    EP         0          b              0            AWPS 00:00:35     RSN WME IEEE80211_MODE_11AC_VHT80   1
+ *
+ * SPF10 ES QSDK example:
+ * admin@GT-AXY16000:/tmp/home/root# wlanconfig ath0 list
+ * ADDR               AID CHAN TXRATE RXRATE RSSI MINRSSI MAXRSSI IDLE  TXSEQ  RXSEQ  CAPS XCAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS   VHTCAPS ASSOCTIME    IEs   MODE RXNSS TXNSS                   PSMODE
+ * 14:dd:a9:3d:68:65    1   60 433M      6M   36      22      40    0      0   65535    EP    OI         0          b              0            AWPS             gGR 00:00:09     RSN WME IEEE80211_MODE_11AC_VHT80  1 1   1
+ *  Minimum Tx Power             : 0
+ *  Maximum Tx Power             : 0
+ *  HT Capability                        : Yes
+ *  VHT Capability                       : Yes
+ *  MU capable                   : No
+ *  SNR                          : 36
+ *  Operating band                       : 5GHz
+ *  Current Operating class      : 0
+ *  Supported Rates              : 12  18  24  36  48  72  96  108
+ */
 		//fseek(fp, 131, SEEK_SET);	// ignore header
 		fgets(line_buf, sizeof(line_buf), fp); // ignore header
 		l2 = strstr(line_buf, "ACAPS");
 		if (l2 != NULL)
 			l2_offset = (int)(l2 - line_buf);
 		else {
-			l2_offset = 79;
+			l2_offset = 79;	/* start offset of ACAPS */
 			l2 = line_buf + l2_offset;
 		}
+		if (strstr(line_buf, "VHTCAPS"))
+			have_vhtcaps = 1;
 		while ( fgets(line_buf, sizeof(line_buf), fp) ) {
-			WLANCONFIG_LIST *r = &sta_info->Entry[sta_info->Num++];
+			WLANCONFIG_LIST *r;
 
+			if (sscanf(line_buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx %*[^\n]", tm, tm + 1, tm + 2, tm + 3, tm + 4, tm + 5) != 6)
+				continue;
+			r = &sta_info->Entry[sta_info->Num++];
 			r->subunit = subunit_str[0];
 			/* IEs may be empty string, find IEEE80211_MODE_ before parsing mode and psmode. */
 			l3 = strstr(line_buf, "IEEE80211_MODE_");
 			if (l3) {
 				*(l3 - 1) = '\0';
 				sscanf(l3, "IEEE80211_MODE_%s %d", r->mode, &r->u_psmode);
+				if (ax2he) {
+					if ((p = strstr(r->mode, "11AXA")) != NULL)
+						memcpy(p, "11AHE", 5);
+					else if ((p = strstr(r->mode, "11AXG")) != NULL)
+						memcpy(p, "11GHE", 5);
+				}
 			}
 			*(l2 - 1) = '\0';
 			sscanf(line_buf, "%s%u%u%s%s%u%u%u%u%[^\n]",
 				r->addr, &r->aid, &r->chan, r->txrate,
 				r->rxrate, &r->rssi, &r->idle, &r->txseq,
 				&r->rxseq, r->caps);
-			sscanf(l2, "%u%x%u%s%s%[^\n]",
-				&r->u_acaps, &r->u_erp, &r->u_state_maxrate, r->htcaps, r->conn_time, r->ie);
+			if (have_vhtcaps) {
+				sscanf(l2, "%u%x%u%s%*s%s%[^\n]",
+					&r->u_acaps, &r->u_erp, &r->u_state_maxrate, r->htcaps, r->conn_time, r->ie);
+			} else {
+				sscanf(l2, "%u%x%u%s%s%[^\n]",
+					&r->u_acaps, &r->u_erp, &r->u_state_maxrate, r->htcaps, r->conn_time, r->ie);
+			}
 			if (strlen(r->rxrate) >= 6)
 				strcpy(r->rxrate, "0M");
+			convert_mac_string(r->addr);
+			r->rssi += channf;
 #if 0
 			dbg("[%s][%u][%u][%s][%s][%u][%u][%u][%u][%s]"
 				"[%u][%u][%x][%s][%s][%s][%d]\n",
@@ -767,7 +805,6 @@ ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        A
 				r->u_acaps, r->u_erp, r->u_state_maxrate, r->htcaps, r->ie,
 				r->mode, r->u_psmode);
 #endif
-				convert_mac_string(r->addr);
 		}
 
 		fclose(fp);
@@ -2155,20 +2192,19 @@ static int ej_wl_rate(int eid, webs_t wp, int argc, char_t **argv, int unit)
 #define ASUS_IOCTL_GET_STA_DATARATE (SIOCDEVPRIVATE+15) /* from qca-wifi/os/linux/include/ieee80211_ioctl.h */
         struct iwreq wrq;
 	int retval = 0;
-	char tmp[256], prefix[] = "wlXXXXXXXXXX_";
+	char tmp[256], prefix[sizeof("wlXXXXXXXXXX_")];
 	char *name;
 	int unit_max = MAX_NR_WL_IF;
 	unsigned int rate[2];
-	char rate_buf[32];
+	char rate_buf[32] = "0 Mbps";
 	int sw_mode = sw_mode();
 	int wlc_band = nvram_get_int("wlc_band");
 	int from_app = 0;
 
-	from_app = check_user_agent(user_agent);
-	strlcpy(rate_buf, "0 Mbps", sizeof(rate_buf));
-
-	if (!nvram_match("wlc_state", "2"))
+	if (sw_mode != SW_MODE_REPEATER && sw_mode != SW_MODE_HOTSPOT)
 		goto ERROR;
+
+	from_app = check_user_agent(user_agent);
 
 	if (unit > (unit_max - 1))
 		goto ERROR;
@@ -2176,21 +2212,20 @@ static int ej_wl_rate(int eid, webs_t wp, int argc, char_t **argv, int unit)
 	if (unit == 2)
 		goto ERROR;
 #endif
-
-	snprintf(prefix, sizeof(prefix), "wlc%d_state", unit);
-	if (!nvram_match(prefix, "2"))
-	{
+	if (wlc_band < 0 || !nvram_match("wlc_state", "2"))
 		goto ERROR;
-	}
 
 #ifdef RTCONFIG_CONCURRENTREPEATER
-	if (sw_mode == SW_MODE_REPEATER || sw_mode == SW_MODE_HOTSPOT)
-#else	
-	if (wlc_band == unit && (sw_mode == SW_MODE_REPEATER || sw_mode == SW_MODE_HOTSPOT))
-#endif
-		snprintf(prefix, sizeof(prefix), "wl%d.1_", unit);
-	else
+	wlc_band = -1;
+	snprintf(prefix, sizeof(prefix), "wlc%d_", unit);
+	if (!nvram_pf_match(prefix, "state", "2"))
 		goto ERROR;
+#endif
+
+	if (wlc_band >= WL_2G_BAND && wlc_band != unit)
+		goto ERROR;
+
+	snprintf(prefix, sizeof(prefix), "wl%d.1_", unit);
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
 
 	wrq.u.data.pointer = rate;
@@ -2249,7 +2284,7 @@ static struct nat_accel_kmod_s {
 } nat_accel_kmod[] = {
 #if defined(RTCONFIG_SOC_IPQ8064)
 	{ "ecm" },
-#elif defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_SOC_IPQ40XX)
+#elif defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X) || defined(RTCONFIG_SOC_IPQ40XX)
 	{ "shortcut_fe" },
 #else
 #error Implement nat_accel_kmod[]

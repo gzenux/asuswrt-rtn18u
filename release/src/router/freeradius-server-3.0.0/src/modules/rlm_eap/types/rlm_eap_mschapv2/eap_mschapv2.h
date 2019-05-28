@@ -1,7 +1,7 @@
 #ifndef _EAP_MSCHAPV2_H
 #define _EAP_MSCHAPV2_H
 
-RCSIDH(eap_mschapv2_h, "$Id$")
+RCSIDH(eap_mschapv2_h, "$Id: 1ce2470ed9a36def1abe5a601a83f6d8769e7d61 $")
 
 #include "eap.h"
 

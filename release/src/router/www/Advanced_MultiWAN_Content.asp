@@ -55,7 +55,7 @@ var Wan_Setting = [
 function initial(){
 	show_menu();
 	// https://www.asus.com/support/FAQ/1011715/
-	httpApi.faqURL("faq", "1011715", "https://www.asus.com", "/support/FAQ/");	
+	httpApi.faqURL("1011715", function(url){document.getElementById("faq").href=url;});	
 
 }
 
@@ -683,7 +683,7 @@ function showMAC(){
 					    </select></td>
 				</tr>
             	<tr>
-             	 	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a></th>
+             	 	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#Username#></a></th>
               		<td><input type="text" maxlength="64" class="input_32_table" name="wan_pppoe_username_now" value="" onkeypress="return validator.isString(this, event)"></td>
             	</tr>
             	<tr id="tr_pppoe_password">

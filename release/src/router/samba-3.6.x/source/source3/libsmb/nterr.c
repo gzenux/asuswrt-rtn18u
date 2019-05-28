@@ -702,7 +702,6 @@ const char *nt_errstr(NTSTATUS nt_code)
 					NT_STATUS_DOS_CODE(nt_code));
 	}
 
-#ifdef VERBOSE_ERROR
 	while (nt_errs[idx].nt_errstr != NULL) {
 		if (NT_STATUS_V(nt_errs[idx].nt_errcode) ==
 		    NT_STATUS_V(nt_code)) {
@@ -710,7 +709,6 @@ const char *nt_errstr(NTSTATUS nt_code)
 		}
 		idx++;
 	}
-#endif
 
 	result = talloc_asprintf(talloc_tos(), "NT code 0x%08x",
 				 NT_STATUS_V(nt_code));
@@ -726,14 +724,12 @@ const char *get_friendly_nt_error_msg(NTSTATUS nt_code)
 {
 	int idx = 0;
 
-#ifdef VERBOSE_ERROR
 	while (nt_err_desc[idx].nt_errstr != NULL) {
 		if (NT_STATUS_V(nt_err_desc[idx].nt_errcode) == NT_STATUS_V(nt_code)) {
 			return nt_err_desc[idx].nt_errstr;
 		}
 		idx++;
 	}
-#endif
 
 	/* fall back to NT_STATUS_XXX string */
 
@@ -749,7 +745,6 @@ const char *get_nt_error_c_code(NTSTATUS nt_code)
 	char *result;
 	int idx = 0;
 
-#ifdef VERBOSE_ERROR
 	while (nt_errs[idx].nt_errstr != NULL) {
 		if (NT_STATUS_V(nt_errs[idx].nt_errcode) ==
 		    NT_STATUS_V(nt_code)) {
@@ -757,7 +752,6 @@ const char *get_nt_error_c_code(NTSTATUS nt_code)
 		}
 		idx++;
 	}
-#endif
 
 	result = talloc_asprintf(talloc_tos(), "NT_STATUS(0x%08x)",
 				 NT_STATUS_V(nt_code));
@@ -773,14 +767,12 @@ NTSTATUS nt_status_string_to_code(const char *nt_status_str)
 {
 	int idx = 0;
 
-#ifdef VERBOSE_ERROR
 	while (nt_errs[idx].nt_errstr != NULL) {
 		if (strcasecmp(nt_errs[idx].nt_errstr, nt_status_str) == 0) {
 			return nt_errs[idx].nt_errcode;
 		}
 		idx++;
 	}
-#endif
 	return NT_STATUS_UNSUCCESSFUL;
 }
 

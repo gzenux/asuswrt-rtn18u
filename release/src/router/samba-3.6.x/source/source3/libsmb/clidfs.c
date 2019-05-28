@@ -98,11 +98,6 @@ static struct cli_state *do_connect(TALLOC_CTX *ctx,
 	const char *username;
 	const char *password;
 	NTSTATUS status;
-	int signing_state = get_cmdline_auth_info_signing_state(auth_info);
-
-	if (force_encrypt) {
-		signing_state = Required;
-	}
 
 	/* make a copy so we don't modify the global string 'service' */
 	servicename = talloc_strdup(ctx,share);
@@ -137,7 +132,7 @@ static struct cli_state *do_connect(TALLOC_CTX *ctx,
 	zero_sockaddr(&ss);
 
 	/* have to open a new connection */
-	c = cli_initialise_ex(signing_state);
+	c = cli_initialise_ex(get_cmdline_auth_info_signing_state(auth_info));
 	if (c == NULL) {
 		d_printf("Connection to %s failed\n", server_n);
 		return NULL;

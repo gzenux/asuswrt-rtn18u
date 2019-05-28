@@ -2398,12 +2398,11 @@ padding-top:1px;
 	background-color:transparent !important;
 }
 .eula_panel_container{
+	margin-left: 25%;
 	display: none;
 	position: absolute;
-	margin-top: -250px;
-	width: 500px;
-	height: 457px;
-	z-index: 2000;
+	width: 50%;
+	z-index: 10000;
 	border: 3px solid #4D5C63;
 	border-radius: 4px;
 }

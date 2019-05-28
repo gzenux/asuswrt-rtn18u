@@ -1,7 +1,7 @@
 /*
  * eap.c    rfc2284 & rfc2869 implementation
  *
- * Version:     $Id$
+ * Version:     $Id: dc40d4ab200a0f9c9ef20f010b0c6cd936432baf $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@
 
 #include <freeradius-devel/modpriv.h>
 
-RCSID("$Id$")
+RCSID("$Id: dc40d4ab200a0f9c9ef20f010b0c6cd936432baf $")
 
 #include "rlm_eap.h"
 #include <ctype.h>

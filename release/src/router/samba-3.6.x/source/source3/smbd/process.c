@@ -36,8 +36,6 @@
 #include "rpc_server/spoolss/srv_spoolss_nt.h"
 #include "libsmb/libsmb.h"
 
-extern bool global_machine_password_needs_changing;
-
 static void construct_reply_common(struct smb_request *req, const char *inbuf,
 				   char *outbuf);
 static struct pending_message_list *get_deferred_open_message_smb(uint64_t mid);
@@ -2423,18 +2421,14 @@ static bool housekeeping_fn(const struct timeval *now, void *private_data)
 
 	change_to_root_user();
 
-#ifdef PRINTER_SUPPORT
 	/* update printer queue caches if necessary */
 	update_monitored_printq_cache(sconn->msg_ctx);
-#endif
 
 	/* check if we need to reload services */
 	check_reload(sconn, time_mono(NULL));
 
-#ifdef NETLOGON_SUPPORT
 	/* Change machine password if neccessary. */
-	attempt_machine_password_change();
-#endif
+	//attempt_machine_password_change();
 
         /*
 	 * Force a log file check.

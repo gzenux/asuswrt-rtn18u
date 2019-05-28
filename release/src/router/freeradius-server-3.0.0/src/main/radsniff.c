@@ -1,7 +1,7 @@
 /*
  *  radsniff.c	Display the RADIUS traffic on the network.
  *
- *  Version:    $Id$
+ *  Version:    $Id: cd735f706aebc95bfaba9a8c1590e77b9d50561b $
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@
  *  Copyright 2006  Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  */
 
-RCSID("$Id$")
+RCSID("$Id: cd735f706aebc95bfaba9a8c1590e77b9d50561b $")
 
 #define _LIBRADIUS 1
 #include <freeradius-devel/libradius.h>

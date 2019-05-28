@@ -123,9 +123,7 @@ static void smb_pcap_updated(struct messaging_context *msg,
 {
 	struct tevent_context *ev_ctx =
 		talloc_get_type_abort(private_data, struct tevent_context);
-#ifndef PRINTER_SUPPORT
-	return;
-#endif
+
 	DEBUG(10,("Got message saying pcap was updated. Reloading.\n"));
 	change_to_root_user();
 	reload_printers(ev_ctx, msg);
@@ -1030,8 +1028,6 @@ extern void build_options(bool screen);
            client problems at a later date. (tridge) */
 	generate_random_buffer(NULL, 0);
 
-	// setpriority(PRIO_PROCESS, 0, -20);
-
 	/* get initial effective uid and gid */
 	sec_init();
 
@@ -1232,10 +1228,8 @@ extern void build_options(bool screen);
 		exit(1);
 	}
 
-#ifdef REGISTRY_BACKEND
 	if (!W_ERROR_IS_OK(registry_init_full()))
 		exit(1);
-#endif
 
 	/* Open the share_info.tdb here, so we don't have to open
 	   after the fork on every single connection.  This is a small
@@ -1283,7 +1277,6 @@ extern void build_options(bool screen);
 	 * The print backend init also migrates the printing tdb's,
 	 * this requires a winreg pipe.
 	 */
-#ifdef PRINTER_SUPPORT
 	if (!print_backend_init(smbd_messaging_context()))
 		exit(1);
 
@@ -1322,7 +1315,7 @@ extern void build_options(bool screen);
 				       smbd_messaging_context());
 		}
 	}
-#endif
+
 	if (!is_daemon) {
 		/* inetd mode */
 		TALLOC_FREE(frame);

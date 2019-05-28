@@ -107,7 +107,7 @@ function initial(){
 		document.getElementById("voip_port3").innerHTML = "LAN port 4"; //P3
 		document.getElementById("iptv_port4").innerHTML = "LAN port 8"; //P4
 	}
-	else if(based_modelid == "RT-AC53"){
+	else if(based_modelid == "RT-N19" || based_modelid == "RT-AC53"){
 		document.getElementById("switch_stb_x").options[3].text = "LAN1";
 		document.getElementById("switch_stb_x").options[4].text = "LAN2";
 		document.getElementById("switch_stb_x").options[6].text = "LAN1 & LAN2";
@@ -118,6 +118,12 @@ function initial(){
 		document.getElementById("iptv_port").innerHTML = "LAN2";
 		document.getElementById("voip_port3").innerHTML = "LAN port 1";
 		document.getElementById("iptv_port4").innerHTML = "LAN port 2";
+	}
+	else if(based_modelid == "MAP-AC1300" || based_modelid == "MAP-AC2200" || based_modelid == "MAP-AC1750"){
+		document.getElementById("iptv_port").innerHTML = "Primary Node LAN Port";
+		document.getElementById("voip_port").innerHTML = "Primary Node LAN Port";
+		document.getElementById("iptv_port4").innerHTML = "Primary Node LAN Port";
+		create_stb_options();
 	}
 
 	if(based_modelid == "AC2900"){	//MODELDEP: AC2900(RT-AC86U)
@@ -141,37 +147,6 @@ function initial(){
 
 	if(port2_device){
 		document.getElementById('singtelMioOption').outerHTML = "";
-	}
-
-	var portName = {
-		"voip": "LAN3",
-		"iptv": "LAN4"
-	}
-
-	if(based_modelid == "MAP-AC1300" || based_modelid == "MAP-AC2200" || based_modelid == "MAP-AC1750"){
-		portName.voip = "Primary Node LAN Port";
-		portName.iptv = "Primary Node LAN Port";
-		document.getElementById("iptv_port4").innerHTML = portName.voip;
-		create_stb_options();
-	}
-
-	//var portName = httpApi.getIptvProfile();
-	document.getElementById("iptv_port").innerHTML = portName.iptv;
-	document.getElementById("voip_port").innerHTML = portName.voip;
-
-	if(based_modelid != "MAP-AC1300" && based_modelid != "MAP-AC2200" && based_modelid != "MAP-AC1750"){
-		document.getElementById('sparkOption').outerHTML = "";
-		document.getElementById('slingshotOption').outerHTML = "";
-		document.getElementById('2degreesOption').outerHTML = "";
-		document.getElementById('orconOption').outerHTML = "";
-		document.getElementById('voda_nzOption').outerHTML = "";
-		document.getElementById('tpgOption').outerHTML = "";
-		document.getElementById('iinetOption').outerHTML = "";
-		document.getElementById('aaptOption').outerHTML = "";
-		document.getElementById('intronodeOption').outerHTML = "";
-		document.getElementById('amaysimOption').outerHTML = "";
-		document.getElementById('dodoOption').outerHTML = "";
-		document.getElementById('iprimusOption').outerHTML = "";
 	}
 }
 
@@ -804,6 +779,7 @@ function copy_index_to_unindex(service){
 		document.form.wan_pppoe_service_now.value = document.form.wan10_pppoe_service.value;
 		document.form.wan_pppoe_ac_now.value = document.form.wan10_pppoe_ac.value;
 		document.form.wan_pppoe_options_x_now.value = document.form.wan10_pppoe_options_x.value;
+		document.form.wan_pptp_options_x_now.value = document.form.wan10_pptp_options_x.value;
 		document.form.wan_ipaddr_x_now.value = document.form.wan10_ipaddr_x.value;
 		document.form.wan_netmask_x_now.value = document.form.wan10_netmask_x.value;
 		document.form.wan_gateway_x_now.value = document.form.wan10_gateway_x.value;
@@ -823,6 +799,7 @@ function copy_index_to_unindex(service){
 		document.form.wan_pppoe_service_now.value = document.form.wan11_pppoe_service.value;
 		document.form.wan_pppoe_ac_now.value = document.form.wan11_pppoe_ac.value;
 		document.form.wan_pppoe_options_x_now.value = document.form.wan11_pppoe_options_x.value;
+		document.form.wan_pptp_options_x_now.value = document.form.wan11_pptp_options_x.value;
 		document.form.wan_ipaddr_x_now.value = document.form.wan11_ipaddr_x.value;
 		document.form.wan_netmask_x_now.value = document.form.wan11_netmask_x.value;
 		document.form.wan_gateway_x_now.value = document.form.wan11_gateway_x.value;
@@ -845,6 +822,7 @@ function copy_unindex_to_index(service){
 		document.form.wan10_pppoe_service.value = document.form.wan_pppoe_service_now.value;
 		document.form.wan10_pppoe_ac.value = document.form.wan_pppoe_ac_now.value;
 		document.form.wan10_pppoe_options_x.value = document.form.wan_pppoe_options_x_now.value;
+		document.form.wan10_pptp_options_x.value = document.form.wan_pptp_options_x_now.value;
 		document.form.wan10_ipaddr_x.value = document.form.wan_ipaddr_x_now.value;
 		document.form.wan10_netmask_x.value = document.form.wan_netmask_x_now.value;
 		document.form.wan10_gateway_x.value = document.form.wan_gateway_x_now.value;
@@ -865,6 +843,7 @@ function copy_unindex_to_index(service){
 		document.form.wan11_pppoe_service.value = document.form.wan_pppoe_service_now.value;
 		document.form.wan11_pppoe_ac.value = document.form.wan_pppoe_ac_now.value;
 		document.form.wan11_pppoe_options_x.value = document.form.wan_pppoe_options_x_now.value;
+		document.form.wan11_pptp_options_x.value = document.form.wan_pptp_options_x_now.value;
 		document.form.wan11_ipaddr_x.value = document.form.wan_ipaddr_x_now.value;
 		document.form.wan11_netmask_x.value = document.form.wan_netmask_x_now.value;
 		document.form.wan11_gateway_x.value = document.form.wan_gateway_x_now.value;
@@ -1086,9 +1065,58 @@ function pass_checked(obj){
 	switchType(obj, document.form.show_pass_1.checked, true);
 }
 
-function change_mr_enable(switch_stb){
-	if(hnd_support){
-		if(switch_stb != "0"){
+function change_port_settings(val, changed){
+	if(val == "12"){
+		document.getElementById("switch_stb_x0").options[1].text = "LAN1"; 	 //P1
+		document.getElementById("switch_stb_x0").options[2].text = "LAN2";	 //P0
+		document.getElementById("switch_stb_x0").options[3].text = "LAN1 & LAN2"; //P1+P0
+
+		document.getElementById("voip_port").innerHTML = "LAN2";
+		if($("#wan_bridge_x").css("display") != "none")
+			document.getElementById("iptv_port").innerHTML = "LAN2";
+		else
+			document.getElementById("iptv_port").innerHTML = "LAN1";
+		document.getElementById("bridge_port").innerHTML = "LAN1";
+		document.getElementById("voip_port3").innerHTML = "LAN Port 2";
+		document.getElementById("iptv_port4").innerHTML = "LAN Port 1";
+	}
+	else if(val == "56"){
+		if(changed){
+			var msg="Change IPTV/ VOIP port settings to LAN5/ LAN6 will disable Bonding/ Link aggregation function. Are you sure to do it?";
+			if(lacp_enabled){
+				if(!confirm(msg)){
+					document.form.iptv_port_settings.value = "12";
+					return;
+				}
+			}
+		}
+		document.getElementById("switch_stb_x0").options[1].text = "LAN5";
+		document.getElementById("switch_stb_x0").options[2].text = "LAN6";
+		document.getElementById("switch_stb_x0").options[3].text = "LAN5 & LAN6";
+
+		document.getElementById("voip_port").innerHTML = "LAN6";
+		if($("#wan_bridge_x").css("display") != "none")
+			document.getElementById("iptv_port").innerHTML = "LAN6";
+		else
+			document.getElementById("iptv_port").innerHTML = "LAN5";
+		document.getElementById("bridge_port").innerHTML = "LAN5";
+		document.getElementById("voip_port3").innerHTML = "LAN Port 6";
+		document.getElementById("iptv_port4").innerHTML = "LAN Port 5";
+	}
+	show_gaming_note(val);
+}
+
+function show_gaming_note(val){
+	if(val == "12")
+		document.getElementById("gaming_note").innerHTML = "<#RouterConfig_GW_GamingPortsNote_12#>";
+	else if(val == "56")
+		document.getElementById("gaming_note").innerHTML = "<#RouterConfig_GW_GamingPortsNote_56#>";
+	document.getElementById("gaming_note_div").style.display = "";
+}
+
+function change_mr_enable(switch_stb_x){
+	if(hnd_support || based_modelid == "BLUECAVE"){
+		if(switch_stb_x != "0"){
 			document.getElementById("mr_enable_x").style.display = "none";
 			document.getElementById("mr_disable").style.display = "";
 			document.form.mr_enable_x.value = "0";
@@ -1159,6 +1187,7 @@ function change_mr_enable(switch_stb){
 <input type="hidden" name="wan10_pppoe_service" value="<% nvram_get("wan10_pppoe_service"); %>">
 <input type="hidden" name="wan10_pppoe_ac" value="<% nvram_get("wan10_pppoe_ac"); %>">
 <input type="hidden" name="wan10_pppoe_options_x" value="<% nvram_get("wan10_pppoe_options_x"); %>">
+<input type="hidden" name="wan10_pptp_options_x" value="<% nvram_get("wan10_pptp_options_x"); %>">
 <input type="hidden" name="wan10_ipaddr_x" value="<% nvram_get("wan10_ipaddr_x"); %>">
 <input type="hidden" name="wan10_netmask_x" value="<% nvram_get("wan10_netmask_x"); %>">
 <input type="hidden" name="wan10_gateway_x" value="<% nvram_get("wan10_gateway_x"); %>">
@@ -1177,6 +1206,7 @@ function change_mr_enable(switch_stb){
 <input type="hidden" name="wan11_pppoe_service" value="<% nvram_get("wan11_pppoe_service"); %>">
 <input type="hidden" name="wan11_pppoe_ac" value="<% nvram_get("wan11_pppoe_ac"); %>">
 <input type="hidden" name="wan11_pppoe_options_x" value="<% nvram_get("wan11_pppoe_options_x"); %>">
+<input type="hidden" name="wan11_pptp_options_x" value="<% nvram_get("wan11_pptp_options_x"); %>">
 <input type="hidden" name="wan11_ipaddr_x" value="<% nvram_get("wan11_ipaddr_x"); %>">
 <input type="hidden" name="wan11_netmask_x" value="<% nvram_get("wan11_netmask_x"); %>">
 <input type="hidden" name="wan11_gateway_x" value="<% nvram_get("wan11_gateway_x"); %>">
@@ -1328,7 +1358,7 @@ function change_mr_enable(switch_stb){
 					    </select></td>
 				</tr>
             	<tr>
-             	 	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a></th>
+             	 	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#Username#></a></th>
               		<td><input type="text" maxlength="64" class="input_32_table" name="wan_pppoe_username_now" value="" onkeypress="return validator.isString(this, event)"></td>
             	</tr>
             	<tr id="tr_pppoe_password">
@@ -1365,10 +1395,10 @@ function change_mr_enable(switch_stb){
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,17);"><#PPPConnection_x_PPTPOptions_itemname#></a></th>
 					<td>
 						<select name="wan_pptp_options_x_now" class="input_option">
-							<option value="" <% nvram_match("wan_pptp_options_x_now", "","selected"); %>><#Auto#></option>
-							<option value="-mppc" <% nvram_match("wan_pptp_options_x_now", "-mppc","selected"); %>><#No_Encryp#></option>
-							<option value="+mppe-40" <% nvram_match("wan_pptp_options_x_now", "+mppe-40","selected"); %>>MPPE 40</option>
-							<option value="+mppe-128" <% nvram_match("wan_pptp_options_x_now", "+mppe-128","selected"); %>>MPPE 128</option>
+							<option value=""><#Auto#></option>
+							<option value="-mppc"><#No_Encryp#></option>
+							<option value="+mppe-40">MPPE 40</option>
+							<option value="+mppe-128">MPPE 128</option>
 						</select>
 					</td>
 				</tr>
@@ -1426,6 +1456,16 @@ function change_mr_enable(switch_stb){
 				<td colspan="2"><#Port_Mapping_item1#></td>
 			</tr>
 		</thead>
+			<tr id="port_settings" style="display:none;">
+				<th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,28);"><#RouterConfig_GW_LANPort_itemname#></a></th>
+				<td>
+					<select name="iptv_port_settings" class="input_option" onChange="change_port_settings(this.value, 1);" disabled>
+						<option value="12" <% nvram_match( "iptv_port_settings", "12", "selected"); %>>LAN1/ LAN2</option>
+						<option value="56" <% nvram_match( "iptv_port_settings", "56", "selected"); %>>LAN5/ LAN6</option>
+					</select>
+				<div id="gaming_note_div" style="display: none;"><span id="gaming_note"></span><div>
+			</td>
+			</tr>
 	    	<tr>
 	    	<th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,28);"><#Select_ISPfile#></a></th>
 			<td>
@@ -1442,23 +1482,19 @@ function change_mr_enable(switch_stb){
 					<option id="meoOption" value="meo" <% nvram_match("switch_wantag", "meo", "selected"); %>>Meo</option>
 					<option id="vodafoneOption" value="vodafone" <% nvram_match("switch_wantag", "vodafone", "selected"); %>>Vodafone(Portugal)</option>
 					<option value="hinet" <% nvram_match("switch_wantag", "hinet", "selected"); %>>Hinet MOD</option>
-<!--					
-					<option value="maxis_fiber_iptv" <% nvram_match("switch_wantag", "maxis_fiber_iptv", "selected"); %>>Maxis-Fiber-IPTV</option>
-					<option value="maxis_fiber_sp_iptv" <% nvram_match("switch_wantag", "maxis_fiber_sp_iptv", "selected"); %>>Maxis-Fiber-Special-IPTV</option>
--->
-					<option id="sfOption" value="stuff_fibre" <% nvram_match("switch_wantag", "stuff_fibre", "selected"); %>>Stuff-Fibre</option>
-					<option id="sparkOption" value="spark" <% nvram_match("switch_wantag", "spark", "selected"); %>>Spark</option>
-					<option id="2degreesOption" value="2degrees" <% nvram_match("switch_wantag", "2degrees", "selected"); %>>2degrees</option>
-					<option id="slingshotOption" value="slingshot" <% nvram_match("switch_wantag", "slingshot", "selected"); %>>Slingshot</option>
-					<option id="orconOption" value="orcon" <% nvram_match("switch_wantag", "orcon", "selected"); %>>Orcon</option>
-					<option id="voda_nzOption" value="voda_nz" <% nvram_match("switch_wantag", "voda_nz", "selected"); %>>Vodafone(New Zealand)</option>
-					<option id="tpgOption" value="tpg" <% nvram_match("switch_wantag", "tpg", "selected"); %>>TPG</option>
-					<option id="iinetOption" value="iinet" <% nvram_match("switch_wantag", "iinet", "selected"); %>>iiNET</option>
-					<option id="aaptOption" value="aapt" <% nvram_match("switch_wantag", "aapt", "selected"); %>>AAPT</option>
-					<option id="intronodeOption" value="intronode" <% nvram_match("switch_wantag", "intronode", "selected"); %>>Intronode</option>
-					<option id="amaysimOption" value="amaysim" <% nvram_match("switch_wantag", "amaysim", "selected"); %>>Amaysim</option>
-					<option id="dodoOption" value="dodo" <% nvram_match("switch_wantag", "dodo", "selected"); %>>Dodo</option>
-					<option id="iprimusOption" value="iprimus" <% nvram_match("switch_wantag", "iprimus", "selected"); %>>Iprimus</option>
+					<option value="stuff_fibre" <% nvram_match("switch_wantag", "stuff_fibre", "selected"); %>>Stuff-Fibre</option>
+					<option value="spark" <% nvram_match("switch_wantag", "spark", "selected"); %>>Spark</option>
+					<option value="2degrees" <% nvram_match("switch_wantag", "2degrees", "selected"); %>>2degrees</option>
+					<option value="slingshot" <% nvram_match("switch_wantag", "slingshot", "selected"); %>>Slingshot</option>
+					<option value="orcon" <% nvram_match("switch_wantag", "orcon", "selected"); %>>Orcon</option>
+					<option value="voda_nz" <% nvram_match("switch_wantag", "voda_nz", "selected"); %>>Vodafone(New Zealand)</option>
+					<option value="tpg" <% nvram_match("switch_wantag", "tpg", "selected"); %>>TPG</option>
+					<option value="iinet" <% nvram_match("switch_wantag", "iinet", "selected"); %>>iiNET</option>
+					<option value="aapt" <% nvram_match("switch_wantag", "aapt", "selected"); %>>AAPT</option>
+					<option value="intronode" <% nvram_match("switch_wantag", "intronode", "selected"); %>>Intronode</option>
+					<option value="amaysim" <% nvram_match("switch_wantag", "amaysim", "selected"); %>>Amaysim</option>
+					<option value="dodo" <% nvram_match("switch_wantag", "dodo", "selected"); %>>Dodo</option>
+					<option value="iprimus" <% nvram_match("switch_wantag", "iprimus", "selected"); %>>Iprimus</option>
 					<option id="manualOption" value="manual" <% nvram_match( "switch_wantag", "manual", "selected"); %>><#Manual_Setting_btn#></option>
 				</select>
 			</td>

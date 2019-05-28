@@ -37,7 +37,7 @@ Alain Magloire: alainm@rcsm.ee.mcgill.ca
 
 #ifndef HAVE_VSNPRINTF
 
-RCSIDH(snprintf_h, "$Id$")
+RCSIDH(snprintf_h, "$Id: c80de2d0244c6a0351468fd60ba4cbd199db5bcb $")
 
 #if __STDC__
 #include <stdarg.h>

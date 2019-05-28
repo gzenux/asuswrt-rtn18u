@@ -2,7 +2,7 @@
  * log.c	Functions in the library call radlib_log() which
  *		does internal logging.
  *
- * Version:	$Id$
+ * Version:	$Id: 25cc1217aa499113a40dfaeb84557605e085a70c $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 25cc1217aa499113a40dfaeb84557605e085a70c $")
 
 #include <freeradius-devel/libradius.h>
 

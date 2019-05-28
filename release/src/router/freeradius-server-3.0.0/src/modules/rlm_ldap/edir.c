@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: d0e8cf402c0e88dac2dd6d8ceb78efccf26c3614 $
  * @file edir.c
  * @brief LDAP extension for reading eDirectory universal password.
  *
@@ -26,7 +26,7 @@
  * @copyright 2002-2004 Novell, Inc.
  */
 
-RCSID("$Id$")
+RCSID("$Id: d0e8cf402c0e88dac2dd6d8ceb78efccf26c3614 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>

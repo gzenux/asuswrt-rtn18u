@@ -557,10 +557,7 @@ static WERROR NetServerSetInfo_l_1005(struct libnetapi_ctx *ctx,
 		return WERR_INVALID_PARAM;
 	}
 
-#ifdef REGISTRY_BACKEND
-	if (!lp_config_backend_is_registry())
-#endif
-	{
+	if (!lp_config_backend_is_registry()) {
 		libnetapi_set_error_string(ctx,
 			"Configuration manipulation requested but not "
 			"supported by backend");

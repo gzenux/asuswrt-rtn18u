@@ -3,10 +3,10 @@
  *  By Steve Reid <steve@edmweb.com>
  *  100% Public Domain
  *
- *  Version:	$Id$
+ *  Version:	$Id: 0459f27c9c6718791cc9b3aa2aef15925d1db26b $
  */
 
-RCSID("$Id$")
+RCSID("$Id: 0459f27c9c6718791cc9b3aa2aef15925d1db26b $")
 
 #include <freeradius-devel/libradius.h>
 

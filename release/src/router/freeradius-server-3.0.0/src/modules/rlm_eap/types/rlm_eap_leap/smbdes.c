@@ -45,7 +45,7 @@
    up with a different answer to the one above)
 */
 
-RCSID("$Id$")
+RCSID("$Id: c6e5e4a45fd699e6acd15a98a1afc413209d852b $")
 
 #include <string.h>
 #include <ctype.h>

@@ -31,7 +31,7 @@
  * license (including the GNU public license).
  */
 
-RCSID("$Id$")
+RCSID("$Id: 0b8783073732b9be5442524f6a4a08d6fc1b6119 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_pwd.h"

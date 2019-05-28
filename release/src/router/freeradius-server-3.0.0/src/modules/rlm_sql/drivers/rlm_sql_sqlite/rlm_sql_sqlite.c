@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 72291da0557ec7919e864d9e2af3d88e4a8db933 $
  * @file rlm_sql_sqlite.c
  * @brief SQLite driver.
  *
@@ -22,7 +22,7 @@
  * @copyright 2007 Apple Inc.
  */
 
-RCSID("$Id$")
+RCSID("$Id: 72291da0557ec7919e864d9e2af3d88e4a8db933 $")
 
 #include <freeradius-devel/radiusd.h>
 

@@ -7,7 +7,7 @@
  * This code was written from scratch by Michael Richardson, and it is
  * dual licensed under both GPL and BSD.
  *
- * Version:     $Id$
+ * Version:     $Id: 4d098be41d8cbd8a7b4e0710664ae64d10c684b4 $
  *
  * GPL notice:
  *
@@ -44,7 +44,7 @@
  *
  */
 
-RCSID("$Id$")
+RCSID("$Id: 4d098be41d8cbd8a7b4e0710664ae64d10c684b4 $")
 
 #include <stdio.h>
 #include <stdlib.h>

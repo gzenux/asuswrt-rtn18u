@@ -19,7 +19,7 @@
  * Copyright 2006  Vitaly Bodzhgua <vitaly@eastera.net>
  */
 
-RCSID("$Id$")
+RCSID("$Id: a2207c930f9e5b8c24795fc620eb492441c75b4a $")
 
 #include "sql_fbapi.h"
 

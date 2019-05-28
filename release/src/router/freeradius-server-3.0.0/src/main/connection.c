@@ -23,7 +23,7 @@
  * @copyright 2012  The FreeRADIUS server project
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
-RCSID("$Id$")
+RCSID("$Id: 54a90031b0e417314ace5d350390dc597dc37ccc $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

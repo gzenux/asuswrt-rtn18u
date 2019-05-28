@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id$
+ * Version:	$Id: 95782495808fac3623976ebe182aea59c67a4e86 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 95782495808fac3623976ebe182aea59c67a4e86 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>

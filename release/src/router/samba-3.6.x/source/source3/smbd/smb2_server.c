@@ -26,7 +26,6 @@
 #include "../lib/tsocket/tsocket.h"
 #include "../lib/util/tevent_ntstatus.h"
 #include "smbprofile.h"
-#include "../lib/util/bitmap.h"
 
 #define OUTVEC_ALLOC_SIZE (SMB2_HDR_BODY + 9)
 

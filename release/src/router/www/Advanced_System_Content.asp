@@ -72,8 +72,6 @@ if(accounts.length == 0)
 
 var header_info = [<% get_header_info(); %>];
 var host_name = header_info[0].host;
-if(host_name.split(":").length > 1)
-	host_name = host_name.split(":")[0];
 if(tmo_support)
 	var theUrl = "cellspot.router";	
 else
@@ -111,8 +109,8 @@ function initial(){
 	restrict_rulelist_array = JSON.parse(JSON.stringify(orig_restrict_rulelist_array));
 
 	show_menu();
-	//	https://www.asus.com/us/support/FAQ/1034294
-	httpApi.faqURL("faq", "1034294", "https://www.asus.com", "/support/FAQ/");
+	httpApi.faqURL("1034294", function(url){document.getElementById("faq").href=url;});
+	httpApi.faqURL("1037370", function(url){document.getElementById("ntp_faq").href=url;});
 	show_http_clientlist();
 	display_spec_IP(document.form.http_client.value);
 
@@ -142,6 +140,8 @@ function initial(){
 	
 	if(svc_ready == "0")
 		document.getElementById('svc_hint_div').style.display = "";
+
+	show_network_monitoring();
 
 	if(!HTTPS_support){
 		document.getElementById("http_auth_table").style.display = "none";
@@ -337,7 +337,7 @@ function applyRule(){
 		}
 
 		// shell_timeout save min to sec
-		document.form.shell_timeout.value = parseInt(document.form.shell_timeout_x.value)*60;		
+		document.form.shell_timeout.value = parseInt(document.form.shell_timeout_x.value)*60;
 		
 		if(document.form.misc_http_x[1].checked == true){
 				document.form.misc_httpport_x.disabled = true;
@@ -407,20 +407,38 @@ function applyRule(){
 			updateDateTime();
 		}
 
-		var action_script_tmp = "";
-		if(hdspindown_support)
-			action_script_tmp += "restart_usb_idle;";
-		action_script_tmp += "restart_time;";
-		if(restart_httpd_flag)
-			action_script_tmp += "restart_httpd;";
-		action_script_tmp += "restart_upnp;";
-		if(restart_firewall_flag)
-			action_script_tmp += "restart_firewall;";
-		if(pwrsave_support)
-			action_script_tmp += "pwrsave;";
-		document.form.action_script.value = action_script_tmp;
+		if(document.form.wandog_enable_chk.checked)
+			document.form.wandog_enable.value = "1";
+		else
+			document.form.wandog_enable.value = "0";
+
+		if(document.form.dns_probe_chk.checked)
+			document.form.dns_probe.value = "1";
+		else
+			document.form.dns_probe.value = "0";
 
 		showLoading();
+
+		var action_script_tmp = "restart_time;restart_upnp;";
+
+		if(hdspindown_support)
+			action_script_tmp += "restart_usb_idle;";
+		
+		if(restart_httpd_flag)
+			action_script_tmp += "restart_httpd;";
+			
+		if(restart_firewall_flag)
+			action_script_tmp += "restart_firewall;";
+		
+		if(pwrsave_support)
+			action_script_tmp += "pwrsave;";
+
+		if(needReboot){
+			action_script_tmp = "reboot";
+			document.form.action_wait.value = httpApi.hookGet("get_default_reboot_time");
+		}
+
+		document.form.action_script.value = action_script_tmp;
 		document.form.submit();
 	}
 }
@@ -1300,6 +1318,90 @@ function change_hddSpinDown(obj_value) {
 		$("#usb_idle_timeout_tr").css("display", "");
 	}
 }
+
+function show_network_monitoring(){
+	var orig_dns_probe = httpApi.nvramGet(["dns_probe"]).dns_probe;
+	var orig_wandog_enable = httpApi.nvramGet(["wandog_enable"]).wandog_enable;
+
+	appendMonitorOption(document.form.dns_probe_chk);
+	appendMonitorOption(document.form.wandog_enable_chk);
+	setTimeout("showPingTargetList();", 500);
+}
+
+function appendMonitorOption(obj){
+	if(obj.name == "wandog_enable_chk"){
+		if(obj.checked){
+			document.getElementById("ping_tr").style.display = "";
+			inputCtrl(document.form.wandog_target, 1);
+		}
+		else{
+			document.getElementById("ping_tr").style.display = "none";
+			inputCtrl(document.form.wandog_target, 0);
+		}
+	}
+	else if(obj.name == "dns_probe_chk"){
+		if(obj.checked){
+			document.getElementById("probe_host_tr").style.display = "";
+			document.getElementById("probe_content_tr").style.display = "";
+			inputCtrl(document.form.dns_probe_host, 1);
+			inputCtrl(document.form.dns_probe_content, 1);
+		}
+		else{
+			document.getElementById("probe_host_tr").style.display = "none";
+			document.getElementById("probe_content_tr").style.display = "none";
+			inputCtrl(document.form.dns_probe_host, 0);
+			inputCtrl(document.form.dns_probe_content, 0);
+		}
+	}
+}
+
+var isPingListOpen = 0;
+function showPingTargetList(){
+	var ttc = httpApi.nvramGet(["territory_code"]).territory_code;
+	if(ttc.search("CN") >= 0){
+		var APPListArray = [
+			["Baidu", "www.baidu.com"], ["QQ", "www.qq.com"], ["Taobao", "www.taobao.com"]
+		];
+	}
+	else{
+		var APPListArray = [
+			["Google ", "www.google.com"], ["Facebook", "www.facebook.com"], ["Youtube", "www.youtube.com"], ["Yahoo", "www.yahoo.com"],
+			["Baidu", "www.baidu.com"], ["Wikipedia", "www.wikipedia.org"], ["Windows Live", "www.live.com"], ["QQ", "www.qq.com"],
+			["Amazon", "www.amazon.com"], ["Twitter", "www.twitter.com"], ["Taobao", "www.taobao.com"], ["Blogspot", "www.blogspot.com"],
+			["Linkedin", "www.linkedin.com"], ["Sina", "www.sina.com"], ["eBay", "www.ebay.com"], ["MSN", "msn.com"], ["Bing", "www.bing.com"],
+			["Яндекс", "www.yandex.ru"], ["WordPress", "www.wordpress.com"], ["ВКонтакте", "www.vk.com"]
+		];
+	}
+
+	var code = "";
+	for(var i = 0; i < APPListArray.length; i++){
+		code += '<a><div onclick="setPingTarget(\''+APPListArray[i][1]+'\');"><strong>'+APPListArray[i][0]+'</strong></div></a>';
+	}
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';
+	document.getElementById("TargetList_Block_PC").innerHTML = code;
+}
+
+function setPingTarget(ipaddr){
+	document.form.wandog_target.value = ipaddr;
+	hidePingTargetList();
+}
+
+function hidePingTargetList(){
+	document.getElementById("ping_pull_arrow").src = "/images/arrow-down.gif";
+	document.getElementById('TargetList_Block_PC').style.display='none';
+	isPingListOpen = 0;
+}
+
+function pullPingTargetList(obj){
+	if(isPingListOpen == 0){
+		obj.src = "/images/arrow-top.gif"
+		document.getElementById("TargetList_Block_PC").style.display = 'block';
+		document.form.wandog_target.focus();
+		isPingListOpen = 1;
+	}
+	else
+		hidePingTargetList();
+}
 </script>
 </head>
 
@@ -1334,6 +1436,8 @@ function change_hddSpinDown(obj_value) {
 <input type="hidden" name="reboot_schedule_enable" value="<% nvram_get("reboot_schedule_enable"); %>">
 <input type="hidden" name="shell_timeout" value="<% nvram_get("shell_timeout"); %>">
 <input type="hidden" name="http_lanport" value="<% nvram_get("http_lanport"); %>">
+<input type="hidden" name="dns_probe" value="<% nvram_get("dns_probe"); %>">
+<input type="hidden" name="wandog_enable" value="<% nvram_get("wandog_enable"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
   <tr>
@@ -1417,6 +1521,32 @@ function change_hddSpinDown(obj_value) {
 						<span>(<#Setting_factorydefault_value#> : 60) </span>
 					</td>
 				</tr>
+				<tr id="reduce_usb3_tr" style="display:none">
+					<th width="40%"><a class="hintstyle" href="javascript:void(0);" onclick="openHint(3, 29)">USB Mode</a></th>
+					<td>
+						<select class="input_option" name="usb_usb3" onchange="enableUsbMode(this.value);">
+							<option value="0" <% nvram_match("usb_usb3", "0", "selected"); %>>USB 2.0</option>
+							<option value="1" <% nvram_match("usb_usb3", "1", "selected"); %>>USB 3.0</option>
+						</select>
+						<script>
+							var needReboot = false;
+
+							if( based_modelid == "DSL-AC68U" || based_modelid == "RT-AC3200" || based_modelid == "RT-AC87U" || based_modelid == "RT-AC68U" || based_modelid == "RT-AC68A" || based_modelid == "RT-AC56S" || based_modelid == "RT-AC56U" || based_modelid == "RT-AC55U" || based_modelid == "RT-AC55UHP" || based_modelid == "RT-N18U" || based_modelid == "RT-AC88U" || based_modelid == "RT-AC86U" || based_modelid == "AC2900" || based_modelid == "RT-AC3100" || based_modelid == "RT-AC5300" || based_modelid == "RP-AC68U" || based_modelid == "RT-AC58U" || based_modelid == "RT-AC82U" || based_modelid == "MAP-AC3000" || based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U" || based_modelid == "4G-AC68U" || based_modelid == "BLUECAVE" || based_modelid == "RT-AC88Q" || based_modelid == "RT-AD7200" || based_modelid == "RT-N65U" || based_modelid == "GT-AC5300" || based_modelid == "RT-AX88U" || based_modelid == "RT-AX95U" || based_modelid == "BRT-AC828"
+							){
+								$("#reduce_usb3_tr").show();
+							}
+
+							function enableUsbMode(v){
+								httpApi.nvramGetAsync({
+									data: ["usb_usb3"],
+									success: function(nvram){
+										needReboot = (nvram.usb_usb3 != v);
+									}
+								})
+							}
+						</script>
+					</td>
+				</tr>
 			</table>
 
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable" style="margin-top:8px;">
@@ -1493,7 +1623,37 @@ function change_hddSpinDown(obj_value) {
 					<td>
 						<input type="text" maxlength="256" class="input_32_table" name="ntp_server0" value="<% nvram_get("ntp_server0"); %>" onKeyPress="return validator.isString(this, event);" autocorrect="off" autocapitalize="off">
 						<a href="javascript:openLink('x_NTPServer1')"  name="x_NTPServer1_link" style=" margin-left:5px; text-decoration: underline;"><#LANHostConfig_x_NTPServer1_linkname#></a>
-						<div id="svc_hint_div" style="display:none;"><span style="color:#FFCC00;"><#General_x_SystemTime_syncNTP#></span></div>
+						<div id="svc_hint_div" style="display:none;">
+							<span style="color:#FFCC00;"><#General_x_SystemTime_syncNTP#></span>
+							<a id="ntp_faq" href="" target="_blank" style="margin-left:5px; color: #FFCC00; text-decoration: underline;">FAQ</a>
+						</div>
+					</td>
+				</tr>
+				<tr id="network_monitor_tr">
+					<th><#Network_Monitoring#></th>
+					<td>
+						<input type="checkbox" name="dns_probe_chk" value="" <% nvram_match("dns_probe", "1", "checked"); %> onClick="appendMonitorOption(this);"><div style="display: inline-block; vertical-align: middle; margin-bottom: 2px;" ><#DNS_Query#></div>
+						<input type="checkbox" name="wandog_enable_chk" value="" <% nvram_match("wandog_enable", "1", "checked"); %>  onClick="appendMonitorOption(this);"><div style="display: inline-block; vertical-align: middle; margin-bottom: 2px;"><#Ping#></div>
+					</td>
+				</tr>
+				<tr id="probe_host_tr" style="display: none;">
+					<th><#Resolved_Target#></th>
+					<td>
+							<input type="text" class="input_32_table" name="dns_probe_host" maxlength="255" autocorrect="off" autocapitalize="off" value="<% nvram_get("dns_probe_host"); %>">
+					</td>
+				</tr>
+				<tr id="probe_content_tr" style="display: none;">
+					<th><#Respond_IP#></th>
+					<td>
+							<input type="text" class="input_32_table" name="dns_probe_content" maxlength="1024" autocorrect="off" autocapitalize="off" value="<% nvram_get("dns_probe_content"); %>">
+					</td>
+				</tr>
+				<tr id="ping_tr" style="display: none;">
+					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(26,2);"><#Ping_Target#></a></th>
+					<td>
+							<input type="text" class="input_32_table" name="wandog_target" maxlength="100" value="<% nvram_get("wandog_target"); %>" placeholder="ex: www.google.com" autocorrect="off" autocapitalize="off">
+							<img id="ping_pull_arrow" class="pull_arrow" height="14px;" src="/images/arrow-down.gif" style="position:absolute;*margin-left:-3px;*margin-top:1px;" onclick="pullPingTargetList(this);" title="<#select_network_host#>">
+							<div id="TargetList_Block_PC" name="TargetList_Block_PC" class="clientlist_dropdown" style="margin-left: 2px; width: 348px;display: none;"></div>
 					</td>
 				</tr>
 				<tr>
@@ -1552,6 +1712,24 @@ function change_hddSpinDown(obj_value) {
 					<td>
 						<input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_hour" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 0);" autocorrect="off" autocapitalize="off"> :
 						<input type="text" maxlength="2" class="input_3_table" name="reboot_time_x_min" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 1);" autocorrect="off" autocapitalize="off">
+					</td>
+				</tr>
+				<tr id="ncb_enable_option_tr" style="display:none">
+					<th><#Enable_ncb_notice#></th>
+					<td>
+						<select name="ncb_enable_option" class="input_option">
+							<option value="0" <% nvram_match("ncb_enable", "0", "selected"); %>><#Enable_ncb_Non_Block#></option>
+							<option value="1" <% nvram_match("ncb_enable", "1", "selected"); %>><#Enable_ncb_Limited_Block#></option>
+							<option value="2" <% nvram_match("ncb_enable", "2", "selected"); %>><#Enable_ncb_All_Block#></option>
+						</select>
+					</td>
+				</tr>
+
+				<tr id="sw_mode_radio_tr" style="display:none">
+					<th><#OP_AP_item#></th>
+					<td>
+						<input type="radio" name="sw_mode_radio" value="1" <% nvram_match_x("","sw_mode","3", "checked"); %> ><#checkbox_Yes#>
+						<input type="radio" name="sw_mode_radio" value="0" <% nvram_match_x("","sw_mode","1", "checked"); %> ><#checkbox_No#>
 					</td>
 				</tr>
 			</table>
@@ -1621,7 +1799,7 @@ function change_hddSpinDown(obj_value) {
 				<tr id="auth_keys_tr">
 					<th><#Authorized_Keys#></th>
 					<td>
-						<textarea rows="5" cols="55" class="textarea_ssh_table"  name="sshd_authkeys" maxlength="2999"><% nvram_get("sshd_authkeys"); %></textarea>
+						<textarea rows="5" class="textarea_ssh_table" style="width:98%; overflow:auto; word-break:break-all;" name="sshd_authkeys" maxlength="2999"><% nvram_get("sshd_authkeys"); %></textarea>
 					</td>
 				</tr>
 				<tr>

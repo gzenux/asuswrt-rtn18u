@@ -695,7 +695,7 @@ NTSTATUS _eventlog_GetNumRecords(struct pipes_struct *p,
 
 NTSTATUS _eventlog_BackupEventLogW(struct pipes_struct *p, struct eventlog_BackupEventLogW *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
@@ -838,104 +838,104 @@ NTSTATUS _eventlog_ReportEventW(struct pipes_struct *p,
 NTSTATUS _eventlog_DeregisterEventSource(struct pipes_struct *p,
 					 struct eventlog_DeregisterEventSource *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_ChangeNotify(struct pipes_struct *p,
 				struct eventlog_ChangeNotify *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_RegisterEventSourceW(struct pipes_struct *p,
 					struct eventlog_RegisterEventSourceW *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_OpenBackupEventLogW(struct pipes_struct *p,
 				       struct eventlog_OpenBackupEventLogW *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_ClearEventLogA(struct pipes_struct *p,
 				  struct eventlog_ClearEventLogA *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_BackupEventLogA(struct pipes_struct *p,
 				   struct eventlog_BackupEventLogA *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_OpenEventLogA(struct pipes_struct *p,
 				 struct eventlog_OpenEventLogA *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_RegisterEventSourceA(struct pipes_struct *p,
 					struct eventlog_RegisterEventSourceA *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_OpenBackupEventLogA(struct pipes_struct *p,
 				       struct eventlog_OpenBackupEventLogA *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_ReadEventLogA(struct pipes_struct *p,
 				 struct eventlog_ReadEventLogA *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_ReportEventA(struct pipes_struct *p,
 				struct eventlog_ReportEventA *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_RegisterClusterSvc(struct pipes_struct *p,
 				      struct eventlog_RegisterClusterSvc *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_DeregisterClusterSvc(struct pipes_struct *p,
 					struct eventlog_DeregisterClusterSvc *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_WriteClusterEvents(struct pipes_struct *p,
 				      struct eventlog_WriteClusterEvents *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS _eventlog_ReportEventAndSourceW(struct pipes_struct *p,
 					 struct eventlog_ReportEventAndSourceW *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }

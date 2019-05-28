@@ -59,14 +59,8 @@ struct handle_list {
 
 static bool is_samr_lsa_pipe(const struct ndr_syntax_id *syntax)
 {
-	return
-#ifdef SAMR_SUPPORT
-		ndr_syntax_id_equal(syntax, &ndr_table_samr.syntax_id) ||
-#endif
-#ifdef LSA_SUPPORT
-		ndr_syntax_id_equal(syntax, &ndr_table_lsarpc.syntax_id) ||
-#endif
-		false;
+	return (ndr_syntax_id_equal(syntax, &ndr_table_samr.syntax_id)
+		|| ndr_syntax_id_equal(syntax, &ndr_table_lsarpc.syntax_id));
 }
 
 size_t num_pipe_handles(struct pipes_struct *p)
@@ -248,7 +242,7 @@ static struct dcesrv_handle *find_policy_by_hnd_internal(struct pipes_struct *p,
 	DEBUG(4,("Policy not found: "));
 	dump_data(4, (uint8_t *)hnd, sizeof(*hnd));
 
-	p->fault_state = DCERPC_FAULT_CONTEXT_MISMATCH;
+	p->bad_handle_fault_state = true;
 
 	return NULL;
 }

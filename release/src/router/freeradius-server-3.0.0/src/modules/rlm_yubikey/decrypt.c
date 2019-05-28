@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: e6c41060c6db4c5c751f843c56b0e79fd7fccfeb $
  * @file decrypt.c
  * @brief Authentication for yubikey OTP tokens using the yubikey library.
  *

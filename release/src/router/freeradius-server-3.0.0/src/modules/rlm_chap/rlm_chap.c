@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 12d67a2f7a505474e78f7830b91bea2bbfa79625 $
  * @file rlm_chap.c
  * @brief Process chap authentication requests.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2001  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id$")
+RCSID("$Id: 12d67a2f7a505474e78f7830b91bea2bbfa79625 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

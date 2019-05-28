@@ -20,6 +20,8 @@
 <script type="text/javascript" src="form.js"></script>
 <script type="text/javascript" src="switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="client_function.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/asus_eula.js"></script>
 <style>
 #switch_menu{
 	text-align:right
@@ -47,12 +49,6 @@
 }
 </style>
 <script>
-window.onresize = function() {
-	if(document.getElementById("agreement_panel").style.display == "block") {
-		cal_panel_block("agreement_panel", 0.25);
-	}
-}
-
 var wrs_filter = "<% nvram_get("wrs_rulelist"); %>".replace(/&#62/g, ">").replace(/&#60/g, "<");
 var wrs_id_array = [["1,2,3,4,5,6,8", "9,10,14,15,16,25,26", "11"],
 					["24", "50", "52", "51", "53,89", "42"],
@@ -93,6 +89,9 @@ function initial(){
 
 	generate_group_list();
 	//showDropdownClientList('setClientIP', 'mac', 'all', 'ClientList_Block_PC', 'pull_arrow', 'all');
+
+	if(!ASUS_EULA.status("tm"))
+		ASUS_EULA.config(eula_confirm, cancel);
 }
 
 function device_object(name, mac, type, type_name, description, group_array){
@@ -521,7 +520,8 @@ function genMain_table(){
 			code += '</td>';
 			code += '<td><input class="remove_btn" type="button" onclick="deleteRow_main(this);"></td>';
 			code += '</tr>';
-			clientListEventData.push({"mac" : clientMac, "name" : clientName, "ip" : clientIP, "callBack" : "WebProtector"});
+			if(validator.mac_addr(clientMac))
+				clientListEventData.push({"mac" : clientMac, "name" : clientName, "ip" : clientIP, "callBack" : "WebProtector"});
 		}
 	}
 
@@ -596,76 +596,80 @@ function edit_table(){
 var ctf_disable = '<% nvram_get("ctf_disable"); %>';
 var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';
 function applyRule(){
-	var wrs_filter_row = "";
-	if(document.form.PC_devicename.value != ""){
-		alert("You must press add icon to add a new rule first.");
-		return false;
-	}
+	document.form.action_script.value = "restart_wrs;restart_firewall";
 
-	if(wrs_filter != ""){
-		if(edit_table())
-			wrs_filter_row =  wrs_filter.split("<");
-		else
+	if(document.form.wrs_enable.value == "1") {
+		var wrs_filter_row = "";
+		if(document.form.PC_devicename.value != ""){
+			alert("You must press add icon to add a new rule first.");
 			return false;
-	}
+		}
 
-	var wrs_rulelist = "";
-	for(i=0;i<wrs_filter_row.length;i++){
-		var wrs_filter_col = wrs_filter_row[i].split(">");
-		for(j=0;j<wrs_filter_col.length;j++){
-			if(j == 0){
-				if(wrs_rulelist == ""){
+		if(wrs_filter != ""){
+			if(edit_table())
+				wrs_filter_row =  wrs_filter.split("<");
+			else
+				return false;
+		}
+
+		var wrs_rulelist = "";
+		for(i=0;i<wrs_filter_row.length;i++){
+			var wrs_filter_col = wrs_filter_row[i].split(">");
+			for(j=0;j<wrs_filter_col.length;j++){
+				if(j == 0){
+					if(wrs_rulelist == ""){
+						wrs_rulelist += wrs_filter_col[j] + ">";
+					}
+					else{
+						wrs_rulelist += "<" + wrs_filter_col[j] + ">";
+					}
+				}
+				else if(j == 1){
 					wrs_rulelist += wrs_filter_col[j] + ">";
 				}
 				else{
-					wrs_rulelist += "<" + wrs_filter_col[j] + ">";
-				}
-			}
-			else if(j == 1){
-				wrs_rulelist += wrs_filter_col[j] + ">";
-			}
-			else{
-				var cate_id_array = wrs_filter_col[j].split(",");
-				var wrs_first_cate = 0;
-				for(k=0;k<cate_id_array.length;k++){
-					if(cate_id_array[k] == 1){
-						if(wrs_first_cate == 0){
-							if(wrs_id_array[j-2][k] != ""){
-								wrs_rulelist += wrs_id_array[j-2][k];
-								wrs_first_cate = 1;
+					var cate_id_array = wrs_filter_col[j].split(",");
+					var wrs_first_cate = 0;
+					for(k=0;k<cate_id_array.length;k++){
+						if(cate_id_array[k] == 1){
+							if(wrs_first_cate == 0){
+								if(wrs_id_array[j-2][k] != ""){
+									wrs_rulelist += wrs_id_array[j-2][k];
+									wrs_first_cate = 1;
+								}
 							}
-						}
-						else{
-							if(wrs_id_array[j-2][k] != ""){
-								wrs_rulelist += "," + wrs_id_array[j-2][k];
+							else{
+								if(wrs_id_array[j-2][k] != ""){
+									wrs_rulelist += "," + wrs_id_array[j-2][k];
+								}
 							}
 						}
 					}
-				}
 
-				if(j != wrs_filter_col.length-1){
-					wrs_rulelist += ">";
+					if(j != wrs_filter_col.length-1){
+						wrs_rulelist += ">";
+					}
 				}
 			}
 		}
+
+		document.form.wrs_rulelist.value = wrs_rulelist;
+		if(ctf_disable == 0 && ctf_fa_mode == 2){
+			if(!confirm(Untranslated.ctf_fa_hint)){
+				return false;
+			}
+			else{
+				document.form.action_script.value = "reboot";
+				document.form.action_wait.value = "<% nvram_get("reboot_time"); %>";
+			}
+		}
+
+		if(reset_wan_to_fo.change_status)
+			reset_wan_to_fo.change_wan_mode(document.form);
 	}
 
-	document.form.action_script.value = "restart_wrs;restart_firewall";
-	document.form.wrs_rulelist.value = wrs_rulelist;
-	if(ctf_disable == 0 && ctf_fa_mode == 2){
-		if(!confirm(Untranslated.ctf_fa_hint)){
-			return false;
-		}
-		else{
-			document.form.action_script.value = "reboot";
-			document.form.action_wait.value = "<% nvram_get("reboot_time"); %>";
-		}
-	}
-
-	if(reset_wan_to_fo(document.form, document.form.wrs_enable.value)) {
-		showLoading();
-		document.form.submit();
-	}
+	showLoading();
+	document.form.submit();
 }
 
 function translate_category_id(){
@@ -721,32 +725,34 @@ function translate_category_id(){
 	wrs_filter = wrs_filter_temp;
 }
 
-function show_tm_eula(){
-	$.get("tm_eula.htm", function(data){
-		document.getElementById('agreement_panel').innerHTML= data;
-		var url = "https://www.asus.com/Microsite/networks/Trend_Micro_EULA/";
-		$("#eula_url").attr("href",url);
-		adjust_TM_eula_height("agreement_panel");
-	});
-
-	dr_advise();
-	cal_panel_block("agreement_panel", 0.25);
-	$("#agreement_panel").fadeIn(300);
-}
-
 function cancel(){
-	$("#agreement_panel").fadeOut(100);
 	$('#iphone_switch').animate({backgroundPosition: -37}, "slow", function() {});
 	curState = 0;
-	document.getElementById("hiddenMask").style.visibility = "hidden";
-	htmlbodyforIE = parent.document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
-	htmlbodyforIE[0].style.overflow = "scroll";	  //hidden the Y-scrollbar for preventing from user scroll it.
 }
 
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	document.form.wrs_enable.value = 1;
+	document.form.action_wait.value = "15";
 	applyRule();
+}
+function switch_control(_status){
+	if(_status) {
+		if(reset_wan_to_fo.check_status()) {
+			if(ASUS_EULA.check("tm")){
+				document.form.wrs_enable.value = 1;
+				applyRule();
+			}
+		}
+		else
+			cancel();
+	}
+	else {
+		document.form.wrs_enable.value = 0;
+		showhide("list_table",0);
+		document.form.wrs_rulelist.disabled = true;
+		applyRule();
+	}
 }
 
 function generate_group_list(){
@@ -770,10 +776,9 @@ function setGroup(name){
 </script>
 </head>
 
-<body onload="initial();" onunload="unload_body();" onselectstart="return false;">
+<body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="eula_panel_container"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center"></table>
 	<!--[if lte IE 6.5]><script>alert("<#ALERT_TO_CHANGE_BROWSER#>");</script><![endif]-->
@@ -853,27 +858,10 @@ function setGroup(name){
 												<script type="text/javascript">
 													$('#radio_web_restrict_enable').iphoneSwitch('<% nvram_get("wrs_enable"); %>',
 														function(){
-															curState = 1;
-															if(document.form.TM_EULA.value == 0){
-																show_tm_eula();
-																return;
-															}
-
-															document.form.wrs_enable.value = 1;
-															showhide("list_table",1);
-
+															switch_control(1);
 														},
 														function(){
-															document.form.wrs_enable.value = 0;
-															showhide("list_table",0);
-															document.form.wrs_rulelist.disabled = true;
-															if(document.form.wrs_enable_ori.value == 1){
-																applyRule();
-															}
-															else{
-																curState = 0;
-															}
-
+															switch_control(0);
 														}
 													);
 												</script>

@@ -16,6 +16,8 @@
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/form.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/asus_eula.js"></script>
 <style>
 .weakness{
 	width:650px;
@@ -101,9 +103,6 @@ window.onresize = function() {
 	if(document.getElementById("alert_preference").style.display == "block") {
 		cal_panel_block("alert_preference", 0.25);
 	}
-	if(document.getElementById("agreement_panel").style.display == "block") {
-		cal_panel_block("agreement_panel", 0.25);
-	}
 }
 <% get_AiDisk_status(); %>
 var AM_to_cifs = get_share_management_status("cifs");  // Account Management for Network-Neighborhood
@@ -128,6 +127,9 @@ function initial(){
 	getEventData();
 	check_weakness();
 	$("#all_security_btn").hide();
+
+	if(!ASUS_EULA.status("tm"))
+		ASUS_EULA.config(eula_confirm, cancel);
 }
 
 function getEventTime(){
@@ -217,19 +219,11 @@ function applyRule(){
 		}
 	}
 
-	if(reset_wan_to_fo(document.form, document.form.wrs_protect_enable.value)) {
-		showLoading();
-		document.form.submit();
-	}
-	else {
-		curState = 0;
-		document.form.wrs_protect_enable.value = "0";
-		$('#radio_protection_enable').find('.iphone_switch').animate({backgroundPosition: -37}, "slow");
-		shadeHandle('0');
-		if($('#agreement_panel').css('display') == "block") {
-			refreshpage();
-		}
-	}
+	if(reset_wan_to_fo.change_status)
+		reset_wan_to_fo.change_wan_mode(document.form);
+
+	showLoading();
+	document.form.submit();
 }
 
 function showWeaknessTable(){
@@ -715,19 +709,6 @@ function check_TM_feature(){
 	}
 }
 
-function show_tm_eula(){
-	$.get("tm_eula.htm", function(data){
-		document.getElementById('agreement_panel').innerHTML= data;
-		var url = "https://www.asus.com/Microsite/networks/Trend_Micro_EULA/";
-		$("#eula_url").attr("href",url);
-		adjust_TM_eula_height("agreement_panel");
-	});
-
-	dr_advise();
-	cal_panel_block("agreement_panel", 0.25);
-	$("#agreement_panel").fadeIn(300);
-}
-
 function cancel(){
 	refreshpage();
 }
@@ -735,7 +716,26 @@ function cancel(){
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	document.form.wrs_protect_enable.value = "1";
+	document.form.action_wait.value = "15";
 	applyRule();
+}
+function switch_control(_status){
+	if(_status) {
+		if(reset_wan_to_fo.check_status()) {
+			if(ASUS_EULA.check("tm")){
+				document.form.wrs_protect_enable.value = "1";
+				shadeHandle("1");
+				applyRule();
+			}
+		}
+		else
+			cancel();
+	}
+	else {
+		document.form.wrs_protect_enable.value = "0";
+		shadeHandle("0");
+		applyRule();
+	}
 }
 
 function show_alert_preference(){
@@ -848,10 +848,9 @@ function shadeHandle(flag){
 </script>
 </head>
 
-<body onload="initial();" onunload="unload_body();" onselectstart="return false;">
+<body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="eula_panel_container"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center"></table>
 	<!--[if lte IE 6.5.]><script>alert("<#ALERT_TO_CHANGE_BROWSER#>");</script><![endif]-->
@@ -1119,7 +1118,7 @@ function shadeHandle(flag){
 											<tr>
 												<td style="font-size:14px;">
 													<div><#AiProtection_desc#></div>
-													<div><a style="text-decoration:underline;" href="http://www.asus.com/support/FAQ/1008719/" target="_blank"><#AiProtection_title#> FAQ</a></div>
+													<div><a style="text-decoration:underline;" href="https://www.asus.com/support/FAQ/1008719/" target="_blank"><#AiProtection_title#> FAQ</a></div>
 												</td>
 											</tr>
 										</table>
@@ -1134,19 +1133,10 @@ function shadeHandle(flag){
 														<script type="text/javascript">
 															$('#radio_protection_enable').iphoneSwitch('<% nvram_get("wrs_protect_enable"); %>',
 																function(){
-																	if(document.form.TM_EULA.value == 0){
-																		show_tm_eula();
-																		return;
-																	}
-
-																	document.form.wrs_protect_enable.value = "1";
-																	shadeHandle("1");
-																	applyRule();
+																	switch_control(1);
 																},
 																function(){
-																	document.form.wrs_protect_enable.value = "0";
-																	shadeHandle("0");
-																	applyRule();
+																	switch_control(0);
 																}
 															);
 														</script>

@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 0d223376d0d82dc204bed82b879f12724d577fda $
  * @file rlm_ruby.c
  * @brief Translates requests between the server an a ruby interpreter.
  *
@@ -29,7 +29,7 @@
  */
 
 
-RCSID("$Id$")
+RCSID("$Id: 0d223376d0d82dc204bed82b879f12724d577fda $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -1,7 +1,7 @@
 /*
  * dict.c	Routines to read the dictionary file.
  *
- * Version:	$Id$
+ * Version:	$Id: 2aea72f723600ae2a74a7b433e2dfeb548b2138f $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  *
  * Copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: 2aea72f723600ae2a74a7b433e2dfeb548b2138f $")
 
 #include	<freeradius-devel/libradius.h>
 

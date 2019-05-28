@@ -108,7 +108,7 @@ struct nbt_name {
 	const char * name;
 	const char * scope;
 	enum nbt_name_type type;
-}/* [public,nopush,nopull] */;
+}/* [nopull,nopush,public] */;
 
 enum nbt_qclass
 #ifndef USE_UINT_ENUMS
@@ -226,7 +226,7 @@ union nbt_rdata {
 	struct nbt_rdata_netbios netbios;/* [case(NBT_QTYPE_NETBIOS)] */
 	struct nbt_rdata_status status;/* [case(NBT_QTYPE_STATUS)] */
 	struct nbt_rdata_data data;/* [default] */
-}/* [nodiscriminant,public] */;
+}/* [public,nodiscriminant] */;
 
 struct nbt_res_rec {
 	struct nbt_name name;
@@ -350,7 +350,7 @@ struct dgram_smb_packet {
 	uint16_t vuid;
 	uint16_t mid;
 	union smb_body body;/* [switch_is(smb_command)] */
-}/* [flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_LITTLE_ENDIAN|LIBNDR_PRINT_ARRAY_HEX),public] */;
+}/* [public,flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_LITTLE_ENDIAN|LIBNDR_PRINT_ARRAY_HEX)] */;
 
 union dgram_message_body {
 	struct dgram_smb_packet smb;/* [case(DGRAM_SMB)] */
@@ -393,13 +393,13 @@ struct nbt_dgram_packet {
 	const char * src_addr;
 	uint16_t src_port;
 	union dgram_data data;/* [switch_is(msg_type)] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_BIGENDIAN|LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_BIGENDIAN|LIBNDR_PRINT_ARRAY_HEX),public] */;
 
 struct nbt_sockaddr {
 	uint32_t sockaddr_family;
 	const char * pdc_ip;/* [flag(LIBNDR_FLAG_BIGENDIAN)] */
 	DATA_BLOB remaining;/* [flag(LIBNDR_FLAG_REMAINING)] */
-}/* [public,gensize] */;
+}/* [gensize,public] */;
 
 /* bitmap nbt_server_type */
 #define NBT_SERVER_PDC ( 0x00000001 )
@@ -495,7 +495,7 @@ struct NETLOGON_SAM_LOGON_RESPONSE_NT40 {
 	uint32_t nt_version;
 	uint16_t lmnt_token;
 	uint16_t lm20_token;
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct NETLOGON_SAM_LOGON_RESPONSE {
 	enum netlogon_command command;
@@ -528,12 +528,12 @@ struct NETLOGON_SAM_LOGON_RESPONSE_EX {
 	const char * server_site;
 	const char * client_site;
 	uint8_t sockaddr_size;/* [value(ndr_size_nbt_sockaddr(&sockaddr,ndr->flags))] */
-	struct nbt_sockaddr sockaddr;/* [subcontext(0),subcontext_size(sockaddr_size)] */
+	struct nbt_sockaddr sockaddr;/* [subcontext_size(sockaddr_size),subcontext(0)] */
 	const char * next_closest_site;
 	uint32_t nt_version;
 	uint16_t lmnt_token;
 	uint16_t lm20_token;
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct nbt_netlogon_query_for_pdc {
 	const char * computer_name;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */

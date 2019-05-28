@@ -768,13 +768,16 @@ void get_dhcp_pool(char **dhcp_start, char **dhcp_end, char *buffer)
 	if (dhcp_start == NULL || dhcp_end == NULL || buffer == NULL)
 		return;
 
-#ifdef RTCONFIG_WIRELESSREPEATER
-#ifdef RTCONFIG_REALTEK
-/* [MUST] : Need to discuss to add new mode for Media Bridge */
-	if((repeater_mode() || mediabridge_mode()) && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED){
-#else
-	if(sw_mode() == SW_MODE_REPEATER && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED){
+        if ((repeater_mode()
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+                || psr_mode() || mediabridge_mode()
+#elif defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
+                || mediabridge_mode()
 #endif
+#ifdef RTCONFIG_DPSTA
+                || (dpsta_mode() && nvram_get_int("re_mode") == 0)
+#endif
+                ) && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED) {
 		if(nvram_match("lan_proto", "static")) {
 			unsigned int lan_ipaddr, lan_netmask;
 			char *p = buffer;
@@ -812,7 +815,6 @@ void get_dhcp_pool(char **dhcp_start, char **dhcp_end, char *buffer)
 		}
 	}
 	else
-#endif
 	{
 		*dhcp_start = nvram_safe_get("dhcp_start");
 		*dhcp_end = nvram_safe_get("dhcp_end");
@@ -1113,7 +1115,7 @@ void start_dnsmasq(void)
 	if ((repeater_mode()
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 		|| psr_mode() || mediabridge_mode()
-#elif defined(RTCONFIG_REALTEK)
+#elif defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
 		|| mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
@@ -1163,6 +1165,7 @@ void start_dnsmasq(void)
 					    nvram_safe_get("lan_hostname"));
 			}
 		}
+
 #endif
 		fclose(fp);
 	} else
@@ -1222,7 +1225,7 @@ void start_dnsmasq(void)
 		&& !repeater_mode()
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 		&& !psr_mode() && !mediabridge_mode()
-#elif defined(RTCONFIG_REALTEK)
+#elif defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
 		&& !mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
@@ -1252,7 +1255,7 @@ void start_dnsmasq(void)
 
 #if defined(RTCONFIG_REDIRECT_DNAME)
 	if (!repeater_mode()
-#ifdef RTCONFIG_REALTEK
+#if defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
 /* [MUST] : Need to clarify ..... */
 	&& !mediabridge_mode() // skip media bridge
 #endif
@@ -1331,7 +1334,7 @@ void start_dnsmasq(void)
 		|| ((repeater_mode()
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 			|| psr_mode() || mediabridge_mode()
-#elif defined(RTCONFIG_REALTEK)
+#elif defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
 			|| mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
@@ -1357,7 +1360,7 @@ void start_dnsmasq(void)
 			(repeater_mode()
 #if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
 				|| psr_mode() || mediabridge_mode()
-#elif defined(RTCONFIG_REALTEK)
+#elif defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
 				|| mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
@@ -3009,15 +3012,15 @@ start_ddns(void)
 #if defined(RTCONFIG_DUALWAN)
 	if (nvram_match("wans_mode", "lb")) {
 		int ddns_wan_unit = nvram_get_int("ddns_wan_unit");
-
 		if (ddns_wan_unit >= WAN_UNIT_FIRST && ddns_wan_unit < WAN_UNIT_MAX) {
 			unit = ddns_wan_unit;
 		} else {
-			int u = get_first_configured_connected_wan_unit();
-
+			int u = get_first_connected_public_wan_unit();
 			if (u < WAN_UNIT_FIRST || u >= WAN_UNIT_MAX)
+			{
+				logmessage("DDNS", "[%s] dual WAN load balance DDNS cannot succeed to work, because none of wan is public IP.", __FUNCTION__);
 				return -2;
-
+			}
 			unit = u;
 		}
 	}
@@ -3220,9 +3223,12 @@ asusddns_reg_domain(int reg)
 		if (ddns_wan_unit >= WAN_UNIT_FIRST && ddns_wan_unit < WAN_UNIT_MAX) {
 			unit = ddns_wan_unit;
 		} else {
-			int u = get_first_configured_connected_wan_unit();
+			int u = get_first_connected_public_wan_unit();
 			if (u < WAN_UNIT_FIRST || u >= WAN_UNIT_MAX)
+			{
+				logmessage("DDNS", "[%s] dual WAN load balance DDNS cannot succeed to work, because none of wan is public IP.", __FUNCTION__);
 				return -2;
+			}
 
 			unit = u;
 		}
@@ -3300,9 +3306,12 @@ asusddns_unregister(void)
 		if (ddns_wan_unit >= WAN_UNIT_FIRST && ddns_wan_unit < WAN_UNIT_MAX) {
 			unit = ddns_wan_unit;
 		} else {
-			int u = get_first_configured_connected_wan_unit();
+			int u = get_first_connected_public_wan_unit();
 			if (u < WAN_UNIT_FIRST || u >= WAN_UNIT_MAX)
+			{
+				logmessage("DDNS", "[%s] dual WAN load balance DDNS cannot succeed to work, because none of wan is public IP.", __FUNCTION__);
 				return -2;
+			}
 
 			unit = u;
 		}
@@ -3471,7 +3480,11 @@ wl_igs_enabled(void)
 
 		snprintf(prefix, sizeof(prefix), "wl%d_", i);
 		if (nvram_match(strcat_r(prefix, "radio", tmp), "1") &&
-		    nvram_match(strcat_r(prefix, "igs", tmp), "1"))
+			(nvram_match(strcat_r(prefix, "igs", tmp), "1") 
+#ifdef RTCONFIG_PROXYSTA
+			 || is_psta(i) || is_psr(i)
+#endif
+			 ))
 			return 1;
 
 		i++;
@@ -4336,13 +4349,8 @@ void start_upnp(void)
 						// Handle port1,port2,port3 format
 						portp = portv = strdup(port);
 						while (portv && (c = strsep(&portp, ",")) != NULL) {
-							if (strcmp(proto, "TCP") == 0 || strcmp(proto, "BOTH") == 0) {
+							if (strcmp(proto, "TCP") == 0 || strcmp(proto, "BOTH") == 0)
 								fprintf(f, "deny %s 0.0.0.0/0 0-65535\n", c);
-
-								int local_ftpport = nvram_get_int("vts_ftpport");
-								if (!strcmp(c, "21") && local_ftpport != 0 && local_ftpport != 21)
-									fprintf(f, "deny %d 0.0.0.0/0 0-65535\n", local_ftpport);
-							}
 							if (strcmp(proto, "UDP") == 0 || strcmp(proto, "BOTH") == 0)
 								fprintf(f, "deny %s 0.0.0.0/0 0-65535\n", c);
 						}
@@ -4474,6 +4482,10 @@ start_ntpc(void)
 {
 	char *ntp_argv[] = {"ntp", NULL};
 	int pid;
+	int unit = wan_primary_ifunit();
+
+	if(dualwan_unit__usbif(unit) && nvram_get_int("modem_pdp") == 2)
+		return 0;
 
 	if (!pids("ntp"))
 		_eval(ntp_argv, NULL, 0, &pid);
@@ -9300,6 +9312,9 @@ again:
 #endif
 #endif
 #endif
+#ifdef RTCONFIG_BT_CONN
+				stop_dbus_daemon();
+#endif
 				if (!(r = build_temp_rootfs(TMP_ROOTFS_MNT_POINT)))
 					sw = 1;
 #ifdef RTCONFIG_DUAL_TRX
@@ -11303,6 +11318,12 @@ check_ddr_done:
 				stop_wan_if(wan_primary_ifunit_ipv6());
 				start_wan_if(wan_primary_ifunit_ipv6());
 			}
+			else if(dualwan_unit__usbif(wan_primary_ifunit_ipv6())){
+				//stop_wan_if(wan_primary_ifunit_ipv6());
+				//start_wan_if(wan_primary_ifunit_ipv6());
+				stop_wan6();
+				start_wan6();
+			}
 			else
 			{
 				start_wan6();
@@ -11385,8 +11406,12 @@ check_ddr_done:
 	else if (strcmp(script, "sig_check") == 0)
 	{
 		if(action & RC_SERVICE_START){
-			eval("sig_update.sh");
-			if(nvram_get_int("sig_state_flag")) eval("sig_upgrade.sh", "1");
+			char *sig_update_argv[] = {"sig_update.sh", NULL};
+			_eval(sig_update_argv, NULL, 0, NULL);
+			if(nvram_get_int("sig_state_flag")){
+				char *sig_upgrade_argv[] = {"sig_upgrade.sh", NULL};
+				_eval(sig_upgrade_argv, NULL, 0, NULL);
+			}
 			stop_dpi_engine_service(0);
 			start_dpi_engine_service();
 		}
@@ -11558,22 +11583,37 @@ check_ddr_done:
 #if defined(RTCONFIG_AMAS) && defined(CONFIG_BCMWL5)
 	else if (strcmp(script, "wps_enr")==0)
 	{
-		if (is_router_mode()) {
-			int unit = nvram_get_int("wps_band_x");
-			char tmp[100], prefix[] = "wlXXXXXXXXXX_";
-			char *ifname;
+		if (is_router_mode()
+#ifdef RTCONFIG_DPSTA
+			|| (dpsta_mode())
+#endif
+		) {
+			if (is_router_mode()) {
+				int unit = nvram_get_int("wps_band_x");
+				char tmp[100], prefix[] = "wlXXXXXXXXXX_";
+				char *ifname;
 
-			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
-			nvram_set(strcat_r(prefix, "mode", tmp), "psta");
-			ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
-			eval("wlconf", ifname, "down");
-			eval("wlconf", ifname, "up");
-			eval("wlconf", ifname, "start");
-			eval("wl", "-i", ifname, "disassoc");
-			start_wps();
-			sleep(1);
+				snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+				nvram_set(strcat_r(prefix, "mode", tmp), "psta");
+				nvram_set(strcat_r(prefix, "dwds", tmp), "0");
+				ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+				eval("wlconf", ifname, "down");
+				eval("wlconf", ifname, "up");
+				eval("wlconf", ifname, "start");
+				eval("wl", "-i", ifname, "disassoc");
+				start_wps();
+				sleep(1);
+			}
 
+			stop_wps_method();
+			count = 3;
+retry_wps_enr:
 			start_wps_enr();
+			sleep(1);
+			if (!nvram_get_int("wps_proc_status") && (count-- > 0))
+				goto retry_wps_enr;
+			kill_pidfile_s("/var/run/watchdog.pid", SIGTSTP);
+			nvram_unset("wps_ign_btn");
 		}
 	}
 #endif
@@ -13372,7 +13412,7 @@ void start_pc_block(void)
 
 	get_all_pc_list(&pc_list);
 
-	if(nvram_get_int("MULTIFILTER_ALL") != 0 && count_pc_rules(pc_list) > 0)
+	if(nvram_get_int("MULTIFILTER_ALL") != 0 && count_pc_rules(pc_list, 1) > 0)
 		_eval(pc_block_argv, NULL, 0, &pid);
 
 	free_pc_list(&pc_list);

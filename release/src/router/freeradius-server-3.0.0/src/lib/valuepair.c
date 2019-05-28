@@ -1,7 +1,7 @@
 /*
  * valuepair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id$
+ * Version:	$Id: 3843bd0cc8773d4f0cb1f0446110707b570f3f5c $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 3843bd0cc8773d4f0cb1f0446110707b570f3f5c $")
 
 #include <freeradius-devel/libradius.h>
 

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 4339698b218329804e57d61ef78f23d0b11b97aa $
  *
  * Oracle schema for FreeRADIUS
  *

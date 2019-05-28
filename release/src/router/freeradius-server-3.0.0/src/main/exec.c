@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: f1edf86f963806f8548532e818b2e943fb5a62ee $
  *
  * @file exec.c
  * @brief Execute external programs.
@@ -23,7 +23,7 @@
  * @copyright 2000-2004,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: f1edf86f963806f8548532e818b2e943fb5a62ee $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

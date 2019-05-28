@@ -230,7 +230,7 @@ void add_usb_host_module(void)
 #endif
 
 #if defined(RTCONFIG_USB_XHCI)
-#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U)
+#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 	char *u3_param = "u3intf=0";
 #endif
 #endif
@@ -243,7 +243,7 @@ void add_usb_host_module(void)
 	modprobe(USBCORE_MOD);
 
 #if defined(RTCONFIG_USB_XHCI)
-#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U)
+#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 	if (nvram_get_int("usb_usb3") == 1)
 		u3_param = "u3intf=1";
 #if !defined(RTCONFIG_SOC_IPQ40XX)
@@ -725,18 +725,29 @@ void start_usb(int orig)
 			if(nvram_get_int("usb_fs_hfs")){
 #ifdef RTCONFIG_TUXERA_HFS
 #if defined(RTCONFIG_OPENPLUSTUXERA_HFS)
-				if(nvram_match("usb_hfs_mod", "tuxera"))
+				if(nvram_invmatch("usb_hfs_mod", "tuxera")){
+					modprobe("hfs");
+					modprobe("hfsplus");
+				}
+				else
 #endif
 				modprobe("thfsplus");
 #elif defined(RTCONFIG_PARAGON_HFS)
 #if defined(RTCONFIG_OPENPLUSPARAGON_HFS)
-				if(nvram_match("usb_hfs_mod", "paragon"))
+				if(nvram_invmatch("usb_hfs_mod", "paragon")){
+					modprobe("hfs");
+					modprobe("hfsplus");
+				}
+				else
 #endif
 #ifdef RTCONFIG_UFSD_DEBUG
 				modprobe("ufsd_debug");
 #else
 				modprobe("ufsd");
 #endif
+#else
+				modprobe("hfs");
+				modprobe("hfsplus");
 #endif
 			}
 #endif
@@ -938,6 +949,11 @@ void remove_usb_module(void)
 void stop_usb_program(int mode)
 {
 #ifdef RTCONFIG_USB_MODEM
+#ifdef RTCONFIG_INTERNAL_GOBI
+	killall_tk("gobi_api");
+	if(!g_reboot)
+		sleep(1);
+#endif
 #ifdef RTCONFIG_USB_BECEEM
 	killall("wimaxd", SIGTERM);
 	killall("wimaxd", SIGUSR1);
@@ -1039,7 +1055,7 @@ void stop_usb(int f_force)
 #endif
 
 #if defined(RTCONFIG_USB_XHCI)
-#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U)
+#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 	if (disabled) {
 #if defined(RTCONFIG_SOC_IPQ8064)
 		modprobe_r("dwc3-ipq");
@@ -1162,6 +1178,10 @@ int mount_r(char *mnt_dev, char *mnt_dir, char *_type)
 
 		if (strcmp(type, "swap") == 0 || strcmp(type, "mbr") == 0) {
 			/* not a mountable partition */
+			flags = 0;
+		}
+		else if (!strcmp(type, "unknown")) {
+			/* Usually should be EFI, and not a mountable partition */
 			flags = 0;
 		}
 		else if(!strncmp(type, "ext", 3)){
@@ -2897,7 +2917,7 @@ static void kill_samba(int sig)
 void enable_gro(int interval)
 {
 	char *argv[3] = {"echo", "", NULL};
-	char lan_ifname[128], lan_ifnames[32], *next;
+	char lan_ifname[32], lan_ifnames[128], *next;
 	char path[64] = {0};
 	char parm[32] = {0};
 
@@ -2967,9 +2987,13 @@ start_samba(void)
 {
 	int acc_num;
 	char cmd[256];
-#if defined(SMP) && !defined(HND_ROUTER)
+#if defined(SMP)
+#if defined(GTAC5300)
+	char *cpu_list = "3";
+#else
 	char *cpu_list = "1";
-#if (defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_SAMBA36X))
+#endif
+#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064)
 	int cpu_num = sysconf(_SC_NPROCESSORS_CONF);
 	int taskset_ret = -1;
 #endif
@@ -3106,8 +3130,8 @@ start_samba(void)
 	snprintf(smbd_cmd, 32, "%s/smbd", "/usr/sbin");
 #endif
 
-#if defined(SMP) && !defined(HND_ROUTER)
-#if (defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_SAMBA36X))
+#if defined(SMP)
+#if defined(RTCONFIG_BCMARM) || defined(RTCONFIG_SOC_IPQ8064)
 #if 0
 	if(cpu_num > 1)
 		taskset_ret = cpu_eval(NULL, "1", "ionice", "-c1", "-n0", smbd_cmd, "-D", "-s", "/etc/smb.conf");

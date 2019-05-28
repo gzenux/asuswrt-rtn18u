@@ -3,7 +3,7 @@
 
 /*
  * parser.h	Structures and prototypes for parsing
- * Version:	$Id$
+ * Version:	$Id: 4adff2ad9e7608d7489ec93d54b1b087fde45f46 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2013 Alan DeKok <aland@freeradius.org>
  */
 
-RCSIDH(parser_h, "$Id$");
+RCSIDH(parser_h, "$Id: 4adff2ad9e7608d7489ec93d54b1b087fde45f46 $");
 
 #include <freeradius-devel/map.h>
 

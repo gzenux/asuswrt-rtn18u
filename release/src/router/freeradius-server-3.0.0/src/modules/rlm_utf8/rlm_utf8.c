@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: e4938f797348f10d59efd56071bc1165fced140a $
  * @file rlm_utf8.c
  * @brief Enforce UTF8 encoding in strings.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: e4938f797348f10d59efd56071bc1165fced140a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 99fde74d9399c639fd24bdd2cc906837d7c4c8da $
  * @file rlm_securid.c
  * @brief Supports auth against SecurID servers using OTP h/w tokens.
  *

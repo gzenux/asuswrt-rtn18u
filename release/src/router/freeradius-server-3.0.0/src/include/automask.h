@@ -2,7 +2,7 @@
  *  C Preprocessor definitions we do *NOT* want to leave defined autoconf.h
  *  Which are dependent on where the header is being used.
  *
- *  Version: $Id$
+ *  Version: $Id: 87ffdfcdd3513b22180ea1e5d8116edddc4faacb $
  */
 
 

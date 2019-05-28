@@ -3,11 +3,11 @@
 /*
  *	detail.h	Routines to handle detail files.
  *
- * Version:	$Id$
+ * Version:	$Id: 8cd5d73e761ce724373a283ede50446c3e5a944c $
  *
  */
 
-RCSIDH(detail_h, "$Id$")
+RCSIDH(detail_h, "$Id: 8cd5d73e761ce724373a283ede50446c3e5a944c $")
 
 #ifdef __cplusplus
 extern "C" {

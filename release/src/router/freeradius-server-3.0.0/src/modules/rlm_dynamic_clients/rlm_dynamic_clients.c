@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: ef84ad456c2793735c3498165994c1a3e66b59f3 $
  * @file rlm_dynamic_clients.c
  * @brief Reads client definitions from flat files as required.
  *
  * @copyright 2008  The FreeRADIUS server project
  * @copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
-RCSID("$Id$")
+RCSID("$Id: ef84ad456c2793735c3498165994c1a3e66b59f3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

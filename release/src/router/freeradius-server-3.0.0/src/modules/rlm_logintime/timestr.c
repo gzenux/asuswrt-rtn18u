@@ -1,7 +1,7 @@
 /*
  * timestr.c	See if a string like 'Su2300-0700' matches (UUCP style).
  *
- * Version:	$Id$
+ * Version:	$Id: 8f935ea3300443333e88b19dec13c20f794fd8f0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 8f935ea3300443333e88b19dec13c20f794fd8f0 $")
 
 #include	<freeradius-devel/radiusd.h>
 

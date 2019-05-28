@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id$
+ * Version:	$Id: 831a860d1083476d885b6acf2262ba42af920f68 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id$")
+RCSID("$Id: 831a860d1083476d885b6acf2262ba42af920f68 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

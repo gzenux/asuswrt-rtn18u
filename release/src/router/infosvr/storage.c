@@ -21,6 +21,7 @@
 #else
 #error Unknown endian
 #endif
+extern char label_mac[];
 
 int getStorageStatus(STORAGE_INFO_T *st)
 {
@@ -94,7 +95,7 @@ int getStorageStatus(STORAGE_INFO_T *st)
 		printf("AAE DeviceID =%s <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n", st->AAEDeviceID);
 	}
 #endif
-
+	memcpy(st->Label_MacAddress, label_mac, 6);
 
 	return 0;
 }

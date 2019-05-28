@@ -4,11 +4,11 @@
 /*
  * conffile.h	Defines for the conffile parsing routines.
  *
- * Version:	$Id$
+ * Version:	$Id: f16ba26afe04cc0ebf122722efdc492e2be5aaf3 $
  *
  */
 
-RCSIDH(conffile_h, "$Id$")
+RCSIDH(conffile_h, "$Id: f16ba26afe04cc0ebf122722efdc492e2be5aaf3 $")
 
 #include <stddef.h>
 #include <freeradius-devel/token.h>

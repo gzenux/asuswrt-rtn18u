@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: e389bfb83c4cb25a50fd774b40cb1de86881d676 $
  * @file rlm_cram.c
  * @brief CRAM mail authentication (APOP, CRAM-MD5)
    @verbatim
@@ -32,7 +32,7 @@
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2002 SANDY (http://www.sandy.ru/) under GPLr
  */
-RCSID("$Id$")
+RCSID("$Id: e389bfb83c4cb25a50fd774b40cb1de86881d676 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

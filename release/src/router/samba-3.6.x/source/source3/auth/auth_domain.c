@@ -31,73 +31,7 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
 
-extern bool global_machine_password_needs_changing;
 static struct named_mutex *mutex;
-
-/*
- * Change machine password (called from main loop
- * idle timeout. Must be done as root.
- */
-
-void attempt_machine_password_change(void)
-{
-	unsigned char trust_passwd_hash[16];
-	time_t lct;
-	void *lock;
-
-	if (!global_machine_password_needs_changing) {
-		return;
-	}
-
-	if (lp_security() != SEC_DOMAIN) {
-		return;
-	}
-
-	/*
-	 * We're in domain level security, and the code that
-	 * read the machine password flagged that the machine
-	 * password needs changing.
-	 */
-
-	/*
-	 * First, open the machine password file with an exclusive lock.
-	 */
-
-	lock = secrets_get_trust_account_lock(NULL, lp_workgroup());
-
-	if (lock == NULL) {
-		DEBUG(0,("attempt_machine_password_change: unable to lock "
-			"the machine account password for machine %s in "
-			"domain %s.\n",
-			global_myname(), lp_workgroup() ));
-		return;
-	}
-
-	if(!secrets_fetch_trust_account_password(lp_workgroup(),
-			trust_passwd_hash, &lct, NULL)) {
-		DEBUG(0,("attempt_machine_password_change: unable to read the "
-			"machine account password for %s in domain %s.\n",
-			global_myname(), lp_workgroup()));
-		TALLOC_FREE(lock);
-		return;
-	}
-
-	/*
-	 * Make sure someone else hasn't already done this.
-	 */
-
-	if(time(NULL) < lct + lp_machine_password_timeout()) {
-		global_machine_password_needs_changing = false;
-		TALLOC_FREE(lock);
-		return;
-	}
-
-	/* always just contact the PDC here */
-
-	change_trust_account_password( lp_workgroup(), NULL);
-	global_machine_password_needs_changing = false;
-	TALLOC_FREE(lock);
-}
 
 /**
  * Connect to a remote server for (inter)domain security authenticaion.
@@ -492,14 +426,6 @@ static NTSTATUS check_trustdomain_security(const struct auth_context *auth_conte
 	E_md4hash(trust_password, trust_md4_password);
 	SAFE_FREE(trust_password);
 
-#if 0
-	/* Test if machine password is expired and need to be changed */
-	if (time(NULL) > last_change_time + (time_t)lp_machine_password_timeout())
-	{
-		global_machine_password_needs_changing = True;
-	}
-#endif
-
 	/* use get_dc_name() for consistency even through we know that it will be 
 	   a netbios name */
 
@@ -538,9 +464,7 @@ static NTSTATUS auth_init_trustdomain(struct auth_context *auth_context, const c
 
 NTSTATUS auth_domain_init(void) 
 {
-#ifdef NETLOGON_SUPPORT
 	smb_register_auth(AUTH_INTERFACE_VERSION, "trustdomain", auth_init_trustdomain);
 	smb_register_auth(AUTH_INTERFACE_VERSION, "ntdomain", auth_init_ntdomain);
-#endif
 	return NT_STATUS_OK;
 }

@@ -1533,10 +1533,6 @@ WERROR _srvsvc_NetShareSetInfo(struct pipes_struct *p,
 	TALLOC_CTX *ctx = p->mem_ctx;
 	union srvsvc_NetShareInfo *info = r->in.info;
 
-#ifndef FULL_SRVSVC
-	return WERR_ACCESS_DENIED;
-#endif
-
 	DEBUG(5,("_srvsvc_NetShareSetInfo: %d\n", __LINE__));
 
 	if (!r->in.share_name) {
@@ -1767,10 +1763,6 @@ WERROR _srvsvc_NetShareAdd(struct pipes_struct *p,
 	int max_connections = 0;
 	TALLOC_CTX *ctx = p->mem_ctx;
 
-#ifndef FULL_SRVSVC
-	return WERR_ACCESS_DENIED;
-#endif
-
 	DEBUG(5,("_srvsvc_NetShareAdd: %d\n", __LINE__));
 
 	if (r->out.parm_error) {
@@ -1952,10 +1944,6 @@ WERROR _srvsvc_NetShareDel(struct pipes_struct *p,
 	bool is_disk_op;
 	struct share_params *params;
 	TALLOC_CTX *ctx = p->mem_ctx;
-
-#ifndef FULL_SRVSVC
-	return WERR_ACCESS_DENIED;
-#endif
 
 	DEBUG(5,("_srvsvc_NetShareDel: %d\n", __LINE__));
 
@@ -2560,244 +2548,244 @@ WERROR _srvsvc_NetFileClose(struct pipes_struct *p,
 WERROR _srvsvc_NetCharDevEnum(struct pipes_struct *p,
 			      struct srvsvc_NetCharDevEnum *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetCharDevGetInfo(struct pipes_struct *p,
 				 struct srvsvc_NetCharDevGetInfo *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetCharDevControl(struct pipes_struct *p,
 				 struct srvsvc_NetCharDevControl *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetCharDevQEnum(struct pipes_struct *p,
 			       struct srvsvc_NetCharDevQEnum *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetCharDevQGetInfo(struct pipes_struct *p,
 				  struct srvsvc_NetCharDevQGetInfo *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetCharDevQSetInfo(struct pipes_struct *p,
 				  struct srvsvc_NetCharDevQSetInfo *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetCharDevQPurge(struct pipes_struct *p,
 				struct srvsvc_NetCharDevQPurge *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetCharDevQPurgeSelf(struct pipes_struct *p,
 				    struct srvsvc_NetCharDevQPurgeSelf *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetFileGetInfo(struct pipes_struct *p,
 			      struct srvsvc_NetFileGetInfo *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetShareCheck(struct pipes_struct *p,
 			     struct srvsvc_NetShareCheck *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetServerStatisticsGet(struct pipes_struct *p,
 				      struct srvsvc_NetServerStatisticsGet *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetTransportAdd(struct pipes_struct *p,
 			       struct srvsvc_NetTransportAdd *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetTransportEnum(struct pipes_struct *p,
 				struct srvsvc_NetTransportEnum *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetTransportDel(struct pipes_struct *p,
 			       struct srvsvc_NetTransportDel *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetSetServiceBits(struct pipes_struct *p,
 				 struct srvsvc_NetSetServiceBits *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetPathType(struct pipes_struct *p,
 			   struct srvsvc_NetPathType *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetPathCanonicalize(struct pipes_struct *p,
 				   struct srvsvc_NetPathCanonicalize *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetPathCompare(struct pipes_struct *p,
 			      struct srvsvc_NetPathCompare *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRPRNAMECANONICALIZE(struct pipes_struct *p,
 				      struct srvsvc_NETRPRNAMECANONICALIZE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetPRNameCompare(struct pipes_struct *p,
 				struct srvsvc_NetPRNameCompare *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetShareDelStart(struct pipes_struct *p,
 				struct srvsvc_NetShareDelStart *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetShareDelCommit(struct pipes_struct *p,
 				 struct srvsvc_NetShareDelCommit *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetServerTransportAddEx(struct pipes_struct *p,
 				       struct srvsvc_NetServerTransportAddEx *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NetServerSetServiceBitsEx(struct pipes_struct *p,
 					 struct srvsvc_NetServerSetServiceBitsEx *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSGETVERSION(struct pipes_struct *p,
 				 struct srvsvc_NETRDFSGETVERSION *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSCREATELOCALPARTITION(struct pipes_struct *p,
 					   struct srvsvc_NETRDFSCREATELOCALPARTITION *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSDELETELOCALPARTITION(struct pipes_struct *p,
 					   struct srvsvc_NETRDFSDELETELOCALPARTITION *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSSETLOCALVOLUMESTATE(struct pipes_struct *p,
 					  struct srvsvc_NETRDFSSETLOCALVOLUMESTATE *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSSETSERVERINFO(struct pipes_struct *p,
 				    struct srvsvc_NETRDFSSETSERVERINFO *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSCREATEEXITPOINT(struct pipes_struct *p,
 				      struct srvsvc_NETRDFSCREATEEXITPOINT *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSDELETEEXITPOINT(struct pipes_struct *p,
 				      struct srvsvc_NETRDFSDELETEEXITPOINT *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSMODIFYPREFIX(struct pipes_struct *p,
 				   struct srvsvc_NETRDFSMODIFYPREFIX *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSFIXLOCALVOLUME(struct pipes_struct *p,
 				     struct srvsvc_NETRDFSFIXLOCALVOLUME *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRDFSMANAGERREPORTSITEINFO(struct pipes_struct *p,
 					    struct srvsvc_NETRDFSMANAGERREPORTSITEINFO *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }
 
 WERROR _srvsvc_NETRSERVERTRANSPORTDELEX(struct pipes_struct *p,
 					struct srvsvc_NETRSERVERTRANSPORTDELEX *r)
 {
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
+	p->rng_fault_state = True;
 	return WERR_NOT_SUPPORTED;
 }

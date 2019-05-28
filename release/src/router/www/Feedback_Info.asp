@@ -36,13 +36,17 @@ FWString += "_"+extendno;
 function initial(){
 	show_menu();
 	check_info();
+	$("#bind_google")
+		.attr('target','_self')
+		.attr("href", "Advanced_Feedback.asp?provider=google&reload=1")
+		.attr("style", "text-decoration:underline;color:#FFCC00;");
 }
 
 function check_info(){
 	//0:initial  1:Success  2.Failed  3.Limit?  4.dla
 	if(wan_diag_state == "4"){	
 		document.getElementById("fb_send_debug_log").style.display = "";
-		document.getElementById("Email_subject").href = "mailto:xdsl_feedback@asus.com?Subject="+based_modelid;
+		document.getElementById("Email_subject").href = "mailto:broadband_feedback@asus.com?Subject="+based_modelid;
 		get_debug_log_info();
 	}
 	else{
@@ -95,6 +99,10 @@ function reset_diag_state(){
 	document.diagform.dslx_diag_state.value = 0;	
 	document.diagform.submit();
 	setTimeout("location.href='TCC.log.gz';", 300);
+}
+
+function get_feedback_tarball(){
+	setTimeout("location.href='fb_data.tgz.gz';", 300);
 }
 
 </script>
@@ -165,7 +173,8 @@ function reset_diag_state(){
 <div id="fb_fail_dsl" style="display:none;" class="feedback_info_1">
 	<#feedback_fail0#>
 	<br>
-	<#feedback_fail1#> : ( <a href="mailto:xdsl_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">xdsl_feedback@asus.com </a>) <#feedback_fail2#>
+	<#feedback_fail1#> : ( <a href="mailto:broadband_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">broadband_feedback@asus.com </a>) <#feedback_fail2#>
+	And download <span onClick="get_feedback_tarball();" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">this debug file</span> and add as email attachment.
 	<br>
 </div>
 
@@ -173,6 +182,7 @@ function reset_diag_state(){
 	<#feedback_fail0#>
 	<br>
 	<#feedback_fail1#> : ( <a href="mailto:router_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">router_feedback@asus.com </a>) <#feedback_fail2#>
+	And download <span onClick="get_feedback_tarball();" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">this debug file</span> and add as email attachment.
 	<br>
 </div>
 
@@ -202,7 +212,7 @@ function reset_diag_state(){
 	<div class="feedback_info_0">The debug log of diagnostic DSL captured.</div>
 	<br>
 	<br>
-	<div class="feedback_info_1">Please send us an email directly ( <a id="Email_subject" href="" target="_top" style="color:#FFCC00;">xdsl_feedback@asus.com</a> ). Simply copy from following text area and paste as mail content. <br><div onClick="reset_diag_state();" style="text-decoration: underline; font-family:Lucida Console; cursor:pointer;">Click here to download the debug log and add as mail attachment.</div></div>
+	<div class="feedback_info_1">Please send us an email directly ( <a id="Email_subject" href="" target="_top" style="color:#FFCC00;">broadband_feedback@asus.com</a> ). Simply copy from following text area and paste as mail content. <br><div onClick="reset_diag_state();" style="text-decoration: underline; font-family:Lucida Console; cursor:pointer;">Click here to download the debug log and add as mail attachment.</div></div>
 	<br>
 	<textarea name="fb_send_debug_log_content" cols="70" rows="15" style="width:90%; margin-left:25px; font-family:'Courier New', Courier, mono; font-size:13px;background:#475A5F;color:#FFFFFF;" readonly></textarea>
 	<br>	

@@ -25,7 +25,7 @@
 ** Function: fr_hmac_md5
 */
 
-RCSID("$Id$")
+RCSID("$Id: 59fab530e70e662a9b25a5ee9237de62c891b62c $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/md5.h>

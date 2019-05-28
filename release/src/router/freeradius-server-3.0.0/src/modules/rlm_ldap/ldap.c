@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: b578e4ec20c0b6e236c9fdae311a266ab306921c $
  * @file ldap.c
  * @brief LDAP module library functions.
  *

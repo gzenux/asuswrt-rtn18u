@@ -1,7 +1,7 @@
 /*
  * other.c
  *
- * Version:	$Id$
+ * Version:	$Id: 4485bad614308d44f09256f35fa4ce1ffc4a107e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  your name <your address>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 4485bad614308d44f09256f35fa4ce1ffc4a107e $")
 
 #include <stdio.h>
 

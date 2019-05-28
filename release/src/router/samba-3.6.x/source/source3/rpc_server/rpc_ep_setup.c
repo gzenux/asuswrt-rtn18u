@@ -409,7 +409,6 @@ static bool epmapper_shutdown_cb(void *ptr)
 	return true;
 }
 
-#ifdef WINREG_SUPPORT
 static bool winreg_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -457,7 +456,6 @@ static bool winreg_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
 static bool srvsvc_init_cb(void *ptr)
 {
@@ -508,7 +506,6 @@ static bool srvsvc_init_cb(void *ptr)
 	return true;
 }
 
-#ifdef LSA_SUPPORT
 static bool lsarpc_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -557,9 +554,7 @@ static bool lsarpc_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
-#ifdef SAMR_SUPPORT
 static bool samr_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -608,9 +603,7 @@ static bool samr_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
-#ifdef NETLOGON_SUPPORT
 static bool netlogon_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -659,7 +652,6 @@ static bool netlogon_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
 static bool spoolss_init_cb(void *ptr)
 {
@@ -705,7 +697,6 @@ static bool spoolss_shutdown_cb(void *ptr)
 	return true;
 }
 
-#ifdef EXTRA_SERVICES
 static bool svcctl_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -718,12 +709,10 @@ static bool svcctl_init_cb(void *ptr)
 					   "epmapper",
 					   "none");
 
-#ifdef WINREG_SUPPORT
 	ok = svcctl_init_winreg(ep_ctx->msg_ctx);
 	if (!ok) {
 		return false;
 	}
-#endif
 
 	/* initialize the control hooks */
 	init_service_op_table();
@@ -744,7 +733,6 @@ static bool svcctl_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
 static bool svcctl_shutdown_cb(void *ptr)
 {
@@ -752,8 +740,6 @@ static bool svcctl_shutdown_cb(void *ptr)
 
 	return true;
 }
-
-#ifdef EXTRA_SERVICES
 
 static bool ntsvcs_init_cb(void *ptr)
 {
@@ -795,12 +781,10 @@ static bool eventlog_init_cb(void *ptr)
 					   "epmapper",
 					   "none");
 
-#ifdef WINREG_SUPPORT
 	ok = eventlog_init_winreg(ep_ctx->msg_ctx);
 	if (!ok) {
 		return false;
 	}
-#endif
 
 	if (StrCaseCmp(rpcsrv_type, "embedded") == 0 ||
 	    StrCaseCmp(rpcsrv_type, "daemon") == 0) {
@@ -818,7 +802,6 @@ static bool eventlog_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
 static bool initshutdown_init_cb(void *ptr)
 {
@@ -887,7 +870,6 @@ static bool rpcecho_init_cb(void *ptr) {
 
 #endif
 
-#ifdef DFS_SUPPORT
 static bool netdfs_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -935,9 +917,7 @@ static bool netdfs_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
-#ifdef ACTIVE_DIRECTORY
 static bool dssetup_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -986,7 +966,6 @@ static bool dssetup_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
 static bool wkssvc_init_cb(void *ptr)
 {
@@ -1091,14 +1070,12 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 		}
 	}
 
-#ifdef WINREG_SUPPORT
 	winreg_cb.init         = winreg_init_cb;
 	winreg_cb.shutdown     = NULL;
 	winreg_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_winreg_init(&winreg_cb))) {
 		return false;
 	}
-#endif
 
 	srvsvc_cb.init         = srvsvc_init_cb;
 	srvsvc_cb.shutdown     = NULL;
@@ -1108,42 +1085,31 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 	}
 
 
-#ifdef LSA_SUPPORT
 	lsarpc_cb.init         = lsarpc_init_cb;
 	lsarpc_cb.shutdown     = NULL;
 	lsarpc_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_lsarpc_init(&lsarpc_cb))) {
 		return false;
 	}
-#endif
 
-#ifdef SAMR_SUPPORT
 	samr_cb.init         = samr_init_cb;
 	samr_cb.shutdown     = NULL;
 	samr_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_samr_init(&samr_cb))) {
 		return false;
 	}
-#endif
 
-#ifdef NETLOGON_SUPPORT
 	netlogon_cb.init         = netlogon_init_cb;
 	netlogon_cb.shutdown     = NULL;
 	netlogon_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_netlogon_init(&netlogon_cb))) {
 		return false;
 	}
-#endif
-
 
 	rpcsrv_type = lp_parm_const_string(GLOBAL_SECTION_SNUM,
 					   "rpc_server",
 					   "spoolss",
 					   "embedded");
-#ifndef PRINTER_SUPPORT
-	if (1) {
-	} else
-#endif
 	if (StrCaseCmp(rpcsrv_type, "embedded") == 0) {
 		spoolss_cb.init         = spoolss_init_cb;
 		spoolss_cb.shutdown     = spoolss_shutdown_cb;
@@ -1158,7 +1124,6 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 		}
 	}
 
-#ifdef EXTRA_SERVICES
 	svcctl_cb.init         = svcctl_init_cb;
 	svcctl_cb.shutdown     = svcctl_shutdown_cb;
 	svcctl_cb.private_data = ep_ctx;
@@ -1179,7 +1144,6 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 	if (!NT_STATUS_IS_OK(rpc_eventlog_init(&eventlog_cb))) {
 		return false;
 	}
-#endif
 
 	initshutdown_cb.init         = initshutdown_init_cb;
 	initshutdown_cb.shutdown     = NULL;
@@ -1188,14 +1152,12 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 		return false;
 	}
 
-#ifdef DFS_SUPPORT
 	netdfs_cb.init         = netdfs_init_cb;
 	netdfs_cb.shutdown     = NULL;
 	netdfs_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_netdfs_init(&netdfs_cb))) {
 		return false;
 	}
-#endif
 
 #ifdef DEVELOPER
 	rpcecho_cb.init         = rpcecho_init_cb;
@@ -1206,14 +1168,12 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 	}
 #endif
 
-#ifdef ACTIVE_DIRECTORY
 	dssetup_cb.init         = dssetup_init_cb;
 	dssetup_cb.shutdown     = NULL;
 	dssetup_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_dssetup_init(&dssetup_cb))) {
 		return false;
 	}
-#endif
 
 	wkssvc_cb.init         = wkssvc_init_cb;
 	wkssvc_cb.shutdown     = NULL;

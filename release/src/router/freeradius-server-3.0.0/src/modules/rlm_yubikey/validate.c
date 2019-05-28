@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: 629c59cc82727cdb6abd38401d2212afe0db0821 $
  * @file validate.c
  * @brief Authentication for yubikey OTP tokens using the ykclient library.
  *

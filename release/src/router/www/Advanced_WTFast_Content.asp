@@ -619,7 +619,8 @@ function show_rulelist(){
 			code += '<td style="width:15%"><div><img src = "images/New_ui/delete.svg" onMouseOver="this.src=\'images/New_ui/delete_hover.svg\'" onMouseOut="this.src=\'images/New_ui/delete.svg\'"style="width:25px; height:25px; cursor:pointer;" onclick="delRule(this);"></div></td>';
 			code += '</tr>';
 			code += '<tr><td colspan="5"><div style="width:100%;height:1px;background-color:#660000"></div></td></tr>';
-			clientListEventData.push({"mac" : clientMac, "name" : clientName, "ip" : clientIP, "callBack" : "WTFast"});
+			if(validator.mac_addr(clientMac))
+				clientListEventData.push({"mac" : clientMac, "name" : clientName, "ip" : clientIP, "callBack" : "WTFast"});
 		});
 	}
 	code +='</table>';
@@ -843,7 +844,7 @@ function wtf_login(){
 		document.getElementById("loadingIcon_login").style.display = "";
 		document.getElementById("login_button").style.display = "none";
 		$.ajax({
-			url: "http://rapi.wtfast.com/user/login",
+			url: "https://rapi.wtfast.com/user/login",
 			jsonp: "callback",
 			dataType: "jsonp",
 			async: true,
@@ -909,7 +910,7 @@ function wtf_logout(){
 		document.getElementById("loadingIcon_logout").style.display = "";
 
 		$.ajax({
-			url: "http://rapi.wtfast.com/user/logout",
+			url: "https://rapi.wtfast.com/user/logout",
 			jsonp: "callback",
 			dataType: "jsonp",
 			async: true,

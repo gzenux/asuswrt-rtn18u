@@ -25,6 +25,7 @@
 <script type="text/javascript" src="/form.js"></script>
 <script type="text/javascript" src="client_function.js"></script>
 <script type="text/javascript" src="/js/httpApi.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/asus_eula.js"></script>
 <style>
 .QISform_wireless{
 	width:600px;
@@ -255,6 +256,9 @@ else
 var dsl_DataRateDown = parseInt("<% nvram_get("dsllog_dataratedown"); %>");
 var dsl_DataRateUp = parseInt("<% nvram_get("dsllog_datarateup"); %>");
 
+var qos_enable_orig = '<% nvram_get("qos_enable"); %>';
+var qos_type_orig = '<% nvram_get("qos_type"); %>';
+
 //HND_ROUTER HW NAT (fc_disable/runner_disable) ON: 0/0 ; OFF: 1/1
 var fc_disable_orig = '<% nvram_get("fc_disable"); %>';
 var runner_disable_orig = '<% nvram_get("runner_disable"); %>';
@@ -264,6 +268,7 @@ var bwdpi_app_rulelist = "<% nvram_get("bwdpi_app_rulelist"); %>".replace(/&#60/
 var category_title = ["", "<#Adaptive_Game#>", "<#Adaptive_Stream#>","<#Adaptive_Message#>", "<#Adaptive_WebSurf#>","<#Adaptive_FileTransfer#>", "<#Adaptive_Others#>"];
 var cat_id_array = [[9,20], [8], [4], [0,5,6,15,17], [13,24], [1,3,14], [7,10,11,21,23]];
 var ctf_disable = '<% nvram_get("ctf_disable"); %>';
+var ctf_disable_force  = '<% nvram_get("ctf_disable_force "); %>';
 var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';
 var qos_bw_rulelist = "<% nvram_get("qos_bw_rulelist"); %>".replace(/&#62/g, ">").replace(/&#60/g, "<");
 var select_all_checked = 0;
@@ -347,8 +352,8 @@ if(pm_support) {
 
 function initial(){
 	show_menu();
-	// http://www.asus.com/support/FAQ/1008718/
-	httpApi.faqURL("faq", "1008718", "https://www.asus.com", "/support/FAQ/");
+	// https://www.asus.com/support/FAQ/1008718/
+	httpApi.faqURL("1008718", function(url){document.getElementById("faq").href=url;});
 
 	if(downsize_4m_support || downsize_8m_support)
 		document.getElementById("guest_image").parentNode.style.display = "none";
@@ -361,14 +366,14 @@ function initial(){
 	}
 
 	var qos_type = document.form.qos_type.value;
-	if(document.form.qos_enable_orig.value == 1){
+	if(qos_enable_orig == "1"){
 		change_qos_type(qos_type);
 
 		document.getElementById('qos_type_tr').style.display = "";
 		if(bwdpi_support){
 			document.getElementById('int_type').style.display = "";
 			document.getElementById('int_type_link').style.display = "";
-			change_qos_type(document.form.qos_type_orig.value);
+			change_qos_type(qos_type_orig);
 		}
 		else
 			show_settings("NonAdaptive");
@@ -387,7 +392,7 @@ function initial(){
 
 	if(bwdpi_support){
 		document.getElementById('content_title').innerHTML = "<#menu5_3_2#> - <#Adaptive_QoS_Conf#>";
-		if(document.form.qos_enable.value == 1){
+		if(document.form.qos_enable.value == "1"){
 			if(qos_type == 0){              //Traditional Type
 				add_option(document.getElementById("settingSelection"), '<#qos_user_rules#>', 3, 0);
 				add_option(document.getElementById("settingSelection"), '<#qos_user_prio#>', 4, 0);
@@ -414,9 +419,8 @@ function initial(){
 	}
 
 	/* MODELDEP */
-	if(based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U"){
-	//if(based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U" || based_modelid == "BLUECAVE"){
-		if(document.form.qos_type_orig.value == "1"){
+	if(based_modelid == "RT-AC85U" || based_modelid == "RT-AC85P" || based_modelid == "RT-AC65U"){
+		if(qos_type_orig == "1"){
 			document.getElementById('bandwidth_setting_tr').style.display = "none";
 			document.form.qos_type_radio[1].checked = true;
 		}
@@ -525,16 +529,15 @@ function switchPage(page){
 
 function validForm(){
 
-	if(document.form.qos_enable.value == 0 && document.form.qos_enable_orig.value == 0){
+	if(document.form.qos_enable.value == "0" && document.form.qos_enable_orig.value == "0"){
 		return false;
 	}
 
-	if(document.form.qos_enable.value == 1){
+	if(document.form.qos_enable.value == "1"){
 		var qos_type = document.form.qos_type.value;
 		if(qos_type == 1) {
-			if(!reset_wan_to_fo(document.form, 1)) {
+			if(!reset_wan_to_fo.check_status())
 				return false;
-			}
 		}
 		if(qos_type != 2){	//not Bandwidth Limiter
 			if( ((qos_type == 1 && document.form.bw_setting_name[1].checked == true ) || qos_type == 0) && document.form.obw.value.length == 0){	//To check field is empty
@@ -629,31 +632,50 @@ function validForm(){
 	return true;
 }
 
+function determineActionScript(){
+	if(geforceNow_support && document.form.qos_enable.value == "0" && qos_enable_orig == "0" &&
+		(document.form.nvgfn_enable.value != orig_nvgfn_enable)){
+		document.form.action_script.value = "restart_upnp;";
+	}
+	else if( lantiq_support || Rawifi_support || (ctf_disable == "1" || ctf_disable_force == "1") ||  //BULECAVE; MTK Models; HW NAT OFF
+			 (qos_enable_orig == "1" && document.form.qos_enable.value == "0") ||   //qos enable => disable
+			 ((qos_enable_orig == document.form.qos_enable.value) && 				//qos_enable and qos_type no change
+			  (qos_type_orig == document.form.qos_type.value)) ){
+		document.form.action_script.value = "restart_qos;restart_firewall;";
+		document.form.action_wait.value = "15";
+	}
+	else if(document.form.qos_enable.value == "1" && document.form.qos_type.value == "1" && (ctf_fa_mode != "2" || qca_support)){
+		//BCM: Support FA but disable FA ,or not support FA. QCA Models
+		document.form.action_script.value = "restart_qos;restart_firewall;";
+		document.form.action_wait.value = "15";
+	}
+	else if(document.form.qos_enable.value == "1" && document.form.qos_type.value == "1" && (fc_disable  != "" && runner_disable != "")){ //HND Router
+		document.form.action_script.value = "restart_qos;restart_firewall;";
+		document.form.action_wait.value = "15";
+	}
+	else{
+		document.form.action_script.value = "reboot";
+		document.form.action_wait.value = "<% get_default_reboot_time(); %>";
+	}
+
+	if((qos_type_orig != document.form.qos_type.value) && document.form.qos_type.value == "0")
+		document.form.next_page.value = "Advanced_QOSUserRules_Content.asp";
+}
+
 function submitQoS(){
 
 	if(validForm()){
 
-		if(document.form.qos_enable.value == 1 && document.form.qos_type.value == 1 && document.form.TM_EULA.value == 0){
-			show_tm_eula();
+		if(document.form.qos_enable.value == "1" && document.form.qos_type.value == "1" && document.form.TM_EULA.value == "0"){
+			ASUS_EULA
+				.config(eula_confirm, cancel)
+				.show("tm")
 		}
 		else{
-			if(ctf_disable == 1 || (fc_disable_orig != '' && runner_disable_orig != '')){	//HW NAT [OFF] or HND ROUTER
-				document.form.action_script.value = "restart_qos;restart_firewall";
-			}
-			else{
-				if(ctf_fa_mode == "2"){
-					FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");
-				}
-				else{
-					if(document.form.qos_type.value == 0 && !lantiq_support){
-						FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");
-					}
-					else{				
-						document.form.action_script.value = "restart_qos;restart_firewall";
-					}
-				}
-			}
+			if(reset_wan_to_fo.change_status)
+				reset_wan_to_fo.change_wan_mode(document.form);
 
+			determineActionScript();
 			showLoading();
 			document.form.submit();
 		}
@@ -664,7 +686,7 @@ function submitQoS(){
 
 function change_qos_type(value){
 	/* MODELDEP */
-	if(value=="1" && (based_modelid == "RT-AC85U" || based_modelid == "RT-AC65U")){	//Force change to 0
+	if(value=="1" && (based_modelid == "RT-AC85U" || based_modelid == "RT-AC85P" || based_modelid == "RT-AC65U")){	//Force change to 0
 		value = 0;
 	}
 
@@ -681,13 +703,6 @@ function change_qos_type(value){
 		show_up_down(1);
 		document.getElementById('list_table').style.display = "none";
 		document.form.qos_bw_rulelist.disabled = true;
-		if(document.form.qos_type_orig.value == 0 && document.form.qos_enable_orig.value != 0){
-			document.form.action_script.value = "restart_qos;restart_firewall";
-		}
-		else{
-			document.form.action_script.value = "reboot";
-			document.form.next_page.value = "Advanced_QOSUserRules_Content.asp";
-		}
 		show_settings("NonAdaptive");
 	}
 	else if(value == 1){		//Adaptive QoS
@@ -704,13 +719,6 @@ function change_qos_type(value){
 			show_up_down(1);
 		}
 
-		if(document.form.qos_type_orig.value == 1 && document.form.qos_enable_orig.value != 0)
-			document.form.action_script.value = "restart_qos;restart_firewall";
-		else{
-			document.form.action_script.value = "reboot";
-			document.form.next_page.value = "QoS_EZQoS.asp";
-		}
-
 		show_settings("Adaptive_quick");
 	}
 	else{		// Bandwidth Limiter
@@ -721,12 +729,6 @@ function change_qos_type(value){
 		show_up_down(0);
 		document.getElementById('list_table').style.display = "block";
 		document.form.qos_bw_rulelist.disabled = false;
-		if(document.form.qos_type_orig.value == 2 && document.form.qos_enable_orig.value != 0)
-			document.form.action_script.value = "restart_qos;restart_firewall";
-		else{
-			document.form.action_script.value = "reboot";
-		}
-
 		show_settings("NonAdaptive");
 		genMain_table();
 		if(!pm_support)
@@ -1281,23 +1283,6 @@ function check_field(){
 	}
 }
 
-function show_tm_eula(){
-	$.get("tm_eula.htm", function(data){
-		document.getElementById('agreement_panel').innerHTML= data;
-		var url = "https://www.asus.com/Microsite/networks/Trend_Micro_EULA/";
-		$("#eula_url").attr("href",url);
-		url = "https://www.trendmicro.com/en_us/about/legal/privacy-policy-product.html"
-		$("#tm_eula_url").attr("href",url);
-		url = "https://success.trendmicro.com/data-collection-disclosure";
-		$("#tm_disclosure_url").attr("href",url);
-		adjust_TM_eula_height("agreement_panel");
-	});
-
-	dr_advise();
-	cal_panel_block("agreement_panel", 0.25);
-	$("#agreement_panel").fadeIn(300);
-}
-
 function eula_confirm(){
 	document.form.TM_EULA.value = 1;
 	submitQoS();
@@ -1331,7 +1316,6 @@ function setGroup(name){
 <body onload="initial();" id="body_id" onunload="unload_body();" onClick="">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="eula_panel_container"></div>
 <div id="hiddenMask" class="popup_bg" style="z-index:999;">
 	<table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center"></table>
 	<!--[if lte IE 6.5.]><script>alert("<#ALERT_TO_CHANGE_BROWSER#>");</script><![endif]-->
@@ -1416,13 +1400,11 @@ function setGroup(name){
 			<input type="hidden" name="next_page" value="QoS_EZQoS.asp">
 			<input type="hidden" name="group_id" value="">
 			<input type="hidden" name="action_mode" value="apply">
-			<input type="hidden" name="action_script" value="">
-			<input type="hidden" name="action_wait" value="15">
+			<input type="hidden" name="action_script" value="reboot">
+			<input type="hidden" name="action_wait" value="<% get_default_reboot_time(); %>">
 			<input type="hidden" name="flag" value="">
 			<input type="hidden" name="TM_EULA" value="<% nvram_get("TM_EULA"); %>">
 			<input type="hidden" name="qos_enable" value="<% nvram_get("qos_enable"); %>">
-			<input type="hidden" name="qos_enable_orig" value="<% nvram_get("qos_enable"); %>">
-			<input type="hidden" name="qos_type_orig" value="<% nvram_get("qos_type"); %>">
 			<input type="hidden" name="qos_type" value="<% nvram_get("qos_type"); %>">
 			<input type="hidden" name="qos_obw" value="<% nvram_get("qos_obw"); %>" disabled>
 			<input type="hidden" name="qos_ibw" value="<% nvram_get("qos_ibw"); %>" disabled>
@@ -1494,8 +1476,8 @@ function setGroup(name){
 													<script type="text/javascript">
 														$('#radio_qos_enable').iphoneSwitch('<% nvram_get("qos_enable"); %>',
 															 function() {
-																document.form.qos_enable.value = 1;
-																if(document.form.qos_enable_orig.value != 1){
+																document.form.qos_enable.value = "1";
+																if(qos_enable_orig != "1"){
 																	if(document.getElementById('int_type').checked == true && bwdpi_support)
 																		document.form.next_page.value = "QoS_EZQoS.asp";
 																	else if(document.getElementById('trad_type').checked)		//Traditional QoS
@@ -1512,11 +1494,11 @@ function setGroup(name){
 																document.getElementById('qos_type_tr').style.display = "";
 																if(bwdpi_support){
 																	document.getElementById('qos_enable_hint').style.display = "";
-																	change_qos_type(document.form.qos_type_orig.value);
+																	change_qos_type(qos_type_orig);
 																}
 															 },
 															 function() {
-																document.form.qos_enable.value = 0;
+																document.form.qos_enable.value = "0";
 																show_up_down(0);
 																document.getElementById('qos_type_tr').style.display = "none";
 																document.getElementById('bandwidth_setting_tr').style.display = "none";

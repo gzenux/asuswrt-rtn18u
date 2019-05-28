@@ -21,7 +21,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 286c354a96275f737246c3d1cb7540eee219628d $
  * @file rlm_eap_tnc.c
  * @brief Interfaces with the naeap library to provide EAP-TNC inner method.
  *

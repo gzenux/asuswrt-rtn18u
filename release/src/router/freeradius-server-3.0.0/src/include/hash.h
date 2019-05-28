@@ -5,7 +5,7 @@
  * hash.h	Structures and prototypes
  *		for fast hashing.
  *
- * Version:	$Id$
+ * Version:	$Id: a48509b5e5da1fc0754bc52a65367f306498f5b5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2005,2006  The FreeRADIUS server project
  */
 
-RCSIDH(hash_h, "$Id$")
+RCSIDH(hash_h, "$Id: a48509b5e5da1fc0754bc52a65367f306498f5b5 $")
 
 #ifdef __cplusplus
 extern "C" {

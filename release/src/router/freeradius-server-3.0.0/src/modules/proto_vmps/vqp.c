@@ -1,7 +1,7 @@
 /*
  * vqp.c	Functions to send/receive VQP packets.
  *
- * Version:	$Id$
+ * Version:	$Id: ae59126287771a9fc4e680f334720cc917d40eac $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id$");
+RCSID("$Id: ae59126287771a9fc4e680f334720cc917d40eac $");
 
 #include	<freeradius-devel/libradius.h>
 #include	<freeradius-devel/udpfromto.h>

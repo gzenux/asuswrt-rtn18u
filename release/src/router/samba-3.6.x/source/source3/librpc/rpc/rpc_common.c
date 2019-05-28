@@ -92,56 +92,39 @@ bool smb_register_ndr_interface(const struct ndr_interface_table *interface)
 
 static bool initialize_interfaces(void)
 {
-#ifdef LSA_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_lsarpc)) {
 		return false;
 	}
-#endif
-#ifdef ACTIVE_DIRECTORY
 	if (!smb_register_ndr_interface(&ndr_table_dssetup)) {
 		return false;
 	}
-#endif
-#ifdef SAMR_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_samr)) {
 		return false;
 	}
-#endif
-#ifdef NETLOGON_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_netlogon)) {
 		return false;
 	}
-#endif
 	if (!smb_register_ndr_interface(&ndr_table_srvsvc)) {
 		return false;
 	}
 	if (!smb_register_ndr_interface(&ndr_table_wkssvc)) {
 		return false;
 	}
-#ifdef WINREG_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_winreg)) {
 		return false;
 	}
-#endif
-#ifdef PRINTER_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_spoolss)) {
 		return false;
 	}
-#endif
-#ifdef DFS_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_netdfs)) {
 		return false;
 	}
-#endif
-#ifdef DEVELOPER
 	if (!smb_register_ndr_interface(&ndr_table_rpcecho)) {
 		return false;
 	}
-#endif
 	if (!smb_register_ndr_interface(&ndr_table_initshutdown)) {
 		return false;
 	}
-#ifdef EXTRA_SERVICES
 	if (!smb_register_ndr_interface(&ndr_table_svcctl)) {
 		return false;
 	}
@@ -151,15 +134,12 @@ static bool initialize_interfaces(void)
 	if (!smb_register_ndr_interface(&ndr_table_ntsvcs)) {
 		return false;
 	}
-#endif
 	if (!smb_register_ndr_interface(&ndr_table_epmapper)) {
 		return false;
 	}
-#ifdef ACTIVE_DIRECTORY
 	if (!smb_register_ndr_interface(&ndr_table_drsuapi)) {
 		return false;
 	}
-#endif
 	return true;
 }
 

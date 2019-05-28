@@ -3,7 +3,7 @@
 #ifndef _MSCHAP_H
 #define _MSCHAP_H
 
-RCSIDH(mschap_h, "$Id$")
+RCSIDH(mschap_h, "$Id: 9c4fcd82aa34321d11dbc812d333f4dff1e08873 $")
 
 int mschap_ntpwdhash(uint8_t *out, char const *password);
 void mschap_challenge_hash(uint8_t const *peer_challenge,

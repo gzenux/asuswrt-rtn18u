@@ -1,7 +1,7 @@
 /*
  *  radsniff.h	Structures and defines for the RADIUS sniffer.
  *
- *  Version:    $Id$
+ *  Version:    $Id: 0f3f999d87c14376eb81fd4a2996920a50915f49 $
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@
  *  Copyright 2006  Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  */
 
-RCSIDH(radsniff_h, "$Id$")
+RCSIDH(radsniff_h, "$Id: 0f3f999d87c14376eb81fd4a2996920a50915f49 $")
 
 #include <sys/types.h>
 #include <netinet/in.h>

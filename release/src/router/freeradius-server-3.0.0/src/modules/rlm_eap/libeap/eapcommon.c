@@ -3,7 +3,7 @@
  *
  * code common to clients and to servers.
  *
- * Version:     $Id$
+ * Version:     $Id: 1885fde21fec31d20947a59706fdef8f3459c759 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@
  *
  */
 
-RCSID("$Id$")
+RCSID("$Id: 1885fde21fec31d20947a59706fdef8f3459c759 $")
 
 #include <freeradius-devel/libradius.h>
 #include "eap_types.h"

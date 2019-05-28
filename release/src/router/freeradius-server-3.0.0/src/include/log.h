@@ -16,14 +16,14 @@
 #ifndef FR_LOG_H
 #define FR_LOG_H
 /*
- * $Id$
+ * $Id: 0a02b5b9f92c5cd1132ac6f39bbb31a0b6880dd1 $
  *
  * @file log.h
  * @brief Structures and prototypes for logging.
  *
  * @copyright 2013 Alan DeKok <aland@freeradius.org>
  */
-RCSIDH(log_h, "$Id$")
+RCSIDH(log_h, "$Id: 0a02b5b9f92c5cd1132ac6f39bbb31a0b6880dd1 $")
 
 #ifdef __cplusplus
 extern "C" {

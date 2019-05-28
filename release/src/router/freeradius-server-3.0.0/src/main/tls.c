@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id$
+ * Version:     $Id: e492b4ad7f5945ec1442e7e5804b11e7bf09754e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: e492b4ad7f5945ec1442e7e5804b11e7bf09754e $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>

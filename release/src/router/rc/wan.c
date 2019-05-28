@@ -514,51 +514,6 @@ del_wan_routes(char *wan_ifname)
 	return del_routes(prefix, "route", wan_ifname);
 }
 
-#ifdef QOS
-int enable_qos()
-{
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-	return 0;
-#endif
-	int qos_userspec_app_en = 0;
-	int rulenum = nvram_get_int("qos_rulenum_x"), idx_class = 0;
-
-	/* Add class for User specify, 10:20(high), 10:40(middle), 10:60(low)*/
-	if (rulenum) {
-		for (idx_class=0; idx_class < rulenum; idx_class++)
-		{
-			if (atoi(Ch_conv("qos_prio_x", idx_class)) == 1)
-			{
-				qos_userspec_app_en = 1;
-				break;
-			}
-			else if (atoi(Ch_conv("qos_prio_x", idx_class)) == 6)
-			{
-				qos_userspec_app_en = 1;
-				break;
-			}
-		}
-	}
-
-	if (	(nvram_match("qos_tos_prio", "1") ||
-		 nvram_match("qos_pshack_prio", "1") ||
-		 nvram_match("qos_service_enable", "1") ||
-		 nvram_match("qos_shortpkt_prio", "1")	) ||
-		(!nvram_match("qos_manual_ubw","0") && *nvram_safe_get("qos_manual_ubw")) ||
-		(rulenum && qos_userspec_app_en)
-	)
-	{
-		fprintf(stderr, "found QoS rulues\n");
-		return 1;
-	}
-	else
-	{
-		fprintf(stderr, "no QoS rulues\n");
-		return 0;
-	}
-}
-#endif
-
 /*
  * (1) wan[x]_ipaddr_x/wan[x]_netmask_x/wan[x]_gateway_x/...:
  *    static ip or ip get from dhcp
@@ -1187,7 +1142,7 @@ _dprintf("start_wan_if: USB modem is scanning...\n");
 			nvram_set(strcat_r(prefix, "dnsenable_x", tmp), "1");
 #endif
 
-			char *pppd_argv[] = { "/usr/sbin/pppd", "call", "3g", "nochecktime", NULL};
+			char *pppd_argv[] = { "/usr/sbin/pppd", "call", "3g", NULL};
 
 			if(nvram_get_int("stop_conn_3g") != 1)
 				_eval(pppd_argv, NULL, 0, NULL);
@@ -1293,8 +1248,18 @@ TRACE_PT("3g begin with %s.\n", wan_ifname);
 						sleep(2);
 					}
 #endif
-					dbG("start udhcpc(%d): %s.\n", unit, wan_ifname);
-					start_udhcpc(wan_ifname, unit, &pid);
+#ifdef RTCONFIG_INTERNAL_GOBI
+					/* Skip dhcp for IPv6-only USB modem */
+					if (nvram_get_int("modem_pdp") == 2) {
+						//wan_ifname = get_wan6face();
+						ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
+						wan_up(wan_ifname);
+					} else
+#endif
+					{
+						dbG("start udhcpc(%d): %s.\n", unit, wan_ifname);
+						start_udhcpc(wan_ifname, unit, &pid);
+					}
 				}
 				else
 					TRACE_PT("stop_conn_3g was set.\n");
@@ -2123,18 +2088,22 @@ void wan6_up(const char *wan_ifname)
 	struct in_addr addr4;
 	struct in6_addr addr;
 	char gateway[INET6_ADDRSTRLEN];
-	int mtu, service = get_ipv6_service();
+	int mtu, service, accept_defrtr;
 
-	if (!wan_ifname || (strlen(wan_ifname) <= 0) ||
-		(service == IPV6_DISABLED))
+	if (!wan_ifname || *wan_ifname == '\0')
 		return;
 
+	service = get_ipv6_service();
 	switch (service) {
 	case IPV6_NATIVE_DHCP:
 #ifdef RTCONFIG_6RELAYD
 	case IPV6_PASSTHROUGH:
 #endif
+		accept_defrtr = service == IPV6_NATIVE_DHCP && /* limit to native by now */
+				nvram_match(ipv6_nvname("ipv6_ifdev"), "ppp") ?
+				nvram_get_int(ipv6_nvname("ipv6_accept_defrtr")) : 1;
 		ipv6_sysconf(wan_ifname, "accept_ra", 1);
+		ipv6_sysconf(wan_ifname, "accept_ra_defrtr", accept_defrtr);
 		ipv6_sysconf(wan_ifname, "forwarding", 0);
 		break;
 	case IPV6_MANUAL:
@@ -2144,6 +2113,8 @@ void wan6_up(const char *wan_ifname)
 	case IPV6_6RD:
 		update_6rd_info();
 		break;
+	case IPV6_DISABLED:
+		return;
 	}
 
 	set_intf_ipv6_dad(wan_ifname, 0, 1);
@@ -3062,6 +3033,9 @@ found_default_route(int wan_unit)
 	char *wanif;
 
 	if(wan_unit != wan_primary_ifunit())
+		return 1;
+
+	if(dualwan_unit__usbif(wan_unit) && nvram_get_int("modem_pdp") == 2)
 		return 1;
 
 	n = 0;

@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 57d4c3139e34d9485b1ff73b86dd9c8becb1dfc5 $
  * @file rlm_perl.c
  * @brief Translates requests between the server an a perl interpreter.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Boian Jordanov <bjordanov@orbitel.bg>
  */
-RCSID("$Id$")
+RCSID("$Id: 57d4c3139e34d9485b1ff73b86dd9c8becb1dfc5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

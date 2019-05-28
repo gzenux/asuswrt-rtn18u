@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: 5d2c610cef14855f7ac0c7b268266fcb184c8fdb $
  *
  * @file modules.h
  * @brief Interface to the RADIUS module system.
@@ -26,7 +26,7 @@
 #ifndef RADIUS_MODULES_H
 #define RADIUS_MODULES_H
 
-RCSIDH(modules_h, "$Id$")
+RCSIDH(modules_h, "$Id: 5d2c610cef14855f7ac0c7b268266fcb184c8fdb $")
 
 #include <freeradius-devel/conffile.h>
 

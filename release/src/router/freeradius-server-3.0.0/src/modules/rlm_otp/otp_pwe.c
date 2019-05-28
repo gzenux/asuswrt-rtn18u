@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: c39dee39b547f693e8f22af16d9b64cc82475d4f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * is not sufficient for X9.9 use.
  */
 
-RCSID("$Id$")
+RCSID("$Id: c39dee39b547f693e8f22af16d9b64cc82475d4f $")
 
 /* avoid inclusion of these FR headers which conflict w/ OpenSSL */
 #define _FR_MD4_H

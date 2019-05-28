@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 58ab8b0a76d86d22a1023eb31682a281990a13f0 $
  * @file rlm_expiration.c
  * @brief Lockout user accounts based on control attributes.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2004  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id$")
+RCSID("$Id: 58ab8b0a76d86d22a1023eb31682a281990a13f0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
