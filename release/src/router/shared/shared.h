@@ -674,6 +674,8 @@ enum {
 	MODEL_RTAC55U,
 	MODEL_RTAC55UHP,
 	MODEL_RT4GAC55U,
+	MODEL_RTN19,
+	MODEL_RTAC59U,
 	MODEL_PLN12,
 	MODEL_PLAC56,
 	MODEL_PLAC66U,
@@ -732,6 +734,8 @@ enum {
 	MODEL_RTN11P_B1,
 	MODEL_RPAC87,
 	MODEL_RTAC85U,
+	MODEL_RTAC85P,
+	MODEL_RTACRH26,
 	MODEL_RTN800HP,
 	MODEL_RTAC88N,
 	MODEL_BRTAC828,
@@ -1613,6 +1617,7 @@ extern int config_rtkswitch(int argc, char *argv[]);
 extern int config_mtkswitch(int argc, char *argv[]);
 extern int get_channel_list_via_driver(int unit, char *buffer, int len);
 extern int get_channel_list_via_country(int unit, const char *country_code, char *buffer, int len);
+extern int get_mtk_wifi_driver_version(char *buffer, int len);
 #if defined(RTCONFIG_RALINK_MT7620)
 extern int __mt7620_wan_bytecount(int unit, unsigned long *tx, unsigned long *rx);
 #elif defined(RTCONFIG_RALINK_MT7620)
@@ -1688,10 +1693,8 @@ extern int with_non_dfs_chspec(char *wif);
 extern chanspec_t select_band1_chspec_with_same_bw(char *wif, chanspec_t chanspec);
 extern chanspec_t select_band4_chspec_with_same_bw(char *wif, chanspec_t chanspec);
 extern chanspec_t select_chspec_with_band_bw(char *wif, int band, int bw, chanspec_t chanspec);
-#if !defined(RTN18U)
 extern void wl_list_5g_chans(int unit, int band, char *buf, int len);
 extern int wl_cap(int unit, char *cap_check);
-#endif
 #endif
 #ifdef RTCONFIG_AMAS
 //extern char *get_pap_bssid(int unit, char bssid_str[]);
@@ -2144,11 +2147,11 @@ static inline void enable_wifi_bled(char *ifname)
 #if defined(RTCONFIG_QCA)
 		v = LED_OFF;	/* WiFi not ready. Don't turn on WiFi LED here. */		
 #endif
-#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P)
+#if defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 		if(!get_radio(1, 0) && unit==1) //*5G WiFi not ready. Don't turn on WiFi GPIO LED . */
 		 	v=LED_OFF;
 #endif		
-#if defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P) || defined(RTN800HP)
+#if defined(RTN56UB1) || defined(RTN56UB2) || defined(RTAC1200GA1) || defined(RTAC1200GU) || defined(RTAC85U) || defined(RTAC85P) || defined(RTN800HP) || defined(RTACRH26)
 		if(!get_radio(0, 0) && unit==0) //*2G WiFi not ready. Don't turn on WiFi GPIO LED . */
 		 	v=LED_OFF;
 #endif		
@@ -2547,5 +2550,6 @@ extern int is_amaslib_enabled();
 
 #endif /* defined(RTCONFIG_AMAS) */
 
+extern int get_discovery_ssid(char *ssid_g, int size);
 extern int get_chance_to_control(void);
 #endif	/* !__SHARED_H__ */

@@ -4227,6 +4227,82 @@ int is_amaslib_enabled()
 }
 #endif
 
+int get_discovery_ssid(char *ssid_g, int size)
+{
+#if defined(RTCONFIG_WIRELESSREPEATER) || defined(RTCONFIG_PROXYSTA)
+	char tmp[100], prefix[] = "wlXXXXXXXXXXXXXX";
+#endif
+#ifdef RTCONFIG_DPSTA
+	char word[80], *next;
+	int unit, connected;
+#endif
+#ifdef RTCONFIG_WIRELESSREPEATER
+	if (sw_mode() == SW_MODE_REPEATER)
+	{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+		if (nvram_get_int("wlc_band") < 0 || nvram_get_int("wlc_express") == 0)
+			snprintf(prefix, sizeof(prefix), "wl0.1_");
+		else if (nvram_get_int("wlc_express") == 1)
+			snprintf(prefix, sizeof(prefix), "wl1.1_");
+		else if (nvram_get_int("wlc_express") == 2)
+			snprintf(prefix, sizeof(prefix), "wl0.1_");
+		else
+#endif
+			snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
+		strlcpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), size);
+	}
+	else
+#ifdef RTCONFIG_REALTEK
+		if (sw_mode() == SW_MODE_AP && nvram_get_int("wlc_psta") == 1)
+		{
+#ifdef RTCONFIG_CONCURRENTREPEATER
+			snprintf(prefix, sizeof(prefix), "wl0_");
+#else
+			snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
+#endif
+			strlcpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), size);
+		}
+		else
+#endif
+#endif
+#ifdef RTCONFIG_BCMWL6
+#ifdef RTCONFIG_PROXYSTA
+#ifdef RTCONFIG_DPSTA
+		if (dpsta_mode() && nvram_get_int("re_mode") == 0)
+		{
+			connected = 0;
+			foreach(word, nvram_safe_get("dpsta_ifnames"), next) {
+				wl_ioctl(word, WLC_GET_INSTANCE, &unit, sizeof(unit));
+				snprintf(prefix, sizeof(prefix), "wlc%d_", unit == 0 ? 0 : 1);
+				if (nvram_get_int(strcat_r(prefix, "state", tmp)) == 2) {
+					connected = 1;
+					snprintf(prefix, sizeof(prefix), "wl%d.1_", unit);
+					strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), size);
+					break;
+				}
+			}
+		if (!connected)
+			strlcpy(ssid_g, nvram_safe_get("wl0.1_ssid"), size);
+		}
+		else
+#endif
+		if (is_psta(nvram_get_int("wlc_band")))
+		{
+			snprintf(prefix, sizeof(prefix), "wl%d_", nvram_get_int("wlc_band"));
+			strncpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), size);
+		}
+		else if (is_psr(nvram_get_int("wlc_band")))
+		{
+			snprintf(prefix, sizeof(prefix), "wl%d.1_", nvram_get_int("wlc_band"));
+			strlcpy(ssid_g, nvram_safe_get(strcat_r(prefix, "ssid", tmp)), size);
+		}
+		else
+#endif
+#endif
+	strlcpy(ssid_g, nvram_safe_get("wl0_ssid"), size);
+	return 0;
+}
+
 int get_chance_to_control(void)
 {
 	time_t now_t, login_ts, app_login_ts;

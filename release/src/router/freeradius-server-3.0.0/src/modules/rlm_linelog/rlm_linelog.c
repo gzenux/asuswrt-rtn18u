@@ -1,7 +1,7 @@
 /*
  * rlm_linelog.c
  *
- * Version:	$Id$
+ * Version:	$Id: 2727f924bf456d8ce37b0f4c9f7f0b678795c933 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2004  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 2727f924bf456d8ce37b0f4c9f7f0b678795c933 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

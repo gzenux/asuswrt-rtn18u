@@ -2,7 +2,7 @@
  * fifo.c	Non-thread-safe fifo (FIFO) implementation, based
  *		on hash tables.
  *
- * Version:	$Id$
+ * Version:	$Id: b71fc5113bb2c7b58c24e07cf970182df33624d4 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  *  Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: b71fc5113bb2c7b58c24e07cf970182df33624d4 $")
 
 #include <freeradius-devel/libradius.h>
 

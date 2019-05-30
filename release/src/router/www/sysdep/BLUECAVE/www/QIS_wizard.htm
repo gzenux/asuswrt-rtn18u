@@ -59,6 +59,10 @@
 					systemVariable.lanIpaddr = initNvram.lan_ipaddr;
 					systemVariable.forceChangePw = (httpApi.hookGet("check_pw") == '1') ? true : false;
 
+					if(isSupport("2p5G_LWAN"))
+						systemVariable.originWansExtwan = httpApi.nvramGet(["wans_extwan"]).wans_extwan;
+					if(isSupport("10G_LWAN") || isSupport("10GS_LWAN"))
+						systemVariable.originWansDualwan = httpApi.nvramGet(["wans_dualwan"]).wans_dualwan;
 					$("#switchWanTagContainer").append(Get_Component_ISPSelect);
 					$("#switch_wantag").attr("class", "optionInput");
 
@@ -136,8 +140,12 @@
 				<div id="welcomeTitle"></div>
 				<div class="pageDesc" style="display:none"></div>
 
-				<div class="productIconContainer">
+				<div class="productIconContainer nonROG">
 					<div><div id="ModelPid_img"></div></div>
+				</div>
+
+				<div class="productIconContainer ROG" style="display:none">
+					<div><div id="ROGLOGO"></div></div>
 				</div>
 
 				<div style="text-align:center;margin:50px 0">
@@ -727,6 +735,90 @@
 							<table style="width:100%;" cellpadding="0" cellspacing="0">
 								<tr>
 									<td class="mobileAbort" style="width:100%;" onclick='abort.wan()'>
+										<div class="mobile_abortBtn"><#CTL_prev#></div>
+									</td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- WAN Option Setting -->
+		<div id="wanOption_setting" data-role="page" class="qisBackground">
+			<div class="headerBar"></div>
+			<div class="tableContainer">
+				<div class="desktop_left_field">
+					<div>
+						<div class="titleMain"><#Internet#></div>
+						<div class="titleSub"><#Connectiontype#></div>
+					</div>
+				</div>
+				<div class="table_td">
+					<div class="pageDesc" id="connTypeDesc"><#Layer3Forwarding_x_ConnectionType_itemname#></div>
+					<div>
+						<div class="selectorTopContainer">
+							<div class="selectorContainer">
+								<div class="selectorContainerDiv">
+									<div class="selectBar" onclick="apply.WAN1G();">
+										<#wan_port#>
+									</div>
+									<div class="narrowContainer">
+										<div class="icon_arrow_right" style="width:20px;height:32px;"></div>
+									</div>
+								</div>
+							</div>
+							<div class="selectorContainer LWAN_2p5G">
+								<div class="selectorContainerDiv">
+									<div class="selectBar" onclick="apply.WAN2p5G();">
+										2.5G <#wan_ethernet#>
+									</div>
+									<div class="narrowContainer">
+										<div class="icon_arrow_right" style="width:20px;height:32px;"></div>
+									</div>
+								</div>
+							</div>
+							<div class="selectorContainer LWAN_10G">
+								<div class="selectorContainerDiv">
+									<div class="selectBar" onclick="apply.WAN10G();">
+										10G base-T
+									</div>
+									<div class="narrowContainer">
+										<div class="icon_arrow_right" style="width:20px;height:32px;"></div>
+									</div>
+								</div>
+							</div>
+							<div class="selectorContainer LWAN_10GS">
+								<div class="selectorContainerDiv">
+									<div class="selectBar" onclick="apply.WAN10GS();">
+										10G SFP+
+									</div>
+									<div class="narrowContainer">
+										<div class="icon_arrow_right" style="width:20px;height:32px;"></div>
+									</div>
+								</div>
+							</div>
+							<div class="selectorContainer modem">
+								<div class="selectorContainerDiv">
+									<div class="selectBar" onclick="apply.WANModem();">
+										<#menu5_4_4#>
+									</div>
+									<div class="narrowContainer">
+										<div class="icon_arrow_right" style="width:20px;height:32px;"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Action Button -->
+						<div class="footer_desktop">
+							<div class="desktop_abortBtn" onclick='abort.wanType()'><#CTL_prev#></div>
+						</div>
+						<div class="footer_mobile">
+							<table style="width:100%;" cellpadding="0" cellspacing="0">
+								<tr>
+									<td class="mobileAbort" style="width:100%;" onclick='abort.wanType()'>
 										<div class="mobile_abortBtn"><#CTL_prev#></div>
 									</td>
 								</tr>
@@ -1942,6 +2034,12 @@
 
 		<!-- ASUS Terms of Use -->
 		<div id="asustos_page" data-role="page" class="qisBackground"></div>
+
+		<!-- ROG Turbo Key -->
+		<div id="boostKey_page" data-role="page" class="qisBackground"></div>
+
+		<!-- 802.11AX mode -->
+		<div id="axMode_page" data-role="page" class="qisBackground"></div>
 
 		<!-- AiMesh Site Survey option-->
 		<div id="amas_option_page" data-role="page" class="qisBackground aimeshPages">

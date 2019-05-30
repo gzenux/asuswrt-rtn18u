@@ -8,7 +8,7 @@
 # Inside freeradius, the 'radiusd' Python module is created by the C module
 # and the definitions are automatically created.
 #
-# $Id$
+# $Id: 87c9b64dafecee1cf672e5a527b6a8a3d2eedd67 $
 
 # from modules.h
 

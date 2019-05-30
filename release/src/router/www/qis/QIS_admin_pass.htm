@@ -329,9 +329,6 @@ function submitForm(){
 					else
 						document.form.action = "/qis/QIS_wireless.htm";
 				}
-				else if(wanstate == 4 && wansbstate == 3 && wanauxstate == 0 && autodet_state == "3"){
-					document.form.action = "/qis/QIS_resetModem.htm";
-				}
 				else{
 					parent.changeSubnet = false;
 					parent.document.QKform.wan_proto.value = "pppoe";

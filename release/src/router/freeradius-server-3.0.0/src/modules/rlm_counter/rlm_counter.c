@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: ff946f1d05e107c50070cb1df3516de1c0da90e5 $
  * @file rlm_counter.c
  * @brief Provides a packet counter to track data usage and other values.
  *
@@ -22,7 +22,7 @@
  * @copyright 2001  Alan DeKok <aland@ox.org>
  * @copyright 2001-2003  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id$")
+RCSID("$Id: ff946f1d05e107c50070cb1df3516de1c0da90e5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

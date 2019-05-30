@@ -241,7 +241,7 @@ void add_usb_host_module(void)
 	tweak_usb_affinity(1);
 #endif
 #if defined(RTCONFIG_USB_XHCI)
-#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P)
+#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 	char *u3_param = "u3intf=0";
 #endif
 #endif
@@ -259,7 +259,7 @@ void add_usb_host_module(void)
 	modprobe(USBCORE_MOD);
 
 #if defined(RTCONFIG_USB_XHCI)
-#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P)
+#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 	if (nvram_get_int("usb_usb3") == 1)
 		u3_param = "u3intf=1";
 #if !defined(RTCONFIG_SOC_IPQ40XX)
@@ -1078,7 +1078,7 @@ void stop_usb(int f_force)
 #endif
 
 #if defined(RTCONFIG_USB_XHCI)
-#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P)
+#if defined(RTN65U) || defined(RTCONFIG_QCA) || defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 	if (disabled) {
 #if defined(RTCONFIG_SOC_IPQ8064)
 		modprobe_r("dwc3-ipq");

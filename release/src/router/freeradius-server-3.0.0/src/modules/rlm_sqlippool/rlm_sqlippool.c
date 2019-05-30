@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: a7fe45255ba09a9c48104ea581534a32b7390f9d $
  * @file rlm_sqlippool.c
  * @brief Allocates an IPv4 address from pools stored in SQL.
  *
@@ -22,7 +22,7 @@
  * @copyright 2006  The FreeRADIUS server project
  * @copyright 2006  Suntel Communications
  */
-RCSID("$Id$")
+RCSID("$Id: a7fe45255ba09a9c48104ea581534a32b7390f9d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

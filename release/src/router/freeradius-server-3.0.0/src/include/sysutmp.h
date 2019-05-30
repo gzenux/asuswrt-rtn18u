@@ -1,13 +1,13 @@
 /*
  * sysutmp.h	Compatibility stuff for the different UTMP systems.
  *
- * Version:	$Id$
+ * Version:	$Id: c2a7a5dff1f250bb270305a8ad911a081149c1ed $
  */
 
 #ifndef SYSUTMP_H_INCLUDED
 #define SYSUTMP_H_INCLUDED
 
-RCSIDH(sysutmp_h, "$Id$")
+RCSIDH(sysutmp_h, "$Id: c2a7a5dff1f250bb270305a8ad911a081149c1ed $")
 
 /*
  *  If we have BOTH utmp.h and utmpx.h, then

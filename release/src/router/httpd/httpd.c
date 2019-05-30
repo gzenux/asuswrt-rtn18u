@@ -828,9 +828,6 @@ int wave_handle_flag(char *url)
 }
 #endif
 
-#ifdef RTN18U // lacking binary support
-int auto_set_lang = 0; //Prevent to check language every request
-#endif
 static void
 handle_request(void)
 {
@@ -893,11 +890,7 @@ handle_request(void)
 		}
 #ifdef TRANSLATE_ON_FLY
 		else if ( strncasecmp( cur, "Accept-Language:", 16) == 0 ) {
-#ifdef RTN18U // lacking binary support
-			if(change_preferred_lang()){
-#else
 			if(change_preferred_lang(0)){
-#endif
 				char *p;
 				struct language_table *pLang;
 				char lang_buf[256];
@@ -948,11 +941,7 @@ handle_request(void)
 					nvram_set("preferred_lang", Accept_Language);
 				}
 
-#ifdef RTN18U // lacking binary support
-				auto_set_lang = 1; //Prevent to check language every request
-#else
 				change_preferred_lang(1);
-#endif
 			}
 
 			#ifdef RTCONFIG_DSL_TCLINUX
@@ -1943,6 +1932,10 @@ int main(int argc, char **argv)
 	//int do_ssl = 0;
 
 	do_ssl = 0; // default
+
+#if defined(RTCONFIG_UIDEBUG)
+	eval("touch", HTTPD_DEBUG);
+#endif
 
 #if defined(RTCONFIG_UIDEBUG)
 	eval("touch", HTTPD_DEBUG);

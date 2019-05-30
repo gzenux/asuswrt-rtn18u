@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: f9b57767eecc4b81ddcf1c05be9534cdb5106502 $
  * @file rlm_rediswho.c
  * @brief Session tracking using redis.
  *
@@ -22,7 +22,7 @@
  * @copyright 2011  TekSavvy Solutions <gabe@teksavvy.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: f9b57767eecc4b81ddcf1c05be9534cdb5106502 $")
 
 #include <freeradius-devel/radiusd.h>
 

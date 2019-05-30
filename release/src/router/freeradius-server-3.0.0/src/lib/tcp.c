@@ -1,7 +1,7 @@
 /*
  * tcp.c	TCP-specific functions.
  *
- * Version:	$Id$
+ * Version:	$Id: 7931b456abb8f309b0da54bd5603feac982cdf94 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright (C) 2009 Dante http://dante.net
  */
 
-RCSID("$Id$")
+RCSID("$Id: 7931b456abb8f309b0da54bd5603feac982cdf94 $")
 
 #include	<freeradius-devel/libradius.h>
 

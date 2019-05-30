@@ -16,13 +16,13 @@
  */
 
 /**
- * $Id$
+ * $Id: d341a9b5ff36a28adfe2765df01efee520512506 $
  * @file rlm_always.c
  * @brief Return preconfigured fixed rcodes.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: d341a9b5ff36a28adfe2765df01efee520512506 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -2,7 +2,7 @@
 /*
  * radwho.c	Show who is logged in on the terminal servers.
  *
- * Version:	$Id$
+ * Version:	$Id: e3b9f2b9a5bd89e09c6ccbf762a565c8061d9bb3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: e3b9f2b9a5bd89e09c6ccbf762a565c8061d9bb3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/sysutmp.h>

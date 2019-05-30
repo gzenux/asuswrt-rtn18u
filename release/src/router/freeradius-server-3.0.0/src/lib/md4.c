@@ -1,13 +1,13 @@
 /*
  *  md4c.c	MD4 message-digest algorithm
  *
- *  Version:	$Id$
+ *  Version:	$Id: 45d169ecdd6506ee3f3dc80e04c4a448d96b7952 $
  *
  *  This file is licensed under the LGPL, but is largely derived
  *  from public domain source code.
  */
 
-RCSID("$Id$")
+RCSID("$Id: 45d169ecdd6506ee3f3dc80e04c4a448d96b7952 $")
 
 /*
  *  FORCE MD4 TO USE OUR MD4 HEADER FILE!

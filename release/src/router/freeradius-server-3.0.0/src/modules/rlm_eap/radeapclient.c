@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id$
+ * Version:	$Id: 7761c0167aa6f5429f9e26252df906d16faf0124 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 7761c0167aa6f5429f9e26252df906d16faf0124 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -1030,7 +1030,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("radclient: $Id$ built on " __DATE__ " at " __TIME__ "\n");
+			printf("radclient: $Id: 7761c0167aa6f5429f9e26252df906d16faf0124 $ built on " __DATE__ " at " __TIME__ "\n");
 			exit(0);
 			break;
 	       case 'S':

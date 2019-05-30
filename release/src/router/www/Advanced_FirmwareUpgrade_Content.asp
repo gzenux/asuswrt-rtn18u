@@ -98,7 +98,7 @@ var webs_state_upgrade = '<% nvram_get("webs_state_upgrade"); %>';
 var webs_state_error = '<% nvram_get("webs_state_error"); %>';
 //var webs_state_info = '<% nvram_get("webs_state_info"); %>';
 var webs_state_REQinfo = '<% nvram_get("webs_state_REQinfo"); %>';
-//var webs_state_flag = '<% nvram_get("webs_state_flag"); %>'
+//var webs_state_flag = '<% nvram_get("webs_state_flag"); %>';
 //var webs_state_info_beta = '<% nvram_get("webs_state_info_beta"); %>';
 
 var firmware_check_enable = '<% nvram_get("firmware_check_enable"); %>';
@@ -337,10 +337,10 @@ function initial(){
 	}
 	*/
 
-//	if(based_modelid == "RT-AC68R"){	//MODELDEP	//id: asus_link is in string tag #FW_desc0#
-//		document.getElementById("asus_link").href = "https://www.asus.com/us/supportonly/RT-AC68R/";
-//		document.getElementById("asus_link").innerHTML = "https://www.asus.com/us/supportonly/RT-AC68R/";
-//	}
+	if(based_modelid == "RT-AC68R"){	//MODELDEP	//id: asus_link is in string tag #FW_desc0#
+		document.getElementById("asus_link").href = "https://www.asus.com/us/supportonly/RT-AC68R/";
+		document.getElementById("asus_link").innerHTML = "https://www.asus.com/us/supportonly/RT-AC68R/";
+	}
 
 	if(based_modelid == "RT-AC68A"){        //MODELDEP : Spec special fine tune
 		document.getElementById("fw_note2").style.display = "none";

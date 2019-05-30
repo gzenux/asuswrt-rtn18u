@@ -217,7 +217,7 @@ extern int ej_wl_stainfo_list_5g_2(int eid, webs_t wp, int argc, char_t **argv);
 #endif
 #endif
 extern int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv);
-#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_LANTIQ)
+#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_LANTIQ) || defined(RTCONFIG_RALINK)
 extern int ej_wl_control_channel(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wl_extent_channel(int eid, webs_t wp, int argc, char_t **argv);
 #endif
@@ -3275,8 +3275,8 @@ static int validate_apply(webs_t wp, json_object *root) {
 						wans_dualwan_usb |= NVRAM_MODIFIED_DUALWAN_REBOOT;
 				}
 #endif
-				if( !strcmp(name, "PM_MY_EMAIL") || !strcmp(name, "PM_SMTP_AUTH_USER")){
-					if (strpbrk(value, "`") != NULL)
+				if( !strcmp(name, "PM_MY_EMAIL") || !strcmp(name, "PM_SMTP_AUTH_USER") || !strcmp(name, "fb_email")){
+					if (strchr(value, '`') != NULL)
 						continue;
 				}
 #ifdef RTCONFIG_CFGSYNC
@@ -10447,7 +10447,7 @@ static void
 prepare_restore(webs_t wp){
 	int offset = 10;
 #ifdef RTCONFIG_RALINK
-	if (get_model() == MODEL_RTN65U || get_model() == MODEL_RTAC85U || get_model() == MODEL_RTAC85P)
+	if (get_model() == MODEL_RTN65U || get_model() == MODEL_RTAC85U || get_model() == MODEL_RTAC85P || get_model() == MODEL_RTACRH26 )
 		offset = 15;
 #endif
 
@@ -11780,7 +11780,6 @@ do_lang_cgi(char *url, FILE *stream)
 	}
 }
 
-#if !defined(RTN18U)
 static void
 do_change_location_cgi(char *url, FILE *stream)
 {
@@ -11797,7 +11796,6 @@ do_change_location_cgi(char *url, FILE *stream)
 	websWrite(stream, "{\"statusCode\":\"%d\"}", (ret)?200:400);
 	json_object_put(root);
 }
-#endif
 
 /*doesn't be used any more*/
 static void
@@ -13844,7 +13842,7 @@ static void GetWanStatus(char *state)
 		logmessage("BLUEZ", "wan:%s, proto:%d\n", prefix, wan_proto);
 
 		if (strlen(prefix)) {
-#if defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
+#if defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X)
 			if (!strncmp(prefix, "vlan2", strlen(prefix)))
 #else
 			if (!strncmp(prefix, "eth0", strlen(prefix)))
@@ -15892,7 +15890,7 @@ do_auto_guestnetwork_cgi(char *url, FILE *stream)
 		if(from_app == FROM_IFTTT)
 			sprintf((char *) ssid, "%s_IFTTT%s_Guest", SSID_PREFIX, unit ? (unit == 2 ? "_5G-2" : (band_num > 2 ? "_5G-1" : "_5G")) : "");
 		else if(from_app == FROM_ALEXA)
-			sprintf((char *) ssid, "%s_Alexa%s_Guest", SSID_PREFIX, unit ? (unit == 2 ? "_5G-2" : (band_num > 2 ? "_5G-1" : "_5G")) : "");
+			sprintf((char *) ssid, "%s%s_Guest%d", SSID_PREFIX, unit ? (unit == 2 ? "_5G-2" : (band_num > 2 ? "_5G-1" : "_5G")) : "", subunit);
 
 		nvram_set(strcat_r(prefix, "ssid", tmp), (char *) ssid);
 		nvram_set(strcat_r(prefix, "wpa_psk", tmp), key);
@@ -15929,6 +15927,7 @@ do_auto_guestnetwork_cgi(char *url, FILE *stream)
 #ifdef RTCONFIG_LANTIQ
 	wave_handle_app_flag("auto_guestnetwork", wave_app_flag);
 #endif
+	nvram_commit();
 	notify_rc("restart_wireless");
 }
 
@@ -16184,9 +16183,7 @@ struct mime_handler mime_handlers[] = {
 	{ "wpad.dat", "application/x-ns-proxy-autoconfig", NULL, NULL, do_file, NULL },
 #ifdef TRANSLATE_ON_FLY
 	{ "change_lang.cgi*", "text/html", no_cache_IE7, do_lang_post, do_lang_cgi, do_auth },
-#if !defined(RTN18U)
 	{ "change_location.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_change_location_cgi, do_auth },
-#endif
 #endif //TRANSLATE_ON_FLY
 #if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_BRCM_NAND_JFFS2))
 	{ "backup_jffs.tar", "application/force-download", NULL, NULL, do_jffs_file, do_auth },
@@ -19126,6 +19123,7 @@ int ej_UI_rs_status(int eid, webs_t wp, int argc, char **argv){
 #define WEBDEVINFO_VER 1 //log ej_webdavInfo
 int ej_webdavInfo(int eid, webs_t wp, int argc, char **argv) {
 
+	char ssid[32];
 	unsigned short ExtendCap=0;
 #ifdef RTCONFIG_WEBDAV
 	ExtendCap |= EXTEND_CAP_WEBDAV;
@@ -19162,9 +19160,9 @@ int ej_webdavInfo(int eid, webs_t wp, int argc, char **argv) {
 	if (nvram_get_int("cfg_master"))
 		ExtendCap |= EXTEND_CAP_MASTER;
 #endif
-
+	get_discovery_ssid(ssid, sizeof(ssid));
 	websWrite(wp, "// pktInfo=['PrinterInfo','SSID','NetMask','ProductID','FWVersion','OPMode','MACAddr','Regulation'];\n");
-	websWrite(wp, "pktInfo=['','%s',", nvram_safe_get("wl0_ssid"));
+	websWrite(wp, "pktInfo=['','%s',", ssid);
 	websWrite(wp, "'%s',", nvram_safe_get("lan_netmask"));
 	websWrite(wp, "'%s',", get_productid());
 	websWrite(wp, "'%s.%s',", nvram_safe_get("firmver"), nvram_safe_get("buildno"));
@@ -20645,7 +20643,17 @@ ej_wtfast_status(int eid, webs_t wp, int argc, char **argv) {
 
 	return ret;
 }
+#endif
 
+#ifdef RTCONFIG_WTF_REDEEM
+static int ej_get_redeem_code(int eid, webs_t wp, int argc, char **argv){
+
+	char partnercode[65];
+	wtfast_gen_partnercode(partnercode, sizeof(partnercode));
+	websWrite(wp, "\"%s\"", partnercode);
+
+	return 0;
+}
 #endif
 
 static int
@@ -22523,7 +22531,7 @@ ej_get_default_ssid(int eid, webs_t wp, int argc, char_t **argv)
 	char word[256], *next;
 
 	websWrite(wp, "[");
-#ifdef RTCONFIG_NEWSSID_REV2
+#if defined(RTCONFIG_NEWSSID_REV2) || defined(RTCONFIG_NEWSSID_REV4)
 	while (unit < band_num){
 		SKIP_ABSENT_BAND_AND_INC_UNIT(unit)
 		if(unit != 0) websWrite(wp, ", ");
@@ -24135,7 +24143,7 @@ struct ej_handler ej_handlers[] = {
 #endif
 #endif
 	{ "wl_auth_list", ej_wl_auth_list},
-#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_LANTIQ)
+#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_LANTIQ) || defined(RTCONFIG_RALINK)
 	{ "wl_control_channel", ej_wl_control_channel},
 	{ "wl_extent_channel", ej_wl_extent_channel},
 #endif
@@ -24262,6 +24270,9 @@ struct ej_handler ej_handlers[] = {
 #ifdef RTCONFIG_WTFAST
 	{ "wtfast_status", ej_wtfast_status },
 #endif
+#ifdef RTCONFIG_WTF_REDEEM
+	{ "get_redeem_code", ej_get_redeem_code},
+#endif
 #ifdef RTCONFIG_INTERNAL_GOBI
 	{ "chk_lte_fw", ej_chk_lte_fw},
 #endif
@@ -24375,6 +24386,8 @@ write_ver:
 }
 
 #if 0	// Moved to data_array
+#define NATSRC_SUPPORT
+
 int
 get_nat_vserver_table(int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -24481,8 +24494,6 @@ char *trim_r(char *str)
 
 	return (str);
 }
-
-#define NATSRC_SUPPORT
 
 int
 ej_get_default_reboot_time(int eid, webs_t wp, int argc, char_t **argv)

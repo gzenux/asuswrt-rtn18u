@@ -470,6 +470,10 @@ my %table=(
 "linux-alpha-ccc","ccc:-fast -readonly_strings -DL_ENDIAN::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${alpha_asm}",
 "linux-alpha+bwx-ccc","ccc:-fast -readonly_strings -DL_ENDIAN::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${alpha_asm}",
 
+# Asuswrt
+"linux-mipsel","gcc:-DL_ENDIAN -DTERMIO -Os \$(EXTRACFLAGS) -DOPENSSL_SMALL_FOOTPRINT -fomit-frame-pointer -Wall -DBN_DIV3W::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${mips32_asm}:o32:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+"linux-mips","gcc:-DB_ENDIAN -DTERMIO -Os \$(EXTRACFLAGS) -DOPENSSL_SMALL_FOOTPRINT -fomit-frame-pointer -Wall -DBN_DIV3W::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${mips32_asm}:o32:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+
 # Android: linux-* but without pointers to headers and libs.
 "android","gcc:-mandroid -I\$(ANDROID_DEV)/include -B\$(ANDROID_DEV)/lib -O3 -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
 "android-x86","gcc:-mandroid -I\$(ANDROID_DEV)/include -B\$(ANDROID_DEV)/lib -O3 -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG ${x86_gcc_des} ${x86_gcc_opts}:".eval{my $asm=${x86_elf_asm};$asm=~s/:elf/:android/;$asm}.":dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
@@ -997,7 +1001,7 @@ PROCESS_ARGS:
 			else	# common if (/^[-+]/), just pass down...
 				{
 				$_ =~ s/%([0-9a-f]{1,2})/chr(hex($1))/gei;
-				$flags.=$_." ";
+				$flags.=" ".$_;
 				}
 			}
 		elsif ($_ =~ /^([^:]+):(.+)$/)
@@ -1153,7 +1157,7 @@ foreach (sort (keys %disabled))
 			$openssl_other_defines .= "#define OPENSSL_NO_$ALGO\n";
 			print " OPENSSL_NO_$ALGO";
 		
-			if (/^err$/)	{ $flags .= "-DOPENSSL_NO_ERR "; }
+			if (/^err$/)	{ $flags .= " -DOPENSSL_NO_ERR"; }
 			elsif (/^asm$/)	{ $no_asm = 1; }
 			}
 		else
@@ -1285,7 +1289,7 @@ if ($target =~ /linux.*\-mips/ && !$no_asm && $flags !~ /\-m(ips|arch=)/) {
 my $no_shared_warn=0;
 my $no_user_cflags=0;
 
-if ($flags ne "")	{ $cflags="$flags$cflags"; }
+if ($flags ne "")	{ $cflags="$cflags$flags"; }
 else			{ $no_user_cflags=1;       }
 
 # Kerberos settings.  The flavor must be provided from outside, either through

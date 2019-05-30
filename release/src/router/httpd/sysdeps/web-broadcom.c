@@ -5408,7 +5408,7 @@ wl_scan(int eid, webs_t wp, int argc, char_t **argv, int unit)
 			} else {
 				dbg("current chanspec: %s (0x%x)\n", wf_chspec_ntoa(chspec_cur, chanbuf), chspec_cur);
 
-				chanspec = ((nvram_get_hex(strcat_r(prefix, "band5grp", tmp)) & WL_5G_BAND_4) ? select_chspec_with_band_bw(name, 4, 0, chspec_cur) : select_chspec_with_band_bw(name, 1, 0, chspec_cur));
+				chanspec = ((nvram_get_hex(strcat_r(prefix, "band5grp", tmp)) & WL_5G_BAND_4) ? select_chspec_with_band_bw(name, 4, 3, chspec_cur) : select_chspec_with_band_bw(name, 1, 3, chspec_cur));
 				dbg("switch to chanspec: %s (0x%x)\n", wf_chspec_ntoa(chanspec, chanbuf), chanspec);
 				wl_iovar_setint(name, "chanspec", chanspec);
 				wl_iovar_setint(name, "acs_update", -1);

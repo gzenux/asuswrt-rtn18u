@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /*
- * $Id$
+ * $Id: 693db43bdcdf3a276d2fd6aee993020036264e10 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id$")
+RCSIDH(radiusd_h, "$Id: 693db43bdcdf3a276d2fd6aee993020036264e10 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>

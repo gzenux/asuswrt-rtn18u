@@ -398,8 +398,8 @@ function genMain_table(){
 
 				apps_filter_col[0] = "0";
 			}
-			/*End exception*/
 
+			/*End exception*/
 			//user icon
 			var userIconBase64 = "NoIcon";
 			var clientName, clientMac, clientIP, deviceType, deviceVender;

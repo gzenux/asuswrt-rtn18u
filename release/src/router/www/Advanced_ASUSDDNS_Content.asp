@@ -795,7 +795,7 @@ function save_cert_key(){
 					<span id="le_crypt" style="color:#FFF;display:none;">
 					<input type="radio" value="1" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "1", "checked"); %>><#DDNS_https_cert_LetsEncrypt#>
 					</span>
-					<input type="radio" value="2" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "2", "checked"); %>>Import/Persistent Auto-generated<!--untranslated-->
+					<input type="radio" value="2" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "2", "checked"); %>><#DDNS_https_cert_Import#>
 					<span id="self_signed" style="color:#FFF;">
 					<input type="radio" value="0" name="le_enable" onClick="change_cert_method(this.value);" <% nvram_match("le_enable", "0", "checked"); %>><#wl_securitylevel_0#>
 					</span>	

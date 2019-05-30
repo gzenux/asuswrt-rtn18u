@@ -19,7 +19,7 @@
  * Copyright 2000  David Kerry <davidk@snti.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: fa1685de77cb878405647d63ab2fe0e9b8cc6e2d $")
 
 #include <freeradius-devel/radiusd.h>
 

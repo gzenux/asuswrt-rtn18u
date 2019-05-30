@@ -635,7 +635,8 @@ typedef struct _WIFI_STA_TABLE {
 static int __getSTAInfo(int unit, WIFI_STA_TABLE *sta_info, char *ifname, char id)
 {
 	FILE *fp;
-	int l2_offset, subunit, channf, ax2he = 0;
+	int l2_offset, subunit, channf, ax2he = 0, have_vhtcaps = 0;
+	unsigned char tmac[6], *tm = &tmac[0];
 	char *l2, *l3, *p;
 	char line_buf[300]; // max 14x
 	char subunit_str[4] = "0", wlif[sizeof("wlX.Yxxx")];
@@ -668,24 +669,50 @@ static int __getSTAInfo(int unit, WIFI_STA_TABLE *sta_info, char *ifname, char i
 	doSystem("wlanconfig %s list > %s", ifname, STA_INFO_PATH);
 	fp = fopen(STA_INFO_PATH, "r");
 	if (fp) {
-/* wlanconfig ath1 list
-ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS ASSOCTIME    IEs   MODE PSMODE
-00:10:18:55:cc:08    1  149  55M   1299M   63    0      0   65535               0        807              0              Q 00:10:33 IEEE80211_MODE_11A  0
-08:60:6e:8f:1e:e6    2  149 159M    866M   44    0      0   65535     E         0          b              0           WPSM 00:13:32 WME IEEE80211_MODE_11AC_VHT80  0
-08:60:6e:8f:1e:e8    1  157 526M    526M   51 4320      0   65535    EP         0          b              0          AWPSM 00:00:10 RSN WME IEEE80211_MODE_11AC_VHT80 0
-*/
+/* ILQ3.1 example:
+ * wlanconfig ath1 list
+ * ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS ASSOCTIME    IEs   MODE PSMODE
+ * 00:10:18:55:cc:08    1  149  55M   1299M   63    0      0   65535               0        807              0              Q 00:10:33 IEEE80211_MODE_11A  0
+ * 08:60:6e:8f:1e:e6    2  149 159M    866M   44    0      0   65535     E         0          b              0           WPSM 00:13:32 WME IEEE80211_MODE_11AC_VHT80  0
+ * 08:60:6e:8f:1e:e8    1  157 526M    526M   51 4320      0   65535    EP         0          b              0          AWPSM 00:00:10 RSN WME IEEE80211_MODE_11AC_VHT80 0
+ *
+ * SPF8 CSU2 QSDK example:
+ * admin@RT-AX89U:/tmp/home/root# wlanconfig ath0 list
+ * ADDR               AID CHAN TXRATE RXRATE RSSI MINRSSI MAXRSSI IDLE  TXSEQ  RXSEQ  CAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS ASSOCTIME    IEs   MODE                   PSMODE
+ * 12:9d:92:4e:85:bc    1  104 2882M   3026M   73       0      74    0      0   65535   EPs         0          b              0           AWPSM 00:00:35     RSN WME IEEE80211_MODE_11AXA_HE80   0
+ * 14:dd:a9:3d:68:65    2  104 433M    433M   69       0      79    0      0   65535    EP         0          b              0            AWPS 00:00:35     RSN WME IEEE80211_MODE_11AC_VHT80   1
+ *
+ * SPF10 ES QSDK example:
+ * admin@GT-AXY16000:/tmp/home/root# wlanconfig ath0 list
+ * ADDR               AID CHAN TXRATE RXRATE RSSI MINRSSI MAXRSSI IDLE  TXSEQ  RXSEQ  CAPS XCAPS        ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS   VHTCAPS ASSOCTIME    IEs   MODE RXNSS TXNSS                   PSMODE
+ * 14:dd:a9:3d:68:65    1   60 433M      6M   36      22      40    0      0   65535    EP    OI         0          b              0            AWPS             gGR 00:00:09     RSN WME IEEE80211_MODE_11AC_VHT80  1 1   1
+ *  Minimum Tx Power             : 0
+ *  Maximum Tx Power             : 0
+ *  HT Capability                        : Yes
+ *  VHT Capability                       : Yes
+ *  MU capable                   : No
+ *  SNR                          : 36
+ *  Operating band                       : 5GHz
+ *  Current Operating class      : 0
+ *  Supported Rates              : 12  18  24  36  48  72  96  108
+ */
 		//fseek(fp, 131, SEEK_SET);	// ignore header
 		fgets(line_buf, sizeof(line_buf), fp); // ignore header
 		l2 = strstr(line_buf, "ACAPS");
 		if (l2 != NULL)
 			l2_offset = (int)(l2 - line_buf);
 		else {
-			l2_offset = 79;
+			l2_offset = 79;	/* start offset of ACAPS */
 			l2 = line_buf + l2_offset;
 		}
+		if (strstr(line_buf, "VHTCAPS"))
+			have_vhtcaps = 1;
 		while ( fgets(line_buf, sizeof(line_buf), fp) ) {
-			WLANCONFIG_LIST *r = &sta_info->Entry[sta_info->Num++];
+			WLANCONFIG_LIST *r;
 
+			if (sscanf(line_buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx %*[^\n]", tm, tm + 1, tm + 2, tm + 3, tm + 4, tm + 5) != 6)
+				continue;
+			r = &sta_info->Entry[sta_info->Num++];
 			r->subunit = subunit_str[0];
 			/* IEs may be empty string, find IEEE80211_MODE_ before parsing mode and psmode. */
 			l3 = strstr(line_buf, "IEEE80211_MODE_");
@@ -704,8 +731,13 @@ ADDR               AID CHAN TXRATE RXRATE RSSI IDLE  TXSEQ  RXSEQ  CAPS        A
 				r->addr, &r->aid, &r->chan, r->txrate,
 				r->rxrate, &r->rssi, &r->idle, &r->txseq,
 				&r->rxseq, r->caps);
-			sscanf(l2, "%u%x%u%s%s%[^\n]",
-				&r->u_acaps, &r->u_erp, &r->u_state_maxrate, r->htcaps, r->conn_time, r->ie);
+			if (have_vhtcaps) {
+				sscanf(l2, "%u%x%u%s%*s%s%[^\n]",
+					&r->u_acaps, &r->u_erp, &r->u_state_maxrate, r->htcaps, r->conn_time, r->ie);
+			} else {
+				sscanf(l2, "%u%x%u%s%s%[^\n]",
+					&r->u_acaps, &r->u_erp, &r->u_state_maxrate, r->htcaps, r->conn_time, r->ie);
+			}
 			if (strlen(r->rxrate) >= 6)
 				strcpy(r->rxrate, "0M");
 			convert_mac_string(r->addr);
@@ -2242,7 +2274,7 @@ static struct nat_accel_kmod_s {
 } nat_accel_kmod[] = {
 #if defined(RTCONFIG_SOC_IPQ8064)
 	{ "ecm" },
-#elif defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_SOC_IPQ40XX)
+#elif defined(RTCONFIG_SOC_QCA9557) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X) || defined(RTCONFIG_SOC_IPQ40XX)
 	{ "shortcut_fe" },
 #else
 #error Implement nat_accel_kmod[]

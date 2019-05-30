@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: c891ed5c4615c363adff7c1c702e4d7d031a63e3 $
  * @file rlm_passwd.c
  * @brief Enables authentication against unix passwd files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: c891ed5c4615c363adff7c1c702e4d7d031a63e3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

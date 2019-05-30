@@ -16,7 +16,7 @@
 #ifndef FR_TCP_H
 #define FR_TCP_H
 /*
- * $Id$
+ * $Id: 5fb86c5063749faeade6368dbc4319484fab17f8 $
  *
  * @file tcp.h
  * @brief RADIUS over TCP
@@ -24,7 +24,7 @@
  * @copyright 2009 Dante http://dante.net
  */
 
-RCSIDH(tcp_h, "$Id$")
+RCSIDH(tcp_h, "$Id: 5fb86c5063749faeade6368dbc4319484fab17f8 $")
 
 int fr_tcp_socket(fr_ipaddr_t *ipaddr, int port);
 int fr_tcp_client_socket(fr_ipaddr_t *src_ipaddr, fr_ipaddr_t *dst_ipaddr, int dst_port);

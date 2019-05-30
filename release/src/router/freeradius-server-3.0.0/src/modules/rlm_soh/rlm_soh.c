@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: 15856f644856f265e17669ed08b88aebe6da6c17 $
  * @file rlm_soh.c
  * @brief Decodes Microsoft's Statement of Health sub-protocol.
  *
  * @copyright 2010 Phil Mayers <p.mayers@imperial.ac.uk>
  */
-RCSID("$Id$")
+RCSID("$Id: 15856f644856f265e17669ed08b88aebe6da6c17 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

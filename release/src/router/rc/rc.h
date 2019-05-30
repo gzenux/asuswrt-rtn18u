@@ -453,9 +453,11 @@ extern unsigned int get_conn_link_quality(int unit);
 #endif
 typedef unsigned int	u_int;
 extern u_int ieee80211_mhz2ieee(u_int freq);
-#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X)
+#if defined(RTCONFIG_WIFI_QCA9557_QCA9882) || defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X)
 #ifdef RTCONFIG_ART2_BUILDIN
 extern void Set_ART2(void);
+#else
+extern void Set_ART2(const char *tftpd_ip);
 #endif
 extern void Get_EEPROM_X(char *command);
 extern void Get_CalCompare(void);

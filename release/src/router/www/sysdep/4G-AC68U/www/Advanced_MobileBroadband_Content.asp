@@ -2155,14 +2155,14 @@ function update_lte_fw(){
 					</tr>					
                                 
 					<tr>
-						<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,11);"><#HSDPAConfig_Username_itemname#></a></th>
+						<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,11);"><#Username#></a></th>
 						<td>
 						<input id="modem_user" name="modem_user" class="input_20_table" style="margin-left:0px;" type="text" value="<% nvram_get("modem_user"); %>" autocorrect="off" autocapitalize="off"/>
 						</td>
 					</tr>
 
           			<tr id="modem_user_div_tr" style="display:none;">
-						<th><#HSDPAConfig_Username_itemname#></th>
+						<th><#Username#></th>
 	            		<td>
 							<div id="modem_user_div" style="color:#FFFFFF; margin-left:1px;"></div>
 						</td>

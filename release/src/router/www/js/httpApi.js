@@ -346,7 +346,7 @@ var httpApi ={
 		};
 
 		var hadPlugged = function(deviceType){
-			var usbDeviceList = httpApi.hookGet("show_usb_path")[0] || [];
+			var usbDeviceList = httpApi.hookGet("show_usb_path") || [];
 			return (usbDeviceList.join().search(deviceType) != -1)
 		}
 
@@ -497,7 +497,6 @@ var httpApi ={
 		var temp_URL_lang = "https://www.asus.com" + faqLang[pLang] + "/support/FAQ/" + _faqNum;
 		if(handler) handler(temp_URL_lang.replace(faqLang[pLang], ""));
 
-
 		$.ajax({
 			url: temp_URL_lang,
 			dataType: "jsonp",
@@ -577,6 +576,41 @@ var httpApi ={
 
 	"update_wlanlog": function(){
 		$.get("/update_wlanlog.cgi");
+	},
+
+	"boostKey_support": function(){
+		var ch = eval('<% channel_list_5g(); %>');
+		var retData = {
+				"GAME_BOOST": {
+					"value": 3,
+					"text": "Enable GameBoost",
+					"desc": "Game Boost analyzes network traffic and prioritizes gaming packets, giving games a second level of acceleration for the best possible performance."
+				},
+				"ACS_DFS": {
+					"value": 1,
+					"text": "<#WLANConfig11b_EChannel_dfs#>",
+					"desc": "Auto channel selection includes DFS band allows <#Web_Title2#> to utilize extra 5GHz channels for less interferences and greater bandwidth."
+				},
+				"LED": {
+					"value": 0,
+					"text": "LED On/Off",
+					"desc": "The LED on/off control is used to turn off all LEDs includes Aura light."
+				},
+				"AURA_RGB": {
+					"value": 2,
+					"text": "Aura RGB",
+					"desc": "Aura sync control is used to get Aura control from other ROG devices, if disabled, it will be customized Aura RGB."
+				}
+		};
+		if(isSupport("triband"))
+			ch += eval('<% channel_list_5g_2(); %>');
+		if(ch.indexOf(52) == -1 && ch.indexOf(56) == -1 && ch.indexOf(60) == -1 && ch.indexOf(64) == -1 && ch.indexOf(100) == -1 && ch.indexOf(104) == -1 && ch.indexOf(108) == -1 && ch.indexOf(112) == -1 && ch.indexOf(116) == -1 && ch.indexOf(120) == -1 && ch.indexOf(124) == -1 && ch.indexOf(128) == -1 && ch.indexOf(132) == -1 && ch.indexOf(136) == -1 && ch.indexOf(140) == -1 && ch.indexOf(144) == -1){
+			delete retData.ACS_DFS;
+		}
+		if(qisPostData.hasOwnProperty("sw_mode") && (qisPostData.sw_mode != "1" && qisPostData.sw_mode != "4")){
+			delete retData.GAME_BOOST;
+		}
+		return retData;
 	},
 
 	"getPAPStatus": function(_band){

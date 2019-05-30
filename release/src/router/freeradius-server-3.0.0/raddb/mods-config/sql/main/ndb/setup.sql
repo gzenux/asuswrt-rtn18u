@@ -6,7 +6,7 @@
 ##		 to something else.  Also update raddb/sql.conf
 ##		 with the new RADIUS password.
 ##
-##	$Id$
+##	$Id: 5c91384c0991ea9614b7c798a1ab4c89ca227115 $
 
 #
 #  Create default administrator for RADIUS

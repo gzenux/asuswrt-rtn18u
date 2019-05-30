@@ -2,7 +2,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file.
 ##
 ##	http://www.freeradius.org/
-##	$Id$
+##	$Id: d66babcfe3eb93973bd5de595451bf200fdae67b $
 ##
 
 # This is the radiusd.conf file used for testing EAP-SIM stuff.

@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 6ffc2161e8c1c1544824f58ca7dc9171d0fafaec $
  * @file rlm_sql.c
  * @brief Implements FreeTDS rlm_sql driver.
  *
@@ -23,7 +23,7 @@
  * @copyright 2000  Mattias Sjostrom <mattias@nogui.se>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 6ffc2161e8c1c1544824f58ca7dc9171d0fafaec $")
 
 #include <freeradius-devel/radiusd.h>
 

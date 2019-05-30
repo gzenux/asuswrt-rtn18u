@@ -16,7 +16,7 @@
 #ifndef FR_SOH_H
 #define FR_SOH_H
 /*
- * $Id$
+ * $Id: a51907438c58df66f8651b69ce237ec9277b1ff5 $
  *
  * @file soh.h
  * @brief Microsoft SoH support
@@ -24,7 +24,7 @@
  * @copyright 2010 Phil Mayers <p.mayers@imperial.ac.uk>
  */
 
-RCSIDH(soh_h, "$Id$")
+RCSIDH(soh_h, "$Id: a51907438c58df66f8651b69ce237ec9277b1ff5 $")
 
 #ifdef __cplusplus
 extern "C" {

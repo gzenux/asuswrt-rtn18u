@@ -34,7 +34,7 @@
 #ifndef _EAP_PWD_H
 #define _EAP_PWD_H
 
-RCSIDH(eap_pwd_h, "$Id$")
+RCSIDH(eap_pwd_h, "$Id: 9c9cfe8c0a3db749a4f5df6384a2554317eec269 $")
 #include "eap.h"
 
 #include <openssl/bn.h>

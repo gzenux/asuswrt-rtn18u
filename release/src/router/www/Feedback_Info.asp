@@ -46,7 +46,7 @@ function check_info(){
 	//0:initial  1:Success  2.Failed  3.Limit?  4.dla
 	if(wan_diag_state == "4"){	
 		document.getElementById("fb_send_debug_log").style.display = "";
-		document.getElementById("Email_subject").href = "mailto:xdsl_feedback@asus.com?Subject="+based_modelid;
+		document.getElementById("Email_subject").href = "mailto:broadband_feedback@asus.com?Subject="+based_modelid;
 		get_debug_log_info();
 	}
 	else{

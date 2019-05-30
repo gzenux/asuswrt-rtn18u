@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 65f2a8fd28c9e2a51e434b06fbcb3415aa266461 $
  *
  * Passcode verification function (otpd client) for rlm_otp.
  *
@@ -21,7 +21,7 @@
  * Copyright 2006,2007 TRI-D Systems, Inc.
  */
 
-RCSID("$Id$")
+RCSID("$Id: 65f2a8fd28c9e2a51e434b06fbcb3415aa266461 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

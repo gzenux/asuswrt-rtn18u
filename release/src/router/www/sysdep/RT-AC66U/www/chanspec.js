@@ -188,10 +188,10 @@ function wl_chanspec_list_change(){
 										_wl_channel.push(wlextchannel_fourty(_cur_channel));
 									}
 								}
-							}	
+							}
 						}
 					}
-					
+
 					wl_channel_list_5g = _wl_channel;						
 				}
 				else{		//20MHz

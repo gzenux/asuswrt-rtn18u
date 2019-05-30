@@ -46,7 +46,7 @@
    up with a different answer to the one above)
 */
 
-RCSID("$Id$")
+RCSID("$Id: 12e75a0000a9a4b8c912aeaa2065d83449d5d3a8 $")
 
 #include <freeradius-devel/libradius.h>
 #include <ctype.h>

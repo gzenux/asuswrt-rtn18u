@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: fdd8786e42524a682cb15c28c4575b468fa5e8f7 $
  * @file rlm_realm.c
  * @brief Parses NAIs and assigns requests to realms.
  *
  * @copyright 2000-2013  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: fdd8786e42524a682cb15c28c4575b468fa5e8f7 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

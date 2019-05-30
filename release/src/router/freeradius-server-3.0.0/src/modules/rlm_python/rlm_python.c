@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 7a4e8e3c39a4f38e326c54ce8fd68a064f103587 $
  * @file rlm_python.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -24,7 +24,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id$")
+RCSID("$Id: 7a4e8e3c39a4f38e326c54ce8fd68a064f103587 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

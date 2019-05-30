@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id$
+ * Version:     $Id: 3f544bcd7c38c390c85d57f0ec3432b9503b6c3e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 3f544bcd7c38c390c85d57f0ec3432b9503b6c3e $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>

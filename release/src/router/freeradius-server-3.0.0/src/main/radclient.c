@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id$
+ * Version:	$Id: a7f1ab207c61d2d80ff1c6f8658a330a664abd4c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: a7f1ab207c61d2d80ff1c6f8658a330a664abd4c $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/conf.h>

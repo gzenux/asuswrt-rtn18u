@@ -691,7 +691,7 @@ function update_applist(e){
   										<tr>
    												<td><div class="formfontdesc" id="usbHint"><#AiCloud_maintext_note#></div></td> 
   										</tr>
-											<tr>
+										<tr>
    												<td><div class="formfontdesc" id="usbHint2"><#Learn_more#> : <a href="https://www.asus.com/search/results.aspx?SearchKey=AiCloud&SearchType=FAQ&IsSupport=True&Page=1" target="_blank" style="color:#FC0;text-decoration: underline; font-family:Lucida Console;">GO</a></div></td> 
   										</tr>  	   
   										<tr>

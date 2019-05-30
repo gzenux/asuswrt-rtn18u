@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: cf8c5362933cef6e6240e084c1e8f91f108be495 $
  * @file rlm_mschap.c
  * @brief Implemented mschap authentication.
  *
@@ -22,7 +22,7 @@
  */
 
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
-RCSID("$Id$")
+RCSID("$Id: cf8c5362933cef6e6240e084c1e8f91f108be495 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

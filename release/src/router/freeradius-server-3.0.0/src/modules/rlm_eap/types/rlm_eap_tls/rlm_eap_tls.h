@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.h
  *
- * Version:     $Id$
+ * Version:     $Id: 97bc8c8452bcdc6789943072aadc1cf8fe61ef4b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _RLM_EAP_TLS_H
 #define _RLM_EAP_TLS_H
 
-RCSIDH(rlm_eap_tls_h, "$Id$")
+RCSIDH(rlm_eap_tls_h, "$Id: 97bc8c8452bcdc6789943072aadc1cf8fe61ef4b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -3,7 +3,7 @@
 #ifndef _SQL_POSTGRESQL_H_
 #define _SQL_POSTGRESQL_H_
 
-RCSIDH(sql_postgresql_h, "$Id$")
+RCSIDH(sql_postgresql_h, "$Id: f8885c8d2ffcdfc68e90c9f6fea6bdfdba9c81d5 $")
 
 /**************************************************
 * Error Codes and required information Lookup table

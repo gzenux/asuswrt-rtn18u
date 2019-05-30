@@ -18,7 +18,7 @@
  * Copyright 2007 Apple Inc.
  */
 
-RCSID("$Id$")
+RCSID("$Id: cfb79a1a8c51cd5e21d5881da18d6f156d975b31 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

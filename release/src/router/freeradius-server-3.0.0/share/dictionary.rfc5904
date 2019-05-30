@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 5904.
 #	http://www.ietf.org/rfc/rfc5904.txt
 #
-#	$Id$
+#	$Id: 8cb9f917bbabc4126bd8f045ae21150335f171aa $
 #
 
 # The next two attributes are continued, like EAP-Message

@@ -197,8 +197,8 @@ static const struct led_btn_table_s {
 #if defined(RPAC51)
 	{ "led_pwr_red_gpio",&led_gpio_table[LED_RED_POWER] },
 	{ "led_single_gpio",	&led_gpio_table[LED_SINGLE] },
-	{ "led_far_gpio",	&led_gpio_table[LED_FAR] },
 	{ "led_near_gpio",	&led_gpio_table[LED_NEAR] },
+	{ "led_far_gpio",	&led_gpio_table[LED_FAR] },
 #endif
 #ifdef RPAC87
 	{ "led_2g_green_gpio1",	&led_gpio_table[LED_2G_GREEN1] },

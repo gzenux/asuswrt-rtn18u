@@ -286,6 +286,11 @@ config RTCONFIG_BCMWL6A
 	depends on RTCONFIG_BCMARM && RTCONFIG_BCMWL6
 	default n
 
+config RTCONFIG_BCM4708
+	bool "BCM WL 6.37.14"
+	depends on RTCONFIG_BCMARM && RTCONFIG_BCMWL6
+	default n
+
 config RTCONFIG_WIRELESSWAN
 	bool "Wireless WAN Function"
 	default n
@@ -733,6 +738,10 @@ config RTCONFIG_NEWSSID_REV2
 	bool "New ASUS_2GMAC_xG rule"
 	default n
 
+config RTCONFIG_NEWSSID_REV4
+	bool "RT-V4 SSID rule"
+	default n
+
 config RTCONFIG_QCA
 	bool "Qualcomm Atheros Chip Support"
 	default n
@@ -820,6 +829,10 @@ config RTCONFIG_QCA953X
 
 config RTCONFIG_QCA956X
 	bool "Qualcomm Atheros QCA956X Chip Support"
+	default n
+
+config RTCONFIG_QCN550X
+	bool "Qualcomm Atheros QCN550X Chip Support"
 	default n
 
 config RTCONFIG_SOC_IPQ40XX
@@ -1798,6 +1811,10 @@ config RTCONFIG_SW_HW_AUTH
 
 config RTCONFIG_LIBASUSLOG
 	bool "asuslog library for debug"
+	default n
+
+config RTCONFIG_WTF_REDEEM
+	bool "wtf_redeem support"
 	default n
 
 config RTCONFIG_ETHOBD

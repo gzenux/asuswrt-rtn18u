@@ -4,7 +4,7 @@
  * The development of the EAP/SIM support was funded by Internet Foundation
  * Austria (http://www.nic.at/ipa).
  *
- * Version:     $Id$
+ * Version:     $Id: cd8b0d4dcb8611658b4aadd694155c88736a2e58 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  *
  */
 
-RCSID("$Id$")
+RCSID("$Id: cd8b0d4dcb8611658b4aadd694155c88736a2e58 $")
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,7 +1,7 @@
 /*
  * files.c	Read config files into memory.
  *
- * Version:     $Id$
+ * Version:     $Id: 6b0c7665523c889ff508371dc2cce5882cb7c582 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 6b0c7665523c889ff508371dc2cce5882cb7c582 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

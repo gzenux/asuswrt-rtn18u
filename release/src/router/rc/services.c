@@ -1244,6 +1244,7 @@ void start_dnsmasq(void)
 					    nvram_safe_get("lan_hostname"));
 			}
 		}
+
 #endif
 		append_custom_config("hosts", fp);
 		fclose(fp);
@@ -3762,6 +3763,7 @@ asusddns_unregister(void)
 				logmessage("DDNS", "[%s] dual WAN load balance DDNS cannot succeed to work, because none of wan is public IP.", __FUNCTION__);
 				return -2;
 			}
+
 			unit = u;
 		}
 	}
@@ -3971,7 +3973,11 @@ wl_igs_enabled(void)
 
 		snprintf(prefix, sizeof(prefix), "wl%d_", i);
 		if (nvram_match(strcat_r(prefix, "radio", tmp), "1") &&
-			(nvram_match(strcat_r(prefix, "igs", tmp), "1") || is_psta(i) || is_psr(i)))
+			(nvram_match(strcat_r(prefix, "igs", tmp), "1") 
+#ifdef RTCONFIG_PROXYSTA
+			 || is_psta(i) || is_psr(i)
+#endif
+			 ))
 			return 1;
 
 		i++;
@@ -4884,7 +4890,6 @@ void start_upnp(void)
 						while (portv && (c = strsep(&portp, ",")) != NULL) {
 							if (strcmp(proto, "TCP") == 0 || strcmp(proto, "BOTH") == 0)
 								fprintf(f, "deny %s 0.0.0.0/0 0-65535\n", c);
-
 							if (strcmp(proto, "UDP") == 0 || strcmp(proto, "BOTH") == 0)
 								fprintf(f, "deny %s 0.0.0.0/0 0-65535\n", c);
 						}
@@ -10263,6 +10268,9 @@ again:
 				stop_amas_lldpd();
 #endif
 #endif
+#endif
+#ifdef RTCONFIG_BT_CONN
+				stop_dbus_daemon();
 #endif
 				if (!(r = build_temp_rootfs(TMP_ROOTFS_MNT_POINT)))
 					sw = 1;

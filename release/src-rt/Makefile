@@ -539,7 +539,7 @@ ifeq ($(CONFIG_RALINK),y)
 	PAD2=`expr $${ISIZE} - $${KSIZE} - $${RSIZE}` ; \
 	RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
 	echo "PAD2: $${PAD2}" ; \
-	if [ "$(BUILD_NAME)" = "RT-N56UB1" ] || [ "$(BUILD_NAME)" = "RT-N56UB2" ] || [ "$(BUILD_NAME)" = "RT-AC1200GA1" ] || [ "$(BUILD_NAME)" = "RT-AC1200GU" ] || [ "$(BUILD_NAME)" = "RP-AC56" ] || [ "$(BUILD_NAME)" = "RP-AC87" ] || [ "$(BUILD_NAME)" = "RT-AC85U" ] || [ "$(BUILD_NAME)" = "RT-AC85P" ] || [ "$(BUILD_NAME)" = "RT-AC65U" ] || [ "$(BUILD_NAME)" = "RT-N800HP" ]; then \
+	if [ "$(BUILD_NAME)" = "RT-N56UB1" ] || [ "$(BUILD_NAME)" = "RT-N56UB2" ] || [ "$(BUILD_NAME)" = "RT-AC1200GA1" ] || [ "$(BUILD_NAME)" = "RT-AC1200GU" ] || [ "$(BUILD_NAME)" = "RP-AC56" ] || [ "$(BUILD_NAME)" = "RP-AC87" ] || [ "$(BUILD_NAME)" = "RT-AC85U" ] || [ "$(BUILD_NAME)" = "RT-AC85P" ] || [ "$(BUILD_NAME)" = "RT-AC65U" ] || [ "$(BUILD_NAME)" = "RT-N800HP" ] || [ "$(BUILD_NAME)" = "RT-ACRH26" ]; then \
 		asustools/mkimage -A mips -O linux -T kernel -C lzma -a 80001000 -e $${ENTRY} -r $${RFSOFFSET} \
 		-n $(BUILD_NAME) -V "$(KERNEL_VER)" "$(FS_VER)"  "$(SERIALNO)" "$(EXTENDNO)" "0" "0" "0" "0" "0" "0"  \
 		-d $(PLATFORMDIR)/zImage.img image/$(IMGNAME).trx ; \
@@ -1020,6 +1020,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_BCMWL6A/d" $(1); \
 		echo "RTCONFIG_BCMWL6A=y" >>$(1); \
 	fi; \
+	if [ "$(BCM4708)" = "y" ]; then \
+		sed -i "/RTCONFIG_BCM4708/d" $(1); \
+		echo "RTCONFIG_BCM4708=y" >>$(1); \
+	fi; \
 	if [ "$(ARM)" = "y" ]; then \
 		sed -i "/RTCONFIG_BCMARM/d" $(1); \
 		echo "RTCONFIG_BCMARM=y" >>$(1); \
@@ -1192,6 +1196,10 @@ define RouterOptions
 	if [ "$(NEWSSID_REV2)" = "y" ]; then \
 		sed -i "/RTCONFIG_NEWSSID_REV2/d" $(1); \
 		echo "RTCONFIG_NEWSSID_REV2=y" >>$(1); \
+	fi; \
+	if [ "$(NEWSSID_REV4)" = "y" ]; then \
+		sed -i "/RTCONFIG_NEWSSID_REV4/d" $(1); \
+		echo "RTCONFIG_NEWSSID_REV4=y" >>$(1); \
 	fi; \
 	if [ "$(NEW_APP_ARM)" = "y" ]; then \
 		sed -i "/RTCONFIG_NEW_APP_ARM/d" $(1); \
@@ -1414,7 +1422,7 @@ define RouterOptions
 			sed -i "/RTCONFIG_EXT4FS/d" $(1); \
 			echo "RTCONFIG_EXT4FS=y" >>$(1); \
 		fi; \
-		if [ "$(TFAT)" = "y" ] || [ "$(findstring open, $(TFAT))" = "open" ]; then \
+		if [ "$(TFAT)" != "" -a "$(TFAT)" != "n" ]; then \
 			sed -i "/RTCONFIG_TFAT/d" $(1); \
 			echo "RTCONFIG_TFAT=y" >>$(1); \
 			if [ "$(TFAT)" != "y" ]; then \
@@ -2690,6 +2698,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_PORT2_DEVICE/d" $(1); \
 		echo "RTCONFIG_PORT2_DEVICE=y" >>$(1); \
 	fi; \
+	if [ "$(WTF_REDEEM)" = "y" ]; then \
+		sed -i "/RTCONFIG_WTF_REDEEM/d" $(1); \
+		echo "RTCONFIG_WTF_REDEEM=y" >>$(1); \
+	fi; \
 	if [ "$(ETHOBD)" = "y" ]; then \
 		sed -i "/RTCONFIG_ETHOBD/d" $(1); \
 		echo "RTCONFIG_ETHOBD=y" >>$(1); \
@@ -3170,7 +3182,7 @@ if [ "$(TUNEK)" != "n" ]; then \
 		sed -i "/CONFIG_BUG/d" $(1); \
 		echo "# CONFIG_BUG is not set" >>$(1); \
 	fi; \
-	if [ "$(PLN12)" = "y" ] || [ "$(PLAC56)" = "y" ] || [ "$(RPAC66)" = "y" ] || [ "$(RPAC51)" = "y" ] ; then \
+	if [ "$(RTN19)" = "y" ] || [ "$(PLN12)" = "y" ] || [ "$(PLAC56)" = "y" ] || [ "$(RPAC66)" = "y" ] || [ "$(RPAC51)" = "y" ] ; then \
 		sed -i "/CONFIG_USB/d" $(1); \
 		echo "# CONFIG_USB is not set" >>$(1); \
 		sed -i "/CONFIG_USB_SUPPORT/d" $(1); \

@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: e9e2623088e2bba3f4d9e2ed43f11f216650d429 $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: e9e2623088e2bba3f4d9e2ed43f11f216650d429 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/parser.h>

@@ -1,7 +1,7 @@
 /*
  * eap_tls.h
  *
- * Version:     $Id$
+ * Version:     $Id: 93a49534579a51b0d9af3dd180d9e5ce7a8744cf $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_TLS_H
 #define _EAP_TLS_H
 
-RCSIDH(eap_tls_h, "$Id$")
+RCSIDH(eap_tls_h, "$Id: 93a49534579a51b0d9af3dd180d9e5ce7a8744cf $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <stdio.h>

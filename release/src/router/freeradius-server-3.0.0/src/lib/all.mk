@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:      $Id$
+# Version:      $Id: d14d6896ecb7ccb3f9a25a80e70110ea336e458b $
 #
 TARGET		:= libfreeradius-radius.a
 

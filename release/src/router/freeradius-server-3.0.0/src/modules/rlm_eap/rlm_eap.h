@@ -1,7 +1,7 @@
 /*
  * rlm_eap.h    Local Header file.
  *
- * Version:     $Id$
+ * Version:     $Id: 05b5674d8b3373faa93ece8879e904a7a770018d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _RLM_EAP_H
 #define _RLM_EAP_H
 
-RCSIDH(rlm_eap_h, "$Id$")
+RCSIDH(rlm_eap_h, "$Id: 05b5674d8b3373faa93ece8879e904a7a770018d $")
 
 #include <freeradius-devel/modpriv.h>
 #include "eap.h"

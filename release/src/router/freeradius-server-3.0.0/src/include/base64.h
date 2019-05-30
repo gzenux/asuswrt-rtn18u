@@ -19,7 +19,7 @@
 #ifndef _FR_BASE64_H
 #define _FR_BASE64_H
 
-RCSIDH(base64_h, "$Id$")
+RCSIDH(base64_h, "$Id: b679040bf3f4125c4d80dede11899daa1185c017 $")
 
 #include <stddef.h>
 #include <stdint.h>

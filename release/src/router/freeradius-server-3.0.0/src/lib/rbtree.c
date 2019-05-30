@@ -1,7 +1,7 @@
 /*
  * rbtree.c	Red-black balanced binary trees.
  *
- * Version:	$Id$
+ * Version:	$Id: 3562067d4b1f25c142999d03851fb16d4f9b1ca4 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  *  Copyright 2004,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 3562067d4b1f25c142999d03851fb16d4f9b1ca4 $")
 
 #include <freeradius-devel/libradius.h>
 

@@ -91,6 +91,12 @@ enum
 	} \
 }while(0)
 
+#define NMP_CONSOLE_DEBUG(fmt, args...) do{ \
+	if(nvram_match("nmp_debug", "1")) { \
+		cprintf(fmt, ## args); \
+	} \
+}while(0)
+
 #if !defined(RTCONFIG_RALINK) && !defined(HND_ROUTER)
 #define NMP_DEBUG(fmt, args...) \
 	if(f_exists(NMP_DEBUG_FILE)) { \

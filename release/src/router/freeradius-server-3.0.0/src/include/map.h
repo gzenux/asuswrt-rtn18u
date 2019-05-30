@@ -16,7 +16,7 @@
 #ifndef MAP_H
 #define MAP_H
 /*
- * $Id$
+ * $Id: bd2f199a1de32514e7feb7bd86c0d36c9bcd2cc9 $
  *
  * @file map.h
  * @brief Structures and prototypes for templates / maps
@@ -24,7 +24,7 @@
  * @copyright 2013  The FreeRADIUS server project
  */
 
-RCSIDH(map_h, "$Id$")
+RCSIDH(map_h, "$Id: bd2f199a1de32514e7feb7bd86c0d36c9bcd2cc9 $")
 
 #include <freeradius-devel/conffile.h>
 

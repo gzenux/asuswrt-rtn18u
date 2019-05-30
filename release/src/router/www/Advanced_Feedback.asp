@@ -416,7 +416,14 @@ function applyRule(){
 				return false;
 			}
 		}
-
+		
+		var re = new RegExp("^[a-zA-Z][0-9]{10}","gi");
+		if(!re.test(document.form.fb_serviceno.value) && document.form.fb_serviceno.value != ""){
+			alert("<#JS_validchar#>");
+			document.form.fb_serviceno.focus();
+			return false;
+		}
+		
 		if(fb_trans_id != "")
 		{
 			document.form.fb_transid.value = fb_trans_id;
@@ -950,6 +957,13 @@ function CheckFBSize(){
 </tr>
 
 <tr>
+<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(34,2);">ASUS Service No./Case#</a></th>
+<td>
+	<input type="text" name="fb_serviceno" maxlength="11" class="input_15_table" value="" autocorrect="off" autocapitalize="off">
+</td>
+</tr>
+
+<tr>
 <th><#feedback_extra_info#> *</th>
 <td>
 	<input type="checkbox" class="input" name="attach_syslog" id="attach_syslog_id"><label for="attach_syslog_id"><#System_Log#></label>&nbsp;&nbsp;&nbsp;
@@ -1079,7 +1093,7 @@ function CheckFBSize(){
 	<td colspan="2">
 		<strong><#FW_note#></strong>
 		<ul>
-			<li><#feedback_note4#></li>
+			<li><#feedback_note4#><br><a style="font-weight: bolder;text-decoration:underline;cursor:pointer;" href="https://www.asus.com/support/CallUs/" target="_blank">https://www.asus.com/support/CallUs/</a></li>
 		</ul>
 	</td>
 </tr>	

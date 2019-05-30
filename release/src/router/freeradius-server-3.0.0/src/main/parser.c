@@ -1,7 +1,7 @@
 /*
  * parser.c	Parse various things
  *
- * Version:	$Id$
+ * Version:	$Id: 62a6b9f314d93c94a28922bbf78e02f8daf4baac $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 62a6b9f314d93c94a28922bbf78e02f8daf4baac $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>

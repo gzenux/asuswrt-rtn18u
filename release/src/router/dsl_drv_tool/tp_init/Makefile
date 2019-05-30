@@ -33,6 +33,9 @@ CFLAGS += $(EXTRA_FLAG)
 CFLAGS += -I$(SRCBASE)/common/include
 CFLAGS += -DTYPEDEF_FLOAT_T
 endif
+ifeq ($(RTCONFIG_BCMWL6),y)
+CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include
+endif
 
 CFLAGS += -Wall -O
 

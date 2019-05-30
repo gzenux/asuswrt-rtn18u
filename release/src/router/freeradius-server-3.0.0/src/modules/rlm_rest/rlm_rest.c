@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: fb9e184e7d59d2ee77c1eaeb0af759f9667512c0 $
  * @file rlm_rest.c
  * @brief Integrate FreeRADIUS with RESTfull APIs
  *
  * @copyright 2012-2013  Arran Cudbard-Bell <arran.cudbardb@freeradius.org>
  */
-RCSID("$Id$")
+RCSID("$Id: fb9e184e7d59d2ee77c1eaeb0af759f9667512c0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -67,7 +67,7 @@ if(dsl_support){
 			}
 		}
 		notif_msg += "</ol>";
-    	}	
+	}
 }
 
 var aimesh_system_new_fw_flag = false;

@@ -3,7 +3,7 @@
 # radtest	Emulate the user interface of the old
 #		radtest that used to be part of FreeRADIUS.
 #
-# Version:	$Id$
+# Version:	$Id: 9f3f6b0f270c23aa0f685f4a9651dbcda36083ac $
 #
 
 prefix="@prefix@"

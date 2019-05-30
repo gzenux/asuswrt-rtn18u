@@ -24,6 +24,7 @@
 <script type="text/javascript" src="switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="jscolor/jscolor.js"></script>
 <script type="text/javascript" src="Captive_Portal_Advanced_template.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <script>
 // disable auto log out
 AUTOLOGOUT_MAX_MINUTE = 0;
@@ -73,6 +74,12 @@ function initial(){
 	if(captive_portal_adv_profile_list == "") {
 		editProfile("new");
 	}
+
+	var series = productid.split("-")[0].toUpperCase();
+	if(series == "BRT")
+		httpApi.faqURL("1034977", function(url){document.getElementById("faq").href=url;});
+	else
+		$(".brt_series").remove();
 }
 function captivePortalAdvShowAndHide(_flag) {
 	if(_flag == 1) {
@@ -5070,6 +5077,9 @@ function remove_hint_msg() {
 									<div style='float:left;width:80%;'>
 									<div class="captive_portal_adv_intro_txt" style="color:#FC0;"><#Captive_Portal_desc1#></div>
 									<div class="captive_portal_adv_intro_txt"><#Captive_Portal_desc2#></div>
+									<div class="captive_portal_adv_intro_txt brt_series">
+										<#FAQ_Find#> : <a id="faq" href="" target="_blank" style="font-weight:bolder;text-decoration:underline;" href="" target="_blank">GO</a>
+									</div>
 									</div>
 									<div style="clear:both;"></div>
 									<div style="margin:10px 0 10px 5px;" class="splitLine"></div>

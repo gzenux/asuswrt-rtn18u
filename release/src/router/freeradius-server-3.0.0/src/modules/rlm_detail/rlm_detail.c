@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: bca528011741873d4021c455cd143646edfb320f $
  * @file rlm_detail.c
  * @brief Write plaintext versions of packets to flatfiles.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: bca528011741873d4021c455cd143646edfb320f $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

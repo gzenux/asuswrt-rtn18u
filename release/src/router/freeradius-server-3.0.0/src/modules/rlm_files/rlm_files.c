@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: e51f08fea348ae87ca60f0b9472d9c62f316a3a3 $
  * @file rlm_files.c
  * @brief Process simple 'users' policy files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id$")
+RCSID("$Id: e51f08fea348ae87ca60f0b9472d9c62f316a3a3 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

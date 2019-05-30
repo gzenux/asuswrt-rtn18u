@@ -194,17 +194,8 @@ if(parent.yadns_support){
 	var yadns_mode = '<% nvram_get("yadns_mode"); %>';
 }
 
-var get_protocol = function() {
-	var protocol = "http:";
-	if(window.location.protocol == "http:" || window.location.protocol == "https:") {
-		protocol = window.location.protocol;
-		return protocol;
-	}
-
-	return protocol;
-};
 var header_info = [<% get_header_info(); %>];
-var location_org = get_protocol() + "//" + header_info[0].host;
+var location_org = header_info[0].protocol + "://" + header_info.host + ":" + header_info.port;
 
 function yadns_change(need_apply){
 	var enable = document.getElementById("yadns_enable").checked;
@@ -419,10 +410,6 @@ function checkIsNewFirmware(){
 			$("#rog_feature_field").hide();
 		}
 
-		//force_upgrade_support : rc_support with "fupgrade"
-		if(!parent.is_CN && parent.force_upgrade_support){
-			doLiveUpdate(true);
-		}
 	}
 	else{
 		if((parent.based_modelid == "4G-AC55U" || parent.based_modelid == "4G-AC68U") && parent.wan_autodet_state == "4" && parent.usb_connected == 1 && wans_dualwan_orig == "wan usb"){
@@ -1479,8 +1466,12 @@ var TM_eula_ori = '<% nvram_get("TM_EULA"); %>';
 function show_tm_eula(){
 	$.get("../tm_eula.htm", function(data){
 		document.getElementById('agreement_panel').innerHTML= data;
-		var url = "https://www.asus.com/Microsite/networks/Trend_Micro_EULA/" + document.form.preferred_lang.value;
+		var url = "https://www.asus.com/Microsite/networks/Trend_Micro_EULA/";
 		$("#eula_url").attr("href",url);
+		url = "https://www.trendmicro.com/en_us/about/legal/privacy-policy-product.html"
+		$("#tm_eula_url").attr("href",url);
+		url = "https://success.trendmicro.com/data-collection-disclosure";
+		$("#tm_disclosure_url").attr("href",url);
 		adjust_TM_eula_height("agreement_panel");
 	});
 

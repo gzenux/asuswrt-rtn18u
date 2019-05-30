@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 4072
 #	http://www.ietf.org/rfc/4072.txt
 #
-#	$Id$
+#	$Id: 54d2cb96ff210de06ba33aa6b7f53c2337bc7388 $
 #
 
 ATTRIBUTE	EAP-Key-Name				102	string

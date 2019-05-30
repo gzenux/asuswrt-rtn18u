@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id$
+ * $Id: c1a38f13d557528cfe9dfc9ae3864df2001fa7d9 $
  *
  * @file soh.c
  * @brief Implements the MS-SOH parsing code. This is called from rlm_eap_peap
@@ -23,7 +23,7 @@
  * @copyright 2010 Phil Mayers <p.mayers@imperial.ac.uk>
  */
 
-RCSID("$Id$")
+RCSID("$Id: c1a38f13d557528cfe9dfc9ae3864df2001fa7d9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/soh.h>

@@ -333,6 +333,9 @@ int mssl_init(char *cert, char *priv)
 	}
 
 	if (server) {
+		// Disable TLS 1.0 & 1.1
+		SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+
 		// Enforce server cipher order
 		SSL_CTX_set_options(ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
 

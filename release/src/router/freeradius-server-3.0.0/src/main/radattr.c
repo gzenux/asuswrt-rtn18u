@@ -1,7 +1,7 @@
 /*
  * radattr.c	RADIUS Attribute debugging tool.
  *
- * Version:	$Id$
+ * Version:	$Id: 17dac8b9bf8ef1abc6c91a45f17535d4c2d44147 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2010  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 17dac8b9bf8ef1abc6c91a45f17535d4c2d44147 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/parser.h>

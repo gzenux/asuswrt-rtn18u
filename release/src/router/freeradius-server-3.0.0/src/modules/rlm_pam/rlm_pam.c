@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 64c5b480db6c23c872b16b9802bda47201efa922 $
  * @file rlm_pam.c
  * @brief Interfaces with the PAM library to allow auth via PAM.
  *
@@ -27,7 +27,7 @@
  * @copyright 1997  Jeph Blaize <jblaize@kiva.net>
  * @copyright 1999  miguel a.l. paraz <map@iphil.net>
  */
-RCSID("$Id$")
+RCSID("$Id: 64c5b480db6c23c872b16b9802bda47201efa922 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

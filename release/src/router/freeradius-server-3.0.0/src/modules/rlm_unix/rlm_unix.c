@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 211455bc1e0ad1000863d90e12f64e8dfd3e9853 $
  * @file rlm_unix.c
  * @brief Unixy things
  *
@@ -26,7 +26,7 @@
  * @copyright 2000  Jeff Carneal <jeff@apex.net>
  * @copyright 2000  Alan Curry <pacman@world.std.com>
  */
-RCSID("$Id$")
+RCSID("$Id: 211455bc1e0ad1000863d90e12f64e8dfd3e9853 $")
 
 #include	<freeradius-devel/radiusd.h>
 

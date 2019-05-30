@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 24e7f3a9ae3815189a3ae1b8053f52bb56841fa4 $
  * @file rlm_krb5.c
  * @brief Authenticate users, retrieving their TGT from a Kerberos V5 TDC.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Nathan Neulinger <nneul@umr.edu>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id$")
+RCSID("$Id: 24e7f3a9ae3815189a3ae1b8053f52bb56841fa4 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

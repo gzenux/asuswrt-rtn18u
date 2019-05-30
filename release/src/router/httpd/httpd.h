@@ -316,12 +316,7 @@ extern int check_lang_support(char *lang);
 extern int load_dictionary (char *lang, pkw_t pkw);
 extern void release_dictionary (pkw_t pkw);
 extern char* search_desc (pkw_t pkw, char *name);
-#ifdef RTN18U // lacking binary support
-extern int auto_set_lang;
-extern int change_preferred_lang();
-#else
 extern int change_preferred_lang(int finish);
-#endif
 extern int get_lang_num();
 //extern char Accept_Language[16];
 #else
@@ -452,10 +447,11 @@ extern void page_default_redirect(int fromapp_flag, char* url);
 extern int wave_app_flag;
 extern int wave_handle_app_flag(char *name, int wave_app_flag);
 #endif
-#if !defined(RTN18U)
 #ifdef RTCONFIG_TCODE
 extern int change_location(char *lang);
 #endif
+#ifdef RTCONFIG_WTF_REDEEM
+extern void wtfast_gen_partnercode(char *str, size_t size);
 #endif
 extern void update_wlan_log(int sig);
 #endif /* _httpd_h_ */

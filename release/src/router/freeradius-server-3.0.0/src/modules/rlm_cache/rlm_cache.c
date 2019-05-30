@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: 5f1d792992997516860ec2802dad618a6a227741 $
  * @file rlm_cache.c
  * @brief Cache values and merge them back into future requests.
  *
  * @copyright 2012-2013  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: 5f1d792992997516860ec2802dad618a6a227741 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -1,7 +1,7 @@
 /*
  * session.c	session management
  *
- * Version:	$Id$
+ * Version:	$Id: 10f3d13bf01caf2f7cdd9979a4a354946c7ca549 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 10f3d13bf01caf2f7cdd9979a4a354946c7ca549 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

@@ -23,7 +23,7 @@
 #ifndef _SQL_FBAPI_H_
 #define _SQL_FBAPI_H_
 
-RCSIDH(sql_fbapi_h, "$Id$")
+RCSIDH(sql_fbapi_h, "$Id: f3e272cf555f9c2be7db983188034acc92ace67e $")
 
 #include <stdlib.h>
 #include <string.h>

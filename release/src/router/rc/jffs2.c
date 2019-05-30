@@ -85,6 +85,8 @@ unsigned int get_root_type(void)
 		case MODEL_RTN11P_B1:
 		case MODEL_RPAC53:
 		case MODEL_RPAC55:
+		case MODEL_RTN19:
+		case MODEL_RTAC59U:
 		case MODEL_MAPAC1750:
 			return 0x73717368;      /* squashfs */
 		case MODEL_GTAC5300:
@@ -295,6 +297,8 @@ void start_jffs2(void)
 			return;
 		}
 	}
+
+	set_proper_perm();
 
 	if(jffs2_fail == 1) {
 		nvram_set("jffs2_fail", "1");

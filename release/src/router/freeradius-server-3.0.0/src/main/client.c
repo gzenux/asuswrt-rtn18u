@@ -1,7 +1,7 @@
 /*
  * client.c	Read clients into memory.
  *
- * Version:     $Id$
+ * Version:     $Id: 7b7e60bed984ec0181d5aea262d54cc7a6f51f30 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 7b7e60bed984ec0181d5aea262d54cc7a6f51f30 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

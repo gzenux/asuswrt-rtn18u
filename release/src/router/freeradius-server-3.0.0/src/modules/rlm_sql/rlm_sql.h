@@ -8,7 +8,7 @@
 #ifndef _RLM_SQL_H
 #define _RLM_SQL_H
 
-RCSIDH(rlm_sql_h, "$Id$")
+RCSIDH(rlm_sql_h, "$Id: 2fa110faae8d7caf2ee17080b6788cf7f5331653 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/connection.h>

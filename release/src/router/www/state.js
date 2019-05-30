@@ -503,7 +503,7 @@ var ipsec_cli_support = isSupport("ipsec_cli");
 var traffic_analyzer_support = bwdpi_support;
 var traffic_limiter_support = isSupport("traffic_limiter");
 var force_upgrade_support = isSupport("fupgrade");
-
+var odm_support = isSupport("odm");
 var adBlock_support = isSupport("adBlock");
 var keyGuard_support = isSupport("keyGuard");
 var rog_support = isSupport("rog");
@@ -524,6 +524,7 @@ var stainfo_support = isSupport("stainfo");
 var dhcp_override_support = isSupport("dhcp_override");
 var disnwmd_support = isSupport("disable_nwmd");
 var wtfast_support = isSupport("wtfast");
+var wtf_redeem_support = uiSupport("wtf_redeem");
 var powerline_support = isSupport("plc");
 var reboot_schedule_support = isSupport("reboot_schedule");
 var captivePortal_support = isSupport("captivePortal");
@@ -570,6 +571,7 @@ var bcm_mumimo_support = isSupport("mumimo");		//Broadcom MU-MIMOs
 var nt_center_support = isSupport("nt_center");
 var dblog_support = isSupport("dblog");
 var qca_support = isSupport("qca");
+var geforceNow_support = isSupport("nvgfn");
 
 if(nt_center_support)
 	document.write('<script type="text/javascript" src="/client_function.js"></script>');
@@ -827,7 +829,7 @@ function show_banner(L3){// L3 = The third Level of Menu
  	banner_code +='<td valign="center" class="titledown" width="auto">';
 
 	// dsl does not support operation mode
-	if (!dsl_support && based_modelid != "AC2900" && !lyra_hide_support) {	//MODELDEP: AC2900(RT-AC86U)
+	if (!dsl_support && !lyra_hide_support) {
 		banner_code +='<span style="font-family:Verdana, Arial, Helvetica, sans-serif;"><#menu5_6_1_title#>:</sapn><span class="title_link" style="text-decoration: none;" id="op_link"><a href="/Advanced_OperationMode_Content.asp" style="color:white"><span id="sw_mode_span" style="text-decoration: underline;"></span></a></span>\n';
 	}
 	banner_code +='<span style="font-family:Verdana, Arial, Helvetica, sans-serif;"><#General_x_FirmwareVersion_itemname#></sapn><a href="/Advanced_FirmwareUpgrade_Content.asp" style="color:white;"><span id="firmver" class="title_link"></span></a>\n';
@@ -1511,7 +1513,6 @@ function show_footer(){
 
 	footer_code += '&nbsp|&nbsp<a id="registration_link" target="_blank" href="https://account.asus.com/" target="_self" style="font-weight: bolder;text-decoration:underline;cursor:pointer;"><#Product_Registration#></a>';
 
-
 	if(dsl_support && feedback_support){
 		footer_code += '&nbsp|&nbsp<a id="fb_link" href="/Advanced_Feedback.asp" target="_self" style="font-weight: bolder;text-decoration:underline;cursor:pointer;"><#menu_feedback#></a>';
 	}
@@ -1835,7 +1836,7 @@ function show_top_status(){
 	}
 
 	// no_op_mode
-	if (!dsl_support && based_modelid != "AC2900" && !lyra_hide_support){	//MODELDEP: AC2900(RT-AC86U)
+	if (!dsl_support && !lyra_hide_support){
 
 		if(sw_mode == "1")  // Show operation mode in banner, Viz 2011.11
 			document.getElementById("sw_mode_span").innerHTML = "<#wireless_router#>";

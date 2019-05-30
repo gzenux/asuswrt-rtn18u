@@ -1,7 +1,7 @@
 /*
  * paircmp.c	Valuepair functions for various attributes
  *
- * Version:	$Id$
+ * Version:	$Id: 85cd906147dba5c76c10f13257107e49953b608f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 85cd906147dba5c76c10f13257107e49953b608f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

@@ -256,6 +256,9 @@ else
 var dsl_DataRateDown = parseInt("<% nvram_get("dsllog_dataratedown"); %>");
 var dsl_DataRateUp = parseInt("<% nvram_get("dsllog_datarateup"); %>");
 
+var qos_enable_orig = '<% nvram_get("qos_enable"); %>';
+var qos_type_orig = '<% nvram_get("qos_type"); %>';
+
 //HND_ROUTER HW NAT (fc_disable/runner_disable) ON: 0/0 ; OFF: 1/1
 var fc_disable_orig = '<% nvram_get("fc_disable"); %>';
 var runner_disable_orig = '<% nvram_get("runner_disable"); %>';
@@ -265,6 +268,7 @@ var bwdpi_app_rulelist = "<% nvram_get("bwdpi_app_rulelist"); %>".replace(/&#60/
 var category_title = ["", "<#Adaptive_Game#>", "<#Adaptive_Stream#>","<#Adaptive_Message#>", "<#Adaptive_WebSurf#>","<#Adaptive_FileTransfer#>", "<#Adaptive_Others#>"];
 var cat_id_array = [[9,20], [8], [4], [0,5,6,15,17], [13,24], [1,3,14], [7,10,11,21,23]];
 var ctf_disable = '<% nvram_get("ctf_disable"); %>';
+var ctf_disable_force  = '<% nvram_get("ctf_disable_force "); %>';
 var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';
 var qos_bw_rulelist = "<% nvram_get("qos_bw_rulelist"); %>".replace(/&#62/g, ">").replace(/&#60/g, "<");
 var select_all_checked = 0;
@@ -382,14 +386,14 @@ function initial(){
 	}
 
 	var qos_type = document.form.qos_type.value;
-	if(document.form.qos_enable_orig.value == 1){
+	if(qos_enable_orig == "1"){
 		change_qos_type(qos_type);
 
 		document.getElementById('qos_type_tr').style.display = "";
 		if(bwdpi_support){
 			document.getElementById('int_type').style.display = "";
 			document.getElementById('int_type_link').style.display = "";
-			change_qos_type(document.form.qos_type_orig.value);
+			change_qos_type(qos_type_orig);
 		}
 		else
 			show_settings("NonAdaptive");
@@ -408,7 +412,7 @@ function initial(){
 
 	if(bwdpi_support){
 		document.getElementById('content_title').innerHTML = "<#menu5_3_2#> - <#Adaptive_QoS_Conf#>";
-		if(document.form.qos_enable.value == 1){
+		if(document.form.qos_enable.value == "1"){
 			if(qos_type == 0){              //Traditional Type
 				add_option(document.getElementById("settingSelection"), '<#qos_user_rules#>', 3, 0);
 				add_option(document.getElementById("settingSelection"), '<#qos_user_prio#>', 4, 0);
@@ -441,7 +445,7 @@ function initial(){
 
 	/* MODELDEP */
 	if(based_modelid == "RT-AC85U" || based_modelid == "RT-AC85P" || based_modelid == "RT-AC65U"){
-		if(document.form.qos_type_orig.value == "1"){
+		if(qos_type_orig == "1"){
 			document.getElementById('bandwidth_setting_tr').style.display = "none";
 			document.form.qos_type_radio[1].checked = true;
 		}
@@ -551,11 +555,11 @@ function switchPage(page){
 
 function validForm(){
 
-	if(document.form.qos_enable.value == 0 && document.form.qos_enable_orig.value == 0){
+	if(document.form.qos_enable.value == "0" && document.form.qos_enable_orig.value == "0"){
 		return false;
 	}
 
-	if(document.form.qos_enable.value == 1){
+	if(document.form.qos_enable.value == "1"){
 		var qos_type = document.form.qos_type.value;
 		if(qos_type == 1) {
 			if(!reset_wan_to_fo.check_status())
@@ -654,11 +658,41 @@ function validForm(){
 	return true;
 }
 
+function determineActionScript(){
+	if(geforceNow_support && document.form.qos_enable.value == "0" && qos_enable_orig == "0" &&
+		(document.form.nvgfn_enable.value != orig_nvgfn_enable)){
+		document.form.action_script.value = "restart_upnp;";
+	}
+	else if( lantiq_support || Rawifi_support || (ctf_disable == "1" || ctf_disable_force == "1") ||  //BULECAVE; MTK Models; HW NAT OFF
+			 (qos_enable_orig == "1" && document.form.qos_enable.value == "0") ||   //qos enable => disable
+			 ((qos_enable_orig == document.form.qos_enable.value) && 				//qos_enable and qos_type no change
+			  (qos_type_orig == document.form.qos_type.value)) ){
+		document.form.action_script.value = "restart_qos;restart_firewall;";
+		document.form.action_wait.value = "15";
+	}
+	else if(document.form.qos_enable.value == "1" && document.form.qos_type.value == "1" && (ctf_fa_mode != "2" || qca_support)){
+		//BCM: Support FA but disable FA ,or not support FA. QCA Models
+		document.form.action_script.value = "restart_qos;restart_firewall;";
+		document.form.action_wait.value = "15";
+	}
+	else if(document.form.qos_enable.value == "1" && document.form.qos_type.value == "1" && (fc_disable  != "" && runner_disable != "")){ //HND Router
+		document.form.action_script.value = "restart_qos;restart_firewall;";
+		document.form.action_wait.value = "15";
+	}
+	else{
+		document.form.action_script.value = "reboot";
+		document.form.action_wait.value = "<% get_default_reboot_time(); %>";
+	}
+
+	if((qos_type_orig != document.form.qos_type.value) && document.form.qos_type.value == "0")
+		document.form.next_page.value = "Advanced_QOSUserRules_Content.asp";
+}
+
 function submitQoS(){
 
 	if(validForm()){
 
-		if(document.form.qos_enable.value == 1 && document.form.qos_type.value == 1 && document.form.TM_EULA.value == 0){
+		if(document.form.qos_enable.value == "1" && document.form.qos_type.value == "1" && document.form.TM_EULA.value == "0"){
 			ASUS_EULA
 				.config(eula_confirm, cancel)
 				.show("tm")
@@ -666,31 +700,10 @@ function submitQoS(){
 		else{
 			document.form.qos_atm.value = (document.form.qos_atm_x.checked ? 1 : 0);
 
-			if(ctf_disable == 1 || (fc_disable_orig != '' && runner_disable_orig != '')){	//HW NAT [OFF] or HND ROUTER
-				document.form.action_script.value = "restart_qos;restart_firewall";
-			}
-			else{
-				if(ctf_fa_mode == "2"){
-					FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");
-				}
-				else{
-					if(document.form.qos_type.value == 0 && !lantiq_support){
-						FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");
-					}
-					else{
-						if(document.form.qos_type.value == 0 && lantiq_support){
-							var hwnatPrompt = "NAT traffic will be processed by CPU if traditional QoS is enabled. Are you sure want to enable?";
-							if(!confirm(hwnatPrompt)) return false;
-						}
-
-						document.form.action_script.value = "restart_qos;restart_firewall";
-					}
-				}
-			}
-
 			if(reset_wan_to_fo.change_status)
 				reset_wan_to_fo.change_wan_mode(document.form);
 
+			determineActionScript();
 			showLoading();
 			document.form.submit();
 		}
@@ -716,13 +729,6 @@ function change_qos_type(value){
 			document.getElementById('qos_overhead_tr').style.display = "";
 		}
 		document.form.qos_bw_rulelist.disabled = true;
-		if(document.form.qos_type_orig.value == 0 && document.form.qos_enable_orig.value != 0){
-			document.form.action_script.value = "restart_qos;restart_firewall";
-		}
-		else{
-			document.form.action_script.value = "reboot";
-			document.form.next_page.value = "Advanced_QOSUserRules_Content.asp";
-		}
 		show_settings("NonAdaptive");
 	}
 	else if(value == 1){		//Adaptive QoS
@@ -743,13 +749,6 @@ function change_qos_type(value){
 			show_up_down(1);
 		}
 
-		if(document.form.qos_type_orig.value == 1 && document.form.qos_enable_orig.value != 0)
-			document.form.action_script.value = "restart_qos;restart_firewall";
-		else{
-			document.form.action_script.value = "reboot";
-			document.form.next_page.value = "QoS_EZQoS.asp";
-		}
-
 		show_settings("Adaptive_quick");
 	}
 	else{		// Bandwidth Limiter
@@ -764,12 +763,6 @@ function change_qos_type(value){
 			document.getElementById('qos_overhead_tr').style.display = "";
 		}
 		document.form.qos_bw_rulelist.disabled = false;
-		if(document.form.qos_type_orig.value == 2 && document.form.qos_enable_orig.value != 0)
-			document.form.action_script.value = "restart_qos;restart_firewall";
-		else{
-			document.form.action_script.value = "reboot";
-		}
-
 		show_settings("NonAdaptive");
 		genMain_table();
 		if(!pm_support)
@@ -1459,13 +1452,11 @@ function change_scheduler(value){
 			<input type="hidden" name="next_page" value="QoS_EZQoS.asp">
 			<input type="hidden" name="group_id" value="">
 			<input type="hidden" name="action_mode" value="apply">
-			<input type="hidden" name="action_script" value="">
-			<input type="hidden" name="action_wait" value="15">
+			<input type="hidden" name="action_script" value="reboot">
+			<input type="hidden" name="action_wait" value="<% get_default_reboot_time(); %>">
 			<input type="hidden" name="flag" value="">
 			<input type="hidden" name="TM_EULA" value="<% nvram_get("TM_EULA"); %>">
 			<input type="hidden" name="qos_enable" value="<% nvram_get("qos_enable"); %>">
-			<input type="hidden" name="qos_enable_orig" value="<% nvram_get("qos_enable"); %>">
-			<input type="hidden" name="qos_type_orig" value="<% nvram_get("qos_type"); %>">
 			<input type="hidden" name="qos_type" value="<% nvram_get("qos_type"); %>">
 			<input type="hidden" name="qos_obw" value="<% nvram_get("qos_obw"); %>" disabled>
 			<input type="hidden" name="qos_ibw" value="<% nvram_get("qos_ibw"); %>" disabled>
@@ -1541,8 +1532,8 @@ function change_scheduler(value){
 													<script type="text/javascript">
 														$('#radio_qos_enable').iphoneSwitch('<% nvram_get("qos_enable"); %>',
 															 function() {
-																document.form.qos_enable.value = 1;
-																if(document.form.qos_enable_orig.value != 1){
+																document.form.qos_enable.value = "1";
+																if(qos_enable_orig != "1"){
 																	if (codel_support) {
 																		document.getElementById('qos_sched_tr').style.display = "";
 																		change_scheduler(document.getElementById('qos_sched').value);
@@ -1563,11 +1554,11 @@ function change_scheduler(value){
 																document.getElementById('qos_type_tr').style.display = "";
 																if(bwdpi_support){
 																	document.getElementById('qos_enable_hint').style.display = "";
-																	change_qos_type(document.form.qos_type_orig.value);
+																	change_qos_type(qos_type_orig);
 																}
 															 },
 															 function() {
-																document.form.qos_enable.value = 0;
+																document.form.qos_enable.value = "0";
 																show_up_down(0);
 																document.getElementById('qos_type_tr').style.display = "none";
 																document.getElementById('bandwidth_setting_tr').style.display = "none";

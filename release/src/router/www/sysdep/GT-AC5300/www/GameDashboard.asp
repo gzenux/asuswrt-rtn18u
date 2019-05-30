@@ -20,6 +20,8 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/httpApi.js"></script>
+<script language="JavaScript" type="text/javascript" src="/js/asus_eula.js"></script>
 <style>
 .traffic_bar{
 	width: 0%;
@@ -123,6 +125,25 @@ function initial(){
 		"type": 1, 
 		"target": "www.google.com"
 	});		
+
+	setTimeout(check_eula, 100);
+}
+
+function check_eula(){
+	ASUS_EULA.config(check_eula, check_eula);
+
+	var asus_status = httpApi.nvramGet(["ASUS_EULA", "ASUS_EULA_time", "ddns_enable_x", "ddns_server_x"], true);
+	if( (asus_status.ASUS_EULA == "1" && asus_status.ASUS_EULA_time == "") ||
+		(asus_status.ASUS_EULA == "0" && asus_status.ddns_enable_x == "1" && asus_status.ddns_server_x == "WWW.ASUS.COM") ){
+		ASUS_EULA.check("asus");
+		return false;
+	}
+
+	var tm_status = httpApi.nvramGet(["TM_EULA", "TM_EULA_time"], true);
+	if(tm_status.TM_EULA == "1" &&  tm_status.TM_EULA_time == ""){
+		ASUS_EULA.check("tm");
+		return false;
+	}
 }
 
 function check_sw_mode(){
@@ -131,9 +152,9 @@ function check_sw_mode(){
 		mode = "<#wireless_router#>";
 	else if(sw_mode == "2"){
 		if(wlc_express == 1)
-			mode = "Express Way (2.4GHz)";
+			mode = "<#OP_RE2G_item#>";
 		else if(wlc_express == 2)
-			mode = "Express Way (5GHz)";
+			mode = "<#OP_RE5G_item#>";
 		else
 			mode = "<#OP_RE_item#>";
 	}
@@ -453,11 +474,9 @@ var netoolApi = {
 </script>
 </head>
 
-<body onload="initial();" onunload="unload_body();" onselectstart="return false;">
+<body onload="initial();" onunload="unload_body();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
-<div id="agreement_panel" class="panel_folder" style="margin-top: -100px;"></div>
-
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="productid" value="<% nvram_get("productid"); %>">

@@ -4,7 +4,7 @@
 #
 #       raddb/sql/ippool/<DB>/schema.sql
 #
-#  $Id$
+#  $Id: 26960222182b4656ed895e365a4ca4659d87e2a9 $
 
 sqlippool {
 	# SQL instance to use (from sql.conf)

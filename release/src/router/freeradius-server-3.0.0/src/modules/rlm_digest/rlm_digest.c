@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 15f934a4f212ad3a9382f3c9bc0dcc6f675c3081 $
  * @file rlm_digest.c
  * @brief Handles SIP digest authentication requests from Cisco SIP servers.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id$")
+RCSID("$Id: 15f934a4f212ad3a9382f3c9bc0dcc6f675c3081 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

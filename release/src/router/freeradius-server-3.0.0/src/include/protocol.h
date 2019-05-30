@@ -3,7 +3,7 @@
 
 /*
  * heap.h	Structures and prototypes for plug-in protocols
- * Version:	$Id$
+ * Version:	$Id: 263b2c0a9dffcc436152fceb47498627b6fda9fe $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2013 Alan DeKok
  */
 
-RCSIDH(protocol_h, "$Id$")
+RCSIDH(protocol_h, "$Id: 263b2c0a9dffcc436152fceb47498627b6fda9fe $")
 
 #ifdef __cplusplus
 extern "C" {

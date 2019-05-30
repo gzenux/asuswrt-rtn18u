@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: 25344527759d22b49b5e990fd83f0e506442fa76 $
 
 # The logintime module. This handles the Login-Time,
 # Current-Time, and Time-Of-Day attributes.  It should be

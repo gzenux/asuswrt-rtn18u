@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 11addfc1b57a91c7873f8f1457b4bf27aebc49b3 $
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #ifndef _OTP_H
 #define _OTP_H
 
-RCSIDH(otp_h, "$Id$")
+RCSIDH(otp_h, "$Id: 11addfc1b57a91c7873f8f1457b4bf27aebc49b3 $")
 
 #include <sys/types.h>
 

@@ -2532,6 +2532,18 @@ void start_lan(void)
 						ioctl(sfd, SIOCSIFHWADDR, &ifr);
 					}
 
+#ifdef RTCONFIG_EMF
+					if ((nvram_get_int("emf_enable")
+#if defined(RTCONFIG_BCMWL6) && !defined(HND_ROUTER)
+						|| wl_igs_enabled()
+#endif
+					) && !strcmp(ifname, "dpsta")) {
+						eval("emf", "add", "iface", lan_ifname, ifname);
+						eval("emf", "add", "uffp", lan_ifname, ifname);
+						eval("emf", "add", "rtport", lan_ifname, ifname);
+					}
+#endif
+
 					if (dpsta)
 						add_to_list(ifname, list, sizeof(list));
 				}
@@ -2627,7 +2639,11 @@ gmac3_no_swbr:
 #ifdef HND_ROUTER
 						if (!strstr(bonding_ifnames, ifname))
 #endif
-						eval("emf", "add", "iface", lan_ifname, ifname);
+						{
+							eval("emf", "add", "iface", lan_ifname, ifname);
+							eval("emf", "add", "uffp", lan_ifname, ifname);
+							eval("emf", "add", "rtport", lan_ifname, ifname);
+						}
 					}
 #endif
 				}
@@ -3194,7 +3210,11 @@ gmac3_no_swbr:
 					|| wl_igs_enabled()
 #endif
 				)
+				{
 					eval("emf", "del", "iface", lan_ifname, ifname);
+					eval("emf", "del", "uffp", lan_ifname, ifname);
+					eval("emf", "del", "rtport", lan_ifname, ifname);
+				}
 #endif
 #if defined (RTCONFIG_WLMODULE_RT3352_INIC_MII)
 				{ // remove interface for iNIC packets
@@ -5294,6 +5314,18 @@ void start_lan_wl(void)
 						close(s);
 					}
 
+#ifdef RTCONFIG_EMF
+					if ((nvram_get_int("emf_enable")
+#if defined(RTCONFIG_BCMWL6) && !defined(HND_ROUTER)
+						|| wl_igs_enabled()
+#endif
+					) && !strcmp(ifname, "dpsta")) {
+						eval("emf", "add", "iface", lan_ifname, ifname);
+						eval("emf", "add", "uffp", lan_ifname, ifname);
+						eval("emf", "add", "rtport", lan_ifname, ifname);
+					}
+#endif
+
 					if (dpsta)
 						add_to_list(ifname, list2, sizeof(list2));
 				}
@@ -5373,7 +5405,11 @@ gmac3_no_swbr:
 #ifdef HND_ROUTER
 						if (!strstr(bonding_ifnames, ifname))
 #endif
-						eval("emf", "add", "iface", lan_ifname, ifname);
+						{
+							eval("emf", "add", "iface", lan_ifname, ifname);
+							eval("emf", "add", "uffp", lan_ifname, ifname);
+							eval("emf", "add", "rtport", lan_ifname, ifname);
+						}
 					}
 #endif
 				}

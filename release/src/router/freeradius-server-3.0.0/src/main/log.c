@@ -1,7 +1,7 @@
 /*
  * log.c	Logging module.
  *
- * Version:	$Id$
+ * Version:	$Id: e854ee91005e26c1c7d330e11cbd483e0135fa15 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: e854ee91005e26c1c7d330e11cbd483e0135fa15 $")
 
 #include <freeradius-devel/radiusd.h>
 

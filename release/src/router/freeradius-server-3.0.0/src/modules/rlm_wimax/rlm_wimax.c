@@ -10,13 +10,13 @@
  */
 
 /**
- * $Id$
+ * $Id: da5453774f414cae0c5026f4d5cda13aaa64371f $
  * @file rlm_wimax.c
  * @brief Supports various WiMax functionality.
  *
  * @copyright 2008 Alan DeKok <aland@networkradius.com>
  */
-RCSID("$Id$")
+RCSID("$Id: da5453774f414cae0c5026f4d5cda13aaa64371f $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>

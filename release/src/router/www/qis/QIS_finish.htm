@@ -580,11 +580,6 @@ function QKfinish_load_body(){
 		}, 6000);
 	}
 
-	/* MODELDEP */
-	if(document.restartForm.productid.value == "AC2900"){	//MODELDEP: AC2900(RT-AC86U)
-		$("#main_manual")[0].style.display = "none";
-	}
-
 	parent.detect_firmware();
 	document.getElementById("QISmain").style.display = "";
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";

@@ -14,13 +14,13 @@
  */
 
 /**
- * $Id$
+ * $Id: c7fba7f32c1d9dd642634f3867e11d787678bbb8 $
  * @file rlm_dhcp.c
  * @brief Will contain dhcp listener code.
  *
  * @copyright 2012  The FreeRADIUS server project
  */
-RCSID("$Id$")
+RCSID("$Id: c7fba7f32c1d9dd642634f3867e11d787678bbb8 $")
 
 #include <freeradius-devel/libradius.h>
 

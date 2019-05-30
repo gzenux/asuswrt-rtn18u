@@ -1,7 +1,7 @@
 /*
  * radconf2xml.c	Converts radiusd.conf to XML.
  *
- * Version:	$Id$
+ * Version:	$Id: 116cf9127510c24abbe2f814f3765e86c7171178 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id$")
+RCSID("$Id: 116cf9127510c24abbe2f814f3765e86c7171178 $")
 
 #include <freeradius-devel/radiusd.h>
 

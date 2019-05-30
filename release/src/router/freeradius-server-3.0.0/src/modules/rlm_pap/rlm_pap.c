@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 7ebcedf0232a86d8a45d9c6fc12b84801904fa0d $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -22,7 +22,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id$")
+RCSID("$Id: 7ebcedf0232a86d8a45d9c6fc12b84801904fa0d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

@@ -17,7 +17,7 @@
 #	See also the "radmin" program, which is used to communicate
 #	with the server over the control socket.
 #
-#	$Id$
+#	$Id: 8d06082d3a8fba31bb1471aef19e28093cee4a9e $
 #
 ######################################################################
 listen {

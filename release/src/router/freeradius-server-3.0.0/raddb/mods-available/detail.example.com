@@ -20,7 +20,7 @@
 #  Writing multiple detail enables the server to process the pieces
 #  in smaller chunks.  This helps in certain catastrophic corner cases.
 #
-#  $Id$
+#  $Id: 827cdf57e70dc2ff2252016194f4bb846eecead2 $
 #
 detail detail.example.com {
 	filename = ${radacctdir}/detail.example.com/detail-%Y%m%d:%H:%G

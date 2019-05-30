@@ -193,7 +193,7 @@ function hasBlank(objArray){
 }
 
 function hadPlugged(deviceType){
-	var usbDeviceList = httpApi.hookGet("show_usb_path")[0] || [];
+	var usbDeviceList = httpApi.hookGet("show_usb_path") || [];
 	return (usbDeviceList.join().search(deviceType) != -1)
 }
 
@@ -444,9 +444,8 @@ var Get_Component_ISPSelect = function(){
 function handleSysDep(){
 	var isNoWAN = (httpApi.detwanGetRet().wanType == 'NOWAN');
 
-	var enableAMAS = httpApi.nvramGet(["amas_force"], true);
-	$(".amasSupport").toggle(isSupport("AMAS") && (enableAMAS.amas_force == "1"));
-	$(".noAmasSupport").toggle(!isSupport("AMAS") || (enableAMAS.amas_force != "1"));
+	$(".amasSupport").toggle(isSupport("amas"));
+	$(".noAmasSupport").toggle(!isSupport("amas"));
 	$(".tosSupport").toggle(systemVariable.isDefault && isSupport("QISBWDPI"));
 	$(".repeaterSupport").toggle(isSupport("repeater"));
 	$(".pstaSupport").toggle(isSupport("psta"));
@@ -532,14 +531,15 @@ function handleModelIcon() {
 }
 
 function handleSortField(){
-	if($("#sort_field").css("display") == "none"){
-		$("#sort_field").css("display", "block");
-		$("#sort_background").css("display", "block");
+	if(!$("#sort_field").is(":visible")){
+		$("#sort_field").fadeIn(300)
+		$("#sort_background").fadeIn(300)
 	}
 	else{
-		$("#sort_field").css("display", "none");
-		$("#sort_background").css("display", "none");
+		$("#sort_field").fadeOut(300);
+		$("#sort_background").fadeOut(300);
 	}
+
 	if(systemVariable.multiPAP.wlcOrder.length != 0)
 		$("#sortByBand").hide();
 	else
@@ -700,7 +700,13 @@ var getRestartService = function(){
 		actionScript.push("restart_yadns");
 	}
 
-	if(qisPostData.hasOwnProperty("wl0_ssid") || qisPostData.hasOwnProperty("wl0.1_ssid") || systemVariable.isDefault || isSmartConnectChanged()){
+	if(
+		qisPostData.hasOwnProperty("wl0_ssid") || 
+		qisPostData.hasOwnProperty("wl0.1_ssid") || 
+		qisPostData.hasOwnProperty("wl0_he_features") || 
+		systemVariable.isDefault || 
+		isSmartConnectChanged()
+	){
 		actionScript.push("restart_wireless");
 	}
 
@@ -717,8 +723,17 @@ var getRestartService = function(){
 		actionScript.push("restart_cfgsync");
 	}
 
+	if(isSupport("2p5G_LWAN")) {
+		actionScript.push("start_br_addif");
+	}
+
 	if(isSwModeChanged() && isSwMode("RT")){
 		return "restart_all";
+	}
+
+	if(isSupport("2p5G_LWAN") || isSupport("10G_LWAN") || isSupport("10GS_LWAN")){
+		if(isWANLANChange())
+			return "reboot";
 	}
 
 	if( qisPostData.hasOwnProperty("switch_wantag") ||
@@ -787,6 +802,20 @@ var isWANChanged = function(){
 
 	if(qisPostData.hasOwnProperty("wan_dnsenable_x")){
 		if(qisPostData.wan_dnsenable_x != systemVariable.wanDnsenable) isChanged = true;
+	}
+
+	return isChanged;
+};
+
+var isWANLANChange = function(){
+	var isChanged = false;
+
+	if(isSupport("2p5G_LWAN") && qisPostData.hasOwnProperty("wans_extwan")){
+		if(qisPostData.wans_extwan != systemVariable.originWansExtwan) isChanged = true;
+	}
+
+	if((isSupport("10G_LWAN") || isSupport("10GS_LWAN")) && qisPostData.hasOwnProperty("wans_dualwan")){
+		if(qisPostData.wans_dualwan != systemVariable.originWansDualwan) isChanged = true;
 	}
 
 	return isChanged;

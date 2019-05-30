@@ -3,7 +3,7 @@
 #ifndef _SMBDES_H
 #define _SMBDES_H
 
-RCSIDH(smbdes_h, "$Id$")
+RCSIDH(smbdes_h, "$Id: aa06d761d421d997cfdc6f54af581545f691179e $")
 
 void smbhash(unsigned char *out, unsigned char const *in, unsigned char *key);
 void smbdes_lmpwdhash(char const *password, uint8_t *lmhash);

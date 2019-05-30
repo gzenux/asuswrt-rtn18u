@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id$
+ * $Id: 5d8a3700642fe12b27f7db4ec54b90467b785d3f $
  * @file groups.c
  * @brief LDAP module group functions.
  *

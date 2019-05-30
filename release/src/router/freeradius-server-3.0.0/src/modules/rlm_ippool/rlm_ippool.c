@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: 5f55275e44437f1c0b02dda7a47f26607150be4f $
  * @file rlm_ippool.c
  * @brief Allocates an IPv4 address from a pool stored in a GDBM database.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2002  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id$")
+RCSID("$Id: 5f55275e44437f1c0b02dda7a47f26607150be4f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

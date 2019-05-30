@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: d1da9afa87ee202328b3cfb533b9aef45085ed8f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #ifndef OTP_MPPE_H
 #define OTP_MPPE_H
 
-RCSIDH(otp_mppe_h, "$Id$")
+RCSIDH(otp_mppe_h, "$Id: d1da9afa87ee202328b3cfb533b9aef45085ed8f $")
 
 /* MPPE encryption policy */
 #define MPPE_ENC_POL_ENCRYPTION_FORBIDDEN "0x00000000"

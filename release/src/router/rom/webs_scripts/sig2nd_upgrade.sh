@@ -85,6 +85,7 @@ else
 			fi
 			echo "Do restart_wrs"
 			echo "Do restart_wrs" >> /tmp/sig_upgrade.log
+			nvram set sig_update_t=`date +%s`   #set timestamp for download signature and restart_wrs
 			rc rc_service restart_wrs
 		else
 			echo "do nothing..." >> /tmp/sig_upgrade.log

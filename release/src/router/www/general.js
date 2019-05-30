@@ -854,7 +854,18 @@ function insertExtChannelOption_5g(){
 				}
 			}
 
-				if(document.form.wl_bw.value != "0" && document.form.wl_nmode_x.value != "2"){ //not Legacy mode and BW != 20MHz
+				if( country == 'RU' 
+				&& (based_modelid == 'RT-AC59U' || based_modelid == 'RT-AC65P' || based_modelid == 'RT-AC85P' || based_modelid == 'RT-AC1750U')){
+					if(document.form.wl_nmode_x.value == 0 || document.form.wl_nmode_x.value == 8){    // Auto or N/AC mixed
+						if(document.form.wl_bw.value == 3){    // 80 MHz
+							wl_channel_list_5g = ['42', '58', '138', '155'];
+						}
+						else if(document.form.wl_bw.value == 2){    // 40 MHz
+							wl_channel_list_5g = ['38', '46', '54', '62', '134', '142', '151', '159'];
+						}
+					}
+				}
+				else if(document.form.wl_bw.value != "0" && document.form.wl_nmode_x.value != "2"){ //not Legacy mode and BW != 20MHz
 					// for V40, if not all 2 continuous channels exist, remove them.
 					if(document.form.wl_bw.value == "2" && (Rawifi_support || Qcawifi_support || Rtkwifi_support)){
 						wl_channel_list_5g = filter_5g_channel_by_bw(wl_channel_list_5g, 40);
@@ -1234,6 +1245,19 @@ function insertExtChannelOption_5g(){
         }
         if(ch_v[0] == "0")
         	channels[0] = "<#Auto#>";
+
+				if( country == 'RU' 
+				&& (based_modelid == 'RT-AC59U' || based_modelid == 'RT-AC65P' || based_modelid == 'RT-AC85P' || based_modelid == 'RT-AC1750U')){
+					if(document.form.wl_nmode_x.value == 0 || document.form.wl_nmode_x.value == 8){    // Auto or N/AC mixed
+						if(document.form.wl_bw.value == 3){    // 80 MHz
+							ch_v = ['0', '36', '52', '136', '149'];
+						}
+						else if(document.form.wl_bw.value == 2){    // 40 MHz
+							ch_v = ['0', '36', '44', '52', '60', '132', '136', '149', '157'];
+						}			
+					}
+				}
+
         add_options_x2(document.form.wl_channel, channels, ch_v, orig);
 				var x = document.form.wl_nctrlsb;
 				//x.remove(x.selectedIndex);

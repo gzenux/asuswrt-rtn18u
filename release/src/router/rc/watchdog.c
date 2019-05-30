@@ -2814,7 +2814,7 @@ void btn_check(void)
 			if (LED_status_on) {
 				TRACE_PT("LED turn to normal\n");
 				led_control(LED_POWER, LED_ON);
-#if defined(RTAC65U) || defined(RTAC85U) || defined(RTAC85P) || defined(RTN800HP)
+#if defined(RTAC65U) || defined(RTAC85U) || defined(RTAC85P) || defined(RTN800HP) || defined(RTACRH26)
 			if (nvram_match("wl0_radio", "1")) {
 				led_control(LED_2G, LED_ON);
 			}
@@ -2854,15 +2854,15 @@ void btn_check(void)
 				kill_pidfile_s("/var/run/usbled.pid", SIGTSTP); // inform usbled to reset status
 #endif
 #ifdef RTCONFIG_QCA
-				led_control(LED_2G, LED_ON);
-#if defined(RTCONFIG_HAS_5G)
-				led_control(LED_5G, LED_ON);
-#if defined(RTCONFIG_HAS_5G_2)
-				led_control(LED_5G2, LED_ON);
-#endif	/* RTCONFIG_HAS_5G_2 */
-#endif	/* RTCONFIG_HAS_5G */
+				char word[16], *next;
+				int unit = 0;
+				const int wled[] = { LED_2G, LED_5G, LED_5G2, LED_60G };
+				foreach (word, nvram_safe_get("wl_ifnames"), next) {
+					if (get_radio_status(word))
+						led_control(wled[unit], LED_ON);
+					unit++;
+				}
 #endif	/* RTCONFIG_QCA */
-				wigig_led_control(LED_ON);
 #ifdef RTCONFIG_LAN4WAN_LED
 				LanWanLedCtrl();
 #endif
@@ -6162,6 +6162,7 @@ static void link_pap_status()
 #if defined(RTCONFIG_LP5523)
 						lp55xx_leds_proc(LP55XX_ALL_BREATH_LEDS, LP55XX_ACT_NONE);
 #elif defined(MAPAC1750)
+						set_rgbled(RGBLED_GREEN_3ON1OFF);
 #endif
 					}
 					else {

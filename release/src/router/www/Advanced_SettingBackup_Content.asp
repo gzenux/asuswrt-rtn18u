@@ -56,7 +56,6 @@ function initial(){
 
 function restoreRule(_flag){
 	var alert_string = "<#Setting_factorydefault_hint1#>";
-
 	if($('#restoreInit').prop("checked") && bwdpi_support)
 		alert_string = "<#Setting_initialize_hint1#>";
 

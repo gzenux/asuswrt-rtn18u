@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id$
+ * Version:     $Id: 1e31d8f706f058b62a07eb9828c5c24a8b6bf359 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
  *
  */
 
-RCSID("$Id$")
+RCSID("$Id: 1e31d8f706f058b62a07eb9828c5c24a8b6bf359 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>

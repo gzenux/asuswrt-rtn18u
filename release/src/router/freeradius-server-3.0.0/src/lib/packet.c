@@ -1,7 +1,7 @@
 /*
  * packet.c	Generic packet manipulation functions.
  *
- * Version:	$Id$
+ * Version:	$Id: 732a4e6bcb1d2cad2f369a5a698a86ea5395fd28 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-RCSID("$Id$")
+RCSID("$Id: 732a4e6bcb1d2cad2f369a5a698a86ea5395fd28 $")
 
 #include	<freeradius-devel/libradius.h>
 

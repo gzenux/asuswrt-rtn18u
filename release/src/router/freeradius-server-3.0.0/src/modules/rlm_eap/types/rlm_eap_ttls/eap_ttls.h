@@ -1,7 +1,7 @@
 /*
  * eap_ttls.h
  *
- * Version:     $Id$
+ * Version:     $Id: bfd01fb93a51290bc047bdc3d4b483fdf423402f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #ifndef _EAP_TTLS_H
 #define _EAP_TTLS_H
 
-RCSIDH(eap_ttls_h, "$Id$")
+RCSIDH(eap_ttls_h, "$Id: bfd01fb93a51290bc047bdc3d4b483fdf423402f $")
 
 #include "eap_tls.h"
 

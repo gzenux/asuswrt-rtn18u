@@ -142,7 +142,7 @@ var Amazon_URLs = [
 
 function initial(){
 	show_menu();
-
+	//	https://www.asus.com/us/support/FAQ/1033393
 	httpApi.faqURL("1033393", function(url){document.getElementById("faq").href=url;});
 	create_AmazonRegion_select();
 

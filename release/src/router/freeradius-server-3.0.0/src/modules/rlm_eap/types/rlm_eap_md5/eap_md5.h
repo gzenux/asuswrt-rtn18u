@@ -1,7 +1,7 @@
 #ifndef _EAP_MD5_H
 #define _EAP_MD5_H
 
-RCSIDH(eap_md5_h, "$Id$")
+RCSIDH(eap_md5_h, "$Id: 5fc46972ee61513f468840dc8ebbfb0b6a83970b $")
 
 #include "eap.h"
 

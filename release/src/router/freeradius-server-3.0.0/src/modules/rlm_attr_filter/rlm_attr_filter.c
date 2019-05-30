@@ -14,14 +14,14 @@
  */
 
 /**
- * $Id$
+ * $Id: c85db63afa334236361a8b478051a4f89ec33a24 $
  * @file rlm_attr_filter.c
  * @brief Filter the contents of a list, allowing only certain attributes.
  *
  * @copyright (C) 2001,2006 The FreeRADIUS server project
  * @copyright (C) 2001 Chris Parker <cparker@starnetusa.net>
  */
-RCSID("$Id$")
+RCSID("$Id: c85db63afa334236361a8b478051a4f89ec33a24 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

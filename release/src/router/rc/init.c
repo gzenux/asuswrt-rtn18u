@@ -490,8 +490,10 @@ wl_defaults(void)
 				} else
 #endif
 #ifdef RTCONFIG_WLMODULE_MT7615E_AP
-				if(!strncmp(tmp,"wl0_txbf",8) ){
+				if(!strcmp(tmp,"wl0_txbf") || !strcmp(tmp,"wl0_txbf_en") ){
 				nvram_set(tmp, "0");
+				}else{
+				nvram_set(tmp, t->value);
 				}
 #else
 				nvram_set(tmp, t->value);
@@ -835,7 +837,7 @@ restore_defaults_wifi(int all)
 	unsigned int max_mssid;
 	char prefix[]="wlXXXXXX_", tmp[100];
 
-#ifdef RTCONFIG_NEWSSID_REV2
+#if defined(RTCONFIG_NEWSSID_REV2) || defined(RTCONFIG_NEWSSID_REV4)
 	rev3 = 1;
 #endif
 	unit = 0;
@@ -1522,6 +1524,7 @@ misc_defaults(int restore_defaults)
 		case MODEL_RTN65U:
 		case MODEL_RTAC85U:
 		case MODEL_RTAC85P:
+		case MODEL_RTACRH26:
 			nvram_set("reboot_time", "90");		// default is 70 sec
 			break;
 #endif
@@ -1530,6 +1533,8 @@ misc_defaults(int restore_defaults)
 		case MODEL_RT4GAC55U:
 		case MODEL_RTAC55U:
 		case MODEL_RTAC55UHP:
+		case MODEL_RTN19:
+		case MODEL_RTAC59U:
 		case MODEL_PLN12:
 		case MODEL_PLAC56:
 		case MODEL_PLAC66U:
@@ -1606,6 +1611,9 @@ misc_defaults(int restore_defaults)
 #endif
 
 #if defined(RTCONFIG_RALINK) || defined(RTCONFIG_QCA)
+#ifndef RTCONFIG_USB
+	int i;
+#endif
 	for (i = WL_2G_BAND; i < MAX_NR_WL_IF; ++i) {
 		char prefix[sizeof("wlXXXXXX_")];
 
@@ -1801,13 +1809,23 @@ restore_defaults(void)
 			restore_defaults = 1;
 		}
 #endif
-#if defined(RTCONFIG_REALTEK) && defined(RPAC55)
+#if defined(RTCONFIG_REALTEK)
+#if defined(RPAC55) || defined(RPAC53)
 		char c;
 		f_write_string("/proc/asus_ate", "restore 1", 0, 0);
 		f_read("/proc/asus_ate", &c, 1);
 		int restore_flag = c - '0';
-		if (restore_flag == 1)
-			restore_defaults = 1;
+#ifdef RPAC53		
+		if (restore_flag != 1)
+			restore_flag = rtk_check_nvram_partation(); // Restore defaults if nvram value is garbled.
+#endif
+		if (restore_flag == 1) {
+			_dprintf("Erase NVRAM...\n");
+			system("mtd-erase -d nvram");
+			sleep(1);
+			reboot(RB_AUTOBOOT);
+		}
+#endif
 #endif
 	}
 
@@ -1991,7 +2009,7 @@ static void set_term(int fd)
 	/* set control chars */
 	tty.c_cc[VINTR]  = 3;	/* C-c */
 	tty.c_cc[VQUIT]  = 28;	/* C-\ */
-	tty.c_cc[VERASE] = 127; /* C-? */
+	tty.c_cc[VERASE] = 8; /* C-H */
 	tty.c_cc[VKILL]  = 21;	/* C-u */
 	tty.c_cc[VEOF]   = 4;	/* C-d */
 	tty.c_cc[VSTART] = 17;	/* C-q */
@@ -2052,10 +2070,9 @@ static int console_init(void)
 
 static pid_t run_shell(int timeout, int nowait)
 {
-#ifdef LOGIN
+	char *argv_shell[] = { SHELL, NULL };
 	char *argv_login[] = { LOGIN, "-p", NULL };
-#endif
-	char *argv[] = { SHELL, NULL };
+	char **argv = argv_shell;
 	pid_t pid;
 	int sig;
 
@@ -2063,17 +2080,16 @@ static pid_t run_shell(int timeout, int nowait)
 	if (waitfor(STDIN_FILENO, timeout) <= 0)
 		return 0;
 
-#ifdef LOGIN
 #ifdef CONFIG_BCMWL5
-	if (!ATE_BRCM_FACTORY_MODE()
+	if (!ATE_BRCM_FACTORY_MODE())
 #else
-	if (!IS_ATE_FACTORY_MODE()
+	if (!IS_ATE_FACTORY_MODE())
 #endif
-		&& !(check_if_file_exist("/etc/shadow"))) {
-		void setup_passwd(void);
-		setup_passwd();
+	{
+		if (!check_if_file_exist("/etc/shadow"))
+			setup_passwd();
+		argv = argv_login;
 	}
-#endif	/* LOGIN */
 
 	switch (pid = fork()) {
 	case -1:
@@ -2089,32 +2105,10 @@ static pid_t run_shell(int timeout, int nowait)
 
 		/* Now run it.  The new program will take over this PID,
 		 * so nothing further in init.c should be run. */
-#ifdef LOGIN
-#ifdef CONFIG_BCMWL5
-		if (ATE_BRCM_FACTORY_MODE())
-#else
-		if (IS_ATE_FACTORY_MODE())
-#endif
-			execve(argv[0], argv, defenv);
-		else
-			execve(argv_login[0], argv_login, defenv);
-#else
 		execve(argv[0], argv, defenv);
-#endif
 
 		/* We're still here?  Some error happened. */
-#ifdef LOGIN
-#ifdef CONFIG_BCMWL5
-		if (ATE_BRCM_FACTORY_MODE())
-#else
-		if (IS_ATE_FACTORY_MODE())
-#endif
-			perror(argv[0]);
-		else
-			perror(argv_login[0]);
-#else
 		perror(argv[0]);
-#endif
 		_exit(errno);
 	default:
 		if (!nowait) {
@@ -2668,7 +2662,7 @@ static int set_basic_ifname_vars(char *wan, char *lan, char *wl_ifaces[WL_NR_BAN
 	}
 
 #if (defined(RTCONFIG_DUALWAN) && defined(RTCONFIG_QCA))
-#if (defined(PLN12) || defined(PLAC56) || defined(PLAC66U) || defined(RTCONFIG_SOC_IPQ40XX))
+#if defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X) || defined(RTCONFIG_SOC_IPQ40XX)
 #else /* RT-AC55U || 4G-AC55U */
 	if(enable_dw_wan) {
 		nvram_set("vlan2hwname", "et0");
@@ -3909,6 +3903,7 @@ int init_nvram(void)
 		add_rc_support("switchctrl");
 		add_rc_support("manual_stb");
 		add_rc_support("11AC");
+		add_rc_support("app");
 		//add_rc_support("pwrctrl");
 		// the following values is model dep. so move it from default.c to here
 		nvram_set("wl0_HT_TxStream", "4");
@@ -3917,6 +3912,50 @@ int init_nvram(void)
 		nvram_set("wl1_HT_RxStream", "4");
 		break;
 #endif /*  RTAC85P  */
+
+#if defined(RTACRH26) 
+	case MODEL_RTACRH26:
+		nvram_set("boardflags", "0x100"); // although it is not used in ralink driver, set for vlan
+		nvram_set("vlan1hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface.
+		nvram_set("vlan2hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface.
+		nvram_set("lan_ifname", "br0");
+		wl_ifaces[WL_2G_BAND] = "ra0";
+		wl_ifaces[WL_5G_BAND] = "rai0";
+		set_basic_ifname_vars("eth3", "vlan1", wl_ifaces, "usb", "vlan1", NULL, "vlan3", NULL, 0);
+
+		nvram_set_int("btn_rst_gpio",  3|GPIO_ACTIVE_LOW);
+		nvram_set_int("btn_wps_gpio",  6|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_pwr_gpio",  4|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_5g_gpio", 8|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_2g_gpio", 10|GPIO_ACTIVE_LOW);
+//		nvram_set_int("led_all_gpio", 10|GPIO_ACTIVE_LOW);
+
+		eval("rtkswitch", "11");
+
+		/* enable bled */
+		config_netdev_bled("led_2g_gpio", "ra0");
+		config_netdev_bled("led_5g_gpio", "rai0");
+
+		nvram_set("ehci_ports", "1-1");
+		nvram_set("ohci_ports", "2-1");
+		nvram_set("ct_max", "300000"); // force
+
+		if (nvram_get("wl_mssid") && nvram_match("wl_mssid", "1"))
+			add_rc_support("mssid");
+		add_rc_support("2.4G 5G update usbX1");
+		add_rc_support("rawifi");
+		add_rc_support("switchctrl");
+		add_rc_support("manual_stb");
+		add_rc_support("11AC");
+		add_rc_support("app");
+		//add_rc_support("pwrctrl");
+		// the following values is model dep. so move it from default.c to here
+		nvram_set("wl0_HT_TxStream", "4");
+		nvram_set("wl0_HT_RxStream", "4");
+		nvram_set("wl1_HT_TxStream", "4");
+		nvram_set("wl1_HT_RxStream", "4");
+		break;
+#endif /*  RTACRH26  */
 
 #if defined(RTN11P_B1)
 	case MODEL_RTN11P_B1:
@@ -4688,6 +4727,85 @@ int init_nvram(void)
 		add_rc_support("11AC");
 		break;
 #endif	/* RT4GAC55U */
+
+#if defined(RTN19)
+	case MODEL_RTN19:
+		nvram_set("boardflags", "0x100"); // although it is not used in ralink driver, set for vlan
+		nvram_set("vlan1hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface.
+		nvram_set("vlan2hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface.
+		nvram_set("lan_ifname", "br0");
+		wl_ifaces[WL_2G_BAND] = "ath0";
+		set_basic_ifname_vars("vlan2", "vlan1", wl_ifaces, NULL, "vlan1", "vlan2", "vlan3", NULL, 0);
+
+		nvram_set_int("btn_rst_gpio", 17|GPIO_ACTIVE_LOW);
+		nvram_set_int("btn_wps_gpio", 1|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_2g_gpio", 15|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_wps_gpio", 16|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_pwr_gpio", 16|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_wan_gpio", 4|GPIO_ACTIVE_LOW);
+#ifdef RTCONFIG_LAN4WAN_LED
+		nvram_set_int("led_lan1_gpio", 3|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_lan2_gpio", 2|GPIO_ACTIVE_LOW);
+#endif
+
+		/* enable bled */
+		config_netdev_bled("led_2g_gpio", "ath0");
+
+		nvram_set("ct_max", "300000"); // force
+
+		if (nvram_get("wl_mssid") && nvram_match("wl_mssid", "1"))
+			add_rc_support("mssid");
+		add_rc_support("2.4G update");
+		add_rc_support("qcawifi");
+		add_rc_support("manual_stb");
+		// the following values is model dep. so move it from default.c to here
+		nvram_set("wl0_HT_TxStream", "4");
+		nvram_set("wl0_HT_RxStream", "4");
+		break;
+#endif	/* RTN19 */
+
+#if defined(RTAC59U)
+	case MODEL_RTAC59U:
+		nvram_set("boardflags", "0x100"); // although it is not used in ralink driver, set for vlan
+		nvram_set("vlan1hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface.
+		nvram_set("vlan2hwname", "et0");  // vlan. used to get "%smacaddr" for compare and find parent interface.
+		nvram_set("lan_ifname", "br0");
+		wl_ifaces[WL_2G_BAND] = "ath0";
+		wl_ifaces[WL_5G_BAND] = "ath1";
+		set_basic_ifname_vars("vlan2", "vlan1", wl_ifaces, "usb", "vlan1", "vlan2", "vlan3", NULL, 0);
+
+		nvram_set_int("btn_rst_gpio", 17|GPIO_ACTIVE_LOW);
+		nvram_set_int("btn_wps_gpio", 1|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_usb_gpio", 4|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_2g_gpio", 15|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_5g_gpio",  5|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_wps_gpio", 16|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_pwr_gpio", 16|GPIO_ACTIVE_LOW);
+
+		/* enable bled */
+		config_netdev_bled("led_2g_gpio", "ath0");
+		config_netdev_bled("led_5g_gpio", "ath1");
+
+		nvram_set("ehci_ports", "1-1 3-1");
+		nvram_set("ohci_ports", "1-1 4-1");
+
+		nvram_set("ct_max", "300000"); // force
+
+		if (nvram_get("wl_mssid") && nvram_match("wl_mssid", "1"))
+			add_rc_support("mssid");
+		add_rc_support("2.4G 5G update usbX1");
+		add_rc_support("qcawifi");
+		add_rc_support("switchctrl");
+		add_rc_support("manual_stb");
+		add_rc_support("11AC");
+		add_rc_support("nodm");
+		// the following values is model dep. so move it from default.c to here
+		nvram_set("wl0_HT_TxStream", "4");
+		nvram_set("wl0_HT_RxStream", "4");
+		nvram_set("wl1_HT_TxStream", "2");
+		nvram_set("wl1_HT_RxStream", "2");
+		break;
+#endif	/* RTAC59U */
 
 #if defined(PLN12)
 	case MODEL_PLN12:
@@ -9248,12 +9366,13 @@ int init_nvram2(void)
 	macp = get_2g_hwaddr();
 	ether_atoe(macp, mac_binary);
 
-#if defined(RTAC85U) || defined(RTAC85P)
+#if defined(RTAC85U) || defined(RTAC85P) || defined(RTACRH26)
 	int model = get_model();
 	switch(model)
 	{
 	case MODEL_RTAC85U:
 	case MODEL_RTAC85P:
+	case MODEL_RTACRH26:
 #ifdef RTCONFIG_USB_SWAP
 		if(nvram_get_int("apps_swap_threshold") == 0) {
 			nvram_set("apps_swap_enable", "1");
@@ -11296,7 +11415,7 @@ int reboothalt_main(int argc, char *argv[])
 	_dprintf(reboot ? "Rebooting..." : "Shutting down...");
 	kill(1, reboot ? SIGTERM : SIGQUIT);
 
-#if defined(RTN14U) || defined(RTN65U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTCONFIG_QCA) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2) || defined(RTAC85U) || defined(RTAC85P) || defined(RTN800HP)
+#if defined(RTN14U) || defined(RTN65U) || defined(RTAC52U) || defined(RTAC51U) || defined(RTN11P) || defined(RTN300) || defined(RTN54U) || defined(RTCONFIG_QCA) || defined(RTAC1200HP) || defined(RTN56UB1) || defined(RTAC54U) || defined(RTN56UB2) || defined(RTAC85U) || defined(RTAC85P) || defined(RTN800HP) || defined(RTACRH26)
 	def_reset_wait = 50;
 #endif
 

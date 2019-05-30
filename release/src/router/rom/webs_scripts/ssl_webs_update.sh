@@ -9,6 +9,11 @@ dl_path_SQ="https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ"
 dl_path_info="https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless"
 dl_path_file="https://dlcdnets.asus.com/pub/ASUS/wireless/ASUSWRT"
 
+dl_path_MR="https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ/MR"
+dl_path_SQ="https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless_SQ"
+dl_path_info="https://dlcdnets.asus.com/pub/ASUS/LiveUpdate/Release/Wireless"
+dl_path_file="https://dlcdnets.asus.com/pub/ASUS/wireless/ASUSWRT"
+
 nvram set webs_state_update=0 # INITIALIZING
 nvram set webs_state_flag=0   # 0: Don't do upgrade  1: New firmeware available  2: Do Force Upgrade	
 nvram set webs_state_error=0

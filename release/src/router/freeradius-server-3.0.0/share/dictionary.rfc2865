@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 2865.
 #	http://www.ietf.org/rfc/rfc2865.txt
 #
-#	$Id$
+#	$Id: 8a2aedde3ce678e2c0ba0e8007e0a219bf5efcad $
 #
 ATTRIBUTE	User-Name				1	string
 ATTRIBUTE	User-Password				2	string encrypt=1

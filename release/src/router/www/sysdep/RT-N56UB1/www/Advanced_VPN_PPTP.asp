@@ -60,8 +60,8 @@ function initial(){
 	var pptpd_clients = '<% nvram_get("pptpd_clients"); %>';
 
 	show_menu();
-	httpApi.faqURL("faq", "114892", "https://www.asus.com", "/support/FAQ/");
-	httpApi.faqURL("faq_port_forwarding", "1033906", "https://www.asus.com", "/support/FAQ/");
+	// https://www.asus.com/US/support/FAQ/1033906
+	httpApi.faqURL("1033906", function(url){document.getElementById("faq").href=url;});
 
 	//if support pptpd and openvpnd then show switch button
 	if(pptpd_support && openvpnd_support) {
@@ -911,7 +911,7 @@ function check_vpn_conflict() {		//if conflict with LAN ip & DHCP ip pool & stat
 											</thead>								
 											<tr>
 												<th><#PPPConnection_x_WANLink_itemname#></th>
-												<th><#HSDPAConfig_Username_itemname#></th>
+												<th><#Username#></th>
 												<th><#HSDPAConfig_Password_itemname#></th>
 												<th><#list_add_delete#></th>
 												<th><#pvccfg_edit#></th>

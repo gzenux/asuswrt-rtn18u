@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: 1dba5a33d677de4f43d78482fa832cd255847ae8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  */
 
-RCSID("$Id$")
+RCSID("$Id: 1dba5a33d677de4f43d78482fa832cd255847ae8 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #ifdef HAVE_OPENSSL_RAND_H

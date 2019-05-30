@@ -2,7 +2,7 @@
 #	Configuration file for the rlm_attr_filter module.
 #	Please see rlm_attr_filter(5) manpage for more information.
 #
-#	$Id$
+#	$Id: 8c601cf205f9d85b75c1ec7fc8e816e7341a5ba4 $
 #
 #	This file contains security and configuration information
 #	for each realm. It can be used be an rlm_attr_filter module

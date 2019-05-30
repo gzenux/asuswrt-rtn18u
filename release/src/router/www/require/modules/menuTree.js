@@ -94,6 +94,30 @@ define(function(){
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
+			{		//for without bwdpi model, RT-N66U_C1
+				menuName: "<#Menu_TrafficManager#>",
+				index: "menu_QoS", 
+				tab: [
+					{url: "QoS_EZQoS.asp", tabName: "<#menu5_3_2#>"},
+					{url: "Main_TrafficMonitor_realtime.asp", tabName: "<#traffic_monitor#>"},
+					{url: "Main_TrafficMonitor_last24.asp", tabName: "__INHERIT__"},
+					{url: "Main_TrafficMonitor_daily.asp", tabName: "__INHERIT__"},
+					{url: "AdaptiveQoS_ROG.asp", tabName: "<table style='margin-top:-7px;'><tr><td><img src='/images/ROG_Logo.png' style='border:0px;width:32px;'></td><td>ROG First</td></tr></table>"}, 
+					{url: "Main_Spectrum_Content.asp", tabName: "<#Spectrum_title#>"},
+					{url: "AdaptiveQoS_TrafficLimiter.asp", tabName: "Traffic Limiter"},
+					{url: "Advanced_QOSUserPrio_Content.asp", tabName: "__INHERIT__"},
+					{url: "Advanced_QOSUserRules_Content.asp", tabName: "__INHERIT__"},
+				] 
+			},
+			{		//for without bwdpi model, RT-N66U_C1
+				menuName: "<#Parental_Control#>",
+				index: "menu_ParentalControl", 
+				tab: [
+					{url: "ParentalControl.asp", tabName: "<#Parental_Control#>"},
+					{url: "YandexDNS.asp", tabName: "<#YandexDNS#>"},
+					{url: "NULL", tabName: "__INHERIT__"}
+				] 
+			},
 			{
 				menuName: "<#Adaptive_QoS#>",
 				index: "menu_BandwidthMonitor", 
@@ -635,6 +659,12 @@ define(function(){
 //				if(!cooler_support){
 //					retArray.push("Advanced_PerformanceTuning_Content.asp");
 //				}
+
+				if(!rrsut_support)
+					retArray.push("cloud_router_sync.asp");
+
+				if(!amesh_support)
+					retArray.push("Advanced_Roaming_Block_Content.asp");
 
 				if(!rrsut_support)
 					retArray.push("cloud_router_sync.asp");

@@ -16,7 +16,7 @@
 #ifndef FR_CONNECTION_H
 #define FR_CONNECTION_H
 /*
- * $Id$
+ * $Id: 3606ad4269f45822ae768f29e7cdf8873c23d4fe $
  *
  * @file connection.h
  * @brief Structures, prototypes and global variables for server connection pools.
@@ -25,7 +25,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(connection_h, "$Id$")
+RCSIDH(connection_h, "$Id: 3606ad4269f45822ae768f29e7cdf8873c23d4fe $")
 
 #include <freeradius-devel/conffile.h>
 
