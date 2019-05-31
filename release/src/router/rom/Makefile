@@ -68,6 +68,9 @@ certs: dummy
 
 certs-install: certs/ca-bundle.crt
 	install -d $(INSTALLDIR)/rom/etc/ssl/certs
+ifeq ($(RTCONFIG_OPENVPN),y)
+	install -m 0644 certs/dh2048.pem $(INSTALLDIR)/rom/etc/ssl/certs/dh2048.pem
+endif
 	install -m 0644 certs/ca-bundle.crt $(INSTALLDIR)/rom/etc/ssl/certs/ca-certificates.crt
 	sed -r '/^\s*(#|$$)/d;/\-BEGIN/{h;d};H;/\-END/{x;/\-BEGIN/p};d' -i $(INSTALLDIR)/rom/etc/ssl/certs/ca-certificates.crt
 
@@ -229,9 +232,9 @@ endif
 
 ifeq ($(RTCONFIG_HTTPS),y)
 	sed 's/#.*//g;s/[ \t]\+/ /g;s/^[ \t]*//;s/[ \t]*$$//;/^$$/d' < rom/etc/ssl/openssl.cnf > $(INSTALLDIR)/rom/etc/ssl/openssl.cnf
-	ln -s certs/ca-certificates.crt $(INSTALLDIR)/rom/etc/ssl/cert.pem
+	ln -sf certs/ca-certificates.crt $(INSTALLDIR)/rom/etc/ssl/cert.pem
 else
-	rm -f $(INSTALLDIR)/rom/etc/openssl.cnf
+	rm -f $(INSTALLDIR)/rom/etc/ssl/openssl.cnf
 endif
 
 ifneq ($(RTCONFIG_BCMARM),y)
