@@ -1797,7 +1797,7 @@ void start_dnsmasq(void)
 
 	/* Update local resolving mode */
 	n = readlink("/etc/resolv.conf", buf, sizeof(buf));
-	if (nvram_get_int("dns_local")) {
+	if (nvram_get_int("dns_local_cache")) {
 		/* Use dnsmasq for local resolving if it did start,
 		 * fallback to wan dns otherwise */
 		path = (char *)dmresolv;
@@ -12535,6 +12535,7 @@ check_ddr_done:
 	{
 		update_nc_setting_conf();
 	}
+#if !defined(RTAC3200) && !defined(RTAC56U) && !defined(RTAC87U)        // Kludge
 	else if (strcmp(script, "oauth_google_gen_token_email") == 0)
 	{
 		oauth_google_gen_token_email();
@@ -12555,6 +12556,7 @@ check_ddr_done:
 		//  WEVENT_GENERIC_MSG	 "{\""WEVENT_PREFIX"\":{\""EVENT_ID"\":\"%d\"}}"
 #endif	// RTCONFIG_CFGSYNC
 	}
+#endif	// Kludge
 #endif
 	else if (strcmp(script, "logger") == 0)
 	{

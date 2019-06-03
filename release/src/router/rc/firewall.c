@@ -4164,7 +4164,7 @@ TRACE_PT("write wl filter\n");
 		fprintf(fp_ipv6, "-A FORWARD -j %s\n", logdrop);
 #endif
 
-	write_rules(fp);
+//	write_rules(fp);
 
 	fprintf(fp, "COMMIT\n\n");
 	if (fp) fclose(fp);
@@ -5331,7 +5331,7 @@ TRACE_PT("write wl filter\n");
 		fprintf(fp_ipv6, "-A FORWARD -j %s\n", logdrop);
 #endif
 
-	write_rules(fp);
+//	write_rules(fp);
 
 	fprintf(fp, "COMMIT\n\n");
 	if (fp) fclose(fp);

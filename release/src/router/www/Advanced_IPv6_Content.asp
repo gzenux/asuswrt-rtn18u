@@ -424,13 +424,13 @@ function showInputfield(v){
 		inputCtrl(document.form.ipv6_ifdev_select, 0);
 		inputCtrl(document.form.ipv6_dhcp_pd[0], 0);
 		inputCtrl(document.form.ipv6_dhcp_pd[1], 0);
+		inputCtrl(document.form.ipv6_dhcp6c_release[0], 0);
+		inputCtrl(document.form.ipv6_dhcp6c_release[1], 0);
 		showInputfield2('ipv6_ifdev', 0);
 		inputCtrl(document.form.ipv6_tun_v4end, 0);
 		inputCtrl(document.form.ipv6_relay, 0);
 		inputCtrl(document.form.ipv6_6rd_dhcp[0], 0);
 		inputCtrl(document.form.ipv6_6rd_dhcp[1], 0);
-		inputCtrl(document.form.ipv6_dhcp6c_release[0], 0);
-		inputCtrl(document.form.ipv6_dhcp6c_release[1], 0);
 		inputCtrl(document.form.ipv6_6rd_prefix, 0);
 		inputCtrl(document.form.ipv6_6rd_prefixlen, 0);
 		inputCtrl(document.form.ipv6_6rd_router, 0);
