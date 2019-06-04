@@ -1032,12 +1032,13 @@ int set_enc_nvram(char *name, char *input, char *output){
 int dec_nvram(char *name, char *input, char *output)
 {
 	int ret = 0;
-	char passwdbuf[NVRAM_ENC_LEN];
+	char passwdbuf[NVRAM_ENC_LEN] = {0};
 	char buf[NVRAM_ENC_MAXLEN] = {0}, tmp_buf[NVRAM_ENC_MAXLEN] = {0};
 
 #if 0 /* zero initialization on declaration */
 	memset(buf, 0, sizeof(buf));
 	memset(tmp_buf, 0, sizeof(tmp_buf));
+	memset(passwdbuf, 0, sizeof(passwdbuf));
 #endif
 
 	if(strcmp(name, "pptpd_clientlist") == 0 || strcmp(name, "acc_list") == 0 || strcmp(name, "vpn_serverx_clientlist") == 0){
@@ -1091,6 +1092,13 @@ int init_enc_nvram(void)
 			}
 			nvram_set(t->name, output);
 		}
+#if 0 /* do not decode nvram if the enc field is not marked */
+		else{
+			if(len > 23 && len < NVRAM_ENC_MAXLEN && dec_nvram(t->name, value, output)){
+				nvram_set(t->name, output);
+			}
+		}
+#endif
 	}
 
 	if(nvram_encrypt != NULL)
