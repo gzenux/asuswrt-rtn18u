@@ -1,5 +1,11 @@
 include ../common.mak
 
+ifeq ($(RTCONFIG_QTN),y)
+	QTN = _qtn
+else
+	QTN =
+endif
+
 ifeq ($(wildcard $(TOP)/bwdpi_source/$(PREBUILD)/*),)
 pre_build:
 ifeq ($(RTCONFIG_SOC_IPQ8064),y)

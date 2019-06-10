@@ -107,6 +107,11 @@ ifeq ($(HND_ROUTER),y)
 CFLAGS += -DHND_ROUTER
 endif
 
+ifeq ($(RTCONFIG_QTN),y)
+	QTN = _qtn
+else
+	QTN =
+endif
 ifneq ($(AC2900),y)
 ifeq ($(wildcard $(SRCBASE)/router/networkmap/*.c),)
 all: 
