@@ -674,7 +674,7 @@ enum {
 	MODEL_RTAC55U,
 	MODEL_RTAC55UHP,
 	MODEL_RT4GAC55U,
-#if defined(RTAC3200) || defined(RTAC87U)	// Kludge
+#if defined(RTAC3200) || defined(RTAC87U) || defined(RTN18U)	// Kludge
 	MODEL_RTN19,
 	MODEL_RTAC59U,
 #endif
@@ -688,7 +688,7 @@ enum {
 	MODEL_MAPAC2200,
 	MODEL_VZWAC1300,
 	MODEL_MAPAC1750,
-#if defined(RTAC3200) || defined(RTAC87U)	// Kludge
+#if defined(RTAC3200) || defined(RTAC87U) || defined(RTN18U)	// Kludge
 	MODEL_MAPAC3000,
 #else
 	MODEL_RTAC92U,
