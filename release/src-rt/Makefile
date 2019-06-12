@@ -2863,6 +2863,10 @@ define BusyboxOptions
 		sed -i "/CONFIG_TRACEROUTE6/d" $(1); \
 		echo "CONFIG_TRACEROUTE6=y" >>$(1); \
 	fi; \
+	if [ "$(TRACEROUTE)" = "y" ]; then \
+		sed -i "/CONFIG_TRACEROUTE/d" $(1); \
+		echo "# CONFIG_TRACEROUTE is not set" >>$(1); \
+	fi; \
 	if [ "$(SNMPD)" = "y" ]; then \
 		sed -i "/CONFIG_TFTP/d" $(1); \
 		echo "CONFIG_TFTP=y" >>$(1); \

@@ -4022,6 +4022,9 @@ traceroute-2.1.0: traceroute-2.1.0/stamp-h1
 traceroute-2.1.0-install: traceroute-2.1.0
 	install -d $(INSTALLDIR)/traceroute-2.1.0/usr/sbin/
 	install -D traceroute-2.1.0/traceroute/traceroute $(INSTALLDIR)/traceroute-2.1.0/usr/sbin/traceroute
+ifeq ($(RTCONFIG_IPV6),y)
+	ln -sf traceroute $(INSTALLDIR)/traceroute-2.1.0/usr/sbin/traceroute6
+endif
 	$(STRIP) $(INSTALLDIR)/traceroute-2.1.0/usr/sbin/traceroute
 
 traceroute-2.1.0-clean:
