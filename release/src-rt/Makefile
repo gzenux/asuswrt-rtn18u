@@ -717,7 +717,7 @@ ifeq ($(RTCONFIG_REALTEK),y)
 	asustools/mkimage -A mips -O linux -T kernel -C lzma -a 80c00000 -e $${ENTRY} -n $(BUILD_NAME) -V "$(KERNEL_VER)" "$(FS_VER)" "$(SERIALNO)" "$(EXTENDNO)" "0" "0" "0" "0" "0" "0" -d $(RSDKDIR)/image/fw.bin image/$(IMGNAME).trx
 	#@asustools/mkimage -A mips -O linux -d $(RSDKDIR)/image/fw.bin image/$(IMGNAME).trx
 endif
-	@cd image && sha256sum $(IMGNAME).trx > $(IMGNAME).sha256
+	@cd image && sha256sum $(IMGNAME).trx > $(IMGNAME).trx.sha256
 
 ifeq ($(DSL),y)
 	$(call dsl_genbintrx_epilog)
