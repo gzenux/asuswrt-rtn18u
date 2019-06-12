@@ -4424,7 +4424,9 @@ stop_misc(void)
 	stop_mdns();
 #endif
 #if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
+#if !defined(RTN18U) /* unsupported redundant code */
 	stop_erp_monitor();
+#endif /* unsupported redundant code */
 #endif
 #ifdef RTCONFIG_CROND
 	stop_cron();
@@ -8369,7 +8371,9 @@ start_services(void)
 #endif
 
 #if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
+#if !defined(RTN18U) /* unsupported redundant code */
 	start_erp_monitor();
+#endif /* unsupported redundant code */
 #endif
 #ifdef RTCONFIG_HD_SPINDOWN
 #ifdef LINUX26
@@ -8430,7 +8434,9 @@ stop_services(void)
 	stop_adtbw();
 #endif
 #if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
+#if !defined(RTN18U) /* unsupported redundant code */
 	stop_erp_monitor();
+#endif /* unsupported redundant code */
 #endif
 #ifdef RTCONFIG_INTERNAL_GOBI
 	stop_lteled();
@@ -8831,7 +8837,9 @@ stop_services_mfg(void)
 	stop_ptcsrv();
 #endif
 #if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
+#if !defined(RTN18U) /* unsupported redundant code */
 	stop_erp_monitor();
+#endif /* unsupported redundant code */
 #endif
 #ifdef RTCONFIG_NOTIFICATION_CENTER
 	stop_notification_center();

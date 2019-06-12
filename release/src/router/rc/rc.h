@@ -2209,9 +2209,11 @@ extern int netool_main(int argc, char **argv);
 
 // erp_monitor.c
 #if !(defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK) || defined(RTCONFIG_REALTEK))
+#if !defined(RTN18U)
 extern int erp_monitor_main(int argc, char **argv);
 extern void stop_erp_monitor();
 extern void start_erp_monitor();
+#endif
 #endif
 
 #ifdef RTCONFIG_USB_SWAP

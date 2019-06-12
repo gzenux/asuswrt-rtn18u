@@ -650,7 +650,9 @@ OBJS += natnl_api.o
 endif
 
 ifneq ($(RTCONFIG_RALINK)$(RTCONFIG_QCA)$(RTCONFIG_REALTEK),y)
+ifneq ($(RTN18U),y)
 OBJS += erp_monitor.o
+endif
 endif
 
 ifeq ($(RCONFIG_SW_HW_AUTH), y)
@@ -1040,7 +1042,9 @@ ifeq ($(RTCONFIG_RALINK),y)
 endif
 
 ifneq ($(RTCONFIG_RALINK)$(RTCONFIG_QCA)$(RTCONFIG_REALTEK),y)
+ifneq ($(RTN18U),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc erp_monitor
+endif
 endif
 
 ifeq ($(RTCONFIG_AMAS),y)
