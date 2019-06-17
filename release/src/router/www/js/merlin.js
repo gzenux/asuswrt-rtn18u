@@ -16,7 +16,7 @@ function merlin_url_hide() {
 function merlin_logo() {
 	var i, banner_code = "";
 	var siteurl = [
-		["The official website" , "https://asuswrt.lostrealm.ca/"],
+		["The official website" , "https://www.asuswrt-merlin.net/"],
 		["Asuswrt-Merlin for RT-N18U" , "https://gzenux.github.io/asuswrt-rtn18u/"]
 	];
 
