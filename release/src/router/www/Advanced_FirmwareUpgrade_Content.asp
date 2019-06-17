@@ -120,7 +120,7 @@ if(cfg_sync_support){
 
 var download_srv = '<% nvram_get("firmware_server"); %>';
 if (download_srv == "") {
-	download_url = "https://asuswrt.lostrealm.ca/download";
+	download_url = "https://www.asuswrt-merlin.net/download";
 	download_url_alpha = download_url;
 	download_url_beta = download_url;
 } else {
