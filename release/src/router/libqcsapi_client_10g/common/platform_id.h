@@ -1,1 +1,0 @@
-#define PEARL_PLATFORM
