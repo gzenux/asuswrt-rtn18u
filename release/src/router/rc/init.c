@@ -1640,6 +1640,13 @@ misc_defaults(int restore_defaults)
 	nvram_unset("qtn_ready");
 #endif
 	nvram_set("mfp_ip_requeue", "");
+	nvram_unset("webs_state_update");
+	nvram_unset("webs_state_upgrade");
+	nvram_unset("webs_state_info");
+	nvram_unset("webs_state_REQinfo");
+	nvram_unset("webs_state_url");
+	nvram_unset("webs_state_flag");
+	nvram_unset("webs_state_error");
 #if defined(RTAC68U) || defined(RTCONFIG_FORCE_AUTO_UPGRADE)
 	nvram_set_int("auto_upgrade", 0);
 	nvram_unset("fw_check_period");
