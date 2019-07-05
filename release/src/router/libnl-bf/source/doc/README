@@ -1,6 +1,0 @@
-Requirements to build documentation
-
-mscgen
-asciidoc 8.6.5
-mscgen-filter-1.2
-doxygen

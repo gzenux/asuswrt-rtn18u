@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e
-
-if /bin/launchctl list "im.bernat.lldpd" &> /dev/null; then
-    /bin/launchctl unload "/Library/LaunchDaemons/im.bernat.lldpd.plist"
-fi
