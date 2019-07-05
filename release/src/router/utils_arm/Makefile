@@ -129,7 +129,7 @@ wifi/%.o: %.c
 	$(CC) -c $(CFLAGS) -DRWL_WIFI -o $@ $^
 endif
 
-ifeq ($(wildcard $(SRCBASE)/router/utils/robocfg.c),)
+ifeq ($(wildcard $(SRCBASE)/router/utils$(BCMEX)$(EX7)/robocfg.c),)
 robocfg:
 	cp -f $(SRCBASE)/wl/exe/$(PREBUILT)/robocfg robocfg
 else
