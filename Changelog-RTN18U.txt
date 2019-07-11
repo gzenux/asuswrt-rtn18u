@@ -9,6 +9,18 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
 
+384.11_1
+  Changelog for RT-N18U:
+  - FIXED: Samba with password login does not work correctly.
+
+  Changelog from Asuswrt-Merlin:
+  - FIXED: Firefox was showing a no-op Uninstall button on the
+           AiCloud page
+  - FIXED: FTP would be accessible from the WAN even while disabled
+           if you had DualWAN load balancing enabled, or IPTV
+           configured.
+
+
 384.11
   Changelog for RT-N18U:
   - NEW: Merged RT-N18U GPL release 382_51634
