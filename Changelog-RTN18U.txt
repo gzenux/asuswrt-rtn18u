@@ -1,12 +1,23 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.12-alpha1
+384.12-alpha2
   Changelog for RT-N18U:
   - NEW: Merged RT-N18U GPL release 382_51640
 
   Changelog from Asuswrt-Merlin:
-  - No Updates Available.
+  - CHANGED: dhcp_staticlist no longer contains hostnames, these
+             have been moved to dhcp_hostnames for better
+             compatibility with upstream and closed source
+             components, also allows more static leases to be
+             defined before reaching the size limit.
+  - CHANGED: Replace Nettle with OpenSSL for dnsmasq's DNSSEC
+             validation, which opens the door to supporting
+             more ciphers.  (themiron)
+  - FIXED: Firmware Update check button would redirect to Asus
+           support site if scheduled checks are disabled.
+  - FIXED: IGMP Snooper daemon crashing when more than 32 hosts
+           are present (themiron)
 
 
 384.11_1
