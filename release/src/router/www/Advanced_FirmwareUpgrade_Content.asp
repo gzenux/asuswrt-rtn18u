@@ -163,7 +163,7 @@ function initial(){
 		html += "<td>";
 		html += '<div>';
 		html += '<input type="button" id="update" name="update" class="button_gen" onclick="show_offline_msg(true);" value="<#liveupdate#>" />';
-		html += '<div><input type="button" id="amas_update" class="button_gen" style="display:none;" onclick="cfgsync_firmware_upgrade();" value="<#CTL_upgrade#>"/><div>';
+		html += '<span style="padding-left:30px;"><input type="button" id="amas_update" class="button_gen" style="display:none;" onclick="cfgsync_firmware_upgrade();" value="<#CTL_upgrade#>"/><span>';
 		html += '</div>';
 		html += '<div id="linkpage_div" class="button_helplink" style="margin-left:200px;margin-top:-38px;display:none;">';
 		html += '<a id="linkpage" target="_blank"><div style="padding-top:5px;"><#liveupdate#></div></a>';
@@ -236,7 +236,10 @@ function initial(){
 				html += "<#AiMesh_NodeLocation#> : " + alias;
 				html += "</th>";
 				html += "<td id='amas_" + mac_id + "'>";
-				html += "<div id='current_version'><#ADSL_FW_item1#> : " + fwver + "</div>";
+				if (check_is_merlin_fw(fwver))
+					html += "<div id='current_version'><#ADSL_FW_item1#> : " + fwver.replace("3.0.0.4.", "") + "</div>";
+				else
+					html += "<div id='current_version'><#ADSL_FW_item1#> : " + fwver + "</div>";
 				html += "<div id='manual_firmware_update'>";
 				html += gen_AiMesh_fw_status(check_AiMesh_fw_version(fwver), ip, online);
 				html += "</div>";
@@ -291,7 +294,7 @@ function initial(){
 	else{
 		if(!live_update_support || !HTTPS_support){
 			document.getElementById("update_div").style.display = "none";
-			document.getElementById("fw_tr").style.display = "none";
+//			document.getElementById("fw_tr").style.display = "none";
 			document.getElementById("linkpage_div").style.display = "";
 			document.getElementById("fwupgrade_tr").style.display = "none";
 			document.getElementById("beta_firmware_path_tr").style.display = "none";
@@ -1006,13 +1009,18 @@ function show_amas_fw_result() {
 					var mac_id = mac.replace(/:/g, "");
 					var ck_fw_result = "<#is_latest#>";
 					var online = get_cfg_clientlist[idx].online;
+					var fwver = get_cfg_clientlist[idx].fwver;
 					$("#amas_" + mac_id + "").children().find(".checkFWReuslt").html(ck_fw_result);
 					if(newfwver != "") {
-						ck_fw_result = newfwver;
+						if (check_is_merlin_fw(fwver)) {
+							ck_fw_result = newfwver.replace("3.0.0.4.","");
+						} else {
+							ck_fw_result = newfwver;
+							$("#amas_update").css("display", "");
+						}
 						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").addClass("aimesh_fw_release_note");
 						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").html(ck_fw_result);
-						$("#amas_update").css("display", "");
-						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").click({"model_name": model_name, "newfwver": newfwver}, show_fw_relese_note);
+						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").click({"isMerlin" : check_is_merlin_fw(fwver), "model_name": model_name, "newfwver": newfwver}, show_fw_relese_note);
 					}
 					if(online == "1")
 						$("#amas_" + mac_id + "").children("#checkNewFW").css("display", "");
@@ -1026,7 +1034,10 @@ function show_fw_relese_note(event) {
 		$(".confirm_block").remove();
 
 	document.amas_release_note.model.value = event.data.model_name;
-	document.amas_release_note.version.value = event.data.newfwver;
+	if (event.data.isMerlin)
+		document.amas_release_note.version.value = event.data.newfwver.replace("3.0.0.4.","");
+	else
+		document.amas_release_note.version.value = event.data.newfwver;
 	document.amas_release_note.submit();
 	confirm_asus({
 		title: "New Firmware Available",
@@ -1104,7 +1115,10 @@ function update_AiMesh_fw() {
 					var ip = get_cfg_clientlist[idx].ip;
 					var online = get_cfg_clientlist[idx].online;
 					var mac_id = mac.replace(/:/g, "");
-					$("#amas_" + mac_id + "").children("#current_version").html("<#ADSL_FW_item1#> : " + fwver + "");
+					if (check_is_merlin_fw(fwver))
+						$("#amas_" + mac_id + "").children("#current_version").html("<#ADSL_FW_item1#> : " + fwver.replace("3.0.0.4.","") + "");
+					else
+						$("#amas_" + mac_id + "").children("#current_version").html("<#ADSL_FW_item1#> : " + fwver + "");
 					$("#amas_" + mac_id + "").children("#manual_firmware_update").empty();
 					$("#amas_" + mac_id + "").children("#manual_firmware_update").html(gen_AiMesh_fw_status(check_AiMesh_fw_version(fwver), ip, online));
 				}
@@ -1133,23 +1147,25 @@ function check_AiMesh_fw_version(_fw) {
 	var support_manual_fw_id = 382;
 	var support_manual_fw_num = 18000;
 	var manual_status = false;
-	var fw_array = _fw.split(".");
-	for(var i = 0; i < fw_array.length; i += 1) {
-		if( fw_array[i] != "" && (fw_array[i].indexOf("_") != -1) && (fw_array[i].indexOf("-") != -1) ) {
-			var fw_id_num = fw_array[i].substring(0, fw_array[i].indexOf('-')).split("_");
-			var fw_id = fw_id_num[0];
-			var fw_num = fw_id_num[1];
-			if(parseInt(fw_id) > support_manual_fw_id) {
-				manual_status = true;
-				break;
-			}
-			else if( (parseInt(fw_id) == support_manual_fw_id) && (parseInt(fw_num) >= support_manual_fw_num) ) {
-				manual_status = true;
-				break;
-			}
+	var fw_array = _fw.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)\.([^_]+)_(\w+)/);
+
+	if (fw_array) {
+		var fw_id = fw_array[5];
+		var fw_num = fw_array[6];
+		if( (parseInt(fw_id) > support_manual_fw_id) ||
+		    (parseInt(fw_id) == support_manual_fw_id) && (parseInt(fw_num) >= support_manual_fw_num) ) {
+			manual_status = true;
 		}
 	}
-	return manual_status
+	return manual_status;
+}
+
+function check_is_merlin_fw(_fw) {
+	var fw_array = _fw.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)\.([^_]+)_(\w+)/);
+	if (fw_array && (fw_array[5].indexOf('.') > 0) )
+		return true;
+	else
+		return false;
 }
 
 function toggle_fw_check(state) {
