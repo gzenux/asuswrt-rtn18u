@@ -405,7 +405,7 @@ int main(void)
 	
 	while (terminated) {
 		check_wanlan_lock();
-		usleep(1000);
+		usleep(100000);
 	}
 	
 	MyDBG("ProtectionSrv Terminated\n");
