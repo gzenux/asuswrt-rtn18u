@@ -357,6 +357,7 @@ static void local_socket_thread(void)
 	
 	MyDBG("Start local socket thread.\n");
 	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, PTCSRV_PTHREAD_STACK_SIZE);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	pthread_create(&thread,NULL,(void *)&start_local_socket,NULL);
 	pthread_attr_destroy(&attr);
