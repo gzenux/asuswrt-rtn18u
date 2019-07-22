@@ -566,12 +566,6 @@ ifneq ($(RTCONFIG_IPSEC), y)
 	rm -rf $(INSTALLDIR)/www/ajax_ipsec_log.xml
 endif
 
-ifneq ($(RTCONFIG_IPSEC), y)
-	rm -rf $(INSTALLDIR)/www/Advanced_VPN_IPSec.asp
-	rm -rf $(INSTALLDIR)/www/ajax_ipsec.asp
-	rm -rf $(INSTALLDIR)/www/ajax_ipsec_log.xml
-endif
-
 ifneq ($(RTCONFIG_CAPTIVE_PORTAL), y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/captive_portal
 	rm -rf $(INSTALLDIR)/www/ajax_captive_portal.asp
