@@ -555,7 +555,7 @@ function switchPage(page){
 
 function validForm(){
 
-	if(document.form.qos_enable.value == "0" && document.form.qos_enable_orig.value == "0"){
+	if(document.form.qos_enable.value == "0" && qos_enable_orig == "0"){
 		return false;
 	}
 
