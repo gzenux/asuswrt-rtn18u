@@ -1566,9 +1566,11 @@ extern int start_wdg_monitor(void);
 extern int get_apps_name(const char *string);
 extern int run_app_script(const char *pkg_name, const char *pkg_action);
 extern void set_hostname(void);
+#ifdef RTCONFIG_TELNETD
 extern int _start_telnetd(int force);
 extern int start_telnetd(void);
 extern void stop_telnetd(void);
+#endif
 #ifdef RTCONFIG_SSH
 extern int start_sshd(void);
 extern void stop_sshd(void);

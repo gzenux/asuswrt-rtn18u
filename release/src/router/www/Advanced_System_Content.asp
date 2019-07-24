@@ -274,7 +274,7 @@ function initial(){
 
 	/* MODELDEP */
 //	if(tmo_support || based_modelid == "AC2900"){	//MODELDEP: AC2900(RT-AC86U)
-	if(1){
+	if(!telnetd_support){
 		document.getElementById("telnet_tr").style.display = "none";
 		document.form.telnetd_enable[0].disabled = true;
 		document.form.telnetd_enable[1].disabled = true;

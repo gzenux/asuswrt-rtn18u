@@ -936,7 +936,9 @@ endif
 ifeq ($(or $(RTCONFIG_OPENPLUS_TFAT),$(RTCONFIG_OPENPLUSPARAGON_NTFS),$(RTCONFIG_OPENPLUSTUXERA_NTFS),$(RTCONFIG_OPENPLUSPARAGON_HFS),$(RTCONFIG_OPENPLUSTUXERA_HFS)),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc set_fs_coexist
 endif
+ifeq ($(RTCONFIG_TELNETD),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd
+endif
 ifeq ($(RTCONFIG_SSH),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc run_sshd
 endif

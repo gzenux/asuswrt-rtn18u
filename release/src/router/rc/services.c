@@ -4565,6 +4565,7 @@ set_hostname(void)
 	}
 }
 
+#ifdef RTCONFIG_TELNETD
 int
 _start_telnetd(int force)
 {
@@ -4625,6 +4626,7 @@ stop_telnetd(void)
 	if (pids("telnetd"))
 		killall_tk("telnetd");
 }
+#endif /* RTCONFIG_TELNETD */
 
 void
 start_httpd(void)
@@ -8142,7 +8144,9 @@ start_services(void)
 #ifdef RTCONFIG_NETOOL
 	start_netool();
 #endif
+#ifdef RTCONFIG_TELNETD
 	start_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 	start_sshd();
 #endif
@@ -8635,7 +8639,9 @@ stop_services(void)
 #ifdef RTCONFIG_TOAD
 	stop_toads();
 #endif
+#ifdef RTCONFIG_TELNETD
 	stop_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 	stop_sshd();
 #endif
@@ -10460,7 +10466,9 @@ script_allnet:
 #endif
 			stop_networkmap();
 			stop_httpd();
+#ifdef RTCONFIG_TELNETD
 			stop_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			stop_sshd();
 #endif
@@ -10628,7 +10636,9 @@ script_allnet:
 			start_upnp();
 
 			start_httpd();
+#ifdef RTCONFIG_TELNETD
 			start_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			start_sshd();
 #endif
@@ -10675,7 +10685,9 @@ script_allnet:
 #endif
 			stop_networkmap();
 			stop_httpd();
+#ifdef RTCONFIG_TELNETD
 			stop_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			stop_sshd();
 #endif
@@ -10812,7 +10824,9 @@ script_allnet:
 			start_upnp();
 
 			start_httpd();
+#ifdef RTCONFIG_TELNETD
 			start_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			start_sshd();
 #endif
@@ -10881,7 +10895,9 @@ script_allnet:
 #endif
 			stop_networkmap();
 			stop_httpd();
+#ifdef RTCONFIG_TELNETD
 			stop_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			stop_sshd();
 #endif
@@ -11046,7 +11062,9 @@ script_allnet:
 			start_upnp();
 
 			start_httpd();
+#ifdef RTCONFIG_TELNETD
 			start_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			start_sshd();
 #endif
@@ -12379,11 +12397,13 @@ check_ddr_done:
 #endif
 		}
 	}
+#ifdef RTCONFIG_TELNETD
 	else if (strcmp(script, "telnetd") == 0)
 	{
 		if(action & RC_SERVICE_STOP) stop_telnetd();
 		if(action & RC_SERVICE_START) start_telnetd();
 	}
+#endif
 #ifdef RTCONFIG_SSH
 	else if (strcmp(script, "sshd") == 0)
 	{
@@ -12691,7 +12711,9 @@ check_ddr_done:
 			stop_ntpd();
 #endif
 			stop_hour_monitor_service();
+#ifdef RTCONFIG_TELNETD
 			stop_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			stop_sshd();
 #endif
@@ -12702,7 +12724,9 @@ check_ddr_done:
 			setup_timezone();
 			refresh_ntpc();
 			start_logger();
+#ifdef RTCONFIG_TELNETD
 			start_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			start_sshd();
 #endif
@@ -12843,7 +12867,9 @@ retry_wps_enr:
 #endif
 			stop_networkmap();
 			stop_httpd();
+#ifdef RTCONFIG_TELNETD
 			stop_telnetd();
+#endif
 #ifdef RTCONFIG_SSH
 			stop_sshd();
 #endif
@@ -12868,7 +12894,9 @@ retry_wps_enr:
 			start_lan_wlc();
 			start_dnsmasq();
 			start_httpd();
+#ifdef RTCONFIG_TELNETD
 			start_telnetd();
+#endif
 #ifdef RTCONFIG_NEW_USER_LOW_RSSI
 			start_roamast();
 #endif

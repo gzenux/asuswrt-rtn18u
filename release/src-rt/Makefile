@@ -1675,6 +1675,10 @@ define RouterOptions
 		sed -i "/RTCONFIG_AUTODICT/d" $(1); \
 		echo "RTCONFIG_AUTODICT=n" >>$(1); \
 	fi; \
+	if [ "$(TELNETD)" = "y" ]; then \
+		sed -i "/RTCONFIG_TELNETD/d" $(1); \
+		echo "RTCONFIG_TELNETD=y" >>$(1); \
+	fi; \
 	if [ "$(SSH)" = "y" ]; then \
 		sed -i "/RTCONFIG_SSH/d" $(1); \
 		echo "RTCONFIG_SSH=y" >>$(1); \
@@ -3005,6 +3009,14 @@ define BusyboxOptions
 				echo "# CONFIG_FEATURE_LS_COLOR_IS_DEFAULT is not set" >>$(1); \
 			fi; \
 		fi; \
+	fi; \
+	if [ "$(TELNETD)" = "y" ]; then \
+		sed -i "/CONFIG_TELNETD/d" $(1); \
+		echo "CONFIG_TELNETD=y" >>$(1); \
+		sed -i "/CONFIG_FEATURE_TELNETD_STANDALONE/d" $(1); \
+		echo "CONFIG_FEATURE_TELNETD_STANDALONE=y" >>$(1); \
+		sed -i "/CONFIG_FEATURE_TELNETD_INETD_WAIT/d" $(1); \
+		echo "# CONFIG_FEATURE_TELNETD_INETD_WAIT is not set" >>$(1); \
 	fi; \
 	if [ "$(DISKTEST)" = "y" ]; then \
 		sed -i "/CONFIG_HDPARM/d" $(1); \

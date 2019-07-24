@@ -2481,7 +2481,12 @@ void write_access_restriction(FILE *fp)
 			strcpy(sshport, "");
 
 		fprintf(fp, "-A INPUT -p tcp -m multiport --dport %s%s%s -j ACCESS_RESTRICTION\n",
-			    webports, sshport, nvram_get_int("telnetd_enable") == 1 ? ",23" : "");
+			    webports, sshport
+#ifdef RTCONFIG_TELNETD
+			    , nvram_get_int("telnetd_enable") == 1 ? ",23" : "");
+#else
+			    , "");
+#endif /* RTCONFIG_TELNETD */
 
 		nvp = nv = strdup(nvram_safe_get("restrict_rulelist"));
 		while (nv && (b = strsep(&nvp, "<")) != NULL) {
@@ -2509,6 +2514,7 @@ void write_access_restriction(FILE *fp)
 #endif
 			}
 #endif
+#ifdef RTCONFIG_TELNETD
 			if ((atoi(accessType) & ACCESS_TELNET) && nvram_get_int("telnetd_enable") == 1) {
 #ifdef RTCONFIG_PROTECTION_SERVER
 				fprintf(fp, "-A ACCESS_RESTRICTION -s %s -p tcp --dport 23 -j RETURN\n", srcip);
@@ -2516,6 +2522,7 @@ void write_access_restriction(FILE *fp)
 				fprintf(fp, "-A ACCESS_RESTRICTION -s %s -p tcp --dport 23 -j ACCEPT\n", srcip);
 #endif
 			}
+#endif /* RTCONFIG_TELNETD */
 		}
 		free(nv);
 		if(cnt) {
@@ -2635,7 +2642,12 @@ start_default_filter(int lanunit)
 			strcpy(sshport, "");
 
 		fprintf(fp, "-A INPUT -p tcp -m multiport --dport %s%s%s -j ACCESS_RESTRICTION\n",
-			    webports, sshport, nvram_get_int("telnetd_enable") == 1 ? ",23" : "");
+			    webports, sshport
+#ifdef RTCONFIG_TELNETD
+			    , nvram_get_int("telnetd_enable") == 1 ? ",23" : "");
+#else
+			    , "");
+#endif /* RTCONFIG_TELNETD */
 
 		nvp = nv = strdup(nvram_safe_get("restrict_rulelist"));
 		while (nv && (b = strsep(&nvp, "<")) != NULL) {
@@ -2663,6 +2675,7 @@ start_default_filter(int lanunit)
 #endif
 			}
 #endif
+#ifdef RTCONFIG_TELNETD
 			if ((atoi(accessType) & ACCESS_TELNET) && nvram_get_int("telnetd_enable") == 1) {
 #ifdef RTCONFIG_PROTECTION_SERVER
 				fprintf(fp, "-A ACCESS_RESTRICTION -s %s -p tcp --dport 23 -j RETURN\n", srcip);
@@ -2670,6 +2683,7 @@ start_default_filter(int lanunit)
 				fprintf(fp, "-A ACCESS_RESTRICTION -s %s -p tcp --dport 23 -j ACCEPT\n", srcip);
 #endif
 			}
+#endif /* RTCONFIG_TELNETD */
 		}
 		free(nv);
 		if(cnt) {
@@ -2684,7 +2698,10 @@ start_default_filter(int lanunit)
 	write_access_restriction(fp);
 
 #ifdef RTCONFIG_PROTECTION_SERVER
-	if (nvram_get_int("telnetd_enable") != 0
+	if (0
+#ifdef RTCONFIG_TELNETD
+	    || nvram_get_int("telnetd_enable") != 0
+#endif
 #ifdef RTCONFIG_SSH
 	    || nvram_get_int("sshd_enable") != 0
 #endif
@@ -3287,7 +3304,10 @@ TRACE_PT("writing Parental Control\n");
 		write_access_restriction(fp);
 
 #ifdef RTCONFIG_PROTECTION_SERVER
-		if (nvram_get_int("telnetd_enable") != 0
+		if (0
+#ifdef RTCONFIG_TELNETD
+		    || nvram_get_int("telnetd_enable") != 0
+#endif
 #ifdef RTCONFIG_SSH
 		    || nvram_get_int("sshd_enable") != 0
 #endif
@@ -4462,7 +4482,10 @@ TRACE_PT("writing Parental Control\n");
 		write_access_restriction(fp);
 
 #ifdef RTCONFIG_PROTECTION_SERVER
-		if (nvram_get_int("telnetd_enable") != 0
+		if (0
+#ifdef RTCONFIG_TELNETD
+		    || nvram_get_int("telnetd_enable") != 0
+#endif
 #ifdef RTCONFIG_SSH
 		    || nvram_get_int("sshd_enable") != 0
 #endif

@@ -1658,10 +1658,12 @@ int main(int argc, char **argv)
 		return 0;
 	}
 #endif
+#ifdef RTCONFIG_TELNETD
 	else if (!strcmp(base, "run_telnetd")) {
 		_start_telnetd(1);
 		return 0;
 	}
+#endif
 #ifdef RTCONFIG_SSH
 	else if (!strcmp(base, "run_sshd")) {
 		start_sshd();

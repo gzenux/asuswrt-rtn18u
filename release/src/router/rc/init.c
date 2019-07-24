@@ -9115,6 +9115,10 @@ NO_USB_CAP:
 #endif
 #endif
 
+#ifdef RTCONFIG_TELNETD
+	add_rc_support("telnetd");
+#endif
+
 #ifdef RTCONFIG_SSH
 	add_rc_support("ssh");
 #endif
@@ -11131,7 +11135,9 @@ dbg("boot/continue fail= %d/%d\n", nvram_get_int("Ate_boot_fail"),nvram_get_int(
 			if (nvram_match("Ate_power_on_off_enable", "3")|| //Show alert light
 				nvram_match("Ate_power_on_off_enable", "4")||
 				nvram_match("Ate_power_on_off_enable", "5")  ) {
+#ifdef RTCONFIG_TELNETD
 				start_telnetd();
+#endif
 				Ate_on_off_led_fail_loop();	// keep loop in this function
 			}
 
