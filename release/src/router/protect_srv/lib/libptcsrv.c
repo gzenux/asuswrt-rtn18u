@@ -72,6 +72,16 @@ int isFileExist(char *fname)
 }
 #endif
 
+static int isSocketExist(char *fname)
+{
+	struct stat fstat;
+	
+	if (!lstat(fname, &fstat) && S_ISSOCK(fstat.st_mode))
+		return 1;
+	
+	return 0;
+}
+
 static PTCSRV_STATE_REPORT_T *initial_ptcsrv_event()
 {
 	PTCSRV_STATE_REPORT_T *e;
@@ -126,6 +136,8 @@ static int send_ptcsrv_event(void *data, char *socketpath)
 
 void SEND_PTCSRV_EVENT(int s_type, int status, const char *addr, const char *msg)
 {
+	if(!isSocketExist(PROTECT_SRV_SOCKET_PATH)) return;
+	
 	/* Do Initial first */
 	PTCSRV_STATE_REPORT_T *state_t = initial_ptcsrv_event();
 	

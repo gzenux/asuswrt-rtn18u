@@ -228,6 +228,20 @@ static void check_wanlan_lock()
 	}
 }
 
+static void release_wanlan_lock()
+{
+	/* SSH */
+	if (LOCK & (0x1 << WAN_SSH))
+		flush_rule("WAN", PROTECTION_SERVICE_SSH);
+	
+	if (LOCK & (0x1 << LAN_SSH))
+		flush_rule("LAN", PROTECTION_SERVICE_SSH);
+	
+	/* TELNET */
+	if (LOCK & (0x1 << LAN_TELNET))
+		flush_rule("LAN", PROTECTION_SERVICE_TELNET);
+}
+
 void receive_s(int newsockfd)
 {
 
@@ -407,6 +421,10 @@ int main(void)
 		check_wanlan_lock();
 		usleep(100000);
 	}
+	
+	unlink(PROTECT_SRV_SOCKET_PATH);
+	unlink(PROTECT_SRV_PID_PATH);
+	release_wanlan_lock();
 	
 	MyDBG("ProtectionSrv Terminated\n");
 	
