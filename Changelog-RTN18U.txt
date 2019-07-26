@@ -21,6 +21,18 @@ Asuswrt-Merlin for RT-N18U Release Note
            are present (themiron)
 
 
+384.11_2
+  Changelog for RT-N18U:
+  - FIXED: WebUI loading sometimes broken with traditional QoS
+           enabled.
+  - FIXED: Invalid apply button on changing the QoS slide switch
+           from ON to OFF in QoS page.
+
+  Changelog from Asuswrt-Merlin:
+  - FIXED: External DDNS IP checker would fail for Chinese users,
+           as checkip.dyndns.org is blocked - switched to .com TLD.
+
+
 384.11_1
   Changelog for RT-N18U:
   - FIXED: Samba with password login does not work correctly.
