@@ -9115,6 +9115,10 @@ NO_USB_CAP:
 #endif
 #endif
 
+#ifdef RTCONFIG_PROTECTION_SERVER
+	add_rc_support("ptcsrv");
+#endif
+
 #ifdef RTCONFIG_TELNETD
 	add_rc_support("telnetd");
 #endif

@@ -3957,7 +3957,7 @@ protect_srv-stage:
 	install -D -m 644 -p protect_srv/include/protect_srv.h $(STAGEDIR)/usr/include/protect_srv.h
 	install -D -m 644 -p protect_srv/include/libptcsrv.h $(STAGEDIR)/usr/include/libptcsrv.h
 
-protect_srv: protect_srv/stamp-h1
+protect_srv: protect_srv/stamp-h1 nvram$(BCMEX)$(EX7) shared
 	$(MAKE) -C $@ && $(MAKE) $@-stage
 
 protect_srv-install: protect_srv
