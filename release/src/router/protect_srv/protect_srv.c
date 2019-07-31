@@ -281,6 +281,7 @@ void receive_s(int newsockfd)
 				}
 #endif
 			} else if (report.status == RPT_SUCCESS) {
+				LAN_LOCK_SSH_T = 0;
 				LAN_ERROR_SSH_CNT = 0;
 				MyDBG("(LAN) SSH error count has been reset\n");
 			}
@@ -296,6 +297,7 @@ void receive_s(int newsockfd)
 				}
 #endif
 			} else if (report.status == RPT_SUCCESS) {
+				LAN_LOCK_TELNET_T = 0;
 				LAN_ERROR_TELNET_CNT = 0;
 				MyDBG("(LAN) TELNET error count has been reset\n");
 			}
@@ -315,6 +317,7 @@ void receive_s(int newsockfd)
 				}
 #endif
 			} else if (report.status == RPT_SUCCESS) {
+				WAN_LOCK_SSH_T = 0;
 				WAN_ERROR_SSH_CNT = 0;
 				MyDBG("(WAN) SSH error count has been reset\n");
 			}
