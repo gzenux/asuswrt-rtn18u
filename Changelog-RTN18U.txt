@@ -1,6 +1,13 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
+384.13-alpha1
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - No Updates Available.
+
 384.12
   Changelog for RT-N18U:
   - NEW: Merged RT-N18U GPL release 382_51640
