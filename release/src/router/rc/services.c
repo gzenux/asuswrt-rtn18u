@@ -13128,11 +13128,13 @@ check_ddr_done:
 		if(action & RC_SERVICE_STOP) stop_cron();
 		if(action & RC_SERVICE_START) start_cron();
 	}
+#endif
+#if !defined(RTN18U)	// Kludge
 	else if (strcmp(script, "oauth_google_check_token_status") == 0)
 	{
 		oauth_google_check_token_status();
 	}
-#endif
+#endif	/* Kludge */
 	else if (strcmp(script, "firewall") == 0)
 	{
 		int wan_unit = (count > 1) ? atoi(cmd[1]) : wan_primary_ifunit();

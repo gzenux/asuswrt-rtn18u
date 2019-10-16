@@ -8130,6 +8130,7 @@ static int get_client_detail_info(struct json_object *clients, struct json_objec
 			p_client_info_tab->mac_addr[i][4],p_client_info_tab->mac_addr[i][5]
 			);
 
+#if defined(RTCONFIG_AMAS) || defined(RTCONFIG_WIFI_SON)
 			if(is_amas_support()) {
 				/* replace client mac if needed */
 				memset(clientMac, 0, sizeof(clientMac));
@@ -8141,6 +8142,7 @@ static int get_client_detail_info(struct json_object *clients, struct json_objec
 				if (is_re_node(mac_buf, 1))
 					continue;
 			}
+#endif
 
 			json_object_array_add(macArray, json_object_new_string(mac_buf));
 
@@ -16757,10 +16759,12 @@ struct mime_handler mime_handlers[] = {
 	{ "cleanlog.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_cleanlog_cgi, do_auth },
 	{ "update_wlanlog.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_update_wlanlog_cgi, do_auth },
 	{ "rog_first_qos.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_rog_first_qos_cgi, do_auth },
+#if !defined(RTN18U)	// Kludge
 	{ "feedback_mail.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_feedback_mail_cgi, do_auth },
 	{ "dfb_log.cgi", "application/force-download", NULL, do_html_post_and_get, do_dfb_log_file, do_auth },
+#endif	/* Kludge */
 	{ "clean_offline_clientlist.cgi", "text/html", no_cache_IE7, do_html_post_and_get, do_clean_offline_clientlist_cgi, do_auth },
-#if !defined(RTAC3200) && !defined(RTAC87U) && !defined(RTAC68U) && !defined(RTAC86U)	// Kludge, requires 81116 or newer
+#if !defined(RTAC3200) && !defined(RTAC87U) && !defined(RTAC68U) && !defined(RTAC86U) && !defined(RTN18U)	// Kludge, requires 81116 or newer
 	{ "set_fw_path.cgi", "text/html", no_cache_IE7, do_html_post_and_get, do_set_fw_path_cgi, do_auth },
 #endif
 	{ NULL, NULL, NULL, NULL, NULL, NULL }

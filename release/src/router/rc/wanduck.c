@@ -206,7 +206,7 @@ void set_link_internet(int wan_unit, int link_internet){
 #endif
 }
 
-#ifndef CONFIG_BCMWL5
+#if !defined(CONFIG_BCMWL5) || defined(RTN18U)	// Kludge
 #if defined(RTCONFIG_LANWAN_LED)
 #if defined(RTCONFIG_FAILOVER_LED)
 int update_failover_led(void)

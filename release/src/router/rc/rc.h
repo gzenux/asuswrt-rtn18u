@@ -2417,7 +2417,9 @@ extern void asm1042_upgrade(int);
 extern void oauth_google_gen_token_email(void);
 extern void oauth_google_update_token(void);
 extern int oauth_google_send_message(const char* receiver, const char* subject, const char* message, const char* attached_files[], int attached_files_count);
+#if !defined(RTN18U)	// Kludge
 extern void oauth_google_check_token_status(void);
+#endif	/* Kludge */
 #endif
 
 #ifdef RTCONFIG_UUPLUGIN

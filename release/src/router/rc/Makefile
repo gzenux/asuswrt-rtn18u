@@ -669,6 +669,10 @@ OBJS += erp_monitor.o
 endif
 endif
 
+ifeq ($(RTN18U),y)
+OBJS += rtn18u.o
+endif
+
 ifeq ($(RCONFIG_SW_HW_AUTH), y)
 CLFAGS += -I(TOP)/sw-hw-auth
 endif
