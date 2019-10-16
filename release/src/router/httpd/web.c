@@ -1782,7 +1782,7 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		ret += dump_file(wp, filename);
 	}
 #endif
-#ifdef RTCONFIG_PUSH_EMAIL
+#ifdef RTCONFIG_FRS_FEEDBACK
 #ifdef RTCONFIG_DSL
 	else if(!strcmp(file, "fb_fail_content")){
 		sprintf(filename, FB_FILE_WEB);
@@ -1867,7 +1867,7 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		}
 	}
 #endif /* RTCONFIG_DSL */
-#endif /* RTCONFIG_PUSH_EMAIL */
+#endif /* RTCONFIG_FRS_FEEDBACK */
 #ifdef RTCONFIG_IPSEC
 	else if (strcmp(file, "ipsec.log")==0) {
 		sprintf(filename, FILE_PATH_IPSEC_LOG);
@@ -24084,7 +24084,7 @@ static int ej_get_lan_hwaddr(int eid, webs_t wp, int argc, char **argv){
 	return 0;
 }
 
-#ifdef RTCONFIG_PUSH_EMAIL
+#ifdef RTCONFIG_FRS_FEEDBACK
 static int
 ej_generate_trans_id(int eid, webs_t wp, int argc, char **argv) {
 	int idx = 0;
@@ -24905,7 +24905,7 @@ struct ej_handler ej_handlers[] = {
 	{ "get_lan_hwaddr", ej_get_lan_hwaddr},
 	{ "get_label_mac", ej_get_label_mac},
 	{ "get_ui_support", ej_get_ui_support},
-#ifdef RTCONFIG_PUSH_EMAIL
+#ifdef RTCONFIG_FRS_FEEDBACK
 	{ "generate_trans_id", ej_generate_trans_id},
 #endif
 	{ "get_sw_mode", ej_get_sw_mode},

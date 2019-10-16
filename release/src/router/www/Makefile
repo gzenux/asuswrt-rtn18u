@@ -778,3 +778,9 @@ endif
 ifneq ($(RTCONFIG_APP_FILEFLEX), y)
 	rm -rf $(INSTALLDIR)/www/fileflex.asp
 endif
+
+ifneq ($(RTCONFIG_FRS_FEEDBACK), y)
+	rm -rf $(INSTALLDIR)/www/Advanced_Feedback.asp
+	rm -rf $(INSTALLDIR)/www/Feedback_Info.asp
+	rm -rf $(INSTALLDIR)/www/ajax_fb_size.asp
+endif
