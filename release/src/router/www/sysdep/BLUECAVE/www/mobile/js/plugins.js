@@ -89,8 +89,12 @@ function getAllWlArray(){
 		wlArrayRet.push({"title":"5GHz-1", "ifname":"1", "suffix": "_5G-1"})
 		wlArrayRet.push({"title":"5GHz-2", "ifname":"2", "suffix": "_5G-2"})
 	}
-	else if(isSupport("dualband")){
+	else if(isSupport("dualband") || isSupport('5G')){
 		wlArrayRet.push({"title":"5GHz", "ifname":"1", "suffix": "_5G"})
+	}
+
+	if(isSupport('wigig')){
+		wlArrayRet.push({"title":"60GHz", "ifname":"3", "suffix": "_60G"});
 	}
 
 	return wlArrayRet;
@@ -108,7 +112,7 @@ function getPAPList(siteSurveyAPList, filterType, filterValue) {
 			else{
 				if(isSupport("triband"))
 				{
-					if(based_modelid == "MAP-AC2200" || based_modelid == "RT-AC92U")
+					if(based_modelid == "MAP-AC2200")
 						return (ch >= 36 && ch <= 64) ? {name: "5GHz-1", unit: 2} : {name: "5GHz-2", unit: 1};
 					else
 						return (ch >= 36 && ch <= 64) ? {name: "5GHz-1", unit: 1} : {name: "5GHz-2", unit: 2};
@@ -679,6 +683,7 @@ function updateSubnet(ipAddr){
 
 var getRestartService = function(){
 	var actionScript = [];
+	var original_switch_wantag = httpApi.nvramGet(["switch_wantag"]).switch_wantag;
 
 	if(isWANChanged()){
 		actionScript.push("restart_wan_if 0");
@@ -736,7 +741,7 @@ var getRestartService = function(){
 			return "reboot";
 	}
 
-	if( qisPostData.hasOwnProperty("switch_wantag") ||
+	if((qisPostData.hasOwnProperty("switch_wantag") && (qisPostData.switch_wantag != original_switch_wantag)) ||
 		qisPostData.hasOwnProperty("wlc_ssid") ||
 		qisPostData.hasOwnProperty("lan_proto") ||
 		qisPostData.hasOwnProperty("wans_dualwan") ||
@@ -802,6 +807,28 @@ var isWANChanged = function(){
 
 	if(qisPostData.hasOwnProperty("wan_dnsenable_x")){
 		if(qisPostData.wan_dnsenable_x != systemVariable.wanDnsenable) isChanged = true;
+	}
+
+	if(qisPostData.hasOwnProperty("wan_pppoe_username")){
+		if(qisPostData.wan_pppoe_username != systemVariable.originPppAccount.username) isChanged = true;
+	}
+
+	if(qisPostData.hasOwnProperty("wan_pppoe_passwd")){
+		if(qisPostData.wan_pppoe_passwd != systemVariable.originPppAccount.password) isChanged = true;
+	}
+
+	return isChanged;
+};
+
+var isWANLANChange = function(){
+	var isChanged = false;
+
+	if(isSupport("2p5G_LWAN") && qisPostData.hasOwnProperty("wans_extwan")){
+		if(qisPostData.wans_extwan != systemVariable.originWansExtwan) isChanged = true;
+	}
+
+	if((isSupport("10G_LWAN") || isSupport("10GS_LWAN")) && qisPostData.hasOwnProperty("wans_dualwan")){
+		if(qisPostData.wans_dualwan != systemVariable.originWansDualwan) isChanged = true;
 	}
 
 	return isChanged;
@@ -969,12 +996,12 @@ function startLiveUpdate(){
 			setTimeout(function(){
 				var fwInfo = httpApi.nvramGet(["webs_state_update", "webs_state_info", "webs_state_flag"], true);
 
-				if(fwInfo.webs_state_update == "0" || fwInfo.webs_state_update == ""){
-					setTimeout(arguments.callee, 1000);
-				}
-				else if(fwInfo.webs_state_info !== ""){
+				if(fwInfo.webs_state_flag == "1" || fwInfo.webs_state_flag == "2"){
 					systemVariable.isNewFw = fwInfo.webs_state_flag;
 					systemVariable.newFwVersion = fwInfo.webs_state_info;
+				}
+				if(fwInfo.webs_state_update == "0" || fwInfo.webs_state_update == ""){
+					setTimeout(arguments.callee, 1000);
 				}
 			}, 1000);
 		});

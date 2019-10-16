@@ -523,12 +523,14 @@ static void detect_conn_link_zone()
 	/* Stop detect conn link */
 	if (sw_mode != SW_MODE_REPEATER
 #ifdef RTCONFIG_REALTEK
-	&& !mediabridge_mode()
+    && !mediabridge_mode()
+#ifdef RTCONFIG_AMAS
+    && !((sw_mode == SW_MODE_AP) && nvram_match("re_mode", "1"))
+#endif
 #endif
 	   ) {// Only for repeater mode
 		return;
 	}
-
 	static int pre_link_status = -1;
 	int link_quality = 0;
 	static int band = -1;

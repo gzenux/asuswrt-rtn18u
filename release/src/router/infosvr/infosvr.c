@@ -33,7 +33,7 @@
 #define PRODUCTCFG "/etc/linuxigd/general.log"
 #define LAN_DEV "br0"
 
-DWORD RECV(int sockfd , PBYTE pRcvbuf , DWORD dwlen , struct sockaddr *from, int *fromlen , DWORD timeout);
+DWORD RECV(int sockfd , PBYTE pRcvbuf , DWORD dwlen , struct sockaddr *from, socklen_t *fromlen , DWORD timeout);
 int waitsock(int sockfd , int sec , int usec);
 int closesocket(int sockfd);
 void readPrnID(char *prninfo);
@@ -43,6 +43,8 @@ int check_par_usb_prn(void);
 int  set_pid(int pid);	//deliver process id to driver
 void sig_usr1(int sig);	//signal handler to handle signal send from driver
 void sig_usr2(int sig);
+int processReq(int sockfd);
+extern char *processPacket(int sockfd, char *pdubuf, unsigned short cli_port);
 
 int timeup=0;
 
@@ -68,7 +70,7 @@ void sig_do_nothing(int sig)
 
 void load_sysparam(void)
 {
-	char *p, macstr[32], label_macstr[32];
+	char macstr[32], label_macstr[32];
 
 	get_discovery_ssid(ssid_g, sizeof(ssid_g));
 	strncpy(netmask_g, nvram_safe_get("lan_netmask"), sizeof(netmask_g));
@@ -184,7 +186,7 @@ int processReq(int sockfd)
 {
 //    IBOX_COMM_PKT_HDR*  phdr;
     int		 /*iLen , iRes , iCount , */iRcv;
-    int		 fromlen;
+    socklen_t		 fromlen;
     char		*hdr;
     char		pdubuf[INFO_PDU_LENGTH];
     struct sockaddr_in  from_addr;
@@ -224,7 +226,7 @@ int processReq(int sockfd)
 /***  Receive the socket	  ***/
 /***  with a timeout value	***/
 /************************************/
-DWORD RECV(int sockfd , PBYTE pRcvbuf , DWORD dwlen , struct sockaddr *from, int *fromlen , DWORD timeout)
+DWORD RECV(int sockfd , PBYTE pRcvbuf , DWORD dwlen , struct sockaddr *from, socklen_t *fromlen , DWORD timeout)
 {
     if ( waitsock(sockfd , timeout , 0) == 0)
     {
@@ -318,7 +320,7 @@ void deCR(char *str)
 	len = strlen(str);
 	for (i=0; i<len; i++)
 	{
-		if (*(str+i) == '\r' || *(str+i) == '\n', *(str+i) == '"')
+		if (*(str+i) == '\r' || *(str+i) == '\n' || *(str+i) == '"')
 		{
 			*(str+i) = 0;
 			break;

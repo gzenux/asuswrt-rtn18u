@@ -178,7 +178,7 @@ function selectJFFS() {
 </script>
 </head>
 
-<body onload="initial();">
+<body onload="initial();" class="bg">
 <div id="TopBanner"></div>
 
 <div id="LoadingBar" class="popup_bar_bg">

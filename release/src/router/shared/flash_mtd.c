@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include <rtconfig.h>
+#include <shared.h>
 #include <bcmnvram.h>
 #if defined(RTCONFIG_QCA)
 #include <mtd/mtd-user.h>
@@ -349,10 +350,15 @@ int FactoryRead(const unsigned char *buf, int offset, int count)
  */
 int linuxRead(const unsigned char *buf, int offset, int count)
 {
+	char *mtd_name = LINUX_MTD_NAME;
+#if defined(RTCONFIG_DUAL_TRX2)
+	if (get_active_fw_num() == 1)
+		mtd_name = LINUX2_MTD_NAME;
+#endif
 #if defined(RTCONFIG_ALPINE) || defined(BLUECAVE)
 	return -1;
 #endif
-	return MTDPartitionRead(LINUX_MTD_NAME, buf, offset, count);
+	return MTDPartitionRead(mtd_name, buf, offset, count);
 }
 
 /**

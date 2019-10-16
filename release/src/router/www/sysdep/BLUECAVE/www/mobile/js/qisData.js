@@ -101,6 +101,12 @@ var wirelessObj = {
 		"wl2_wpa_psk": "",
 		"wl2_auth_mode_x": "",
 		"wl2_crypto": ""
+	},
+	"wl3": {
+		"wl3_ssid": "",
+		"wl3_wpa_psk": "",
+		"wl3_auth_mode_x": "",
+		"wl3_crypto": ""
 	}
 }
 
@@ -224,6 +230,10 @@ var modemObj = {
 
 var systemVariable = {
 	"originWanType": "", /* ToDo: Secondary WAN support */
+	"originPppAccount":{
+		"username": "",
+		"password": ""
+	},
 	"originWansExtwan": "",
 	"originWansDualwan": "",
 	"manualWanSetup": false,
@@ -252,7 +262,8 @@ var systemVariable = {
 		"wlcOrder": [],
 		"wlcStatus": {}
 	},
-	"wanOption": false
+	"wanOption": false,
+	"skipAiMeshOptionPage": false
 }
 
 var aimeshObj = {
@@ -265,6 +276,6 @@ var boostKeyObj = {
 
 var axModeObj = {
 	"wl0_he_features": "3",
-	"wl1_he_features": "3",
-	"wl2_he_features": "3"
+	"wl1_he_features": "7",
+	"wl2_he_features": "7"
 }

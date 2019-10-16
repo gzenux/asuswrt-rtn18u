@@ -433,15 +433,17 @@ a{
 }
 #noWanContainer{
     padding: 17%;
+    height: 504px;
+}
+#noWanPic{
+	position: absolute;
 }
 #noWanEth{
 	position: absolute;
-	margin-top: -396px;
 	display: none;
 }
 #noWanUsb{
 	position: absolute;
-	margin-top: -396px;
 	display: none;
 }
 .green{

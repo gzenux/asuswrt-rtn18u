@@ -379,7 +379,7 @@ int mtd_write_main_old(int argc, char *argv[])
 int mtd_write_main(int argc, char *argv[])
 #endif
 {
-	int mf = -1;
+	int mf = -1, device = 0;
 	mtd_info_t mi;
 	erase_info_t ei;
 	FILE *f;
@@ -393,6 +393,10 @@ int mtd_write_main(int argc, char *argv[])
 	char *dev = NULL;
 	char msg_buf[2048];
 	int alloc = 0, bounce = 0, fd;
+#if defined(RTCONFIG_DUAL_TRX2)
+	int imtd_id = -1, omtd_id, mtd_size;
+#endif
+	char mtdblockname[sizeof("/dev/mtdblockXYYYYYY")] = { 0 };
 #ifdef DEBUG_SIMULATE
 	FILE *of;
 #endif
@@ -411,6 +415,31 @@ int mtd_write_main(int argc, char *argv[])
 	if ((iname == NULL) || (dev == NULL)) {
 		usage_exit(argv[0], "-i file -d part");
 	}
+
+#if defined(RTCONFIG_DUAL_TRX2)
+	device = !strncmp(iname, "/dev/mtd", 8);
+	if (device) {
+		/* Make sure /dev/mtdblockX is different MTD partition. */
+		if (!strncmp(iname, "/dev/mtdblock", 13)) {
+			imtd_id = safe_atoi(iname + 13);
+			strlcpy(mtdblockname, iname, sizeof(mtdblockname));
+		} else {
+			imtd_id = safe_atoi(iname + 8);
+			snprintf(mtdblockname, sizeof(mtdblockname), "/dev/mtdblock%d", imtd_id);
+		}
+
+		if (mtd_getinfo(dev, &omtd_id, &mtd_size) == 1) {
+			if (imtd_id == omtd_id) {
+				dbg("%s: source MTD part. = destination MTD part. (%d/%d)\n",
+					__func__, imtd_id, omtd_id);
+				return 1;
+			}
+		} else {
+			dbg("%s: mtd_getinfo() can't find %s\n", __func__, dev);
+			return 1;
+		}
+	}
+#endif
 
 	if (!wait_action_idle(10)) {
 		printf("System is busy\n");
@@ -488,7 +517,7 @@ int mtd_write_main(int argc, char *argv[])
 	goto RTK_FINISH;
 #endif /* RTCONFIG_REALTEK */
 
-	if ((f = fopen(iname, "r")) == NULL) {
+	if ((f = fopen(device? mtdblockname : iname, "r")) == NULL) {
 		error = "Error opening input file";
 		goto ERROR;
 	}
@@ -536,6 +565,11 @@ int mtd_write_main(int argc, char *argv[])
 	if ((buf = mmap(0, filelen, PROT_READ, MAP_SHARED, fd, 0)) == (unsigned char*)MAP_FAILED) {
 		_dprintf("mmap %x bytes fail!. errno %d (%s).\n", filelen, errno, strerror(errno));
 		alloc = 1;
+	}
+
+	if (device && (c = get_firmware_length(buf)) > 0) {
+		filelen = c;
+		_dprintf("new file len=0x%x\n", filelen);
 	}
 
 	sysinfo(&si);

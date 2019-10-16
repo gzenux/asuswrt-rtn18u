@@ -10,6 +10,8 @@ extern void config_switch();
 extern int switch_exist(void);
 extern void init_wl(void);
 #if defined(RTCONFIG_QCA)
+extern void deinit_all_vaps(const int remove_vap);
+extern int rebuild_main_vap(void);
 extern void load_wifi_driver(void);
 extern void load_testmode_wifi_driver(void);
 #endif
@@ -40,7 +42,7 @@ extern void reinit_hwnat(int unit);
 #define reinit_hwnat(unit) reinit_sfe(unit)
 extern void reinit_sfe(int unit);
 static inline void tweak_wifi_ps(const char *wif) { }
-#elif defined(RTCONFIG_SOC_IPQ8064)
+#elif defined(RTCONFIG_SOC_IPQ8064) || defined(RTCONFIG_SOC_IPQ8074)
 #define reinit_hwnat(unit) reinit_ecm(unit)
 extern int ecm_selection(void);
 extern void init_ecm(void);
@@ -77,7 +79,7 @@ extern void config_switch_dsl_set_lan(void);
 #endif
 
 #if defined(RTCONFIG_REALTEK)
-#if defined(RTCONFIG_BT_CONN)
+#if defined(RTCONFIG_BT_CONN) || defined(RPAC55)
 extern void gen_rtlbt_fw_config(void);
 #endif
 extern int rtk_check_nvram_partation(void);

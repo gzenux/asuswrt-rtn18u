@@ -63,7 +63,7 @@ LDFLAGS += -lpthread -ldl
 endif
 CFLAGS += -I$(TOP)/sqlCipher
 CFLAGS += -I$(TOP)/PMS_DBapis
-LDFLAGS += -L$(TOP)/openssl -lcrypto
+LDFLAGS += -L$(TOP)/$(OPENSSLDIR) -lcrypto
 LDFLAGS += -L$(TOP)/sqlCipher/.libs -lsqlcipher
 LDFLAGS += -L$(TOP)/PMS_DBapis -lpms_sql
 endif

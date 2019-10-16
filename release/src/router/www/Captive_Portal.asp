@@ -1721,7 +1721,7 @@ var third_party_wl_used = new Array();
 function create_third_party_wl_used() {
 	var _enable_flag = "";
 	var _third_party_wl_used = new Array();
-	for(var i = 1; i <= multissid_support; i += 1) {
+	for(var i = 1; i <= multissid_count; i += 1) {
 		_third_party_wl_used[i] = "not_used";
 	}
 
@@ -1780,7 +1780,7 @@ function change_wl_input_status(_idx) {
 function find_empty_gn_group() {
 	var _empty_wl_idx = "";
 	var _empty_flag = false;
-	var _gn_count = multissid_support;
+	var _gn_count = multissid_count;
 	for(_gn_count; _gn_count > 0; _gn_count -= 1) {
 		_empty_flag = (gn_array_2g[(_gn_count - 1)][0] == "0") ? true : false;
 		if(!_empty_flag)
@@ -1830,7 +1830,7 @@ function check_gn_if_status(_subunit, _gn_array) {
 
 </head>
 
-<body onload="initial();" onunLoad="return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();" class="bg">
 <div id="full_screen_bg" class="full_screen_bg" onselectstart="return false;"></div>
 <div id="guestnetwork_wl" class="guestnetwork_wl"></div>
 <div id='folderTree_panel' class='landing_folder_content'>

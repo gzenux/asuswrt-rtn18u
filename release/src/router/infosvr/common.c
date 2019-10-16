@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <sys/vfs.h>	/* get disk type */
 #include <sys/ioctl.h>
 #include <netinet/in.h>
@@ -47,6 +48,8 @@
 #include <asm/byteorder.h>
 
 char pdubuf_res[INFO_PDU_LENGTH];
+extern int getStorageStatus(STORAGE_INFO_T *st);
+extern void sendInfo(int sockfd, char *pdubuf, unsigned short cli_port);
 
 #ifdef BTN_SETUP
 
@@ -98,21 +101,6 @@ int bs_put_setting(PKT_SET_INFO_GW_QUICK *setting)
 }
 #endif
 
-int
-kill_pidfile_s(char *pidfile, int sig)	// copy from rc/common_ex.c
-{
-	FILE *fp = fopen(pidfile, "r");
-	char buf[256];
-	extern errno;
-
-	if (fp && fgets(buf, sizeof(buf), fp)) {
-		pid_t pid = strtoul(buf, NULL, 0);
-		fclose(fp);
-		return kill(pid, sig);
-  	} else
-		return errno;
-}
-
 extern char ssid_g[32];
 extern char netmask_g[];
 extern char productid_g[];
@@ -123,7 +111,7 @@ int
 get_ftype(char *type)	/* get disk type */
 {
 	struct statfs fsbuf;
-	long f_type;
+	unsigned int f_type;
 	double free_size;
 	char *mass_path = nvram_safe_get("usb_mnt_first_path");
 	//if (!mass_path)
@@ -171,8 +159,8 @@ char *processPacket(int sockfd, char *pdubuf, unsigned short cli_port)
     int fail = 0;
     pid_t pid;
     DIR *dir;
-    int fd, ret, bytes;
-    unsigned char tmp_buf[15];	// /proc/XXXXXX
+    int fd, ret, bytes=0;
+    char tmp_buf[15];	// /proc/XXXXXX
     WS_INFO_T *wsinfo;
 #endif
 //#ifdef WL700G
