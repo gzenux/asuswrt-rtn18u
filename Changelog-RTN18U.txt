@@ -1,9 +1,10 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.13-alpha1
+384.13-alpha2
   Changelog for RT-N18U:
-  - No Updates Available.
+  - NEW: Merge GPL 384_81116 from asuswrt-merlin.
+  - FIXED: Invalid USB mode option on System page.
 
   Changelog from Asuswrt-Merlin:
   - NEW: Implement option to prevent Firefox's automatic usage of DoH.
