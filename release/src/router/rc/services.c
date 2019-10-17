@@ -4051,20 +4051,15 @@ start_syslogd(void)
 void
 stop_syslogd(void)
 {
+	int running;
+
 #ifdef RTCONFIG_RSYSLOGD
-	if(pids("rsyslogd"))
+	if ((running = pids("rsyslogd")))
 		killall_tk("rsyslogd");
-
-	return;
 #else
-#if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
-	int running = pids("syslogd");
-#endif
-
-#if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
-	if (running)
-#endif
+	if ((running = pids("syslogd")))
 		killall_tk("syslogd");
+#endif
 
 #if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
 	char prefix[PATH_MAX];
@@ -4073,7 +4068,6 @@ stop_syslogd(void)
 
 	if (running)
 		eval("cp", "/tmp/syslog.log", "/tmp/syslog.log-1", prefix);
-#endif
 #endif
 }
 
@@ -4143,8 +4137,8 @@ _dprintf("%s:\n", __FUNCTION__);
 void
 stop_logger(void)
 {
-	stop_syslogd();
 	stop_klogd();
+	stop_syslogd();
 }
 
 #ifdef RTCONFIG_BCMWL6
