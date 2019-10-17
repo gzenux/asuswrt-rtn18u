@@ -11,7 +11,7 @@ Transmission/Makefile:
 
 Transmission: curl-7.21.7 libevent-2.0.21 Transmission/Makefile
 	@$(SEP)
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 Transmission-install: Transmission
 	install -D $</daemon/transmission-daemon $(INSTALLDIR)/$</usr/sbin/transmission-daemon

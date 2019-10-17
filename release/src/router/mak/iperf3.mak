@@ -1,6 +1,6 @@
 iperf3: iperf3/Makefile
 	@$(SEP)
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 iperf3/Makefile:
 	# libstdc++.so.6 is required if you want to remove CFLAGS=-static below.

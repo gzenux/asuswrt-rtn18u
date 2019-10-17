@@ -2384,7 +2384,7 @@ httpd_uam-install:
 	$(MAKE) -C httpd_uam INSTALLDIR=$(INSTALLDIR)/httpd_uam install
 
 conntrack: libnfnetlink-1.0.1 libmnl-1.0.4 libnetfilter_conntrack-1.0.7 libnetfilter_cttimeout-1.0.0 conntrack/Makefile
-	$(MAKE) -C conntrack
+	$(MAKE) $(PARALLEL_BUILD) -C conntrack
 
 conntrack/Makefile:
 	(cd conntrack && autoreconf -i -f)
@@ -2416,7 +2416,7 @@ conntrack-clean:
 	-@$(MAKE) -C conntrack clean
 
 libnfnetlink-1.0.1: libnfnetlink-1.0.1/Makefile
-	$(MAKE) -C libnfnetlink-1.0.1
+	$(MAKE) $(PARALLEL_BUILD) -C libnfnetlink-1.0.1
 
 libnfnetlink-1.0.1/Makefile:
 	$(MAKE) libnfnetlink-1.0.1-configure
@@ -2437,7 +2437,7 @@ libnfnetlink-1.0.1-clean:
 	-@$(MAKE) -C  libnfnetlink-1.0.1 clean
 
 libmnl-1.0.4: libmnl-1.0.4/Makefile
-	$(MAKE) -C libmnl-1.0.4
+	$(MAKE) $(PARALLEL_BUILD) -C libmnl-1.0.4
 
 libmnl-1.0.4/Makefile:
 	(cd libmnl-1.0.4 && autoreconf -i -f)
@@ -2459,7 +2459,7 @@ libmnl-1.0.4-clean:
 	-@$(MAKE) -C libmnl-1.0.4 clean
 
 libnetfilter_conntrack-1.0.7: libnfnetlink-1.0.1 libmnl-1.0.4 libnetfilter_conntrack-1.0.7/Makefile
-	$(MAKE) -C libnetfilter_conntrack-1.0.7
+	$(MAKE) $(PARALLEL_BUILD) -C libnetfilter_conntrack-1.0.7
 
 libnetfilter_conntrack-1.0.7/Makefile:
 	(cd libnetfilter_conntrack-1.0.7 && autoreconf -i -f)
@@ -2486,7 +2486,7 @@ libnetfilter_conntrack-1.0.7-clean:
 	-@$(MAKE) -C libnetfilter_conntrack-1.0.7 clean
 
 libnetfilter_cttimeout-1.0.0: libnetfilter_cttimeout-1.0.0/Makefile
-	$(MAKE) -C libnetfilter_cttimeout-1.0.0
+	$(MAKE) $(PARALLEL_BUILD) -C libnetfilter_cttimeout-1.0.0
 
 libnetfilter_cttimeout-1.0.0/Makefile:
 	(cd libnetfilter_cttimeout-1.0.0 && autoreconf -i -f)
@@ -3925,7 +3925,7 @@ protect_srv-clean:
 
 fprobe-1.1: 
 	@$(SEP)
-	@$(MAKE) -C fprobe-1.1 CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
+	@$(MAKE) $(PARALLEL_BUILD) -C fprobe-1.1 CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 fprobe-1.1-install: fprobe-1.1
 	install -D fprobe-1.1/fprobe $(INSTALLDIR)/fprobe-1.1/usr/bin/fprobe
@@ -3940,7 +3940,7 @@ libpcap/stamp-h1:
 
 libpcap: libpcap/stamp-h1
 	@$(SEP)
-	@$(MAKE) -C libpcap CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
+	@$(MAKE) $(PARALLEL_BUILD) -C libpcap CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 libpcap-install: libpcap
 	@echo "do nothing"
@@ -3958,7 +3958,7 @@ tcpdump-4.4.0/stamp-h1:
 
 tcpdump-4.4.0: libpcap tcpdump-4.4.0/stamp-h1
 	@$(SEP)
-	@$(MAKE) -C tcpdump-4.4.0 CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
+	@$(MAKE) $(PARALLEL_BUILD) -C tcpdump-4.4.0 CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 tcpdump-4.4.0-install: tcpdump-4.4.0
 	install -D tcpdump-4.4.0/tcpdump $(INSTALLDIR)/tcpdump-4.4.0/usr/sbin/tcpdump
@@ -3972,7 +3972,7 @@ traceroute-2.1.0/stamp-h1:
 	touch $@
 
 traceroute-2.1.0: traceroute-2.1.0/stamp-h1
-	$(MAKE) -C traceroute-2.1.0
+	$(MAKE) $(PARALLEL_BUILD) -C traceroute-2.1.0
 
 
 traceroute-2.1.0-install: traceroute-2.1.0
@@ -4019,7 +4019,7 @@ libbcm-install:
 
 iperf: iperf/Makefile
 	@$(SEP)
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 iperf/Makefile:
 	# libstdc++.so.6 is required if you want to remove CFLAGS=-static below.
@@ -4438,7 +4438,7 @@ zlib/stamp-h1:
 	touch $@
 
 zlib: zlib/stamp-h1
-	@$(MAKE) -C zlib CC=$(CC) AR="ar rc" RANLIB=$(RANLIB) LD=$(LD) all && $(MAKE) $@-stage
+	@$(MAKE) $(PARALLEL_BUILD) -C zlib CC=$(CC) AR="ar rc" RANLIB=$(RANLIB) LD=$(LD) all && $(MAKE) $@-stage
 
 zlib-clean:
 	-@$(MAKE) -C zlib clean
@@ -4975,7 +4975,7 @@ lzo-install:
 	cd $(INSTALLDIR)/lzo/usr/lib && ln -sf liblzo2.so.2 liblzo2.so
 
 lz4:
-	$(MAKE) -C $@ && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C $@ && $(MAKE) $@-stage
 
 lz4-stage:
 	$(MAKE) -C lz4 install DESTDIR=$(STAGEDIR) PREFIX=/usr LIBDIR=/usr/lib
@@ -5389,7 +5389,7 @@ strongswan/Makefile: strongswan/configure
 
 strongswan: $(OPENSSL) strongswan/Makefile
 	@$(SEP)
-	$(MAKE) -j 8 -C strongswan
+	$(MAKE) $(PARALLEL_BUILD) -C strongswan
 
 strongswan-install: strongswan
 	@$(SEP)
