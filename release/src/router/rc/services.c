@@ -3955,7 +3955,7 @@ void write_rsyslogd_conf(){
 	if((logsize = nvram_get_int("log_size")) > 0)
 		fprintf(fp, "$MaxMessageSize\t%d\n", logsize);
 
-	loglevel = nvram_get_int("console_loglevel");
+	loglevel = nvram_get_int("message_loglevel");
 	fprintf(fp, "*.%s\t%s\n", get_loglevel_string(loglevel), get_syslog_fname(0));
 
 	snprintf(logport, sizeof(logport), "%s", nvram_safe_get("log_port"));
@@ -4085,15 +4085,15 @@ start_klogd(void)
 #else
 	int argc;
 	char *klogd_argv[] = {"/sbin/klogd",
-		NULL, NULL,				/* -c console_loglevel */
+		NULL, NULL,				/* -c message_loglevel */
 		NULL
 	};
 
 	for (argc = 0; klogd_argv[argc]; argc++);
 
-	if (nvram_invmatch("console_loglevel", "")) {
+	if (nvram_invmatch("message_loglevel", "")) {
 		klogd_argv[argc++] = "-c";
-		klogd_argv[argc++] = nvram_safe_get("console_loglevel");
+		klogd_argv[argc++] = nvram_safe_get("message_loglevel");
 	}
 
 	return _eval(klogd_argv, NULL, 0, NULL);
