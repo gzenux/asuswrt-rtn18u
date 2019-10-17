@@ -7926,7 +7926,10 @@ tablesorter:
 #
 -include $(wildcard mak/*.mak)
 
-libestr-configure:
+libestr/configure:
+	cd libestr && autoreconf -fi
+
+libestr-configure: libestr/configure
 	( cd $(TOP)/libestr && \
 		$(CONFIGURE) \
 		--prefix=/usr \
@@ -7954,7 +7957,10 @@ libfastjson-install:
 	$(STRIP) $(INSTALLDIR)/libfastjson/usr/lib/libfastjson.so.4.2.0
 	cd $(INSTALLDIR)/libfastjson/usr/lib && ln -sf libfastjson.so.4.2.0 libfastjson.so.4 && ln -sf libfastjson.so.4.2.0 libfastjson.so
 
-rsyslog-configure:
+rsyslog/configure:
+	cd rsyslog && autoreconf -fi
+
+rsyslog-configure: rsyslog/configure
 	( cd $(TOP)/rsyslog && \
 		./missing aclocal && \
 		./missing automake && \
