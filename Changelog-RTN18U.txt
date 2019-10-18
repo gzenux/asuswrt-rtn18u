@@ -4,7 +4,9 @@ Asuswrt-Merlin for RT-N18U Release Note
 384.13-alpha2
   Changelog for RT-N18U:
   - NEW: Merge GPL 384_81116 from asuswrt-merlin.
+  - CHANGED: Replace syslogd backend service with rsyslogd.
   - FIXED: Invalid USB mode option on System page.
+  - FIXED: Invalid message log level option on General Log page.
 
   Changelog from Asuswrt-Merlin:
   - NEW: Implement option to prevent Firefox's automatic usage of DoH.
