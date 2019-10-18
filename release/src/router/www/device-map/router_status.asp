@@ -118,7 +118,7 @@ var tmp_unit;
 var tmp_item = {"cpu":{"color":"#00F000", "index":-1, "warn1":79, "warn2":89}, "wl2":{"color":"#FF44FF", "index":-1, "warn1":59, "warn2":69}};
 var tmp_status_array = new Array();
 for (i = 0; i < Object.keys(tmp_item).length; i++) {
-	tmp_status_array[i] = new Array();
+	tmp_status_array[i] = new Array(array_size);
 	for (j = 0; j < array_size; j++) {
 		tmp_status_array[i][j] = 101;
 	}
@@ -317,6 +317,7 @@ function detect_CPU_RAM(){
 			makeRequest.start('/cpu_ram_status.asp', function(xhr){				
 				render_CPU(cpuInfo);
 				render_RAM(memInfo.total, memInfo.free, memInfo.used);
+				render_Temperature(tmpInfo, $("#tmp_unit").prop("checked"));
 				setTimeout("detect_CPU_RAM();", 2000);
 			}, function(){});
 		});
