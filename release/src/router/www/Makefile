@@ -101,31 +101,6 @@ ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME), $(MODELS_QIS_SLIDER)))
 	rm -rf $(INSTALLDIR)/www/QIS_wizard_m.htm
 endif
 
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.asp"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.htm"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.css"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.js"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.svg"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.htc"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.dict"`
-
-ifeq ($(RTCONFIG_AUTODICT), y)
-	# now dict prep will generate necessary dict files to dest dir
-	rm -f $(INSTALLDIR)/www/*.dict
-	# Tool dir , dictctrl.txt , modem name , header mapping , src , dst , output msg file
-	$(ASUSWRTTOOLSDIR)/LnxDictPrep $(ASUSWRTTOOLSDIR) dictctrl.txt $(BUILD_NAME) HdrMapping.txt . $(INSTALLDIR)/www $(SRCBASE)/image/dictenum.txt $(SRCBASE)/image/dict_prep.txt
-	# generate sh file for clear up html and dict auto enum
-	# this is for compression
-	$(ASUSWRTTOOLSDIR2)/genshfile.pl $(ASUSWRTTOOLSDIR2) $(INSTALLDIR)/www $(SRCBASE)/image/compress.sh $(SRCBASE)/image/dictenum.txt $(SRCBASE)/image/output2.txt $(BUILD_NAME) $(SRCBASE)/image/output3.txt
-	chmod 777 $(SRCBASE)/image/compress.sh
-	sh $(SRCBASE)/image/compress.sh
-else
-	for F in $(wildcard *.dict); do \
-		./gendict.pl $(BUILD_NAME) $$F $(INSTALLDIR)/www/$$F; \
-	done
-endif
-	echo " WWW FOR $(BUILD_NAME)"
-
 	rm -rf $(INSTALLDIR)/www/images/New_ui/asustitle_ie6.png
 ifeq ($(BUILD_NAME),RT-N18U)
 	rm -rf $(INSTALLDIR)/www/Advanced_PerformanceTuning_Content.asp
@@ -784,3 +759,29 @@ ifneq ($(RTCONFIG_FRS_FEEDBACK), y)
 	rm -rf $(INSTALLDIR)/www/Feedback_Info.asp
 	rm -rf $(INSTALLDIR)/www/ajax_fb_size.asp
 endif
+
+	chmod -x `find $(INSTALLDIR)/www/ -name "*.asp"`
+	chmod -x `find $(INSTALLDIR)/www/ -name "*.htm"`
+	chmod -x `find $(INSTALLDIR)/www/ -name "*.css"`
+	chmod -x `find $(INSTALLDIR)/www/ -name "*.js"`
+	chmod -x `find $(INSTALLDIR)/www/ -name "*.svg"`
+	chmod -x `find $(INSTALLDIR)/www/ -name "*.htc"`
+	chmod -x `find $(INSTALLDIR)/www/ -name "*.dict"`
+
+ifeq ($(RTCONFIG_AUTODICT), y)
+	# now dict prep will generate necessary dict files to dest dir
+	rm -f $(INSTALLDIR)/www/*.dict
+	# Tool dir , dictctrl.txt , modem name , header mapping , src , dst , output msg file
+	[ -d $(SRCBASE)/image ] || mkdir -p $(SRCBASE)/image
+	$(ASUSWRTTOOLSDIR)/LnxDictPrep $(ASUSWRTTOOLSDIR) dictctrl.txt $(BUILD_NAME) HdrMapping.txt . $(INSTALLDIR)/www $(SRCBASE)/image/dictenum.txt $(SRCBASE)/image/dict_prep.txt
+	# generate sh file for clear up html and dict auto enum
+	# this is for compression
+	$(ASUSWRTTOOLSDIR2)/genshfile.pl $(ASUSWRTTOOLSDIR2) $(INSTALLDIR)/www $(SRCBASE)/image/compress.sh $(SRCBASE)/image/dictenum.txt $(SRCBASE)/image/output2.txt $(BUILD_NAME) $(SRCBASE)/image/output3.txt
+	chmod 777 $(SRCBASE)/image/compress.sh
+	sh $(SRCBASE)/image/compress.sh
+else
+	for F in $(wildcard *.dict); do \
+		./gendict.pl $(BUILD_NAME) $$F $(INSTALLDIR)/www/$$F; \
+	done
+endif
+	echo " WWW FOR $(BUILD_NAME)"
