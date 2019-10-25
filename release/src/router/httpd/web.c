@@ -13340,6 +13340,7 @@ do_prf_file(char *url, FILE *stream)
     prf_file(stream, NULL, NULL, 0, url, NULL, NULL);
 }
 
+#if 0	// used only by Main_AdmStatus_Content.asp, but this page is removed from router
 static void
 do_uploadIconFile_file(char *url, FILE *stream)
 {
@@ -13347,6 +13348,7 @@ do_uploadIconFile_file(char *url, FILE *stream)
 	do_file("/tmp/IconFile.tar", stream);
 	unlink("/tmp/IconFile.tar");
 }
+#endif
 
 #ifdef RTCONFIG_IPSEC
 static void
@@ -13623,6 +13625,7 @@ do_clear_file_cgi(char *url, FILE *stream)
 }
 #endif
 
+#if 0	// used only by Main_AdmStatus_Content.asp, but this page is removed from router
 static void
 do_networkmap_file(char *url, FILE *stream)
 {
@@ -13668,6 +13671,7 @@ do_dnsnet_file(char *url, FILE *stream)
 	do_file("/tmp/mDNSNetMonitor.log", stream);
 #endif
 }
+#endif
 
 static void
 do_prf_ovpn_file(char *url, FILE *stream)
@@ -16648,11 +16652,13 @@ struct mime_handler mime_handlers[] = {
 	{ "**.json", "application/json", no_cache_IE7, do_html_post_and_get, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
 	{ "**.CFG", "application/force-download", NULL, do_html_post_and_get, do_prf_file, do_auth },
+#if 0	// used only by Main_AdmStatus_Content.asp, but this page is removed from router
 	{ "uploadIconFile.tar", "application/force-download", NULL, NULL, do_uploadIconFile_file, do_auth },
 	{ "networkmap.tar", "application/force-download", NULL, NULL, do_networkmap_file, do_auth },
 	{ "upnp.log", "application/force-download", NULL, NULL, do_upnp_file, do_auth },
 	{ "upnpc_xml.log", "application/force-download", NULL, NULL, do_upnpc_xml_file, do_auth },
 	{ "mDNSNetMonitor.log", "application/force-download", NULL, NULL, do_dnsnet_file, do_auth },
+#endif
 	{ "ftpServerTree.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_ftpServerTree_cgi, do_auth },//andi
 	{ "**.ovpn", "application/force-download", NULL, NULL, do_prf_ovpn_file, do_auth },
 	{ "QIS_default.cgi", "text/html", no_cache_IE7, do_html_post_and_get, do_qis_default, do_auth },

@@ -760,6 +760,9 @@ ifneq ($(RTCONFIG_FRS_FEEDBACK), y)
 	rm -rf $(INSTALLDIR)/www/ajax_fb_size.asp
 endif
 
+	# remove unused files
+	rm -rf $(INSTALLDIR)/www/Main_AdmStatus_Content.asp
+
 	chmod -x `find $(INSTALLDIR)/www/ -name "*.asp"`
 	chmod -x `find $(INSTALLDIR)/www/ -name "*.htm"`
 	chmod -x `find $(INSTALLDIR)/www/ -name "*.css"`
