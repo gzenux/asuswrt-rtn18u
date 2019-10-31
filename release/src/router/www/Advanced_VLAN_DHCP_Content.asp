@@ -568,13 +568,13 @@ function calculatorIPPoolRange() {
 										</tr>
 										</thead>	
 										<tr>
-											<th>DNS Server 1</th>
+											<th><#IPConnection_x_DNSServer1_itemname#></th>
 											<td>
 												<input type="text" maxlength="15" class="input_25_table" name="vlan_dns1" onKeyPress="return is_ipaddr(this,event)">
 											</td>
 										</tr>
 										<tr>
-											<th>DNS Server 2</th>
+											<th><#IPConnection_x_DNSServer2_itemname#></th>
 											<td>
 												<input type="text" maxlength="15" class="input_25_table" name="vlan_dns2" onKeyPress="return is_ipaddr(this,event)">
 											</td>
