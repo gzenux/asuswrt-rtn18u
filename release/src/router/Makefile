@@ -2552,9 +2552,9 @@ cyassl-install:
 #      no-ec no-ecdh no-ecdsa no-err no-hw no-jpake no-threads \
 #      no-zlib no-engine no-engines no-sse2 no-perlasm \
 #      no-dtls1 no-store no-psk no-md2 no-mdc2 no-ts
-OPENSSL_CIPHERS := no-ssl2 no-gost no-heartbeats no-err no-unit-test
+OPENSSL_CIPHERS := no-rc4 no-ssl2 no-gost no-heartbeats no-err no-unit-test
 ifeq ($(RTCONFIG_OPENVPN),y)
-OPENSSL_CIPHERS += enable-rc5
+OPENSSL_CIPHERS += enable-rc5 no-ssl3
 endif
 
 ifeq ($(HND_ROUTER),y)
@@ -2567,7 +2567,7 @@ openssl/Makefile:
 	cd openssl && \
 	./Configure $(HOSTCONFIG) -O2 -DOPENSSL_NO_BUF_FREELISTS --prefix=/usr --openssldir=/etc/ssl --cross-compile-prefix=' ' \
 	-ffunction-sections -fdata-sections -Wl,--gc-sections \
-	shared $(OPENSSL_CIPHERS) no-ssl2 no-err
+	shared $(OPENSSL_CIPHERS)
 #	no-sha0 no-smime no-camellia no-krb5 no-rmd160 no-ripemd \
 #	no-seed no-capieng no-cms no-gms no-gmp no-rfc3779 \
 #	no-ec no-ecdh no-ecdsa no-err no-hw no-jpake no-threads \
@@ -2649,7 +2649,7 @@ openssl-1.1/Makefile:
 	./Configure $(HOSTCONFIG) --prefix=/usr --openssldir=/etc/ssl --cross-compile-prefix=' ' \
 	$(if $(filter y,$(RTCONFIG_SFP) $(RTCONFIG_4M_SFP) $(RTCONFIG_8M_SFP)),-Os,-O2) \
 	-ffunction-sections -fdata-sections -Wl,--gc-sections \
-	shared $(OPENSSL_CIPHERS) no-err no-async --api=1.0.0 \
+	shared $(OPENSSL_CIPHERS) no-async --api=1.0.0 \
 	no-aria no-sm2 no-sm3 no-sm4 \
 	$(if $(filter y,$(HND_ROUTER)),,-DOPENSSL_PREFER_CHACHA_OVER_GCM)
 	-@$(MAKE) -C openssl-1.1 depend clean
@@ -2683,7 +2683,7 @@ openssl-1.0/Makefile:
 	./Configure $(HOSTCONFIG) -DOPENSSL_NO_BUF_FREELISTS --prefix=/usr --openssldir=/etc/ssl --cross-compile-prefix=' ' \
 	$(if $(filter y,$(RTCONFIG_SFP) $(RTCONFIG_4M_SFP) $(RTCONFIG_8M_SFP)),-Os,-O2) \
 	-ffunction-sections -fdata-sections -Wl,--gc-sections -Wa,--noexecstack \
-	shared $(OPENSSL_CIPHERS) no-ssl2 no-err
+	shared $(OPENSSL_CIPHERS)
 #	no-sha0 no-smime no-camellia no-krb5 no-rmd160 no-ripemd \
 #	no-seed no-capieng no-cms no-gms no-gmp no-rfc3779 \
 #	no-ec no-ecdh no-ecdsa no-err no-hw no-jpake no-threads \
