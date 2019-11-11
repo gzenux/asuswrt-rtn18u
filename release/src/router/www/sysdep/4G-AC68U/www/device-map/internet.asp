@@ -116,7 +116,6 @@ function format_time(seconds, error)
 }
 
 function initial(){
-	flash_button();
 	// if dualwan enabled , show dualwan status
 	if(parent.wans_flag){
 		var unit = parent.document.form.dual_wan_flag.value; // 0: Priamry WAN, 1: Secondary WAN

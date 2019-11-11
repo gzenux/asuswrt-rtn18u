@@ -379,7 +379,6 @@ function initial(){
 		if(wlc_auth_mode == "") wlc_auth_mode = 'unknown';
 	}
 
-	flash_button();	
 
 	if(history.pushState != undefined) history.pushState("", document.title, window.location.pathname);
 
