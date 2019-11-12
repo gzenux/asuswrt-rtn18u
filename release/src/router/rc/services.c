@@ -15692,6 +15692,8 @@ void setup_leds()
 		if (nvram_match("wl0_radio", "1")) {
 #ifdef RTAC68U
 			eval("wl", "ledbh", "10", "7");
+#elif defined(RTN18U)
+			led_control(LED_2G, LED_ON);
 #elif defined(RTAC3200)
 			eval("wl", "-i", "eth2", "ledbh", "10", "7");
 #elif defined(RTCONFIG_BCM_7114) || defined(RTAC86U)

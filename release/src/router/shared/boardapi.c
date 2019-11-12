@@ -703,6 +703,16 @@ int do_led_control(int which, int mode)
 	}
 #endif
 
+#if defined(RTN18U)
+	if (which == LED_2G && gpio_nr == 0xFF) {
+		if (v)
+			eval("wl", "ledbh", "10", "7");
+		else
+			eval("wl", "ledbh", "10", "0");
+		return 0;
+	}
+#endif
+
 #if defined(RTAC56U) || defined(RTAC56S)
 	if (which == LED_5G && nvram_match("5g_fail", "1"))
 		return -1;
