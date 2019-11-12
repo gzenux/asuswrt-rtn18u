@@ -367,9 +367,9 @@ void led_control_normal(void)
 	LED_switch_count = nvram_get_int("LED_switch_count");
 #endif
 
-#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN)
+//#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN)
 	if (inhibit_led_on()) return;
-#endif
+//#endif
 
 #ifdef RTCONFIG_WPS_LED
 	int v = LED_OFF;
@@ -2566,6 +2566,7 @@ static inline void __handle_led_onoff_button(int led_onoff)
 	char prefix[sizeof("wlXXX_")];
 
 	nvram_set_int("AllLED", !!led_onoff);
+	nvram_set_int("led_disable", inhibit_led_on());
 #if defined(RTCONFIG_RGBLED)
 	nvram_set_int("aurargb_enable", !!led_onoff);
 	nvram_commit();	
@@ -2611,6 +2612,7 @@ static inline void __handle_led_onoff_button(int led_onoff)
 static inline void __handle_led_onoff_button(int led_onoff)
 {
 	nvram_set_int("AllLED", !!led_onoff);
+	nvram_set_int("led_disable", inhibit_led_on());
 #if defined(RTCONFIG_RGBLED)
 	nvram_set_int("aurargb_enable", !!led_onoff);
 	nvram_commit();
@@ -3087,6 +3089,7 @@ void btn_check(void)
 						nvram_set_int("AllLED", 0);
 					else
 						nvram_set_int("AllLED", 1);
+					nvram_set_int("led_disable", inhibit_led_on());
 					LED_status_on = !LED_status_on;
 
 					if (LED_status_on) {
@@ -3328,6 +3331,7 @@ void btn_check(void)
 				nvram_set_int("AllLED", 0);
 			else
 				nvram_set_int("AllLED", 1);
+			nvram_set_int("led_disable", inhibit_led_on());
 			LED_status_on = !LED_status_on;
 
 			if (LED_status_on) {
@@ -3470,12 +3474,14 @@ void btn_check(void)
 			nvram_set_int("AllLED", 1);
 		else
 			nvram_set_int("AllLED", 0);
+		nvram_set_int("led_disable", inhibit_led_on());
 #elif defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER)
 		if (LED_status && (LED_status != LED_status_old)) {
 			if (LED_status_on)
 				nvram_set_int("AllLED", 1);
 			else
 				nvram_set_int("AllLED", 0);
+			nvram_set_int("led_disable", inhibit_led_on());
 			nvram_commit();
 		}
 #endif
@@ -3575,6 +3581,7 @@ void btn_check(void)
 			nvram_set_int("AllLED", 0);
 		else
 			nvram_set_int("AllLED", 1);
+		nvram_set_int("led_disable", inhibit_led_on());
 		LED_status_on = !LED_status_on;
 
 		if (LED_status_on) {
