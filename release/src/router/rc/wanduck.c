@@ -244,12 +244,10 @@ int update_wan_leds(int wan_unit, int link_wan_unit)
 	int link_internet = nvram_get_int("link_internet");
 
 	/* Turn on/off WAN LED in accordance with link status of WAN port */
-	if (link_wan_unit && !inhibit_led_on()) {
+	if (link_wan_unit && (link_internet == 2) && !inhibit_led_on())
 		led_control(LED_WAN, LED_ON);
-	} else {
-		if(link_internet != 2)
-			led_control(LED_WAN, LED_OFF);
-	}
+	else
+		led_control(LED_WAN, LED_OFF);
 #endif	/* RTCONFIG_WANRED_LED */
 
 #if defined(RTCONFIG_FAILOVER_LED)
@@ -341,7 +339,7 @@ void disable_wan_led()
 }
 
 static void wan_led_control(int sig) {
-#ifdef RTCONFIG_HND_ROUTER_AX
+#if defined(RTCONFIG_HND_ROUTER_AX) || defined(RTN18U)
 	int unit;
 
 	for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
