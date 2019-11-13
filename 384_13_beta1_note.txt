@@ -1,0 +1,50 @@
+384.13-beta1
+  Changelog for RT-N18U:
+  - NEW: Merge GPL 384_81116 from asuswrt-merlin.
+  - NEW: Allow switching LED stealth mode with WPS button.
+         To enable this feature, change the WPS button function on
+         System page.
+  - REMOVED: Unused Main_AdmStatus_Content page
+  - CHANGED: Replace syslogd backend service with rsyslogd.
+  - CHANGED: Use unified ping list on System, DualWAN and
+             NetworkAnalysis pages.
+             This also fixed the ping item "Яндекс" and "ВКонтакте"
+             are not shown correctly on System page.
+  - CHANGED: Disable ProtectionSrv service by default.
+  - FIXED: Invalid USB mode option on System page.
+  - FIXED: Invalid message log level option on General Log page.
+  - FIXED: Temperature Info may not refresh on IE8.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Implement option to prevent Firefox's automatic usage of DoH.
+         By default, this will only apply if you have DNSPrivacy
+         enabled, or if you have DNSFilter enabled with a global
+         filter, to ensure that Firefox will not bypass either of
+         these.  You can also have this override applied all the
+         time, or completely disable it.
+  - NEW: Added "split" busybox applet.
+  - NEW: Added IPv6 support to Network Analysis webui
+
+  - UPDATED: miniupnpd 20190824
+  - UPDATED: dnsmasq 2.80-93-g6ebdc95 (themiron)
+  - UPDATED: OpenSSL 1.0.2 to 1.0.2t (themiron)
+  - UPDATED: OpenSSL 1.1.1 to 1.1.1d (themiron)
+  - UPDATED: Curl 7.66.0
+  - UPDATED: nano 4.4
+  - UPDATED: OpenVPN 2.4.8
+  - UPDATED: OUI database to 2018-08-17 version
+  - UPDATED: CA root certificates to October 9th 2019
+  - CHANGED: Made webui SSL certificate generation compliant with
+             IOS 13 and MacOS 10.15 new requirements.
+  - CHANGED: Rewrote the faketc script used to inject Codel into
+             Adaptive QoS as a C program for improved performance.
+  - CHANGED: IPv6 firewall now accepts empty values for local IP
+             (which means any local IP).
+  - FIXED: Webui wouldn't notify when running dangerously low on
+           free nvram (feature was lost at some point in the past)
+  - FIXED: Custom clientlist would be wiped if stopping an
+           OpenVPN server instance.
+  - FIXED: Incorrect detection of EUI64 addresses on the IPv6
+           firewall (would prevent using ::/0 for instance).
+  - FIXED: EUI64 support missing while in Load Balancing or
+           using Multicast IPTV.
