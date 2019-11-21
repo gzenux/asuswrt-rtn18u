@@ -3910,6 +3910,7 @@ _dprintf("%s: do inadyn to unregister! unit = %d wan_ifname = %s nserver = %s ho
 	return 0;
 }
 
+#ifdef RTCONFIG_RSYSLOGD
 char *get_loglevel_string(int loglevel){
 	if(loglevel == LOG_EMERG)
 		return "emerg";
@@ -3955,7 +3956,7 @@ void write_rsyslogd_conf(){
 	if((logsize = nvram_get_int("log_size")) > 0)
 		fprintf(fp, "$MaxMessageSize\t%d\n", logsize);
 
-	loglevel = nvram_get_int("message_loglevel");
+	loglevel = (nvram_get_int("log_level") - 1);
 	fprintf(fp, "*.%s\t%s\n", get_loglevel_string(loglevel), get_syslog_fname(0));
 
 	snprintf(logport, sizeof(logport), "%s", nvram_safe_get("log_port"));
@@ -3969,6 +3970,7 @@ void write_rsyslogd_conf(){
 	if (fp)
 		fclose(fp);
 }
+#endif
 
 int
 start_syslogd(void)
