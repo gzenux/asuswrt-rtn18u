@@ -37,6 +37,9 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/reboot.h>
+#ifdef RTCONFIG_RSYSLOGD
+#include <sys/klog.h>
+#endif
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
@@ -4076,12 +4079,16 @@ stop_syslogd(void)
 int
 start_klogd(void)
 {
+	char console_loglevel[3];
+	snprintf(console_loglevel, sizeof(console_loglevel), "%d", (nvram_get_int("message_loglevel") + 1));
+
 #ifdef RTCONFIG_RSYSLOGD
+	klogctl(8, NULL, atoi(console_loglevel));
 	return 0;
 #else
 	int argc;
 	char *klogd_argv[] = {"/sbin/klogd",
-		NULL, NULL,				/* -c message_loglevel */
+		NULL, NULL,				/* -c console_loglevel */
 		NULL
 	};
 
@@ -4089,7 +4096,7 @@ start_klogd(void)
 
 	if (nvram_invmatch("message_loglevel", "")) {
 		klogd_argv[argc++] = "-c";
-		klogd_argv[argc++] = nvram_safe_get("message_loglevel");
+		klogd_argv[argc++] = console_loglevel;
 	}
 
 	return _eval(klogd_argv, NULL, 0, NULL);
