@@ -568,6 +568,7 @@ var movistarTriple_support = isSupport("movistarTriple");
 var utf8_ssid_support = isSupport("utf8_ssid");
 var wpa3_support = isSupport('wpa3');
 var uu_support = isSupport('uu_accel');
+var rsyslog_support = isSupport("rsyslog");
 
 var QISWIZARD = "QIS_wizard.htm";
 

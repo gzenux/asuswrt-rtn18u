@@ -69,6 +69,9 @@ function initial(){
 	showclock();
 	showbootTime();
 	showDST();
+	if(!rsyslog_support){
+		document.getElementById("log_proto").style.display = "none";
+	}
 	document.getElementById('textarea').scrollTop = 9999999;//make Scroll_y bottom
 	setTimeout("get_log_data();", 5000);
 }
@@ -160,6 +163,11 @@ function get_log_data(){
 												<input type="hidden" name="action_wait" value="5">
 												<input type="text" maxlength="15" class="input_15_table" name="log_ipaddr" value="<% nvram_get("log_ipaddr"); %>" onKeyPress="return validator.isIPAddr(this, event)" autocorrect="off" autocapitalize="off">
 												<label style="padding-left:15px;">Port:</label><input type="text" class="input_6_table" maxlength="5" name="log_port" onKeyPress="return validator.isNumber(this,event);" onblur="validator.numberRange(this, 0, 65535);" value='<% nvram_get("log_port"); %>' autocorrect="off" autocapitalize="off">
+												<div id="log_proto" style="display:inline;">
+													<label style="padding-left:15px;">Protocol:</label>
+													<input type="radio" name="log_tcp" value="1" <% nvram_match("log_tcp", "1", "checked"); %>>TCP
+													<input type="radio" name="log_tcp" value="0" <% nvram_match("log_tcp", "0", "checked"); %>>UDP
+												</div>
 											</td>
 										</tr>
 										<tr>

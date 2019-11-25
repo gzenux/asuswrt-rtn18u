@@ -9236,6 +9236,10 @@ NO_USB_CAP:
 #endif
 #endif // RTCONFIG_USB
 
+#if defined(RTCONFIG_RSYSLOGD)
+	add_rc_support("rsyslog");
+#endif
+
 #ifdef RTCONFIG_FRS_FEEDBACK
 //	add_rc_support("frs_feedback");
 #ifdef RTCONFIG_DBLOG
