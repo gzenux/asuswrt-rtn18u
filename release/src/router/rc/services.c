@@ -3924,6 +3924,34 @@ _dprintf("%s: do inadyn to unregister! unit = %d wan_ifname = %s nserver = %s ho
 	return 0;
 }
 
+#if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
+static void
+backup_syslog_file(void)
+{
+	char prefix[PATH_MAX];
+
+	snprintf(prefix, sizeof(prefix), "%s", nvram_safe_get("log_path"));
+
+	eval("cp", "/tmp/syslog.log", "/tmp/syslog.log-1", prefix);
+}
+
+static void
+restore_syslog_file(void)
+{
+	char prefix[PATH_MAX], path1[PATH_MAX], path2[PATH_MAX];
+
+	snprintf(prefix, sizeof(prefix), "%s", nvram_safe_get("log_path"));
+	snprintf(path1, sizeof(path1), "%s/syslog.log", prefix);
+	snprintf(path2, sizeof(path2), "%s/syslog.log-1", prefix);
+
+	eval("touch", "-c", path1, path2);
+	eval("cp", path1, path2, "/tmp");
+}
+#else
+#define backup_syslog_file() do {} while (0)
+#define restore_syslog_file() do {} while (0)
+#endif
+
 #ifdef RTCONFIG_RSYSLOGD
 char *get_loglevel_string(int loglevel){
 	if(loglevel == LOG_EMERG)
@@ -3984,22 +4012,36 @@ void write_rsyslogd_conf(){
 	if (fp)
 		fclose(fp);
 }
-#endif
 
 int
 start_syslogd(void)
 {
-#ifdef RTCONFIG_RSYSLOGD
 	int pid;
 	char *cmd[] = {"/usr/sbin/rsyslogd", NULL};
 
 	write_rsyslogd_conf();
 
-	if(!pids("rsyslogd"))
+	if(!pids("rsyslogd")) {
+		restore_syslog_file();
 		_eval(cmd, NULL, 0, &pid);
+	}
 
 	return 0;
-#else
+}
+
+void
+stop_syslogd(void)
+{
+	if(pids("rsyslogd")) {
+		killall_tk("rsyslogd");
+		backup_syslog_file();
+	}
+}
+#else /* RTCONFIG_RSYSLOGD */
+
+int
+start_syslogd(void)
+{
 	char syslog_path[PATH_MAX];
 	char syslog_addr[128];
 #ifdef RTCONFIG_AMAS
@@ -4063,47 +4105,22 @@ start_syslogd(void)
 #endif
 	}
 
-//#if defined(RTCONFIG_JFFS2LOG) && defined(RTCONFIG_JFFS2)
-#if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
-	char prefix[PATH_MAX], path1[PATH_MAX], path2[PATH_MAX];
-
-	snprintf(prefix, sizeof(prefix), "%s", nvram_safe_get("log_path"));
-	snprintf(path1, sizeof(path1), "%s/syslog.log", prefix);
-	snprintf(path2, sizeof(path2), "%s/syslog.log-1", prefix);
-
-	eval("touch", "-c", path1, path2);
-	eval("cp", path1, path2, "/tmp");
-#endif
+	restore_syslog_file();
 
 	// TODO: make sure is it necessary?
 	//time_zone_x_mapping();
 	//setenv("TZ", nvram_safe_get("time_zone_x"), 1);
 
 	return _eval(syslogd_argv, NULL, 0, NULL);
-#endif
 }
 
 void
 stop_syslogd(void)
 {
-	int running;
-
-#ifdef RTCONFIG_RSYSLOGD
-	if ((running = pids("rsyslogd")))
-		killall_tk("rsyslogd");
-#else
-	if ((running = pids("syslogd")))
+	if(pids("syslogd")) {
 		killall_tk("syslogd");
-#endif
-
-#if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
-	char prefix[PATH_MAX];
-
-	snprintf(prefix, sizeof(prefix), "%s", nvram_safe_get("log_path"));
-
-	if (running)
-		eval("cp", "/tmp/syslog.log", "/tmp/syslog.log-1", prefix);
-#endif
+		backup_syslog_file();
+	}
 }
 
 void
@@ -4117,13 +4134,6 @@ reload_syslogd(void)
 int
 start_klogd(void)
 {
-	char console_loglevel[3];
-	snprintf(console_loglevel, sizeof(console_loglevel), "%d", (nvram_get_int("message_loglevel") + 1));
-
-#ifdef RTCONFIG_RSYSLOGD
-	klogctl(8, NULL, atoi(console_loglevel));
-	return 0;
-#else
 	int argc;
 	char *klogd_argv[] = {"/sbin/klogd",
 		NULL, NULL,				/* -c console_loglevel */
@@ -4133,24 +4143,23 @@ start_klogd(void)
 	for (argc = 0; klogd_argv[argc]; argc++);
 
 	if (nvram_invmatch("message_loglevel", "")) {
+		char console_loglevel[3];
+		snprintf(console_loglevel, sizeof(console_loglevel), "%d", (nvram_get_int("message_loglevel") + 1));
+
 		klogd_argv[argc++] = "-c";
 		klogd_argv[argc++] = console_loglevel;
 	}
 
 	return _eval(klogd_argv, NULL, 0, NULL);
-#endif
 }
 
 void
 stop_klogd(void)
 {
-#ifdef RTCONFIG_RSYSLOGD
-	return;
-#else
 	if (pids("klogd"))
 		killall_tk("klogd");
-#endif
 }
+#endif /* RTCONFIG_RSYSLOGD */
 
 #ifdef HND_ROUTER
 extern int dump_prev_oops(void);
@@ -4160,7 +4169,11 @@ int
 start_logger(void)
 {
 	start_syslogd();
+#ifndef RTCONFIG_RSYSLOGD
 	start_klogd();
+#else
+	klogctl(8, NULL, (nvram_get_int("message_loglevel") + 1));
+#endif
 
 #if defined(DUMP_PREV_OOPS_MSG) && defined(RTCONFIG_BCMARM)
 #if defined(HND_ROUTER) && defined(RTCONFIG_BRCM_NAND_JFFS2)
@@ -4183,7 +4196,9 @@ start_logger(void)
 void
 stop_logger(void)
 {
+#ifndef RTCONFIG_RSYSLOGD
 	stop_klogd();
+#endif
 	stop_syslogd();
 }
 
@@ -10238,14 +10253,7 @@ again:
 #endif
 #endif
 #endif
-//#if defined(RTCONFIG_JFFS2LOG) && defined(RTCONFIG_JFFS2)
-#if defined(RTCONFIG_JFFS2LOG) && (defined(RTCONFIG_JFFS2)||defined(RTCONFIG_BRCM_NAND_JFFS2))
-		char prefix[PATH_MAX];
-
-		snprintf(prefix, sizeof(prefix), "%s", nvram_safe_get("log_path"));
-
-		eval("cp", "/tmp/syslog.log", "/tmp/syslog.log-1", prefix);
-#endif
+		backup_syslog_file();
 		if(strcmp(script,"rebootandrestore")==0) {
 			for(i=1;i<count;i++) {
 				if(cmd[i]) restore_defaults_module(cmd[i]);
