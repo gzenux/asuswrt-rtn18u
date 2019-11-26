@@ -1160,7 +1160,7 @@ void gen_apmode_dnsmasq(void)
 void start_dnsmasq(void)
 {
 	FILE *fp;
-	char *lan_ifname, *lan_ipaddr;
+	char *lan_ifname, *lan_ipaddr, *lan_hostname;
 	char *value, *value2;
 	int i, have_dhcp = 0;
 #ifdef RTCONFIG_IPSEC
@@ -1202,13 +1202,13 @@ void start_dnsmasq(void)
 	if ((fp = fopen("/etc/hosts", "w")) != NULL) {
 		/* loclhost ipv4 */
 		fprintf(fp, "127.0.0.1 localhost.localdomain localhost\n");
+
 		/* lan hostname.domain hostname */
-		if (nvram_invmatch("lan_hostname", "")) {
-			fprintf(fp, "%s %s.%s %s\n", lan_ipaddr,
-				    nvram_safe_get("lan_hostname"),
-				    nvram_safe_get("lan_domain"),
-				    nvram_safe_get("lan_hostname"));
-		}
+		lan_hostname = get_lan_hostname();
+		fprintf(fp, "%s %s.%s %s\n", lan_ipaddr,
+			    lan_hostname, nvram_safe_get("lan_domain"),
+			    lan_hostname);
+
 		/* default names */
 		fprintf(fp, "%s %s\n", lan_ipaddr, DUT_DOMAIN_NAME);
 		fprintf(fp, "%s %s\n", lan_ipaddr, OLD_DUT_DOMAIN_NAME1);
@@ -1217,12 +1217,16 @@ void start_dnsmasq(void)
 		if (is_dpsta_repeater() && nvram_get_int("re_mode") == 0)
 		fprintf(fp, "%s %s\n", lan_ipaddr, "repeater.asus.com");
 #endif
-		/* productid/samba name */
-		if (is_valid_hostname(value = nvram_safe_get("computer_name")) ||
-		    is_valid_hostname(value = get_productid())) {
+#ifdef RTCONFIG_USB
+		/* samba name */
+		if (is_valid_hostname(value = nvram_safe_get("computer_name")) &&
+		    strcasecmp(lan_hostname, value) != 0) {
 			fprintf(fp, "%s %s.%s %s\n", lan_ipaddr,
-				    value, nvram_safe_get("lan_domain"), value);
+				    value, nvram_safe_get("lan_domain"),
+				    value);
 		}
+#endif
+
 #ifdef RTCONFIG_IPV6
 		if (ipv6_enabled()) {
 			/* localhost ipv6 */
@@ -1232,16 +1236,15 @@ void start_dnsmasq(void)
 				    "ff00::0 ip6-mcastprefix\n"
 				    "ff02::1 ip6-allnodes\n"
 				    "ff02::2 ip6-allrouters\n");
-			/* lan6 hostname.domain hostname */
-			value = (char*) ipv6_router_address(NULL);
-			if (*value && nvram_invmatch("lan_hostname", "")) {
-				fprintf(fp, "%s %s.%s %s\n", value,
-					    nvram_safe_get("lan_hostname"),
-					    nvram_safe_get("lan_domain"),
-					    nvram_safe_get("lan_hostname"));
-			}
-		}
 
+			/* lan6 hostname.domain hostname */
+ 			value = (char*) ipv6_router_address(NULL);
+			if (*value) {
+				fprintf(fp, "%s %s.%s %s\n", value,
+					    lan_hostname, nvram_safe_get("lan_domain"),
+					    lan_hostname);
+ 			}
+		}
 #endif
 		append_custom_config("hosts", fp);
 		fclose(fp);
@@ -3569,6 +3572,7 @@ start_ddns(void)
 		service = "update@asus.com";
 		user = get_lan_hwaddr();
 		passwd = nvram_safe_get("secret_code");
+		asus_ddns = 1;
 	}
 	else if (strcmp(server, "DOMAINS.GOOGLE.COM") == 0)
 		service = "default@domains.google.com";
@@ -3645,6 +3649,8 @@ start_ddns(void)
 				fprintf(fp, "wildcard = true\n");
 
 			fprintf(fp, "}\n");
+			if (asus_ddns == 1)
+				fprintf(fp, "secure-ssl = false\n");
 
 			append_custom_config("inadyn.conf", fp);
 
@@ -3667,6 +3673,9 @@ start_ddns(void)
 			                 "-e", "/sbin/ddns_updated",
 					"--exec-nochg", "/sbin/ddns_updated",
 			                 "-l", loglevel,
+#ifdef RTCONFIG_LETSENCRYPT
+			                 (asus_ddns == 1 ? "-1" : NULL),
+#endif
 			                 NULL };
 
 			_eval(argv, NULL, 0, &pid);
@@ -3809,6 +3818,7 @@ asusddns_reg_domain(int reg)
 		fprintf(fp, "username = %s\n", get_lan_hwaddr());
 		fprintf(fp, "password = %s\n", nvram_safe_get("secret_code"));
 		fprintf(fp, "}\n");
+		fprintf(fp, "secure-ssl = false\n");
 		fclose(fp);
 
 		if((time_fp=fopen("/tmp/ddns.cache","w"))) {
@@ -3885,6 +3895,7 @@ _dprintf("%s: do inadyn to unregister! unit = %d wan_ifname = %s nserver = %s ho
 		fprintf(fp, "username = %s\n", get_lan_hwaddr());
 		fprintf(fp, "password = %s\n", nvram_safe_get("secret_code"));
 		fprintf(fp, "}\n");
+		fprintf(fp, "secure-ssl = false\n");
 		fclose(fp);
 
 /*
@@ -3989,9 +4000,11 @@ start_syslogd(void)
 
 	return 0;
 #else
-	int argc;
 	char syslog_path[PATH_MAX];
 	char syslog_addr[128];
+#ifdef RTCONFIG_AMAS
+	char syslog_hostname[128];
+#endif
 	char *syslogd_argv[] = {"/sbin/syslogd",
 		"-m", "0",				/* disable marks */
 		"-S",					/* small log */
@@ -4001,13 +4014,17 @@ start_syslogd(void)
 		NULL, NULL,				/* -l log_level */
 		NULL, NULL,				/* -R log_ipaddr[:port] */
 		NULL,					/* -L log locally too */
+#ifdef RTCONFIG_AMAS
+		NULL, NULL,				/* -H hostname */
+#endif
 		NULL
 	};
-
-	snprintf(syslog_path, sizeof(syslog_path), "%s", get_syslog_fname(0));
+	int argc;
 	for (argc = 0; syslogd_argv[argc]; argc++);
 
-	if (nvram_invmatch("log_size", "")) {
+	snprintf(syslog_path, sizeof(syslog_path), "%s", get_syslog_fname(0));
+
+	if (nvram_get_int("log_size")) {
 		syslogd_argv[argc++] = "-s";
 #if defined(MAPAC2200) || defined(MAPAC1300) || defined(VZWAC1300) || defined(RTAC95U)
 		if (nvram_get_int("lyra_dbg"))
@@ -4031,6 +4048,19 @@ start_syslogd(void)
 		syslogd_argv[argc++] = "-R";
 		syslogd_argv[argc++] = addr;
 		syslogd_argv[argc++] = "-L";
+
+#ifdef RTCONFIG_AMAS
+		if (1 /* TODO: differ standalone mode from aimesh cap/re to avoid hostname trashing */) {
+			char gid[8];
+
+			strlcpy(gid, nvram_safe_get("cfg_group"), sizeof(gid));
+			snprintf(syslog_hostname, sizeof(syslog_hostname), "%s-%s-%s",
+				 get_lan_hostname(), gid, node_str());
+
+			syslogd_argv[argc++] = "-H";
+			syslogd_argv[argc++] = syslog_hostname;
+		}
+#endif
 	}
 
 //#if defined(RTCONFIG_JFFS2LOG) && defined(RTCONFIG_JFFS2)
@@ -4074,6 +4104,14 @@ stop_syslogd(void)
 	if (running)
 		eval("cp", "/tmp/syslog.log", "/tmp/syslog.log-1", prefix);
 #endif
+}
+
+void
+reload_syslogd(void)
+{
+	/* notify syslogd */
+	if (nvram_invmatch("log_ipaddr", ""))
+		kill_pidfile_s("/var/run/syslogd.pid", SIGHUP);
 }
 
 int
@@ -4121,7 +4159,6 @@ extern int dump_prev_oops(void);
 int
 start_logger(void)
 {
-_dprintf("%s:\n", __FUNCTION__);
 	start_syslogd();
 	start_klogd();
 
@@ -4724,21 +4761,10 @@ chpass(char *user, char *pass)
 void
 set_hostname(void)
 {
-	FILE *fp;
-	char hostname[32];
+	char *hostname = get_lan_hostname();
 
-	strncpy(hostname, nvram_safe_get("computer_name"), 31);
-
-	if (*hostname == 0) {
-		if (get_productid()) {
-			strncpy(hostname, get_productid(), 31);
-		}
-	}
-
-	if ((fp=fopen("/proc/sys/kernel/hostname", "w+"))) {
-		fputs(hostname, fp);
-		fclose(fp);
-	}
+	if (*hostname)
+		f_write_string("/proc/sys/kernel/hostname", hostname, 0, 0);
 }
 
 #ifdef RTCONFIG_TELNETD
@@ -5019,7 +5045,7 @@ void start_upnp(void)
 	char *gfn_mode = "no";
 #endif
 
-	if (getpid() != 1) {
+	if (getpid() != 1 && getuid() != 0) {
 		notify_rc("start_upnp");
 		return;
 	}
@@ -5119,7 +5145,7 @@ void start_upnp(void)
 #endif
 					nvram_get_int("upnp_secure") ? "yes" : "no",	// secure_mode (only forward to self)
 					nvram_get_int("upnp_ssdp_interval"),
-					get_productid(),
+					get_lan_hostname(),
 					get_productid(),
 					"ASUS Wireless Router",
 					rt_serialno,
@@ -5290,7 +5316,7 @@ void start_upnp(void)
 
 void stop_upnp(void)
 {
-	if (getpid() != 1) {
+	if (getpid() != 1 && getuid() != 0) {
 		notify_rc("stop_upnp");
 		return;
 	}
@@ -5425,6 +5451,7 @@ int start_lltd(void)
 	{
 #ifdef RTCONFIG_BCMARM
 		write_lltd_conf();
+/* TODO: clarify do we need to use lan_hostname instead of productid here */
 		nvram_set("lld2d_hostname", get_productid());
 #endif
 		eval("lld2d", "br0");
@@ -5474,13 +5501,10 @@ int generate_mdns_config(void)
 {
 	FILE *fp;
 	char avahi_config[80];
-	char et0macaddr[18];
 	int ret = 0;
 	char *wan1_ifname;
 
 	sprintf(avahi_config, "%s/%s", AVAHI_CONFIG_PATH, AVAHI_CONFIG_FN);
-
-	strlcpy(et0macaddr, get_lan_hwaddr(), sizeof (et0macaddr));
 
 	/* Generate avahi configuration file */
 	if (!(fp = fopen(avahi_config, "w"))) {
@@ -5491,7 +5515,7 @@ int generate_mdns_config(void)
 	/* Set [server] configuration */
 	fprintf(fp, "[Server]\n");
 
-	fprintf(fp, "host-name=%s-%c%c%c%c\n", get_productid(),et0macaddr[12],et0macaddr[13],et0macaddr[15],et0macaddr[16]);
+	fprintf(fp, "host-name=%s\n", get_lan_hostname());
 #ifdef RTCONFIG_FINDASUS
 	fprintf(fp, "aliases=findasus,%s\n",get_productid());
 	fprintf(fp, "aliases_llmnr=findasus,%s\n",get_productid());
@@ -5608,7 +5632,7 @@ int generate_itune_service_config(void)
 	FILE *fp;
 	char itune_service_config[80];
 	int ret = 0;
-	char servername[32];
+	char *servername;
 
 	sprintf(itune_service_config, "%s/%s", AVAHI_SERVICES_PATH, AVAHI_ITUNE_SERVICE_FN);
 
@@ -5618,15 +5642,12 @@ int generate_itune_service_config(void)
 		return -1;
 	}
 
-	if (is_valid_hostname(nvram_safe_get("daapd_friendly_name")))
-		strncpy(servername, nvram_safe_get("daapd_friendly_name"), sizeof(servername));
-	else
-		servername[0] = '\0';
-	if(strlen(servername)==0) strncpy(servername, get_productid(), sizeof(servername));
-
+	servername = nvram_safe_get("daapd_friendly_name");
+	if (*servername == '\0' || !is_valid_hostname(servername))
+		servername = get_lan_hostname();
 
 	fprintf(fp, "<service-group>\n");
-	fprintf(fp, "<name replace-wildcards=\"yes\">%s</name>\n",servername);
+	fprintf(fp, "<name replace-wildcards=\"yes\">%s</name>\n", servername);
 	fprintf(fp, "<service>\n");
 	fprintf(fp, "<type>_daap._tcp</type>\n");
 	fprintf(fp, "<port>3689</port>\n");
@@ -13226,6 +13247,9 @@ check_ddr_done:
 		}
 		if(action & RC_SERVICE_START) {
 			setup_timezone();
+
+			nvram_set("reload_svc_radio", "1");
+
 			refresh_ntpc();
 			start_logger();
 #ifdef RTCONFIG_TELNETD
@@ -13476,7 +13500,6 @@ retry_wps_enr:
 #ifdef HND_ROUTER
 		if (is_router_mode()) start_mcpd_proxy();
 #endif
-		sleep(2);
 		// TODO: function to force ppp connection
 		start_upnp();
 	}
@@ -13665,6 +13688,9 @@ retry_wps_enr:
 		int openvpnc_unit = nvram_get_int("vpn_client_unit");
 #endif
 		if (action & RC_SERVICE_STOP){
+#ifdef RTCONFIG_TUNNEL
+			stop_aae_sip_conn(1);
+#endif
 			stop_vpnc();
 #if defined(RTCONFIG_OPENVPN)
 			for( i = 1; i <= OVPN_CLIENT_MAX; i++ )
@@ -14494,6 +14520,10 @@ void gen_lldpd_if(char *bind_ifnames)
 
 	if (nvram_get_int("x_Setting") == 0)
 	{
+		//skip no wan port model
+		if( !strstr(nvram_safe_get("wans_cap"), "wan"))
+			return;
+
 		if(strcmp(wan_ifname, ""))
 		{
 			if (i == 0)
@@ -14601,6 +14631,7 @@ void gen_lldpd_desc(char *bind_desc)
 void start_amas_lldpd(void)
 {
 	char bind_ifnames[128] = {0};
+/* TODO: clarify do we need to use lan_hostname instead of productid here */
 	char *productid = nvram_safe_get("productid");
 	memset(bind_ifnames, 0x00, sizeof(bind_ifnames));
 
@@ -14837,7 +14868,6 @@ int run_app_script(const char *pkg_name, const char *pkg_action)
 
 	doSystem("/usr/sbin/app_init_run.sh %s %s", app_name, pkg_action);
 
-	sleep(5);
 	if (restart_upnp) start_upnp();
 
 	return 0;

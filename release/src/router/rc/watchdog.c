@@ -237,6 +237,8 @@ static void *fn_acts[_NSIG];
 static int ddns_check_count = 0;
 static int freeze_duck_count = 0;
 
+static char time_zone_t[32]={0};
+
 static const struct mfg_btn_s {
 	enum btn_id id;
 	char *name;
@@ -6381,7 +6383,7 @@ static void auto_firmware_check()
 	int cycle = (cycle_manual > 1) ? cycle_manual : 2880;
 	char *datestr[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 	time_t now;
-	struct tm *tm;
+	struct tm local;
 	static int rand_hr, rand_min;
 
 	if (!nvram_get_int("ntp_ready")){
@@ -6389,13 +6391,13 @@ static void auto_firmware_check()
 		return;
 	}
 
+	time(&now);
+	localtime_r(&now, &local);
+
 	if (!bootup_check && !periodic_check)
 	{
-		time(&now);
-		tm = localtime(&now);
-
-		if ((tm->tm_hour == (2 + rand_hr)) &&	// every 48 hours at 2 am + random offset
-		    (tm->tm_min == rand_min))
+		if ((local.tm_hour == (2 + rand_hr)) &&	// every 48 hours at 2 am + random offset
+		    (local.tm_min == rand_min))
 		{
 			periodic_check = 1;
 			period = -1;
@@ -6411,7 +6413,7 @@ static void auto_firmware_check()
 	if (!period || (period_retry < 2 && bootup_check == 0))
 	{
 		if(nvram_get_int("webs_state_dl_error")){
-			if(!strncmp(datestr[tm->tm_wday], nvram_safe_get("webs_state_dl_error_day"), 3))
+			if(!strncmp(datestr[local.tm_wday], nvram_safe_get("webs_state_dl_error_day"), 3))
 				return;
 			else
 				nvram_set("webs_state_dl_error", "0");
@@ -8054,7 +8056,13 @@ void watchdog(int sig)
 	if (watchdog_period)
 		return;
 
-#if defined(RTCONFIG_HND_ROUTER_AX) && defined(RTCONFIG_HNDMFG)
+	if(nvram_match("ntp_ready", "1") && !nvram_match("time_zone_x", time_zone_t)){
+		strlcpy(time_zone_t, nvram_safe_get("time_zone_x"), sizeof(time_zone_t));
+		setenv("TZ", nvram_safe_get("time_zone_x"), 1);
+		tzset();
+	}
+
+#if defined(RTCONFIG_HND_ROUTER_AX) && defined(RTCONFIG_BCM_MFG)
 	ate_temperature_record();
 #endif
 
