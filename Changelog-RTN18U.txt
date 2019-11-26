@@ -1,12 +1,15 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.13-beta1
+384.13-beta2
   Changelog for RT-N18U:
-  - NEW: Merge GPL 384_81116 from asuswrt-merlin.
+  - NEW: Merge GPL 384_81351 from asuswrt-merlin.
   - NEW: Allow switching LED stealth mode with WPS button.
          To enable this feature, change the WPS button function on
          System page.
+  - NEW: Implement option to switch the logging protocol for
+         rsyslog feature. The logging protocol is UDP by default and
+         can switch to TCP on General Log page.
   - REMOVED: Unused Main_AdmStatus_Content page
   - CHANGED: Replace syslogd backend service with rsyslogd.
   - CHANGED: Use unified ping list on System, DualWAN and
@@ -27,9 +30,11 @@ Asuswrt-Merlin for RT-N18U Release Note
          time, or completely disable it.
   - NEW: Added "split" busybox applet.
   - NEW: Added IPv6 support to Network Analysis webui
+  - NOTE: You might need to reconfigure your device hostname on the
+          LAN -> LAN IP page due to a GPL-level change.
 
   - UPDATED: miniupnpd 20190824
-  - UPDATED: dnsmasq 2.80-93-g6ebdc95 (themiron)
+  - UPDATED: dnsmasq 2.80-74-gdefd6b1 (themiron)
   - UPDATED: OpenSSL 1.0.2 to 1.0.2t (themiron)
   - UPDATED: OpenSSL 1.1.1 to 1.1.1d (themiron)
   - UPDATED: Curl 7.66.0
@@ -51,6 +56,14 @@ Asuswrt-Merlin for RT-N18U Release Note
            firewall (would prevent using ::/0 for instance).
   - FIXED: EUI64 support missing while in Load Balancing or
            using Multicast IPTV.
+  - FIXED: Asus DDNS failing to update due to an expired
+           certificate on Asus's server (inadyn will now
+           ignore that certificate error for Asus DDNS).
+  - FIXED: Let's Encrypt support would sometime fail when using
+           Asus DDNS (fixed DNS publishing of validation record)
+           (in addition to general failure fixed by GPL 81351)
+  - FIXED: IPv6 neighbour solnicitation drop toggle not working
+           for some models
 
 
 384.12
