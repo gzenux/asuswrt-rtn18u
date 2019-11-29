@@ -2607,7 +2607,7 @@ endif
 
 openssl: openssl/Makefile $(if $(filter y,$(HND_ROUTER)),fsbuild,)
 	@$(SEP)
-	$(MAKE) -C openssl && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C openssl && $(MAKE) $@-stage
 
 openssl-clean:
 	[ ! -f openssl/Makefile ] || $(MAKE) -C openssl clean
@@ -3956,7 +3956,7 @@ socat/Makefile:
 	touch $@
 
 socat: socat/Makefile
-	$(MAKE) -C $@
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 socat-clean:
 	[ ! -f socat/Makefile ] || $(MAKE) -C socat distclean
@@ -7953,6 +7953,10 @@ libestr-configure: libestr/configure
 		--libdir=/usr/lib \
 	)
 
+libestr: libestr/Makefile
+	$(SEP)
+	$(MAKE) $(PARALLEL_BUILD) -C $@
+
 libestr-install:
 	install -D libestr/src/.libs/libestr.so.0.0.0 $(INSTALLDIR)/libestr/usr/lib/libestr.so.0.0.0
 	$(STRIP) $(INSTALLDIR)/libestr/usr/lib/libestr.so.0.0.0
@@ -7967,6 +7971,10 @@ libfastjson-configure:
 		--bindir=/usr/sbin \
 		--libdir=/usr/lib \
 	)
+
+libfastjson: libfastjson/Makefile
+	$(SEP)
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 libfastjson-install:
 	install -D libfastjson/.libs/libfastjson.so.4.2.0 $(INSTALLDIR)/libfastjson/usr/lib/libfastjson.so.4.2.0
@@ -7998,6 +8006,10 @@ rsyslog-configure: rsyslog/configure
 		--disable-default-tests \
 		ac_cv_search_getifaddrs="$(EXTRALDFLAGS) $(EXTRALDFLAGS2)" \
 	)
+
+rsyslog: rsyslog/Makefile
+	$(SEP)
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 rsyslog-install:
 	install -D rsyslog/tools/.libs/rsyslogd $(INSTALLDIR)/rsyslog/usr/sbin/rsyslogd
