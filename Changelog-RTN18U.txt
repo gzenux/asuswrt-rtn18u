@@ -11,6 +11,9 @@ Asuswrt-Merlin for RT-N18U Release Note
          rsyslog feature. The logging protocol is UDP by default and
          can switch to TCP on General Log page.
   - REMOVED: Unused Main_AdmStatus_Content page
+  - REMOVED: Strongswan IPsec VPN feature support.
+             It sometimes causes the router crash reboot when using
+             USB modem as the WAN access.
   - CHANGED: Replace syslogd backend service with rsyslogd.
   - CHANGED: Use unified ping list on System, DualWAN and
              NetworkAnalysis pages.
