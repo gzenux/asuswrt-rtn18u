@@ -4142,12 +4142,9 @@ start_klogd(void)
 
 	for (argc = 0; klogd_argv[argc]; argc++);
 
-	if (nvram_invmatch("message_loglevel", "")) {
-		char console_loglevel[3];
-		snprintf(console_loglevel, sizeof(console_loglevel), "%d", (nvram_get_int("message_loglevel") + 1));
-
+	if (nvram_invmatch("log_level", "")) {
 		klogd_argv[argc++] = "-c";
-		klogd_argv[argc++] = console_loglevel;
+		klogd_argv[argc++] = nvram_safe_get("log_level");
 	}
 
 	return _eval(klogd_argv, NULL, 0, NULL);
@@ -4172,7 +4169,7 @@ start_logger(void)
 #ifndef RTCONFIG_RSYSLOGD
 	start_klogd();
 #else
-	klogctl(8, NULL, (nvram_get_int("message_loglevel") + 1));
+	klogctl(8, NULL, nvram_get_int("log_level"));
 #endif
 
 #if defined(DUMP_PREV_OOPS_MSG) && defined(RTCONFIG_BCMARM)

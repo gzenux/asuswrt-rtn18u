@@ -10894,7 +10894,7 @@ static void sysinit(void)
 #endif
 	init_wl(); // for system dependent part
 
-	klogctl(8, NULL, (nvram_get_int("message_loglevel") + 1));
+	klogctl(8, NULL, nvram_get_int("log_level"));
 
 	// Enable rate report for tc classes (QoS stats)
 #ifdef HND_ROUTER
