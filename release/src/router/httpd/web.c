@@ -10559,6 +10559,13 @@ do_json_decode(struct json_object **root)
 }
 
 static void
+clear_file(const char *file_path)
+{
+	if(check_if_file_exist(file_path))
+		doSystem(">%s", file_path);
+}
+
+static void
 prepare_restore(webs_t wp){
 	int offset = 10;
 #ifdef RTCONFIG_RALINK
@@ -10794,8 +10801,8 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}
 	else if (!strcmp(action_mode," Clear "))
 	{
-		unlink(get_syslog_fname(1));
-		unlink(get_syslog_fname(0));
+		clear_file(get_syslog_fname(1));
+		clear_file(get_syslog_fname(0));
 		websRedirect(wp, current_url);
 	}
 	else if (!strcmp(action_mode, " Restart ")||!strcmp(action_mode, "reboot"))
