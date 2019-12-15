@@ -1,7 +1,7 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.13-beta3
+384.13
   Changelog for RT-N18U:
   - NEW: Merge GPL 384_81351 from asuswrt-merlin.
   - NEW: Allow switching LED stealth mode with WPS button.
