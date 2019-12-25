@@ -6,7 +6,15 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
   Changelog from Asuswrt-Merlin:
-  - No Updates Available.
+  - NEW: wan-event script.  The first parameter will be the WAN unit
+         (0 for first WAN, 1 for secondary).  The second parameter
+         will be a string describing the type of event (init,
+         connected, etc...).  A wan-event of type "connected" will
+         be identical to when the original wan-start script was
+         being run (wan-start should be considered deprecated
+         and will be removed in a future release)
+  - UPDATED: odhcp6c to 1.1-97-ge199804 (themiron)
+  - UPDATED: curl to 7.67.0.
 
 
 384.13
