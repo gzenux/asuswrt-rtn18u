@@ -768,13 +768,13 @@ endif
 	# remove unused files
 	rm -rf $(INSTALLDIR)/www/Main_AdmStatus_Content.asp
 
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.asp"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.htm"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.css"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.js"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.svg"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.htc"`
-	chmod -x `find $(INSTALLDIR)/www/ -name "*.dict"`
+	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.asp"`
+	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.htm"`
+	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.css"`
+	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.js"`
+	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.svg"`
+	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.htc"`
+	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.dict"`
 
 ifeq ($(RTCONFIG_AUTODICT), y)
 	# now dict prep will generate necessary dict files to dest dir
