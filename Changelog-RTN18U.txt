@@ -1,6 +1,27 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
+384.13_1
+  Changelog for RT-N18U:
+  - FIXED: LED stealth mode always resets to disable after reboot.
+  - FIXED: Invalid apply button on Guest Network page.
+  - FIXED: Issues on QoS_EZQoS page once QoS activated:
+           - Download/Upload Bandwidth fields are blank.
+           - Missing User-defined QoS rules/priority options in
+             the selection box.
+
+  Changelog from Asuswrt-Merlin:
+  - FIXED: Missing cifs kernel module
+  - FIXED: stubby was linked with OpenSSL 1.0 instead of 1.1
+  - FIXED: some routers were reporting the Internet connection being
+           disconnected.  If you were affected and you had flashed
+           a customized bootloader, then please reflash your original
+           bootloader, as your modded bootloader is invalid, and other
+           potential issues may appear over time.
+  - FIXED: Random traffic spikes logged in Traffic Monitor (regression
+           from 384_81351)
+
+
 384.13
   Changelog for RT-N18U:
   - NEW: Merge GPL 384_81351 from asuswrt-merlin.
