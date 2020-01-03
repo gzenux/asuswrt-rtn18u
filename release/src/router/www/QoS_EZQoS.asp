@@ -751,7 +751,7 @@ function change_qos_type(value){
 			document.getElementById('qos_sched_tr').style.display = "";
 			document.getElementById('qos_overhead_tr').style.display = "";
 		}
-		if(document.form.qos_type_orig.value == 0 && document.form.qos_enable_orig.value != 0){
+		if(qos_type_orig == 0 && qos_enable_orig != 0){
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		}
 		else{
@@ -773,7 +773,7 @@ function change_qos_type(value){
 			document.getElementById('qos_sched_tr').style.display = "";
 			change_scheduler(document.form.qos_sched.value);
 		}
-		if(document.form.qos_type_orig.value == 1 && document.form.qos_enable_orig.value != 0)
+		if(qos_type_orig == 1 && qos_enable_orig != 0)
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		else{
 			document.form.action_script.value = "reboot";
@@ -802,7 +802,7 @@ function change_qos_type(value){
 			document.getElementById('qos_sched_tr').style.display = "";
 			document.getElementById('qos_overhead_tr').style.display = "";
 		}
-		if(document.form.qos_type_orig.value == 2 && document.form.qos_enable_orig.value != 0)
+		if(qos_type_orig == 2 && qos_enable_orig != 0)
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		else{
 			document.form.action_script.value = "reboot";
@@ -821,7 +821,7 @@ function change_qos_type(value){
 		document.getElementById('bandwidth_setting_tr').style.display = "none";
 		show_up_down(1);
 		document.getElementById('list_table').style.display = "none";
-		if(document.form.qos_type_orig.value == 3 && document.form.qos_enable_orig.value != 0)
+		if(qos_type_orig == 3 && qos_enable_orig != 0)
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		else{
 			document.form.action_script.value = "reboot";

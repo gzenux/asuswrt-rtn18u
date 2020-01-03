@@ -1671,8 +1671,7 @@ misc_defaults(int restore_defaults)
 	nvram_unset("wps_reset");
 #if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN)
 #if !(defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER))
-	nvram_set_int("AllLED", 1);
-	nvram_set_int("led_disable", inhibit_led_on());
+	nvram_set_int("AllLED", !nvram_get_int("led_disable"));
 #endif
 #endif
 	nvram_unset("reload_svc_radio");
@@ -2026,9 +2025,12 @@ static pid_t run_shell(int timeout, int nowait)
 	if (waitfor(STDIN_FILENO, timeout) <= 0)
 		return 0;
 
+#if 0
 	if (ate_factory_mode())
 	        argv = argv_shell;
-	else if (!check_if_file_exist("/etc/shadow"))
+	else 
+#endif
+	if (!check_if_file_exist("/etc/shadow"))
 		setup_passwd();
 
 	switch (pid = fork()) {
@@ -8576,8 +8578,7 @@ int init_nvram(void)
 		add_rc_support("nandflash");
 		add_rc_support("app");
 #ifdef RTCONFIG_LED_BTN
-		nvram_set_int("AllLED", 1);
-		nvram_set_int("led_disable", inhibit_led_on());
+		nvram_set_int("AllLED", !nvram_get_int("led_disable"));
 #endif
 #ifdef RTCONFIG_WPS_DUALBAND
 	nvram_set_int("wps_band_x", 0);
@@ -8713,8 +8714,7 @@ int init_nvram(void)
 		add_rc_support("bandstr");
 #endif
 #ifdef RTCONFIG_LED_BTN
-		nvram_set_int("AllLED", 1);
-		nvram_set_int("led_disable", inhibit_led_on());
+		nvram_set_int("AllLED", !nvram_get_int("led_disable"));
 #endif
 #ifdef RTCONFIG_WPS_DUALBAND
 	nvram_set_int("wps_band_x", 0);
@@ -9701,8 +9701,7 @@ int init_nvram2(void)
 #endif // RTCONFIG_CONCURRENTREPEATER
 
 #ifdef RTCONFIG_WPS_ALLLED_BTN
-	nvram_set_int("AllLED", 1);
-	nvram_set_int("led_disable", inhibit_led_on());
+	nvram_set_int("AllLED", !nvram_get_int("led_disable"));
 #endif
 #ifdef RTCONFIG_WIFI_SON
 	nvram_set("wsplcd_uptime", "0");

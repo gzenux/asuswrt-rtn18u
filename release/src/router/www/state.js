@@ -451,7 +451,7 @@ var telnetd_support = isSupport("telnetd");
 var ssh_support = isSupport("ssh");
 var snmp_support = isSupport("snmp");
 var multissid_support = isSupport("mssid");
-var multissid_count = isSupport("mssid_count");
+var multissid_count = (based_modelid == "RT-N18U") ? multissid_support : isSupport("mssid_count");
 var no5gmssid_support = isSupport("no5gmssid");
 var wifi_hw_sw_support = isSupport("wifi_hw_sw");
 var wifi_tog_btn_support = isSupport("wifi_tog_btn");
