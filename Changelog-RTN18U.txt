@@ -3,7 +3,7 @@ Asuswrt-Merlin for RT-N18U Release Note
 
 384.14-alpha1
   Changelog for RT-N18U:
-  - No Updates Available.
+  - UPDATED: Merge GPL 385-10002 from asuswrt-merlin.
 
   Changelog from Asuswrt-Merlin:
   - NEW: wan-event script.  The first parameter will be the WAN unit
@@ -13,6 +13,16 @@ Asuswrt-Merlin for RT-N18U Release Note
          be identical to when the original wan-start script was
          being run (wan-start should be considered deprecated
          and will be removed in a future release)
+  - NEW: Implemented an official API for addon developers to
+         better integrate with the router.  This includes up
+         to ten different pages that can be added anywhere within
+         the webui, and a dedicated storage repository for your
+         settings, which can be interacted with through your
+         custom web page.  See the Wiki for more information:
+
+         (first draft of the documentation, need to be reorganized)
+         https://github.com/RMerl/asuswrt-merlin/wiki/Addons-API
+
   - UPDATED: odhcp6c to 1.1-97-ge199804 (themiron)
   - UPDATED: curl to 7.67.0.
 
