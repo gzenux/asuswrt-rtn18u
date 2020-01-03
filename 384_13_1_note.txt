@@ -1,0 +1,88 @@
+384.13_1
+  Changelog for RT-N18U:
+  - FIXED: LED stealth mode always resets to disable after reboot.
+  - FIXED: Invalid apply button on Guest Network page.
+  - FIXED: Issues on QoS_EZQoS page once QoS activated:
+           - Download/Upload Bandwidth fields are blank.
+           - Missing User-defined QoS rules/priority options in
+             the selection box.
+
+  Changelog from Asuswrt-Merlin:
+  - FIXED: Missing cifs kernel module
+  - FIXED: stubby was linked with OpenSSL 1.0 instead of 1.1
+  - FIXED: some routers were reporting the Internet connection being
+           disconnected.  If you were affected and you had flashed
+           a customized bootloader, then please reflash your original
+           bootloader, as your modded bootloader is invalid, and other
+           potential issues may appear over time.
+  - FIXED: Random traffic spikes logged in Traffic Monitor (regression
+           from 384_81351)
+
+
+384.13
+  Changelog for RT-N18U:
+  - NEW: Merge GPL 384_81351 from asuswrt-merlin.
+  - NEW: Allow switching LED stealth mode with WPS button.
+         To enable this feature, change the WPS button function on
+         System page.
+  - NEW: Implement option to switch the logging protocol for
+         rsyslog feature. The logging protocol is UDP by default and
+         can switch to TCP on General Log page.
+  - REMOVED: Unused Main_AdmStatus_Content page
+  - REMOVED: Strongswan IPsec VPN feature support.
+             It sometimes causes the router crash reboot when using
+             USB modem as the WAN access.
+  - CHANGED: Replace syslogd backend service with rsyslogd.
+  - CHANGED: Use unified ping list on System, DualWAN and
+             NetworkAnalysis pages.
+             This also fixed the ping item "Яндекс" and "ВКонтакте"
+             are not shown correctly on System page.
+  - CHANGED: Disable ProtectionSrv service by default.
+  - FIXED: Invalid USB mode option on System page.
+  - FIXED: Some bug fixes caused by rsyslog feature migration.
+  - FIXED: Temperature Info may not refresh on IE8.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Implement option to prevent Firefox's automatic usage of DoH.
+         By default, this will only apply if you have DNSPrivacy
+         enabled, or if you have DNSFilter enabled with a global
+         filter, to ensure that Firefox will not bypass either of
+         these.  You can also have this override applied all the
+         time, or completely disable it.
+  - NEW: Added "split" busybox applet.
+  - NEW: Added IPv6 support to Network Analysis webui
+  - NOTE: You might need to reconfigure your device hostname on the
+          LAN -> LAN IP page due to a GPL-level change.
+
+  - UPDATED: miniupnpd 20190824
+  - UPDATED: dnsmasq 2.80-95-g1aef66b (themiron)
+  - UPDATED: OpenSSL 1.0.2 to 1.0.2t (themiron)
+  - UPDATED: OpenSSL 1.1.1 to 1.1.1d (themiron)
+  - UPDATED: Curl 7.66.0
+  - UPDATED: nano 4.4
+  - UPDATED: OpenVPN 2.4.8
+  - UPDATED: OUI database to 2018-08-17 version
+  - UPDATED: CA root certificates to October 9th 2019
+  - CHANGED: Made webui SSL certificate generation compliant with
+             IOS 13 and MacOS 10.15 new requirements.
+  - CHANGED: Rewrote the faketc script used to inject Codel into
+             Adaptive QoS as a C program for improved performance.
+  - CHANGED: IPv6 firewall now accepts empty values for local IP
+             (which means any local IP).
+  - FIXED: Webui wouldn't notify when running dangerously low on
+           free nvram (feature was lost at some point in the past)
+  - FIXED: Custom clientlist would be wiped if stopping an
+           OpenVPN server instance.
+  - FIXED: Incorrect detection of EUI64 addresses on the IPv6
+           firewall (would prevent using ::/0 for instance).
+  - FIXED: EUI64 support missing while in Load Balancing or
+           using Multicast IPTV.
+  - FIXED: Asus DDNS failing to update due to an invalid
+           certificate on Asus's server.
+  - FIXED: Let's Encrypt support would sometime fail when using
+           Asus DDNS (fixed DNS publishing of validation record)
+           (in addition to general failure fixed by GPL 81351)
+  - FIXED: IPv6 neighbour solicitation drop toggle not working
+           for some models
+  - FIXED: openvpn-event scripts would be executed even if custom
+           scripts were globally disabled
