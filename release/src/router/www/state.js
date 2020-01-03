@@ -1977,9 +1977,14 @@ function submit_language(obj){
 			preferred_lang.value = obj.id;
 			//preferred_lang.value = document.getElementById("select_lang").value;
 			flag.value = "set_language";
-			/* For Notification Center ActMail service update language */
-			action_script.value = "email_info"; 
-			
+			if(nt_center_support){
+				/* For Notification Center ActMail service update language */
+				action_script.value = "email_info";
+			}
+			else{
+				action_script.value = "";
+			}
+
 			submit();
 		}
 	}
