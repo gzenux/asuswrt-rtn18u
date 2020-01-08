@@ -689,7 +689,7 @@ CFLAGS += -DRTAC1200V2
 endif
 
 ifeq ($(RTCONFIG_ISP_CUSTOMIZE),y)
-OBJS += $(if $(wildcard customize_rc.c),customize_rc.o,prebuild/customize_rc.o)
+OBJS += $(if $(wildcard customize_rc.c),customize_rc.o,$(PREBUILD)/customize_rc.o)
 endif
 
 ifeq ($(RTCONFIG_CONNDIAG),y)
@@ -1164,9 +1164,9 @@ endif
 endif
 endif
 
-ifneq ($(wildcard ./prebuild/frs_service.o),)
+ifneq ($(wildcard ./$(PREBUILD)/frs_service.o),)
 frs_service.o:
-	@-cp -f ./prebuild/frs_service.o .
+	@cp -f ./$(PREBUILD)/frs_service.o .
 endif
 
 ifneq ($(wildcard ./$(PREBUILD)/bwdpi*.o),)

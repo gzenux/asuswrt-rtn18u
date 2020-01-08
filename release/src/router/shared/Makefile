@@ -125,10 +125,10 @@ OBJS += mac_name_tbl.o
 OBJS += stun.o
 OBJS += scripts.o
 ifeq ($(RTCONFIG_AHS),y)
-OBJS += $(if $(wildcard notify_ahs.c),notify_ahs.o,prebuild/notify_ahs.o)
+OBJS += $(if $(wildcard notify_ahs.c),notify_ahs.o,$(PREBUILD)/notify_ahs.o)
 endif
 ifeq ($(RTCONFIG_RGBLED),y)
-OBJS += $(if $(wildcard aura_rgb.c),aura_rgb.o,prebuild/aura_rgb.o)
+OBJS += $(if $(wildcard aura_rgb.c),aura_rgb.o,$(PREBUILD)/aura_rgb.o)
 endif
 OBJS += timer_utils.o
 ifeq ($(RTCONFIG_TRAFFIC_LIMITER),y)
@@ -282,7 +282,7 @@ endif
 OBJS	+= $(if $(wildcard shutils_private.c),shutils_private.o,$(PREBUILD)/shutils_private.o)
 
 ifeq ($(RTCONFIG_ISP_CUSTOMIZE),y)
-OBJS	+= $(if $(wildcard customize_shared.c),customize_shared.o,prebuild/customize_shared.o)
+OBJS	+= $(if $(wildcard customize_shared.c),customize_shared.o,$(PREBUILD)/customize_shared.o)
 endif
 
 OBJS += $(if $(wildcard spwenc.c), spwenc.o, $(PREBUILD)/spwenc.o)
@@ -318,7 +318,7 @@ endif
 OBJS += $(if $(wildcard sysdeps/amas/amas_dwb.c),amas_dwb.o,$(PREBUILD)/amas_dwb.o)
 endif
 OBJS += amas_utils.o
-OBJS += $(if $(wildcard amas_utils.c),amas_utils.o,prebuild/amas_utils.o)
+OBJS += $(if $(wildcard amas_utils.c),amas_utils.o,$(PREBUILD)/amas_utils.o)
 ifeq ($(RTCONFIG_AMASDB),y)
 CFLAGS += -DAMASDB
 endif

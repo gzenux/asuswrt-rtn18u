@@ -3864,7 +3864,7 @@ wpa_supplicant-clean:
 	-@$(MAKE) -C wpa_supplicant/wpa_supplicant clean
 
 tr069:
-ifeq ($(wildcard tr069/prebuild/*),)
+ifeq ($(wildcard tr069/$(PREBUILD)/*),)
 	cp tr069/Makefile.ASUSWRT tr069/Makefile
 
 	$(MAKE) -C $@
