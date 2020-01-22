@@ -3,7 +3,7 @@ Asuswrt-Merlin for RT-N18U Release Note
 
 384.14-alpha1
   Changelog for RT-N18U:
-  - UPDATED: Merge GPL 385-10002 from asuswrt-merlin.
+  - UPDATED: Merged GPL 385_10002 from asuswrt-merlin.
 
   Changelog from Asuswrt-Merlin:
   - NEW: wan-event script.  The first parameter will be the WAN unit
@@ -23,8 +23,11 @@ Asuswrt-Merlin for RT-N18U Release Note
          (first draft of the documentation, need to be reorganized)
          https://github.com/RMerl/asuswrt-merlin/wiki/Addons-API
 
+  - UPDATED: Backported some fixes from 384_81981, mostly related
+             to WAN, port bonding and mdns.
   - UPDATED: odhcp6c to 1.1-97-ge199804 (themiron)
   - UPDATED: curl to 7.67.0.
+  - UPDATED: openssl-1.0 to 1.0.2u
 
 
 384.13_1
