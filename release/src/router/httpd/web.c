@@ -16774,7 +16774,7 @@ struct mime_handler mime_handlers[] = {
 	{ "dfb_log.cgi", "application/force-download", NULL, do_html_post_and_get, do_dfb_log_file, do_auth },
 #endif	/* Kludge */
 	{ "clean_offline_clientlist.cgi", "text/html", no_cache_IE7, do_html_post_and_get, do_clean_offline_clientlist_cgi, do_auth },
-#if !defined(RTAC3200) && !defined(RTAC87U) && !defined(RTAC68U) && !defined(RTAC86U) && !defined(RTN18U)	// Kludge, requires 81116 or newer
+#if !defined(RTAC3200) && !defined(RTAC87U) && !defined(RTN18U)	// Kludge, requires 81116 or newer
 	{ "set_fw_path.cgi", "text/html", no_cache_IE7, do_html_post_and_get, do_set_fw_path_cgi, do_auth },
 #endif
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
