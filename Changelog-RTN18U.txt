@@ -1,7 +1,7 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.14-beta1
+384.14
   Changelog for RT-N18U:
   - UPDATED: Merged GPL 385_10002 from asuswrt-merlin.
 
@@ -30,6 +30,8 @@ Asuswrt-Merlin for RT-N18U Release Note
          advanced firewall extension).  The plugins for amtm are
          still maintained by its original author (thelonelycoder).
 
+         https://github.com/RMerl/asuswrt-merlin/wiki/AMTM
+
   - UPDATED: Backported some fixes from 384_81981, mostly related
              to WAN, port bonding and mdns.
   - UPDATED: odhcp6c to 1.1-97-ge199804 (themiron)
@@ -39,6 +41,7 @@ Asuswrt-Merlin for RT-N18U Release Note
   - CHANGED: Replaced entware-setup.sh script with link to amtm, as
              using the amtm Entware installer is now the supported
              method.
+  - CHANGED: Improved connection handling in httpd (themiron)
   - FIXED: Some of the newest DNSFilter servers weren't properly set
            up with IPv6 (dave14305)
 
