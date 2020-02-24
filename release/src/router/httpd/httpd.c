@@ -340,26 +340,40 @@ void Debug2File(const char *path, const char *fmt, ...)
 		fprintf(stderr, "Open %s Error!\n", path);
 }
 
-void sethost(char *host)
+void sethost(const char *host)
 {
-	char *cp;
+	char *p = host_name;
+	size_t len;
 
-	if(!host) return;
+	if (!host || *host == '\0')
+		goto error;
 
-	memset(host_name, 0, sizeof(host_name));
-	strlcpy(host_name, host, sizeof(host_name));
+	while (*host == '.') host++;
 
-	cp = host_name;
-	for ( cp = cp + 7; *cp && *cp != '\r' && *cp != '\n'; cp++ );
-	*cp = '\0';
+	len = strcspn(host, "\r\n");
+	while (len > 0 && strchr(" \t", host[len - 1]) != NULL)
+		len--;
+	if (len > sizeof(host_name) - 1)
+		goto error;
+
+	while (len-- > 0) {
+		int c = *host++;
+		if (((c | 0x20) < 'a' || (c | 0x20) > 'z') &&
+		    ((c < '0' || c > '9')) &&
+		    strchr(".-_:[]", c) == NULL) {
+			p = host_name;
+			break;
+		}
+		*p++ = c;
+	}
+
+error:
+	*p = '\0';
 }
 
 char *gethost(void)
 {
-	if(strlen(host_name)) {
-		return host_name;
-	}
-	else return(nvram_safe_get("lan_ipaddr"));
+	return host_name[0] ? host_name : nvram_safe_get("lan_ipaddr");
 }
 
 #include <sys/sysinfo.h>
@@ -952,7 +966,7 @@ handle_request(void)
 
 	/* Initialize the request variables. */
 	authorization = boundary = cookies = referer = useragent = NULL;
-	host_name[0] = 0;
+	host_name[0] = '\0';
 	bzero( line, sizeof line );
 
 	/* Parse the first line of the request. */
