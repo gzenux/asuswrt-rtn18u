@@ -6,7 +6,15 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
   Changelog from Asuswrt-Merlin:
-  - No Updates Available.
+  - UPDATED: Tor to 0.3.5.9.
+  - UPDATED: curl to 7.68.0.
+  - UPDATED: nano to 4.8.
+  - UPDATED: dnsmasq to 2.80-148-g3ce803d-openssl (themiron)
+  - CHANGED: Wireless Log page will now regroup Guest Network
+             clients together and identify which guest instance
+             they are connected to.
+  - FIXED: DNS server was unreachable when connecting to an OpenVPN
+           server with Advertise DNS enabled, due to firewall rules.
 
 
 384.14
