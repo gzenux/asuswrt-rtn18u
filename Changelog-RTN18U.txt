@@ -6,13 +6,15 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
   Changelog from Asuswrt-Merlin:
+  - NEW: Added ed25519 support in Dropbear (themiron)
   - UPDATED: Tor to 0.3.5.9.
   - UPDATED: curl to 7.68.0.
   - UPDATED: nano to 4.8.
-  - UPDATED: dnsmasq to 2.80-148-g3ce803d-openssl (themiron)
+  - UPDATED: dnsmasq to 2.81rc1-29-g5b6f222 (themiron)
   - UPDATED: inadyn to 2.6 (themiron)
-  - UPDATED: getdns to 1.6.0-beta.1 (themiron)
-  - UPDATED: stubby to 0.3.0-beta.1 (themiron)
+  - UPDATED: getdns to 1.6.0 (themiron)
+  - UPDATED: stubby to 0.3.0 (themiron)
+  - UPDATED: amtm to 3.1.4 (thelonelycoder)
   - CHANGED: Wireless Log page will now regroup Guest Network
              clients together and identify which guest instance
              they are connected to.
