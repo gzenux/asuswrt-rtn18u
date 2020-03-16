@@ -18,8 +18,23 @@ Asuswrt-Merlin for RT-N18U Release Note
   - CHANGED: Wireless Log page will now regroup Guest Network
              clients together and identify which guest instance
              they are connected to.
+
+
+384.14_1
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
   - FIXED: DNS server was unreachable when connecting to an OpenVPN
            server with Advertise DNS enabled, due to firewall rules.
+  - FIXED: miniupnpd would reject private WAN IPs - changed that
+           upstream behaviour to allow these.
+  - FIXED: Would require you to reset the DHCP scope if you
+           changed the LAN hostname.
+  - FIXED: Couldn't set http mode to http-only if you previously
+           had WAN access enabled but have since switched to
+           non-router mode.
+  - FIXED: CVE-2020-8597 in pppd
 
 
 384.14
