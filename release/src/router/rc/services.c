@@ -1677,9 +1677,11 @@ void start_dnsmasq(void)
 		if (*value)
 			fprintf(fp, "dhcp-option=lan,option6:24,%s\n", value);
 
-		/* SNTP server */
-		if (nvram_get_int("ntpd_enable"))
+		/* SNTP & NTP server */
+		if (nvram_get_int("ntpd_enable")) {
 			fprintf(fp, "dhcp-option=lan,option6:31,%s\n", "[::]");
+			fprintf(fp, "dhcp-option=lan,option6:56,%s\n", "[::]");
+		}
 	}
 #endif
 
@@ -14394,7 +14396,8 @@ _dprintf("test 2. turn off the USB power during %d seconds.\n", reset_seconds[re
 		fprintf(stderr,
 			"WARNING: rc notified of unrecognized event `%s'.\n",
 					script);
-		logmessage("rc", "received unrecognized event: %s", script);
+		if (nvram_get_int("rc_debug"))
+			logmessage("rc", "received unrecognized event: %s", script);
 	}
 
 skip:

@@ -22,7 +22,7 @@ function merlin_logo() {
 
 	banner_code +='<div id="merlin_logo"><img src="images/merlin-logo.png" onclick="merlin_url_show(event);"><ul id="merlin_url" style="display:none;" onmouseleave="merlin_url_hide();">';
 	for(i = 0; i < siteurl.length; i++)
-		banner_code +='<li><a href="'+siteurl[i][1]+'" target="_blank" onclick="merlin_url_hide();"><span>'+siteurl[i][0]+'</span></a></li>';
+		banner_code +='<li><a href="'+siteurl[i][1]+'" target="_blank" rel="noreferrer" onclick="merlin_url_hide();"><span>'+siteurl[i][0]+'</span></a></li>';
 	banner_code +='</ul></div>';
 
 	return banner_code;
