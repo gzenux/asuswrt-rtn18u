@@ -6928,8 +6928,11 @@ libconfuse-clean:
 	[ ! -f libconfuse/Makefile ] || $(MAKE) -C libconfuse distclean
 	@rm -f libconfuse/Makefile
 
-inadyn/Makefile:
-	cd inadyn && autoreconf -i -f && $(CONFIGURE) --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
+inadyn/configure:
+	cd inadyn && ./autogen.sh
+
+inadyn/Makefile: inadyn/configure
+	cd inadyn && $(CONFIGURE) --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
 		--enable-openssl \
 		confuse_CFLAGS="-I$(STAGEDIR)/usr/include" \
 		confuse_LIBS="-L$(STAGEDIR)/usr/lib -lconfuse" \
