@@ -1,0 +1,26 @@
+384.15
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Added ed25519 support in Dropbear (themiron)
+  - UPDATED: Tor to 0.4.2.6.
+  - UPDATED: curl to 7.68.0.
+  - UPDATED: nano to 4.8.
+  - UPDATED: dnsmasq to 2.81rc4-33-g7558f2b-openssl (themiron)
+  - UPDATED: inadyn to 2.7 (themiron, merlin)
+  - UPDATED: getdns to 1.6.0 (themiron)
+  - UPDATED: stubby to 0.3.0 (themiron)
+  - UPDATED: amtm to 3.1.6 (thelonelycoder)
+  - UPDATED: openssl-1.1 to 1.1.1f (themiron, merlin)
+  - UPDATED: Chart.js to 2.9.3
+  - CHANGED: Wireless Log page will now regroup Guest Network
+             clients together and identify which guest instance
+             they are connected to.
+  - CHANGED: Added down/upload monitor to network status page, and
+             removed useless RAM chart to free some space.
+  - CHANGED: Security hardening in dropbear dropped CBC and 3DES
+             ciphers, removed version disclosure from ident
+             string (themiron)
+  - FIXED: Disks with a single quote in their name would fail to
+           properly list on various USB service pages.
