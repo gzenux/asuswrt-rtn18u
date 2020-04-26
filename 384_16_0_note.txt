@@ -1,0 +1,12 @@
+384.16
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Add Chacha20-poly1305 support to dropbear (themiron)
+  - UPDATED: dnsmasq to 2.81-openssl (themiron)
+  - UPDATED: openvpn to 2.4.9.
+  - UPDATED: curl to 7.69.1.
+  - UPDATED: openssl-1.1 to 1.1.1g (themiron)
+  - UPDATED: nano to 4.9.2.
+  - FIXED: Various webui issues with sorting DHCP reservations.
