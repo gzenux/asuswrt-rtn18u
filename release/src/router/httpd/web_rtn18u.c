@@ -444,3 +444,8 @@ void system_cmd_test(char *system_cmd, char *SystemCmd, int len)
 		nvram_set("ateUpgrade_flag", "1");
 	}
 }
+
+int check_cmd_injection_blacklist(char *para)
+{
+	return (strchr(para, '`') != NULL);
+}
