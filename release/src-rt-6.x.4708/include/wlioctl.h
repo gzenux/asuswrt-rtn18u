@@ -1235,9 +1235,7 @@ typedef struct {
 						          */
 	int8			rx_lastpkt_rssi[WL_STA_ANT_MAX]; /* Per antenna RSSI of last
 						                  * received data frame
-								  */
-	uint32			wnm_cap;		/* wnm capabilities */
-	uint8			rrm_cap[DOT11_RRM_CAP_LEN]; /* RRM capability */
+						                  */
 } sta_info_t;
 
 #define WL_OLD_STAINFO_SIZE	OFFSETOF(sta_info_t, tx_tot_pkts)
@@ -1869,9 +1867,8 @@ typedef struct wlc_iov_trx_s {
 #define WLC_SET_TXBF_RATESET			319
 #define WLC_SCAN_CQ				320
 #define WLC_GET_RSSI_QDB			321 /* qdB portion of the RSSI */
-#define WLC_DUMP_RATESET			322
-#define WLC_SET_WSEC_PORTOPEN			323
-#define WLC_LAST				324
+#define WLC_DUMP_RATESET                       322
+#define WLC_LAST				323
 
 #ifndef EPICTRL_COOKIE
 #define EPICTRL_COOKIE		0xABADCEDE
@@ -2521,19 +2518,13 @@ typedef struct wl_txchain_pwr_offsets {
  */
 #define SPECT_MNGMT_LOOSE_11H_D		4		/* operation defined above */
 
-#define WL_CHAN_VALID_HW		(1 << 0)	/* valid with current HW */
-#define WL_CHAN_VALID_SW		(1 << 1)	/* valid with current country setting */
-#define WL_CHAN_BAND_5G			(1 << 2)	/* 5GHz-band channel */
-#define WL_CHAN_RADAR			(1 << 3)	/* radar sensitive  channel */
-#define WL_CHAN_INACTIVE		(1 << 4)	/* temporarily inactive due to radar */
-#define WL_CHAN_PASSIVE			(1 << 5)	/* channel is in passive mode */
-#define WL_CHAN_RESTRICTED		(1 << 6)	/* restricted use channel */
-#define WL_CHAN_RADAR_EU_WEATHER	(1 << 7)	/* EU Radar weather channel. Implies an
-							 * EU Radar channel.
-							 */
-
-/* following definition is for precommit; will be removed once wl, acsd switch to the new def */
-#define WL_CHAN_WEATHER_RADAR		WL_CHAN_RADAR_EU_WEATHER
+#define WL_CHAN_VALID_HW	(1 << 0)	/* valid with current HW */
+#define WL_CHAN_VALID_SW	(1 << 1)	/* valid with current country setting */
+#define WL_CHAN_BAND_5G		(1 << 2)	/* 5GHz-band channel */
+#define WL_CHAN_RADAR		(1 << 3)	/* radar sensitive  channel */
+#define WL_CHAN_INACTIVE	(1 << 4)	/* temporarily inactive due to radar */
+#define WL_CHAN_PASSIVE		(1 << 5)	/* channel is in passive mode */
+#define WL_CHAN_RESTRICTED	(1 << 6)	/* restricted use channel */
 
 /* BTC mode used by "btc_mode" iovar */
 #define	WL_BTC_DISABLE		0	/* disable BT coexistence */
