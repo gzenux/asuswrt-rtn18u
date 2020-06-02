@@ -739,8 +739,6 @@ function submitQoS(){
 				.show("tm")
 		}
 		else{
-			document.form.qos_atm.value = (document.form.qos_atm_x.checked ? 1 : 0);
-
 			if(	document.form.qos_enable.value == "1" && document.form.qos_type_orig.value != document.form.qos_type.value &&
 				document.form.qos_type.value == 0 && lantiq_support){
 				var hwnatPrompt = "NAT traffic will be processed by CPU if traditional QoS is enabled. Are you sure want to enable?";
@@ -804,7 +802,7 @@ function change_qos_type(value){
 			document.getElementById('qos_sched_tr').style.display = "";
 			document.getElementById('qos_overhead_tr').style.display = "";
 		}
-		if(qos_type_orig == 0 && qos_enable_orig != 0){
+		if(document.form.qos_type_orig.value == 0 && document.form.qos_enable_orig.value != 0){
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		}
 		else{
@@ -826,7 +824,7 @@ function change_qos_type(value){
 			document.getElementById('qos_sched_tr').style.display = "";
 			change_scheduler(document.form.qos_sched.value);
 		}
-		if(qos_type_orig == 1 && qos_enable_orig != 0)
+		if(document.form.qos_type_orig.value == 1 && document.form.qos_enable_orig.value != 0)
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		else{
 			document.form.action_script.value = "reboot";
@@ -855,7 +853,7 @@ function change_qos_type(value){
 			document.getElementById('qos_sched_tr').style.display = "";
 			document.getElementById('qos_overhead_tr').style.display = "";
 		}
-		if(qos_type_orig == 2 && qos_enable_orig != 0)
+		if(document.form.qos_type_orig.value == 2 && document.form.qos_enable_orig.value != 0)
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		else{
 			document.form.action_script.value = "reboot";
@@ -874,7 +872,7 @@ function change_qos_type(value){
 		document.getElementById('bandwidth_setting_tr').style.display = "none";
 		show_up_down(1);
 		document.getElementById('list_table').style.display = "none";
-		if(qos_type_orig == 3 && qos_enable_orig != 0)
+		if(document.form.qos_type_orig.value == 3 && document.form.qos_enable_orig.value != 0)
 			document.form.action_script.value = "restart_qos;restart_firewall";
 		else{
 			document.form.action_script.value = "reboot";
@@ -1633,6 +1631,8 @@ function change_scheduler(value){
 			<input type="hidden" name="flag" value="">
 			<input type="hidden" name="TM_EULA" value="<% nvram_get("TM_EULA"); %>">
 			<input type="hidden" name="qos_enable" value="<% nvram_get("qos_enable"); %>">
+			<input type="hidden" name="qos_enable_orig" value="<% nvram_get("qos_enable"); %>">
+			<input type="hidden" name="qos_type_orig" value="<% nvram_get("qos_type"); %>">
 			<input type="hidden" name="qos_type" value="<% nvram_get("qos_type"); %>">
 			<input type="hidden" name="qos_obw" value="<% nvram_get("qos_obw"); %>" disabled>
 			<input type="hidden" name="qos_ibw" value="<% nvram_get("qos_ibw"); %>" disabled>
