@@ -979,7 +979,11 @@ extern int dpdt_ant_main(int argc, char *argv[]);
 extern int thermal_txpwr_main(int argc, char *argv[]);
 extern void start_wan(void);
 extern void stop_wan(void);
+#if defined(RTN18U)	// Kludge
+extern int add_multi_routes(void);
+#else
 extern int add_multi_routes(int check_link);
+#endif
 extern int add_routes(char *prefix, char *var, char *ifname);
 extern int del_routes(char *prefix, char *var, char *ifname);
 extern void start_wan_if(int unit);

@@ -856,7 +856,9 @@ enum {
 	MODEL_GTAX11000,
 	MODEL_RTAX92U,
 	MODEL_RTAX95Q,
+#if !defined(RTN18U)	// Kludge
 	MODEL_RTAX56_XD4,
+#endif
 	MODEL_RTAX58U,
 	MODEL_RTAX56U,
 	MODEL_SHAC1300,
@@ -2009,7 +2011,11 @@ extern int with_non_dfs_chspec(char *wif);
 extern chanspec_t select_band1_chspec_with_same_bw(char *wif, chanspec_t chanspec);
 extern chanspec_t select_band4_chspec_with_same_bw(char *wif, chanspec_t chanspec);
 extern chanspec_t select_chspec_with_band_bw(char *wif, int band, int bw, chanspec_t chanspec);
+#if defined(RTN18U)	// Kludge
+extern void wl_list_5g_chans(int unit, int band, char *buf, int len);
+#else
 extern void wl_list_5g_chans(int unit, int band, int war, char *buf, int len);
+#endif
 extern int wl_cap(int unit, char *cap_check);
 #endif
 #ifdef RTCONFIG_AMAS

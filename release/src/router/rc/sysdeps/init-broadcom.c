@@ -7299,7 +7299,9 @@ void set_acs_ifnames()
 	unsigned int cfg_excl_chans[3][MAX_CHANS];	// 2g/5g chans num
 	memset(cfg_excl_chans, 0, sizeof(cfg_excl_chans));
 #endif
+#if !defined(RTN18U)	// Kludge
 	int war = nvram_match("wl1_bw_160", "1") && nvram_match("acs_dfs", "0");
+#endif
 
 	wl_check_5g_band_group();
 
@@ -7307,9 +7309,15 @@ void set_acs_ifnames()
 	memset(acs_ifnames, 0, sizeof(acs_ifnames));
 	memset(acs_ifnames2, 0, sizeof(acs_ifnames2));
 
+#if defined(RTN18U)	// Kludge
+	wl_list_5g_chans(1, 1, list_5g_band1_chans, sizeof(list_5g_band1_chans));
+	wl_list_5g_chans(1, 2, list_5g_band2_chans, sizeof(list_5g_band2_chans));
+	wl_list_5g_chans((num_of_wl_if() == 3) ? 2 : 1, 3, list_5g_band3_chans, sizeof(list_5g_band3_chans));
+#else
 	wl_list_5g_chans(1, 1, 0, list_5g_band1_chans, sizeof(list_5g_band1_chans));
 	wl_list_5g_chans(1, 2, war, list_5g_band2_chans, sizeof(list_5g_band2_chans));
 	wl_list_5g_chans((num_of_wl_if() == 3) ? 2 : 1, 3, 0, list_5g_band3_chans, sizeof(list_5g_band3_chans));
+#endif
 
 	foreach (word, nvram_safe_get("wl_ifnames"), next) {
 #ifdef RTCONFIG_QTN

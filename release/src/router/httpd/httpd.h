@@ -426,7 +426,9 @@ extern int check_AiMesh_whitelist(char *page);
 #ifdef RTCONFIG_DNSPRIVACY
 extern int ej_get_dnsprivacy_presets(int eid, webs_t wp, int argc, char_t **argv);
 #endif
+#if !defined(RTN18U)	// kludge
 extern int check_cmd_injection_blacklist(char *para);
+#endif
 
 /* web-*.c */
 extern int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit);

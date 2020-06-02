@@ -2738,7 +2738,11 @@ wan_up(const char *pwan_ifname)
 	update_resolvconf();
 
 	/* default route via default gateway */
+#if defined(RTN18U)	// Kludge
+	add_multi_routes();
+#else
 	add_multi_routes(0);
+#endif
 
 	/* Kick syslog to re-resolve remote server */
 	reload_syslogd();
@@ -3074,7 +3078,11 @@ wan_down(char *wan_ifname)
 
 #ifdef RTCONFIG_DUALWAN
 	if(nvram_match("wans_mode", "lb"))
+#if defined(RTN18U)	// Kludge
+		add_multi_routes();
+#else
 		add_multi_routes(1);
+#endif
 #endif
 
 #ifdef RTCONFIG_GETREALIP

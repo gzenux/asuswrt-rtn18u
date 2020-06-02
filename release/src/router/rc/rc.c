@@ -2130,7 +2130,11 @@ int main(int argc, char **argv)
 	}
 #endif
 	else if (!strcmp(base, "add_multi_routes")) {
+#if defined(RTN18U)	// Kludge
+		return add_multi_routes();
+#else
 		return add_multi_routes(0);
+#endif
 	}
 	else if (!strcmp(base, "led_ctrl")) {
 		if (argc != 3)
