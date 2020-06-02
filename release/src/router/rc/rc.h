@@ -2322,9 +2322,11 @@ enum LED_STATUS
 #ifdef RTCONFIG_TUNNEL
 extern void start_mastiff();
 extern void stop_mastiff();
+#if !defined(RTN18U)	// Kludge
 extern void start_aae_sip_conn(int sdk_init);
 extern void stop_aae_sip_conn(int sdk_deinit);
 extern void stop_aae_gently();
+#endif
 #endif
 #ifdef RTCONFIG_HAPDEVENT
 extern int start_hapdevent(void);

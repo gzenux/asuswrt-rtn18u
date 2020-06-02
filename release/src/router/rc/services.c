@@ -13868,7 +13868,9 @@ retry_wps_enr:
 #endif
 		if (action & RC_SERVICE_STOP){
 #ifdef RTCONFIG_TUNNEL
+#if !defined(RTN18U)	// Kludge
 			stop_aae_sip_conn(1);
+#endif
 #endif
 			stop_vpnc();
 #if defined(RTCONFIG_OPENVPN)

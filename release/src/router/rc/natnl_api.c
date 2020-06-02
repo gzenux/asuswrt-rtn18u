@@ -51,6 +51,7 @@ void stop_aae()
 	//logmessage("NAT Tunnel", "AAE Service is stopped");
 }
 
+#if !defined(RTN18U)	// Kludge
 void start_aae_sip_conn(int sdk_init)
 {
 #define WAIT_TIMEOUT 5
@@ -109,6 +110,7 @@ void stop_aae_gently()
 		}
 	}
 }
+#endif
 
 void start_mastiff()
 {
