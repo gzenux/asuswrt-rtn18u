@@ -860,7 +860,7 @@ int pw_enc(const char *input, char *output)
 	return 0;
 }
 
-int pw_dec(const char *input, char *output)
+int pw_dec(const char *input, char *output, int len)
 {
 	if(!strlen(input)){
 		strcpy(output, "");
@@ -916,11 +916,11 @@ int pw_dec(const char *input, char *output)
 	}
 
 	if(crc_str != NULL && crc_dec_str != NULL && !strcmp(crc_str, crc_dec_str)){
-		strlcpy(output, (char *)output_buf+CRC_LEN, n+1-CRC_LEN);
+		strlcpy(output, (char *)output_buf+CRC_LEN, len);
 		ret = 1;
 	}
 	else{
-		strcpy(output, input);
+		strlcpy(output, input, len);
 		ret = 0;
 	}
 	return ret;
@@ -1052,7 +1052,7 @@ int dec_nvram(char *name, char *input, char *output)
 					continue;
 				memset(passwdbuf, 0, sizeof(passwdbuf));
 
-				ret = pw_dec(passwd, passwdbuf);
+				ret = pw_dec(passwd, passwdbuf, sizeof(passwdbuf));
 				sprintf(tmp_buf, "<%s>%s%s", username, passwdbuf, buf);
 
 				strlcpy(buf, tmp_buf, sizeof(buf));
@@ -1061,7 +1061,7 @@ int dec_nvram(char *name, char *input, char *output)
 			free(nv);
 		}
 	}else{
-		ret = pw_dec(input, passwdbuf);
+		ret = pw_dec(input, passwdbuf, sizeof(passwdbuf));
 		strlcpy(output, passwdbuf, sizeof(passwdbuf));
 	}
 
