@@ -1035,7 +1035,7 @@ function show_amas_fw_result() {
 						}
 						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").addClass("aimesh_fw_release_note");
 						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").html(ck_fw_result);
-						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").click({"isMerlin" : check_is_merlin_fw(fwver), "model_name": model_name, "newfwver": newfwver}, show_fw_relese_note);
+						$("#amas_" + mac_id + "").children().find(".checkFWReuslt").click({"isMerlin" : check_is_merlin_fw(fwver), "model_name": model_name, "newfwver": newfwver}, show_fw_release_note);
 					}
 					if(online == "1")
 						$("#amas_" + mac_id + "").children("#checkNewFW").css("display", "");
@@ -1044,7 +1044,7 @@ function show_amas_fw_result() {
 		}
 	});
 }
-function show_fw_relese_note(event) {
+function show_fw_release_note(event) {
 	if($(".confirm_block").length > 0)
 		$(".confirm_block").remove();
 
@@ -1069,9 +1069,9 @@ function show_fw_relese_note(event) {
 		note_display_flag: 0
 	});
 
-	setTimeout(function(){check_fw_relese_note_status();}, 2000);
+	setTimeout(function(){check_fw_release_note_status();}, 2000);
 }
-function check_fw_relese_note_status() {
+function check_fw_release_note_status() {
 	if($(".confirm_block").length > 0) {
 		$.ajax({
 			url: '/ajax_onboarding.asp',
@@ -1082,11 +1082,11 @@ function check_fw_relese_note_status() {
 						setTimeout(function(){check_fw_release_note_status();}, 1000);
 						break;
 					case "1" :
-						show_fw_relese_note_result(true);
+						show_fw_release_note_result(true);
 						break;
 					case "2" :
 					case "3" :
-						show_fw_relese_note_result(false);
+						show_fw_release_note_result(false);
 						break;
 				}
 			}
@@ -1107,7 +1107,7 @@ function show_fw_release_note_result(_status) {
 		});*/
 	}
 	else
-		$(".confirm_block").children().find("#status_iframe").contents().find("#amas_relese_note_hint").val("Fail to grab release note");/* untranslated */
+		$(".confirm_block").children().find("#status_iframe").contents().find("#amas_release_note_hint").val("Fail to grab release note");/* untranslated */
 }
 function open_AiMesh_node_fw_upgrade(_ip) {
 	var url = "http://" + _ip + "/AiMesh_Node_FirmwareUpgrade.asp";
