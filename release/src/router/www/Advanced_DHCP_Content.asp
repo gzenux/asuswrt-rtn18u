@@ -183,8 +183,8 @@ function addRow_Group(upper){
 		document.form.dhcp_staticip_x_0.focus();
 		document.form.dhcp_staticip_x_0.select();
 		return false;
-	}else if ((document.form.dhcp_staticname_x_0.value != "") && (validator.hostName(document.form.dhcp_staticname_x_0) != "")){
-		alert("Hostname must only contain alphanumeric characters, underline and dash symbol. The first character cannot be dash \"-\" or underline \"_\".");
+	}else if ((document.form.dhcp_staticname_x_0.value != "") && ((alert_str = validator.host_name(document.form.dhcp_staticname_x_0)) != "")){
+		alert(alert_str);
 		document.form.dhcp_staticname_x_0.focus();
 		document.form.dhcp_staticname_x_0.select();
 		return false;
@@ -413,7 +413,7 @@ function applyRule(){
 			dhcp_hostnames_array += "<" + manually_dhcp_list_array[key].mac + ">" + manually_dhcp_list_array[key].hostname;
 		});
 
-		if (dhcp_staticlist_array.length > 2998 || dhcp_hostnames_array.length > 2998)  {
+		if (dhcp_staticlist_array.length > 2499 || dhcp_hostnames_array.length > 2998)  {
 			alert("Resulting list of DHCP reservations is too long - remove some, or use shorter names.");
 			return false;
 		}

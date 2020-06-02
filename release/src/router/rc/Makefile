@@ -390,6 +390,10 @@ OBJS += pc_block.o
 OBJS += pc_tmp.o
 endif
 
+ifeq ($(RTCONFIG_INTERNETCTRL),y)
+OBJS += ic.o
+endif
+
 ifeq ($(RTCONFIG_HTTPS),y)
 ifeq ($(RTCONFIG_FRS_FEEDBACK),y)
 OBJS += dsl_fb.o
@@ -415,6 +419,7 @@ endif
 endif
 
 ifeq ($(and $(RTCONFIG_BCMWL6),$(RTCONFIG_PROXYSTA)),y)
+OBJS += arpreq.o
 OBJS += psta_monitor.o
 endif
 
@@ -658,6 +663,10 @@ ifeq ($(RTN18U),y)
 OBJS += rtn18u.o
 endif
 
+ifeq ($(RTCONFIG_GN_WBL),y)
+OBJS += gn_wbl.o
+endif
+
 ifeq ($(RCONFIG_SW_HW_AUTH), y)
 CLFAGS += -I(TOP)/sw-hw-auth
 endif
@@ -762,6 +771,7 @@ ifeq ($(HND_ROUTER),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc hnd-write
 	@cd $(INSTALLDIR)/sbin && ln -sf rc hnd-erase
 	@cd $(INSTALLDIR)/sbin && ln -sf rc mtd_erase_image_update
+	@cd $(INSTALLDIR)/sbin && ln -sf rc mtd_erase_misc2
 else
 	@cd $(INSTALLDIR)/sbin && ln -sf rc nvram_erase
 ifeq ($(RTCONFIG_BCMARM),y)
@@ -804,6 +814,7 @@ ifeq ($(and $(CONFIG_BCMWL5),$(RTCONFIG_FANCTRL)),y)
 endif
 
 ifeq ($(and $(RTCONFIG_BCMWL6),$(RTCONFIG_PROXYSTA)),y)
+	@cd $(INSTALLDIR)/sbin && ln -sf rc sendarp
 	@cd $(INSTALLDIR)/sbin && ln -sf rc psta_monitor
 endif
 
@@ -1005,6 +1016,9 @@ ifeq ($(RTCONFIG_PARENTALCTRL),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc pc
 	@cd $(INSTALLDIR)/sbin && ln -sf rc pc_block
 	@cd $(INSTALLDIR)/sbin && ln -sf rc pc_tmp
+endif
+ifeq ($(RTCONFIG_INTERNETCTRL),y)
+	@cd $(INSTALLDIR)/sbin && ln -sf rc ic
 endif
 	@cd $(INSTALLDIR)/sbin && ln -sf rc wlcscan
 ifeq ($(RTCONFIG_WIRELESSREPEATER),y)
