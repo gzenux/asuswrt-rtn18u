@@ -13,8 +13,10 @@ TOOLCHAIN="${SrcDir}/toolchains/hndtools-arm-linux-2.6.36-uclibc-4.5.3"
 echo $PATH | grep ${TOOLCHAIN}/bin > /dev/null 2>&1 || export PATH="$PATH:${TOOLCHAIN}/bin"
 
 # CFE build configuration (Optional)
-echo $PATH | grep ${SrcDir}/ctools > /dev/null 2>&1 || export PATH="$PATH:${SrcDir}/ctools"
-echo $LD_LIBRARY_PATH | grep ${TOOLCHAIN}/lib > /dev/null 2>&1 || export LD_LIBRARY_PATH="${TOOLCHAIN}/lib"
+echo $PATH | grep ${SrcDir}/ctools > /dev/null 2>&1 || {
+	export PATH="$PATH:${SrcDir}/ctools"
+	export LD_LIBRARY_PATH="${TOOLCHAIN}/lib"
+}
 
 cd ${SrcDir} > /dev/null
 
