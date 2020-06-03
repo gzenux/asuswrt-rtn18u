@@ -110,6 +110,20 @@ ifeq ($(BUILD_NAME),RT-N18U)
 	rm -rf $(INSTALLDIR)/www/images/btnPressed.png
 	rm -rf $(INSTALLDIR)/www/images/btnReleased.png
 	rm -rf $(INSTALLDIR)/www/images/position.png
+	# No ROG/Game Acceleration support
+	rm -rf $(INSTALLDIR)/www/GearAccelerator.asp
+	rm -rf $(INSTALLDIR)/www/GameProfile.asp
+	rm -rf $(INSTALLDIR)/www/GameBoost.asp
+	rm -rf $(INSTALLDIR)/www/images/gameprofile
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_WTFast.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_openNAT.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_mobileGame.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/open_NAT.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/mainimage_img_Game.jpg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_gamePriority.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/game.svg
+	rm -rf $(INSTALLDIR)/www/js/gameProfile.js
+	rm -rf $(INSTALLDIR)/www/css/gameprofile.css
 endif
 ifeq ($(RTCONFIG_SFP),y)
 	rm -rf $(INSTALLDIR)/www/images/PrinterServer
