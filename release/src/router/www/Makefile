@@ -395,6 +395,8 @@ ifneq ($(RTCONFIG_BWDPI)$(RTCONFIG_BWDPI_DEP),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/recount_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/add.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/add_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/arrow_right.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/arrow_down.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/disable.svg
 	rm -rf $(INSTALLDIR)/www/images/save.svg
 	rm -rf $(INSTALLDIR)/www/images/save_hover.svg
@@ -702,6 +704,7 @@ ifneq ($(RTCONFIG_AMAS), y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/amesh
 	rm -rf $(INSTALLDIR)/www/require/modules/amesh.js
 	rm -rf $(INSTALLDIR)/www/ajax_onboarding.asp
+	rm -rf $(INSTALLDIR)/www/release_note_amas.asp
 	rm -rf $(INSTALLDIR)/www/get_release_note_amas.asp
 	rm -rf $(INSTALLDIR)/www/chcap.json
 	rm -rf $(INSTALLDIR)/www/message.htm
