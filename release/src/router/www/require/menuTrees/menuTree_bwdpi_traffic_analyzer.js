@@ -385,7 +385,6 @@ define(function(){
 				}
 
 				if(!gameMode_support) {
-					retArray.push("menu_GameBoost");
 					retArray.push("menu_OpenNAT");
 				}
 

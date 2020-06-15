@@ -2438,7 +2438,7 @@ void load_wl()
 		}
 	}
 
-#if defined(HND_ROUTER) || defined(RTCONFIG_BCM_7114)
+#if defined(HND_ROUTER) || defined(RTCONFIG_BCM_7114) || defined(RTCONFIG_BCM4708)
 	wl_driver_mode_update();
 #endif
 
@@ -7911,8 +7911,8 @@ void fc_init()
 
 void fc_fini()
 {
-        eval("fc", "disable");
-        eval("fc", "flush");
+	eval("fc", "disable");
+	eval("fc", "flush");
 }
 
 void hnd_nat_ac_init(int bootup)
@@ -7935,7 +7935,7 @@ void hnd_nat_ac_init(int bootup)
 }
 #endif
 
-#if defined(HND_ROUTER) || defined(RTCONFIG_BCM_7114)
+#if defined(HND_ROUTER) || defined(RTCONFIG_BCM_7114) || defined(RTCONFIG_BCM4708)
 /* This function updates the nvram radio_dmode_X to NIC/DGL depending on driver mode */
 void wl_driver_mode_update(void)
 {
