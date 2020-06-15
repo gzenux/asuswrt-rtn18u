@@ -1,12 +1,14 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.17-alpha1
+384.17-alpha2
   Changelog for RT-N18U:
   - UPDATED: Merged GPL 385_20490 from asuswrt-merlin.
 
   Changelog from Asuswrt-Merlin:
   - UPDATED: amtm to 3.1.7.
+  - UPDATED: Root certificate bundle to June 3rd 2020.
+  - UPDATED: OUI database used by the webui.
   - FIXED: ssh/scp client would fail to connect while negotiating
            a chacha20 connection (themiron)
 
