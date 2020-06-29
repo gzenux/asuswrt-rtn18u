@@ -1,0 +1,16 @@
+384.17
+  Changelog for RT-N18U:
+  - UPDATED: Merged GPL 384_81918 from asuswrt-merlin (mainline).
+  - CHANGED: Synchronize the static OUI database in networkmap with
+             webui.
+
+  Changelog from Asuswrt-Merlin:
+  - UPDATED: amtm to 3.1.7.
+  - UPDATED: Root certificate bundle to June 3rd 2020.
+  - UPDATED: OUI database used by the webui.
+  - UPDATED: Dropbear 2020.80 (themiron)
+  - UPDATED: nano to 4.9.3.
+  - CHANGED: Optimized OpenVPN routing policy storage (this change
+             is NOT backward compatible with previous firmwares)
+  - FIXED: ssh/scp client would fail to connect while negotiating
+           a chacha20 connection (themiron)
