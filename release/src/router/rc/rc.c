@@ -2133,7 +2133,10 @@ int main(int argc, char **argv)
 #if defined(RTN18U)	// Kludge
 		return add_multi_routes();
 #else
-		return add_multi_routes(0);
+		if(argc == 2)
+			return add_multi_routes(atoi(argv[1]));
+		else
+			return add_multi_routes(0);
 #endif
 	}
 	else if (!strcmp(base, "led_ctrl")) {
