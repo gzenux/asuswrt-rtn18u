@@ -728,7 +728,7 @@ obj-$(RTCONFIG_AHS) += ahs
 
 obj-$(RTCONFIG_ASD) += asd
 
-obj-$(RTCONFIG_OPENVPN) += libvpn
+obj-$(RTCONFIG_OPENVPN) += libovpn
 
 obj-y += rc
 obj-y += rom
@@ -2736,7 +2736,7 @@ wb: json-c openssl libxml2 curl
 wb-install:
 	$(MAKE) -C wb INSTALLDIR=$(INSTALLDIR)/wb install
 
-rc: shared nvram$(BCMEX)$(EX7) libdisk $(if $(RTCONFIG_FBWIFI),fb_wifi) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_BWDPI),bwdpi_source) $(if $(RTCONFIG_USB_SMS_MODEM),smspdu) $(if $(RTCONFIG_HND_ROUTER),bcm_flashutil bcm_util bcm_boardctl) $(if $(RTCONFIG_OPENVPN),libvpn) $(if $(RTCONFIG_LANTIQ),libfapi-0.1) $(if $(RTCONFIG_CFGSYNC), $(CFGSYNC_PKG) $(if $(RTCONFIG_AMAS), amas-utils) $(if $(RTCONFIG_LANTIQ),hostapd-2.6)) json-c $(if $(RTCONFIG_FRS_FEEDBACK)$(RTCONFIG_HTTPS), curl) $(if $(RTCONFIG_LETSENCRYPT),libletsencrypt)
+rc: shared nvram$(BCMEX)$(EX7) libdisk $(if $(RTCONFIG_FBWIFI),fb_wifi) $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(CONFIG_LIBBCM),libbcm) $(if $(RTCONFIG_BWDPI),bwdpi_source) $(if $(RTCONFIG_USB_SMS_MODEM),smspdu) $(if $(RTCONFIG_HND_ROUTER),bcm_flashutil bcm_util bcm_boardctl) $(if $(RTCONFIG_OPENVPN),libovpn) $(if $(RTCONFIG_LANTIQ),libfapi-0.1) $(if $(RTCONFIG_CFGSYNC), $(CFGSYNC_PKG) $(if $(RTCONFIG_AMAS), amas-utils) $(if $(RTCONFIG_LANTIQ),hostapd-2.6)) json-c $(if $(RTCONFIG_FRS_FEEDBACK)$(RTCONFIG_HTTPS), curl) $(if $(RTCONFIG_LETSENCRYPT),libletsencrypt)
 	@$(SEP)
 	@$(MAKE) $(PARALLEL_BUILD) -C rc
 
@@ -7192,9 +7192,9 @@ portmap-install:
 	install -D portmap/portmap $(INSTALLDIR)/portmap/usr/sbin/portmap
 	$(STRIP) $(INSTALLDIR)/portmap/usr/sbin/portmap
 
-libvpn: shared nvram$(BCMEX)$(EX7)
+libovpn: shared nvram$(BCMEX)$(EX7)
 	@$(SEP)
-	$(MAKE) -C libvpn
+	$(MAKE) -C libovpn
 
 wsdd2:
 	@$(SEP)

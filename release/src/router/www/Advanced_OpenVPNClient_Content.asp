@@ -539,7 +539,7 @@ function validForm(){
 	}
 
 	if (getRadioValue(document.form.vpn_client_userauth) &&
-	    (document.form.vpn_client_username.value == "" || document.form.vpn_client_username.value == "")) {
+	    (document.form.vpn_client_username.value == "" || document.form.vpn_client_password.value == "")) {
 		alert("You must provide a username and a password.")
 		document.form.vpn_client_username.focus();
 		return false;
@@ -933,9 +933,6 @@ function showConnStatus() {
 					break;
 				case "6":
 					code = "Error - Authentication failure!";
-					break;
-				case "7":
-					code = "Error - Key/Certificate error!";
 					break;
 				default:
 					code = "Error - check configuration!";
