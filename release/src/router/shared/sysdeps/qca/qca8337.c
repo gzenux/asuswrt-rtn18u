@@ -70,11 +70,11 @@ enum {
 #elif defined(RTN19) // QCN5502 ESW
 enum {
 	P0_PORT=0,
-	LAN1_PORT=2,
-	LAN2_PORT=1,
-	LAN3_PORT=4,	/* unused */
+	LAN1_PORT=3,
+	LAN2_PORT=2,
+	LAN3_PORT=1,	/* unused */
 	LAN4_PORT=5,	/* unused */
-	WAN_PORT=3,
+	WAN_PORT=4,
 	P6_PORT=6,
 	P7_PORT=6,
 };
@@ -94,6 +94,16 @@ static const int lan_wan_partition[9][NR_WANLAN_PORT] = {
 	{1,1,0,0,0}, //LLWWW
 	{0,0,1,1,0}, //WWLLW
 	{1,1,1,1,1}  //ALL
+#elif defined(RTN19)
+	/* W, L1, L2, X, X */
+	{0,1,1,1,1}, //WLLLL
+	{0,0,1,1,1}, //WWLLL
+	{0,1,0,1,1}, //WLWLL
+	{0,0,1,1,1}, //WWLLL
+	{0,1,0,1,1}, //WLWLL
+	{0,0,0,1,1}, //WWWLL
+	{0,0,0,1,1}, //WWWLL
+	{1,1,1,1,1}  //ALL
 #else
 	/* W, L1, L2, L3, L4 */
 	{0,1,1,1,1}, //WLLLL
@@ -109,7 +119,7 @@ static const int lan_wan_partition[9][NR_WANLAN_PORT] = {
 
 void reset_qca_switch(void);
 
-#if defined(RTAC55U) || defined(RTAC55UHP) || defined(RT4GAC55U) || defined(RPAC51)
+#if defined(RTAC55U) || defined(RTAC55UHP) || defined(RT4GAC55U) || defined(PLAC56) || defined(PLAC66U) || defined(RPAC51)
 ////// RT-AC55U/RT-AC55UHP/4G-AC55U definition
 #define RGMII_PORT		P6_PORT
 #define SGMII_PORT		P0_PORT
@@ -944,7 +954,12 @@ static void create_Vlan(int bitmask)
 
 	if (mbr & 0x200) {	//Internet && WAN port
 		char pvid[8];
-		qca8337_vlan_set(2, vid, prio, mbr_qca, untag_qca);
+#ifdef RTCONFIG_MULTICAST_IPTV
+		if (!strcmp(nvram_safe_get("switch_wantag"), "movistar"))
+			qca8337_vlan_set(-1, vid, prio, mbr_qca, untag_qca);
+		else
+#endif
+			qca8337_vlan_set(2, vid, prio, mbr_qca, untag_qca);
 		snprintf(pvid, sizeof(pvid), "%d", vid);
 		eval("swconfig", "dev", MII_IFNAME, "port", "set", "pvid", pvid);
 	}

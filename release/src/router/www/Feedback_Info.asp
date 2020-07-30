@@ -18,18 +18,18 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <script>
-var fb_state = "<% nvram_get("fb_state"); %>";
+var fb_state = httpApi.nvramGet(["fb_state"], true).fb_state;
 
-var firmver = '<% nvram_get("firmver"); %>';
-var buildno = '<% nvram_get("buildno"); %>';
-//var rcno = '<% nvram_get("rcno"); %>';
-var extendno = '<% nvram_get("extendno"); %>';
+var firmver = httpApi.nvramGet(["firmver"], true).firmver;
+var buildno = httpApi.nvramGet(["buildno"], true).buildno;
+var extendno = httpApi.nvramGet(["extendno"], true).extendno;
+var fb_split_files = Number(httpApi.nvramGet(["fb_split_files"], true).fb_split_files);
+
 var FWString = '';
-
 FWString = firmver+"."+buildno;
-//if(rcno.length > 0)
-//	FWString += "rc"+rcno;
 FWString += "_"+extendno;
 
 
@@ -63,10 +63,69 @@ function check_info(){
 	if(dsl_support && fb_state == "2"){
 		document.getElementById("fb_fail_dsl").style.display = "";
 		document.getElementById("fb_fail_textarea").style.display = "";
+		show_dbg_files(fb_split_files, "dsl");
 	}
 	else if(fb_state == "2"){
 		document.getElementById("fb_fail_router").style.display = "";
 		document.getElementById("fb_fail_textarea").style.display = "";
+		show_dbg_files(fb_split_files, "rt");
+	}
+}
+
+function show_dbg_files(seg, type){
+	if(type == "dsl"){
+
+		switch(seg){
+
+			case 1:
+				document.getElementById("dbg_dsl_file").style.display = "";
+				break;
+			case 2:
+				document.getElementById("dbg_dsl_seg_a").style.display = "";
+				document.getElementById("dbg_dsl_seg_b").style.display = "";
+				break;
+			case 3:
+				document.getElementById("dbg_dsl_seg_a").style.display = "";
+				document.getElementById("dbg_dsl_seg_b").style.display = "";
+				document.getElementById("dbg_dsl_seg_c").style.display = "";
+				break;
+			case 4:
+				document.getElementById("dbg_dsl_seg_a").style.display = "";
+				document.getElementById("dbg_dsl_seg_b").style.display = "";
+				document.getElementById("dbg_dsl_seg_c").style.display = "";
+				document.getElementById("dbg_dsl_seg_d").style.display = "";
+				break;
+			default:
+				document.getElementById("dbg_dsl_file").style.display = "";
+				break;
+		}
+	}
+	else{
+
+		switch(seg){
+
+			case 1:
+				document.getElementById("dbg_rt_file").style.display = "";
+				break;
+			case 2:
+				document.getElementById("dbg_rt_seg_a").style.display = "";
+				document.getElementById("dbg_rt_seg_b").style.display = "";
+				break;
+			case 3:
+				document.getElementById("dbg_rt_seg_a").style.display = "";
+				document.getElementById("dbg_rt_seg_b").style.display = "";
+				document.getElementById("dbg_rt_seg_c").style.display = "";
+				break;
+			case 4:
+				document.getElementById("dbg_rt_seg_a").style.display = "";
+				document.getElementById("dbg_rt_seg_b").style.display = "";
+				document.getElementById("dbg_rt_seg_c").style.display = "";
+				document.getElementById("dbg_rt_seg_d").style.display = "";
+				break;
+			default:
+				document.getElementById("dbg_rt_file").style.display = "";
+				break;
+		}
 	}
 }
 
@@ -84,7 +143,7 @@ function get_debug_log_info(){
 	desc += "PIN Code: <% nvram_get("secret_code"); %>\n";
 	desc += "MAC Address: <% nvram_get("lan_hwaddr"); %>\n\n";
 
-	desc += "Diagnostic debug log capture duration: <% nvram_get("dslx_diag_duration"); %>\n";
+	desc += "<#feedback_capturing_duration#>: <% nvram_get("dslx_diag_duration"); %>\n";
 	desc += "DSL connection: <% nvram_get("fb_availability"); %>\n";
 
 	document.uiForm.fb_send_debug_log_content.value = desc;
@@ -105,6 +164,29 @@ function get_feedback_tarball(){
 	setTimeout("location.href='fb_data.tgz.gz';", 300);
 }
 
+function get_split_feedback(seg){
+	switch(seg) {
+		case 1:
+			setTimeout("location.href='fb_data.tgz.gz';", 300);
+			break;
+		case "a":
+	setTimeout("location.href='fb_data.tgz.gz.part.a';", 300);
+			break;
+		case "b":
+	setTimeout("location.href='fb_data.tgz.gz.part.b';", 300);
+			break;
+		case "c":
+	setTimeout("location.href='fb_data.tgz.gz.part.c';", 300);
+			break;
+		case "d":
+	setTimeout("location.href='fb_data.tgz.gz.part.d';", 300);
+			break;
+		default:
+			setTimeout("location.href='fb_data.tgz.gz';", 300);
+			break;
+	}
+}
+
 </script>
 <style>
 .feedback_info_0{
@@ -123,7 +205,7 @@ function get_feedback_tarball(){
 </style>	
 </head>
 
-<body onload="initial();" onunLoad="return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();" class="bg">
 <div id="TopBanner"></div>
 
 <div id="Loading" class="popup_bg"></div>
@@ -154,7 +236,7 @@ function get_feedback_tarball(){
 <td bgcolor="#4D595D" valign="top">
 <div>&nbsp;</div>
 		  <div class="formfonttitle"><#menu5_6#> - <#menu_feedback#></div>
-<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
+<div style="margin:10px 0 10px 5px;" class="splitLine"></div>
 
 <div id="fb_success_dsl_0" style="display:none;">
 	<br>
@@ -172,18 +254,35 @@ function get_feedback_tarball(){
 
 <div id="fb_fail_dsl" style="display:none;" class="feedback_info_1">
 	<#feedback_fail0#>
-	<br>
+	<br><br>
 	<#feedback_fail1#> : ( <a href="mailto:broadband_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">broadband_feedback@asus.com </a>) <#feedback_fail2#>
-	And download <span onClick="get_feedback_tarball();" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">this debug file</span> and add as email attachment.
 	<br>
+	<#feedback_fail3#> :
+	<br>
+	<ul>
+		<li id="dbg_dsl_file" style="display:none;"><span onClick="get_split_feedback(1);" style="text-decoration: underline; color:#FFCC00; cursor:pointer;"><#feedback_debug_file#></span></li>
+		<li id="dbg_dsl_seg_a" style="display:none;"><span onClick="get_split_feedback('a');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_a</span></li>
+		<li id="dbg_dsl_seg_b" style="display:none;"><span onClick="get_split_feedback('b');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_b</span></li>
+		<li id="dbg_dsl_seg_c" style="display:none;"><span onClick="get_split_feedback('c');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_c</span></li>
+		<li id="dbg_dsl_seg_d" style="display:none;"><span onClick="get_split_feedback('d');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_d</span></li>
+	</ul>
 </div>
 
 <div id="fb_fail_router" style="display:none;" class="feedback_info_1">
 	<#feedback_fail0#>
-	<br>
+	<br><br>
 	<#feedback_fail1#> : ( <a href="mailto:router_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">router_feedback@asus.com </a>) <#feedback_fail2#>
-	And download <span onClick="get_feedback_tarball();" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">this debug file</span> and add as email attachment.
+	&nbsp;<#feedback_fail_BindGoogle#>
 	<br>
+	<#feedback_fail3#> :
+	<br>
+	<ul>
+		<li id="dbg_rt_file" style="display:none;"><span onClick="get_split_feedback(1);" style="text-decoration: underline; color:#FFCC00; cursor:pointer;"><#feedback_debug_file#></span></li>
+		<li id="dbg_rt_seg_a" style="display:none;"><span onClick="get_split_feedback('a');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_a</span></li>
+		<li id="dbg_rt_seg_b" style="display:none;"><span onClick="get_split_feedback('b');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_b</span></li>
+		<li id="dbg_rt_seg_c" style="display:none;"><span onClick="get_split_feedback('c');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_c</span></li>
+		<li id="dbg_rt_seg_d" style="display:none;"><span onClick="get_split_feedback('d');" style="text-decoration: underline; color:#FFCC00; cursor:pointer;">get_split_feedback_d</span></li>
+	</ul>
 </div>
 
 <div id="fb_fail_textarea" style="display:none;">

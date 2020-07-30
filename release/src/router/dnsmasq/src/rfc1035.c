@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2020 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -608,7 +608,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 #ifdef HAVE_DNSSEC
 	  if (option_bool(OPT_DNSSEC_VALID))
 	    for (i = 0; i < ntohs(header->ancount); i++)
-	      if (daemon->rr_status[i])
+	      if (daemon->rr_status[i] != 0)
 		return 0;
 #endif
 	}
@@ -681,13 +681,16 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 		      if (!extract_name(header, qlen, &p1, name, 1, 0))
 			return 0;
 #ifdef HAVE_DNSSEC
-		      if (option_bool(OPT_DNSSEC_VALID) && daemon->rr_status[j])
+		      if (option_bool(OPT_DNSSEC_VALID) && daemon->rr_status[j] != 0)
 			{
 			  /* validated RR anywhere in CNAME chain, don't cache. */
 			  if (cname_short || aqtype == T_CNAME)
 			    return 0;
 
 			  secflag = F_DNSSECOK;
+			  /* limit TTL based on signature. */
+			  if (daemon->rr_status[j] < cttl)
+			    cttl = daemon->rr_status[j];
 			}
 #endif
 
@@ -768,19 +771,24 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 	      if (aqclass == C_IN && res != 2 && (aqtype == T_CNAME || aqtype == qtype))
 		{
 #ifdef HAVE_DNSSEC
-		  if (option_bool(OPT_DNSSEC_VALID) && daemon->rr_status[j])
+		  if (option_bool(OPT_DNSSEC_VALID) && daemon->rr_status[j] != 0)
+		    {
 		      secflag = F_DNSSECOK;
+
+		      /* limit TTl based on sig. */
+		      if (daemon->rr_status[j] < attl)
+			attl = daemon->rr_status[j];
+		    }
 #endif		  
 		  if (aqtype == T_CNAME)
 		    {
 		      if (!cname_count--)
 			return 0; /* looped CNAMES */
-		      newc = cache_insert(name, NULL, C_IN, now, attl, F_CNAME | F_FORWARD | secflag);
-		      if (newc)
+
+		      if ((newc = cache_insert(name, NULL, C_IN, now, attl, F_CNAME | F_FORWARD | secflag)))
 			{
 			  newc->addr.cname.target.cache = NULL;
-			  /* anything other than zero, to avoid being mistaken for CNAME to interface-name */ 
-			  newc->addr.cname.uid = 1; 
+			  newc->addr.cname.is_name_ptr = 0; 
 			  if (cpp)
 			    {
 			      next_uid(newc);
@@ -793,8 +801,10 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 		      if (attl < cttl)
 			cttl = attl;
 		      
+		      namep = p1;
 		      if (!extract_name(header, qlen, &p1, name, 1, 0))
 			return 0;
+		      
 		      goto cname_loop1;
 		    }
 		  else if (!(flags & F_NXDOMAIN))
@@ -833,17 +843,31 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 			      if ((flags & F_IPV4) &&
 				  private_net(addr.addr4, !option_bool(OPT_LOCAL_REBIND)))
 				return 1;
-			      
-			      if ((flags & F_IPV6) &&
-				  IN6_IS_ADDR_V4MAPPED(&addr.addr6))
+
+			      /* Block IPv4-mapped IPv6 addresses in private IPv4 address space */
+			      if (flags & F_IPV6)
 				{
-				  struct in_addr v4;
-				  v4.s_addr = ((const uint32_t *) (&addr.addr6))[3];
-				  if (private_net(v4, !option_bool(OPT_LOCAL_REBIND)))
+				  if (IN6_IS_ADDR_V4MAPPED(&addr.addr6))
+				    {
+				      struct in_addr v4;
+				      v4.s_addr = ((const uint32_t *) (&addr.addr6))[3];
+				      if (private_net(v4, !option_bool(OPT_LOCAL_REBIND)))
+					return 1;
+				    }
+
+				  /* Check for link-local (LL) and site-local (ULA) IPv6 addresses */
+				  if (IN6_IS_ADDR_LINKLOCAL(&addr.addr6) ||
+				      IN6_IS_ADDR_SITELOCAL(&addr.addr6))
+				    return 1;
+
+				  /* Check for the IPv6 loopback address (::1) when
+				     option rebind-localhost-ok is NOT set */
+				  if (!option_bool(OPT_LOCAL_REBIND) &&
+				      IN6_IS_ADDR_LOOPBACK(&addr.addr6))
 				    return 1;
 				}
 			    }
-			  
+
 #ifdef HAVE_IPSET
 			  if (ipsets && (flags & (F_IPV4 | F_IPV6)))
 			    {
@@ -1291,7 +1315,11 @@ static unsigned long crec_ttl(struct crec *crecp, time_t now)
   else
     return daemon->max_ttl;
 }
-  
+
+static int cache_validated(const struct crec *crecp)
+{
+  return (option_bool(OPT_DNSSEC_VALID) && !(crecp->flags & F_DNSSECOK));
+}
 
 /* return zero if we can't answer from cache, or packet size if we can */
 size_t answer_request(struct dns_header *header, char *limit, size_t qlen,  
@@ -1310,12 +1338,12 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
   int nxdomain = 0, notimp = 0, auth = 1, trunc = 0, sec_data = 1;
   struct mx_srv_record *rec;
   size_t len;
+  int rd_bit = (header->hb3 & HB3_RD);
 
   /* never answer queries with RD unset, to avoid cache snooping. */
-  if (!(header->hb3 & HB3_RD) ||
-      ntohs(header->ancount) != 0 ||
+  if (ntohs(header->ancount) != 0 ||
       ntohs(header->nscount) != 0 ||
-      ntohs(header->qdcount) == 0 || 
+      ntohs(header->qdcount) == 0 ||
       OPCODE(header) != QUERY )
     return 0;
 
@@ -1342,6 +1370,8 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 
   for (q = ntohs(header->qdcount); q != 0; q--)
     {
+      int count = 255; /* catch loops */
+      
       /* save pointer to name for copying into answers */
       nameoffset = p - (unsigned char *)header;
 
@@ -1353,7 +1383,35 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
       GETSHORT(qclass, p);
 
       ans = 0; /* have we answered this question */
-      
+
+      while (--count != 0 && (crecp = cache_find_by_name(NULL, name, now, F_CNAME)))
+	{
+	  char *cname_target = cache_get_cname_target(crecp);
+
+	  /* If the client asked for DNSSEC  don't use cached data. */
+	  if ((crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)) ||
+	      (rd_bit && (!do_bit || cache_validated(crecp))))
+	    {
+	      if (crecp->flags & F_CONFIG || qtype == T_CNAME)
+		ans = 1;
+
+	      if (!(crecp->flags & F_DNSSECOK))
+		sec_data = 0;
+
+	      if (!dryrun)
+		{
+		  log_query(crecp->flags, name, NULL, record_source(crecp->uid));
+		  if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
+					  crec_ttl(crecp, now), &nameoffset,
+					  T_CNAME, C_IN, "d", cname_target))
+		    anscount++;
+		}
+
+	    }
+
+	  strcpy(name, cname_target);
+	}
+	  
       if (qtype == T_TXT || qtype == T_ANY)
 	{
 	  struct txt_record *t;
@@ -1501,9 +1559,8 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		  /* Don't use cache when DNSSEC data required, unless we know that
 		     the zone is unsigned, which implies that we're doing
 		     validation. */
-		  if ((crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)) || 
-		      !do_bit || 
-		      (option_bool(OPT_DNSSEC_VALID) && !(crecp->flags & F_DNSSECOK)))
+		  if ((crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)) ||
+		      (rd_bit && (!do_bit || cache_validated(crecp)) ))
 		    {
 		      do 
 			{ 
@@ -1595,7 +1652,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		    }
 		}
 	    }
-	  
+
 	  for (flag = F_IPV4; flag; flag = (flag == F_IPV4) ? F_IPV6 : 0)
 	    {
 	      unsigned short type = (flag == F_IPV6) ? T_AAAA : T_A;
@@ -1605,7 +1662,6 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		continue;
 	      
 	      /* interface name stuff */
-	    intname_restart:
 	      for (intr = daemon->int_names; intr; intr = intr->next)
 		if (hostname_isequal(name, intr->name))
 		  break;
@@ -1663,8 +1719,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		  continue;
 		}
 
-	    cname_restart:
-	      if ((crecp = cache_find_by_name(NULL, name, now, flag | F_CNAME | (dryrun ? F_NO_RR : 0))))
+	      if ((crecp = cache_find_by_name(NULL, name, now, flag | (dryrun ? F_NO_RR : 0))))
 		{
 		  int localise = 0;
 		  
@@ -1680,14 +1735,13 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 			    localise = 1;
 			    break;
 			  } 
-			} while ((crecp = cache_find_by_name(crecp, name, now, flag | F_CNAME)));
+			} while ((crecp = cache_find_by_name(crecp, name, now, flag)));
 		      crecp = save;
 		    }
 
 		  /* If the client asked for DNSSEC  don't use cached data. */
 		  if ((crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)) ||
-		      !do_bit ||
-		      (option_bool(OPT_DNSSEC_VALID) && !(crecp->flags & F_DNSSECOK)))
+		      (rd_bit && (!do_bit || cache_validated(crecp)) ))
 		    do
 		      { 
 			/* don't answer wildcard queries with data not from /etc/hosts
@@ -1697,27 +1751,6 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 			
 			if (!(crecp->flags & F_DNSSECOK))
 			  sec_data = 0;
-			
-			if (crecp->flags & F_CNAME)
-			  {
-			    char *cname_target = cache_get_cname_target(crecp);
-			    
-			    if (!dryrun)
-			      {
-				log_query(crecp->flags, name, NULL, record_source(crecp->uid));
-				if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
-							crec_ttl(crecp, now), &nameoffset,
-							T_CNAME, C_IN, "d", cname_target))
-				  anscount++;
-			      }
-			    
-			    strcpy(name, cname_target);
-			    /* check if target interface_name */
-			    if (crecp->addr.cname.uid == SRC_INTERFACE)
-			      goto intname_restart;
-			    else
-			      goto cname_restart;
-			  }
 			
 			if (crecp->flags & F_NEG)
 			  {
@@ -1752,7 +1785,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 				  anscount++;
 			      }
 			  }
-		      } while ((crecp = cache_find_by_name(crecp, name, now, flag | F_CNAME)));
+		      } while ((crecp = cache_find_by_name(crecp, name, now, flag)));
 		}
 	      else if (is_name_synthetic(flag, name, &addr))
 		{
@@ -1762,27 +1795,6 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		      log_query(F_FORWARD | F_CONFIG | flag, name, &addr, NULL);
 		      if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
 					      daemon->local_ttl, NULL, type, C_IN, type == T_A ? "4" : "6", &addr))
-			anscount++;
-		    }
-		}
-	    }
-
-	  if (qtype == T_CNAME || qtype == T_ANY)
-	    {
-	      if ((crecp = cache_find_by_name(NULL, name, now, F_CNAME | (dryrun ? F_NO_RR : 0))) &&
-		  (qtype == T_CNAME || (crecp->flags & F_CONFIG)) &&
-		  ((crecp->flags & F_CONFIG) || !do_bit || (option_bool(OPT_DNSSEC_VALID) && !(crecp->flags & F_DNSSECOK))))
-		{
-		  if (!(crecp->flags & F_DNSSECOK))
-		    sec_data = 0;
-		  
-		  ans = 1;
-		  if (!dryrun)
-		    {
-		      log_query(crecp->flags, name, NULL, record_source(crecp->uid));
-		      if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
-					      crec_ttl(crecp, now), &nameoffset,
-					      T_CNAME, C_IN, "d", cache_get_cname_target(crecp)))
 			anscount++;
 		    }
 		}
@@ -1810,7 +1822,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		      }
 		  }
 	      
-	      if (!found && (option_bool(OPT_SELFMX) || option_bool(OPT_LOCALMX)) && 
+	      if (!found && (option_bool(OPT_SELFMX) || option_bool(OPT_LOCALMX)) &&
 		  cache_find_by_name(NULL, name, now, F_HOSTS | F_DHCP | F_NO_RR))
 		{ 
 		  ans = 1;
@@ -1871,9 +1883,8 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 
 	      if (!found)
 		{
-		cname_srv_restart:
-		  if ((crecp = cache_find_by_name(NULL, name, now, F_CNAME | F_SRV | (dryrun ? F_NO_RR : 0))) &&
-		      (!do_bit || (option_bool(OPT_DNSSEC_VALID) && !(crecp->flags & F_DNSSECOK))))
+		  if ((crecp = cache_find_by_name(NULL, name, now, F_SRV | (dryrun ? F_NO_RR : 0))) &&
+		      rd_bit && (!do_bit || (option_bool(OPT_DNSSEC_VALID) && !(crecp->flags & F_DNSSECOK))))
 		    {
 		      if (!(crecp->flags & F_DNSSECOK))
 			sec_data = 0;
@@ -1882,51 +1893,25 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		      found = ans = 1;
 		      
 		      do {
-			if (crecp->flags & F_CNAME)
-			  {
-			    char *cname_target = cache_get_cname_target(crecp);
-			    
-			    if (!dryrun)
-			      {
-				log_query(crecp->flags, name, NULL, record_source(crecp->uid));
-				if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
-							crec_ttl(crecp, now), &nameoffset,
-							T_CNAME, C_IN, "d", cname_target))
-				  anscount++;
-			      }
-			    
-			    strcpy(name, cname_target);
-			    goto cname_srv_restart;
-			  }
-			else if (crecp->flags & F_NEG)
+			if (crecp->flags & F_NEG)
 			  {
 			    if (crecp->flags & F_NXDOMAIN)
 			      nxdomain = 1;
 			    if (!dryrun)
 			      log_query(crecp->flags, name, NULL, NULL);
 			  }
-			else 
+			else if (!dryrun)
 			  {
-			    unsigned char *p1 = ((unsigned char *)header) + nameoffset;
+			    char *target = blockdata_retrieve(crecp->addr.srv.target, crecp->addr.srv.targetlen, NULL);
+			    log_query(crecp->flags, name, NULL, 0);
 			    
-			    if (!dryrun)
-			      {
-				log_query(crecp->flags, name, NULL, 0);
-				
-				blockdata_retrieve(crecp->addr.srv.target, crecp->addr.srv.targetlen, name); 
-				if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
-							crec_ttl(crecp, now), NULL, T_SRV, C_IN, "sssd",
-							crecp->addr.srv.priority, crecp->addr.srv.weight, crecp->addr.srv.srvport,
-							name))
-				  anscount++;
-				
-				
-				/* restore name we overwrote */
-				if (!extract_name(header, qlen, &p1, name, 1, 0))
-				  return 0; /* bad packet */
-			      }
+			    if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
+						    crec_ttl(crecp, now), NULL, T_SRV, C_IN, "sssd",
+						    crecp->addr.srv.priority, crecp->addr.srv.weight, crecp->addr.srv.srvport,
+						    target))
+			      anscount++;
 			  }
-		      } while ((crecp = cache_find_by_name(crecp, name, now, F_SRV | F_CNAME)));
+		      } while ((crecp = cache_find_by_name(crecp, name, now, F_SRV)));
 		    }
 		}
 

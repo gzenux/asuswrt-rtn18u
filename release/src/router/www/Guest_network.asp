@@ -1199,20 +1199,22 @@ function dis_qos_enable(_wl_idx, _form_obj, _control_item){
 	if(_wl_idx == "" || _wl_idx == undefined || _form_obj == "" || _form_obj == undefined || _control_item == "" || _control_item == undefined)
 		return;
 
-	if(!(all_gn_status.some(item => item.enable == true && item.bw_enabled == true)))//if all gn bw disabled, not need disable qos
+	if(!(all_gn_status.some(function(item, index, array){return (item.enable == true && item.bw_enabled == true)})))//if all gn bw disabled, not need disable qos
 		return;
 
 	var sw_mode_support = isSwMode("rt");
 	var cp_wifi_not_used = (captive_portal_used_wl_array["wl" + _wl_idx] == undefined) ? true : false;
 	if(sw_mode_support && cp_wifi_not_used){
-		var specific_gn = all_gn_status.find(item => item.idx == _wl_idx);
+		var specific_gn = all_gn_status.filter(function(item, index, array){
+			return (item.idx == _wl_idx);
+		})[0];
 
 		if(_control_item == "enable")
 			specific_gn.enable = false;
 		else if(_control_item == "bw_enabled")
-			specific_gn.bw_enabled = (document.form.bw_enabled_x.value == "1") ? true : false;
+			specific_gn.bw_enabled = document.form.bw_enabled_x[0].checked;
 
-		var all_gn_bw_dis = !(all_gn_status.some(item => item.enable == true && item.bw_enabled == true));
+		var all_gn_bw_dis = !(all_gn_status.some(function(item, index, array){return (item.enable == true && item.bw_enabled == true)}));
 		var QoS_bw_rulelist_orig = '<% nvram_get("qos_bw_rulelist"); %>';
 		var qos_can_dis = (QoS_enable_orig == "1" && QoS_type_orig == "2" && QoS_bw_rulelist_orig == "") ? true : false;
 		if(all_gn_bw_dis && qos_can_dis){

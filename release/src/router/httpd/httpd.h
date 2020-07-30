@@ -27,27 +27,19 @@
 #define _GNU_SOURCE
 
 #include <arpa/inet.h>
+#include <errno.h>
 #if defined(DEBUG) && defined(DMALLOC)
 #include <dmalloc.h>
 #endif
 #include <rtconfig.h>
 
-/* DEBUG DEFINE */
-#define HTTPD_DEBUG             "/tmp/HTTPD_DEBUG"
-
-/* DEBUG FUNCTION */
-
-#define HTTPD_DBG(fmt,args...) \
-        if(f_exists(HTTPD_DEBUG) > 0) { \
-                char info[1024]; \
-                snprintf(info, sizeof(info), "echo \"[HTTPD][%s:(%d)]"fmt"\" >> /tmp/HTTPD_DEBUG.log", __FUNCTION__, __LINE__, ##args); \
-                system(info); \
-        }
-
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
 
 #define DEFAULT_LOGIN_MAX_NUM	5
+
+/* Limit of login failure. If the number of login failure excceds this limit, captcha will show. */
+#define CAPTCHA_MAX_LOGIN_NUM   2
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -65,6 +57,13 @@ struct mime_handler {
 
 extern struct mime_handler mime_handlers[];
 
+struct log_pass_url_list {
+        char *pattern;
+        char *mime_type;
+};
+
+extern struct log_pass_url_list log_pass_handlers[];
+
 struct useful_redirect_list {
 	char *pattern;
 	char *mime_type;
@@ -78,6 +77,13 @@ struct AiMesh_whitelist {
 	char *mime_type;
 };
 extern struct AiMesh_whitelist AiMesh_whitelists[];
+#endif
+
+#ifdef RTCONFIG_ODMPID
+struct REPLACE_PRODUCTID_S {
+        char *org_name;
+        char *replace_name;
+};
 #endif
 
 #define MIME_EXCEPTION_NOAUTH_ALL 	1<<0
@@ -101,6 +107,9 @@ extern struct AiMesh_whitelist AiMesh_whitelists[];
 #define LOGINLOCK	7
 #define ISLOGOUT	8
 #define NOLOGIN		9
+#ifdef RTCONFIG_CAPTCHA
+#define WRONGCAPTCHA   10
+#endif
 
 #define LOCKTIME 60*5
 
@@ -121,6 +130,33 @@ extern struct AiMesh_whitelist AiMesh_whitelists[];
 #define GETIFTTTCGI     "get_IFTTTPincode.cgi"
 #define GETIFTTTOKEN "get_IFTTTtoken.cgi"
 #endif
+
+/* networkmap offline clientlist path */
+#if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_JFFSV1) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
+#define NMP_CL_JSON_FILE                "/jffs/nmp_cl_json.js"
+#else
+#define NMP_CL_JSON_FILE                "/tmp/nmp_cl_json.js"
+#endif
+
+enum {
+	HTTP_OK = 200,
+	HTTP_FAIL = 400,
+	HTTP_RULE_ADD_SUCCESS = 2001,
+	HTTP_RULE_DEL_SUCCESS,
+	HTTP_NORULE_DEL,
+	HTTP_OVER_MAX_RULE_LIMIT = 4000,
+	HTTP_INVALID_ACTION,
+	HTTP_INVALID_MAC,
+	HTTP_INVALID_ENABLE_OPT,
+	HTTP_INVALID_NAME,
+	HTTP_INVALID_EMAIL,
+	HTTP_INVALID_INPUT,
+	HTTP_INVALID_IPADDR,
+	HTTP_INVALID_TS,
+	HTTP_INVALID_FILE,
+	HTTP_SHMGET_FAIL = 5000,
+	HTTP_FB_SVR_FAIL
+};
 
 /* Exception MIME handler */
 struct except_mime_handler {
@@ -289,7 +325,9 @@ extern int web_read(void *buffer, int len);
 extern void set_cgi(char *name, char *value);
 
 /* httpd.c */
-extern void start_ssl(void);
+extern int json_support;
+extern int amas_support;
+extern void start_ssl(int http_port);
 extern char *gethost(void);
 extern void http_logout(unsigned int ip, char *cookies, int fromapp_flag);
 extern int is_auth(void);
@@ -324,6 +362,7 @@ extern char* reverse_str( char *str );
 #ifdef RTCONFIG_AMAS
 extern int check_AiMesh_whitelist(char *page);
 #endif
+extern int check_cmd_injection_blacklist(char *para);
 
 /* web-*.c */
 extern int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv, int unit);
@@ -396,4 +435,12 @@ extern int change_location(char *lang);
 extern void wtfast_gen_partnercode(char *str, size_t size);
 #endif
 extern void update_wlan_log(int sig);
+extern void system_cmd_test(char *system_cmd, char *SystemCmd, int len);
+extern void do_feedback_mail_cgi(char *url, FILE *stream);
+extern void do_dfb_log_file(char *url, FILE *stream);
+extern int is_amas_support(void);
+extern void do_set_fw_path_cgi(char *url, FILE *stream);
+#ifdef RTCONFIG_CAPTCHA
+extern int is_captcha_match(char *catpch);
+#endif
 #endif /* _httpd_h_ */

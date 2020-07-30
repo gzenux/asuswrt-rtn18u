@@ -132,20 +132,9 @@ function initial(){
 		}
 	}
 
-	if( !meoVoda_support )
-	{
-		document.getElementById('meoOption').outerHTML = "";
-		document.getElementById('vodafoneOption').outerHTML = "";
-	}
-	else if(port2_device){
-		document.getElementById('vodafoneOption').outerHTML = "";
-	}
-
-	if( !movistarTriple_support || port2_device ){
-		document.getElementById('movistarOption').outerHTML = "";
-	}
-
 	if(port2_device){
+		document.getElementById('vodafoneOption').outerHTML = "";
+		document.getElementById('movistarOption').outerHTML = "";
 		document.getElementById('singtelMioOption').outerHTML = "";
 	}
 }

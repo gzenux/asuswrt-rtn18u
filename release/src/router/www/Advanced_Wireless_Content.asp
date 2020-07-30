@@ -202,6 +202,30 @@ function initial(){
 
 		enableSmartCon(smart_connect_flag_t);
 	}
+
+	if(is_RU_sku){
+		var ch_orig = parseInt(document.form.wl_channel_orig.value);
+		var _ch = '0';
+		var _array = [36, 44, 52, 60, 100, 108, 116, 124, 132, 140, 149, 157];
+		if(document.form.wl_nmode_x.value == 0 || document.form.wl_nmode_x.value == 8){    // Auto or N/AC mixed
+			if(document.form.wl_bw.value == 3){    // 80 MHz		
+				for(i=0; i<_array.length; i+=2){
+					if(ch_orig >= _array[i] && ch_orig <= (_array[i]+12)){
+						_ch = _array[i];
+					}
+				}
+			}
+			else if(document.form.wl_bw.value == 2){    // 40 MHz
+				for(i=0; i<_array.length; i++){
+					if(ch_orig >= _array[i] && ch_orig <= (_array[i]+4)){
+						_ch = _array[i];
+					}
+				}
+			}
+			
+			document.form.wl_channel.value = _ch;
+		}
+	}
 }
 
 function genBWTable(_unit){
@@ -263,11 +287,16 @@ function genBWTable(_unit){
 				array_160m = filter_5g_channel_by_bw(ch.split(","), 160);
 			}
 			if(vht80_80_support && array_80m.length/4 >= 2){
-				bws.push([4]);
+				bwsDesc[0] = "20/40/80/80+80 MHz";
+				bws.push(4);
 				bwsDesc.push("80+80 MHz");
 			}
 			if(vht160_support && array_160m.length/4 >= 1){
-				bws.push([5]);
+				if (vht80_80_support && array_80m.length/4 >= 2)
+					bwsDesc[0] = "20/40/80/80+80/160 MHz";
+				else
+					bwsDesc[0] = "20/40/80/160 MHz";
+				bws.push(5);
 				bwsDesc.push("160 MHz");
 			}
 		}
@@ -930,6 +959,7 @@ function change_wl_nmode(o){
 <input type="hidden" name="wps_band" value="<% nvram_get("wps_band_x"); %>" disabled>
 <input type="hidden" name="wps_multiband" value="<% nvram_get("wps_multiband"); %>" disabled>
 <input type="hidden" name="w_Setting" value="1">
+<input type="hidden" name="w_apply" value="1">
 <input type="hidden" name="smart_connect_x" value="<% nvram_get("smart_connect_x"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">

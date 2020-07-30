@@ -62,6 +62,31 @@ extern const char VPHY_60G[];
 #define INIC_VLAN_ID_START	4 //first vlan id used for RT3352 iNIC MII
 #define INIC_VLAN_IDX_START	2 //first available index to set vlan id and its group.
 
+typedef struct _WLANCONFIG_LIST {
+	char addr[18];
+	unsigned int aid;
+	unsigned int chan;
+	char txrate[10];
+	char rxrate[10];
+	int rssi;
+	char conn_time[12];
+	char mode[31];
+	char subunit_id;	/* '0': main 2G/5G network, '1' ~ '7': Guest network (MAX_NO_MSSID = 8), 'B': Facebook Wi-Fi, 'F': Free Wi-Fi, 'C': Captive Portal */
+} WLANCONFIG_LIST;
+
+#if defined(RTCONFIG_WIFI_QCA9990_QCA9990) || \
+    defined(RTCONFIG_WIFI_QCA9994_QCA9994) || \
+    defined(RTCONFIG_WIFI_QCN5024_QCN5054)
+#define MAX_STA_NUM 512
+#else
+#define MAX_STA_NUM 256
+#endif
+
+typedef struct _WIFI_STA_TABLE {
+	int Num;
+	WLANCONFIG_LIST Entry[ MAX_STA_NUM ];
+} WIFI_STA_TABLE;
+
 // MIMO Tx parameter, ShortGI, MCS, STBC, etc.  these are fields in TXWI. Don't change this definition!!!
 typedef union  _MACHTTRANSMIT_SETTING {
 	struct  {
@@ -383,7 +408,8 @@ enum ASUS_IOCTL_SUBCMD {
  * disable DHCP client and DHCP override during ATE
  */
 #ifdef RTCONFIG_DEFAULT_AP_MODE
-#define OFFSET_FORCE_DISABLE_DHCP	(MTD_FACTORY_BASE_ADDRESS + 0x0D1AA)	// 1
+//#define OFFSET_FORCE_DISABLE_DHCP	(MTD_FACTORY_BASE_ADDRESS + 0x0D1AA)	// 1
+#define OFFSET_FORCE_DISABLE_DHCP	(MTD_FACTORY_BASE_ADDRESS + 0x0D1AB)	// 1
 #endif
 
 #ifdef RTCONFIG_CFGSYNC
@@ -396,6 +422,14 @@ enum ASUS_IOCTL_SUBCMD {
 
 #define OFFSET_IPADDR_LAN               (MTD_FACTORY_BASE_ADDRESS + 0x0D1F4) 
 
+#define OFFSET_HWID			(MTD_FACTORY_BASE_ADDRESS + 0x0FF00)  /*  4 bytes */
+#define HWID_LENGTH			(4)
+#define OFFSET_HWVERSION		(MTD_FACTORY_BASE_ADDRESS + 0x0FF10)  /*  8 bytes */
+#define HWVERSION_LENGTH		(8)
+#define OFFSET_DATECODE			(MTD_FACTORY_BASE_ADDRESS + 0x0FF18)  /*  8 bytes */
+#define DATECODE_LENGTH			(8)
+#define OFFSET_HWBOM			(MTD_FACTORY_BASE_ADDRESS + 0x0FF20)  /* 32 bytes */
+#define HWBOM_LENGTH			(32)
 
 #define OFFSET_DEV_FLAGS		(MTD_FACTORY_BASE_ADDRESS + 0x0ffa0)	//device dependent flags
 #ifdef RTCONFIG_32BYTES_ODMPID
@@ -451,6 +485,9 @@ extern void switch_fini(void);
 extern int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
 extern int qc98xx_verify_checksum(void *eeprom);
 extern int calc_qca_eeprom_csum(void *ptr, unsigned int eeprom_size);
+#if defined(RTAC58U)
+extern int check_mid(char *mid);
+#endif
 /* for ATE Get_WanLanStatus command */
 #if defined(RTCONFIG_SWITCH_RTL8370M_PHY_QCA8033_X2) || \
     defined(RTCONFIG_SWITCH_RTL8370MB_PHY_QCA8033_X2)
@@ -512,7 +549,7 @@ typedef struct {
 #define BD_5G2_CHIP_DIR	"QCA9984"
 #define BD_5G2_HW_DIR	"hw.1"
 #elif defined(RTAC59U)
-#define BD_5G_PREFIX	"boardData_2_0_QCA9888_5G_Y9484"
+#define BD_5G_PREFIX	"boardData_2_0_QCA9888_5G_Y9690"
 #define BD_5G_CHIP_DIR	"QCA9888"
 #define BD_5G_HW_DIR	"hw.2"
 #elif defined(RPAC51)
@@ -522,5 +559,8 @@ typedef struct {
 #endif
 
 #define QCA_DEFAULT_NOISE_FLOOR (-96)	/* via QCA case #03626623 */
+
+extern int __get_qca_sta_info_by_ifname(const char *ifname, char subunit_id, int (*handler)(const WLANCONFIG_LIST *rptr, void *arg), void *arg);
+extern int get_qca_sta_info_by_ifname(const char *ifname, char subunit_id, WIFI_STA_TABLE *sta_info);
 
 #endif	/* _QCA_H_ */

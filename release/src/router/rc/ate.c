@@ -346,42 +346,17 @@ pincheck(const char *a)
 
 int isValidSN(const char *sn)
 {
-	int i;
-	unsigned char *c;
+	int i = 0;
+	unsigned char *c = (unsigned char *) sn;
 
 	if (strlen(sn) != SERIAL_NUMBER_LENGTH)
 		return 0;
 
-	c = (unsigned char *)sn;
-	/* [1]year: C~Z (2012=C, 2013=D, ...) */
-	if (*c < 0x43 || *c > 0x5A)
-		return 0;
-	c++;
-	/* [2]month: 1~9 & ABC */
-	if (!((*c > 0x30 && *c < 0x3A) || *c == 0x41 || *c == 0x42 || *c == 0x43))
-		return 0;
-	c++;
-	/* [3]WLAN & ADSL: I(aye) */
-	if (*c != 0x49)
-		return 0;
-	c++;
-	/* [4]Channel: AEJ0(zero) (A:11ch, E:13ch, J:14ch, 0:no ch) */
-	if (*c != 0x41 && *c != 0x45 && *c != 0x4A && *c != 0x30)
-		return 0;
-	c++;
-	/* [5]factory: 0~9 & A~Z, except I(aye) & O(oh) */
-	if (!((*c > 0x2F && *c < 0x3A) || (*c > 0x40 && *c < 0x5B)) || *c == 0x49 || *c == 0x4F)
-		return 0;
-	c++;
-	/* [6]model: 0~9 & A~Z */
-	if (!((*c > 0x2F && *c < 0x3A) || (*c > 0x40 && *c < 0x5B)))
-		return 0;
-	c++;
-	/* [7~12]serial: 0~9 */
-	i = 7;
-	while (i < 13) {
-		if (*c < 0x30 || *c > 0x39)
+	while (i < SERIAL_NUMBER_LENGTH) {
+		/*  0~9 & A~Z */
+		if (!((*c > 0x2F && *c < 0x3A) || (*c > 0x40 && *c < 0x5B)))
 			return 0;
+
 		c++;
 		i++;
 	}
@@ -1176,6 +1151,56 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		}
 		return 0;
 	}
+#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA)
+	else if (!strcmp(command, "Set_HwId")) {
+#if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
+		if (!chk_envrams_proc())
+			return EINVAL;
+#endif
+                if (set_HwId(value) < 0)
+                {
+                        puts("ATE_ERROR_INCORRECT_PARAMETER");
+                        return EINVAL;
+                }
+                return 0;
+	}
+	else if (!strcmp(command, "Set_HwVersion")) {
+#if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
+		if (!chk_envrams_proc())
+			return EINVAL;
+#endif
+                if (set_HwVersion(value) < 0)
+                {
+                        puts("ATE_ERROR_INCORRECT_PARAMETER");
+                        return EINVAL;
+                }
+                return 0;
+	}
+	else if (!strcmp(command, "Set_HwBom")) {
+#if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
+		if (!chk_envrams_proc())
+			return EINVAL;
+#endif
+                if (set_HwBom(value) < 0)
+                {
+                        puts("ATE_ERROR_INCORRECT_PARAMETER");
+                        return EINVAL;
+                }
+                return 0;
+	}
+	else if (!strcmp(command, "Set_DateCode")) {
+#if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
+		if (!chk_envrams_proc())
+			return EINVAL;
+#endif
+                if (set_DateCode(value) < 0)
+                {
+                        puts("ATE_ERROR_INCORRECT_PARAMETER");
+                        return EINVAL;
+                }
+                return 0;
+	}
+#endif
 	/*** ATE Get functions ***/
 	else if (!strcmp(command, "Get_FWVersion")) {
 		char fwver[16];
@@ -2036,6 +2061,24 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 			puts("0");
 		return 0;
 	}
+#if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA)
+	else if (!strcmp(command, "Get_HwId")) {
+		get_HwId();
+		return 0;
+	}
+	else if (!strcmp(command, "Get_HwVersion")) {
+		get_HwVersion();
+		return 0;
+	}
+	else if (!strcmp(command, "Get_HwBom")) {
+		get_HwBom();
+		return 0;
+	}
+	else if (!strcmp(command, "Get_DateCode")) {
+		get_DateCode();
+		return 0;
+	}
+#endif
 	else if (!strcmp(command, "Get_RDG")) {
 #ifdef RTCONFIG_RALINK
 		if(nvram_match("reg_spec", "CE")) {

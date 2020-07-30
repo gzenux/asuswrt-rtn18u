@@ -18,8 +18,8 @@
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
-<script language="JavaScript" type="text/javascript" src="merlin.js"></script>
 <script language="JavaScript" type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/oauth.js"></script>
 <script type="text/javascript" src="js/httpApi.js"></script>
 <style>
 .noUSBHint, .storeUSBHint {
@@ -41,7 +41,11 @@
 <script>
 var usb_status_last_time = false;
 var orig_page = '<% get_parameter("origPage"); %>';
+var fb_trans_id = '<% generate_trans_id(); %>';
+var default_provider = '<% get_parameter("provider"); %>';
+var reload_data = parseInt('<% get_parameter("reload"); %>');
 var dblog_trans_id = '<% generate_trans_id(); %>';
+var fb_total_size;
 function initial(){
 	show_menu();
 	if(dsl_support){
@@ -70,7 +74,7 @@ function initial(){
 		Reload_pdesc(document.form.fb_ptype,orig_page);
 	}		
 
-	if(modem_support == -1 || nomodem_support){
+	if(!modem_support || nomodem_support){
 		document.form.attach_modemlog.checked = false;
 		document.getElementById("attach_modem_span").style.display = "none";
 	}
@@ -82,6 +86,49 @@ function initial(){
 		init_diag_feature();
 	else {
 		$(".dblog_support_class").remove();
+	}
+
+	if(false){
+		$("#fb_email_provider_field").show();
+		var fb_email_provider = '<% nvram_get("fb_email_provider"); %>';
+		if(fb_email_provider=="" && default_provider!=""){
+			document.form.fb_email_provider.value = default_provider;	
+		}
+		else{
+			document.form.fb_email_provider.value = fb_email_provider;
+		}
+		change_fb_email_provider();
+
+		$("#oauth_google_btn").click(
+			function() {
+				oauth.google(onGoogleLogin);
+			}
+		);
+
+		//init check google token_status
+		if(document.form.fb_email_provider.value == "google") {
+			$(".oauth_google_status").hide();
+			if(httpApi.nvramGet(["oauth_google_refresh_token"], true).oauth_google_refresh_token != "") {
+				$("#oauth_google_loading").show();
+				document.form.fb_email.value = "";
+				check_refresh_token_valid(
+					function(_callBackValue) {
+						$("#oauth_google_loading").hide();
+						show_google_auth_status(_callBackValue);
+					}
+				);
+			}
+			else
+				show_google_auth_status();
+		}
+	}
+
+	if(reload_data==1){
+		document.form.fb_country.value = decodeURIComponent('<% nvram_char_to_ascii("", "fb_country"); %>');
+		document.form.fb_ptype.value = decodeURIComponent('<% nvram_char_to_ascii("", "fb_ptype"); %>');
+		Reload_pdesc(document.form.fb_ptype);
+		document.form.fb_pdesc.value = decodeURIComponent('<% nvram_char_to_ascii("", "fb_pdesc"); %>');
+		document.form.fb_comment.value = decodeURIComponent('<% nvram_char_to_ascii("", "fb_comment"); %>');
 	}
 
 	httpApi.nvramGetAsync({
@@ -288,13 +335,13 @@ function Reload_pdesc(obj, url){
 	}
 	else if(ptype == "Compatibility_Problem"){
 		
-		desclist.push(["<#feedback_compat_wm#>","Compatible Problem"]);
-		desclist.push(["<#feedback_compat_wor#>","Compatible Problem"]);
-		desclist.push(["<#feedback_compat_oooa#>","Compatible Problem"]);
-		desclist.push(["<#feedback_compat_wp#>","Compatible Problem"]);
-		desclist.push(["<#feedback_compat_wum#>","Compatible Problem"]);
-		desclist.push(["<#feedback_compat_wehd#>","Compatible Problem"]);
-		desclist.push(["<#feedback_compat_wond#>","Compatible Problem"]);
+		desclist.push(["<#feedback_compat_wm#>","modem"]);
+		desclist.push(["<#feedback_compat_wor#>","other router"]);
+		desclist.push(["<#feedback_compat_oooa#>","OS or Application"]);
+		desclist.push(["<#feedback_compat_wp#>","printer"]);
+		desclist.push(["<#feedback_compat_wum#>","USB modem"]);
+		desclist.push(["<#feedback_compat_wehd#>","external hardware disk"]);
+		desclist.push(["<#feedback_compat_wond#>","network devices"]);
 
 	}
 	else if(ptype == "Translated_Suggestion"){
@@ -353,26 +400,26 @@ function applyRule(){
 				return false;
 		}*/
 		if(document.form.attach_syslog.checked == true)
-			document.form.PM_attach_syslog.value = 1;
+			document.form.fb_attach_syslog.value = 1;
 		else
-			document.form.PM_attach_syslog.value = 0;
+			document.form.fb_attach_syslog.value = 0;
 		if(document.form.attach_cfgfile.checked == true)
-			document.form.PM_attach_cfgfile.value = 1;
+			document.form.fb_attach_cfgfile.value = 1;
 		else
-			document.form.PM_attach_cfgfile.value = 0;
+			document.form.fb_attach_cfgfile.value = 0;
 		if(document.form.attach_modemlog.checked == true)
-			document.form.PM_attach_modemlog.value = 1;
+			document.form.fb_attach_modemlog.value = 1;
 		else
-			document.form.PM_attach_modemlog.value = 0;
+			document.form.fb_attach_modemlog.value = 0;
 		if(document.form.attach_wlanlog.checked == true)
-			document.form.PM_attach_wlanlog.value = 1;
+			document.form.fb_attach_wlanlog.value = 1;
 		else
-			document.form.PM_attach_wlanlog.value = 0;
+			document.form.fb_attach_wlanlog.value = 0;
 		if(dsl_support){
 			if(document.form.attach_iptables.checked == true)
-				document.form.PM_attach_iptables.value = 1;
+				document.form.fb_attach_iptables.value = 1;
 			else
-				document.form.PM_attach_iptables.value = 0;
+				document.form.fb_attach_iptables.value = 0;
 		}	
                 
 		if(document.form.fb_email.value == ""){
@@ -389,23 +436,33 @@ function applyRule(){
 			}
 		}
 		
-		var re = new RegExp("^[a-zA-Z][0-9]{10}","gi");
+		var re = new RegExp("^[a-zA-Z][0-9]{8,11}","gi");
 		if(!re.test(document.form.fb_serviceno.value) && document.form.fb_serviceno.value != ""){
 			alert("<#JS_validchar#>");
 			document.form.fb_serviceno.focus();
 			return false;
 		}
 		
+		if(fb_trans_id != "")
+		{
+			document.form.fb_transid.value = fb_trans_id;
+		}
+
 		//check Diagnostic
 		if(dblog_support) {
+			document.form.dblog_tousb.disabled = true;
+			document.form.dblog_service.disabled = true;
+			document.form.dblog_duration.disabled = true;
+			document.form.dblog_transid.disabled = true;
+			var dblog_enable_status = httpApi.nvramGet(["dblog_enable"], true).dblog_enable;
 			var dblog_enable = getRadioValue($('form[name="form"]').children().find('input[name=dblog_enable]'));
-			if(dblog_enable == "1") {
+			if(dblog_enable_status == "0" && dblog_enable == "1") {
 				var service_list_checked = $("input:checkbox[name=dblog_service_list]:checked").map(function() {
 					return $(this).val();
 				}).get();
 				var dblog_service = 0;
 				if(service_list_checked.length == 0) {
-					alert("Please select at least one option.");/*untranslated*/
+					alert("<#feedback_debug_log_noSelected#>");
 					return false;
 				}
 				for(var idx in service_list_checked){
@@ -429,24 +486,15 @@ function applyRule(){
 				if(dblog_trans_id != "")
 					document.form.dblog_transid.value = dblog_trans_id;
 			}
-			else {
-				document.form.dblog_tousb.disabled = true;
-				document.form.dblog_service.disabled = true;
-				document.form.dblog_duration.disabled = true;
-				document.form.dblog_transid.disabled = true;
-			}
 		}
 
+		if(document.form.fb_attach_wlanlog.value == "1")
+			httpApi.update_wlanlog();
+
 		document.form.fb_browserInfo.value = navigator.userAgent;
-		if(dsl_support){
-			if(document.form.dslx_diag_enable[0].checked == true){
-				document.form.action_wait.value="120";
-				showLoading(120);
-			}else	
-				showLoading(60);
-		}
-		else
-			showLoading(60);
+
+		startLogPrep();
+
 		document.form.submit();
 }
 
@@ -523,7 +571,7 @@ function init_diag_feature() {
 		}, 1000);
 
 		var dblog_service = parseInt('<% nvram_get("dblog_service"); %>');
-		var dblog_service_mapping = ["", "Wi-Fi", "<#DM_title#>", "<#UPnPMediaServer#>", "AiMesh"];/* untranslated */
+		var dblog_service_mapping = ["", "Wi-Fi", "<#DM_title#>", "<#UPnPMediaServer#>", "AiMesh"];
 		var dblog_service_text = "";
 		for(var i = 1; dblog_service != 0 && i <= 4; i++) {
 			if(dblog_service & 1) {
@@ -676,7 +724,7 @@ function diag_tune_service_option() {
 
 		return $labelHtml;
 	};
-	if(amesh_support && (isSwMode("rt") || isSwMode("ap"))) {
+	if(amesh_support && (isSwMode("rt") || isSwMode("ap")) && ameshRouter_support) {
 		if($(".dblog_service_item.AiMesh").length == 0)
 			$(".dblog_service_item.all").after(gen_service_option(8, "AiMesh", "AiMesh"));
 	}
@@ -699,20 +747,132 @@ function dblog_stop() {
 	showLoading(3);
 	document.stop_dblog_form.submit();
 }
+
+function check_refresh_token() {
+	var interval_retry = 0;
+	interval_status = setInterval(function(){
+		var refresh_token = httpApi.nvramGet(["oauth_google_refresh_token"], true).oauth_google_refresh_token;
+		if(refresh_token == "" && interval_retry == 5) {
+			show_google_auth_status("0");
+			$("#oauth_google_loading").hide();
+			clearInterval(interval_status);
+		}
+		else if(refresh_token != "") {
+			clearInterval(interval_status);
+			check_refresh_token_valid(
+				function(_callBackValue) {
+					$("#oauth_google_loading").hide();
+					show_google_auth_status(_callBackValue);
+				}
+			);
+		}
+		interval_retry++;
+	}, 1000);
+}
+function onGoogleLogin(_parm) {
+	if(_parm.code != "error") {
+		$("#oauth_google_hint").hide();
+		$("#oauth_google_loading").show();
+		document.form.fb_email.value = "";
+		httpApi.nvramSet({
+			"oauth_google_auth_code" : _parm.code,
+			"fb_email_provider" : "google",
+			"action_mode": "apply",
+			"rc_service": "oauth_google_gen_token_email"
+			}, check_refresh_token);
+	}
+}
+function change_fb_email_provider(obj){
+	if(document.form.fb_email_provider.value == "google") {
+		$("#option_google").show();
+		document.form.fb_email.value = httpApi.nvramGet(["oauth_google_user_email"], true).oauth_google_user_email;
+		document.form.fb_email.readOnly = true;
+	}
+	else {
+		$("#option_google").hide();
+		document.form.fb_email.value = "";
+		document.form.fb_email.readOnly = false;
+	}
+}
+function check_refresh_token_valid(callBackFun) {
+	httpApi.nvramSet({
+		"action_mode": "apply",
+		"rc_service": "oauth_google_check_token_status"
+		},
+		function(){
+			var interval_retry = 0;
+			interval_status = setInterval(function(){
+				var token_status = httpApi.nvramGet(["oauth_google_token_status"], true).oauth_google_token_status;
+				if(token_status == "" && interval_retry >= 5) {
+					callBackFun("0");
+					clearInterval(interval_status);
+				}
+				else if(token_status != "") {
+					callBackFun(token_status);
+					clearInterval(interval_status);
+				}
+				interval_retry++;
+			}, 1000);
+		}
+	);
+}
+function show_google_auth_status(_status) {
+	$("#oauth_google_hint").show();
+	var auth_status_hint = "<#Authenticated_non#>";
+	document.form.fb_email.value = "";
+	switch(_status) {
+		case "0" :
+			auth_status_hint = "<#qis_fail_desc1#>";
+			break;
+		case "1" :
+			auth_status_hint = "<#Authenticated#>";
+			var googleAuthInfo = httpApi.nvramGet(["oauth_google_user_email"], true);
+			document.form.fb_email.value = googleAuthInfo.oauth_google_user_email;
+			break;
+	}
+	$("#oauth_google_hint").html(auth_status_hint);
+}
+
+function startLogPrep(){
+	dr_advise();
+}
+
+var redirect_info = 0;
+function CheckFBSize(){
+	$.ajax({
+		url: '/ajax_fb_size.asp',
+		dataType: 'script',
+		timeout: 1500,
+		error: function(xhr){
+				redirect_info++;
+				if(redirect_info < 10){
+					setTimeout("CheckFBSize();", 1000);
+				}
+				else{
+					showLoading(35);
+					setTimeout("redirect()", 35000);
+				}
+		},
+		success: function(){
+				if(fb_state == 0)
+					setTimeout("CheckFBSize()", 3000);
+				else
+					setTimeout("redirect()", 1000);
+		}
+	});
+}
 </script>
 </head>
-<body onload="initial();" onunLoad="return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();" class="bg">
 <div id="TopBanner"></div>
 <div id="hiddenMask" class="popup_bg">
 <table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
 <tr>
 <td>
-<div class="drword" id="drword" style="height:110px;"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
+<div class="drword" id="drword" style="height:110px;"><#Main_alert_proceeding_desc4#> <#QKSet_detect_waitdesc1#>...
 <br/>
 <br/>
 </div>
-<div class="drImg"><img src="/images/alertImg.png"></div>
-<div style="height:70px;"></div>
 </td>
 </tr>
 </table>
@@ -731,16 +891,17 @@ function dblog_stop() {
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="current_page" value="Advanced_Feedback.asp">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_script" value="restart_sendmail">
+<input type="hidden" name="action_script" value="restart_sendfeedback">
 <input type="hidden" name="action_wait" value="60">
-<input type="hidden" name="PM_attach_syslog" value="">
-<input type="hidden" name="PM_attach_cfgfile" value="">
-<input type="hidden" name="PM_attach_iptables" value="">	
-<input type="hidden" name="PM_attach_modemlog" value="">
-<input type="hidden" name="PM_attach_wlanlog" value="">
+<input type="hidden" name="fb_attach_syslog" value="">
+<input type="hidden" name="fb_attach_cfgfile" value="">
+<input type="hidden" name="fb_attach_iptables" value="">	
+<input type="hidden" name="fb_attach_modemlog" value="">
+<input type="hidden" name="fb_attach_wlanlog" value="">
 <input type="hidden" name="feedbackresponse" value="<% nvram_get("feedbackresponse"); %>">
 <input type="hidden" name="fb_experience" value="<% nvram_get("fb_experience"); %>">
 <input type="hidden" name="fb_browserInfo" value="">
+<input type="hidden" name="fb_transid" value="123456789ABCDEF0">
 <input type="hidden" name="dblog_service" class="dblog_support_class" value="">
 <input type="hidden" name="dblog_tousb" class="dblog_support_class" value="">
 <input type="hidden" name="dblog_transid" class="dblog_support_class" value="0123456789ABCDEF">
@@ -763,7 +924,7 @@ function dblog_stop() {
 <td bgcolor="#4D595D" valign="top" >
 <div>&nbsp;</div>
 <div class="formfonttitle"><#menu5_6#> - <#menu_feedback#></div>
-<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
+<div style="margin:10px 0 10px 5px;" class="splitLine"></div>
 <div id="fb_desc0" class="formfontdesc" style="display:none;"><#Feedback_desc0#></div>
 <div id="fb_desc1" class="formfontdesc" style="display:none;"><#Feedback_desc1#></div>
 <div id="fb_desc_disconnect" class="formfontdesc" style="display:none;color:#FC0;"><#Feedback_desc_disconnect#> <a href="mailto:router_feedback@asus.com?Subject=<%nvram_get("productid");%>" target="_top" style="color:#FFCC00;">router_feedback@asus.com</a></div>
@@ -786,15 +947,31 @@ function dblog_stop() {
 	<input type="text" name="fb_Subscribed_Info" maxlength="50" class="input_25_table" value="" autocorrect="off" autocapitalize="off">
 </td>
 </tr>
+<tr id="fb_email_provider_field" style="display: none;">
+	<th><#Provider#></th>
+	<td>
+		<div style="float:left;">
+			<select class="input_option" name="fb_email_provider" onChange="change_fb_email_provider(this);">
+				<option value="">ASUS</option>
+				<option value="google">Google</option>
+			</select>
+		</div>
+		<div id="option_google" style="float:left;">
+			<div id="oauth_google_btn" class="oauth_google_btn"></div>
+			<img id="oauth_google_loading" src="/images/InternetScan.gif" class="oauth_google_status">
+			<span id="oauth_google_hint" class="oauth_google_status"></span>
+		</div>
+	</td>
+	</tr>
 <tr>
 <th><#feedback_email#> *</th>
 <td>
-	<input type="text" name="fb_email" maxlength="50" class="input_25_table" value="" autocorrect="off" autocapitalize="off">
+	<input type="text" name="fb_email" maxlength="50" class="input_25_table" value="" autocorrect="off" autocapitalize="off">	
 </td>
 </tr>
 
 <tr>
-<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(34,2);">ASUS Service No./Case#</a></th>
+<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(34,2);"><#ASUS_Service_No#></a></th>
 <td>
 	<input type="text" name="fb_serviceno" maxlength="11" class="input_15_table" value="" autocorrect="off" autocapitalize="off">
 </td>
@@ -825,7 +1002,7 @@ function dblog_stop() {
 <tr id="dslx_diag_duration">
 	<th><#feedback_capturing_duration#> *</th>
 	<td>
-		<select id="" class="input_option" name="dslx_diag_duration">
+		<select class="input_option" name="dslx_diag_duration">
 			<option value="0" selected><#Auto#></option>
 			<option value="3600">1 <#Hour#></option>
 			<option value="18000">5 <#Hour#></option>
@@ -841,7 +1018,7 @@ function dblog_stop() {
 		<div class="dblog_disabled_status">
 			<input type='radio' name='dblog_enable' id='dblog_status_en' value="1" onclick="diag_change_dblog_status();"><label for='dblog_status_en'><#checkbox_Yes#></label>
 			<input type='radio' name='dblog_enable' id='dblog_status_dis' value="0" onclick="diag_change_dblog_status();" checked><label for='dblog_status_dis'><#checkbox_No#></label>
-			<label class="storeUSBHint"><input type="checkbox" name="dblog_tousb_cb" value="1" onclick="diag_change_storeUSB();" checked>Store in USB disk<!--untranslated--></label>
+			<label class="storeUSBHint"><input type="checkbox" name="dblog_tousb_cb" value="1" onclick="diag_change_storeUSB();" checked><#feedback_debug_log_inDisk#></label>
 			<span class="noUSBHint">* <#no_usb_found#></span>
 		</div>
 		<div class="dblog_enabled_status">

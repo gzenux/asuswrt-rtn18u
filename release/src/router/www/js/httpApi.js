@@ -786,5 +786,97 @@ var httpApi ={
 
 	"updateClientList": function(){
 		$.post("/applyapp.cgi?action_mode=update_client_list");
+	},
+
+	"ftp_port_conflict_check" : {
+		usb_ftp : {
+			enabled : function(){
+				if(noftp_support)
+					return 0;
+				else{
+					var enable_ftp = httpApi.nvramGet(["enable_ftp"], true).enable_ftp;
+					if(enable_ftp == "")
+						return 0;
+					else
+						return parseInt(enable_ftp);
+				}
+			},
+			hint : "<#IPConnection_VServer_usb_port_conflict#>\n<#IPConnection_VServer_go_VS_change_lan_port#>"
+		},
+		port_forwarding : {
+			enabled : function(){
+				if(isSwMode("rt")){
+					var vts_enable_x = httpApi.nvramGet(["vts_enable_x"], true).vts_enable_x;
+					if(vts_enable_x == "0")
+						return 0;
+					else{
+						return httpApi.ftp_port_conflict_check.port_forwarding.use_usb_ftp_port();
+					}
+				}
+				else
+					return 0;
+			},
+			use_usb_ftp_port : function(){
+				var state = 0;
+				var lan_ipaddr = httpApi.nvramGet(["lan_ipaddr"], true).lan_ipaddr;
+				var usb_ftp_port = 21;
+				var vts_rulelist = decodeURIComponent(httpApi.nvramCharToAscii(["vts_rulelist"], true).vts_rulelist);
+				var dual_wan_lb_status = (check_dual_wan_status().status == "1" && check_dual_wan_status().mode == "lb") ? true : false;
+				var support_dual_wan_unit_flag = (mtwancfg_support && dual_wan_lb_status) ? true : false;
+				if(support_dual_wan_unit_flag)
+					vts_rulelist += decodeURIComponent(httpApi.nvramCharToAscii(["vts1_rulelist"], true).vts1_rulelist);
+
+				var eachRulelist = decodeURIComponent(vts_rulelist).split('<');
+				break_loop:
+					for(var i = 0; i < eachRulelist.length; i += 1){
+						if(eachRulelist[i] != "") {
+							var eachRuleItem = eachRulelist[i].split('>');
+							var externalPort = eachRuleItem[1];
+							var internalIP = eachRuleItem[2];
+							var eachPort = externalPort.split(",");
+							for(var j = 0; j < eachPort.length; j += 1){
+								if(eachPort[j].indexOf(":") != -1){//port range
+									var portS = eachPort[j].split(":")[0];
+									var portE = eachPort[j].split(":")[1];
+									if(parseInt(portS) <= usb_ftp_port && parseInt(portE) >= usb_ftp_port && internalIP != lan_ipaddr){
+										state = 1;
+										break break_loop;
+									}
+								}
+								else if(parseInt(eachPort[j]) == usb_ftp_port && internalIP != lan_ipaddr){
+									state = 1;
+									break break_loop;
+								}
+							}
+						}
+					}
+				return state;
+			},
+			hint : "<#IPConnection_VServer_usb_port_conflict#>\n<#IPConnection_VServer_change_lan_port#>"
+		},
+		conflict : function(){
+			return (httpApi.ftp_port_conflict_check.usb_ftp.enabled() && httpApi.ftp_port_conflict_check.port_forwarding.enabled()) ? true : false;
+		}
+	},
+
+	"isItSafe_trend": function(queryStr){
+		var $form = $("<form>", {
+			action: "https://global.sitesafety.trendmicro.com/result.php",
+			method: "post",
+			target: "_blank"
+		});
+
+		$form
+			.append($("<input>", {
+				type: "hidden",
+				name: "urlname",
+				value: queryStr
+			}))
+			.append($("<input>", {
+				type: "hidden",
+				name: "getinfo",
+				value: "Check Now"
+			}))			
+			.appendTo("body").submit().remove();
 	}
 }

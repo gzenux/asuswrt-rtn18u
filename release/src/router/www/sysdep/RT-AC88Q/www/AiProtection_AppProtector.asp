@@ -607,7 +607,7 @@ var ctf_fa_mode = '<% nvram_get("ctf_fa_mode"); %>';
 function applyRule(){
 	var wrs_app_filter_row = "";
 	if(document.form.PC_devicename.value != ""){
-		alert("You must press add icon to add a new rule first.");
+		alert("<#JS_add_rule#>");
 		return false;
 	}
 

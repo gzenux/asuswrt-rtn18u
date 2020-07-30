@@ -42,6 +42,10 @@
 #include <ftw.h>
 #include "network_utility.h"
 
+#ifdef RTCONFIG_AHS
+#include "notify_ahs.h"
+#endif /* RTCONFIG_AHS */
+
 /* Endian conversion functions. */
 #define __bswap16(x) (uint16_t)	( \
 				(((uint16_t)(x) & 0x00ffu) << 8) | \
@@ -299,7 +303,7 @@ enum {
 #define GIF_PREFIXLEN  0x0002  /* return prefix length */
 #define GIF_PREFIX     0x0004  /* return prefix, not addr */
 
-#define EXTEND_AIHOME_API_LEVEL		19
+#define EXTEND_AIHOME_API_LEVEL		21
 
 #define EXTEND_HTTPD_AIHOME_VER		0
 
@@ -620,7 +624,6 @@ enum {
 	MODEL_RTAC55U,
 	MODEL_RTAC55UHP,
 	MODEL_RT4GAC55U,
-	MODEL_RTN19,
 	MODEL_RTAC59U,
 	MODEL_PLN12,
 	MODEL_PLAC56,
@@ -633,6 +636,7 @@ enum {
 	MODEL_VZWAC1300,
 	MODEL_MAPAC1750,
 	MODEL_MAPAC3000,
+	MODEL_MAPAC2200V,
 	MODEL_RTN36U3,
 	MODEL_RTN56U,
 	MODEL_RTN65U,
@@ -696,6 +700,27 @@ enum {
 	MODEL_GTAX6000,
 	MODEL_GTAX6000N,
 	MODEL_GTAX6000S,
+	MODEL_RTAC1200V2,
+	MODEL_RTN19,
+	MODEL_TUFAC1750,
+	MODEL_RTAX88U,
+	MODEL_GTAX11000,
+	MODEL_RTAX92U,
+	MODEL_RTAX95Q,
+	MODEL_RTAX56_XD4,
+	MODEL_RTAX58U,
+	MODEL_RTAX56U,
+	MODEL_SHAC1300,
+	MODEL_RPAC92,
+	MODEL_RTAC59CD6R,
+	MODEL_RTAC59CD6N,
+	MODEL_RTAX86U,
+	MODEL_RTAX68U,
+	MODEL_RT4GAC56,
+	MODEL_DSLAX82U,
+	MODEL_RTAX55,
+	MODEL_GTAXE11000,
+	MODEL_MAX
 };
 
 /* NOTE: Do not insert new entries in the middle of this enum,
@@ -1636,6 +1661,7 @@ extern int remove_word(char *buffer, const char *word);
 extern void trim_space(char *str);
 extern void toLowerCase(char *str);
 extern void toUpperCase(char *str);
+extern void trim_colon(char *str);
 
 // file.c
 extern int check_if_file_exist(const char *file);
@@ -2207,13 +2233,15 @@ extern int wanport_status(int wan_unit);
 extern void erase_symbol(char *old, char *sym);
 
 /* pwenc.c */
+#if defined(RTCONFIG_NVRAM_ENCRYPT) || defined(RTCONFIG_ASD) || defined(RTCONFIG_AHS)
+extern int pw_enc(const char *input, char *output);
+extern int pw_dec(const char *input, char *output, int len);
+extern int pw_enc_blen(const char *input);
+extern int pw_dec_len(const char *input);
+#endif
 #ifdef RTCONFIG_NVRAM_ENCRYPT
 #define NVRAM_ENC_LEN	1024
 #define NVRAM_ENC_MAXLEN	4096
-extern int pw_enc(const char *input, char *output);
-extern int pw_dec(const char *input, char *output);
-extern int pw_enc_blen(const char *input);
-extern int pw_dec_len(const char *input);
 extern int set_enc_nvram(char *name, char *input, char *output);
 extern int enc_nvram(char *name, char *input, char *output);
 extern int dec_nvram(char *name, char *input, char *output);
@@ -2298,6 +2326,7 @@ extern int detwan_set_def_vid(const char *ifname, int vid, int needTagged, int a
 extern int IPTV_ports_cnt(void);
 
 #ifdef RTCONFIG_BCMWL6
+#define WL_5G_BAND_1	1 << (1 - 1)
 #define WL_5G_BAND_2	1 << (2 - 1)
 #define WL_5G_BAND_3	1 << (3 - 1)
 #define WL_5G_BAND_4	1 << (4 - 1)

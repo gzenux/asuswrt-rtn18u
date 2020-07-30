@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <asm/byteorder.h>
 
 #include <bcmnvram.h>
 #include <bcmdevs.h>
@@ -417,6 +418,29 @@ int illegal_ipv4_netmask(char *netmask)
 
 	return 0;
 }
+
+#if defined(RTCONFIG_QCA)
+void convert_mac_string(char *mac)
+{
+	int i;
+	char mac_str[18], mac_str_t[18];
+	memset(mac_str,0,sizeof(mac_str));
+
+	for(i=0;i<strlen(mac);i++)
+	{
+		if(*(mac+i)>0x60 && *(mac+i)<0x67){
+			snprintf(mac_str_t, sizeof(mac_str), "%s%c",mac_str,*(mac+i)-0x20);
+			strlcpy(mac_str, mac_str_t, sizeof(mac_str));
+		}
+		else{
+			snprintf(mac_str_t, sizeof(mac_str), "%s%c",mac_str,*(mac+i));
+			strlcpy(mac_str, mac_str_t, sizeof(mac_str));
+		}
+
+	}
+	strlcpy(mac, mac_str, strlen(mac_str) + 1);
+}
+#endif
 
 #if defined(RTCONFIG_PORT_BASED_VLAN) || defined(RTCONFIG_TAGGED_BASED_VLAN)
 /**
@@ -1301,7 +1325,7 @@ enum wan_unit_e get_first_connected_public_wan_unit(void)
 
 		snprintf(wan_ip, sizeof(wan_ip), "wan%d_ipaddr", i);
 		wan_public = is_private_subnet(nvram_safe_get(wan_ip));
-		if(wan_public) // wan_public = 0 is public IP, wan_public = 1, 2, 3 is private IP.
+		if(wan_public) // wan_public = 0 is public IP, wan_public = 1, 2, 3, 4 is private IP.
 			continue;
 		wan_unit = i;
 		break;
@@ -2617,34 +2641,33 @@ unsigned int netdev_calc(char *ifname, char *ifname_desc, unsigned long *rx, uns
 	return 0;
 }
 
-// 0: Not private subnet, 1: A class, 2: B class, 3: C class.
+/* 0: Not private subnet
+ * 1: A class, 2: B class, 3: C class, 4: rfc6598 */
 int is_private_subnet(const char *ip)
 {
-	unsigned long long ip_num;
-	unsigned long long A_class_start, A_class_end;
-	unsigned long long B_class_start, B_class_end;
-	unsigned long long C_class_start, C_class_end;
+	const static struct {
+		in_addr_t network;
+		in_addr_t netmask;
+	} classes[] = {
+		{ __constant_htonl(0xc0a80000), __constant_htonl(0xffff0000) }, /* 192.168.0.0/16 */
+		{ __constant_htonl(0xac100000), __constant_htonl(0xfff00000) }, /* 172.16.0.0/12 */
+		{ __constant_htonl(0x0a000000), __constant_htonl(0xff000000) }, /* 10.0.0.0/8 */
+		{ __constant_htonl(0x64400000), __constant_htonl(0xffc00000) }, /* 100.64.0.0/10 */
+	};
+	struct in_addr sin;
+	int i;
 
-	if(ip == NULL)
+	if (ip == NULL)
 		return 0;
 
-	A_class_start = inet_network("10.0.0.0");
-	A_class_end = inet_network("10.255.255.255");
-	B_class_start = inet_network("172.16.0.0");
-	B_class_end = inet_network("172.31.255.255");
-	C_class_start = inet_network("192.168.0.0");
-	C_class_end = inet_network("192.168.255.255");
+	if (inet_pton(AF_INET, ip, &sin) > 0) {
+		for (i = 0; i < ARRAY_SIZE(classes); i++) {
+			if ((sin.s_addr & classes[i].netmask) == classes[i].network)
+				return i + 1;
+		}
+	}
 
-	ip_num = inet_network(ip);
-
-	if(ip_num > A_class_start && ip_num < A_class_end)
-		return 1;
-	else if(ip_num > B_class_start && ip_num < B_class_end)
-		return 2;
-	else if(ip_num > C_class_start && ip_num < C_class_end)
-		return 3;
-	else
-		return 0;
+	return 0;
 }
 
 // clean_mode: 0~3, clean_time: 0~(LONG_MAX-1), threshold(KB): 0: always act, >0: act when lower than.

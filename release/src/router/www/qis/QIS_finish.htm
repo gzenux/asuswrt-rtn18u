@@ -26,6 +26,7 @@ span{
 <script type="text/javascript" src="/qis/QISMobilePlugin.js"></script>
 <script type="text/JavaScript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <script>
 /*
 	# restart needed service after loading this page immediately by restartService();
@@ -130,7 +131,7 @@ var timezones = {
 	"UTC4_1":	"(GMT-04:00)",
 	"UTC4DST_2":	"(GMT-04:00)",
 	"NST3.30DST":	"(GMT-03:30)",
-	"EBST3DST_1":	"(GMT-03:00)",
+	"EBST3":	"(GMT-03:00)",	//EBST3DST_1
 	"UTC3":	"(GMT-03:00)",
 	"EBST3DST_2":	"(GMT-03:00)",
 	"UTC2":	"(GMT-02:00)",
@@ -165,6 +166,7 @@ var timezones = {
 	"UTC-4_3":	"(GMT+04:00)",
 	"UTC-4_1":	"(GMT+04:00)",
 	"UTC-4_6":	"(GMT+04:00)",
+	"UTC-4_7":	"(GMT+04:00)",	//UTC-3_5
 	"UTC-4.30":	"(GMT+04:30)",
 	"UTC-5":	"(GMT+05:00)",
 	"UTC-5.30_2":	"(GMT+05:30)",
@@ -248,7 +250,7 @@ function doLiveUpdate(_do){
 		document.start_update.submit();
 	}
 	else{
-		setTimeout("parent.location.href='/'", 3000);
+		finish_qis();
 	}
 }
 
@@ -444,6 +446,17 @@ function checkIsNewFirmware(){
 
 	}
 	else{
+		setTimeout(function(){
+			finish_qis();
+		}, 1000);
+	}
+}
+
+var retry_cnt = 24;
+function finish_qis(){
+	var cur_rc_service = httpApi.nvramGet(["rc_service"], true).rc_service;
+
+	if( cur_rc_service == ""){
 		if(parent.sysReboot || isWLclient())
 			restartService();
 		else if(parent.changeSubnet){
@@ -457,6 +470,16 @@ function checkIsNewFirmware(){
 				parent.location.href = '/';
 			}, delayTimeout);
 		}
+	}
+	else{
+		if(retry_cnt > 0){
+			setTimeout(function(){
+				finish_qis();
+			}, 5000);
+			retry_cnt--;
+		}
+		else
+			parent.location.href = '/';
 	}
 }
 
@@ -583,6 +606,11 @@ function QKfinish_load_body(){
 	parent.detect_firmware();
 	document.getElementById("QISmain").style.display = "";
 	parent.document.title = "<#Web_Title#> - <#QKSet_all_title#>";
+
+	var linkInternet = httpApi.isConnected();
+	if(linkInternet){
+		document.getElementById("main_manual").style.display = "";
+	}
 
 	if(gobi_support){
 		$("#freqtitle2")[0].style.display = "none";
@@ -1407,6 +1435,7 @@ var startQuery = function(){
 		}
 	});
 };
+
 </script>
 </head>
 
@@ -1673,7 +1702,7 @@ var startQuery = function(){
 
 <div id="AreaHint" style="margin-top:10px; margin-left:5px;">
 	<div><img style="width: 720px; *width: 710px; height: 2px;" src="/images/New_ui/export/line_export.png"></div>
-	<div id="main_manual" style="padding-left:20px;margin-top:10px">
+	<div id="main_manual" style="padding-left:20px;margin-top:10px;display:none;">
 		<span><#ASUS_Registration#></span>
 	</div>	
 </div>

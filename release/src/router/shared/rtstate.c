@@ -1093,10 +1093,11 @@ char *get_default_ssid(int unit, int subunit)
 	) {
 		macp = get_2g_hwaddr();
 		ether_atoe(macp, mac_binary);
-#if defined(RTAC58U)
+#if defined(RTAC58U) || defined(RTAC59U)
 		if (!strncmp(nvram_safe_get("territory_code"), "SP", 2))
 			sprintf((char *)ssidbase, "Spirit_%02X", mac_binary[5]);
-		else if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
+		else if (!strncmp(nvram_safe_get("territory_code"), "CX/01", 5)
+		      || !strncmp(nvram_safe_get("territory_code"), "CX/05", 5))
 			sprintf((char *)ssidbase, "Stuff-Fibre_%02X", mac_binary[5]);
 		else
 #endif
@@ -1111,7 +1112,12 @@ char *get_default_ssid(int unit, int subunit)
 	strlcpy(ssid, ssidbase, sizeof(ssid));
 
 #ifdef RTCONFIG_NEWSSID_REV4
-	if (!subunit)
+	if ((!subunit)
+#if defined(RTAC59U)
+		&& strncmp(nvram_safe_get("territory_code"), "CX/01", 5)
+		&& strncmp(nvram_safe_get("territory_code"), "CX/05", 5)
+#endif
+	)
 		return ssid;
 #endif
 

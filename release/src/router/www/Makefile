@@ -64,6 +64,9 @@ endif # CONFIG_VISUALIZATION
 	rm -rf $(INSTALLDIR)/www/model_patch
 	rm -rf $(INSTALLDIR)/www/.gitignore
 	rm -rf `find $(INSTALLDIR) -name "*.bak"`
+	rm -rf $(INSTALLDIR)/www/device-map/compatibility.asp
+	cp -rf $(INSTALLDIR)/www/images/new/* $(INSTALLDIR)/www/images/
+	rm -rf $(INSTALLDIR)/www/images/new
 
 ifeq ($(RTCONFIG_AMAS),y)
 	cp $(TOP)/www/sysdep/BLUECAVE/www/QIS_wizard.htm $(INSTALLDIR)/www/QIS_wizard.htm
@@ -356,7 +359,6 @@ endif
 ifeq ($(RTCONFIG_OPENVPN), y)
 	cd $(INSTALLDIR)/www && ln -sf ../etc/openvpn/server1/client.ovpn && cd $(TOP)/www
 else
-	rm -rf $(INSTALLDIR)/www/merlin.js
 	rm -rf $(INSTALLDIR)/www/ajax_openvpn_server.asp
 	rm -rf $(INSTALLDIR)/www/Advanced_VPN_OpenVPN.asp
 ifneq ($(RTCONFIG_ACCEL_PPTPD), y)
@@ -404,6 +406,18 @@ ifneq ($(RTCONFIG_BWDPI)$(RTCONFIG_BWDPI_DEP),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/mals.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/recount.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/recount_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/add.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/add_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/disable.svg
+	rm -rf $(INSTALLDIR)/www/images/save.svg
+	rm -rf $(INSTALLDIR)/www/images/save_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/save_active.svg
+	rm -rf $(INSTALLDIR)/www/images/delete.svg
+	rm -rf $(INSTALLDIR)/www/images/delete_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/delete_active.svg
+	rm -rf $(INSTALLDIR)/www/images/edit.svg
+	rm -rf $(INSTALLDIR)/www/images/edit_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/edit_active.svg
 ifneq ($(RTCONFIG_PARENTALCTRL),y)
 	rm -rf $(INSTALLDIR)/www/blocking.asp
 endif
@@ -449,7 +463,6 @@ endif
 
 ifneq ($(RTCONFIG_DROPBOXCLIENT),y)
 	rm -rf $(INSTALLDIR)/www/images/cloudsync/dropbox.png
-	rm -rf $(INSTALLDIR)/www/dropbox_callback.htm
 endif
 
 ifneq ($(RTCONFIG_FTPCLIENT),y)
@@ -487,7 +500,6 @@ endif
 
 ifneq ($(BUILD_NAME),$(filter $(BUILD_NAME), $(MODELS_HAVE_TRAFFIC_ANALYZER)))
 	rm -rf $(INSTALLDIR)/www/TrafficAnalyzer_Statistic.asp
-	rm -rf $(INSTALLDIR)/www/images/New_ui/TrafficAnalyzer.gif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/cancel.svg
 	rm -rf $(INSTALLDIR)/www/chart.js
 	rm -rf $(INSTALLDIR)/www/datepicker.css
@@ -538,13 +550,10 @@ ifneq ($(RTCONFIG_WTFAST), y)
 	rm -rf $(INSTALLDIR)/www/images/wtfast_back_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/wtfast_device.svg
 	rm -rf $(INSTALLDIR)/www/images/wtfast_point.gif
-	rm -rf $(INSTALLDIR)/www/images/New_ui/add.svg
-	rm -rf $(INSTALLDIR)/www/images/New_ui/add_hover.svg
 ifneq ($(RTCONFIG_BWDPI)$(RTCONFIG_BWDPI_DEP),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/delete.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/delete_hover.svg
 endif
-	rm -rf $(INSTALLDIR)/www/images/New_ui/disable.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/enable.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/logout.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/logout_hover.svg
@@ -552,12 +561,8 @@ endif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/upgrade_hover.svg
 endif
 ifneq ($(RTCONFIG_WTF_REDEEM)$(RTCONFIG_WTFAST), y)
-	rm -rf $(INSTALLDIR)/www/images/New_ui/game.svg
-	rm -rf $(INSTALLDIR)/www/GameBoost.asp
 	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_AiProtection.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_QoS.png
-	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_WTFast.png
-	rm -rf $(INSTALLDIR)/www/images/New_ui/mainimage_img_Game.jpg
 endif
 
 ifneq ($(RTCONFIG_IPSEC), y)
@@ -719,4 +724,71 @@ endif
 
 ifneq ($(RTCONFIG_DBLOG),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/dblog_diag.gif
+endif
+
+ifneq ($(RTCONFIG_UUPLUGIN), y)
+	rm -rf $(INSTALLDIR)/www/images/uu_accelerator.png
+endif
+
+ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME), RT-AC59U))
+	rm -rf $(INSTALLDIR)/www/GameBoost.asp
+	rm -rf $(INSTALLDIR)/www/GameProfile.asp
+	rm -rf $(INSTALLDIR)/www/js/gameProfile.JS
+	rm -rf $(INSTALLDIR)/www/css/gameprofile.css
+	rm -rf $(INSTALLDIR)/www/images/gameprofile
+	rm -rf $(INSTALLDIR)/www/images/vpn_illustration.png
+	rm -rf $(INSTALLDIR)/www/images/setup.jpg
+	rm -rf $(INSTALLDIR)/www/images/mobile/sim_state.png
+	rm -rf $(INSTALLDIR)/www/images/qis/trio_io.png
+	rm -rf $(INSTALLDIR)/www/images/qis/lyra_io.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/Bandwidth_Limiter.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_WTFast.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/game.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/game.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_gamePriority.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_mobileGame.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_openNAT.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_ifttt.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/mainimage_img_Game.jpg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/pvid.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest1.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest2.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest3.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/coolerstatus.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/multiplessidstatus.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/network_config.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/open_NAT.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/re.jpg
+endif
+
+ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME), RT-AC1200G+))
+	rm -rf $(INSTALLDIR)/www/GameBoost.asp
+	rm -rf $(INSTALLDIR)/www/GameProfile.asp
+	rm -rf $(INSTALLDIR)/www/js/gameProfile.JS
+	rm -rf $(INSTALLDIR)/www/css/gameprofile.css
+	rm -rf $(INSTALLDIR)/www/images/gameprofile
+	rm -rf $(INSTALLDIR)/www/images/vpn_illustration.png
+	rm -rf $(INSTALLDIR)/www/images/setup.jpg
+	rm -rf $(INSTALLDIR)/www/images/mobile/sim_state.png
+	rm -rf $(INSTALLDIR)/www/images/qis/trio_io.png
+	rm -rf $(INSTALLDIR)/www/images/qis/lyra_io.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/Bandwidth_Limiter.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_WTFast.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/game.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/game.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_gamePriority.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_mobileGame.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_openNAT.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_ifttt.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/mainimage_img_Game.jpg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/pvid.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest1.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest2.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/networkmap/icon_guest3.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/coolerstatus.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/network_config.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/open_NAT.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/re.jpg
 endif
