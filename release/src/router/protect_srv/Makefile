@@ -45,7 +45,7 @@ all:
 	cp -f $(PREBUILD)/protect_srv protect_srv
 	cp -f $(PREBUILD)/Send_Event2ptcsrv Send_Event2ptcsrv
 	cp -f lib/$(PREBUILD)/libptcsrv.so lib
-	-cp -f prebuild/req_ptcsrv req_ptcsrv
+	cp -f $(PREBUILD)/req_ptcsrv req_ptcsrv
 
 else
 all: ptcsrvdir Send_Event2ptcsrv protect_srv req_ptcsrv

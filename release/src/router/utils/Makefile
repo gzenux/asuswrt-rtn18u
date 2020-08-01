@@ -129,7 +129,7 @@ all: $(UTILS)
 
 ifeq ($(wildcard $(SRCBASE)/wl/exe/*.c),)
 wl:
-	-cp -f $(SRCBASE)/wl/exe/prebuilt/wl wl
+	cp -f $(SRCBASE)/wl/exe/$(PREBUILT)/wl wl
 else
 wl: $(WLU_OBJS)
 	$(CC) $^ -o $@ $(LDFLAGS)
