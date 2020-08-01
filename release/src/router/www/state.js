@@ -446,7 +446,6 @@ var dualWAN_support = isSupport("dualwan");
 var noWAN_support = isSupport("nowan");
 var mtwancfg_support = isSupport("mtwancfg");
 var ruisp_support = isSupport("ruisp");
-var ptcsrv_support = isSupport("ptcsrv");
 var telnetd_support = isSupport("telnetd");
 var ssh_support = isSupport("ssh");
 var snmp_support = isSupport("snmp");

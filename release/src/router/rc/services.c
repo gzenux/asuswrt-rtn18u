@@ -8526,28 +8526,14 @@ start_ptcsrv(void)
 	char *ptcsrv_argv[] = {"protect_srv", NULL};
 	pid_t pid;
 
-	if (!nvram_get_int("ptcsrv_enable") || (pidof(ptcsrv_argv[0]) != -1))
-		return 0;
-
-	if (getpid() != 1) {
-		notify_rc("start_protect_srv");
-		return 0;
-	}
-
 	return _eval(ptcsrv_argv, NULL, 0, &pid);
 }
-
 void
 stop_ptcsrv(void)
 {
-	if (getpid() != 1) {
-		notify_rc("stop_protect_srv");
-		return;
-	}
-
-	if (pids("protect_srv"))
-		killall_tk("protect_srv");
+	killall_tk("protect_srv");
 }
+
 #endif
 #ifdef RTCONFIG_NETOOL
 int
@@ -13086,13 +13072,6 @@ check_ddr_done:
 #endif
 		}
 	}
-#ifdef RTCONFIG_PROTECTION_SERVER
-	else if (strcmp(script, "protect_srv") == 0)
-	{
-		if(action & RC_SERVICE_STOP) stop_ptcsrv();
-		if(action & RC_SERVICE_START) start_ptcsrv();
-	}
-#endif
 #ifdef RTCONFIG_TELNETD
 	else if (strcmp(script, "telnetd") == 0)
 	{

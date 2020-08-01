@@ -99,7 +99,6 @@ wifison = '<% nvram_get("wifison_ready"); %>';
 var orig_shell_timeout_x = Math.floor(parseInt("<% nvram_get("shell_timeout"); %>")/60);
 var orig_enable_acc_restriction = '<% nvram_get("enable_acc_restriction"); %>';
 var orig_restrict_rulelist_array = [];
-var orig_ptcsrv_enable = null;
 if((ntpd_support) && (isSwMode('rt')))
 	var orig_ntpd_server_redir = '<% nvram_get("ntpd_server_redir"); %>';
 var restrict_rulelist_array = [];
@@ -273,19 +272,7 @@ function initial(){
 		hideport(document.form.misc_http_x[0].checked);
 
 	document.form.http_username.value = '<% nvram_get("http_username"); %>';
-
-	if(ptcsrv_support){
-		document.getElementById("ptcsrv_tr").style.display = "";
-		document.form.ptcsrv_enable[0].disabled = false;
-		document.form.ptcsrv_enable[1].disabled = false;
-		orig_ptcsrv_enable = document.form.ptcsrv_enable.value;
-	}
-	else{
-		document.getElementById("ptcsrv_tr").style.display = "none";
-		document.form.ptcsrv_enable[0].disabled = true;
-		document.form.ptcsrv_enable[1].disabled = true;
-	}
-
+	
 	if(ssh_support){
 		check_sshd_enable('<% nvram_get("sshd_enable"); %>');
 		document.form.sshd_authkeys.value = document.form.sshd_authkeys.value.replace(/>/gm,"\r\n");
@@ -604,9 +591,6 @@ function applyRule(){
 					action_script_tmp += ";restart_ftpd";
 			}
 		}
-
-		if(ptcsrv_support && (orig_ptcsrv_enable != document.form.ptcsrv_enable.value))
-			action_script_tmp += "restart_protect_srv;";
 
 		if(restart_firewall_flag)
 			action_script_tmp += "restart_firewall;";
@@ -2246,13 +2230,6 @@ function save_cert_key(){
 					  <td colspan="2"><#qis_service#></td>
 					</tr>
 				</thead>
-				<tr id="ptcsrv_tr">
-					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(39,1);">Enable ProtectionSrv</a></th>
-					<td>
-						<input type="radio" name="ptcsrv_enable" class="input" value="1" <% nvram_match("ptcsrv_enable", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" name="ptcsrv_enable" class="input" value="0" <% nvram_match("ptcsrv_enable", "0", "checked"); %>><#checkbox_No#>
-					</td>
-				</tr>
 				<tr id="telnet_tr">
 					<th><#Enable_Telnet#></th>
 					<td>
