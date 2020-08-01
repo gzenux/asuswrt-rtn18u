@@ -879,6 +879,10 @@ enum {
 	MODEL_RTAX55,
 	MODEL_GTAXE11000,
 	MODEL_MAX
+#if defined(RTN18U)	// Kludge
+	,
+	MODEL_RTAX89U,
+#endif
 };
 
 /* NOTE: Do not insert new entries in the middle of this enum,
