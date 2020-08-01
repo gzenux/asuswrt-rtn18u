@@ -1472,7 +1472,7 @@ misc_defaults(int restore_defaults)
 		case MODEL_BRTAC828:
 		case MODEL_RTAC88S:
 		case MODEL_RTAD7200:
-			nvram_set("reboot_time", "100");	// default is 70 sec
+			nvram_set("reboot_time", "110");	// default is 70 sec
 #if defined(RTCONFIG_LETSENCRYPT)
 			if (nvram_match("le_acme_auth", "dns"))
 				nvram_set("le_acme_auth", "http");
@@ -3986,6 +3986,7 @@ int init_nvram(void)
 		nvram_set_int("btn_rst_gpio",  3|GPIO_ACTIVE_LOW);
 		nvram_set_int("btn_wps_gpio",  6|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_pwr_gpio",  4|GPIO_ACTIVE_LOW);
+		nvram_set_int("led_wps_gpio",  4|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_5g_gpio", 8|GPIO_ACTIVE_LOW);
 		nvram_set_int("led_2g_gpio", 10|GPIO_ACTIVE_LOW);
 //		nvram_set_int("led_all_gpio", 10|GPIO_ACTIVE_LOW);
@@ -4009,6 +4010,7 @@ int init_nvram(void)
 		add_rc_support("11AC");
 		add_rc_support("gameMode");
 		add_rc_support("app");
+		add_rc_support("gameMode");
 		//add_rc_support("pwrctrl");
 		// the following values is model dep. so move it from default.c to here
 		nvram_set("wl0_HT_TxStream", "4");
@@ -4981,6 +4983,10 @@ int init_nvram(void)
 		add_rc_support("11AC");
 		add_rc_support("nodm");
 		add_rc_support("app");
+		if (!strncmp(nvram_safe_get("territory_code"), "CX/05", 5)) {
+			add_rc_support("pwrctrl");
+			add_rc_support("nz_isp");
+		}
 		// the following values is model dep. so move it from default.c to here
 		nvram_set("wl0_HT_TxStream", "4");
 		nvram_set("wl0_HT_RxStream", "4");
@@ -5277,7 +5283,8 @@ int init_nvram(void)
 		add_rc_support("11AC");
 		add_rc_support("pwrctrl");
 		add_rc_support("nodm");
-		if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
+		if (!strncmp(nvram_safe_get("territory_code"), "CX/01", 5)
+		 || !strncmp(nvram_safe_get("territory_code"), "CX/05", 5))
 			add_rc_support("nz_isp");
 		else if (!strncmp(nvram_safe_get("territory_code"), "SP", 2))
 			add_rc_support("spirit");
@@ -9058,6 +9065,13 @@ int init_nvram(void)
 	add_rc_support("utf8_ssid");
 #endif
 
+#ifdef RTCONFIG_FRS_FEEDBACK
+	add_rc_support("frs_feedback");
+#ifdef RTCONFIG_DBLOG
+	add_rc_support("dblog");
+#endif /* RTCONFIG_DBLOG */
+#endif
+
 #ifdef RTCONFIG_USB
 #ifdef RTAC68U
 	if (!hw_usb_cap())
@@ -9065,6 +9079,10 @@ int init_nvram(void)
 #endif
 #ifdef RTCONFIG_USB_PRINTER
 	add_rc_support("printer");
+#endif
+
+#ifdef RTCONFIG_PUSH_EMAIL
+	add_rc_support("email");
 #endif
 
 #ifdef RTCONFIG_USB_MODEM
@@ -9308,14 +9326,7 @@ NO_USB_CAP:
 #ifdef RTAC68U
 	if (!is_n66u_v2())
 #endif
-
-#ifdef RTCONFIG_LANTIQ
-	if(strcmp(nvram_safe_get("blver"), "0.0.3.12") == 0){
-		add_rc_support("bwdpi");
-	}
-#else
 	add_rc_support("bwdpi");
-#endif
 
 	/* modify logic for AiProtection switch */
 	// DON'T USE the logic of nvram_match, it's the wrong logic in this case!!

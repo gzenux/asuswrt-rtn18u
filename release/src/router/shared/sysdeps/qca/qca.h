@@ -713,4 +713,7 @@ extern int nss_wifi_offloading(void);
 static inline int nss_wifi_offloading(void) { return 0; }
 #endif
 
+extern int __get_qca_sta_info_by_ifname(const char *ifname, char subunit_id, int (*handler)(const WLANCONFIG_LIST *rptr, void *arg), void *arg);
+extern int get_qca_sta_info_by_ifname(const char *ifname, char subunit_id, WIFI_STA_TABLE *sta_info);
+
 #endif	/* _QCA_H_ */

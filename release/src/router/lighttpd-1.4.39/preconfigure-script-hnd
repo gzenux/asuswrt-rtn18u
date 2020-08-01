@@ -15,8 +15,8 @@ echo $cur_dir
 PCRE_VER=8.31
 
 ####	Set compiler variable ####
-export CFLAGS="-I$cur_dir/../pcre-$PCRE_VER -I$uclib_inc -I$srcbase_dir/include -I$srcbase_dir/shared/bcmwifi/include -I$cur_dir/../sqlite -I$cur_dir/../curl-7.21.7/include -I$router_dir/nvram${BCMEX}${EX7} -I$router_dir/shared -I$router_dir/libdisk -I$router_dir/libpasswd -DHAVE_OPENSSL_SSL_H=1 -DHAVE_LIBSSL=1 -DEMBEDDED_EANBLE=1"
-export LIBS="-L$uclib -L$router_dir/shared -lshared -L$router_dir/nvram${BCMEX}${EX7} -lnvram -L$router_dir/wlcsm -lwlcsm -L$router_dir/libdisk -ldisk -L$router_dir/libpasswd -lpasswd -lpthread  -L$router_dir/openssl -lcrypto -lssl -L$router_dir/curl-7.21.7/lib/.libs -lcurl -L$router_dir/libxml2/.libs -lxml2 -lpthread -dl"
+export CFLAGS="-I$cur_dir/../pcre-$PCRE_VER -I$uclib_inc -I$srcbase_dir/include -I$srcbase_dir/shared/bcmwifi/include -I$cur_dir/../sqlite -I$cur_dir/../curl-7.21.7/include -I$router_sysdep_dir/nvram${BCMEX}${EX7} -I$router_dir/shared -I$router_dir/libdisk -I$router_dir/libpasswd -DHAVE_OPENSSL_SSL_H=1 -DHAVE_LIBSSL=1 -DEMBEDDED_EANBLE=1"
+export LIBS="-L$uclib -L$router_dir/shared -lshared -L$router_sysdep_dir/nvram${BCMEX}${EX7} -lnvram -L$router_sysdep_dir/wlcsm${EXHND} -lwlcsm -L$router_dir/libdisk -ldisk -L$router_dir/libpasswd -lpasswd -lpthread  -L$router_dir/openssl -lcrypto -lssl -L$router_dir/curl-7.21.7/lib/.libs -lcurl -L$router_dir/libxml2/.libs -lxml2 -lpthread -dl"
 
 NVRAM_ENCRYPT=`cat ../.config |grep "RTCONFIG_NVRAM_ENCRYPT=y"`
 if [ -n "$NVRAM_ENCRYPT" ]; then

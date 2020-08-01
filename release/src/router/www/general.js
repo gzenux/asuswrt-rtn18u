@@ -855,13 +855,33 @@ function insertExtChannelOption_5g(){
 					inputCtrl(document.form.wl_nctrlsb, 0);
 				}
 			}
+
 			if(is_RU_sku){
+				var RU_band4 = (function(){
+					for(i=0;i<wl_channel_list_5g.length;i++){
+						if(wl_channel_list_5g[i] >= '149'){
+							return true;
+						}
+					}
+	
+					return false;
+				})();
 				if(document.form.wl_nmode_x.value == 0 || document.form.wl_nmode_x.value == 8){    // Auto or N/AC mixed
 					if(document.form.wl_bw.value == 3){    // 80 MHz
-						wl_channel_list_5g = ['42', '58', '138'];
+						if(RU_band4){
+							wl_channel_list_5g = ['42', '58', '138', '155'];
+						}
+						else{
+							wl_channel_list_5g = ['42', '58', '138'];
+						}	
 					}
 					else if(document.form.wl_bw.value == 2){    // 40 MHz
-						wl_channel_list_5g = ['38', '46', '54', '62', '134', '142'];
+						if(RU_band4){
+							wl_channel_list_5g = ['38', '46', '54', '62', '134', '142', '151', '159'];
+						}
+						else{
+							wl_channel_list_5g = ['38', '46', '54', '62', '134', '142'];
+						}
 					}			
 				}
 			}
@@ -1248,12 +1268,31 @@ function insertExtChannelOption_5g(){
 		}
 		
 		if(is_RU_sku){
+			var RU_band4 = (function(){
+				for(i=0;i<wl_channel_list_5g.length;i++){
+					if(wl_channel_list_5g[i] >= '149'){
+						return true;
+					}
+				}
+
+				return false;
+			})();
 			if(document.form.wl_nmode_x.value == 0 || document.form.wl_nmode_x.value == 8){    // Auto or N/AC mixed
 				if(document.form.wl_bw.value == 3){    // 80 MHz
-					ch_v = ['0', '36', '52', '132'];
+					if(RU_band4){
+						ch_v = ['0', '36', '52', '132', '149'];
+					}
+					else{
+						ch_v = ['0', '36', '52', '132'];
+					}
 				}
 				else if(document.form.wl_bw.value == 2){    // 40 MHz
-					ch_v = ['0', '36', '44', '52', '60', '132', '140'];
+					if(RU_band4){
+						ch_v = ['0', '36', '44', '52', '60', '132', '140', '149', '157'];
+					}
+					else{
+						ch_v = ['0', '36', '44', '52', '60', '132', '140'];
+					}
 				}			
 			}
 		}

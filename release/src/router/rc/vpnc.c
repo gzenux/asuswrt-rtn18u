@@ -225,6 +225,7 @@ start_vpnc(void)
 
 	fclose(fp);
 
+/* TODO: remove */
 #if 0
 	/* shut down previous instance if any */
 	stop_vpnc();

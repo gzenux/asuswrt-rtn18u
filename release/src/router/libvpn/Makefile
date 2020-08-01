@@ -12,7 +12,7 @@ LDFLAGS += -lcrypt
 
 INSTALL = install
 
-OBJS = openvpn_config.o openvpn_control.o
+OBJS = openvpn_config.o openvpn_control.o openvpn_utils.o
 
 all: libvpn.so
 

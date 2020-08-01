@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wget 1.18.109\n"
 "Report-Msgid-Bugs-To: bug-wget@gnu.org\n"
-"POT-Creation-Date: 2018-11-30 00:09+0100\n"
+"POT-Creation-Date: 2018-12-26 21:10+0100\n"
 "PO-Revision-Date: 2017-01-17 11:59-0500\n"
 "Last-Translator: Kevin Scannell <kscanne@gmail.com>\n"
 "Language-Team: Irish <gaeilge-gnulinux@lists.sourceforge.net>\n"
@@ -1315,33 +1315,33 @@ msgstr "Cáilíocht cosanta nach dtacaítear léi '%s'.\n"
 msgid "Unsupported algorithm '%s'.\n"
 msgstr "Algartam gan tacaíocht '%s'.\n"
 
-#: src/init.c:583
+#: src/init.c:579
 #, fuzzy, c-format
 msgid ""
 "%s: WGETRC points to %s, which couldn't be accessed because of error: %s.\n"
 msgstr "%s: Tá WGETRC dírithe ar %s, agus níl sé seo ann ar chor ar bith.\n"
 
-#: src/init.c:682 src/netrc.c:452
+#: src/init.c:678 src/netrc.c:452
 #, c-format
 msgid "%s: Cannot read %s (%s).\n"
 msgstr "%s: Ní féidir %s a léamh (%s).\n"
 
-#: src/init.c:699
+#: src/init.c:695
 #, c-format
 msgid "%s: Error in %s at line %d.\n"
 msgstr "%s: Earráid i %s, líne %d.\n"
 
-#: src/init.c:705
+#: src/init.c:701
 #, c-format
 msgid "%s: Syntax error in %s at line %d.\n"
 msgstr "%s: Earráid chomhréire i %s ag líne %d.\n"
 
-#: src/init.c:710
+#: src/init.c:706
 #, c-format
 msgid "%s: Unknown command %s in %s at line %d.\n"
 msgstr "%s: Ordú anaithnid %s i %s ag líne %d.\n"
 
-#: src/init.c:749
+#: src/init.c:745
 #, c-format
 msgid ""
 "Parsing system wgetrc file (env SYSTEM_WGETRC) failed.  Please check\n"
@@ -1351,7 +1351,7 @@ msgstr ""
 "Níorbh fhéidir comhad wgetrc an chórais a pharsáil (cf athróg\n"
 "SYSTEM_WGETRC). Féach '%s', nó roghnaigh comhad eile le --config.\n"
 
-#: src/init.c:764
+#: src/init.c:760
 #, c-format
 msgid ""
 "Parsing system wgetrc file failed.  Please check\n"
@@ -1361,49 +1361,49 @@ msgstr ""
 "Níorbh fhéidir comhad wgetrc an chórais a pharsáil Féach '%s',\n"
 "nó roghnaigh comhad eile le --config.\n"
 
-#: src/init.c:780
+#: src/init.c:776
 #, c-format
 msgid "%s: Warning: Both system and user wgetrc point to %s.\n"
 msgstr ""
 "%s: Rabhadh: Tá na comhaid wgetrc ag an úsáideoir agus ag an gcóras nasctha "
 "le %s.\n"
 
-#: src/init.c:981
+#: src/init.c:977
 #, c-format
 msgid "%s: Invalid --execute command %s\n"
 msgstr "%s: Ordú neamhbhailí --execute %s\n"
 
-#: src/init.c:1041
+#: src/init.c:1037
 #, c-format
 msgid "%s: %s: Invalid boolean %s; use `on' or `off'.\n"
 msgstr "%s: %s: Slonn neamhbhailí Boole %s; úsáid `on' nó `off'.\n"
 
-#: src/init.c:1074
+#: src/init.c:1070
 #, c-format
 msgid "%s: %s: Invalid %s; use `on', `off' or `quiet'.\n"
 msgstr "%s: %s: %s neamhbhailí; úsáid `on', `off', nó `quiet'.\n"
 
-#: src/init.c:1094
+#: src/init.c:1090
 #, c-format
 msgid "%s: %s: Invalid number %s.\n"
 msgstr "%s: %s: Uimhir neamhbhailí %s.\n"
 
-#: src/init.c:1176
+#: src/init.c:1172
 #, c-format
 msgid "%s: %s must only be used once\n"
 msgstr "%s: Ní féidir %s a úsáid níos mó ná uair amháin\n"
 
-#: src/init.c:1331 src/init.c:1352
+#: src/init.c:1327 src/init.c:1348
 #, c-format
 msgid "%s: %s: Invalid byte value %s\n"
 msgstr "%s: %s: Luach neamhbhailí birt %s\n"
 
-#: src/init.c:1377
+#: src/init.c:1373
 #, c-format
 msgid "%s: %s: Invalid time period %s\n"
 msgstr "%s: %s: Tréimhse neamhbhailí %s\n"
 
-#: src/init.c:1439 src/main.c:1912
+#: src/init.c:1435 src/main.c:1912
 #, c-format
 msgid ""
 "use-askpass requires a string or either environment variable WGET_ASKPASS or "
@@ -1412,28 +1412,28 @@ msgstr ""
 "ní mór duit teaghrán a thabhairt do use-askpass, nó athróg timpeallachta "
 "WGET_ASKPASS nó SSH_ASKPASS a shocrú.\n"
 
-#: src/init.c:1457 src/init.c:1479 src/init.c:1587 src/init.c:1643
-#: src/init.c:1709 src/init.c:1729 src/init.c:1754
+#: src/init.c:1453 src/init.c:1475 src/init.c:1583 src/init.c:1639
+#: src/init.c:1705 src/init.c:1725 src/init.c:1750
 #, c-format
 msgid "%s: %s: Invalid value %s.\n"
 msgstr "%s: %s: Luach neamhbhailí %s.\n"
 
-#: src/init.c:1513
+#: src/init.c:1509
 #, c-format
 msgid "%s: %s: Invalid header %s.\n"
 msgstr "%s: %s: Ceanntásc neamhbhailí %s.\n"
 
-#: src/init.c:1534
+#: src/init.c:1530
 #, c-format
 msgid "%s: %s: Invalid WARC header %s.\n"
 msgstr "%s: %s: Ceanntásc WARC neamhbhailí %s.\n"
 
-#: src/init.c:1600
+#: src/init.c:1596
 #, c-format
 msgid "%s: %s: Invalid progress type %s.\n"
 msgstr "%s: %s: Cineál neamhbhailí dul chun cinn %s.\n"
 
-#: src/init.c:1682
+#: src/init.c:1678
 #, c-format
 msgid ""
 "%s: %s: Invalid restriction %s,\n"
@@ -1913,8 +1913,9 @@ msgstr ""
 "Metalink\n"
 
 #: src/main.c:757
+#, fuzzy
 msgid ""
-"       --no-xattr                  turn off storage of metadata in extended "
+"       --xattr                     turn on storage of metadata in extended "
 "file attributes\n"
 msgstr ""
 "       --no-xattr                  ná stóráil meiteashonraí in aitreabúidí "

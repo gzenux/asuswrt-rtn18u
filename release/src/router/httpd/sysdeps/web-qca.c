@@ -2085,8 +2085,9 @@ bypass:
 	if (country_code == NULL || strlen(country_code) != 2) return retval;
 
 	//try getting channel list via wifi driver first
-#if defined(RTAC58U)
-	if (unit == 0 && !strncmp(nvram_safe_get("territory_code"), "CX", 2))
+#if defined(RTAC58U) || defined(RTAC59U)
+	if (unit == 0 && (!strncmp(nvram_safe_get("territory_code"), "CX/01", 5)
+		       || !strncmp(nvram_safe_get("territory_code"), "CX/05", 5)))
 		retval += websWrite(wp, "[1,2,3,4,5,6,7,8,9,10,11]");
 	else
 #endif

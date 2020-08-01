@@ -35,7 +35,7 @@ define(function(){
 				] 
 			},
 			{
-				menuName: "Dash Board",
+				menuName: "<#AiProtection_title_Dashboard_title#>",
 				index: "menu_Dashboard",
 				tab: [
 					{url: "GameDashboard.asp", tabName: "__HIDE__"},
@@ -322,7 +322,7 @@ define(function(){
 					retArray.push("menu_APP");
 				}
 
-				if(!cloudsync_support && !aicloudipk_support){
+				if((!cloudsync_support && !aicloudipk_support) || nocloudsync_support){
 					retArray.push("menu_AiCloud");
 				}
 

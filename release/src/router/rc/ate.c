@@ -1411,7 +1411,6 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		}
 		return 0;
 	}
-#if !defined(RTN18U)	// Kludge
 #if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK)
 	else if (!strcmp(command, "Set_HwId")) {
 #if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
@@ -1492,7 +1491,6 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		return 0;
 	}
 #endif
-#endif	/* Kludge */
 	/*** ATE Get functions ***/
 	else if (!strcmp(command, "Get_FWVersion")) {
 		char fwver[16];
@@ -2412,7 +2410,6 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 			puts("0");
 		return 0;
         }
-#if !defined(RTN18U)	// Kludge
 #if defined(CONFIG_BCMWL5) || defined(RTCONFIG_QCA) || defined(RTCONFIG_RALINK)
 	else if (!strcmp(command, "Get_HwId")) {
 		get_HwId();
@@ -2431,7 +2428,6 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		return 0;
 	}
 #endif
-#endif	/* Kludge */
 	else if (!strcmp(command, "Get_RDG")) {
 #ifdef RTCONFIG_RALINK
 		if(nvram_match("reg_spec", "CE"))

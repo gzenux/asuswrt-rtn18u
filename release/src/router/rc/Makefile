@@ -398,10 +398,8 @@ ifeq ($(RTCONFIG_INTERNETCTRL),y)
 OBJS += ic.o
 endif
 
-ifeq ($(RTCONFIG_HTTPS),y)
 ifeq ($(RTCONFIG_FRS_FEEDBACK),y)
 OBJS += dsl_fb.o
-endif
 endif
 
 ifeq ($(RTCONFIG_FRS_LIVE_UPDATE),y)
@@ -535,6 +533,10 @@ ifeq ($(RTCONFIG_IPERF),y)
 OBJS += monitor.o
 endif
 
+ifeq ($(or $(RTCONFIG_FRS_LIVE_UPDATE),$(RTCONFIG_FRS_FEEDBACK)),y)
+CFLAGS += -I$(TOP)/curl-7.21.7/include
+LDFLAGS += -L$(TOP)/curl-7.21.7/lib/.libs -lcurl
+endif
 
 ifeq ($(RTCONFIG_HTTPS),y)
 CFLAGS += -I$(TOP)/curl-7.21.7/include
@@ -544,6 +546,11 @@ OBJS += pwdec.o
 CFLAGS += -I$(TOP)/json-c
 LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
 endif
+endif
+
+ifeq ($(RTCONFIG_FRS_LIVE_UPDATE),y)
+CFLAGS += -I$(TOP)/json-c
+LDFLAGS += -L$(TOP)/json-c/.libs -ljson-c
 endif
 
 ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
@@ -1063,6 +1070,9 @@ ifeq ($(RTCONFIG_HTTPS),y)
 ifeq ($(RTCONFIG_FRS_FEEDBACK),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc firmware_check_update
 endif
+endif
+ifeq ($(RTCONFIG_FRS_LIVE_UPDATE),y)
+	@cd $(INSTALLDIR)/sbin && ln -sf rc firmware_check_update
 endif
 	@cd $(INSTALLDIR)/sbin && ln -sf rc test_endian
 ifeq ($(RTCONFIG_BWDPI),y)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNU wget 1.18.109\n"
 "Report-Msgid-Bugs-To: bug-wget@gnu.org\n"
-"POT-Creation-Date: 2018-11-30 00:09+0100\n"
+"POT-Creation-Date: 2018-12-26 21:10+0100\n"
 "PO-Revision-Date: 2018-05-10 21:24-0300\n"
 "Last-Translator: Felipe Castro <fefcas@gmail.com>\n"
 "Language-Team: Esperanto <translation-team-eo@lists.sourceforge.net>\n"
@@ -1306,33 +1306,33 @@ msgstr "Nesubtenata eco de protekto '%s'.\n"
 msgid "Unsupported algorithm '%s'.\n"
 msgstr "Nesubtenata algoritmo '%s'.\n"
 
-#: src/init.c:583
+#: src/init.c:579
 #, fuzzy, c-format
 msgid ""
 "%s: WGETRC points to %s, which couldn't be accessed because of error: %s.\n"
 msgstr "%s: WGETRC indikas %s, kiu ne ekzistas.\n"
 
-#: src/init.c:682 src/netrc.c:452
+#: src/init.c:678 src/netrc.c:452
 #, c-format
 msgid "%s: Cannot read %s (%s).\n"
 msgstr "%s: Ne eblas legi %s (%s).\n"
 
-#: src/init.c:699
+#: src/init.c:695
 #, c-format
 msgid "%s: Error in %s at line %d.\n"
 msgstr "%s: Eraro en %s ĉe linio %d.\n"
 
-#: src/init.c:705
+#: src/init.c:701
 #, c-format
 msgid "%s: Syntax error in %s at line %d.\n"
 msgstr "%s: Sintaksa eraro en %s ĉe linio %d.\n"
 
-#: src/init.c:710
+#: src/init.c:706
 #, c-format
 msgid "%s: Unknown command %s in %s at line %d.\n"
 msgstr "%s: nekonata komando %s en %s ĉe linio %d.\n"
 
-#: src/init.c:749
+#: src/init.c:745
 #, c-format
 msgid ""
 "Parsing system wgetrc file (env SYSTEM_WGETRC) failed.  Please check\n"
@@ -1343,7 +1343,7 @@ msgstr ""
 "kontrolu '%s',\n"
 "aŭ indiku malsaman dosieron uzante --config.\n"
 
-#: src/init.c:764
+#: src/init.c:760
 #, c-format
 msgid ""
 "Parsing system wgetrc file failed.  Please check\n"
@@ -1354,48 +1354,48 @@ msgstr ""
 "kontrolu '%s',\n"
 "aŭ indiku malsaman dosieron uzante --config.\n"
 
-#: src/init.c:780
+#: src/init.c:776
 #, c-format
 msgid "%s: Warning: Both system and user wgetrc point to %s.\n"
 msgstr ""
 "%s: Averto: la wgetrc, kaj de la sistemo kaj de la uzanto, indikas %s.\n"
 
-#: src/init.c:981
+#: src/init.c:977
 #, c-format
 msgid "%s: Invalid --execute command %s\n"
 msgstr "%s: malvalida komando --execute %s\n"
 
-#: src/init.c:1041
+#: src/init.c:1037
 #, c-format
 msgid "%s: %s: Invalid boolean %s; use `on' or `off'.\n"
 msgstr "%s: %s: malvalida buleo %s; uzu 'on' aŭ 'off'.\n"
 
-#: src/init.c:1074
+#: src/init.c:1070
 #, c-format
 msgid "%s: %s: Invalid %s; use `on', `off' or `quiet'.\n"
 msgstr "%s: %s: malvalida %s; uzu 'on', 'off' aŭ 'quiet'.\n"
 
-#: src/init.c:1094
+#: src/init.c:1090
 #, c-format
 msgid "%s: %s: Invalid number %s.\n"
 msgstr "%s: %s: malvalida numero %s.\n"
 
-#: src/init.c:1176
+#: src/init.c:1172
 #, c-format
 msgid "%s: %s must only be used once\n"
 msgstr "%s: %s devas esti uzata nur unufoje\n"
 
-#: src/init.c:1331 src/init.c:1352
+#: src/init.c:1327 src/init.c:1348
 #, c-format
 msgid "%s: %s: Invalid byte value %s\n"
 msgstr "%s: %s: malvalida bajt-valoro %s\n"
 
-#: src/init.c:1377
+#: src/init.c:1373
 #, c-format
 msgid "%s: %s: Invalid time period %s\n"
 msgstr "%s: %s: malvalida tempo-periodo %s\n"
 
-#: src/init.c:1439 src/main.c:1912
+#: src/init.c:1435 src/main.c:1912
 #, c-format
 msgid ""
 "use-askpass requires a string or either environment variable WGET_ASKPASS or "
@@ -1404,28 +1404,28 @@ msgstr ""
 "use-askpass postulas ĉenon aŭ alian medi-variablon WGET_ASKPASS aŭ "
 "SSH_ASKPASS por esti difinata.\n"
 
-#: src/init.c:1457 src/init.c:1479 src/init.c:1587 src/init.c:1643
-#: src/init.c:1709 src/init.c:1729 src/init.c:1754
+#: src/init.c:1453 src/init.c:1475 src/init.c:1583 src/init.c:1639
+#: src/init.c:1705 src/init.c:1725 src/init.c:1750
 #, c-format
 msgid "%s: %s: Invalid value %s.\n"
 msgstr "%s: %s: malvalida valoro %s.\n"
 
-#: src/init.c:1513
+#: src/init.c:1509
 #, c-format
 msgid "%s: %s: Invalid header %s.\n"
 msgstr "%s: %s: malvalida ĉapo %s.\n"
 
-#: src/init.c:1534
+#: src/init.c:1530
 #, c-format
 msgid "%s: %s: Invalid WARC header %s.\n"
 msgstr "%s: %s: malvalida ĉapo WARC %s.\n"
 
-#: src/init.c:1600
+#: src/init.c:1596
 #, c-format
 msgid "%s: %s: Invalid progress type %s.\n"
 msgstr "%s: %s: malvalida progres-tipo %s.\n"
 
-#: src/init.c:1682
+#: src/init.c:1678
 #, c-format
 msgid ""
 "%s: %s: Invalid restriction %s,\n"
@@ -1920,8 +1920,9 @@ msgstr ""
 "       --preferred-location        preferata loko por rimedoj Metalink\n"
 
 #: src/main.c:757
+#, fuzzy
 msgid ""
-"       --no-xattr                  turn off storage of metadata in extended "
+"       --xattr                     turn on storage of metadata in extended "
 "file attributes\n"
 msgstr ""
 "       --no-xattr                  malebligi konservon de metadatumaro en "

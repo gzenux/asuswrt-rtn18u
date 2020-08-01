@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wget 1.20\n"
 "Report-Msgid-Bugs-To: bug-wget@gnu.org\n"
-"POT-Creation-Date: 2018-11-30 00:09+0100\n"
+"POT-Creation-Date: 2018-12-26 21:10+0100\n"
 "PO-Revision-Date: 2018-11-19 14:14+0100\n"
 "Last-Translator: Milo Casagrande <milo@milo.name>\n"
 "Language-Team: Italian <tp@lists.linux.it>\n"
@@ -1326,7 +1326,7 @@ msgstr "Qualità di protezione \"%s\" non gestita.\n"
 msgid "Unsupported algorithm '%s'.\n"
 msgstr "Algoritmo \"%s\" non supportato.\n"
 
-#: src/init.c:583
+#: src/init.c:579
 #, c-format
 msgid ""
 "%s: WGETRC points to %s, which couldn't be accessed because of error: %s.\n"
@@ -1334,27 +1334,27 @@ msgstr ""
 "%s: WGETRC punta a %s, a cui non è possibile accedere per via dell'errore: "
 "%s.\n"
 
-#: src/init.c:682 src/netrc.c:452
+#: src/init.c:678 src/netrc.c:452
 #, c-format
 msgid "%s: Cannot read %s (%s).\n"
 msgstr "%s: impossibile leggere %s (%s).\n"
 
-#: src/init.c:699
+#: src/init.c:695
 #, c-format
 msgid "%s: Error in %s at line %d.\n"
 msgstr "%s: errore in %s alla riga %d.\n"
 
-#: src/init.c:705
+#: src/init.c:701
 #, c-format
 msgid "%s: Syntax error in %s at line %d.\n"
 msgstr "%s: errore di sintassi in %s alla riga %d.\n"
 
-#: src/init.c:710
+#: src/init.c:706
 #, c-format
 msgid "%s: Unknown command %s in %s at line %d.\n"
 msgstr "%s: comando sconosciuto %s in %s alla riga %d.\n"
 
-#: src/init.c:749
+#: src/init.c:745
 #, c-format
 msgid ""
 "Parsing system wgetrc file (env SYSTEM_WGETRC) failed.  Please check\n"
@@ -1366,7 +1366,7 @@ msgstr ""
 "\"%s\"\n"
 "o specificare un altro file utilizzando --config.\n"
 
-#: src/init.c:764
+#: src/init.c:760
 #, c-format
 msgid ""
 "Parsing system wgetrc file failed.  Please check\n"
@@ -1377,50 +1377,50 @@ msgstr ""
 "\"%s\"\n"
 "o specificare un altro file utilizzando --config.\n"
 
-#: src/init.c:780
+#: src/init.c:776
 #, c-format
 msgid "%s: Warning: Both system and user wgetrc point to %s.\n"
 msgstr ""
 "%s: Attenzione: il file wgetrc di sistema e quello personale puntano "
 "entrambi a %s.\n"
 
-#: src/init.c:981
+#: src/init.c:977
 #, c-format
 msgid "%s: Invalid --execute command %s\n"
 msgstr "%s: comando %s passato a --execute non valido\n"
 
-#: src/init.c:1041
+#: src/init.c:1037
 #, c-format
 msgid "%s: %s: Invalid boolean %s; use `on' or `off'.\n"
 msgstr "%s: %s: valore booleano %s non valido, usare \"on\" oppure \"off\".\n"
 
 # FIXME: boolean: booleano? logico?
-#: src/init.c:1074
+#: src/init.c:1070
 #, c-format
 msgid "%s: %s: Invalid %s; use `on', `off' or `quiet'.\n"
 msgstr "%s: %s: %s non valido, usare \"on\", \"off\" oppure \"quiet\".\n"
 
-#: src/init.c:1094
+#: src/init.c:1090
 #, c-format
 msgid "%s: %s: Invalid number %s.\n"
 msgstr "%s: %s: numero %s non valido.\n"
 
-#: src/init.c:1176
+#: src/init.c:1172
 #, c-format
 msgid "%s: %s must only be used once\n"
 msgstr "%s: %s può essere usata solo una volta\n"
 
-#: src/init.c:1331 src/init.c:1352
+#: src/init.c:1327 src/init.c:1348
 #, c-format
 msgid "%s: %s: Invalid byte value %s\n"
 msgstr "%s: %s: valore di byte %s non valido\n"
 
-#: src/init.c:1377
+#: src/init.c:1373
 #, c-format
 msgid "%s: %s: Invalid time period %s\n"
 msgstr "%s: %s: periodo di tempo %s non valido\n"
 
-#: src/init.c:1439 src/main.c:1912
+#: src/init.c:1435 src/main.c:1912
 #, c-format
 msgid ""
 "use-askpass requires a string or either environment variable WGET_ASKPASS or "
@@ -1430,28 +1430,28 @@ msgstr ""
 "come WGET_ASKPASS o SSH_ASKPASS.\n"
 "\n"
 
-#: src/init.c:1457 src/init.c:1479 src/init.c:1587 src/init.c:1643
-#: src/init.c:1709 src/init.c:1729 src/init.c:1754
+#: src/init.c:1453 src/init.c:1475 src/init.c:1583 src/init.c:1639
+#: src/init.c:1705 src/init.c:1725 src/init.c:1750
 #, c-format
 msgid "%s: %s: Invalid value %s.\n"
 msgstr "%s: %s: valore %s non valido.\n"
 
-#: src/init.c:1513
+#: src/init.c:1509
 #, c-format
 msgid "%s: %s: Invalid header %s.\n"
 msgstr "%s: %s: intestazione %s non valida.\n"
 
-#: src/init.c:1534
+#: src/init.c:1530
 #, c-format
 msgid "%s: %s: Invalid WARC header %s.\n"
 msgstr "%s: %s: intestazione WARC %s non valida.\n"
 
-#: src/init.c:1600
+#: src/init.c:1596
 #, c-format
 msgid "%s: %s: Invalid progress type %s.\n"
 msgstr "%s: %s: tipo di avanzamento %s non valido.\n"
 
-#: src/init.c:1682
+#: src/init.c:1678
 #, c-format
 msgid ""
 "%s: %s: Invalid restriction %s,\n"
@@ -1987,8 +1987,9 @@ msgstr ""
 "                                     Metalink\n"
 
 #: src/main.c:757
+#, fuzzy
 msgid ""
-"       --no-xattr                  turn off storage of metadata in extended "
+"       --xattr                     turn on storage of metadata in extended "
 "file attributes\n"
 msgstr ""
 "       --no-xattr                    Disabilita l'archiviazione dei "

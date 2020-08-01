@@ -10705,13 +10705,9 @@ again:
 #else /* !RTCONFIG_REALTEK */
 #if defined(RTCONFIG_QCA) && defined(RTCONFIG_FITFDT)
 					{
-						char *upgrade_file2 = "/tmp/linux2.trx";
-						char command_buf[256];
-						sprintf(command_buf,"dd if=%s of=%s bs=%d skip=1", upgrade_file, upgrade_file2, get_imageheader_size());
-						system(command_buf);
-						unlink(upgrade_file);
-						eval("mtd-write", "-i", upgrade_file2, "-d", "linux");
-						strcpy(upgrade_file, upgrade_file2);
+						char header_size[20];
+						snprintf(header_size, sizeof(header_size)-1, "%d", get_imageheader_size());
+						eval("mtd-write", "-i", upgrade_file, "-d", "linux", "-s", header_size);
 					}
 #else
 					eval("mtd-write", "-i", upgrade_file, "-d", fwpart[0]);
@@ -10994,13 +10990,9 @@ again:
 #else /* !RTCONFIG_REALTEK */
 #if defined(RTCONFIG_QCA) && defined(RTCONFIG_FITFDT)
 					{
-						char *upgrade_file2 = "/tmp/linux2.trx";
-						char command_buf[256];
-						sprintf(command_buf,"dd if=%s of=%s bs=%d skip=1", upgrade_file, upgrade_file2, get_imageheader_size());
-						system(command_buf);
-						unlink(upgrade_file);
-						eval("mtd-write", "-i", upgrade_file2, "-d", "linux");
-						strcpy(upgrade_file, upgrade_file2);
+						char header_size[20];
+						snprintf(header_size, sizeof(header_size)-1, "%d", get_imageheader_size());
+						eval("mtd-write", "-i", upgrade_file, "-d", "linux", "-s", header_size);
 					}
 #else
 					eval("mtd-write", "-i", upgrade_file, "-d", fwpart[0]);
@@ -13335,6 +13327,10 @@ check_ddr_done:
 #endif	// RTCONFIG_CFGSYNC
 	}
 #endif	// Kludge
+	else if (strcmp(script, "oauth_google_check_token_status") == 0)
+	{
+		oauth_google_check_token_status();
+	}
 #endif
 	else if (strcmp(script, "logger") == 0)
 	{
@@ -13348,12 +13344,6 @@ check_ddr_done:
 		if(action & RC_SERVICE_START) start_cron();
 	}
 #endif
-#if !defined(RTN18U)	// Kludge
-	else if (strcmp(script, "oauth_google_check_token_status") == 0)
-	{
-		oauth_google_check_token_status();
-	}
-#endif	/* Kludge */
 	else if (strcmp(script, "firewall") == 0)
 	{
 		int wan_unit = (count > 1) ? atoi(cmd[1]) : wan_primary_ifunit();
@@ -15082,8 +15072,9 @@ int start_nat_rules(void)
 	int ret, retry, nat_state;
 
 	// all rules applied directly according to currently status, wanduck help to triger those not cover by normal flow
-#if defined(RTAC58U)
-	if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
+#if defined(RTAC58U) || defined(RTAC59U)
+	if (!strncmp(nvram_safe_get("territory_code"), "CX/01", 5)
+	 || !strncmp(nvram_safe_get("territory_code"), "CX/05", 5))
 		;
 	else
 #endif

@@ -5,13 +5,13 @@
 # Const Kaplinsky <const@ce.cctpu.edu.ru>, 1998, 1999, 2000, 2001.
 # Pavel Maryanov <acid_jack@ukr.net>, 2004, 2005, 2006, 2008, 2009.
 # Pavel Maryanov <acid@jack.kiev.ua>, 2010, 2011, 2012.
-# Yuri Kozlov <yuray@komyakino.ru>, 2012, 2013, 2015, 2016, 2017.
+# Yuri Kozlov <yuray@komyakino.ru>, 2012, 2013, 2015, 2016, 2017, 2018.
 msgid ""
 msgstr ""
-"Project-Id-Version: wget 1.18.109\n"
+"Project-Id-Version: wget 1.20\n"
 "Report-Msgid-Bugs-To: bug-wget@gnu.org\n"
-"POT-Creation-Date: 2018-11-30 00:09+0100\n"
-"PO-Revision-Date: 2017-01-18 20:14+0300\n"
+"POT-Creation-Date: 2018-12-26 21:10+0100\n"
+"PO-Revision-Date: 2018-11-30 19:52+0300\n"
 "Last-Translator: Yuri Kozlov <yuray@komyakino.ru>\n"
 "Language-Team: Russian <gnu@d07.ru>\n"
 "Language: ru\n"
@@ -104,29 +104,29 @@ msgid "Unknown error"
 msgstr "Неизвестная ошибка"
 
 #: lib/getopt.c:278
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '%s%s' is ambiguous\n"
-msgstr "%s: двусмысленный параметр «%s»\n"
+msgstr "%s: двусмысленный параметр «%s%s»\n"
 
 #: lib/getopt.c:284
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '%s%s' is ambiguous; possibilities:"
-msgstr "%s: двусмысленный параметр «%s»; возможные варианты:"
+msgstr "%s: двусмысленный параметр «%s%s»; возможные варианты:"
 
 #: lib/getopt.c:319
-#, fuzzy, c-format
+#, c-format
 msgid "%s: unrecognized option '%s%s'\n"
-msgstr "%s: нераспознанный параметр «%c%s»\n"
+msgstr "%s: нераспознанный параметр «%s%s»\n"
 
 #: lib/getopt.c:345
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '%s%s' doesn't allow an argument\n"
-msgstr "%s: для параметра «%c%s» нельзя использовать аргумент\n"
+msgstr "%s: для параметра «%s%s» нельзя использовать аргумент\n"
 
 #: lib/getopt.c:360
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '%s%s' requires an argument\n"
-msgstr "%s: для параметра «%s» требуется аргумент\n"
+msgstr "%s: для параметра «%s%s» требуется аргумент\n"
 
 #: lib/getopt.c:621
 #, c-format
@@ -763,14 +763,14 @@ msgid "Rejecting %s.\n"
 msgstr "Отклоняется %s.\n"
 
 #: src/ftp.c:2623
-#, fuzzy, c-format
+#, c-format
 msgid "Rejecting %s (Invalid Entry).\n"
-msgstr "Отклоняется %s.\n"
+msgstr "Отклоняется %s (некорректный элемент).\n"
 
 #: src/ftp.c:2631
-#, fuzzy, c-format
+#, c-format
 msgid "%s is excluded/not-included through regex.\n"
-msgstr "Вход в каталог «%s» не выполняется, т.к. он исключён/не включён.\n"
+msgstr "«%s» исключён/не включён в соответствии с регулярным выражением.\n"
 
 #: src/ftp.c:2645
 #, c-format
@@ -822,14 +822,13 @@ msgid "ERROR: GnuTLS requires the key and the cert to be of the same type.\n"
 msgstr "ОШИБКА: Для GnuTLS требуется ключ и сертификат одного типа.\n"
 
 #: src/gnutls.c:664 src/gnutls.c:728
-#, fuzzy
 msgid "Your GnuTLS version is too old to support TLS 1.3\n"
-msgstr "Версия вашего OpenSSL слишком старая для поддержки TLSv1.1\n"
+msgstr "Слишком старая версия GnuTLS, чтобы поддерживать TLS 1.3\n"
 
 #: src/gnutls.c:676
-#, fuzzy, c-format
+#, c-format
 msgid "GnuTLS: unimplemented 'secure-protocol' option value %u\n"
-msgstr "GnuTLS: значение %d параметра «secure-protocol» не реализовано\n"
+msgstr "GnuTLS: значение %u параметра «secure-protocol» не реализовано\n"
 
 #: src/gnutls.c:678 src/gnutls.c:734 src/host.c:157 src/openssl.c:284
 msgid "Please report this issue to bug-wget@gnu.org\n"
@@ -844,6 +843,8 @@ msgstr "GnuTLS: значение %d параметра «secure-protocol» не 
 msgid ""
 "GnuTLS: Cannot set prio string directly. Falling back to default priority.\n"
 msgstr ""
+"GnuTLS: невозможно задать строку приоритета напрямую. Возвращаемся к "
+"приоритету по умолчанию.\n"
 
 #: src/gnutls.c:914 src/openssl.c:825
 msgid "ERROR"
@@ -864,9 +865,9 @@ msgid "%s: The certificate of %s is not trusted.\n"
 msgstr "%s: Нет доверия сертификату для %s.\n"
 
 #: src/gnutls.c:932
-#, fuzzy, c-format
+#, c-format
 msgid "%s: The certificate of %s doesn't have a known issuer.\n"
-msgstr "%s: Сертификат %s неизвестно кем выпущен.\n"
+msgstr "%s: Неизвестный издатель сертификата %s.\n"
 
 #: src/gnutls.c:933
 #, c-format
@@ -1307,33 +1308,33 @@ msgstr "Неподдерживаемый атрибут защиты «%s».\n"
 msgid "Unsupported algorithm '%s'.\n"
 msgstr "Неподдерживаемый алгоритм «%s».\n"
 
-#: src/init.c:583
-#, fuzzy, c-format
+#: src/init.c:579
+#, c-format
 msgid ""
 "%s: WGETRC points to %s, which couldn't be accessed because of error: %s.\n"
-msgstr "%s: WGETRC указывает на несуществующий %s.\n"
+msgstr "%s: WGETRC указывает на %s, доступ к которому вызывает ошибку: %s.\n"
 
-#: src/init.c:682 src/netrc.c:452
+#: src/init.c:678 src/netrc.c:452
 #, c-format
 msgid "%s: Cannot read %s (%s).\n"
 msgstr "%s: Невозможно прочитать %s (%s).\n"
 
-#: src/init.c:699
+#: src/init.c:695
 #, c-format
 msgid "%s: Error in %s at line %d.\n"
 msgstr "%s: Ошибка в %s в строке %d.\n"
 
-#: src/init.c:705
+#: src/init.c:701
 #, c-format
 msgid "%s: Syntax error in %s at line %d.\n"
 msgstr "%s: Ошибка синтаксиса в %s в строке %d.\n"
 
-#: src/init.c:710
+#: src/init.c:706
 #, c-format
 msgid "%s: Unknown command %s in %s at line %d.\n"
 msgstr "%s: Неизвестная команда %s в %s строке %d.\n"
 
-#: src/init.c:749
+#: src/init.c:745
 #, c-format
 msgid ""
 "Parsing system wgetrc file (env SYSTEM_WGETRC) failed.  Please check\n"
@@ -1344,7 +1345,7 @@ msgstr ""
 "«%s»,\n"
 "или укажите другой файл с помощью --config.\n"
 
-#: src/init.c:764
+#: src/init.c:760
 #, c-format
 msgid ""
 "Parsing system wgetrc file failed.  Please check\n"
@@ -1355,49 +1356,49 @@ msgstr ""
 "«%s»,\n"
 "или укажите другой файл с помощью --config.\n"
 
-#: src/init.c:780
+#: src/init.c:776
 #, c-format
 msgid "%s: Warning: Both system and user wgetrc point to %s.\n"
 msgstr ""
 "%s: Предупреждение: системный и пользовательский wgetrc указывают на %s.\n"
 
-#: src/init.c:981
+#: src/init.c:977
 #, c-format
 msgid "%s: Invalid --execute command %s\n"
 msgstr "%s: Неверная команда --execute %s\n"
 
-#: src/init.c:1041
+#: src/init.c:1037
 #, c-format
 msgid "%s: %s: Invalid boolean %s; use `on' or `off'.\n"
 msgstr ""
 "%s: %s: Неверное логическое выражение %s; используйте «on» или «off».\n"
 
-#: src/init.c:1074
+#: src/init.c:1070
 #, c-format
 msgid "%s: %s: Invalid %s; use `on', `off' or `quiet'.\n"
 msgstr "%s: %s: Неверное %s; используйте «on», «off» или «quiet».\n"
 
-#: src/init.c:1094
+#: src/init.c:1090
 #, c-format
 msgid "%s: %s: Invalid number %s.\n"
 msgstr "%s: %s: Неверное число %s.\n"
 
-#: src/init.c:1176
+#: src/init.c:1172
 #, c-format
 msgid "%s: %s must only be used once\n"
 msgstr "%s: %s должно использоваться только один раз\n"
 
-#: src/init.c:1331 src/init.c:1352
+#: src/init.c:1327 src/init.c:1348
 #, c-format
 msgid "%s: %s: Invalid byte value %s\n"
 msgstr "%s: %s: Неверное значение байта %s\n"
 
-#: src/init.c:1377
+#: src/init.c:1373
 #, c-format
 msgid "%s: %s: Invalid time period %s\n"
 msgstr "%s: %s: Неверный диапазон времени %s\n"
 
-#: src/init.c:1439 src/main.c:1912
+#: src/init.c:1435 src/main.c:1912
 #, c-format
 msgid ""
 "use-askpass requires a string or either environment variable WGET_ASKPASS or "
@@ -1406,28 +1407,28 @@ msgstr ""
 "Для use-askpass требуется строка или установленная переменная окружения "
 "WGET_ASKPASS или SSH_ASKPASS.\n"
 
-#: src/init.c:1457 src/init.c:1479 src/init.c:1587 src/init.c:1643
-#: src/init.c:1709 src/init.c:1729 src/init.c:1754
+#: src/init.c:1453 src/init.c:1475 src/init.c:1583 src/init.c:1639
+#: src/init.c:1705 src/init.c:1725 src/init.c:1750
 #, c-format
 msgid "%s: %s: Invalid value %s.\n"
 msgstr "%s: %s: Неверное значение %s.\n"
 
-#: src/init.c:1513
+#: src/init.c:1509
 #, c-format
 msgid "%s: %s: Invalid header %s.\n"
 msgstr "%s: %s: Неверный заголовок %s.\n"
 
-#: src/init.c:1534
+#: src/init.c:1530
 #, c-format
 msgid "%s: %s: Invalid WARC header %s.\n"
 msgstr "%s: %s: Неверный заголовок WARC %s.\n"
 
-#: src/init.c:1600
+#: src/init.c:1596
 #, c-format
 msgid "%s: %s: Invalid progress type %s.\n"
 msgstr "%s: %s: Неверный тип прогресса %s.\n"
 
-#: src/init.c:1682
+#: src/init.c:1678
 #, c-format
 msgid ""
 "%s: %s: Invalid restriction %s,\n"
@@ -1627,13 +1628,13 @@ msgstr ""
 "отказано\n"
 
 #: src/main.c:654
-#, fuzzy
 msgid ""
 "       --retry-on-http-error=ERRORS    comma-separated list of HTTP errors "
 "to retry\n"
 msgstr ""
-"       --ignore-tags=СПИСОК        список игнорируемых тегов HTML,\n"
-"                                   через запятую\n"
+"       --retry-on-http-error=ОШИБКИ\n"
+"                                   список (через запятую) ошибок HTTP,\n"
+"                                   вызывающих повтор\n"
 
 #: src/main.c:656
 msgid "  -O,  --output-document=FILE      write documents to FILE\n"
@@ -1649,11 +1650,11 @@ msgstr ""
 "                                 (и их перезаписи)\n"
 
 #: src/main.c:661
-#, fuzzy
 msgid ""
 "       --no-netrc                  don't try to obtain credentials from ."
 "netrc\n"
-msgstr "       --no-config           не читать файлы настроек\n"
+msgstr ""
+"       --no-netrc                  не пытаться получить данные из .netrc\n"
 
 #: src/main.c:663
 msgid ""
@@ -1923,8 +1924,9 @@ msgstr ""
 "Metalink\n"
 
 #: src/main.c:757
+#, fuzzy
 msgid ""
-"       --no-xattr                  turn off storage of metadata in extended "
+"       --xattr                     turn on storage of metadata in extended "
 "file attributes\n"
 msgstr ""
 "       --no-xattr                выключить хранилище метаданных в\n"
@@ -2012,6 +2014,8 @@ msgid ""
 "       --compression=TYPE          choose compression, one of auto, gzip and "
 "none. (default: none)\n"
 msgstr ""
+"       --compression=ТИП       тип сжатия: auto, gzip или none\n"
+"                               (по умолчанию: none)\n"
 
 #: src/main.c:799
 msgid ""
@@ -2155,14 +2159,13 @@ msgid "HTTPS (SSL/TLS) options:\n"
 msgstr "Параметры HTTPS (SSL/TLS):\n"
 
 #: src/main.c:845
-#, fuzzy
 msgid ""
 "       --secure-protocol=PR        choose secure protocol, one of auto, "
 "SSLv2,\n"
 "                                     SSLv3, TLSv1, TLSv1_1, TLSv1_2 and PFS\n"
 msgstr ""
-"       --secure-protocol=ПР     выбор безопасного протокола: auto, SSLv2,\n"
-"                                SSLv3, TLSv1 и PFS\n"
+"       --secure-protocol=ПР     выбор протокола безопасности: auto, SSLv2,\n"
+"                                SSLv3, TLSv1, TLSv1_1, TLSv1_2 или PFS\n"
 
 #: src/main.c:848
 msgid "       --https-only                only follow secure HTTPS links\n"
@@ -2247,6 +2250,13 @@ msgid ""
 "                                   The format and syntax of this string "
 "depend on the specific SSL/TLS engine.\n"
 msgstr ""
+"       --ciphers=СТРОКА         назначить строку приоритета (GnuTLS) или\n"
+"                                список шифров (OpenSSL) непосредственным\n"
+"                                образом. Использовать осторожно. Данный\n"
+"                                параметр заменяет значение --secure-"
+"protocol.\n"
+"                                Формат и синтаксис строки зависит от\n"
+"                                используемой библиотеки SSL/TLS.\n"
 
 #: src/main.c:887
 msgid "HSTS options:\n"
@@ -2608,15 +2618,17 @@ msgstr ""
 "  -np, --no-parent                 не подниматься в родительский каталог\n"
 
 #: src/main.c:1029
-#, fuzzy
 msgid "Email bug reports, questions, discussions to <bug-wget@gnu.org>\n"
-msgstr "Сообщения об ошибках и пожелания отправляйте на <bug-wget@gnu.org>\n"
+msgstr ""
+"Сообщения об ошибках, вопросы и пожелания отправляйте на <bug-wget@gnu.org>\n"
 
 #: src/main.c:1030
 msgid ""
 "and/or open issues at https://savannah.gnu.org/bugs/?"
 "func=additem&group=wget.\n"
 msgstr ""
+"и/или откройте проблему на https://savannah.gnu.org/bugs/?"
+"func=additem&group=wget.\n"
 
 #: src/main.c:1035
 #, c-format
@@ -2869,12 +2881,12 @@ msgstr ""
 "записи.\n"
 
 #: src/main.c:1742
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Compression does not work with --continue or --start-pos, they will be "
 "disabled.\n"
 msgstr ""
-"Вывод WARC не работает с --continue или --start-pos; они будут отключены.\n"
+"Сжатие не работает с --continue или --start-pos; они будут отключены.\n"
 
 #: src/main.c:1753
 #, c-format
@@ -3214,9 +3226,9 @@ msgstr ""
 "file.\n"
 
 #: src/openssl.c:267
-#, fuzzy
 msgid "Your OpenSSL version is too old to support TLS 1.3\n"
-msgstr "Версия вашего OpenSSL слишком старая для поддержки TLSv1.1\n"
+msgstr ""
+"Версия вашей библиотеки OpenSSL слишком старая, чтобы поддерживать TLS 1.3\n"
 
 #: src/openssl.c:273
 msgid "Your OpenSSL version is too old to support TLSv1.1\n"
@@ -3232,16 +3244,15 @@ msgid "OpenSSL: unimplemented 'secure-protocol' option value %d\n"
 msgstr "OpenSSL: значение %d параметра «secure-protocol» не реализовано\n"
 
 #: src/openssl.c:323
-#, fuzzy, c-format
+#, c-format
 msgid "OpenSSL: Invalid cipher list: %s\n"
-msgstr "%s: недопустимый URL %s: %s\n"
+msgstr "OpenSSL: некорректный список шифров: %s\n"
 
 #: src/openssl.c:640
-#, fuzzy
 msgid "WARNING: Could not seed PRNG. Consider using --random-file.\n"
 msgstr ""
-"Невозможно породить PRNG; подразумевается использование параметра --random-"
-"file.\n"
+"ПРЕДУПРЕЖДЕНИЕ: невозможно засеить PRNG; рассматривается использование "
+"параметра --random-file.\n"
 
 #: src/openssl.c:860
 #, c-format
@@ -3442,9 +3453,8 @@ msgid "HTTPS support not compiled in"
 msgstr "Программа скомпилирована без поддержки HTTPS"
 
 #: src/url.c:1603
-#, fuzzy
 msgid "Unconvertable multibyte sequence encountered\n"
-msgstr "Встречена неполная или недопустимая многобайтовая последовательность\n"
+msgstr "Обнаружена непреобразуемая многобайтовая последовательность\n"
 
 #: src/utils.c:128
 #, c-format
@@ -3472,34 +3482,36 @@ msgid "Failed to unlink symlink %s: %s\n"
 msgstr "Не удалось разорвать символьную ссылку %s: %s\n"
 
 #: src/utils.c:865
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to Fopen file %s\n"
-msgstr "Сбой при инициализации libcares\n"
+msgstr "Ошибка при выполнении Fopen для файла %s\n"
 
 #: src/utils.c:871
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to get FD for file %s\n"
-msgstr "Не удалось назначить права для %s.\n"
+msgstr "Ошибка при получении FD для файла %s\n"
 
 #: src/utils.c:878
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to stat file %s, (check permissions)\n"
-msgstr "Не удалось назначить права для %s.\n"
+msgstr "Ошибка при выполнении stat для файла %s (проверьте права доступа)\n"
 
 #: src/utils.c:888
 #, c-format
 msgid "File %s changed since the last check. Security check failed."
 msgstr ""
+"С момента последней проверки файл %s изменился. Ошибка при проверке "
+"безопасности."
 
 #: src/utils.c:923
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to open file %s, reason :%s\n"
-msgstr "Не удалось разобрать IP-адрес «%s»\n"
+msgstr "Ошибка при открытии файла %s, причина: %s\n"
 
 #: src/utils.c:929
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to stat file %s, error: %s\n"
-msgstr "Не удалось назначить права для %s.\n"
+msgstr "Ошибка при выполнении stat для файла %s, ошибка: %s\n"
 
 #: src/utils.c:939
 #, c-format
@@ -3507,11 +3519,13 @@ msgid ""
 "Trying to open file %s but it changed since last check. Security check "
 "failed."
 msgstr ""
+"Выполняется попытка открытия файла %s, но он изменился с момента последней "
+"проверки. Ошибка при проверке безопасности."
 
 #: src/utils.c:2445
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid regular expression %s, PCRE2 error %d\n"
-msgstr "Недопустимое регулярное выражение %s, %s\n"
+msgstr "Недопустимое регулярное выражение %s, ошибка PCRE2 %d\n"
 
 #: src/utils.c:2462 src/utils.c:2485
 #, c-format
@@ -3526,12 +3540,11 @@ msgstr "Ошибка при сравнении %s: %d\n"
 #: src/utils.c:2854
 #, c-format
 msgid "Skipping key with wrong size (%d/%d): %s\n"
-msgstr ""
+msgstr "Пропускается ключ с неправильным размером (%d/%d): %s\n"
 
 #: src/warc.c:222
-#, fuzzy
 msgid "Error duplicating WARC file file descriptor.\n"
-msgstr "Ошибка открытия файла WARC %s.\n"
+msgstr "Ошибка создания дубликата файлового дескриптора файла WARC.\n"
 
 #: src/warc.c:233
 msgid "Error opening GZIP stream to WARC file.\n"

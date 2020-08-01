@@ -250,7 +250,7 @@ function doLiveUpdate(_do){
 		document.start_update.submit();
 	}
 	else{
-		setTimeout("parent.location.href='/'", 3000);
+		finish_qis();
 	}
 }
 
@@ -446,6 +446,17 @@ function checkIsNewFirmware(){
 
 	}
 	else{
+		setTimeout(function(){
+			finish_qis();
+		}, 1000);
+	}
+}
+
+var retry_cnt = 24;
+function finish_qis(){
+	var cur_rc_service = httpApi.nvramGet(["rc_service"], true).rc_service;
+
+	if( cur_rc_service == ""){
 		if(parent.sysReboot || isWLclient())
 			restartService();
 		else if(parent.changeSubnet){
@@ -459,6 +470,16 @@ function checkIsNewFirmware(){
 				parent.location.href = '/';
 			}, delayTimeout);
 		}
+	}
+	else{
+		if(retry_cnt > 0){
+			setTimeout(function(){
+				finish_qis();
+			}, 5000);
+			retry_cnt--;
+		}
+		else
+			parent.location.href = '/';
 	}
 }
 

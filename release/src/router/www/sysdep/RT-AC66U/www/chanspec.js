@@ -529,7 +529,7 @@ function wl_chanspec_list_change(){
 				if(is_RU_sku){
 					_wl_channel = ["132/80"];
 				}
-				
+
 				wl_channel_list_5g_2 = _wl_channel;								
 			}
 			else if(bw_cap == "2"){		// 40 MHz
@@ -563,7 +563,7 @@ function wl_chanspec_list_change(){
 				if(is_RU_sku){
 					_wl_channel = ["132l", "140l"];
 				}
-				
+
 				wl_channel_list_5g_2 = _wl_channel;	
 			}
 			else{		//20MHz
@@ -594,6 +594,7 @@ function wl_chanspec_list_change(){
 
 	/* Reconstruct channel array from new chanspecs */
 	document.form.wl_channel.length = chanspecs.length;
+
 	if(band == 1 || band == 2){
 		var _bw = document.form.wl_bw.value;
 		var _array_160 = ['0', '50'];
@@ -662,6 +663,7 @@ function wl_chanspec_list_change(){
 				sel = 1;
 			}
 		}
+
 		if (sel == 0 && document.form.wl_channel.length > 0)
 			document.form.wl_channel[0].selected = true;
 	}

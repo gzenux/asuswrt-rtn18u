@@ -1,4 +1,40 @@
+2018-12-26  Tim Rühsen  <tim.ruehsen@gmx.de>
+
+	* NEWS: Add release changes for 1.20.1
+
+2018-12-26  Tim Rühsen  <tim.ruehsen@gmx.de>
+
+	Don't save user/pw with --xattr
+	Also the Referer info is reduced to scheme+host+port.
+
+	* src/ftp.c (getftp): Change params of set_file_metadata()
+	* src/http.c (gethttp): Change params of set_file_metadata()
+	* src/xattr.c (set_file_metadata): Remove user/password from origin URL,
+	  reduce Referer value to scheme/host/port.
+	* src/xattr.h: Change prototype of set_file_metadata()
+
+2018-12-26  Tim Rühsen  <tim.ruehsen@gmx.de>
+
+	Don't use extended attributes (--xattr) by default
+	* src/init.c (defaults): Set enable_xattr to false by default
+	* src/main.c (print_help): Reverse option logic of --xattr
+	* doc/wget.texi: Add description for --xattr
+
+	Users may not be aware that the origin URL and Referer are saved
+	including credentials, and possibly access tokens within
+	the urls.
+
+2018-12-13  Tim Rühsen  <tim.ruehsen@gmx.de>
+
+	* .travis.yml: Email to wget-dev instead bug-wget mailing list
+
+2018-11-30  Darshit Shah  <darnir@gnu.org>
+
+	* NEWS: Prepare for new version
+
 2018-11-13  Darshit Shah  <darnir@gnu.org>
+
+	* contrib/make-release: Add a small checklist for pending tasks
 
 	Prepare NEWS for new release
 
@@ -4619,10 +4655,6 @@
 
 	Add support for older versions of flex (tiny change)
 	E.g. flex 2.5.4 (Solaris 10) does not like a space after -o.
-
-2014-12-10  Tim Rühsen  <tim.ruehsen@gmx.de>
-
-	Check for pcre.h in configure.ac
 
 2014-12-11  Tim Ruehsen <tim.ruehsen@gmx.de>
 

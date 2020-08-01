@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wget 1.9.1\n"
 "Report-Msgid-Bugs-To: bug-wget@gnu.org\n"
-"POT-Creation-Date: 2018-11-30 00:09+0100\n"
+"POT-Creation-Date: 2018-12-26 21:10+0100\n"
 "PO-Revision-Date: 2004-05-27 21:46-0400\n"
 "Last-Translator: Gareth Owen <gowen72@yahoo.com>\n"
 "Language-Team: English (British) <en_gb@li.org>\n"
@@ -1285,33 +1285,33 @@ msgstr ""
 msgid "Unsupported algorithm '%s'.\n"
 msgstr "Unsupported scheme"
 
-#: src/init.c:583
+#: src/init.c:579
 #, fuzzy, c-format
 msgid ""
 "%s: WGETRC points to %s, which couldn't be accessed because of error: %s.\n"
 msgstr "%s: WGETRC points to %s, which doesn't exist.\n"
 
-#: src/init.c:682 src/netrc.c:452
+#: src/init.c:678 src/netrc.c:452
 #, c-format
 msgid "%s: Cannot read %s (%s).\n"
 msgstr "%s: Cannot read %s (%s).\n"
 
-#: src/init.c:699
+#: src/init.c:695
 #, c-format
 msgid "%s: Error in %s at line %d.\n"
 msgstr "%s: Error in %s at line %d.\n"
 
-#: src/init.c:705
+#: src/init.c:701
 #, fuzzy, c-format
 msgid "%s: Syntax error in %s at line %d.\n"
 msgstr "%s: Error in %s at line %d.\n"
 
-#: src/init.c:710
+#: src/init.c:706
 #, fuzzy, c-format
 msgid "%s: Unknown command %s in %s at line %d.\n"
 msgstr "%s: Error in %s at line %d.\n"
 
-#: src/init.c:749
+#: src/init.c:745
 #, c-format
 msgid ""
 "Parsing system wgetrc file (env SYSTEM_WGETRC) failed.  Please check\n"
@@ -1319,7 +1319,7 @@ msgid ""
 "or specify a different file using --config.\n"
 msgstr ""
 
-#: src/init.c:764
+#: src/init.c:760
 #, c-format
 msgid ""
 "Parsing system wgetrc file failed.  Please check\n"
@@ -1327,75 +1327,75 @@ msgid ""
 "or specify a different file using --config.\n"
 msgstr ""
 
-#: src/init.c:780
+#: src/init.c:776
 #, fuzzy, c-format
 msgid "%s: Warning: Both system and user wgetrc point to %s.\n"
 msgstr "%s: Warning: Both system and user wgetrc point to `%s'.\n"
 
-#: src/init.c:981
+#: src/init.c:977
 #, fuzzy, c-format
 msgid "%s: Invalid --execute command %s\n"
 msgstr "%s: Invalid --execute command `%s'\n"
 
-#: src/init.c:1041
+#: src/init.c:1037
 #, fuzzy, c-format
 msgid "%s: %s: Invalid boolean %s; use `on' or `off'.\n"
 msgstr "%s: %s: Invalid boolean `%s', use `on' or `off'.\n"
 
-#: src/init.c:1074
+#: src/init.c:1070
 #, fuzzy, c-format
 msgid "%s: %s: Invalid %s; use `on', `off' or `quiet'.\n"
 msgstr "%s: %s: Invalid boolean `%s', use `on' or `off'.\n"
 
-#: src/init.c:1094
+#: src/init.c:1090
 #, fuzzy, c-format
 msgid "%s: %s: Invalid number %s.\n"
 msgstr "%s: %s: Invalid number `%s'.\n"
 
-#: src/init.c:1176
+#: src/init.c:1172
 #, c-format
 msgid "%s: %s must only be used once\n"
 msgstr ""
 
-#: src/init.c:1331 src/init.c:1352
+#: src/init.c:1327 src/init.c:1348
 #, fuzzy, c-format
 msgid "%s: %s: Invalid byte value %s\n"
 msgstr "%s: %s: Invalid byte value `%s'\n"
 
-#: src/init.c:1377
+#: src/init.c:1373
 #, fuzzy, c-format
 msgid "%s: %s: Invalid time period %s\n"
 msgstr "%s: %s: Invalid time period `%s'\n"
 
-#: src/init.c:1439 src/main.c:1912
+#: src/init.c:1435 src/main.c:1912
 #, c-format
 msgid ""
 "use-askpass requires a string or either environment variable WGET_ASKPASS or "
 "SSH_ASKPASS to be set.\n"
 msgstr ""
 
-#: src/init.c:1457 src/init.c:1479 src/init.c:1587 src/init.c:1643
-#: src/init.c:1709 src/init.c:1729 src/init.c:1754
+#: src/init.c:1453 src/init.c:1475 src/init.c:1583 src/init.c:1639
+#: src/init.c:1705 src/init.c:1725 src/init.c:1750
 #, fuzzy, c-format
 msgid "%s: %s: Invalid value %s.\n"
 msgstr "%s: %s: Invalid value `%s'.\n"
 
-#: src/init.c:1513
+#: src/init.c:1509
 #, fuzzy, c-format
 msgid "%s: %s: Invalid header %s.\n"
 msgstr "%s: %s: Invalid header `%s'.\n"
 
-#: src/init.c:1534
+#: src/init.c:1530
 #, fuzzy, c-format
 msgid "%s: %s: Invalid WARC header %s.\n"
 msgstr "%s: %s: Invalid header `%s'.\n"
 
-#: src/init.c:1600
+#: src/init.c:1596
 #, fuzzy, c-format
 msgid "%s: %s: Invalid progress type %s.\n"
 msgstr "%s: %s: Invalid progress type `%s'.\n"
 
-#: src/init.c:1682
+#: src/init.c:1678
 #, fuzzy, c-format
 msgid ""
 "%s: %s: Invalid restriction %s,\n"
@@ -1809,7 +1809,7 @@ msgstr ""
 
 #: src/main.c:757
 msgid ""
-"       --no-xattr                  turn off storage of metadata in extended "
+"       --xattr                     turn on storage of metadata in extended "
 "file attributes\n"
 msgstr ""
 

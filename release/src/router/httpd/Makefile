@@ -317,6 +317,11 @@ CFLAGS += -I$(TOP)/libasuslog
 LIBS += -L$(TOP)/libasuslog -lasuslog
 endif
 
+ifeq ($(RTCONFIG_LIBASUSLOG),y)
+CFLAGS += -I$(TOP)/libasuslog
+LIBS += -L$(TOP)/libasuslog -lasuslog
+endif
+
 all: httpd #test_apps
 
 #test_apps: apps.c

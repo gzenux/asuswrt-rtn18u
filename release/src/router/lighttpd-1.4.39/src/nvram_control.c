@@ -1066,8 +1066,8 @@ char* nvram_get_computer_name(void)
 	return computer_name;
 #else
 	char *computer_name = nvram_safe_get(COMPUTER_NAME);
-	if (*computer_name == '\0')
-		computer_name = get_lan_hostname();
+	// if (*computer_name == '\0')
+	// 	computer_name = get_lan_hostname();
 	return computer_name;
 #endif
 }

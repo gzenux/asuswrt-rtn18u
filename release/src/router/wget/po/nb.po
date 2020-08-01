@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wget-1.20\n"
 "Report-Msgid-Bugs-To: bug-wget@gnu.org\n"
-"POT-Creation-Date: 2018-11-30 00:09+0100\n"
+"POT-Creation-Date: 2018-12-26 21:10+0100\n"
 "PO-Revision-Date: 2018-11-18 22:33+0100\n"
 "Last-Translator: Åka Sikrom <a4@hush.com>\n"
 "Language-Team: Norwegian Bokmaal <i18n-nb@lister.ping.uio.no>\n"
@@ -1311,33 +1311,33 @@ msgstr "Beskyttelseskvalitet «%s» støttes ikke.\n"
 msgid "Unsupported algorithm '%s'.\n"
 msgstr "Algoritmen «%s» støttes ikke.\n"
 
-#: src/init.c:583
+#: src/init.c:579
 #, c-format
 msgid ""
 "%s: WGETRC points to %s, which couldn't be accessed because of error: %s.\n"
 msgstr "%s: WGETRC peker på %s, som ble avvist på grunn av feil: %s.\n"
 
-#: src/init.c:682 src/netrc.c:452
+#: src/init.c:678 src/netrc.c:452
 #, c-format
 msgid "%s: Cannot read %s (%s).\n"
 msgstr "%s: Klarte ikke å lese %s (%s).\n"
 
-#: src/init.c:699
+#: src/init.c:695
 #, c-format
 msgid "%s: Error in %s at line %d.\n"
 msgstr "%s: Feil i %s på linje %d.\n"
 
-#: src/init.c:705
+#: src/init.c:701
 #, c-format
 msgid "%s: Syntax error in %s at line %d.\n"
 msgstr "%s: Syntaksfeil i %s på linje %d.\n"
 
-#: src/init.c:710
+#: src/init.c:706
 #, c-format
 msgid "%s: Unknown command %s in %s at line %d.\n"
 msgstr "%s: %s er en ukjent kommando i %s på linje %d.\n"
 
-#: src/init.c:749
+#: src/init.c:745
 #, c-format
 msgid ""
 "Parsing system wgetrc file (env SYSTEM_WGETRC) failed.  Please check\n"
@@ -1349,7 +1349,7 @@ msgstr ""
 "«%s»,\n"
 "eller velg en annen fil med «--config».\n"
 
-#: src/init.c:764
+#: src/init.c:760
 #, c-format
 msgid ""
 "Parsing system wgetrc file failed.  Please check\n"
@@ -1360,49 +1360,49 @@ msgstr ""
 "«%s»,\n"
 "eller velg en annen fil med «--config».\n"
 
-#: src/init.c:780
+#: src/init.c:776
 #, c-format
 msgid "%s: Warning: Both system and user wgetrc point to %s.\n"
 msgstr "%s: Advarsel: Både systemet og wgetrc peker på %s.\n"
 
-#: src/init.c:981
+#: src/init.c:977
 #, c-format
 msgid "%s: Invalid --execute command %s\n"
 msgstr "%s: %s er en ugyldig «--execute»-kommando\n"
 
-#: src/init.c:1041
+#: src/init.c:1037
 #, c-format
 msgid "%s: %s: Invalid boolean %s; use `on' or `off'.\n"
 msgstr ""
 "%s: %s: %s er en ugyldig boolsk verdi. Bruk «on» (på) eller «off» (av).\n"
 
-#: src/init.c:1074
+#: src/init.c:1070
 #, c-format
 msgid "%s: %s: Invalid %s; use `on', `off' or `quiet'.\n"
 msgstr ""
 "%s: %s: Ugyldig %s. Bruk «on» (på), «off» (av) eller «quiet» (stille).\n"
 
-#: src/init.c:1094
+#: src/init.c:1090
 #, c-format
 msgid "%s: %s: Invalid number %s.\n"
 msgstr "%s: %s: %s er et ugyldig tall.\n"
 
-#: src/init.c:1176
+#: src/init.c:1172
 #, c-format
 msgid "%s: %s must only be used once\n"
 msgstr "%s: %s kan bare brukes én gang\n"
 
-#: src/init.c:1331 src/init.c:1352
+#: src/init.c:1327 src/init.c:1348
 #, c-format
 msgid "%s: %s: Invalid byte value %s\n"
 msgstr "%s: %s: %s er en ugyldig byte-verdi\n"
 
-#: src/init.c:1377
+#: src/init.c:1373
 #, c-format
 msgid "%s: %s: Invalid time period %s\n"
 msgstr "%s: %s: %s er en ugyldig tidsperiode\n"
 
-#: src/init.c:1439 src/main.c:1912
+#: src/init.c:1435 src/main.c:1912
 #, c-format
 msgid ""
 "use-askpass requires a string or either environment variable WGET_ASKPASS or "
@@ -1411,28 +1411,28 @@ msgstr ""
 "use-askpass krever at miljøvariabel WGET_ASKPASS eller SSH_ASKPASS har en "
 "verdi.\n"
 
-#: src/init.c:1457 src/init.c:1479 src/init.c:1587 src/init.c:1643
-#: src/init.c:1709 src/init.c:1729 src/init.c:1754
+#: src/init.c:1453 src/init.c:1475 src/init.c:1583 src/init.c:1639
+#: src/init.c:1705 src/init.c:1725 src/init.c:1750
 #, c-format
 msgid "%s: %s: Invalid value %s.\n"
 msgstr "%s: %s: %s er en ugyldig verdi.\n"
 
-#: src/init.c:1513
+#: src/init.c:1509
 #, c-format
 msgid "%s: %s: Invalid header %s.\n"
 msgstr "%s: %s: %s er en ugyldig linje.\n"
 
-#: src/init.c:1534
+#: src/init.c:1530
 #, c-format
 msgid "%s: %s: Invalid WARC header %s.\n"
 msgstr "%s: %s: %s er en ugyldig WARC-linje.\n"
 
-#: src/init.c:1600
+#: src/init.c:1596
 #, c-format
 msgid "%s: %s: Invalid progress type %s.\n"
 msgstr "%s: %s: %s er en ugyldig framdriftstype.\n"
 
-#: src/init.c:1682
+#: src/init.c:1678
 #, c-format
 msgid ""
 "%s: %s: Invalid restriction %s,\n"
@@ -1932,8 +1932,9 @@ msgstr ""
 "ressurser\n"
 
 #: src/main.c:757
+#, fuzzy
 msgid ""
-"       --no-xattr                  turn off storage of metadata in extended "
+"       --xattr                     turn on storage of metadata in extended "
 "file attributes\n"
 msgstr ""
 "       --no-xattr                  slå av lagring av metadata i utvidede "

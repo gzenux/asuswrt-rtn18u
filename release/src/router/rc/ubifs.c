@@ -257,6 +257,8 @@ void start_ubifs(void)
 
 	userfs_prepare(UBIFS_MNT_DIR);
 
+	userfs_prepare(UBIFS_MNT_DIR);
+
 	notice_set("ubifs", format ? "Formatted" : "Loaded");
 
 #if 0 /* disable legacy & asus autoexec */

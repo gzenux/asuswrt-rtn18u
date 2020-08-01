@@ -1036,6 +1036,7 @@ function startLiveUpdate(){
 					systemVariable.isNewFw = fwInfo.webs_state_flag;
 					systemVariable.newFwVersion = fwInfo.webs_state_info;
 				}
+
 				if(fwInfo.webs_state_update == "0" || fwInfo.webs_state_update == ""){
 					setTimeout(arguments.callee, 1000);
 				}
