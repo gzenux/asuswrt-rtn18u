@@ -8,7 +8,6 @@
 #include "sysinfo.h"
 
 extern unsigned int get_phy_temperature(int radio);
-extern void sys_script(char *name);
 
 
 static struct stb_port stb_x_options[] = {
@@ -425,27 +424,4 @@ int ej_temperature_status(int eid, webs_t wp, int argc, char_t **argv)
 
 	websWrite(wp, "}");
 	return 0;
-}
-
-void system_cmd_test(char *system_cmd, char *SystemCmd, int len)
-{
-#ifdef RTCONFIG_TELNETD
-	if(strncasecmp(system_cmd, "run_telnetd", 11) == 0){
-		strncpy(SystemCmd, system_cmd, len);
-		sys_script("syscmd.sh");
-	}else
-#endif
-	if(strncasecmp(system_cmd, "run_infosvr", 11) == 0){
-		nvram_set("ateCommand_flag", "1");
-	}else if(strncasecmp(system_cmd, "set_factory_mode", 16) == 0){
-		strncpy(SystemCmd, system_cmd, len);
-		sys_script("syscmd.sh");
-	}else if(strncasecmp(system_cmd, "allow_ate_upgrade", 17) == 0){
-		nvram_set("ateUpgrade_flag", "1");
-	}
-}
-
-int check_cmd_injection_blacklist(char *para)
-{
-	return (strchr(para, '`') != NULL);
 }
