@@ -162,6 +162,9 @@ subjectAltName = @alt_names
 # You can even override a supported extension:
 # basicConstraints= critical, DER:30:03:01:01:FF
 
+[alt_names]
+DNS.1 = router.asus.com
+
 [ crl_ext ]
 # CRL extensions.
 # Only issuerAltName and authorityKeyIdentifier make any sense in a CRL.

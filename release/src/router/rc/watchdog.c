@@ -3443,6 +3443,12 @@ void btn_check(void)
 						led_control(wled[unit], LED_ON);
 					unit++;
 				}
+
+#if defined(RTAC59U)
+				eval("ssdk_sh", "debug", "reg", "set", "0x50", "0xc735c735", "4");
+				eval("ssdk_sh", "debug", "reg", "set", "0x54", "0xc735c735", "4");
+				eval("ssdk_sh", "debug", "reg", "set", "0x58", "0xc735c735", "4");
+#endif
 #endif	/* RTCONFIG_QCA */
 #ifdef RTCONFIG_LAN4WAN_LED
 				LanWanLedCtrl();
@@ -4366,9 +4372,9 @@ void timecheck(void)
 		}
 	}
 
- #ifdef RTCONFIG_REBOOT_SCHEDULE
- 	/* Reboot Schedule */
- 	char reboot_schedule[PATH_MAX];
+#ifdef RTCONFIG_REBOOT_SCHEDULE
+	/* Reboot Schedule */
+	char reboot_schedule[PATH_MAX];
 	if (nvram_match("reboot_schedule_enable", "1"))
 	{
 		if (nvram_match("ntp_ready", "1"))

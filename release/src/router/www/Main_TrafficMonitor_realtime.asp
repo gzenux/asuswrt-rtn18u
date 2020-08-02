@@ -223,6 +223,11 @@ function setUnit(unit){
 	cookie.set('ASUS_TrafficMonitor_unit', unit);
 	initCommon(2, 0, 0, 1);
 }
+
+function setUnit(unit){
+	cookie.set('ASUS_TrafficMonitor_unit', unit);
+	initCommon(2, 0, 0, 1);
+}
 </script>
 </head>
 

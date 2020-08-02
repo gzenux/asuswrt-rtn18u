@@ -84,9 +84,9 @@ version.c:  $(wget_SOURCES) ../lib/libgnu.a
 	echo '' >> $@
 	echo '#include "version.h"' >> $@
 	echo 'const char *version_string = "@VERSION@";' >> $@
-	echo 'const char *compilation_string = "'$(COMPILE)'";' \
+	echo 'const char *compilation_string = (char *)0; // "'$(COMPILE)'";' \
 	    | $(ESCAPEQUOTE) >> $@
-	echo 'const char *link_string = "'$(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	echo 'const char *link_string = (char *)0; // "'$(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) $(LIBS) $(wget_LDADD)'";' \
 	    | $(ESCAPEQUOTE) >> $@
 

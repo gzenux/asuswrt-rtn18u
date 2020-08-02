@@ -558,11 +558,7 @@ extern int getEEPROM(unsigned char *outbuf, unsigned short *lenpt, char *area);
 extern void hexdump(unsigned char *pt, unsigned short len);
 extern void setCTL(const char *);
 extern int verify_ctl_table(void);
-#if defined(RTN18U)
-extern char *getStaMAC(void);
-#else
 extern char *getStaMAC(char *buf, int buflen);
-#endif
 extern char *get_qca_iwpriv(char *name, char *command);
 extern unsigned int getPapState(int unit);
 extern unsigned int getStaXRssi(int unit);
@@ -636,11 +632,7 @@ extern int verify_ctl_table(void);
 extern int getForceU3(void);
 extern int setForceU3(const char *val);
 #endif
-#if defined(RTN18U)
-extern char *getStaMAC(void);
-#else
 extern char *getStaMAC(char *buf, int buflen);
-#endif
 extern unsigned int getPapState(int unit);
 typedef unsigned int	u_int;
 extern u_int ieee80211_mhz2ieee(u_int freq);
@@ -674,11 +666,7 @@ extern int verify_ctl_table(void);
 extern int getForceU3(void);
 extern int setForceU3(const char *val);
 #endif
-#if defined(RTN18U)
-extern char *getStaMAC(void);
-#else
 extern char *getStaMAC(char *buf, int buflen);
-#endif
 extern unsigned int getPapState(int unit);
 typedef unsigned int	u_int;
 extern u_int ieee80211_mhz2ieee(u_int freq);
@@ -2475,11 +2463,10 @@ extern void asm1042_upgrade(int);
 extern void oauth_google_gen_token_email(void);
 extern void oauth_google_update_token(void);
 extern int oauth_google_send_message(const char* receiver, const char* subject, const char* message, const char* attached_files[], int attached_files_count);
-#if !defined(RTN18U)	// Kludge
 extern void oauth_google_check_token_status(void);
-#endif	/* Kludge */
 #endif
 
+// private.c
 #ifdef RTCONFIG_UUPLUGIN
 extern void exec_uu();
 #endif

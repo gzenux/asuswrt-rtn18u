@@ -41,6 +41,10 @@
 struct REPLACE_PRODUCTID_S replace_productid_t[] =
 {
 	{"LYRA_VOICE", "LYRA VOICE"},
+	{"RT-AC57U_V2", "RT-AC57U V2"},
+	{"RT-AC58U_V2", "RT-AC58U V2"},
+	{"RT-AC1300G_PLUS_V2", "RT-AC1300G PLUS V2"},
+	{"RT-AC1500G_PLUS", "RT-AC1500G PLUS"},
 	{NULL, NULL}
 };
 

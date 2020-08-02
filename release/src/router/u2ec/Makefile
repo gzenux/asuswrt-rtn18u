@@ -73,6 +73,7 @@ endif
 CFLAGS += -Wall -I.
 CFLAGS += $(DEBFLAGS)
 
+all: $(PROG)
 
 ifneq ($(wildcard ./$(PREBUILD)),)
 $(PROG):

@@ -247,7 +247,7 @@ function initial(){
 			
 			document.form.wl_channel.value = _ch;
 		}
-	}	
+	}
 }
 
 function genBWTable(_unit){
@@ -310,11 +310,15 @@ function genBWTable(_unit){
 			}
 			
 			if(vht80_80_support && array_80m.length/4 >= 2){
+				bwsDesc[0] = "20/40/80/80+80 MHz";
 				bws.push(4);
 				bwsDesc.push("80+80 MHz");
 			}
 			if(vht160_support && array_160m.length/4 >= 1){
-				bwsDesc[0] = "20/40/80/160 MHz";
+				if (vht80_80_support && array_80m.length/4 >= 2)
+					bwsDesc[0] = "20/40/80/80+80/160 MHz";
+				else
+					bwsDesc[0] = "20/40/80/160 MHz";
 				bws.push(5);
 				bwsDesc.push("160 MHz");
 			}

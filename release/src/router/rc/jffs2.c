@@ -350,12 +350,9 @@ void start_jffs2(void)
 		nvram_commit_x();
 	}
 
-#if !defined(RTN18U)	// Kludge
 	userfs_prepare("/jffs");
-#endif	/* Kludge */
 	notice_set("jffs", format ? "Formatted" : "Loaded");
 	jffs2_fail = 0;
-
 
 #ifdef HND_ROUTER
 #ifdef RTCONFIG_JFFS_NVRAM

@@ -689,7 +689,7 @@ function validForm(){
 		}
 		else{		//Bandwidth Limiter
 			if(document.form.PC_devicename.value != ""){
-				alert("You must press add icon to add a new rule first.");	//untranslated
+				alert("<#JS_add_rule#>");
 				return false;
 			}
 
@@ -709,7 +709,7 @@ function determineActionScript(){
 	else if( lantiq_support || Rawifi_support || (ctf_disable == "1" || ctf_disable_force == "1") ||  //BULECAVE; MTK Models; HW NAT OFF
 			 (document.form.qos_enable_orig.value == "1" && document.form.qos_enable.value == "0") ||   //qos enable => disable
 			 ((document.form.qos_enable_orig.value == document.form.qos_enable.value) && 				//qos_enable and qos_type no change
-		 	  (document.form.qos_type_orig.value == document.form.qos_type.value)) ){
+			  (document.form.qos_type_orig.value == document.form.qos_type.value)) ){
 		document.form.action_script.value = "restart_qos;restart_firewall;";
 		document.form.action_wait.value = "15";
 	}
@@ -1739,6 +1739,7 @@ function change_scheduler(value){
 																	document.getElementById('qos_enable_hint').style.display = "";
 																	change_qos_type(document.form.qos_type_orig.value);
 																}
+																change_qos_type(document.form.qos_type_orig.value);
 															 },
 															 function() {
 																document.form.qos_enable.value = "0";

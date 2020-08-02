@@ -963,7 +963,12 @@ static void create_Vlan(int bitmask)
 
 	if (mbr & 0x200) {	//Internet && WAN port
 		char pvid[8];
-		qca8337_vlan_set(2, vid, prio, mbr_qca, untag_qca);
+#ifdef RTCONFIG_MULTICAST_IPTV
+		if (!strcmp(nvram_safe_get("switch_wantag"), "movistar"))
+			qca8337_vlan_set(-1, vid, prio, mbr_qca, untag_qca);
+		else
+#endif
+			qca8337_vlan_set(2, vid, prio, mbr_qca, untag_qca);
 		snprintf(pvid, sizeof(pvid), "%d", vid);
 		eval("swconfig", "dev", MII_IFNAME, "port", "set", "pvid", pvid);
 	}

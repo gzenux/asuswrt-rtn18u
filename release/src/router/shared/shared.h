@@ -372,7 +372,7 @@ enum {
 #define GIF_PREFIXLEN  0x0002  /* return prefix length */
 #define GIF_PREFIX     0x0004  /* return prefix, not addr */
 
-#define EXTEND_AIHOME_API_LEVEL		20
+#define EXTEND_AIHOME_API_LEVEL		21
 
 #define EXTEND_HTTPD_AIHOME_VER		0
 
@@ -763,7 +763,7 @@ enum {
 	MODEL_RTAC55U,
 	MODEL_RTAC55UHP,
 	MODEL_RT4GAC55U,
-#if defined(RTAC3200) || defined(RTAC87U) || defined(RTN18U)	// Kludge
+#if defined(RTAC3200) || defined(RTAC87U)	// Kludge
 	MODEL_RTN19,
 #endif
 	MODEL_RTAC59U,
@@ -777,8 +777,11 @@ enum {
 	MODEL_MAPAC2200,
 	MODEL_VZWAC1300,
 	MODEL_MAPAC1750,
-#if defined(RTAC3200) || defined(RTAC87U) || defined(RTN18U)	// Kludge
+#if defined(RTAC3200) || defined(RTAC87U)	// Kludge
 	MODEL_MAPAC3000,
+#elif defined(RTN18U)	// Kludge
+	MODEL_MAPAC3000,
+	MODEL_MAPAC2200V,
 #else
 	MODEL_RTAC95U,
 	MODEL_MAPAC2200V,
@@ -845,25 +848,30 @@ enum {
 	MODEL_RTAD7200,
 	MODEL_GTAXY16000,
 	MODEL_GTAX6000N,
+#if defined(RTN18U)	// Kludge
+	MODEL_GTAX6000S,
+#else
 	MODEL_RTAX89U,
-	MODEL_RTAC1200V2,
-#if !defined(RTN18U)	// Kludge
-	MODEL_RTN19,
 #endif
+	MODEL_RTAC1200V2,
+	MODEL_RTN19,
 	MODEL_TUFAC1750,
 	MODEL_RTAX88U,
 	MODEL_GTAX11000,
 	MODEL_RTAX92U,
 	MODEL_RTAX95Q,
-#if !defined(RTN18U)	// Kludge
 	MODEL_RTAX56_XD4,
-#endif
 	MODEL_RTAX58U,
 	MODEL_RTAX56U,
 	MODEL_SHAC1300,
 	MODEL_RPAC92,
+#if defined(RTN18U)	// Kludge
+	MODEL_RTAC59CD6R,
+	MODEL_RTAC59CD6N,
+#else
 	MODEL_ZENWIFICD6R,
 	MODEL_ZENWIFICD6N,
+#endif
 	MODEL_RTAX86U,
 	MODEL_RTAX68U,
 	MODEL_RT4GAC56,
@@ -871,6 +879,10 @@ enum {
 	MODEL_RTAX55,
 	MODEL_GTAXE11000,
 	MODEL_MAX
+#if defined(RTN18U)	// Kludge
+	,
+	MODEL_RTAX89U,
+#endif
 };
 
 /* NOTE: Do not insert new entries in the middle of this enum,

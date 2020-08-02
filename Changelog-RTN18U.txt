@@ -4,6 +4,9 @@ Asuswrt-Merlin for RT-N18U Release Note
 384.18-alpha4
   Changelog for RT-N18U:
   - UPDATED: Merged GPL 384_81992 from asuswrt-merlin (mainline).
+  - UPDATED: Merged RT-N18U GPL release 382_52288
+  - CHANGED: Removed switchable protectionSrv feature introduced in
+             384.12 and use GPL 382_52288 (closed source) insteaded.
 
   Changelog from Asuswrt-Merlin:
   - NEW: Added support for static routes for PPTP/L2TP VPN

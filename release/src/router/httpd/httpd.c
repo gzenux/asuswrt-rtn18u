@@ -1001,7 +1001,7 @@ handle_request(void)
 	while ( fgets( cur, line + sizeof(line) - cur, conn_fp ) != (char*) 0 )
 	{
 		//_dprintf("handle_request:cur = %s\n",cur);
-		if ( strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 ) {
+		if ( *cur == '\0' || strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 ) {
 			break;
 		}
 #ifdef TRANSLATE_ON_FLY
@@ -1580,8 +1580,9 @@ int is_auth(void)
 
 int is_firsttime(void)
 {
-#if defined(RTAC58U)
-	if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
+#if defined(RTAC58U) || defined(RTAC59U)
+	if (!strncmp(nvram_safe_get("territory_code"), "CX/01", 5)
+	 || !strncmp(nvram_safe_get("territory_code"), "CX/05", 5))
 		return 0;
 	else
 #endif
@@ -2041,9 +2042,17 @@ int main(int argc, char **argv)
 	if (nvram_get_int("HTTPD_DBG") > 0)
 		eval("touch", HTTPD_DEBUG);
 
-#if defined(RTCONFIG_UIDEBUG)
-	eval("touch", HTTPD_DEBUG);
+	/* set initial TZ to avoid mem leaks
+	 * it suppose to be convert after applying
+	 * time_zone_x_mapping(); */
+	setenv("TZ", nvram_safe_get_x("", "time_zone_x"), 1);
+
+#ifdef RTCONFIG_LETSENCRYPT
+	nvram_unset("le_restart_httpd");
 #endif
+
+	if (nvram_get_int("HTTPD_DBG") > 0)
+		eval("touch", HTTPD_DEBUG);
 
 #if defined(RTCONFIG_SW_HW_AUTH)
 	//if(!httpd_sw_hw_check()) return 0;
@@ -2194,10 +2203,6 @@ int main(int argc, char **argv)
 				free(item);
 				continue;
 			}
-
-			/* Set receive/send timeouts */
-			setsockopt(item->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-			setsockopt(item->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
 			/* Set receive/send timeouts */
 			setsockopt(item->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));

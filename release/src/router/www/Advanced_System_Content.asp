@@ -99,7 +99,6 @@ wifison = '<% nvram_get("wifison_ready"); %>';
 var orig_shell_timeout_x = Math.floor(parseInt("<% nvram_get("shell_timeout"); %>")/60);
 var orig_enable_acc_restriction = '<% nvram_get("enable_acc_restriction"); %>';
 var orig_restrict_rulelist_array = [];
-var orig_ptcsrv_enable = null;
 if((ntpd_support) && (isSwMode('rt')))
 	var orig_ntpd_server_redir = '<% nvram_get("ntpd_server_redir"); %>';
 var restrict_rulelist_array = [];
@@ -273,19 +272,7 @@ function initial(){
 		hideport(document.form.misc_http_x[0].checked);
 
 	document.form.http_username.value = '<% nvram_get("http_username"); %>';
-
-	if(ptcsrv_support){
-		document.getElementById("ptcsrv_tr").style.display = "";
-		document.form.ptcsrv_enable[0].disabled = false;
-		document.form.ptcsrv_enable[1].disabled = false;
-		orig_ptcsrv_enable = document.form.ptcsrv_enable.value;
-	}
-	else{
-		document.getElementById("ptcsrv_tr").style.display = "none";
-		document.form.ptcsrv_enable[0].disabled = true;
-		document.form.ptcsrv_enable[1].disabled = true;
-	}
-
+	
 	if(ssh_support){
 		check_sshd_enable('<% nvram_get("sshd_enable"); %>');
 		document.form.sshd_authkeys.value = document.form.sshd_authkeys.value.replace(/>/gm,"\r\n");
@@ -605,9 +592,6 @@ function applyRule(){
 			}
 		}
 
-		if(ptcsrv_support && (orig_ptcsrv_enable != document.form.ptcsrv_enable.value))
-			action_script_tmp += "restart_protect_srv;";
-
 		if(restart_firewall_flag)
 			action_script_tmp += "restart_firewall;";
 		else
@@ -789,7 +773,7 @@ function validForm(){
 
 	if (!validator.range(document.form.http_lanport, 1, 65535))
 		/*return false;*/ document.form.http_lanport = 80;
-	if (HTTPS_support && !validator.range(document.form.https_lanport, 1, 65535) && !tmo_support)
+	if (HTTPS_support && !validator.range(document.form.https_lanport, 1025, 65535) && !tmo_support)
 		return false;
 
 	if (document.form.misc_http_x[0].checked) {
@@ -881,7 +865,7 @@ function validForm(){
 		}
 
 		if(WebUI_selected <= 0){
-			alert("Please select at least one Web UI of Access Type and enable it in [Allow only specified IP address]");   //Untranslated 2017/08
+			alert("<#JS_access_type#> <#System_login_specified_Iplist_enable#>");
 			document.form.http_client_ip_x_0.focus();
 			return false;
 		}
@@ -1311,7 +1295,7 @@ function addRow(obj, upper){
 			access_type_value += parseInt($(this).val());
 	});	
 	if(access_type_value == 0) {
-		alert("Please select at least one Access Type.");/*untranslated*/
+		alert("<#JS_access_type#>");
 		return false;
 	}
 	else{
@@ -2246,13 +2230,6 @@ function save_cert_key(){
 					  <td colspan="2"><#qis_service#></td>
 					</tr>
 				</thead>
-				<tr id="ptcsrv_tr">
-					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(39,1);">Enable ProtectionSrv</a></th>
-					<td>
-						<input type="radio" name="ptcsrv_enable" class="input" value="1" <% nvram_match("ptcsrv_enable", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" name="ptcsrv_enable" class="input" value="0" <% nvram_match("ptcsrv_enable", "0", "checked"); %>><#checkbox_No#>
-					</td>
-				</tr>
 				<tr id="telnet_tr">
 					<th><#Enable_Telnet#></th>
 					<td>
@@ -2305,6 +2282,13 @@ function save_cert_key(){
 					<td>
 						<textarea rows="8" class="textarea_ssh_table" style="width:98%; overflow:auto; word-break:break-all;" name="sshd_authkeys" style="width:95%;" spellcheck="false" maxlength="2999"><% nvram_clean_get("sshd_authkeys"); %></textarea>
 						<span id="ssh_alert_msg"></span>
+					</td>
+				</tr>
+				<tr id="plc_sleep_tr" style="display:none;">
+					<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(11,12);">Enable PLC sleep automatically<!--untranslated--></a></th>
+					<td>
+						<input type="radio" name="plc_sleep_enabled" value="1" <% nvram_match_x("","plc_sleep_enabled","1", "checked"); %> ><#checkbox_Yes#>
+						<input type="radio" name="plc_sleep_enabled" value="0" <% nvram_match_x("","plc_sleep_enabled","0", "checked"); %> ><#checkbox_No#>
 					</td>
 				</tr>
 				<tr id="plc_sleep_tr" style="display:none;">

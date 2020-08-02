@@ -936,6 +936,8 @@ static void init_switch_qca(void)
 		"shortcut-fe", "shortcut-fe-ipv6", "shortcut-fe-cm",
 		"qca-ssdk",
 		"hyfi_qdisc", "hyfi-bridging",
+#elif defined(RTCONFIG_QCN550X) && defined(RTCONFIG_SWITCH_QCA8337N)
+		"qca-ssdk",
 #endif
 #if defined(RTCONFIG_STRONGSWAN) ||  defined(RTCONFIG_QUICKSEC)
 #if LINUX_KERNEL_VERSION >= KERNEL_VERSION(4,4,0)
@@ -1151,9 +1153,6 @@ void enable_jumbo_frame(void)
 
 void init_switch(void)
 {
-	int sfe_dev;
-	char dev_num[6];
-
 	init_switch_qca();
 
 	if (( f_read_string("/sys/sfe_ipv4/debug_dev", dev_num, sizeof(dev_num)) && \
@@ -1403,6 +1402,8 @@ void config_switch(void)
 			else if (!strcmp(nvram_safe_get("switch_wantag"), "movistar")) {
 #if defined(RTCONFIG_SOC_IPQ40XX)
 				doSystem("echo 10 > /proc/sys/net/edma/default_group1_vlan_tag");
+#elif defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X)
+				nvram_set("vlan_idx", "1");
 #else
 				/* Software bridge based IPTV implementation need to create VLAN interface
 				 * in __setup_vlan() which is called by config_switch().  In this case,
@@ -1453,7 +1454,7 @@ void config_switch(void)
 					eval("rtkswitch", "8", "4");		/* LAN4 with WAN */
 				}
 			}
-#if defined(RTAC58U)
+#if defined(RTAC58U) || defined(RTAC59U)
 			else if (!strcmp(nvram_safe_get("switch_wantag"), "stuff_fibre")) {
 				system("rtkswitch 38 0");			//No IPTV and VoIP ports
 				/* Internet:	untag: P9;   port: P4, P9 */
@@ -1489,6 +1490,12 @@ void config_switch(void)
 						doSystem("echo 10 > /proc/sys/net/edma/default_group1_vlan_tag");
 #endif
 					__setup_vlan(vlan_val, prio_val, 0x02000210);
+				} else { /* switch_wan0tagid empty case */
+#if defined(RTCONFIG_SOC_IPQ40XX)
+					__setup_vlan(2, 0, 0x00100210);
+#elif defined(RTCONFIG_QCA953X) || defined(RTCONFIG_QCA956X) || defined(RTCONFIG_QCN550X)
+					/* need to fix by using ssdk_sh instead of swconfig */
+#endif
 				}
 
 				if(strcmp(nvram_safe_get("switch_wan1tagid"), "") != 0) {
@@ -1531,7 +1538,7 @@ void config_switch(void)
 
 			}
 		}
-		else
+		else /* switch_wantag empty case */
 		{
 			const int sw_br_vid = get_sw_bridge_iptv_vid();
 			char *str __attribute__((unused));
@@ -3136,6 +3143,14 @@ void init_syspara(void)
 #if defined(MAPAC2200) || defined(MAPAC1300)
 			if(strcmp(country_code, "CA") == 0 && strcmp(buffer, "US/01") == 0)
 				strcpy(buffer, "CA/01");
+#elif defined(RTN19)
+			if (strcmp(buffer, "US/01") == 0
+			&& ((strcmp(macaddr, "04:D9:F5:90:28:E0") >= 0 && strcmp(macaddr, "04:D9:F5:90:2A:1C") <= 0)
+			||  (strcmp(macaddr, "04:D9:F5:90:9D:20") >= 0 && strcmp(macaddr, "04:D9:F5:90:A4:9C") <= 0))
+			) {
+				strcpy(buffer, "MX/01");
+				setTerritoryCode("MX/01");
+			}
 #endif
 			nvram_set("territory_code", buffer);
 		}
@@ -3152,8 +3167,9 @@ void init_syspara(void)
 		else
 			nvram_set("wifi_psk", buffer);
 	}
-#if defined(RTAC58U)
-	if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
+#if defined(RTAC58U) || defined(RTAC59U)
+	if (!strncmp(nvram_safe_get("territory_code"), "CX/01", 5)
+	 || !strncmp(nvram_safe_get("territory_code"), "CX/05", 5))
 		nvram_set("wifi_psk", nvram_safe_get("secret_code"));
 #endif
 #endif
@@ -3305,24 +3321,19 @@ void reinit_sfe(int unit)
 	int wanslan_cap = get_wans_dualwan() & WANSCAP_LAN;
 	char nat_x_str[] = "wanX_nat_xXXXXXX";
 #endif
+	int sfe_dev;
+	char dev_num[6];
 #if defined(RTCONFIG_SOC_IPQ40XX) && defined(RTCONFIG_BWDPI)
 	int handle_bwdpi = 0;
 #endif
 
-#if  defined(RTCONFIG_SOC_IPQ40XX) 
 	act = nvram_get_int("qca_sfe");	
-#else
-	if (!nvram_get_int("qca_sfe"))
-		return;
-#endif
 
-#if  defined(RTCONFIG_SOC_IPQ40XX) 
 	if(nvram_get_int("url_enable_x")==1 && strlen(nvram_get("url_rulelist"))!=0)
 		act = 0;
 
 	if(nvram_get_int("keyword_enable_x")==1 && strlen(nvram_get("keyword_rulelist"))!=0)
 		act = 0;
-#endif
 
 	/* If non-A.QoS is enabled, disable sfe. */
 	if (IS_NON_AQOS())
@@ -3340,11 +3351,6 @@ void reinit_sfe(int unit)
 	if ((nvram_match("url_enable_x", "1") && !nvram_match("url_rulelist", "")) ||
 	    (nvram_match("keyword_enable_x", "1") && !nvram_match("keyword_rulelist", "")))
 		act = 0;
-
-#if defined(RTAC58U)
-	if (nvram_match("switch_wantag", "stuff_fibre"))
-		act = 0;
-#endif
 
 	if (act > 0) {
 #if defined(RTCONFIG_DUALWAN)
@@ -3491,6 +3497,22 @@ void reinit_sfe(int unit)
 				modprobe(p->kmod_name);
 			if (p->load_sleep)
 				sleep(p->load_sleep);
+		}
+	}
+
+	if (!act) {
+		unlink("/dev/sfe4");
+		unlink("/dev/sfe6");
+	} else {
+		if (( f_read_string("/sys/sfe_ipv4/debug_dev", dev_num, sizeof(dev_num)) && \
+				(sfe_dev = atoi(dev_num)) > 0)) {
+			unlink("/dev/sfe4");
+			__mknod("/dev/sfe4", S_IFCHR | 0660, makedev(sfe_dev, 0));
+		}
+		if (( f_read_string("/sys/sfe_ipv6/debug_dev", dev_num, sizeof(dev_num)) && \
+				(sfe_dev = atoi(dev_num)) > 0)) {
+			unlink("/dev/sfe6");
+			__mknod("/dev/sfe6", S_IFCHR | 0660, makedev(sfe_dev, 0));
 		}
 	}
 }
@@ -3725,7 +3747,7 @@ set_wan_tag(char *interface)
 		/* Set Wan port PRIO */
 		if(nvram_invmatch("switch_wan0prio", "0"))
 			eval("vconfig", "set_egress_map", wan_dev, "0", nvram_get("switch_wan0prio"));
-#if defined(RTAC58U)
+#if defined(RTAC58U) || defined(RTAC59U)
 		if (nvram_match("switch_wantag", "stuff_fibre"))
 			eval("vconfig", "set_egress_map", wan_dev, "3", "5");
 #endif

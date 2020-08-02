@@ -391,11 +391,6 @@ helpcontent[34] = new Array("",
 							"<#Feedback_case_No_desc#>"
 							);
 
-//RT-N18U customization
-helpcontent[39] = new Array("",
-							"ProtectionSrv, originally developed by Asus, is a security protection mechanism that can block Telnet/SSH login from WAN/LAN for 5 minutes after 5 failed login attempts."
-							);
-
 helpcontent[50] = new Array("",
 				"<#IPConnection_LocalIP_itemdesc#> or fixed Interface (Device) ID starting with ::<br/>A fixed Interface ID is commonly an EUI-64 address.",
 				"On ARM routers, Asus regularly flushes caches, which can hurt performance while preserving a maximum amount of available RAM.",
