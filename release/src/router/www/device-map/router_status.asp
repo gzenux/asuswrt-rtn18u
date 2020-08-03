@@ -595,10 +595,13 @@ function update_traffic() {
 			current_rx = netdev.INTERNET.rx;
 		}
 		else{
-			current_rx = netdev.WIRED.rx + netdev.WIRELESS0.rx + netdev.WIRELESS1.rx;
-			if( netdev.WIRELESS2){
+			current_rx = netdev.WIRED.rx;
+			if(netdev.WIRELESS0)
+				current_rx += netdev.WIRELESS0.rx;
+			if(netdev.WIRELESS1)
+				current_rx += netdev.WIRELESS1.rx;
+			if(netdev.WIRELESS2)
 				current_rx += netdev.WIRELESS2.rx;
-			}
 		}
 
 		var diff_tx = 0;
@@ -616,10 +619,13 @@ function update_traffic() {
 			current_tx = netdev.INTERNET.tx;
 		}
 		else{
-			current_tx = netdev.WIRED.tx + netdev.WIRELESS0.tx + netdev.WIRELESS1.tx;
-			if( netdev.WIRELESS2){
+			current_tx = netdev.WIRED.tx;
+			if(netdev.WIRELESS0)
+				current_tx += netdev.WIRELESS0.tx;
+			if(netdev.WIRELESS1)
+				current_tx += netdev.WIRELESS1.tx;
+			if(netdev.WIRELESS2)
 				current_tx += netdev.WIRELESS2.tx;
-			}
 		}
 
 		document.getElementById('rx-current').innerHTML = adjust_unit(diff_rx);

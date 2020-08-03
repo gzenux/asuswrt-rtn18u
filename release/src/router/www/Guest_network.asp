@@ -92,16 +92,18 @@ function initial(){
 		document.getElementById("guest_table60").style.display = "";
 	}
 
-	if(radio_2 != 1){
+	if(band2g_support && radio_2 != 1){
 		document.getElementById('2g_radio_hint').style.display ="";
 	}
-	if(radio_5 != 1){
+	if(band5g_support && radio_5 != 1){
 		document.getElementById('5g_radio_hint').style.display ="";
 	}
 
 	if(document.form.preferred_lang.value == "JP"){    //use unique font-family for JP
-		document.getElementById('2g_radio_hint').style.fontFamily = "MS UI Gothic,MS P Gothic";
-		document.getElementById('5g_radio_hint').style.fontFamily = "MS UI Gothic,MS P Gothic";
+		if(band2g_support)
+			document.getElementById('2g_radio_hint').style.fontFamily = "MS UI Gothic,MS P Gothic";
+		if(band5g_support)
+			document.getElementById('5g_radio_hint').style.fontFamily = "MS UI Gothic,MS P Gothic";
 	}	
 	
 	if("<% get_parameter("af"); %>" == "wl_NOnly_note"){
