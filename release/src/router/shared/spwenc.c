@@ -869,7 +869,7 @@ int pw_dec(const char *input, char *output, int len)
 
 	struct AES_ctx ctx;
 	int i, n, ret;
-	int decodedLen, crc_isalnum = 0;
+	int crc_isalnum = 0;
 	int inputLen = strlen(input);
 	char key[33] = {0};
 	char crc_str[CRC_LEN+1] = {0};
@@ -891,8 +891,7 @@ int pw_dec(const char *input, char *output, int len)
 	n = base64_decode(input, decoded, inputLen);
 
 	decoded[n] = '\0';
-	decodedLen = pw_enc_blen((char *)decoded);
-	unsigned char output_buf[decodedLen];
+	unsigned char output_buf[len];
 	memset(output_buf, 0, sizeof(output_buf));
 
 	memcpy(output_buf, decoded, n);
@@ -916,7 +915,7 @@ int pw_dec(const char *input, char *output, int len)
 	}
 
 	if(crc_str != NULL && crc_dec_str != NULL && !strcmp(crc_str, crc_dec_str)){
-		strlcpy(output, (char *)output_buf+CRC_LEN, len);
+		strlcpy(output, (char *)output_buf+CRC_LEN, n+1-CRC_LEN);
 		ret = 1;
 	}
 	else{
