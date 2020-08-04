@@ -1,0 +1,53 @@
+384.18-beta1
+  Changelog for RT-N18U:
+  - UPDATED: Merged GPL 384_81992 from asuswrt-merlin (mainline).
+  - UPDATED: Merged RT-N18U GPL release 382_52288
+  - CHANGED: Removed switchable protectionSrv feature introduced in
+             384.12 and use GPL 382_52288 (closed source) insteaded.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Added support for static routes for PPTP/L2TP VPN
+         clients, on the Static Route page (themiron)
+  - NEW: Added notification when jffs free space drops
+         below 3 MB.
+  - UPDATED: dnsmasq to 2.82-openssl (themiron)
+  - CHANGED: Rewrote a large portion of the OpenVPN implementation,
+             to make the code easier to maintain.  Functionality
+             should largely remain the same.
+  - CHANGED: Replaced updown-*.sh OpenVPN event handler scripts
+             with binary libovpn functions. Should only affect
+             people who were overwriting the original event
+             handler with their own.
+  - CHANGED: Enabling Client Config Dir (ccd) for an OpenVPN
+             server in non-exclusive mode will no longer accept
+             duplicate common names (to prevent issues with
+             two clients trying to share the same settings).
+             If you need such an unusual setup, you should
+             enable "Username/Password auth only", which will
+             make the common name become the username.  Or
+             better, ensure that you have unique certificates
+             for all of your users.
+  - CHANGED: Removed the (undocumented) vpn_debug setting.  Debug
+             logging will now only come from OpenVPN itself
+             (through the log verbosity setting).
+  - CHANGED: Improved mechanism for providing an available
+             mount point for addon API scripters (dave14305)
+  - CHANGED: Harmonized the various SSL certificate modes with
+             upstream.
+             0-None - will be self-generated
+             1-Imported - lets you upload your own (no longer
+                           self generated unless you don't
+                           upload one)
+            2-Let's Encrypt (unchanged)
+            Self-generated cert will be stored to /jffs/cert.tgz,
+            just like upstream.
+  - FIXED: ddns updates and OpenVPN instances might be launched
+           twice at boot time if the initial ntp clock sync
+           happened too fast.
+  - FIXED: Enforced DNS and tQoS fix would be lost when the
+           firewall gets restarted while an OpenVPN client
+           is running.
+  - FIXED: Various issues surrounding error state report
+           when an OpenVPN client failed to start properly.
+  - FIXED: WINS provided by an OpenVPN server weren't properly
+           used.
