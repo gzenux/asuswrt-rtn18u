@@ -9,6 +9,12 @@
 
 extern unsigned int get_phy_temperature(int radio);
 
+#ifdef RTCONFIG_CAPTCHA
+extern const int gifsize;
+extern void captcha(unsigned char im[70*200], unsigned char l[6]);
+extern void makegif(unsigned char im[70*200], unsigned char gif[gifsize]);
+unsigned char cur_captcha[6] = {0};
+#endif
 
 static struct stb_port stb_x_options[] = {
 	{ .name = "none", .value = "0" },
@@ -425,3 +431,30 @@ int ej_temperature_status(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "}");
 	return 0;
 }
+
+#ifdef RTCONFIG_CAPTCHA
+int is_captcha_match(char *catpch)
+{
+	return !strncmp(catpch, (const char *)cur_captcha, sizeof(cur_captcha));
+}
+
+void do_captcha_file(char *url, FILE *stream)
+{
+	FILE *fp;
+	const char *captcha_file = "/tmp/captcha.gif";
+	unsigned char img[70*200] = {0};
+	unsigned char gif[gifsize];
+
+	memset(gif, 0, sizeof(gif));
+
+	if ((fp = fopen(captcha_file, "w")) != NULL) {
+		captcha(img, cur_captcha);
+		makegif(img, gif);
+		fwrite(gif, 1, gifsize, fp);
+		fclose(fp);
+	}
+
+	do_file(captcha_file, stream);
+	unlink(captcha_file);
+}
+#endif
