@@ -5,6 +5,7 @@ Asuswrt-Merlin for RT-N18U Release Note
   Changelog for RT-N18U:
   - UPDATED: Merged GPL 384_81992 from asuswrt-merlin (mainline).
   - UPDATED: Merged RT-N18U GPL release 382_52288
+  - NEW: Added captcha feature support.
   - CHANGED: Removed switchable protectionSrv feature introduced in
              384.12 and use GPL 382_52288 (closed source) insteaded.
 
