@@ -20,7 +20,7 @@ export LIBS="-L$uclib -L$router_dir/shared -lshared -L$router_sysdep_dir/nvram${
 
 NVRAM_ENCRYPT=`cat ../.config |grep "RTCONFIG_NVRAM_ENCRYPT=y"`
 if [ -n "$NVRAM_ENCRYPT" ]; then
-	CFLAGS+=" -DNVRAM_ENCRYPT_ENABLE=1"
+        CFLAGS+=" -DNVRAM_ENCRYPT_ENABLE=1"
 fi
 
 export LDFLAGS="-L$uclib -ldl -L$cur_dir/../pcre-$PCRE_VER/.libs -lpcre -L$cur_dir/../libxml2/.libs -lxml2 -lm -L$router_dir/openssl -L$cur_dir/../curl-7.21.7/lib/.libs"

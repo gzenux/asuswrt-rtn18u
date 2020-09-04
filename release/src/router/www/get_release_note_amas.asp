@@ -18,7 +18,7 @@ function GenContent(){
 		timeout: 1500,
 		error: function(xhr){
 			if(dead > 30){
-				break;
+				$("#amas_release_note").html("Fail to grab release note");
 			}
 			else{
 				dead++;
@@ -33,6 +33,9 @@ function GenContent(){
 				$("#amas_release_note")
 					.html(content)
 					.css("display", "");
+			}
+			else{
+				$("#amas_release_note").html("Fail to grab release note");
 			}
 		}
 	});

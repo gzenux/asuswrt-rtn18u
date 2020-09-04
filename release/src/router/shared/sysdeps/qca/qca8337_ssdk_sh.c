@@ -51,6 +51,17 @@ enum {
 
 //0:WAN, 1:LAN, lan_wan_partition[][0] is port0
 static const int lan_wan_partition[9][NR_WANLAN_PORT] = {
+#if defined(RTAC59_CD6R) || defined(RTAC59_CD6N)
+	/* W, L1, L2, L3, X */
+	{0,1,1,1,1}, //WLLLL
+	{0,0,1,1,1}, //WWLLL
+	{0,1,0,1,1}, //WLWLL
+	{0,1,1,0,1}, //WLLWL
+	{0,1,1,0,1}, //WLLWL
+	{0,0,0,1,1}, //WWWLL
+	{0,1,0,0,1}, //WLWWL
+	{1,1,1,1,1}  //ALL
+#else
 	/* W, L1, L2, L3, L4 */
 	{0,1,1,1,1}, //WLLLL
 	{0,0,1,1,1}, //WWLLL
@@ -60,6 +71,7 @@ static const int lan_wan_partition[9][NR_WANLAN_PORT] = {
 	{0,0,0,1,1}, //WWWLL
 	{0,1,1,0,0}, //WLLWW
 	{1,1,1,1,1}  //ALL
+#endif
 };
 
 #define	CPU_PORT_WAN_MASK	(1U << CPU_PORT)
@@ -81,6 +93,18 @@ static unsigned int wans_lan_mask = 0;	/* wan_type = WANS_DUALWAN_IF_LAN. */
  * ==> Model-specific port number.
  */
 static int switch_port_mapping[] = {
+#if defined(RTAC59_CD6R) || defined(RTAC59_CD6N)
+	LAN3_PORT,	//0000 0000 0001 LAN4 (convert to LAN3)
+	LAN2_PORT,	//0000 0000 0010 LAN3 (convert to LAN2)
+	LAN2_PORT,	//0000 0000 0100 LAN2
+	LAN1_PORT,	//0000 0000 1000 LAN1
+	WAN_PORT,	//0000 0001 0000 WAN
+	P6_PORT,	//0000 0010 0000 -
+	P6_PORT,	//0000 0100 0000 -
+	P6_PORT,	//0000 1000 0000 -
+	P6_PORT,	//0001 0000 0000 -
+	CPU_PORT,	//0010 0000 0000 CPU port
+#else
 	LAN4_PORT,	//0000 0000 0001 LAN4
 	LAN3_PORT,	//0000 0000 0010 LAN3
 	LAN2_PORT,	//0000 0000 0100 LAN2
@@ -91,6 +115,7 @@ static int switch_port_mapping[] = {
 	P6_PORT,	//0000 1000 0000 -
 	P6_PORT,	//0001 0000 0000 -
 	CPU_PORT,	//0010 0000 0000 CPU port
+#endif
 };
 
 /* Model-specific LANx ==> Model-specific PortX mapping */
@@ -120,8 +145,10 @@ static unsigned int get_wan_port_mask(int wan_unit)
 	int sw_mode = sw_mode();
 	char nv[] = "wanXXXports_maskXXXXXX";
 
+#if !defined(RTCONFIG_AMAS)
 	if (sw_mode == SW_MODE_AP || sw_mode == SW_MODE_REPEATER)
 		return 0;
+#endif
 
 	if (wan_unit <= 0 || wan_unit >= WAN_UNIT_MAX)
 		strcpy(nv, "wanports_mask");
@@ -375,6 +402,15 @@ static void config_qca8337_LANWANPartition(int type)
 	_dprintf("%s: LAN/WAN/WANS_LAN portmask %08x/%08x/%08x\n", __func__, lan_mask, wan_mask, wans_lan_mask);
 	reset_qca_switch();
 
+#if defined(RTAC59_CD6N) /* AMAS_ETHDETECT=y */
+	{
+		/* Create VLAN rules based on port number for each port has an independent interface (vlanX) */
+		int i = 0, vlan = 1;
+		unsigned int port_mask = 0x1;
+		for (i = 1; i <= 5; i++)
+			qca8337_vlan_set(vlan++, 0, ((port_mask << i) | CPU_PORT_WAN_MASK), (port_mask << i));
+	}
+#else
 	// LAN 
 	if (lan_mask)
 		qca8337_vlan_set(1, 0, (lan_mask | CPU_PORT_LAN_MASK), lan_mask);
@@ -385,6 +421,7 @@ static void config_qca8337_LANWANPartition(int type)
 		qca8337_vlan_set(vlan++, 0, (wan_mask      | CPU_PORT_WAN_MASK), wan_mask);
 	if (wans_lan_mask)
 		qca8337_vlan_set(vlan++, 0, (wans_lan_mask | CPU_PORT_WAN_MASK), wans_lan_mask);
+#endif
 }
 
 static void get_qca8337_Port_Speed(unsigned int port_mask, unsigned int *speed)
@@ -837,12 +874,24 @@ void ATE_port_status(void)
 		get_qca8337_port_info(lan_id_to_port_nr(i), &pS.link[i], &pS.speed[i]);
 	}
 
+#if defined(RTAC59_CD6R)
+	snprintf(buf, sizeof(buf), "W0=%C;L1=%C;L2=%C;L3=%C;",
+		(pS.link[0] == 1) ? (pS.speed[0] == 2) ? 'G' : 'M': 'X',
+		(pS.link[1] == 1) ? (pS.speed[1] == 2) ? 'G' : 'M': 'X',
+		(pS.link[2] == 1) ? (pS.speed[2] == 2) ? 'G' : 'M': 'X',
+		(pS.link[3] == 1) ? (pS.speed[3] == 2) ? 'G' : 'M': 'X');
+#elif defined(RTAC59_CD6N)
+	snprintf(buf, sizeof(buf), "L1=%C;L2=%C;",
+		(pS.link[0] == 1) ? (pS.speed[0] == 2) ? 'G' : 'M': 'X',
+		(pS.link[1] == 1) ? (pS.speed[1] == 2) ? 'G' : 'M': 'X');
+#else
 	snprintf(buf, sizeof(buf), "W0=%C;L1=%C;L2=%C;L3=%C;L4=%C;",
 		(pS.link[0] == 1) ? (pS.speed[0] == 2) ? 'G' : 'M': 'X',
 		(pS.link[1] == 1) ? (pS.speed[1] == 2) ? 'G' : 'M': 'X',
 		(pS.link[2] == 1) ? (pS.speed[2] == 2) ? 'G' : 'M': 'X',
 		(pS.link[3] == 1) ? (pS.speed[3] == 2) ? 'G' : 'M': 'X',
 		(pS.link[4] == 1) ? (pS.speed[4] == 2) ? 'G' : 'M': 'X');
+#endif
 	puts(buf);
 }
 
@@ -916,3 +965,13 @@ void usage(char *cmd)
 	exit(0);
 }
 #endif
+
+unsigned int
+rtkswitch_Port_phyLinkRate(unsigned int port_mask)
+{
+	unsigned int speed = 0;
+
+	get_qca8337_Port_Speed(port_mask, &speed);
+
+	return speed;
+}

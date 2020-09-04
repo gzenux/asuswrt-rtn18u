@@ -28,11 +28,15 @@ ifeq ($(HND_ROUTER),y)
 CFLAGS += -DNON_P_THREAD
 endif
 
+ifeq ($(RPAC92),y)
+CFLAGS += -DRPAC92
+endif
+
 ifeq ($(RTCONFIG_BCMARM),y)
 CFLAGS += -I$(SRCBASE)/shared/bcmwifi/include -DTYPEDEF_FLOAT_T
 endif
 
-LDFLAGS += -L$(TOP)/nvram$(BCMEX)${EX7} ${EXTRA_NV_LDFLAGS} -lnvram
+LDFLAGS += -L$(TOP_PLATFORM)/nvram$(BCMEX)${EX7} ${EXTRA_NV_LDFLAGS} -lnvram
 LDFLAGS += -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
 LDFLAGS += -L$(TOP)/protect_srv/lib/ -lptcsrv
 
@@ -46,7 +50,6 @@ all:
 	cp -f $(PREBUILD)/Send_Event2ptcsrv Send_Event2ptcsrv
 	cp -f lib/$(PREBUILD)/libptcsrv.so lib
 	cp -f $(PREBUILD)/req_ptcsrv req_ptcsrv
-
 else
 all: ptcsrvdir Send_Event2ptcsrv protect_srv req_ptcsrv
 endif

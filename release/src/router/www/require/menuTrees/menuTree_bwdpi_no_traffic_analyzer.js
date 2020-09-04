@@ -43,6 +43,14 @@ define(function(){
 				]
 			}, 
 			{
+				menuName: "AiMesh",
+				index: "menu_AiMesh", 
+				tab: [
+					{url: "AiMesh.asp", tabName: "AiMesh"},
+					{url: "NULL", tabName: "__INHERIT__"}
+				]
+			},
+			{
 				menuName: "<#Guest_Network#>",
 				index: "menu_GuestNetwork",
 				tab: [
@@ -102,6 +110,7 @@ define(function(){
 					{url: "Main_TrafficMonitor_realtime.asp", tabName: "<#traffic_monitor#>"},
 					{url: "Main_TrafficMonitor_last24.asp", tabName: "__INHERIT__"},
 					{url: "Main_TrafficMonitor_daily.asp", tabName: "__INHERIT__"},
+					{url: "AdaptiveQoS_InternetSpeed.asp", tabName: "<#InternetSpeed#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
@@ -191,6 +200,15 @@ define(function(){
 					{url: "Advanced_Exposed_Content.asp", tabName: "<#menu5_3_5#>"},
 					{url: "Advanced_ASUSDDNS_Content.asp", tabName: "<#menu5_3_6#>"},
 					{url: "Advanced_NATPassThrough_Content.asp", tabName: "<#NAT_passthrough_itemname#>"},
+					{url: "NULL", tabName: "__INHERIT__"}
+				]
+			},
+			{
+				menuName: "Alexa & IFTTT",
+				index: "menu_Alexa_IFTTT",
+				tab: [
+					{url: "Advanced_Smart_Home_Alexa.asp", tabName: "__INHERIT__"},
+					{url: "Advanced_Smart_Home_IFTTT.asp", tabName: "__INHERIT__"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				]
 			},
@@ -288,12 +306,24 @@ define(function(){
 					retArray.push("menu_BandwidthMonitor");
 				}
 
+				if(!adaptiveqos_support){	
+					for(i=0; i<menuTree.list.length; i++){
+						if(menuTree.list[i].menuName == '<#Adaptive_QoS#>'){
+							menuTree.list[i].menuName = '<#menu5_3_2#>';
+						}
+					}
+				}
+
 				if(!usb_support){
 					retArray.push("menu_APP");
 				}
 
 				if((!cloudsync_support && !aicloudipk_support) || nocloudsync_support){
 					retArray.push("menu_AiCloud");
+				}
+
+				if(!ifttt_support && !alexa_support){
+					retArray.push("menu_Alexa_IFTTT");
 				}
 
 				if(!IPv6_support){
@@ -319,6 +349,18 @@ define(function(){
 				if(!uu_support){
 					retArray.push("menu_UU");
 				}
+
+				if(!amesh_support)
+					retArray.push("menu_AiMesh");
+				else{
+					if(ameshRouter_support){
+						if(!isSwMode("rt") && !isSwMode("ap"))
+							retArray.push("menu_AiMesh");
+					}
+					else if(ameshNode_support)
+						retArray.push("menu_AiMesh");
+				}
+
 				/* Operation Mode */
 				if(isSwMode("re")){
 					retArray.push("menu_GuestNetwork");
@@ -332,13 +374,10 @@ define(function(){
 					retArray.push("menu_VPN");
 					retArray.push("menu_VLAN");
 					retArray.push("menu_Firewall");
+					retArray.push("menu_Wireless");
 
-					if(!userRSSI_support){
-						retArray.push("menu_Wireless");
-					}
-
-					if(wlc_express != 0){
-						retArray.push("menu_Wireless");
+					if(ifttt_support || alexa_support){
+						retArray.push("menu_Alexa_IFTTT");
 					}
 				}
 				else if(isSwMode("ap")){
@@ -352,6 +391,10 @@ define(function(){
 					retArray.push("menu_VPN");
 					retArray.push("menu_VLAN");
 					retArray.push("menu_Firewall");
+
+					if(ifttt_support || alexa_support){
+						retArray.push("menu_Alexa_IFTTT");
+					}
 				}
 				else if(isSwMode("mb")){
 					retArray.push("menu_GuestNetwork");
@@ -366,6 +409,10 @@ define(function(){
 					retArray.push("menu_VPN");
 					retArray.push("menu_VLAN");
 					retArray.push("menu_Firewall");
+
+					if(ifttt_support || alexa_support){
+						retArray.push("menu_Alexa_IFTTT");
+					}
 				}
 
 				return retArray;
@@ -386,6 +433,30 @@ define(function(){
 					retArray.push("AiProtection_Key_Guard.asp");
 					retArray.push("AiProtection_AdBlock.asp");
 					retArray.push("TrafficAnalyzer_Statistic.asp");
+				}
+
+				if(!bwdpi_webFilter_support){
+					retArray.push("AiProtection_WebProtector.asp");
+				}
+
+				if(!bwdpi_mals_support){
+					retArray.push("AiProtection_MaliciousSitesBlocking.asp");
+				}
+
+				if(!bwdpi_cc_support){
+					retArray.push("AiProtection_InfectedDevicePreventBlock.asp");
+				}
+
+				if(!bwdpi_vp_support){
+					retArray.push("AiProtection_IntrusionPreventionSystem.asp");
+				}
+
+				if(!bwdpi_bwMonitor_support){
+					retArray.push("AdaptiveQoS_Bandwidth_Monitor.asp");
+				}
+
+				if(!bwdpi_webHistory_support){
+					retArray.push("AdaptiveQoS_WebHistory.asp");
 				}
 
 				if(!traffic_analyzer_support){
@@ -469,7 +540,7 @@ define(function(){
 					retArray.push("Advanced_Notification_Content.asp");
 				}
 
-				if(!smart_connect_support){
+				if(!smart_connect_support || Qcawifi_support){
 					retArray.push("Advanced_Smart_Connect.asp");
 				}
 				
@@ -505,7 +576,6 @@ define(function(){
 					retArray.push("Advanced_IPTV_Content.asp");
 				}
 
-
 				if(!media_support || nomedia_support){
 					retArray.push("mediaserver.asp");
 				}
@@ -516,6 +586,14 @@ define(function(){
 
 				if(!wtfast_support){
 					retArray.push("GameBoost.asp");
+				}
+
+				if(!alexa_support){
+					retArray.push("Advanced_Smart_Home_Alexa.asp");
+				}
+
+				if(!ifttt_support){
+					retArray.push("Advanced_Smart_Home_IFTTT.asp");
 				}
 
 				if(!IPv6_support){
@@ -577,12 +655,12 @@ define(function(){
 					retArray.push("Advanced_MultiSubnet_Content.asp");
 					retArray.push("Advanced_GWStaticRoute_Content.asp");
 					retArray.push("Advanced_IPTV_Content.asp");
-					retArray.push("Advanced_SwitchCtrl_Content.asp");
 					retArray.push("Main_DHCPStatus_Content.asp");
 					retArray.push("Main_IPV6Status_Content.asp");
 					retArray.push("Main_RouteStatus_Content.asp");
 					retArray.push("Main_IPTStatus_Content.asp");
 					retArray.push("Main_ConnStatus_Content.asp");
+					retArray.push("Advanced_Smart_Connect.asp");
 
 					if(userRSSI_support){
 						retArray.push("Advanced_ACL_Content.asp");
@@ -603,7 +681,6 @@ define(function(){
 					retArray.push("Advanced_MultiSubnet_Content.asp");
 					retArray.push("Advanced_GWStaticRoute_Content.asp");
 					retArray.push("Advanced_IPTV_Content.asp");
-					retArray.push("Advanced_SwitchCtrl_Content.asp");
 					retArray.push("Main_DHCPStatus_Content.asp");
 					retArray.push("Main_IPV6Status_Content.asp");
 					retArray.push("Main_RouteStatus_Content.asp");
@@ -622,7 +699,6 @@ define(function(){
 					retArray.push("Advanced_MultiSubnet_Content.asp");
 					retArray.push("Advanced_GWStaticRoute_Content.asp");
 					retArray.push("Advanced_IPTV_Content.asp");
-					retArray.push("Advanced_SwitchCtrl_Content.asp");
 					retArray.push("Main_DHCPStatus_Content.asp");
 					retArray.push("Main_IPV6Status_Content.asp");
 					retArray.push("Main_RouteStatus_Content.asp");
@@ -644,6 +720,10 @@ define(function(){
 				else if(based_modelid == "RT-N300"){
 					retArray.push("Advanced_WMode_Content.asp");
 					retArray.push("Advanced_IPTV_Content.asp");
+				}
+
+				if(!internetSpeed_support){
+					retArray.push("AdaptiveQoS_InternetSpeed.asp");
 				}
 
 				return retArray;

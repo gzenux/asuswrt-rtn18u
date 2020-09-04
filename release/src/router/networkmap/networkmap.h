@@ -68,7 +68,8 @@ enum
 #endif
 
 
-#define USERAGENT "Asuswrt/networkmap"
+#define USERAGENT			"Asuswrt/networkmap"
+#define NMP_VC_FILE_LOCK		"nmpvc"
 
 
 #define NCL_LIMIT		14336   //database limit to 14KB to avoid UI glitch
@@ -76,12 +77,15 @@ enum
 #define NMP_DEBUG_FILE			"/tmp/NMP_DEBUG"
 #define NMP_DEBUG_MORE_FILE		"/tmp/NMP_DEBUG_MORE"
 #define NMP_DEBUG_FUNCTION_FILE		"/tmp/NMP_DEBUG_FUNCTION"
+#define NMP_DEBUG_VC_FILE		"/tmp/NMP_DEBUG_VC"
 
 #define NEWORKMAP_OUI_FILE		"/usr/networkmap/networkmap.oui.js"
 #if (defined(RTCONFIG_JFFS2) || defined(RTCONFIG_JFFSV1) || defined(RTCONFIG_BRCM_NAND_JFFS2) || defined(RTCONFIG_UBIFS))
 #define NMP_CL_JSON_FILE		"/jffs/nmp_cl_json.js"
+#define NMP_VC_JSON_FILE		"/jffs/nmp_vc_json.js"
 #else
 #define NMP_CL_JSON_FILE		"/tmp/nmp_cl_json.js"
+#define NMP_VC_JSON_FILE		"/tmp/nmp_vc_json.js"
 #endif
 #define ARP_PATH			"/proc/net/arp"
 
@@ -129,6 +133,18 @@ enum
 #else
 #define NMP_DEBUG_F(fmt, args...) \
 	if(f_exists(NMP_DEBUG_FUNCTION_FILE)) { \
+		printf(fmt, ## args); \
+	}
+#endif
+
+#if !defined(RTCONFIG_RALINK) && !defined(HND_ROUTER)
+#define NMP_DEBUG_VC(fmt, args...) \
+	if(f_exists(NMP_DEBUG_VC_FILE)) { \
+		_dprintf(fmt, ## args); \
+	}
+#else
+#define NMP_DEBUG_VC(fmt, args...) \
+	if(f_exists(NMP_DEBUG_VC_FILE)) { \
 		printf(fmt, ## args); \
 	}
 #endif
