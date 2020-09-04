@@ -502,9 +502,11 @@ int login_main(int argc UNUSED_PARAM, char **argv)
 		}
 #if ENABLE_FEATURE_TELNETD_CLIENT_TO_ENV && defined(SECURITY_NOTIFY)
 		if (telnet_addr) {
+#if !defined(RTN18U)	// Kludge
 			if (IS_PTCSRV_LOCKED(PROTECTION_SERVICE_TELNET, telnet_addr)) {
 				goto auth_failed;
 			}
+#endif
 			SEND_PTCSRV_EVENT(PROTECTION_SERVICE_TELNET,
 				RPT_SUCCESS, telnet_addr,
 				"(PAM) From busybox telnet , LOGIN SUCCESS");
@@ -545,9 +547,11 @@ int login_main(int argc UNUSED_PARAM, char **argv)
 		if (ask_and_check_password(pw) > 0) {
 #if ENABLE_FEATURE_TELNETD_CLIENT_TO_ENV && defined(SECURITY_NOTIFY)
 			if (telnet_addr) {
+#if !defined(RTN18U)	// Kludge
 				if (IS_PTCSRV_LOCKED(PROTECTION_SERVICE_TELNET, telnet_addr)) {
 					goto auth_failed;
 				}
+#endif
 				SEND_PTCSRV_EVENT(PROTECTION_SERVICE_TELNET,
 					RPT_SUCCESS, telnet_addr,
 					"(NOT PAM) From busybox telnet , LOGIN SUCCESS");

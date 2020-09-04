@@ -610,6 +610,11 @@ else
 $(error OpenSSL is not defined)
 endif
 
+# kludge to add openssl-1.0 for RT-N18U due to its prebuilt binary dependency
+ifneq ($(RTCONFIG_OPENSSL10),y)
+obj-$(RTN18U) += openssl-1.0
+endif
+
 obj-$(RTCONFIG_LIBASUSLOG) += libasuslog
 obj-$(RTCONFIG_SW_HW_AUTH) += sw-hw-auth
 ifeq ($(RTCONFIG_TUNNEL),y)

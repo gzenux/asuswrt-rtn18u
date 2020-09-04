@@ -111,6 +111,7 @@ void recv_msg_userauth_request() {
 		dropbear_exit("unknown service in auth");
 	}
 
+#if !defined(RTN18U)	// Kludge
 #ifdef SECURITY_NOTIFY
 	if (IS_PTCSRV_LOCKED(PROTECTION_SERVICE_SSH, svr_ses.hoststring)) {
 		SEND_PTCSRV_EVENT(PROTECTION_SERVICE_SSH,
@@ -119,6 +120,7 @@ void recv_msg_userauth_request() {
 		send_msg_userauth_failure(0, 1);
 		goto out;
 	}
+#endif
 #endif
 
 	/* check username is good before continuing. 
