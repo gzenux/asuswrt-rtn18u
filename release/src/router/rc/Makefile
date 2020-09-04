@@ -100,9 +100,9 @@ CFLAGS += -I$(WPA_SUPPLICANT_DIR)/src/common
 LDFLAGS += -L$(WPA_SUPPLICANT_DIR)/wpa_supplicant -L$(INSTALLDIR)/wpa_supplicant/usr/lib
 WPS_PBCD := wps_pbcd
 ifeq (55,$(BCM_WLIMPL))
-OBJS_WPS_PBCD := $(if $(wildcard sysdeps/broadcom/wps_pbcd_impl55.c),wps_pbcd_impl55.o,prebuild/wps_pbcd_impl55.o) $(if $(wildcard sysdeps/broadcom/hostapd_config_impl55.c),hostapd_config_impl55.o,prebuild/hostapd_config_impl55.o)
+OBJS_WPS_PBCD := $(if $(wildcard sysdeps/broadcom/wps_pbcd_impl55.c),wps_pbcd_impl55.o,$(PREBUILD)/wps_pbcd_impl55.o) $(if $(wildcard sysdeps/broadcom/hostapd_config_impl55.c),hostapd_config_impl55.o,$(PREBUILD)/hostapd_config_impl55.o)
 else
-OBJS_WPS_PBCD := $(if $(wildcard sysdeps/broadcom/wps_pbcd.c),wps_pbcd.o,prebuild/wps_pbcd.o)
+OBJS_WPS_PBCD := $(if $(wildcard sysdeps/broadcom/wps_pbcd.c),wps_pbcd.o,$(PREBUILD)/wps_pbcd.o)
 endif
 LDFLAGS += -lwpa_client
 ifeq (55,$(BCM_WLIMPL))
@@ -803,9 +803,9 @@ endif
 
 ifeq ($(RTCONFIG_BRCM_HOSTAPD),y)
 ifeq (55,$(BCM_WLIMPL))
-OBJS += $(if $(wildcard sysdeps/broadcom/hostapd_config_impl55.c),hostapd_config_impl55.o,prebuild/hostapd_config_impl55.o)
+OBJS += $(if $(wildcard sysdeps/broadcom/hostapd_config_impl55.c),hostapd_config_impl55.o,$(PREBUILD)/hostapd_config_impl55.o)
 else
-OBJS += $(if $(wildcard sysdeps/broadcom/hostapd_config.c),hostapd_config.o,prebuild/hostapd_config.o)
+OBJS += $(if $(wildcard sysdeps/broadcom/hostapd_config.c),hostapd_config.o,$(PREBUILD)/hostapd_config.o)
 endif
 vpath %.c sysdeps/broadcom
 
@@ -815,7 +815,7 @@ CFLAGS += -I$(TOP)/wlceventd
 LDFLAGS2 = $(LDFLAGS)
 
 ifeq ($(RTCONFIG_QCA_LBD),y)
-OBJS += $(if $(wildcard sysdeps/qca/lbd-qca.c),lbd-qca.o,prebuild/lbd-qca.o)
+OBJS += $(if $(wildcard sysdeps/qca/lbd-qca.c),lbd-qca.o,$(PREBUILD)/lbd-qca.o)
 endif
 
 ifeq ($(BUILD_NAME), RT-AC1200_V2)
@@ -1408,9 +1408,9 @@ endif
 endif
 
 ifeq ($(RTCONFIG_AMAS_WGN), y)
-ifneq ($(wildcard ./prebuild/amas_wgn.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_wgn.o),)
 amas_wgn:
-	@-cp -f ./prebuild/amas_wgn.o .
+	@cp -f ./$(PREBUILD)/amas_wgn.o .
 endif	
 endif
 
@@ -1440,9 +1440,9 @@ ifneq ($(wildcard ./$(PREBUILD)/ate-broadcom.o),)
 ate-broadcom.o:
 	@cp -f ./$(PREBUILD)/ate-broadcom.o .
 endif
-ifneq ($(wildcard ./prebuild/init-broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/init-broadcom.o),)
 init-broadcom.o:
-	@-cp -f ./prebuild/init-broadcom.o .
+	@cp -f ./$(PREBUILD)/init-broadcom.o .
 endif
 ifneq ($(wildcard ./$(PREBUILD)/ate.o),)
 ate.o:
@@ -1462,14 +1462,14 @@ endif
 endif
 
 ifeq ($(RTCONFIG_AMAS_ADTBW),y)
-ifneq ($(wildcard ./prebuild/amas_adtbw.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_adtbw.o),)
 amas_adtbw.o:
-	@-cp -f ./prebuild/amas_adtbw.o .
+	@cp -f ./$(PREBUILD)/amas_adtbw.o .
 endif
 
-ifneq ($(wildcard ./prebuild/amas-adtbw-broadcom.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas-adtbw-broadcom.o),)
 amas-adtbw-broadcom.o:
-	@-cp -f ./prebuild/amas-adtbw-broadcom.o .
+	@cp -f ./$(PREBUILD)/amas-adtbw-broadcom.o .
 endif
 endif
 
@@ -1488,9 +1488,9 @@ ifneq ($(wildcard ./$(PREBUILD)/obd-broadcom.o),)
 obd-broadcom.o:
 	@cp -f ./$(PREBUILD)/obd-broadcom.o .
 endif
-ifneq ($(wildcard ./prebuild/amas-ssd-broadcom),)
+ifneq ($(wildcard ./$(PREBUILD)/amas-ssd-broadcom),)
 amas-ssd-broadcom:
-	@-cp -f ./prebuild/amas-ssd-broadcom .
+	@cp -f ./$(PREBUILD)/amas-ssd-broadcom .
 endif
 endif
 endif
@@ -1517,9 +1517,9 @@ ifneq ($(wildcard ./$(PREBUILD)/obd-ralink.o),)
 obd-ralink.o:
 	@cp -f ./$(PREBUILD)/obd-ralink.o .
 endif
-ifneq ($(wildcard ./prebuild/amas-ssd-ralink),)
+ifneq ($(wildcard ./$(PREBUILD)/amas-ssd-ralink),)
 amas-ssd-ralink:
-	@-cp -f ./prebuild/amas-ssd-ralink .
+	@cp -f ./$(PREBUILD)/amas-ssd-ralink .
 endif
 endif
 endif
@@ -1534,9 +1534,9 @@ ifneq ($(wildcard ./$(PREBUILD)/obd-qca.o),)
 obd-qca.o:
 	@cp -f ./$(PREBUILD)/obd-qca.o .
 endif
-ifneq ($(wildcard ./prebuild/amas-ssd-qca),)
+ifneq ($(wildcard ./$(PREBUILD)/amas-ssd-qca),)
 amas-ssd-qca:
-	@-cp -f ./prebuild/amas-ssd-qca .
+	@cp -f ./$(PREBUILD)/amas-ssd-qca .
 endif
 endif
 endif
@@ -1559,9 +1559,9 @@ ifneq ($(wildcard ./$(PREBUILD)/obd-realtek.o),)
 obd-realtek.o:
 	@cp -f ./$(PREBUILD)/obd-realtek.o .
 endif
-ifneq ($(wildcard ./prebuild/amas-ssd-realtek),)
+ifneq ($(wildcard ./$(PREBUILD)/amas-ssd-realtek),)
 amas-ssd-realtek:
-	@-cp -f ./prebuild/amas-ssd-realtek .
+	@cp -f ./$(PREBUILD)/amas-ssd-realtek .
 endif
 endif
 endif
@@ -1638,16 +1638,16 @@ ifneq ($(wildcard ./$(PREBUILD)/obd-lantiq.o),)
 obd-lantiq.o:
 	@cp -f ./$(PREBUILD)/obd-lantiq.o .
 endif
-ifneq ($(wildcard ./prebuild/amas-ssd-lantiq),)
+ifneq ($(wildcard ./$(PREBUILD)/amas-ssd-lantiq),)
 amas-ssd-lantiq:
-	@-cp -f ./prebuild/amas-ssd-lantiq .
+	@cp -f ./$(PREBUILD)/amas-ssd-lantiq .
 endif
 endif
 endif
 
-ifneq ($(wildcard ./prebuild/nbr_monitor.o),)
+ifneq ($(wildcard ./$(PREBUILD)/nbr_monitor.o),)
 nbr_monitor.o:
-	@-cp -f ./prebuild/nbr_monitor.o .
+	@cp -f ./$(PREBUILD)/nbr_monitor.o .
 endif
 
 ifneq ($(wildcard ./$(PREBUILD)/obd.o),)
@@ -1687,9 +1687,9 @@ tr069.o:
 endif
 endif
 
-ifneq ($(wildcard ./prebuild/dhcpc_vc_query.o),)
+ifneq ($(wildcard ./$(PREBUILD)/dhcpc_vc_query.o),)
 dhcpc_vc_query.o:
-	@-cp -f ./prebuild/dhcpc_vc_query.o .
+	@cp -f ./$(PREBUILD)/dhcpc_vc_query.o .
 endif
 
 ifeq ($(RTCONFIG_AMAS),y)
@@ -1710,35 +1710,35 @@ amas_lib.o:
 	@cp -f ./$(PREBUILD)/amas_lib.o .
 endif
 ifeq ($(RTCONFIG_BHCOST_OPT),y)
-ifneq ($(wildcard ./prebuild/amas_status.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_status.o),)
 amas_status.o:
-	@-cp -f ./prebuild/amas_status.o .
+	@cp -f ./$(PREBUILD)/amas_status.o .
 endif
-ifneq ($(wildcard ./prebuild/amas_misc.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_misc.o),)
 amas_misc.o:
-	@-cp -f ./prebuild/amas_misc.o .
+	@cp -f ./$(PREBUILD)/amas_misc.o .
 endif
-ifneq ($(wildcard ./prebuild/amas_ssd.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_ssd.o),)
 amas_ssd.o:
-	@-cp -f ./prebuild/amas_ssd.o .
+	@cp -f ./$(PREBUILD)/amas_ssd.o .
 endif
-ifneq ($(wildcard ./prebuild/amas_ipc.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_ipc.o),)
 amas_ipc.o:
-	@-cp -f ./prebuild/amas_ipc.o .
+	@cp -f ./$(PREBUILD)/amas_ipc.o .
 endif
 endif
 ifeq ($(RTCONFIG_PRELINK),y)
-ifneq ($(wildcard ./prebuild/amas_prelink.o),)
+ifneq ($(wildcard ./$(PREBUILD)/amas_prelink.o),)
 amas_prelink.o:
-	@-cp -f ./prebuild/amas_prelink.o .
+	@cp -f ./$(PREBUILD)/amas_prelink.o .
 endif
 endif
 endif
 
 ifeq ($(RTAX82U)$(DSL_AX82U),y)
-ifneq ($(wildcard ./prebuild/ledg.o.o),)
+ifneq ($(wildcard ./$(PREBUILD)/ledg.o.o),)
 ledg.o:
-	@-cp -f ./prebuild/ledg.o .
+	@cp -f ./$(PREBUILD)/ledg.o .
 endif
 endif
 

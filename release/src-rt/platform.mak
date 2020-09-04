@@ -442,8 +442,8 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcm_arm_cpuidle.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcm_arm_irq.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcm_dt.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/bcm_extirq.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/bcm_i2c.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcm_extirq.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcm_i2c.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcm_legacy_io_map.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/blxargs.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/setup.o $(HND_SRC)/bcmdrivers/opensource/char/plat-bcm/impl1/ ; \
@@ -453,14 +453,14 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/rdpa_cmd.o $(HND_SRC)/bcmdrivers/opensource/char/rdpa_drv/impl1/rdpa_cmd$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/rdpa_gpl_ext.o $(HND_SRC)/bcmdrivers/opensource/char/rdpa_gpl_ext/impl1/rdpa_gpl_ext$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/rdpa_mw.o $(HND_SRC)/bcmdrivers/opensource/char/rdpa_mw/impl1/rdpa_mw$(PRBM_EXT).o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/ivi_map.h $(HND_SRC)/bcmdrivers/opensource/char/map/impl1/ ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/ivi_config.h $(HND_SRC)/bcmdrivers/opensource/char/map/impl1/ ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/ivi_map.h $(HND_SRC)/bcmdrivers/opensource/char/map/impl1/ ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/ivi_config.h $(HND_SRC)/bcmdrivers/opensource/char/map/impl1/ ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wlcsm.o $(HND_SRC)/bcmdrivers/broadcom/char/wlcsm_ext/impl1/wlcsm$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/pktrunner.o $(HND_SRC)/bcmdrivers/broadcom/char/pktrunner/impl2/pktrunner$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmvlan.o $(HND_SRC)/bcmdrivers/broadcom/char/vlan/impl1/bcmvlan$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/chipinfo.o $(HND_SRC)/bcmdrivers/broadcom/char/chipinfo/impl1/chipinfo$(PRBM_EXT).o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/cmdlist.o $(HND_SRC)/bcmdrivers/broadcom/char/cmdlist/impl1/cmdlist$(PRBM_EXT).o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/bcmlibs.o $(HND_SRC)/bcmdrivers/broadcom/char/bcmlibs/impl1/bcmlibs$(PRBM_EXT).o ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/cmdlist.o $(HND_SRC)/bcmdrivers/broadcom/char/cmdlist/impl1/cmdlist$(PRBM_EXT).o ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmlibs.o $(HND_SRC)/bcmdrivers/broadcom/char/bcmlibs/impl1/bcmlibs$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/nciTMSkmod.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciTMSkmod$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/pktflow.o $(HND_SRC)/bcmdrivers/broadcom/char/pktflow/impl1/pktflow$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/pwrmngtd.o $(HND_SRC)/bcmdrivers/broadcom/char/pwrmngt/impl1/pwrmngtd$(PRBM_EXT).o ; \
@@ -475,9 +475,9 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/igs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/igs/linux/$(PREBUILT)/igs.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl_apsta.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl.o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/otp.o $(HND_SRC)/bcmdrivers/broadcom/char/otp/impl1/otp$(PRBM_EXT).o ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/otp.o $(HND_SRC)/bcmdrivers/broadcom/char/otp/impl1/otp$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmwifi_rates.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/shared/bcmwifi/include/bcmwifi_rates.h ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/wlc_types.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/sys/ ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wlc_types.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/sys/ ; \
 			fi; \
 		else \
 			if [ -d $(SRCBASE)/wl/sysdeps/$(BUILD_NAME) ]; then \

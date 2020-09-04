@@ -2668,7 +2668,7 @@ ifeq ($(HND_ROUTER_AX),y)
 endif
 endif
 	@-rm -f httpd/prebuild/*.o || true
-	@-cp -f httpd/prebuild/$(BUILD_NAME)/* httpd/prebuild/
+	@-cp -f httpd/$(PREBUILD)/* httpd/prebuild/
 	$(MAKE) $(PARALLEL_BUILD) -C httpd
 
 httpd-install:
@@ -3583,7 +3583,7 @@ miniupnpc-install:
 shared: $(if $(RTCONFIG_QTN),libqcsapi_client) $(if $(RTCONFIG_HTTPS),openssl) $(if $(RTCONFIG_SW_HW_AUTH),sw-hw-auth)
 # Dig into our collection of prebuilt objects based on model.
 	@-rm -f shared/prebuild/*.o || true
-	@-cp -f shared/prebuild/$(BUILD_NAME)/* shared/prebuild/
+	@-cp -f shared/$(PREBUILD)/* shared/prebuild/
 ifeq ($(RTCONFIG_RALINK)$(RTCONFIG_QCA)$(RTCONFIG_ALPINE)$(RTCONFIG_LANTIQ),y)
 	make -C wireless_tools wireless.h
 endif

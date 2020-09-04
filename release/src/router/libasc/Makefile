@@ -37,7 +37,7 @@ TARGET = libasc.so
 
 ifeq ($(wildcard $(SRCBASE)/router/libasc/*.c),)
 all:
-	-cp -f prebuild/$(BUILD_NAME)/libasc.so ./
+	cp -f $(PREBUILD)/libasc.so ./
 else
 all: $(TARGET)
 endif
