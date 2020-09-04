@@ -59,7 +59,6 @@ static const char *mangle_fn_ipv6 = "/tmp/mangle_rules_ipv6";
 int etable_flag = 0;
 int manual_return = 0;
 
-#ifdef RTCONFIG_AMAS_WGN
 static void WGN_ifname(int i, int j, char *wl_if)
 {
 	if (nvram_get_int("re_mode") == 1) {
@@ -77,6 +76,7 @@ static void WGN_ifname(int i, int j, char *wl_if)
 	}
 }
 
+#ifdef RTCONFIG_AMAS_WGN
 static void WGN_subnet(const char *wgn, char *net, int len)
 {
 	char *buf = NULL, *g = NULL, *p = NULL;
