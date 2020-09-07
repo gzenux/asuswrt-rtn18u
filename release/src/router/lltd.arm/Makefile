@@ -97,9 +97,6 @@ else ifeq ($(BUILD_NAME),RT-AX82U)
 	install icon.large.rtax82u.ico $(INSTALLDIR)/usr/sbin/icon_default.large.ico
 	install icon.rtax82u_gd.ico $(INSTALLDIR)/usr/sbin/icon_gd.ico
 	install icon.large.rtax82u_gd.ico $(INSTALLDIR)/usr/sbin/icon_gd.large.ico
-else ifeq ($(BUILD_NAME),RT-N18U)
-	install icon.ico $(INSTALLDIR)/usr/sbin/icon.ico
-	install icon.large.ico $(INSTALLDIR)/usr/sbin/icon.large.ico
 else
 	install icon.$(modelstr).ico $(INSTALLDIR)/usr/sbin/icon.ico
 	install icon.large.$(modelstr).ico $(INSTALLDIR)/usr/sbin/icon.large.ico
