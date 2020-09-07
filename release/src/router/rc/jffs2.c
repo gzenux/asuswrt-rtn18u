@@ -397,6 +397,9 @@ void start_jffs2(void)
 #endif
 #endif
 
+#if defined(RTN18U)
+	if (!check_if_dir_exist("/jffs/.sys/")) mkdir("/jffs/.sys/", 0755);
+#endif
 	if (!check_if_dir_exist("/jffs/scripts/")) mkdir("/jffs/scripts/", 0755);
 	if (!check_if_dir_exist("/jffs/configs/")) mkdir("/jffs/configs/", 0755);
 	if (!check_if_dir_exist("/jffs/addons/")) mkdir("/jffs/addons/", 0755);
