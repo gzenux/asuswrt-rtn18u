@@ -586,6 +586,7 @@ endif
 
 ifneq ($(RTCONFIG_TCPLUGIN), y)
 	rm -rf $(INSTALLDIR)/www/images/tencent
+	rm -rf $(INSTALLDIR)/www/images/close.svg
 	rm -f $(INSTALLDIR)/www/GameBoost_Tencent.asp
 	rm -f $(INSTALLDIR)/www/game_accelerator_tencent.html
 endif
@@ -667,6 +668,12 @@ else
 	rm -rf $(INSTALLDIR)/www/images/New_ui/nt_center
 	rm -rf $(INSTALLDIR)/www/notification_center
 	rm -rf $(INSTALLDIR)/www/nt_content.json
+endif
+
+ifneq ($(RTCONFIG_OOKLA),y)
+	rm -rf $(INSTALLDIR)/www/AdaptiveQoS_InternetSpeed.asp
+	rm -rf $(INSTALLDIR)/www/internet_speed.html
+	rm -rf $(INSTALLDIR)/www/images/speedtest
 endif
 
 ifeq ($(BUILD_NAME),RT-AC68A)
@@ -974,8 +981,8 @@ endif
 
 ifeq ($(RTCONFIG_ROG_UI),y)
 	cp -rf $(INSTALLDIR)/www/css/ROG/* $(INSTALLDIR)/www/css/
-	rm -rf $(INSTALLDIR)/www/css/ROG
 endif
+	rm -rf $(INSTALLDIR)/www/css/ROG
 
 	# remove unused files
 	rm -rf $(INSTALLDIR)/www/Main_AdmStatus_Content.asp
