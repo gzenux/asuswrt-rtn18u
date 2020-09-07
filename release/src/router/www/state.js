@@ -2375,7 +2375,6 @@ function inputCtrl(obj, flag){
 	|| current_url.indexOf("router.asp") == 0
 	|| current_url.indexOf("Advanced_MobileBroadband_Content") == 0
 	|| current_url.indexOf("Advanced_Feedback") == 0
-	|| current_url.indexOf("Advanced_MultiWAN_Content") == 0
 	|| current_url.indexOf("Advanced_IPv61_Content") == 0
 	|| current_url.indexOf("Advanced_FirmwareUpgrade_Content.asp") == 0
 	){
