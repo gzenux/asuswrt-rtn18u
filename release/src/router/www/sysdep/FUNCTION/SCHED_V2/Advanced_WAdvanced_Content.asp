@@ -512,7 +512,6 @@ function initial(){
 		document.getElementById("DLSCapable").style.display = "none";	
 	}	
 
-
 	if(document.form.wl_nmode_x.value == "2"){    //Legacy
 		var wme_array = ["<#Auto#>", "<#WLANConfig11b_WirelessCtrl_button1name#>", "<#WLANConfig11b_WirelessCtrl_buttonname#>"];
 		var wme_value = ["auto", "on", "off"];
@@ -635,6 +634,14 @@ function initial(){
 		inputCtrl(document.form.wl_hwol, 0);
 	}
 
+	/* Agile DFS, EU sku, HE2.0 only */
+	if((wl_unit_value == '1' || wl_unit_value == '2') && "<% nvram_get("wl0_country_code"); %>" == 'GB' && "<% soc_version_major(); %>" == "2" && (based_modelid == "RT-AX89U" || based_modelid == "GT-AXY16000")){
+		inputCtrl(document.form.wl_precacen, 1);
+	}
+	else{
+		inputCtrl(document.form.wl_precacen, 0);
+	}
+
 	if(based_modelid != "RT-AC87U"){
 		check_ampdu_rts();
 	}
@@ -699,7 +706,7 @@ function initial(){
 		}
 	}
 
-	if(ofdma_support){
+	if(ofdma_support && sw_mode != 2){
 		var wl_11ax = '<% nvram_get("wl_11ax"); %>';
 		if(document.form.wl_nmode_x.value == '0' || document.form.wl_nmode_x.value == '8'){
 			if (based_modelid != 'RT-AX92U' || (wl_unit_value != '0' && wl_unit_value != '1')) {
@@ -867,7 +874,7 @@ function applyRule(){
 			document.form.action_wait.value = "5";
 		}
 
-		if (Bcmwifi_support && wl_txpower_orig != document.form.wl_txpower.value) {
+		if(no_finiwl_support && wl_txpower_orig != document.form.wl_txpower.value){
 			FormActions("start_apply.htm", "apply", "reboot", "<% get_default_reboot_time(); %>");
 		}
 
@@ -1647,6 +1654,15 @@ function check_nodes_support_wireless_scheduler() {
 					</tr>
 
 					<!--QCA9984 platform only, e.g. BRT-AC828 -->
+					<tr id="agiledfs_tr" style="display:none">
+						<th>Agile DFS</th>
+						<td>
+							<select name="wl_precacen" class="input_option">
+									<option value="0" <% nvram_match("wl_precacen", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+									<option value="1" <% nvram_match("wl_precacen", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
+							</select>
+						</td>
+					</tr>
 					<tr>
 						<th><#WLANConfig11b_x_Hardware_Offloading#></th>
 						<td>
