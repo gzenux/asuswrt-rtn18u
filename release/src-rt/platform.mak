@@ -132,6 +132,26 @@ define platformRouterOptions
 endef
 
 define platformBusyboxOptions
+	@( \
+	if [ "$(RTN18U)" = "y" ] ; then \
+		sed -i "/CONFIG_HALT/d" $(1); \
+		echo "# CONFIG_HALT is not set" >>$(1); \
+		sed -i "/CONFIG_ADD_SHELL/d" $(1); \
+		echo "# CONFIG_ADD_SHELL is not set" >>$(1); \
+		sed -i "/CONFIG_REMOVE_SHELL/d" $(1); \
+		echo "# CONFIG_REMOVE_SHELL is not set" >>$(1); \
+		sed -i "/CONFIG_FATATTR/d" $(1); \
+		echo "# CONFIG_FATATTR is not set" >>$(1); \
+		sed -i "/CONFIG_FSTRIM/d" $(1); \
+		echo "# CONFIG_FSTRIM is not set" >>$(1); \
+		sed -i "/CONFIG_IPCRM/d" $(1); \
+		echo "# CONFIG_IPCRM is not set" >>$(1); \
+		sed -i "/CONFIG_IPCS/d" $(1); \
+		echo "# CONFIG_IPCS is not set" >>$(1); \
+		sed -i "/CONFIG_CHRT/d" $(1); \
+		echo "# CONFIG_CHRT is not set" >>$(1); \
+	fi; \
+	)
 endef
 
 define platformKernelConfig
