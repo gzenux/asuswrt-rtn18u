@@ -98,7 +98,8 @@ function getVariable(){
 	}
 	
 	nvram = httpApi.nvramGet(_array);
-	nvram['lan_hwaddr'] = (httpApi.hookGet('get_lan_hwaddr')) ? httpApi.hookGet('get_lan_hwaddr') : '';
+	//nvram['lan_hwaddr'] = (httpApi.hookGet('get_lan_hwaddr')) ? httpApi.hookGet('get_lan_hwaddr') : '';
+	nvram['lan_hwaddr'] = '<% get_lan_hwaddr(); %>';
 	if(system.yadnsSupport){
 		//nvram['yadns_clients'] = (httpApi.hookGet('yadns_clients')) ? httpApi.hookGet('yadns_clients') : '';
 		nvram['yadns_clients'] = [ <% yadns_clients(); %> ];
@@ -141,7 +142,7 @@ function genElement(){
 		code += '<div class="info-block"><div class="info-title">5 GHz-1 <#MAC_Address#></div><div class="info-content">'+ variable.wl1_hwaddr +'</div></div>';
 		code += '<div class="info-block"><div class="info-title">5 GHz-2 <#MAC_Address#></div><div class="info-content">'+ variable.wl2_hwaddr +'</div></div>';
 	}
-	else{
+	else if(system.band5gSupport){
 		code += '<div class="info-block"><div class="info-title">5 GHz <#MAC_Address#></div><div class="info-content">'+ variable.wl1_hwaddr +'</div></div>';
 	}
 
