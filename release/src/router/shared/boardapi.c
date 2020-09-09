@@ -783,7 +783,7 @@ int do_led_control(int which, int mode)
 	int v = (mode == LED_OFF)? 0:1;
 
 	// Did the user disable the leds?
-	if ((mode == LED_ON) && (nvram_get_int("led_disable") == 1)
+	if ((mode == LED_ON) && inhibit_led_on()
 #ifdef RTCONFIG_QTN
 		&& (which != BTN_QTN_RESET)
 #endif
