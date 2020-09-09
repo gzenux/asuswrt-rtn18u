@@ -1679,7 +1679,6 @@ misc_defaults(int restore_defaults)
 #if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN)
 #if !(defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER))
 	nvram_set_int("AllLED", 1);
-	nvram_set_int("led_disable", inhibit_led_on());
 #endif
 #endif
 	nvram_unset("reload_svc_radio");
@@ -8634,7 +8633,6 @@ int init_nvram(void)
 		add_rc_support("app");
 #ifdef RTCONFIG_LED_BTN
 		nvram_set_int("AllLED", 1);
-		nvram_set_int("led_disable", inhibit_led_on());
 #endif
 #ifdef RTCONFIG_WPS_DUALBAND
 	nvram_set_int("wps_band_x", 0);
@@ -8771,7 +8769,6 @@ int init_nvram(void)
 #endif
 #ifdef RTCONFIG_LED_BTN
 		nvram_set_int("AllLED", 1);
-		nvram_set_int("led_disable", inhibit_led_on());
 #endif
 #ifdef RTCONFIG_WPS_DUALBAND
 	nvram_set_int("wps_band_x", 0);
@@ -9772,7 +9769,6 @@ int init_nvram2(void)
 
 #ifdef RTCONFIG_WPS_ALLLED_BTN
 	nvram_set_int("AllLED", 1);
-	nvram_set_int("led_disable", inhibit_led_on());
 #endif
 #ifdef RTCONFIG_WIFI_SON
 	nvram_set("wsplcd_uptime", "0");
