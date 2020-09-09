@@ -2687,8 +2687,7 @@ static inline int turbo_led_control(__attribute__ ((unused)) int onoff) { return
 static inline int boost_led_control(__attribute__ ((unused)) int onoff) { return 0; }
 #endif
 
-//#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN) || (!defined(RTCONFIG_WIFI_TOG_BTN) && !defined(RTCONFIG_QCA))
-#if 1
+#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN) || (!defined(RTCONFIG_WIFI_TOG_BTN) && !defined(RTCONFIG_QCA))
 static inline int inhibit_led_on(void) { return !nvram_get_int("AllLED"); }
 #else
 static inline int inhibit_led_on(void) { return 0; }
