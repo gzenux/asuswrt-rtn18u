@@ -2625,9 +2625,9 @@ static inline void __handle_led_onoff_button(int led_onoff)
 	nvram_set_int("led_disable", inhibit_led_on());
 #if defined(RTCONFIG_RGBLED)
 	nvram_set_int("aurargb_enable", !!led_onoff);
+	nvram_commit();	
 	start_aurargb();
 #endif
-	nvram_commit();
 	if (led_onoff) {
 		led_control(LED_POWER, LED_ON);
 
@@ -2671,9 +2671,9 @@ static inline void __handle_led_onoff_button(int led_onoff)
 	nvram_set_int("led_disable", inhibit_led_on());
 #if defined(RTCONFIG_RGBLED)
 	nvram_set_int("aurargb_enable", !!led_onoff);
+	nvram_commit();
 	start_aurargb();
 #endif
-	nvram_commit();
 	if (led_onoff) {
 		led_control(LED_POWER, LED_ON);
 		kill_pidfile_s("/var/run/wanduck.pid", SIGUSR2);
@@ -3146,7 +3146,6 @@ void btn_check(void)
 					else
 						nvram_set_int("AllLED", 1);
 					nvram_set_int("led_disable", inhibit_led_on());
-					nvram_commit();
 					LED_status_on = !LED_status_on;
 
 					if (LED_status_on) {
@@ -3389,7 +3388,6 @@ void btn_check(void)
 			else
 				nvram_set_int("AllLED", 1);
 			nvram_set_int("led_disable", inhibit_led_on());
-			nvram_commit();
 			LED_status_on = !LED_status_on;
 
 			if (LED_status_on) {
@@ -3546,12 +3544,12 @@ void btn_check(void)
 			else
 				nvram_set_int("AllLED", 0);
 			nvram_set_int("led_disable", inhibit_led_on());
+			nvram_commit();
 		}
 #endif
 #if defined(RTCONFIG_RGBLED)
 		start_aurargb();
 #endif
-		nvram_commit();
 #if defined(RTAC68U)
 		if (((!nvram_match("cpurev", "c0") || nvram_get_int("PA") == 5023 || (nvram_match("cpurev", "c0") && !nvram_get_int("PA"))) && LED_status == LED_status_on) ||
 		      (nvram_match("cpurev", "c0") && nvram_get_int("PA") != 5023 && nvram_get_int("PA") != 0 && LED_status_on))
@@ -3646,7 +3644,6 @@ void btn_check(void)
 		else
 			nvram_set_int("AllLED", 1);
 		nvram_set_int("led_disable", inhibit_led_on());
-		nvram_commit();
 		LED_status_on = !LED_status_on;
 
 		if (LED_status_on) {
