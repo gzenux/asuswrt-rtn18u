@@ -206,7 +206,6 @@ void set_link_internet(int wan_unit, int link_internet){
 #endif
 }
 
-#if !defined(CONFIG_BCMWL5) || defined(RTN18U)	// Kludge
 #if defined(RTCONFIG_LANWAN_LED)
 #if defined(RTCONFIG_FAILOVER_LED)
 int update_failover_led(void)
@@ -270,7 +269,6 @@ void sw_led_ctrl(void)
 #endif
 }
 #endif
-#endif // CONFIG_BCMWL5
 
 /* 67u,87u,3200: have each led on every port.
  * 88u,3100,5300: have one led to hint wan port but this led is the union of all ports
@@ -378,6 +376,12 @@ static void wan_led_control(int sig) {
 #endif
 	}
 #endif // RTCONFIG_HND_ROUTER_AX
+
+#if defined(RTN18U) // Kludge
+#if !defined(RTCONFIG_WANRED_LED)
+	update_wan_leds(WAN_UNIT_NONE, !rule_setup);
+#endif
+#endif
 
 #if defined(RTCONFIG_QCA) && (defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_TURBO_BTN))
 	if (!inhibit_led_on()) {
@@ -3288,6 +3292,7 @@ _dprintf("wanduck(%d)(first detect start): state %d, state_old %d, changed %d, w
 	}
 
 #if defined(RTCONFIG_HND_ROUTER_AX) || defined(RTCONFIG_LANWAN_LED) || defined(RTCONFIG_WANRED_LED) || defined(RTCONFIG_FAILOVER_LED)
+#if defined(RTCONFIG_WANRED_LED)
 	for(wan_unit = WAN_UNIT_FIRST; wan_unit < WAN_UNIT_MAX; ++wan_unit){
 		if(get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_NONE)
 			continue;
@@ -3301,6 +3306,9 @@ _dprintf("wanduck(%d)(first detect start): state %d, state_old %d, changed %d, w
 
 		update_wan_leds(wan_unit, !rule_setup);
 	}
+#else	/* !RTCONFIG_WANRED_LED */
+		update_wan_leds(WAN_UNIT_NONE, !rule_setup);
+#endif	/* RTCONFIG_WANRED_LED */
 #endif
 
 if(test_log)
