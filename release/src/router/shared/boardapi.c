@@ -821,9 +821,9 @@ int do_led_control(int which, int mode)
 #if defined(RTN18U)
 	if (which == LED_2G && gpio_nr == 0xFF) {
 		if (v)
-			eval("wl", "ledbh", "10", "7");
+			eval("wl", "-i", "eth1", "ledbh", "10", "7");
 		else
-			eval("wl", "ledbh", "10", "0");
+			eval("wl", "-i", "eth1", "ledbh", "10", "0");
 		return 0;
 	}
 #endif
