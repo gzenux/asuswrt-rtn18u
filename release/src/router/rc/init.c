@@ -1676,9 +1676,11 @@ misc_defaults(int restore_defaults)
 #endif
 
 	nvram_unset("wps_reset");
+#if 0	// AllLED would be initialized in init_nvram2()
 #if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN)
 #if !(defined(RTAC3200) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER))
 	nvram_set_int("AllLED", 1);
+#endif
 #endif
 #endif
 	nvram_unset("reload_svc_radio");
@@ -9768,7 +9770,7 @@ int init_nvram2(void)
 #endif // RTCONFIG_CONCURRENTREPEATER
 
 #ifdef RTCONFIG_WPS_ALLLED_BTN
-	nvram_set_int("AllLED", 1);
+	nvram_set_int("AllLED", !nvram_get_int("led_disable"));
 #endif
 #ifdef RTCONFIG_WIFI_SON
 	nvram_set("wsplcd_uptime", "0");

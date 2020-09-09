@@ -15866,26 +15866,17 @@ int service_main(int argc, char *argv[])
 
 void setup_leds()
 {
-	int model;
-
-	model = get_model();
+	nvram_set_int("AllLED", !nvram_get_int("led_disable"));
 
 /*** Disable ***/
-	if (nvram_get_int("led_disable") == 1) {
+	if (inhibit_led_on()) {
 		setAllLedOff();
-		nvram_set("AllLED", "0");
-#ifdef RTCONFIG_USB
-		stop_usbled();
-#endif
-
 	} else {
 /*** Enable ***/
-		nvram_set("AllLED", "1");
-
 		led_control(LED_POWER, LED_ON);
 
 #ifdef RTCONFIG_USB
-		start_usbled();
+		kill_pidfile_s("/var/run/usbled.pid", SIGTSTP); // inform usbled to reset status
 #endif
 #ifdef RTCONFIG_LED_ALL
 		led_control(LED_ALL, LED_ON);
@@ -15904,7 +15895,7 @@ void setup_leds()
 		eval("et", "robowr", "0", "0x1a", "0x01ff");
 #endif
 
-#ifdef RTCONFIG_LAN4WAN_LED
+#if defined(RTCONFIG_LANWAN_LED) || defined(RTCONFIG_LAN4WAN_LED)
 		LanWanLedCtrl();
 #endif
 #ifdef RTAC87U
