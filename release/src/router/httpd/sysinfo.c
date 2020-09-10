@@ -162,7 +162,7 @@ int ej_show_sysinfo(int eid, webs_t wp, int argc, char_t ** argv)
 				    && !strcmp(variant, "0x3")
 				    && !strcmp(part, "0xc09")
 				    && !strcmp(arch, "7"))
-					sprintf(model, "BCM470x - Cortex A7 ARMv7 revision %s", revision);
+					sprintf(model, "BCM470x - Cortex A9 ARMv7 revision %s", revision);
 				else
 					sprintf(model, "Implementer: %s, Part: %s, Variant: %s, Arch: %s, Rev: %s",impl, part, variant, arch, revision);
 
