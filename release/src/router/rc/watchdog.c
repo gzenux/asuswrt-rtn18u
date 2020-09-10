@@ -3073,6 +3073,12 @@ void btn_check(void)
 				if (++btn_count > RESET_WAIT_COUNT)
 				{
 					dbg("You can release RESET button now!\n");
+#if defined(RTCONFIG_LED_BTN) || defined(RTCONFIG_WPS_ALLLED_BTN) || defined(RTCONFIG_TURBO_BTN) || defined(RTCONFIG_SW_CTRL_ALLLED) || (!defined(RTCONFIG_WIFI_TOG_BTN) && !defined(RTCONFIG_QCA))
+					if(btn_pressed == 1) {
+						nvram_set_int("AllLED", 1);
+						setAllLedNormal();
+					}
+#endif
 #ifdef BLUECAVE
 					if(btn_pressed == 1) {
 						nvram_set("bc_ledbh", "reset");
