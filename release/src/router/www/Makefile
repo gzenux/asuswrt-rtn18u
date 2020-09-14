@@ -568,7 +568,9 @@ ifneq ($(RTCONFIG_WTFAST), y)
 	rm -rf $(INSTALLDIR)/www/images/wtfast_point.gif
 ifneq ($(RTCONFIG_BWDPI)$(RTCONFIG_BWDPI_DEP),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/delete.svg
+ifneq ($(RTCONFIG_SCHED_V2),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/delete_hover.svg
+endif
 endif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/disable_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/enable.svg
