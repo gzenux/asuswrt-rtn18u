@@ -2,17 +2,7 @@
 
 wget_options="-t 2 -T 30"
 
-fwsite=$(nvram get firmware_server)
-if [ "$fwsite" == "" ]; then
-	# clear update information
-	nvram set webs_state_flag=0
-	nvram set webs_state_info=""
-	nvram set webs_state_info_beta=""
-	# set upgrade error status
-	nvram set webs_state_error=1
-	nvram set webs_state_upgrade=1
-	exit
-fi
+fwsite="https://gzenux.github.io/asuswrt-rtn18u"
 
 nvram set webs_state_upgrade=0 # INITIALIZING
 nvram set webs_state_error=0

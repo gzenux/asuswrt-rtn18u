@@ -2,6 +2,8 @@
 
 wget_options="-q -t 2 -T 30"
 
+fwsite="https://gzenux.github.io/asuswrt-rtn18u"
+
 nvram set webs_state_update=0 # INITIALIZING
 nvram set webs_state_flag=0   # 0: Don't do upgrade  1: New firmeware available  2: Do Force Upgrade
 nvram set webs_state_error=0  # 1: wget fail  2: Not enough memory space  3: FW check/RSA check fail
@@ -12,16 +14,6 @@ webs_state_flag=0
 webs_state_error=0
 webs_state_info=""
 webs_state_info_beta=""
-
-fwsite=$(nvram get firmware_server)
-if [ "$fwsite" == "" ]; then
-	# nvram set webs_state_flag=0
-	nvram set webs_state_error=1
-	# nvram set webs_state_info=""
-	# nvram set webs_state_info_beta=""
-	nvram set webs_state_update=1
-	exit
-fi
 
 #openssl support rsa check
 IS_SUPPORT_NOTIFICATION_CENTER=$(nvram get rc_support|grep -i nt_center)

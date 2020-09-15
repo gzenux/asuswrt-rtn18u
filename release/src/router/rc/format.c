@@ -268,6 +268,13 @@ void adjust_merlin_config(void)
 		nvram_set("ddns_realip_x", nvram_get("ddns_ipcheck"));
 		nvram_unset("ddns_ipcheck");
 	}
+
+/* Remove firmware update server URL from nvram (386.1) */
+#ifdef RTCONFIG_MERLINUPDATE
+	if(!nvram_is_empty("firmware_server")) {
+		nvram_unset("firmware_server");
+	}
+#endif
 }
 
 void adjust_url_urlelist(void)
