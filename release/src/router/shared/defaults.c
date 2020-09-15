@@ -3402,12 +3402,6 @@ struct nvram_tuple router_defaults[] = {
 #endif
 
 #ifdef RTCONFIG_MERLINUPDATE
-#ifdef RTN18U
-#define FW_SERVER_URL "https://gzenux.github.io/asuswrt-rtn18u"
-#else /* default asuswrt-merlin firmware update server */
-#define FW_SERVER_URL "https://fwupdate.asuswrt-merlin.net"
-#endif
-	{ "firmware_server", FW_SERVER_URL, CKN_STR128, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "firmware_check_enable", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "firmware_online_upgrade", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 #endif

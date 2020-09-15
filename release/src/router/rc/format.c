@@ -266,6 +266,13 @@ void adjust_merlin_config(void)
 		if (newstr) free(newstr);
 		if (hostnames) free(hostnames);
 	}
+
+/* Remove firmware update server URL from nvram */
+#ifdef RTCONFIG_MERLINUPDATE
+	if(!nvram_is_empty("firmware_server")) {
+		nvram_unset("firmware_server");
+	}
+#endif
 }
 
 void adjust_url_urlelist(void)

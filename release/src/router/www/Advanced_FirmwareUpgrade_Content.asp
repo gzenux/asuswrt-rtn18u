@@ -118,16 +118,10 @@ if(cfg_sync_support){
 	var cfg_upgrade = '<% nvram_get("cfg_upgrade"); %>';
 }
 
-var download_srv = '<% nvram_get("firmware_server"); %>';
-if (download_srv == "") {
-	download_url = "https://www.asuswrt-merlin.net/download";
-	download_url_alpha = download_url;
-	download_url_beta = download_url;
-} else {
-	download_url = download_srv + "/" + based_modelid;
-	download_url_alpha = download_srv + "/alpha";
-	download_url_beta = download_url + "/beta";
-}
+var download_srv = 'https://gzenux.github.io/asuswrt-rtn18u';
+download_url = download_srv + "/" + based_modelid;
+download_url_alpha = download_srv + "/alpha";
+download_url_beta = download_url + "/beta";
 
 var amesh_offline_flag = false;
 var interval_update_AiMesh_fw_status;
