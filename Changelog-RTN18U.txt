@@ -1,12 +1,20 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.1-alpha1
+386.1-alpha2
   Changelog for RT-N18U:
-  - No Updates Available.
+  - MERGED: GPL 386_39179 from asuswrt-merlin (master).
+  - NEW: Added speedtest feature powered by Ookla.
+  - CHANGED: Enabled EXT4FS and SCHED_V2 options on this model.
+  - CHANGED: Decoupled the LED control behavior between WPS button
+             and 'disable LEDs' option (stealth mode).
+  - REMOVED: CPU/Wireless temperature shown in home page.
+             (incompatible with GPL 386_39179)
+             To check the temperature information, use Tools_Sysinfo
+             page instead.
 
   Changelog from Asuswrt-Merlin:
-  - No Updates Available.
+  - UPDATED: Merged GPL 386_39179 (beta GPL from Asus).
 
 
 384.18
