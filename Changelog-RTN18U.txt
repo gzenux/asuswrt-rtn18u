@@ -8,6 +8,9 @@ Asuswrt-Merlin for RT-N18U Release Note
   - CHANGED: Enabled EXT4FS and SCHED_V2 options on this model.
   - CHANGED: Decoupled the LED control behavior between WPS button
              and 'disable LEDs' option (stealth mode).
+  - CHANGED: firmware update checks are no longer using the
+             server address stored in nvram, for security
+             purposes. (follow asuswrt-merlin's change)
   - REMOVED: CPU/Wireless temperature shown in home page.
              (incompatible with GPL 386_39179)
              To check the temperature information, use Tools_Sysinfo
