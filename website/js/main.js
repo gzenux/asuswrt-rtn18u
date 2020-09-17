@@ -5,10 +5,34 @@ var gFwObj = { model: "RT-N18U", stable: null, beta: null };
 
 $(function()
 {
+	$("#release_list").DataTable({
+		data: fw_data_set(),
+		columns: [
+			{ title: "ID", visible: false },
+			{ title: "Version", className: "dt-head-center dt-body-left" },
+			{
+				title: "Downloads",
+				render: function(data, type, row, meta) {
+					var fw = fw_info_gen(row[0]);
+					var row_html = "";
+
+					row_html += "<a target=\"_blank\" href=\"" + fw.url + "\">firmware</a>&nbsp;&nbsp;&nbsp;&nbsp;";
+					row_html += "<a target=\"_blank\" href=\"" + fw.url_checksum + "\">checksum</a>&nbsp;&nbsp;&nbsp;&nbsp;";
+					row_html += "<a target=\"_blank\" href=\"" + fw.fnote + "\">release note</a>";
+
+					return row_html;
+				},
+				className: "dt-center"
+			}
+		],
+		dom: "lpi",
+		ordering: false
+	});
 	$("#manifest_txt").load(manifest_url , manifest_get);
 	$("#release_stable_nonote_warning").attr('style', 'display:none');
 	$("#release_beta_nonote_warning").attr('style', 'display:none');
 	$("#install_note_accordion").accordion({collapsible: true, active: false});
+	$("#release_history_accordion").accordion({collapsible: true, active: false});
 });
 
 function manifest_get(response, status, xhr)
