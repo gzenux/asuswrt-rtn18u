@@ -6435,6 +6435,7 @@ static void ntevent_disk_usage_check(){
         } \
     }
 
+#ifdef RTCONFIG_MERLINUPDATE
 // Asuswrt-Merlin's code, without the auto-upgrade and debug logging
 static void auto_firmware_check_merlin()
 {
@@ -6506,6 +6507,7 @@ static void auto_firmware_check_merlin()
 		}
 	}
 }
+#endif
 
 #if defined(RTCONFIG_LP5523) || defined(RTCONFIG_LYRA_HIDE)
 #define FILE_LP5523 "/tmp/lp5523_log"
@@ -8099,7 +8101,7 @@ wdp:
 #endif
 #ifdef RTCONFIG_FORCE_AUTO_UPGRADE
 	auto_firmware_check();
-#else
+#elif RTCONFIG_MERLINUPDATE
 	auto_firmware_check_merlin();
 #endif
 #ifdef RTCONFIG_BWDPI
