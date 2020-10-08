@@ -3744,13 +3744,17 @@ define BusyboxOptions
 			fi; \
 		fi; \
 	fi; \
+	sed -i "/CONFIG_TELNETD/d" $(1); \
 	if [ "$(TELNETD)" = "y" ]; then \
-		sed -i "/CONFIG_TELNETD/d" $(1); \
 		echo "CONFIG_TELNETD=y" >>$(1); \
 		sed -i "/CONFIG_FEATURE_TELNETD_STANDALONE/d" $(1); \
 		echo "CONFIG_FEATURE_TELNETD_STANDALONE=y" >>$(1); \
+		sed -i "/CONFIG_FEATURE_TELNETD_CLIENT_TO_ENV/d" $(1); \
+		echo "CONFIG_FEATURE_TELNETD_CLIENT_TO_ENV=y" >>$(1); \
 		sed -i "/CONFIG_FEATURE_TELNETD_INETD_WAIT/d" $(1); \
 		echo "# CONFIG_FEATURE_TELNETD_INETD_WAIT is not set" >>$(1); \
+	else \
+		echo "# CONFIG_TELNETD is not set" >>$(1); \
 	fi; \
 	if [ "$(DISKTEST)" = "y" ]; then \
 		sed -i "/CONFIG_HDPARM/d" $(1); \
