@@ -4896,8 +4896,6 @@ set_hostname(void)
 int
 _start_telnetd(int force)
 {
-	return 1;
-#if 0	// Disable it
 	char *telnetd_argv[] = { "telnetd",
 		NULL, NULL,	/* -b address */
 #if defined(RTCONFIG_BCM_MFG) || defined(RTCONFIG_MFGFW)
@@ -4938,7 +4936,6 @@ _start_telnetd(int force)
 #endif
 
 	return _eval(telnetd_argv, NULL, 0, NULL);
-#endif	// Disable it
 }
 
 int
