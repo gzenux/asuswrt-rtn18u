@@ -2456,7 +2456,7 @@ function save_cert_key(){
 					<td width="40%">
 						<input type="checkbox" name="access_webui" class="input access_type" value="1"><#System_WebUI#>
 						<input type="checkbox" name="access_ssh" class="input access_type" value="2"><#System_SSH#>
-						<!-- input type="checkbox" name="access_telnet" class="input access_type" value="4"><#System_Telnet#> -->
+						<input type="checkbox" name="access_telnet" class="input access_type" value="4"><#System_Telnet#>
 					</td>
 					<td width="10%">
 						<div id="add_delete" class="add_enable" style="margin:0 auto" onclick="addRow(document.form.http_client_ip_x_0, 4);"></div>
