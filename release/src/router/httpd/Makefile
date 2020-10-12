@@ -354,10 +354,10 @@ size: httpd
 ifneq ($(wildcard ./$(PREBUILD)/),)
 ifeq ($(RTCONFIG_HTTPS),y)
 pwenc.o:
-	@cp -f ./$(PREBUILD)/pwenc.o pwenc.o
+	@cp -f ./$(PREBUILD)/pwenc.o .
 endif
 web_hook.o:
-	@cp -f ./$(PREBUILD)/web_hook.o web_hook.o
+	@cp -f ./$(PREBUILD)/web_hook.o .
 endif
 
 %.o: %.c .%.depend

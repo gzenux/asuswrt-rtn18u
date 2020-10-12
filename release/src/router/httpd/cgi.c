@@ -52,10 +52,6 @@
 extern char *strsep(char **stringp, char *delim);
 #endif
 
-#ifdef HND_ROUTER
-#include <shared.h>
-#endif
-
 /* CGI hash table */
 static struct hsearch_data htab;
 
