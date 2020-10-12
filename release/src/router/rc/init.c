@@ -9938,7 +9938,6 @@ void force_free_caches()
 #ifdef RTCONFIG_BCMARM
 	f_write_string("/proc/sys/vm/drop_caches", "1", 0, 0);
 #endif
-	nvram_unset("reload_svc_radio");
 }
 
 #ifdef RTN65U

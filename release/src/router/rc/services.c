@@ -1243,7 +1243,7 @@ void start_dnsmasq(void)
 				    "ff02::2 ip6-allrouters\n");
 
 			/* lan6 hostname.domain hostname */
- 			value = (char*) ipv6_router_address(NULL);
+			value = (char*) ipv6_router_address(NULL);
 			if (*value) {
 				fprintf(fp, "%s %s.%s %s\n", value,
 					    lan_hostname, nvram_safe_get("lan_domain"),
@@ -1251,7 +1251,7 @@ void start_dnsmasq(void)
 
 				/* mdns fallback */
 				fprintf(fp, "%s %s.local\n", value, lan_hostname);
- 			}
+			}
 		}
 #endif
 		append_custom_config("hosts", fp);
@@ -11151,6 +11151,12 @@ script_allnet:
 			stop_CP();
 			stop_uam_srv();
 #endif
+#if defined(RTCONFIG_WIFI_SON)
+			if(nvram_match("wifison_ready","1"))
+				stop_amas_lib();
+#endif
+
+
 #if defined(RTCONFIG_AMAS)
 #if defined(RTCONFIG_WIFI_SON)
 		        if(nvram_match("wifison_ready","1"))
@@ -11162,12 +11168,6 @@ script_allnet:
 			}
 #endif
 #endif
-#if defined(RTCONFIG_WIFI_SON)
-		        if(nvram_match("wifison_ready","1"))
-                		stop_amas_lib();
-#endif
-
-
 
 
 			// TODO free memory here
