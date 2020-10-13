@@ -6439,6 +6439,10 @@ void dnsmasq_check()
 #endif
 		start_dnsmasq();
 		TRACE_PT("watchdog: dnsmasq died. start dnsmasq...\n");
+
+#if defined(RTL_WTDOG)
+		start_rtl_watchdog();
+#endif
 	}
 #ifdef RTCONFIG_DNSPRIVACY
 	else if (nvram_get_int("dnspriv_enable") && !pids("stubby")) {
