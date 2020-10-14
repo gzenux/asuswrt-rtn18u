@@ -120,6 +120,9 @@ ifeq ($(BUILD_NAME),RT-N18U)
 	rm -rf $(INSTALLDIR)/www/images/btnPressed.png
 	rm -rf $(INSTALLDIR)/www/images/btnReleased.png
 	rm -rf $(INSTALLDIR)/www/images/position.png
+	rm -rf $(INSTALLDIR)/www/images/New_ui/coolerstatus.png
+	rm -rf $(INSTALLDIR)/www/wds_aplist_5g.asp
+	rm -rf $(INSTALLDIR)/www/wds_aplist_5g_2.asp
 	# No ROG/Game Acceleration support
 	rm -rf $(INSTALLDIR)/www/GearAccelerator.asp
 	rm -rf $(INSTALLDIR)/www/GameProfile.asp
@@ -131,6 +134,7 @@ ifeq ($(BUILD_NAME),RT-N18U)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/open_NAT.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/mainimage_img_Game.jpg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/GameBoost_gamePriority.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/game.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/game.svg
 	rm -rf $(INSTALLDIR)/www/js/gameProfile.js
 	rm -rf $(INSTALLDIR)/www/css/gameprofile.css
@@ -270,6 +274,17 @@ ifneq ($(RTCONFIG_CLOUDSYNC),y)
 endif
 endif
 endif
+endif
+endif
+
+ifneq ($(BUILD_NAME),RT-AC88Q)
+	rm -rf $(INSTALLDIR)/www/Guest_network.css
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_CopySetting_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_CopySetting.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_GuestNetwork_New_hover.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_GuestNetwork_New.svg
+ifneq ($(RTCONFIG_BWDPI)$(RTCONFIG_BWDPI_DEP),y)
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_close.svg
 endif
 endif
 
@@ -589,6 +604,7 @@ endif
 ifneq ($(RTCONFIG_TCPLUGIN), y)
 	rm -rf $(INSTALLDIR)/www/images/tencent
 	rm -rf $(INSTALLDIR)/www/images/close.svg
+	rm -rf $(INSTALLDIR)/www/images/New_ui/logo_tencent.svg
 	rm -f $(INSTALLDIR)/www/GameBoost_Tencent.asp
 	rm -f $(INSTALLDIR)/www/game_accelerator_tencent.html
 endif
@@ -626,6 +642,7 @@ endif
 
 ifneq ($(RTCONFIG_IFTTT), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_Smart_Home_IFTTT.asp
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_ifttt.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/smh_ifttt.png
 	rm -rf $(INSTALLDIR)/www/images/New_ui/smh_ifttt_asus_channel.png
 endif
@@ -747,7 +764,9 @@ ifneq ($(RTCONFIG_AMAS), y)
 	rm -rf $(INSTALLDIR)/www/device-map/amesh.asp
 	rm -rf $(INSTALLDIR)/www/device-map/amesh.css
 	rm -rf $(INSTALLDIR)/www/images/New_ui/amesh
+	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_AiMesh.png
 	rm -rf $(INSTALLDIR)/www/require/modules/amesh.js
+	rm -rf $(INSTALLDIR)/www/ajax_AiMesh_node_clients.asp
 	rm -rf $(INSTALLDIR)/www/ajax_onboarding.asp
 	rm -rf $(INSTALLDIR)/www/release_note_amas.asp
 	rm -rf $(INSTALLDIR)/www/get_release_note_amas.asp
@@ -756,7 +775,7 @@ ifneq ($(RTCONFIG_AMAS), y)
 	rm -rf $(INSTALLDIR)/www/AiMesh_Node_FirmwareUpgrade.asp
 	rm -rf $(INSTALLDIR)/www/Advanced_Roaming_Block_Content.asp
 	rm -rf $(INSTALLDIR)/www/fonts/Roboto-Light.ttf
-	rm -rf $(INSTALLDIR)/www/js/jstree/jstree.js
+	rm -rf $(INSTALLDIR)/www/js/jstree
 	rm -rf $(INSTALLDIR)/www/AiMesh.asp
 	rm -rf $(INSTALLDIR)/www/aimesh
 endif
@@ -794,7 +813,10 @@ ifneq ($(BUILD_NAME),$(filter $(BUILD_NAME),  GT-AX11000 GT-AC2900 GT-AXY16000 G
 endif
 
 ifneq ($(RTCONFIG_UUPLUGIN), y)
+	rm -rf $(INSTALLDIR)/www/UUAccelerator.asp
+ifneq ($(RTCONFIG_ROG_UI),y)
 	rm -rf $(INSTALLDIR)/www/images/uu_accelerator.png
+endif
 	rm -rf $(INSTALLDIR)/www/images/New_ui/icon_UU.png
 endif
 
@@ -890,6 +912,7 @@ ifneq ($(RTCONFIG_FRS_FEEDBACK), y)
 	rm -rf $(INSTALLDIR)/www/Advanced_Feedback.asp
 	rm -rf $(INSTALLDIR)/www/Feedback_Info.asp
 	rm -rf $(INSTALLDIR)/www/ajax_fb_size.asp
+	rm -rf $(INSTALLDIR)/www/ajax_oauth.asp
 endif
 
 ifeq ($(REMOVE_ROUTER_UI), y)
@@ -988,6 +1011,8 @@ endif
 
 	# remove unused files
 	rm -rf $(INSTALLDIR)/www/Main_AdmStatus_Content.asp
+	rm -rf $(INSTALLDIR)/www/ajax.js
+	rm -rf $(INSTALLDIR)/www/images/ic_file_image.jpg
 
 	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.asp"`
 	chmod -x `find $(INSTALLDIR)/www/ -type f -name "*.htm"`
