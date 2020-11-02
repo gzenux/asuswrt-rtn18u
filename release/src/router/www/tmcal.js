@@ -43,27 +43,39 @@ function getTrafficUnit(){
 	return value;
 }
 
-function trafficTotalScale(byt){
+function translateTraffic(byt){
+	var scale = 0;
+	var value = byt/1024;
 	var unit = getTrafficUnit();
-	var value = '';
-	var scale = 'KB';
-	if(unit == '1'){	// MB
-		value = (byt/1e6).toFixed(2);
-		scale = 'MB';
-	}
-	else if(unit == '2'){	// GB
-		value = (byt/1e9).toFixed(2);
-		scale = 'GB';
-	}
-	else if(unit == '3'){	// TB
-		value = (byt/1e12).toFixed(2);
-		scale = 'TB';
-	}
-	else{	// unit == 9
-		return scaleSize(byt);
+
+	if(unit > 3){
+		unit = 3;
+		while(value > 1024 && scale < unit){
+			value /= 1024;
+			scale++;
+		}
+	}else{
+		while(scale < unit){
+			value /= 1024;
+			scale++;
+		}
 	}
 
-	return value + ' <small>'+ scale +'</small>';
+	if(scale == 1)
+		scale = 'MB';
+	else if(scale == 2)
+		scale = 'GB';
+	else if(scale == 3)
+		scale = 'TB';
+	else
+		scale = 'KB';
+
+	return {'value': value.toFixed(2), 'scale': scale};
+}
+
+function trafficTotalScale(byt){
+	var volume = translateTraffic(byt);
+	return volume.value + ' <small>' + volume.scale + '</small>';
 }
 
 function xpsb(byt)
@@ -73,26 +85,8 @@ function xpsb(byt)
 	125 = 1000 / 8
 	((B * 8) / 1000)
 REMOVE-END */
-	var unit = getTrafficUnit();
-	var value = '';
-	var scale = 'KB/s';
-	if(unit == '1'){	// MB
-		value = (byt/1e6).toFixed(2);
-		scale = 'MB/s';
-	}
-	else if(unit == '2'){	// GB
-		value = (byt/1e9).toFixed(2);
-		scale = 'GB/s';
-	}
-	else if(unit == '3'){	// TB
-		value = (byt/1e12).toFixed(2);
-		scale = 'TB/s';
-	}
-	else{	// unit == 9
-		value = (byt/1000).toFixed(2);
-	}
-
-	return value + ' <small>'+ scale +'</small>';
+	var volume = translateTraffic(byt);
+	return volume.value + ' <small>' + volume.scale + '/s</small>';
 }
 
 function showCTab()
