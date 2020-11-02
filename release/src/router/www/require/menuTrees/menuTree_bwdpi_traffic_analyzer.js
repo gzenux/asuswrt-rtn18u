@@ -282,6 +282,7 @@ define(function(){
 					{url: "Advanced_OpenVPNClient_Content.asp", tabName: (vpn_fusion_support) ? "<#VPN_Fusion#>" : "<#vpnc_title#>"},
 					{url: "Advanced_VPNClient_Content.asp", tabName: "__INHERIT__"},
 					{url: "Advanced_TOR_Content.asp", tabName: "TOR"},
+					{url: "Advanced_Instant_Guard.asp", tabName: "Instant Guard"},/*untranslated*/
 					{url: "NULL", tabName: "__INHERIT__"}
 				]
 			},		
@@ -311,6 +312,7 @@ define(function(){
 					{url: "Feedback_Info.asp", tabName: "__INHERIT__"},
 					{url: "Advanced_SNMP_Content.asp", tabName: "SNMP"},
 					{url: "Advanced_TR069_Content.asp", tabName: "TR-069"},
+					{url: "Advanced_OAM_Content.asp", tabName: "OAM"},
 					{url: "Advanced_Notification_Content.asp", tabName: "Notification"},
 					{url: "Advanced_Privacy.asp", tabName: "<#menu_privacy#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
@@ -607,6 +609,9 @@ define(function(){
 					retArray.push("Advanced_VPNClient_Content.asp");
 				}
 
+				if(!isSupport("Instant_Guard"))
+					retArray.push("Advanced_Instant_Guard.asp");
+
 				if(!ParentalCtrl2_support){
 					retArray.push("ParentalControl.asp");
 				}
@@ -632,6 +637,10 @@ define(function(){
 				else{
 					if(!dualwan_enabled && usb_index == 0){
 						retArray.push("Advanced_WAN_Content.asp");
+						if(dsl_support)
+							retArray.push("Advanced_DSL_Content.asp");
+						if(vdsl_support)
+							retArray.push("Advanced_VDSL_Content.asp");
 						if(!gobi_support)
 							retArray.push("Advanced_MobileBroadband_Content.asp");
 						else
@@ -649,6 +658,10 @@ define(function(){
 
 				if(!tr069_support){
 					retArray.push("Advanced_TR069_Content.asp");
+				}
+
+				if(!oam_support){
+					retArray.push("Advanced_OAM_Content.asp");
 				}
 
 				if(!snmp_support){
@@ -873,7 +886,7 @@ define(function(){
 		}
 	}
 
-	if(odmpid == "RT-N66U_C1"){
+	if(odmpid == "RT-N66U_C1" || odmpid == "DSL-AX5400"){
 		menuTree.list.splice(8,2);
 	}
 	else{

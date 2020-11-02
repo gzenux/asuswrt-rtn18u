@@ -82,10 +82,9 @@ ifeq ($(HND_ROUTER),y)
 CFLAGS += -I$(HND_SRC)/userspace/public/include -I$(HND_SRC)/userspace/public/include/linux -I$(HND_SRC)/userspace/private/include
 CFLAGS += -I$(HND_SRC)/shared/opensource/include/$(BRCM_BOARD)
 ifeq ($(HND_ROUTER_AX_675X),y)
-LDFLAGS += -L$(TOP_PLATFORM)/wlcsm -lwlcsm -L$(TOP_PLATFORM)/bcm_flashutil -lbcm_flashutil -L$(TOP_PLATFORM)/gen_util -lgen_util -L$(TOP_PLATFORM)/sys_util -lsys_util -L$(TOP_PLATFORM)/bcm_util -lbcm_util -L$(TOP_PLATFORM)/bcm_boardctl -lbcm_boardctl
-else
-LDFLAGS += -L$(TOP_PLATFORM)/wlcsm -lwlcsm -L$(TOP_PLATFORM)/bcm_flashutil -lbcm_flashutil -L$(TOP_PLATFORM)/bcm_util -lbcm_crc -L$(TOP_PLATFORM)/bcm_boardctl -lbcm_boardctl
+LDFLAGS += -L$(TOP_PLATFORM)/gen_util -lgen_util -L$(TOP_PLATFORM)/sys_util -lsys_util
 endif
+LDFLAGS += -L$(TOP_PLATFORM)/wlcsm -lwlcsm -L$(TOP_PLATFORM)/bcm_flashutil -lbcm_flashutil -L$(TOP_PLATFORM)/bcm_util $(if $(HND_ROUTER_AX_675X),-lbcm_util,-lbcm_crc) -L$(TOP_PLATFORM)/bcm_boardctl -lbcm_boardctl
 endif
 ifeq ($(HND_ROUTER_AX),y)
 CFLAGS += -DWL11AC_80P80 -DWL11AC_160 -DBCMDONGLEHOST
@@ -98,14 +97,17 @@ CFLAGS += -I$(HND_SRC)/bcmdrivers/opensource/include/bcm963xx -I$(HND_SRC)/share
 CFLAGS += -I$(WPA_SUPPLICANT_DIR)/src/common
 LDFLAGS += -L$(WPA_SUPPLICANT_DIR)/wpa_supplicant -L$(INSTALLDIR)/wpa_supplicant/usr/lib
 WPS_PBCD := wps_pbcd
-ifeq (55,$(BCM_WLIMPL))
-OBJS_WPS_PBCD := $(if $(wildcard sysdeps/broadcom/wps_pbcd_impl55.c),wps_pbcd_impl55.o,$(PREBUILD)/wps_pbcd_impl55.o) $(if $(wildcard sysdeps/broadcom/hostapd_config_impl55.c),hostapd_config_impl55.o,$(PREBUILD)/hostapd_config_impl55.o)
+ifeq (67,$(BCM_WLIMPL))
+OBJS_WPS_PBCD := $(if $(wildcard sysdeps/broadcom/wps_pbcd_impl67.c),wps_pbcd_impl67.o,$(PREBUILD)/wps_pbcd_impl67.o) $(if $(wildcard sysdeps/broadcom/hostapd_config_impl67.c),hostapd_config_impl67.o,$(PREBUILD)/hostapd_config_impl67.o)
+ifeq ($(RTCONFIG_AMAS_WGN), y)
+OBJS_WPS_PBCD += $(if $(wildcard amas_wgn.c),amas_wgn.o,$(PREBUILD)/amas_wgn.o)
+endif
 else
 OBJS_WPS_PBCD := $(if $(wildcard sysdeps/broadcom/wps_pbcd.c),wps_pbcd.o,$(PREBUILD)/wps_pbcd.o)
 endif
 LDFLAGS += -lwpa_client
-ifeq (55,$(BCM_WLIMPL))
-CFLAGS += -DIMPL55
+ifeq (67,$(BCM_WLIMPL))
+CFLAGS += -DIMPL67
 # For now, enable HAPD_WDS only for router builds
 # CFLAGS += -DHAPD_WDS_DRAFT
 # For now, enable HAPD_WDS_HOTPLUG only for router builds
@@ -166,8 +168,8 @@ ifeq ($(RTCONFIG_4352_5G),y)
 CFLAGS += -DBCM4352
 endif
 
-ifeq ($(RTCONFIG_USB),y)
 CFLAGS += -I$(TOP)/libdisk
+ifeq ($(RTCONFIG_USB),y)
 CFLAGS += -DU2EC
 LDFLAGS += -L$(TOP)/libdisk -ldisk
 ifeq ($(BCM_MMC),y)
@@ -312,8 +314,14 @@ ifeq ($(RTCONFIG_BHCOST_OPT),y)
 OBJS += amas-ssd-broadcom.o
 endif
 endif
+ifeq ($(RTCONFIG_BCM_MFG),y)
 ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME),RT-AC68U RT-AC3200 4G-AC68U GT-AC2900 RT-AX58U TUF-AX3000 RT-AX82U RT-AX82_XD6 RT-AX55 RT-AX1800 DSL-AX82U))
 OBJS += cfe.o
+endif
+else
+ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME),RT-AC68U RT-AC3200 4G-AC68U GT-AC2900 RT-AX58U TUF-AX3000 RT-AX82U RT-AX82_XD6 DSL-AX82U))
+OBJS += cfe.o
+endif
 endif
 ifeq ($(RTCONFIG_ADTBW),y)
 OBJS += adtbw-broadcom.o
@@ -801,8 +809,8 @@ CFLAGS += -I$(TOP)/libasuslog
 endif
 
 ifeq ($(RTCONFIG_BRCM_HOSTAPD),y)
-ifeq (55,$(BCM_WLIMPL))
-OBJS += $(if $(wildcard sysdeps/broadcom/hostapd_config_impl55.c),hostapd_config_impl55.o,$(PREBUILD)/hostapd_config_impl55.o)
+ifeq (67,$(BCM_WLIMPL))
+OBJS += $(if $(wildcard sysdeps/broadcom/hostapd_config_impl67.c),hostapd_config_impl67.o,$(PREBUILD)/hostapd_config_impl67.o)
 else
 OBJS += $(if $(wildcard sysdeps/broadcom/hostapd_config.c),hostapd_config.o,$(PREBUILD)/hostapd_config.o)
 endif
@@ -829,7 +837,7 @@ ifeq ($(RTCONFIG_CONNDIAG),y)
 ifeq ($(RTCONFIG_BCMBSD),y)
 CFLAGS += -I$(TOP)/bsd
 endif
-ifeq ($(RTCONFIG_LANTIQ),y)
+ifeq ($(or $(RTCONFIG_LANTIQ),$(RTAC59_CD6R),$(RTAC59_CD6N)),y)
 CFLAGS += -fPIC
 endif
 ifeq ($(RTCONFIG_HND_ROUTER_AX),y)
@@ -851,10 +859,6 @@ endif
 DIAG_OBJS += conn_diag-sql.o
 endif
 
-ifeq ($(RTCONFIG_SCHED_V2),y)
-OBJS += sched_v2.o
-endif
-
 ifeq ($(RTAX82U),y)
 OBJS += ledg.o
 OBJS += ledbtn.o
@@ -871,6 +875,10 @@ ifeq ($(RTCONFIG_MULTISERVICE_WAN),y)
 ifeq ($(CONFIG_BCMWL5),y)
 OBJS += mswan-broadcom.o
 endif
+endif
+
+ifeq ($(RTCONFIG_BCM_OAM),y)
+OBJS += oam.o
 endif
 
 all: PB rc $(if $(RTCONFIG_BRCM_HOSTAPD), $(WPS_PBCD)) init.prep
@@ -1218,6 +1226,7 @@ ifeq ($(RTCONFIG_WIFI_QCN5024_QCN5054),y)
 endif
 ifeq ($(RTCONFIG_SOC_IPQ8074),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc test_blu
+	@cd $(INSTALLDIR)/sbin && ln -sf rc split_q6mem
 endif
 ifeq ($(RTCONFIG_HTTPS),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc rsasign_check
@@ -1275,6 +1284,9 @@ endif
 
 ifeq ($(RTCONFIG_BT_CONN),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc start_bluetooth_service
+ifeq ($(RTCONFIG_BT_CONN_UART),y)
+	@cd $(INSTALLDIR)/sbin && ln -sf rc execute_bt_bscp
+endif
 endif
 
 ifeq ($(RTCONFIG_QCA),y)
@@ -1341,6 +1353,10 @@ endif
 
 ifeq ($(RTCONFIG_DSL_HOST),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc dsld
+endif
+
+ifeq ($(RTCONFIG_QCA_PLC2),y)
+	@cd $(INSTALLDIR)/sbin && ln -sf rc restart_plc
 endif
 
 clean:
@@ -1447,7 +1463,7 @@ ifneq ($(wildcard ./$(PREBUILD)/ate.o),)
 ate.o:
 	@cp -f ./$(PREBUILD)/ate.o .
 endif
-ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME),RT-AC68U RT-AC3200 4G-AC68U GT-AC2900 RT-AX58U TUF-AX3000 RT-AX82U RT-AX82_XD6 RT-AX55 RT-AX1800 DSL-AX82U))
+ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME),RT-AC68U RT-AC3200 4G-AC68U GT-AC2900 RT-AX58U TUF-AX3000 RT-AX82U RT-AX82_XD6 DSL-AX82U))
 ifneq ($(wildcard ./$(PREBUILD)/cfe.o),)
 cfe.o:
 	@cp -f ./$(PREBUILD)/cfe.o .
@@ -1533,9 +1549,9 @@ ifneq ($(wildcard ./$(PREBUILD)/obd-qca.o),)
 obd-qca.o:
 	@cp -f ./$(PREBUILD)/obd-qca.o .
 endif
-ifneq ($(wildcard ./$(PREBUILD)/amas-ssd-qca),)
+ifneq ($(wildcard ./$(PREBUILD)/amas-ssd-qca.o),)
 amas-ssd-qca:
-	@cp -f ./$(PREBUILD)/amas-ssd-qca .
+	@cp -f ./$(PREBUILD)/amas-ssd-qca.o .
 endif
 endif
 endif
