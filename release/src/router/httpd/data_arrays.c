@@ -682,7 +682,7 @@ int ej_tcclass_dump_array(int eid, webs_t wp, int argc, char_t **argv) {
 #ifdef RTAX58U
 	char *wan_ifname = "eth4";
 #else
-	char *wan_ifname = "eth0";
+	char *wan_ifname = get_wan_ifname(wan_primary_ifunit());
 #endif
 
 	if (nvram_get_int("qos_enable") == 0) {
