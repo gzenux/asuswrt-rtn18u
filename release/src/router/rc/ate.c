@@ -3189,6 +3189,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 	}
 #endif
 #ifdef CONFIG_BCMWL5
+#if !defined(RTN18U)	// Kludge
 	else if (!strcmp(command, "Set_CoBrand")) {
 		int n = atoi(value);
 		if ((n >= 0) && (n <= 100))
@@ -3205,6 +3206,7 @@ int asus_ate_command(const char *command, const char *value, const char *value2)
 		get_cb();
 		return 0;
 	}
+#endif
 #endif
 #if defined(RTCONFIG_CSR8811)
 	else if (!strcmp(command, "Get_MacAddr_BT")) {

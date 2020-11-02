@@ -22623,14 +22623,20 @@ int ej_webdavInfo(int eid, webs_t wp, int argc, char **argv) {
 #endif
 	websWrite(wp, "];\n");
 
+#if !defined(RTN18U)	// Kludge
 	websWrite(wp, "// toAPPInfo=['Ver','ExtendCap', label_mac, odmpid, productid, extendno, rtinfo];\n");
+#else
+	websWrite(wp, "// toAPPInfo=['Ver','ExtendCap', label_mac, odmpid, productid, extendno];\n");
+#endif
 	websWrite(wp, "toAPPInfo=['%d'", WEBDEVINFO_VER);
 	websWrite(wp, ",'%u',", ExtendCap);
 	websWrite(wp, "'%s',", get_label_mac());
 	websWrite(wp, "'%s',", nvram_safe_get("odmpid"));
 	websWrite(wp, "'%s',", nvram_safe_get("productid"));
 	websWrite(wp, "'%s',", nvram_safe_get("extendno"));
+#if !defined(RTN18U)	// Kludge
 	websWrite(wp, "'%d',", get_rtinfo());
+#endif
 	websWrite(wp, "''];\n");
 
 	return 0;
