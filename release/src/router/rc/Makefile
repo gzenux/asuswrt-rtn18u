@@ -1267,9 +1267,7 @@ endif
 ifeq ($(RTCONFIG_INTERNAL_GOBI),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc lteled
 endif
-ifneq (,$(filter y,$(RTCONFIG_TR069) $(RTCONFIG_AMAS)))
 	@cd $(INSTALLDIR)/sbin && ln -sf rc dhcpc_lease
-endif
 
 ifeq ($(RTCONFIG_NEW_USER_LOW_RSSI),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc roamast
