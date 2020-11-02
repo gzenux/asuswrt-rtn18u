@@ -1729,7 +1729,7 @@ void start_lan(void)
 									wh.bssidx = subunit;
 									memcpy(&wh.buf, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 
-									wl_iovar_set(name, "wet_host_mac", &wh, ETHER_ADDR_LEN);
+									wl_iovar_set(ifname, "wet_host_mac", &wh, ETHER_ADDR_LEN);
 								}
 							}
 #else
@@ -4703,7 +4703,7 @@ void start_lan_wl(void)
 									wh.bssidx = subunit;
 									memcpy(&wh.buf, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 
-									wl_iovar_set(name, "wet_host_mac", &wh, ETHER_ADDR_LEN);
+									wl_iovar_set(ifname, "wet_host_mac", &wh, ETHER_ADDR_LEN);
 								}
 							}
 #else
