@@ -318,6 +318,7 @@ function setUnit(unit){
 								<div><#Scale#></div>
 								<div style="margin-left: 24px;">
 									<select class="input_option" id="traffic_unit" onchange="setUnit(this.value);">
+										<option value="9">Auto</option>
 										<option value="0">KB</option>
 										<option value="1">MB</option>
 										<option value="2">GB</option>
