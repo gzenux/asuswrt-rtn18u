@@ -1,13 +1,8 @@
 #include <stdio.h>
-#include <string.h>
 
 #include <httpd.h>
 #include <json.h>
 #include <bcmnvram.h>
-
-#include "sysinfo.h"
-
-extern unsigned int get_phy_temperature(int radio);
 
 #ifdef RTCONFIG_CAPTCHA
 extern const int gifsize;
@@ -402,33 +397,6 @@ int config_iptv_vlan(char *isp)
 	nvram_set("switch_wan0tagid", isp_profile->switch_wan0tagid); nvram_set("switch_wan0prio", isp_profile->switch_wan0prio);
 	nvram_set("switch_wan1tagid", isp_profile->switch_wan1tagid); nvram_set("switch_wan1prio", isp_profile->switch_wan1prio);
 	nvram_set("switch_wan2tagid", isp_profile->switch_wan2tagid); nvram_set("switch_wan2prio", isp_profile->switch_wan2prio);
-	return 0;
-}
-
-int ej_temperature_status(int eid, webs_t wp, int argc, char_t **argv)
-{
-	FILE *fp;
-	int temperature;
-
-	websWrite(wp, "{");
-	/* CPU */
-	if ((fp = fopen("/proc/dmu/temperature", "r")) != NULL) {
-		if (fscanf(fp, "%*s %*s %*s %d%*s", &temperature) != 1)
-			websWrite(wp, "\"cpu\":{\"enabled\":0,\"value\":0}");
-		else
-			websWrite(wp, "\"cpu\":{\"enabled\":1,\"value\":%d}", temperature);
-
-		fclose(fp);
-	}
-
-	/* Wireless 2.4 GHz */
-	temperature = get_phy_temperature(2);
-	if (temperature == 0)
-		websWrite(wp, ",\"wl2\":{\"enabled\":0,\"value\":0}");
-	else
-		websWrite(wp, ",\"wl2\":{\"enabled\":1,\"value\":%d}", temperature);
-
-	websWrite(wp, "}");
 	return 0;
 }
 

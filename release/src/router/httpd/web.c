@@ -28381,9 +28381,6 @@ struct ej_handler ej_handlers[] = {
 	{ "shown_language_css", ej_shown_language_css},
 	{ "memory_usage", ej_memory_usage},
 	{ "cpu_usage", ej_cpu_usage},
-#if defined(RTN18U)
-	{ "temperature_status", ej_temperature_status},
-#endif
 	{ "cpu_core_num", ej_cpu_core_num},
 #if defined(RTCONFIG_REALTEK) || defined(RTCONFIG_WIRELESSWAN)
 	/* MUST: Need to clarify how does the RP-AC87's ej_SiteSurvey */
