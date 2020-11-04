@@ -3829,11 +3829,11 @@ TRACE_PT("writing Parental Control\n");
 	case IPV6_6IN4:
 	case IPV6_6TO4:
 	case IPV6_6RD:
+		fprintf(fp_ipv6, "-A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 #ifdef RTCONFIG_PC_SCHED_V3
 		if (*macdrop)
 			fprintf(fp_ipv6, "-A %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", macdrop);
 #else
- 				fprintf(fp_ipv6, "-A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		if (*macaccept)
 			fprintf(fp_ipv6, "-A %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", macaccept);
 #endif
@@ -3945,7 +3945,7 @@ TRACE_PT("writing Parental Control\n");
 		if (*macdrop)
 			fprintf(fp_ipv6, "-A %s -i %s -o %s -j %s\n", macdrop, lan_if, lan_if, logdrop);
 #else
-	if (*macaccept)
+		if (*macaccept)
 			fprintf(fp_ipv6, "-A %s -i %s -o %s -j %s\n", macaccept, lan_if, lan_if, logaccept);
 #endif
 	}
@@ -3970,7 +3970,7 @@ TRACE_PT("writing Parental Control\n");
 		if (*macdrop)
 			fprintf(fp_ipv6, "-A %s -m state --state INVALID -j %s\n", macdrop, logdrop);
 #else
-	if (*macaccept)
+		if (*macaccept)
 			fprintf(fp_ipv6, "-A %s -m state --state INVALID -j %s\n", macaccept, logdrop);
 #endif
 	}
@@ -4188,14 +4188,6 @@ TRACE_PT("writing Parental Control\n");
 	}
 
 #ifdef RTCONFIG_INTERNETCTRL
-#ifdef RTCONFIG_PC_SCHED_V3
-	// MAC address in list and in time period -> ACCEPT.
-	fprintf(fp, "-A PControls -j %s\n", logdrop);
-#ifdef RTCONFIG_IPV6
-	if (ipv6_enabled())
-		fprintf(fp_ipv6, "-A PControls -j %s\n", logdrop);
-#endif
-#else
 	// MAC address in list and in time period -> ACCEPT.
 	fprintf(fp, "-A ICAccept -j %s\n", logaccept);
 	fprintf(fp, "-A ICDrop -j %s\n", logdrop);
@@ -4208,6 +4200,14 @@ TRACE_PT("writing Parental Control\n");
 #endif
 
 #ifdef RTCONFIG_PARENTALCTRL
+#ifdef RTCONFIG_PC_SCHED_V3
+	// MAC address in list and in time period -> DROP.
+	fprintf(fp, "-A PControls -j %s\n", logdrop);
+#ifdef RTCONFIG_IPV6
+	if (ipv6_enabled())
+		fprintf(fp_ipv6, "-A PControls -j %s\n", logdrop);
+#endif
+#else
 	// MAC address in list and in time period -> ACCEPT.
 	fprintf(fp, "-A PControls -j %s\n", logaccept);
 #ifdef RTCONFIG_IPV6
@@ -5568,7 +5568,7 @@ TRACE_PT("writing Parental Control\n");
 
 #ifdef RTCONFIG_PARENTALCTRL
 #ifdef RTCONFIG_PC_SCHED_V3
-	// MAC address in list and in time period -> ACCEPT.
+	// MAC address in list and in time period -> DROP.
 	fprintf(fp, "-A PControls -j %s\n", logdrop);
 #ifdef RTCONFIG_IPV6
 	if (ipv6_enabled())
