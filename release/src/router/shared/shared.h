@@ -678,6 +678,7 @@ extern double nvram_get_double(const char *key);
 extern int nvram_set_double(const char *key, double value);
 extern int nvram_get_hex(const char *key);
 extern int nvram_set_hex(const char *key, int value);
+extern int nvram_valid_get_int(const char *key, int min, int max, int def);
 #ifdef HND_ROUTER
 extern char *nvram_split_get(const char *key, char *buffer, int maxlen, int maxinst);
 extern int nvram_split_set(const char *key, char *value, int size, int maxinst);
@@ -696,7 +697,7 @@ extern int foreach_wif(int include_vifs, void *param,
 	int (*func)(int idx, int unit, int subunit, void *param));
 
 //shutils.c
-#define modprobe(mod, args...) ({ char *argv[] = { "modprobe", "-s", mod, ## args, NULL }; _eval(argv, NULL, 0, NULL); })
+#define modprobe(mod, args...) ({ char *argv[] = { "modprobe", "-q", "-s", mod, ## args, NULL }; _eval(argv, NULL, 0, NULL); })
 extern int modprobe_r(const char *mod);
 extern void dbgprintf (const char * format, ...); //Ren
 extern void cprintf(const char *format, ...);
@@ -960,6 +961,7 @@ extern pid_t* find_pid_by_name(const char *);
 extern char *psname(int pid, char *buffer, int maxlen);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
+extern void killall_tk_period_wait(const char *name, int wait);
 extern int process_exists(pid_t pid);
 extern int module_loaded(const char *module);
 extern int ppid(int pid);
@@ -1202,13 +1204,6 @@ enum led_id {
 
 	LED_ID_MAX,	/* last item */
 };
-
-// Outside of enum to avoid conflicting with Asus's code
-enum led_merlin_id {
-	LED_SWITCH = LED_ID_MAX + 1,
-	LED_5G_FORCED,
-};
-
 
 enum led_fan_mode_id {
 	LED_OFF = 0,

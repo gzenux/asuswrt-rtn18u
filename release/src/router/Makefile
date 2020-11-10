@@ -1258,18 +1258,16 @@ obj-$(RTCONFIG_TELENET) += lanauth
 obj-y += inadyn
 obj-y += libconfuse
 obj-y += wsdd2
-obj-y += faketc
+#obj-y += faketc
 
 ifneq ($(HND_ROUTER),y)
 obj-y += cstats
 endif
 
 ifeq ($(RTCONFIG_BCMARM),y)
-obj-y += libnfnetlink
-obj-y += libmnl
-obj-y += ipset_arm
-else
-obj-y += ipset
+obj-y += libnfnetlink-1.0.1
+obj-y += libmnl-1.0.4
+obj-y += ipset-6
 endif
 obj-$(RTCONFIG_NFS) += nfs-utils-1.3.4
 obj-$(RTCONFIG_NFS) += portmap
@@ -2451,6 +2449,7 @@ libmnl-1.0.4/Makefile:
 
 libmnl-1.0.4-configure:
 	( cd libmnl-1.0.4 ; \
+		autoreconf -i -f && \
 		$(CONFIGURE) \
 		--prefix=/usr \
 		--bindir=/usr/sbin \
@@ -3073,7 +3072,7 @@ else
 		CFLAGS="-Os $(EXTRACFLAGS) -U CONFIG_NVRAM_SIZE"
 endif
 
-iptables-1.4.x: iptables-1.4.x/Makefile libnfnetlink
+iptables-1.4.x: iptables-1.4.x/Makefile libnfnetlink-1.0.1
 	@$(SEP)
 	$(MAKE) $(PARALLEL_BUILD) -C $@ KERNEL_DIR=$(LINUX_INC_DIR) COPT_FLAGS="-Os $(EXTRACFLAGS) -U CONFIG_NVRAM_SIZE"
 #		CFLAGS="-Wall -Os -D_GNU_SOURCE $(EXTRACFLAGS) -I$(TOP)/libnfnetlink/include" \
@@ -4184,9 +4183,9 @@ iproute2:
 
 iproute2-install: iproute2
 	install -D iproute2/tc/tc $(INSTALLDIR)/iproute2/usr/sbin/tc
-	install -D iproute2/tc/tc $(INSTALLDIR)/iproute2/usr/sbin/realtc
+#	install -D iproute2/tc/tc $(INSTALLDIR)/iproute2/usr/sbin/realtc
 	$(STRIP) $(INSTALLDIR)/iproute2/usr/sbin/tc
-	$(STRIP) $(INSTALLDIR)/iproute2/usr/sbin/realtc
+#	$(STRIP) $(INSTALLDIR)/iproute2/usr/sbin/realtc
 	install -D iproute2/ip/ip $(INSTALLDIR)/iproute2/usr/sbin/ip
 	$(STRIP) $(INSTALLDIR)/iproute2/usr/sbin/ip
 
@@ -4196,9 +4195,9 @@ iproute2-3.x: kernel_header iptables-1.4.x
 
 iproute2-3.x-install: iproute2-3.x
 	install -D iproute2-3.x/tc/tc $(INSTALLDIR)/iproute2-3.x/usr/sbin/tc
-	install -D iproute2-3.x/tc/tc $(INSTALLDIR)/iproute2-3.x/usr/sbin/realtc
+#	install -D iproute2-3.x/tc/tc $(INSTALLDIR)/iproute2-3.x/usr/sbin/realtc
 	$(STRIP) $(INSTALLDIR)/iproute2-3.x/usr/sbin/tc
-	$(STRIP) $(INSTALLDIR)/iproute2-3.x/usr/sbin/realtc
+#	$(STRIP) $(INSTALLDIR)/iproute2-3.x/usr/sbin/realtc
 	install -D iproute2-3.x/ip/ip $(INSTALLDIR)/iproute2-3.x/usr/sbin/ip
 	$(STRIP) $(INSTALLDIR)/iproute2-3.x/usr/sbin/ip
 	@if [ -e iproute2-3.x/tc/m_xt.so ] ; then \
@@ -4236,16 +4235,16 @@ iproute2-4.3:
 
 iproute2-4.3-install:
 	install -D iproute2-4.3/iproute2-4.3.0/tc/tc $(INSTALLDIR)/iproute2-4.3/usr/sbin/tc
-	install -D iproute2-4.3/iproute2-4.3.0/tc/tc  $(INSTALL_DIR)/iproute2-4.3/usr/sbin/realtc
+#	install -D iproute2-4.3/iproute2-4.3.0/tc/tc  $(INSTALL_DIR)/iproute2-4.3/usr/sbin/realtc
 	$(STRIP) $(INSTALLDIR)/iproute2-4.3/usr/sbin/tc
-	$(STRIP) $(INSTALLDIR)/iproute2-4.3/usr/sbin/realtc
+#	$(STRIP) $(INSTALLDIR)/iproute2-4.3/usr/sbin/realtc
 	install -D iproute2-4.3/iproute2-4.3.0/ip/ip $(INSTALLDIR)/iproute2-4.3/usr/sbin/ip
 	$(STRIP) $(INSTALLDIR)/iproute2-4.3/usr/sbin/ip
 
 iproute2-4.3-clean:
 	-@$(MAKE) -C iproute2-4.3 clean
 	-rm -f $(INSTALL_DIR)/usr/sbin/tc
-	-rm -f $(INSTALL_DIR)/usr/sbin/realtc
+#	-rm -f $(INSTALL_DIR)/usr/sbin/realtc
 	-rm -f $(INSTALL_DIR)/usr/sbin/ip
 	-rm -f iproute2-4.3/iproute2-4.3.0/Config
 
@@ -4513,7 +4512,7 @@ zlib/stamp-h1:
 	touch $@
 
 zlib: zlib/stamp-h1
-	@$(MAKE) $(PARALLEL_BUILD) -C zlib CC=$(CC) AR="ar rc" RANLIB=$(RANLIB) LD=$(LD) all && $(MAKE) $@-stage
+	@$(MAKE) $(PARALLEL_BUILD) -C zlib CC=$(CC) AR="ar" RANLIB=$(RANLIB) LD=$(LD) all && $(MAKE) $@-stage
 
 zlib-clean:
 	-@$(MAKE) -C zlib clean
@@ -5102,16 +5101,13 @@ lzo-install:
 	cd $(INSTALLDIR)/lzo/usr/lib && ln -sf liblzo2.so.2 liblzo2.so
 
 lz4:
-	$(MAKE) $(PARALLEL_BUILD) -C $@ && $(MAKE) $@-stage
-
-lz4-stage:
-	$(MAKE) -C lz4 install DESTDIR=$(STAGEDIR) PREFIX=/usr LIBDIR=/usr/lib
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 lz4-install:
-	install -D lz4/lib/liblz4.so.1.8.3 $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.8.3
-	$(STRIP) $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.8.3
-	cd $(INSTALLDIR)/lz4/usr/lib && ln -sf liblz4.so.1.8.3 liblz4.so.1
-	cd $(INSTALLDIR)/lz4/usr/lib && ln -sf liblz4.so.1.8.3 liblz4.so
+	install -D lz4/lib/liblz4.so.1.9.2 $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.9.2
+	$(STRIP) $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.9.2
+	cd $(INSTALLDIR)/lz4/usr/lib && ln -sf liblz4.so.1.9.2 liblz4.so.1
+	cd $(INSTALLDIR)/lz4/usr/lib && ln -sf liblz4.so.1.9.2 liblz4.so
 
 openpam: openpam/Makefile
 	$(MAKE) -C $@ $(PARALLEL_BUILD) && $(MAKE) $@-stage
@@ -5152,14 +5148,12 @@ openvpn/Makefile:
 			-Wl,--gc-sections \
 			-lpthread -ldl \
 			-L$(TOP)/zlib -lz" \
-		IPROUTE="/usr/sbin/ip" IFCONFIG="/sbin/ifconfig" ROUTE="/sbin/route" \
 		$(CONFIGURE) --prefix=/usr --bindir=/usr/sbin --libdir=/usr/lib \
 			--disable-debug --enable-management --disable-small \
 			--disable-selinux \
 			--enable-plugin-auth-pam \
 			ac_cv_lib_resolv_gethostbyname=no \
 	)
-#IPROUTE="/usr/sbin/ip" IFCONFIG="/sbin/ifconfig" ROUTE="/sbin/route" \
 
 openvpn-clean:
 	[ ! -f openvpn/Makefile ] || $(MAKE) -C openvpn clean
@@ -7088,90 +7082,34 @@ samba-3.6.x: libiconv-1.14
 samba-3.5.8:
 	@$(MAKE) -C samba-3.5.8 $(PARALLEL_BUILD)
 
-ipset:
-	$(MAKE) -C ipset binaries $(PARALLEL_BUILD)
-
-ipset-install:
-	install -D ipset/ipset $(INSTALLDIR)/ipset/usr/sbin/ipset
-	install -d $(INSTALLDIR)/ipset/usr/lib/
-	install ipset/*.so $(INSTALLDIR)/ipset/usr/lib/
-	$(STRIP) $(INSTALLDIR)/ipset/usr/lib/*.so
-	$(STRIP) $(INSTALLDIR)/ipset/usr/sbin/ipset
-
-libnfnetlink/stamp-h1:
-	cd $(TOP)/libnfnetlink && CC=$(CC) STRIP=$(STRIP) \
-		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		$(CONFIGURE) --prefix=/usr --enable-shared --enable-static
-	touch libnfnetlink/stamp-h1
-
-libnfnetlink: libnfnetlink/stamp-h1
-	@$(SEP)
-	$(MAKE) $(PARALLEL_BUILD) -C libnfnetlink
-
-libnfnetlink-clean:
-	-@$(MAKE) -C libnfnetlink distclean
-	@rm -f libnfnetlink/stamp-h1
-
-libnfnetlink-install:
-	install -D libnfnetlink/src/.libs/libnfnetlink.so.0.2.0 $(INSTALLDIR)/libnfnetlink/usr/lib/libnfnetlink.so.0.2.0
-	$(STRIP) -s $(INSTALLDIR)/libnfnetlink/usr/lib/libnfnetlink.so.0.2.0
-	cd $(INSTALLDIR)/libnfnetlink/usr/lib/ && \
-		ln -sf libnfnetlink.so.0.2.0 libnfnetlink.so.0 && \
-		ln -sf libnfnetlink.so.0.2.0 libnfnetlink.so
-
-libmnl/stamp-h1:
-	cd $(TOP)/libmnl && CC=$(CC) STRIP=$(STRIP) \
-	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	$(CONFIGURE) --prefix=/usr
-	touch libmnl/stamp-h1
-
-libmnl: libmnl/stamp-h1
-	$(MAKE) $(PARALLEL_BUILD) -C libmnl
-	$(MAKE) -C libmnl DESTDIR=$(TOP)/libmnl/staged install
-
-libmnl-install: libmnl
-	install -d $(INSTALLDIR)/libmnl/usr/lib/
-	install libmnl/src/.libs/libmnl.so.0.1.0 $(INSTALLDIR)/libmnl/usr/lib/libmnl.so.0.1.0
-	$(STRIP) $(INSTALLDIR)/libmnl/usr/lib/libmnl.so.0.1.0
-	cd $(INSTALLDIR)/libmnl/usr/lib/ && \
-		ln -sf libmnl.so.0.1.0 libmnl.so.0 && \
-		ln -sf libmnl.so.0.1.0 libmnl.so
-
-libmnl-clean:
-	-@$(MAKE) -C libmnl distclean
-	-@rm -rf libmnl/stamp-h1
-	-@rm -rf libmnl/staged
-
-ipset_arm/stamp-h1: libmnl
-	cd $(TOP)/ipset_arm && CC=$(CC) STRIP=$(STRIP) \
+ipset-6/stamp-h1: libmnl-1.0.4
+	cd $(TOP)/ipset-6 && CC=$(CC) STRIP=$(STRIP) \
 	autoreconf -i -f && \
-	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -I$(TOP)/libmnl-1.0.4/include -I$(TOP)/libnfnetlink-1.0.1/include/" \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	libmnl_CFLAGS="-I$(TOP)/libmnl/staged/usr/include" \
-	libmnl_LIBS="-L$(TOP)/libmnl/staged/usr/lib -lmnl" \
+	libmnl_CFLAGS="-L$(TOP)/libmnl-1.0.4/src/.libs" \
+	libmnl_LIBS="-lmnl" \
 	$(CONFIGURE) --prefix=/usr --with-kmod=no --with-kbuild=$(LINUXDIR)
-	touch ipset_arm/stamp-h1
+	touch ipset-6/stamp-h1
 
-ipset_arm: ipset_arm/stamp-h1
-	$(MAKE) $(PARALLEL_BUILD) -C ipset_arm
-	$(MAKE) $(PARALLEL_BUILD) -C ipset_arm modules
+ipset-6: ipset-6/stamp-h1
+	$(MAKE) $(PARALLEL_BUILD) -C ipset-6
+	$(MAKE) $(PARALLEL_BUILD) -C ipset-6 modules
 
-ipset_arm-install:
-	install -D ipset_arm/src/ipset $(INSTALLDIR)/ipset_arm/usr/sbin/ipset
-	install -d $(INSTALLDIR)/ipset_arm/usr/lib/
-	install ipset_arm/lib/.libs/libipset.so.3.6.0 $(INSTALLDIR)/ipset_arm/usr/lib/libipset.so.3.6.0
-	$(STRIP) $(INSTALLDIR)/ipset_arm/usr/lib/libipset.so.3.6.0
-	$(STRIP) $(INSTALLDIR)/ipset_arm/usr/sbin/ipset
-	cd $(INSTALLDIR)/ipset_arm/usr/lib/ && \
+ipset-6-install:
+	install -D ipset-6/src/ipset $(INSTALLDIR)/ipset-6/usr/sbin/ipset
+	install -d $(INSTALLDIR)/ipset-6/usr/lib/
+	install ipset-6/lib/.libs/libipset.so.3.6.0 $(INSTALLDIR)/ipset-6/usr/lib/libipset.so.3.6.0
+	$(STRIP) $(INSTALLDIR)/ipset-6/usr/lib/libipset.so.3.6.0
+	$(STRIP) $(INSTALLDIR)/ipset-6/usr/sbin/ipset
+	cd $(INSTALLDIR)/ipset-6/usr/lib/ && \
 		ln -sf libipset.so.3.6.0 libipset.so.3 && \
 		ln -sf libipset.so.3.6.0 libipset.so
 
-ipset_arm-clean:
-	-@$(MAKE) -C ipset_arm clean
-	-@$(MAKE) -C ipset_arm modules_clean
-	-@rm -rf ipset_arm/Makefile ipset_arm/stamp-h1
+ipset-6-clean:
+	-@$(MAKE) -C ipset-6 clean
+	-@$(MAKE) -C ipset-6 modules_clean
+	-@rm -rf ipset-6/Makefile ipset-6/stamp-h1
 
 nfs-utils/stamp-h1:
 	cd nfs-utils && CPPFLAGS="$(EXTRACFLAGS) -Os" knfsd_cv_bsd_signals=no \
