@@ -1,9 +1,17 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.19-alpha1
+384.19-alpha2
   Changelog for RT-N18U:
-  - No Updates Available.
+  - CHANGED: Enabled EXT4FS option to support utilities for ext4
+             filesystem.
+  - CHANGED: Decoupled the LED control behavior between WPS button
+             and 'disable LEDs' option (stealth mode).
+  - CHANGED: firmware update checks are no longer using the
+             server address stored in nvram, for security
+             purposes. (follow asuswrt-merlin's change)
+  - FIXED: The traffic unit shows empty option in TrafficMonitor
+           pages when the browser cookie is empty.
 
   Changelog from Asuswrt-Merlin:
   - NEW: Added stub and stub-v2 compression options to OpenVPN
