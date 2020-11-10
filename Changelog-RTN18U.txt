@@ -6,7 +6,34 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
   Changelog from Asuswrt-Merlin:
-  - No Updates Available.
+  - NEW: Added stub and stub-v2 compression options to OpenVPN
+         clients.  Not added to server, since compression is
+         considered deprecated, and will be removed most likely
+         in OpenVPN 2.6, for security reasons.
+  - NEW: Added tls-crypt-v2 support to OpenVPN clients.
+  - UPDATED: Openssl to 1.1.1h.
+  - UPDATED: Updated to OpenVPN 2.5.0.  Note that OpenVPN
+             2.4.0 or newer is now required by the exported
+             client config file.
+  - UPDATED: nano to 5.2.
+  - UPDATED: curl to 7.72.0.
+  - UPDATED: zlib to 1.2.11.
+  - UPDATED: lz4 to 1.9.2.
+  - UPDATED: e2fsprogs to 1.45.6.
+  - CHANGED: The old legacy cipher setting is now only available
+             when running with static key authentication.
+  - CHANGED: Tweaks to the OpenVPN webui layout
+  - CHANGED: OpenVPN clients will now NAT all outbound traffic,
+             regardless of the source subnet.
+  - CHANGED: Reworked the display of DNSPrivacy presets
+  - CHANGED: Added AdGuard (ad blocking) and CIRA Canadian Shield
+             (non US-based service) to the DNSPrivacy presets.
+  - CHANGED: At boot time, OpenVPN killswitch will only be
+             applied for clients set to auto-start with WAN.
+  - CHANGED: Increased number of available mount points for addon
+             webpages to 20.
+  - REMOVED: Option to disable NCP.  The NCP cipher list is
+             now used both for NCP and non-NCP endpoints.
 
 
 384.18
