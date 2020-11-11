@@ -1231,6 +1231,9 @@ handle_request(void)
 				last_login_timestamp = 0;
 				lock_flag &= ~(LOCK_LOGIN_LAN);
 				login_error_status = 0;
+#ifdef RTCONFIG_CAPTCHA
+				login_fail_num = 0;
+#endif
 			}else{
 				if((strncmp(file, "Main_Login.asp", 14)==0 && login_error_status == LOGINLOCK)|| strstr(url, ".png")){
 				}else{
@@ -1247,6 +1250,9 @@ handle_request(void)
 				last_login_timestamp_wan= 0;
 				lock_flag &= ~(LOCK_LOGIN_WAN);
 				login_error_status = 0;
+#ifdef RTCONFIG_CAPTCHA
+				login_fail_num = 0;
+#endif
 			}else{
 				if((strncmp(file, "Main_Login.asp", 14)==0 && login_error_status == LOGINLOCK)|| strstr(url, ".png")){
 				}else{

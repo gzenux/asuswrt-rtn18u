@@ -132,6 +132,7 @@ var uploaded_cert = false;
 
 var le_enable = '<% nvram_get("le_enable"); %>';
 var orig_http_enable = '<% nvram_get("http_enable"); %>';
+var captcha_support = isSupport("captcha");
 
 function initial(){	
 	//parse nvram to array
@@ -362,6 +363,8 @@ function initial(){
 	}
 
 	$("#https_download_cert").css("display", (le_enable == "0" && orig_http_enable != "0")? "": "none");
+
+	$("#login_captcha_tr").css("display", captcha_support? "": "none");
 }
 
 var time_zone_tmp="";
@@ -1941,6 +1944,13 @@ function save_cert_key(){
 					<td>
 						<input type="radio" name="jffs2_scripts" value="1" <% nvram_match("jffs2_scripts", "1", "checked"); %>><#checkbox_Yes#>
 						<input type="radio" name="jffs2_scripts" value="0" <% nvram_match("jffs2_scripts", "0", "checked"); %>><#checkbox_No#>
+					</td>
+				</tr>
+				<tr id="login_captcha_tr" style="display:none">
+					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(11,13)">Enable Login Captcha</a></th>
+					<td>
+						<input type="radio" value="1" name="captcha_enable" <% nvram_match("captcha_enable", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="captcha_enable" <% nvram_match("captcha_enable", "0", "checked"); %>><#checkbox_No#>
 					</td>
 				</tr>
 			</table>

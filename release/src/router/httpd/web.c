@@ -15499,6 +15499,9 @@ END:
 #endif
 
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
+#ifdef RTCONFIG_CAPTCHA
+unsigned int login_fail_num = 0;
+#endif
 static int
 login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		char_t *url, char_t *path, char_t *query)
@@ -15515,8 +15518,8 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	memset(filename, 0, sizeof(filename));
 	memset(asus_token, 0, sizeof(asus_token));
 #ifdef RTCONFIG_CAPTCHA
-	int captcha_right = 0;
-	char *cpatcha_t;
+	int captcha_right = 1;
+	char *captcha_t;
 	unsigned char captcha_text[6];
 #endif
 
@@ -15539,8 +15542,8 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		*authpass++ = '\0';
 
 #ifdef RTCONFIG_CAPTCHA
-	cpatcha_t = websGetVar(wp, "login_captcha","");
-	l = b64_decode( &(cpatcha_t[0]), (unsigned char*) captcha_text, sizeof(captcha_text) );
+	captcha_t = websGetVar(wp, "login_captcha","");
+	l = b64_decode( &(captcha_t[0]), (unsigned char*) captcha_text, sizeof(captcha_text) );
 	captcha_text[l] = '\0';
 #endif
 
@@ -15561,6 +15564,9 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 			last_login_timestamp = 0;
 			lock_flag &= ~(LOCK_LOGIN_LAN);
 			login_error_status = 0;
+#ifdef RTCONFIG_CAPTCHA
+			login_fail_num = 0;
+#endif
 		}
 		if(login_try >= DEFAULT_LOGIN_MAX_NUM){
 			lock_flag |= LOCK_LOGIN_LAN;
@@ -15582,6 +15588,9 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 			last_login_timestamp_wan= 0;
 			lock_flag &= ~(LOCK_LOGIN_WAN);
 			login_error_status = 0;
+#ifdef RTCONFIG_CAPTCHA
+			login_fail_num = 0;
+#endif
 		}
 		if(login_try_wan>= DEFAULT_LOGIN_MAX_NUM){
 			lock_flag |= LOCK_LOGIN_WAN;
@@ -15616,25 +15625,27 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}
 
 #ifdef RTCONFIG_CAPTCHA
-	if( (cur_login_ip_type? login_try_wan: login_try) < CAPTCHA_MAX_LOGIN_NUM ||
-		((cur_login_ip_type? login_try_wan: login_try) >= CAPTCHA_MAX_LOGIN_NUM && is_captcha_match(captcha_text)) )
-	{
-		captcha_right = 1;
-	}
-	else{
-		captcha_right = 0;
-		HTTPD_DBG("Wrong captcha!\n");
-		websWrite(wp,"Connection: close\r\n" );
-		websWrite(wp,"\r\n" );
-		login_error_status = WRONGCAPTCHA;
-		if(fromapp_flag != 0){
-				websWrite(wp, "{\n\"error_status\":\"%d\"\n}\n", login_error_status);
-		}else{
-			websWrite(wp,"<HTML><HEAD>\n" );
-			websWrite(wp,"<script>parent.location.href='/Main_Login.asp';</script>\n");
-			websWrite(wp,"</HEAD></HTML>\n" );
+	if(!nvram_match("captcha_enable", "0")){
+		if( login_fail_num < CAPTCHA_MAX_LOGIN_NUM ||
+			(login_fail_num >= CAPTCHA_MAX_LOGIN_NUM && is_captcha_match(captcha_text)) )
+		{
+			captcha_right = 1;
 		}
-		return 0;
+		else{
+			captcha_right = 0;
+			HTTPD_DBG("Wrong captcha!\n");
+			websWrite(wp,"Connection: close\r\n" );
+			websWrite(wp,"\r\n" );
+			login_error_status = WRONGCAPTCHA;
+			if(fromapp_flag != 0){
+					websWrite(wp, "{\n\"error_status\":\"%d\"\n}\n", login_error_status);
+			}else{
+				websWrite(wp,"<HTML><HEAD>\n" );
+				websWrite(wp,"<script>parent.location.href='/Main_Login.asp';</script>\n");
+				websWrite(wp,"</HEAD></HTML>\n" );
+			}
+			return 0;
+		}
 	}
 #endif
 
@@ -15647,6 +15658,10 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		)
 	{
 		HTTPD_DBG("authpass!\n");
+#ifdef RTCONFIG_CAPTCHA
+		login_fail_num = 0;
+		HTTPD_DBG("authpass: login_fail_num = %d\n", login_fail_num);
+#endif
 		if (fromapp_flag == FROM_BROWSER){
 			if(!cur_login_ip_type)
 			{
@@ -15701,6 +15716,12 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		}
 		return 1;
 	}else{
+#ifdef RTCONFIG_CAPTCHA
+		if(!nvram_match("captcha_enable", "0") && fromapp_flag != FROM_DUTUtil){
+			login_fail_num++;
+		}
+		HTTPD_DBG("authfail: login_fail_num = %d\n", login_fail_num);
+#endif
 		websWrite(wp,"Connection: close\r\n" );
 		websWrite(wp,"\r\n" );
 		if(!cur_login_ip_type)
@@ -24315,8 +24336,8 @@ ej_login_error_info(int eid, webs_t wp, int argc, char **argv)
 	json_object_object_add(item,"error_status", json_object_new_int(login_error_status));
 
 #ifdef RTCONFIG_CAPTCHA
-	/* error number */
-	json_object_object_add(item,"error_num", json_object_new_int(cur_login_ip_type? login_try_wan: login_try));
+	/* number of login fail */
+	json_object_object_add(item,"error_num", json_object_new_int(login_fail_num));
 #endif
 
 	/* url */
