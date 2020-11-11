@@ -1291,10 +1291,10 @@ function show_bandwidth(flag){
 		}
 
 		if(QoS_enable_orig == "0"){
-			show_hint_content += "<br>QoS function of traffic manager will be enable and set as Bandwidth Limiter mode by default.";	/* untranslated */
+			show_hint_content += "<br><#Bandwidth_Limiter_NAT_hint#>";
 		}
 		else if(QoS_type_orig != "2"){
-			show_hint_content += "<br>QoS function of traffic manager will set as Bandwidth Limiter mode.";	/* untranslated */
+			show_hint_content += "<br><#Bandwidth_Limiter_set_hint#>";
 		}
 
 		if(show_hint_content.length <= 0){

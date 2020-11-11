@@ -1,6 +1,6 @@
 ﻿var Untranslated = {
 	fw_size_higher_mem : 'Memory space is NOT enough to upgrade on internet. Please wait for rebooting.',
-	ASUSGATE_note9 : "Your DSL (Digital Suscriber Line) seems unstable. DLA (Dynamic Line Adjustment) enabled by default has modified the necessary setting to improve the network stability. If failed, please submit feedback to our support team.",
+	ASUSGATE_note9 : 'Your DSL line appears to be unstable. DLA (Dynamic Line Adjustment) which enabled by default already adopted necessary changes and ensure stability. However, if interruption continues please submit a Feedback form with "Enable DSL Line Diagnostic" option set as "Yes" and "Diagnostic debug log capture duration" set as 24 hours for our analysis(no need to enable System diagnostic).',
 	ASUSGATE_note6 : "Your DSL (Digital Suscriber Line) seems unstable. We strongly recommend that you submit feedback to our support team.",
 	ASUSGATE_note7 : "If you are experiencing any DSL related issues or you have any comments, please feel free to inform our support team.",
 	ASUSGATE_act_feedback : "Feedback now",
@@ -237,12 +237,10 @@ function overHint(itemNum){
 		statusmenu ="<span><#Adaptive_Custom_desc#></span>";
 	}
 	else if(itemNum == 86){
-		//statusmenu ="<span><#Adaptive_Game_desc#><br><#Adaptive_Category1#></span>";
-		statusmenu ="<span>For optimize online gaming process bandwidth including  Diablo, WOW, Steam games and XBOX, ect.<br><#Adaptive_Category1#></span>";		/* untranslated */
+		statusmenu ="<span><#Adaptive_Game_desc#><br><#Adaptive_Category1#></span>";
 	}
 	else if(itemNum == 87){
-		//statusmenu ="<span><#Adaptive_Stream_desc#><br><#Adaptive_Category2#></span>";
-		statusmenu ="<span>For faster video streaming experience including Youtube, Netflix and Spotify, ect.<br><#Adaptive_Category2#></span>";	/* untranslated */
+		statusmenu ="<span><#Adaptive_Stream_desc#><br><#Adaptive_Category2#></span>";
 	}
 	else if(itemNum == 88){
 		statusmenu ="<span><#Adaptive_WebSurf_desc#><br><#Adaptive_Category4#></span>";

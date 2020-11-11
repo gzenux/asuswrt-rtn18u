@@ -1687,7 +1687,7 @@ function checkWLReady(){
 							<select name="wl_btc_mode" class="input_option">
 									<option value="0" <% nvram_match("wl_btc_mode", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
 									<option value="1" <% nvram_match("wl_btc_mode", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
-									<option value="2" <% nvram_match("wl_btc_mode", "2","selected"); %> >Pre-emptive</option>
+									<option value="2" <% nvram_match("wl_btc_mode", "2","selected"); %> ><#WLANConfig11b_x_BTCoexistence_pre-emptive#></option>
 							</select>
 						</td>
 					</tr>

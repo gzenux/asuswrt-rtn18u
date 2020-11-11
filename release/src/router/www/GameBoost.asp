@@ -246,7 +246,7 @@ var gameList = '<% nvram_get("rog_clientlist"); %>'.replace(/&#60/g, "<");;
 function genGameList(){
 	var list_array = gameList.split('<');
 	var code = '';
-	code += '<thead><tr><td colspan="4">Game Device List&nbsp;(<#List_limit#>&nbsp;64)</td></tr></thead>';
+	code += '<thead><tr><td colspan="4"><#Gear_Accelerator_List#>&nbsp;(<#List_limit#>&nbsp;64)</td></tr></thead>';
 	code += '<tr>';
 	code += '<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,10);"><#Client_Name#> (<#PPPConnection_x_MacAddressForISP_itemname#>)</a></th>';
 	code += '<th><#list_add_delete#></th>';
@@ -296,7 +296,7 @@ function addGameList(){
 	var list_array = gameList.split('<');
 	var maximum = '64';
 	if(mac == ''){
-		alert('client can not be empty!');
+		alert("<#JS_fieldblank#>");
 		return false;
 	}
 
@@ -308,7 +308,7 @@ function addGameList(){
 	// check mac is whether in the list
 	for(i=1; i<list_array.length; i++){
 		if(list_array[i] == mac){
-			alert('Already is the list');
+			alert("<#JS_duplicate#>");
 			return false;
 		}
 	}
@@ -531,10 +531,10 @@ function applyRule(){
 											<!-- <tr style="height:50px;"></tr> -->
 											<tr>
 												<td style="width:200px">
-													<div style="padding: 5px 0;font-size:20px;">Gear Accelerator</div>
+													<div style="padding: 5px 0;font-size:20px;"><#Gear_Accelerator#></div>
 												</td>
 												<td colspan="2">
-													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66">Game Device Prioritizing</div>
+													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66"><#Gear_Accelerator_desc#></div>
 												</td>
 											</tr>
 											<tr>
@@ -547,7 +547,7 @@ function applyRule(){
 													<div style="width:85px;height: 85px;background-image: url('images/New_ui/GameBoost_gamePriority.svg');background-size: 100%;"></div>													
 												</td>
 												<td style="width:400px;height:120px;">
-													<div style="font-size:16px;color:#949393;padding-left:10px;">Prioritizing your game devices for the best gaming experience.</div>
+													<div style="font-size:16px;color:#949393;padding-left:10px;"><#Gear_Accelerator_desc1#></div>
 													<div onclick="showGameListField();" class="btn" style="margin: 12px 0;width:100px;height:40px;line-height: 40px;text-align: center;border-radius: 5px;font-size:18px;"><#CTL_add#></div>
 												</td>
 												<td>
@@ -568,10 +568,10 @@ function applyRule(){
 											<tr style="height:50px;"></tr>
 											<tr>
 												<td style="width:200px">
-													<div style="padding: 5px 0;font-size:20px;">Mobile Game mode</div>
+													<div style="padding: 5px 0;font-size:20px;"><#GB_mobile#></div>
 												</td>
 												<td colspan="2">
-													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66">Boost your Mobile Game Play</div>
+													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66"><#GB_mobile_desc#></div>
 												</td>
 											</tr>
 											<tr>
@@ -585,7 +585,7 @@ function applyRule(){
 													<!-- <img style="padding-right:10px;;" src="/images/New_ui/GameBoost_WTFast.png" > -->
 												</td>
 												<td style="width:400px;height:120px;">
-													<div style="font-size:16px;color:#949393;padding-left:10px;">Download and install ASUS Router App. Enable mobile game mode in app to ensure the best mobile gaming experiences.</div>
+													<div style="font-size:16px;color:#949393;padding-left:10px;"><#GB_mobile_desc1#></div>
 												</td>
 												<td>
 													<div style="display:flex;align-items: center;">
@@ -617,7 +617,7 @@ function applyRule(){
 													<div style="padding: 5px 0;font-size:20px;">Open NAT</div>
 												</td>
 												<td colspan="2">
-													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66">3-steps Port Forwarding Setup</div>
+													<div style="padding: 5px 10px;font-size:20px;color:#FFCC66"><#GB_OpenNAT_desc#></div>
 												</td>
 											</tr>
 											<tr>
@@ -630,7 +630,7 @@ function applyRule(){
 													<div style="width:85px;height: 85px;background-image: url('images/New_ui/GameBoost_openNAT.svg');background-size: 100%;"></div>
 												</td>
 												<td style="width:400px;height:120px;">
-													<div style="font-size:16px;color:#949393;padding-left:10px;">Open NAT offers a hassle-free way to create port forwarding rules for online games and optimizes the routing packets from your game console to the modem with an optimized gaming experience.</div>
+													<div style="font-size:16px;color:#949393;padding-left:10px;"><#GB_OpenNAT_desc1#></div>
 												</td>
 												<td>
 													<div class="btn" style="margin:auto;width:100px;height:40px;text-align:center;line-height:40px;font-size:18px;cursor:pointer;border-radius:5px;" onclick="location.href='GameProfile.asp';"><#btn_go#></div>

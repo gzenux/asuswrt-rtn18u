@@ -91,7 +91,7 @@ var led_control = {
 				break;
 			case 2 :
 				html += "<div style='margin-top:10px;'>";
-				html += "<div class='aimesh_node_setting_info_title'>LED</div>";
+				html += "<div class='aimesh_node_setting_info_title'><#BoostKey_LED#></div>";
 				html += "<div class='aimesh_node_setting_info_content'>";
 				html += "<div align='center' style='float:left;cursor:pointer;' id='led_radio'></div>";
 				html += "</div>";
