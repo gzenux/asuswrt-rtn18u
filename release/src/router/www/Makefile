@@ -650,6 +650,12 @@ else
 	rm -rf $(INSTALLDIR)/www/nt_content.json
 endif
 
+ifneq ($(RTCONFIG_OOKLA),y)
+	rm -rf $(INSTALLDIR)/www/AdaptiveQoS_InternetSpeed.asp
+	rm -rf $(INSTALLDIR)/www/internet_speed.html
+	rm -rf $(INSTALLDIR)/www/images/speedtest
+endif
+
 ifeq ($(BUILD_NAME),RT-AC68A)
 	cd $(INSTALLDIR)/www/require && mv menuTrees/menuTree_RTAC68A.js modules/menuTree.js
 else ifeq ($(BUILD_NAME),RT-AC85U)

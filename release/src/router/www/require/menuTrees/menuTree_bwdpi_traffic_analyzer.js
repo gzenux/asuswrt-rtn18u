@@ -107,6 +107,7 @@ define(function(){
 					{url: "Advanced_QOSUserPrio_Content.asp", tabName: "__INHERIT__"},
 					{url: "Advanced_QOSUserRules_Content.asp", tabName: "__INHERIT__"},
 					{url: "AdaptiveQoS_Adaptive.asp", tabName: "__INHERIT__"},
+					{url: "AdaptiveQoS_InternetSpeed.asp", tabName: "<#InternetSpeed#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
@@ -775,6 +776,10 @@ define(function(){
 					retArray.push("QoS_EZQoS.asp");
 					retArray.push("AdaptiveQoS_WebHistory.asp");
 					retArray.push("Advanced_DHCP_Content.asp");
+				}
+
+				if(!internetSpeed_support){
+					retArray.push("AdaptiveQoS_InternetSpeed.asp");
 				}
 
 				return retArray;

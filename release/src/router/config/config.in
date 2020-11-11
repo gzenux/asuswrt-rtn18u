@@ -2073,6 +2073,10 @@ config RTCONFIG_AMAZON_WSS
 	bool "AMAZON WSS (WiFi Simple Setup) certificate (depends on GN_WBL feature)"
 	default n
 
+config RTCONFIG_OOKLA
+	bool "speedtest function powered by Ookla"
+	default n
+
 config RTCONFIG_CAPTCHA
 	bool "Web UI supports captcha"
 	default n

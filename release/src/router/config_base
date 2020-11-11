@@ -488,4 +488,5 @@ RTCONFIG_NTPD=y
 # RTCONFIG_ATEFROMWAN is not set
 # RTCONFIG_GN_WBL is not set
 # RTCONFIG_AMAZON_WSS is not set
+# RTCONFIG_OOKLA is not set
 # RTCONFIG_CAPTCHA is not set

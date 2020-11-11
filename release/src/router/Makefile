@@ -711,6 +711,8 @@ obj-$(RTCONFIG_BWDPI) += bwdpi_source
 obj-$(RTCONFIG_TRAFFIC_LIMITER) += sqlite
 obj-$(RTCONFIG_TRAFFIC_LIMITER) += traffic_limiter
 
+obj-$(RTCONFIG_OOKLA) += ookla_speedtest
+
 obj-$(RTCONFIG_LETSENCRYPT) += openssl
 obj-$(RTCONFIG_LETSENCRYPT) += acme.sh
 obj-$(RTCONFIG_LETSENCRYPT) += libletsencrypt

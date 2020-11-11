@@ -72,6 +72,7 @@ define(function(){
 					{url: "Advanced_WTFast_Content.asp", tabName: "WTFast"},
 					{url: "GearAccelerator.asp", tabName: "Gear Accelerator"},
 					//{url: "AdaptiveQoS_Adaptive.asp", tabName: "__INHERIT__"},
+					{url: "AdaptiveQoS_InternetSpeed.asp", tabName: "<#InternetSpeed#>"},
 					{url: "NULL", tabName: "__INHERIT__"}
 				] 
 			},
@@ -708,6 +709,10 @@ define(function(){
 				}
 				else{
 					retArray.push("Advanced_MobileBroadband_Content.asp");
+				}
+
+				if(!internetSpeed_support){
+					retArray.push("AdaptiveQoS_InternetSpeed.asp");
 				}
 
 				return retArray;
