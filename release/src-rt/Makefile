@@ -1759,17 +1759,17 @@ define RouterOptions
 		sed -i "/RTCONFIG_PUSH_EMAIL/d" $(1); \
 		echo "RTCONFIG_PUSH_EMAIL=y" >>$(1); \
 	fi; \
-	if [ "$(AHS)" = "n" ]; then \
+	if [ "$(AHS)" = "y" ]; then \
 		sed -i "/RTCONFIG_AHS/d" $(1); \
-		echo "# RTCONFIG_AHS is not set" >>$(1); \
+		echo "RTCONFIG_AHS=y" >>$(1); \
 		sed -i "/RTCONFIG_LIBASC/d" $(1); \
-		echo "# RTCONFIG_LIBASC is not set" >>$(1); \
+		echo "RTCONFIG_LIBASC=y" >>$(1); \
 	fi; \
-	if [ "$(ASD)" = "n" ]; then \
+	if [ "$(ASD)" = "y" ]; then \
 		sed -i "/RTCONFIG_ASD/d" $(1); \
-		echo "# RTCONFIG_ASD is not set" >>$(1); \
+		echo "RTCONFIG_ASD=y" >>$(1); \
 		sed -i "/RTCONFIG_LIBASC/d" $(1); \
-		echo "# RTCONFIG_LIBASC is not set" >>$(1); \
+		echo "RTCONFIG_LIBASC=y" >>$(1); \
 	fi; \
 	if [ "$(RSYSLOGD)" = "y" ]; then \
 		sed -i "/RTCONFIG_RSYSLOGD/d" $(1); \
@@ -5133,11 +5133,6 @@ endif
 ifeq ($(HND_ROUTER),y)
 	@echo BRCM_BOARD_ID=$(BRCM_BOARD_ID)
 	@cd bcmdrivers/broadcom/net/wl/ && ln -sf impl$(BCM_WLIMPL) bcm9$(BRCM_CHIP) && cd $(HND_SRC)
-ifeq ($(HND_ROUTER_AX_675X),y)
-	@rm -f bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP) && ln -sf impl61 bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)
-else
-	@rm -f bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP) && ln -sf impl51 bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)
-endif
 	@rm -f $(PROFILE_FILE_PUB) && ln -sf $(PROFILE_FILE) $(PROFILE_FILE_PUB)
 	@rm -f $(SRCBASE)/.config && ln -sf $(HND_SRC)/.config $(SRCBASE)/.config
 	@rm -f $(LINUXDIR)/.config

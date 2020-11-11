@@ -488,7 +488,6 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmvlan.o $(HND_SRC)/bcmdrivers/broadcom/char/vlan/impl1/bcmvlan$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/chipinfo.o $(HND_SRC)/bcmdrivers/broadcom/char/chipinfo/impl1/chipinfo$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/cmdlist.o $(HND_SRC)/bcmdrivers/broadcom/char/cmdlist/impl1/cmdlist$(PRBM_EXT).o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmlibs.o $(HND_SRC)/bcmdrivers/broadcom/char/bcmlibs/impl1/bcmlibs$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/nciTMSkmod.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciTMSkmod$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/pktflow.o $(HND_SRC)/bcmdrivers/broadcom/char/pktflow/impl1/pktflow$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/pwrmngtd.o $(HND_SRC)/bcmdrivers/broadcom/char/pwrmngt/impl1/pwrmngtd$(PRBM_EXT).o ; \
@@ -503,7 +502,6 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/igs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/igs/linux/$(PREBUILT)/igs.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl_apsta.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl.o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/otp.o $(HND_SRC)/bcmdrivers/broadcom/char/otp/impl1/otp$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmwifi_rates.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/shared/bcmwifi/include/bcmwifi_rates.h ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wlc_types.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/sys/ ; \
 			fi; \
