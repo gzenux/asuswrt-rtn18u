@@ -761,7 +761,7 @@ define(function(){
 					retArray.push("Advanced_IPTV_Content.asp");
 				}
 
-				if(based_modelid == 'RT-AC86U'){
+				if(hnd_support){
 					retArray.push("Advanced_Wireless_Survey.asp");
 				}
 				else{
