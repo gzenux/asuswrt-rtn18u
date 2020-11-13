@@ -3,6 +3,12 @@ Asuswrt-Merlin for RT-N18U Release Note
 
 384.19-alpha2
   Changelog for RT-N18U:
+  - NEW: Add the speedtest feature powered by Ookla.
+         (backported from asuswrt-merlin GPL 386_40577)
+  - NEW: Add the login captcha option to WebUI.
+         (backported from asuswrt-merlin GPL 386_40577)
+  - UPDATED: WebUI language translation and the help description.
+             (backported from asuswrt-merlin GPL 386_40577)
   - CHANGED: Enabled EXT4FS option to support utilities for ext4
              filesystem.
   - CHANGED: Decoupled the LED control behavior between WPS button
