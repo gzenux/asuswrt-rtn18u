@@ -9354,6 +9354,10 @@ NO_USB_CAP:
 	add_rc_support("traffic_limiter");
 #endif
 
+#if defined(RTCONFIG_OOKLA)
+	add_rc_support("ookla");
+#endif
+
 #ifdef RTCONFIG_SNMPD
 	add_rc_support("snmp");
 #endif

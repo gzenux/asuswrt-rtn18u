@@ -15499,6 +15499,9 @@ END:
 #endif
 
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
+#ifdef RTCONFIG_CAPTCHA
+unsigned int login_fail_num = 0;
+#endif
 static int
 login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		char_t *url, char_t *path, char_t *query)
@@ -15515,8 +15518,8 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	memset(filename, 0, sizeof(filename));
 	memset(asus_token, 0, sizeof(asus_token));
 #ifdef RTCONFIG_CAPTCHA
-	int captcha_right = 0;
-	char *cpatcha_t;
+	int captcha_right = 1;
+	char *captcha_t;
 	unsigned char captcha_text[6];
 #endif
 
@@ -15539,8 +15542,8 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		*authpass++ = '\0';
 
 #ifdef RTCONFIG_CAPTCHA
-	cpatcha_t = websGetVar(wp, "login_captcha","");
-	l = b64_decode( &(cpatcha_t[0]), (unsigned char*) captcha_text, sizeof(captcha_text) );
+	captcha_t = websGetVar(wp, "login_captcha","");
+	l = b64_decode( &(captcha_t[0]), (unsigned char*) captcha_text, sizeof(captcha_text) );
 	captcha_text[l] = '\0';
 #endif
 
@@ -15561,6 +15564,9 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 			last_login_timestamp = 0;
 			lock_flag &= ~(LOCK_LOGIN_LAN);
 			login_error_status = 0;
+#ifdef RTCONFIG_CAPTCHA
+			login_fail_num = 0;
+#endif
 		}
 		if(login_try >= DEFAULT_LOGIN_MAX_NUM){
 			lock_flag |= LOCK_LOGIN_LAN;
@@ -15582,6 +15588,9 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 			last_login_timestamp_wan= 0;
 			lock_flag &= ~(LOCK_LOGIN_WAN);
 			login_error_status = 0;
+#ifdef RTCONFIG_CAPTCHA
+			login_fail_num = 0;
+#endif
 		}
 		if(login_try_wan>= DEFAULT_LOGIN_MAX_NUM){
 			lock_flag |= LOCK_LOGIN_WAN;
@@ -15616,25 +15625,27 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}
 
 #ifdef RTCONFIG_CAPTCHA
-	if( (cur_login_ip_type? login_try_wan: login_try) < CAPTCHA_MAX_LOGIN_NUM ||
-		((cur_login_ip_type? login_try_wan: login_try) >= CAPTCHA_MAX_LOGIN_NUM && is_captcha_match(captcha_text)) )
-	{
-		captcha_right = 1;
-	}
-	else{
-		captcha_right = 0;
-		HTTPD_DBG("Wrong captcha!\n");
-		websWrite(wp,"Connection: close\r\n" );
-		websWrite(wp,"\r\n" );
-		login_error_status = WRONGCAPTCHA;
-		if(fromapp_flag != 0){
-				websWrite(wp, "{\n\"error_status\":\"%d\"\n}\n", login_error_status);
-		}else{
-			websWrite(wp,"<HTML><HEAD>\n" );
-			websWrite(wp,"<script>parent.location.href='/Main_Login.asp';</script>\n");
-			websWrite(wp,"</HEAD></HTML>\n" );
+	if(!nvram_match("captcha_enable", "0")){
+		if( login_fail_num < CAPTCHA_MAX_LOGIN_NUM ||
+			(login_fail_num >= CAPTCHA_MAX_LOGIN_NUM && is_captcha_match(captcha_text)) )
+		{
+			captcha_right = 1;
 		}
-		return 0;
+		else{
+			captcha_right = 0;
+			HTTPD_DBG("Wrong captcha!\n");
+			websWrite(wp,"Connection: close\r\n" );
+			websWrite(wp,"\r\n" );
+			login_error_status = WRONGCAPTCHA;
+			if(fromapp_flag != 0){
+					websWrite(wp, "{\n\"error_status\":\"%d\"\n}\n", login_error_status);
+			}else{
+				websWrite(wp,"<HTML><HEAD>\n" );
+				websWrite(wp,"<script>parent.location.href='/Main_Login.asp';</script>\n");
+				websWrite(wp,"</HEAD></HTML>\n" );
+			}
+			return 0;
+		}
 	}
 #endif
 
@@ -15647,6 +15658,10 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		)
 	{
 		HTTPD_DBG("authpass!\n");
+#ifdef RTCONFIG_CAPTCHA
+		login_fail_num = 0;
+		HTTPD_DBG("authpass: login_fail_num = %d\n", login_fail_num);
+#endif
 		if (fromapp_flag == FROM_BROWSER){
 			if(!cur_login_ip_type)
 			{
@@ -15701,6 +15716,12 @@ login_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		}
 		return 1;
 	}else{
+#ifdef RTCONFIG_CAPTCHA
+		if(!nvram_match("captcha_enable", "0") && fromapp_flag != FROM_DUTUtil){
+			login_fail_num++;
+		}
+		HTTPD_DBG("authfail: login_fail_num = %d\n", login_fail_num);
+#endif
 		websWrite(wp,"Connection: close\r\n" );
 		websWrite(wp,"\r\n" );
 		if(!cur_login_ip_type)
@@ -16855,6 +16876,13 @@ FINISH:
 }
 #endif
 
+#ifdef RTCONFIG_OOKLA
+static void do_ookla_speedtest_exe_cgi(char *url, FILE *stream);
+static void do_ookla_speedtest_write_history_cgi(char *url, FILE *stream);
+static void set_ookla_speedtest_state_cgi(char *url, FILE *stream);
+static void set_ookla_speedtest_start_time_cgi(char *url, FILE *stream);
+#endif
+
 static int
 delete_client_in_sta_binding_list(char *del_maclist, char *in_group_list, char *out_group_list, int out_len){
 
@@ -17407,6 +17435,12 @@ struct mime_handler mime_handlers[] = {
 #endif
 #ifdef RTCONFIG_INTERNETCTRL
 	{ "internet_ctrl.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_internet_ctrl_cgi, do_auth },
+#endif
+#ifdef RTCONFIG_OOKLA
+	{ "ookla_speedtest_exe.cgi", "text/html", no_cache_IE7, do_html_post_and_get, do_ookla_speedtest_exe_cgi, do_auth },
+	{ "ookla_speedtest_write_history.cgi", "text/html", no_cache_IE7, do_html_post_and_get, do_ookla_speedtest_write_history_cgi, do_auth },
+	{ "set_ookla_speedtest_state.cgi", "text/html", no_cache_IE7, do_html_post_and_get, set_ookla_speedtest_state_cgi, do_auth },
+	{ "set_ookla_speedtest_start_time.cgi", "text/html", no_cache_IE7, do_html_post_and_get, set_ookla_speedtest_start_time_cgi, do_auth },
 #endif
 	{ "del_client_data.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_del_client_data_cgi, do_auth },
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
@@ -21598,6 +21632,252 @@ ej_bwdpi_engine_status(int eid, webs_t wp, int argc, char_t **argv)
 }
 #endif
 
+#if defined(RTCONFIG_OOKLA)
+/* define */
+#define OOKLA_FOLDER      "/jffs/.sys/OOKLA/"
+#define OOKLA_RESULT      OOKLA_FOLDER"ookla_result"
+#define OOKLA_HISTORY     OOKLA_FOLDER"ookla_history"
+#define OOKLA_HISTORY_T   OOKLA_FOLDER"ookla_history_t"
+#define OOKLA_SERVERS     OOKLA_FOLDER"ookla_servers"
+#define OOKLA_HISTORY_MAX 99
+int ookla_history_count = 0;
+
+enum{
+		OOKLA_STATE_IDLE = 0,
+		OOKLA_STATE_RUN,
+		OOKLA_STATE_ERR_DISCON,
+		OOKLA_STATE_ERR_TIMEOUT,
+		OOKLA_STATE_ERR_TERMINATE,
+		OOKLA_STATE_ERR_UNKNOWN
+};
+
+
+/* debug */
+#define OOKLA_DEBUG       "/tmp/OOKLA_DEBUG"
+#define OOKLA_DBG(fmt,args...) \
+	if(f_exists(OOKLA_DEBUG) > 0) { \
+		printf("[OOKLA][%s:(%d)]"fmt, __FUNCTION__, __LINE__, ##args); \
+	}
+
+static int
+ookla_exec(char *type, char *id)
+{
+	int pid;
+	int retval = 0;
+
+	OOKLA_DBG(" type=%s, id=%s\n", type, id);
+
+
+	/* check folder and files */
+	if (!f_exists(OOKLA_FOLDER))
+		mkdir(OOKLA_FOLDER, 0666);
+
+	/* kill old ookla process */
+	if (pidof("ookla") > 0) doSystem("killall -9 ookla");
+
+	nvram_set_int("ookla_state", OOKLA_STATE_RUN);
+	if (!strcmp(type, "") && !strcmp(id, "")) {
+		char *cmd[] = {"ookla", "-c", "http://www.speedtest.net/api/embed/vz0azjarf5enop8a/config", "-f", "jsonl", NULL};
+		if (f_exists(OOKLA_RESULT)) unlink(OOKLA_RESULT);
+		retval = _eval(cmd, ">"OOKLA_RESULT, 0, &pid);
+	}
+	else if (!strcmp(type, "list") && !strcmp(id, "")) {
+		char *cmd[] = {"ookla", "-c", "http://www.speedtest.net/api/embed/vz0azjarf5enop8a/config", "-f", "jsonl", "-L", NULL};
+		if (f_exists(OOKLA_SERVERS)) unlink(OOKLA_SERVERS);
+		retval = _eval(cmd, ">"OOKLA_SERVERS, 0, &pid);
+	}
+	else if (!strcmp(type, "") && strcmp(id, "")) {
+		/* check xss for input "id" */
+		if (check_xss_blacklist(id, 0)) return retval;
+		char *cmd[] = {"ookla", "-c", "http://www.speedtest.net/api/embed/vz0azjarf5enop8a/config", "-f", "jsonl", "-s", id, NULL};
+		if (f_exists(OOKLA_RESULT)) unlink(OOKLA_RESULT);
+		retval = _eval(cmd, ">"OOKLA_RESULT, 0, &pid);
+	}
+
+	return retval;
+}
+
+static void
+do_ookla_speedtest_exe_cgi(char *url, FILE *stream)
+{
+	int retval = 0;
+	struct json_object *root = NULL;
+	char *type = NULL, *id = NULL;
+
+	do_json_decode(&root);
+	type = get_cgi_json("type", root);
+	id = get_cgi_json("id", root);
+
+	if (type == NULL) type = "";
+	if (id == NULL) id = "";
+
+	retval = ookla_exec(type, id);
+
+	if (root != NULL) json_object_put(root);
+}
+
+static int
+ej_ookla_speedtest_get_result(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int retval = 0;
+	FILE *fp = NULL;
+	char buf[1024] = {0};
+
+	if ((fp = fopen(OOKLA_RESULT, "r")) != NULL)
+	{
+		memset(buf, 0, sizeof(buf));
+		websWrite(wp, "[");
+		while (fgets(buf, sizeof(buf), fp) != NULL)
+		{
+			websWrite(wp, "%s,", buf);
+		}
+		websWrite(wp, "{}]");
+		fclose(fp);
+	}
+	else {
+		websWrite(wp, "[]");
+	}
+
+	return retval;
+}
+
+static int
+ej_ookla_speedtest_get_servers(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int retval = 0;
+	FILE *fp = NULL;
+	char buf[1024] = {0};
+
+	if ((fp = fopen(OOKLA_SERVERS, "r")) != NULL)
+	{
+		memset(buf, 0, sizeof(buf));
+		websWrite(wp, "[");
+		while (fgets(buf, sizeof(buf), fp) != NULL)
+		{
+			websWrite(wp, "%s,", buf);
+		}
+		websWrite(wp, "{}]");
+		fclose(fp);
+	}
+	else {
+		websWrite(wp, "[]");
+	}
+	nvram_set_int("ookla_state", OOKLA_STATE_IDLE);
+	return retval;
+}
+
+static int
+ej_ookla_speedtest_get_history(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int retval = 0;
+	FILE *fp = NULL;
+	char buf[1024] = {0};
+
+	if ((fp = fopen(OOKLA_HISTORY, "r")) != NULL)
+	{
+		memset(buf, 0, sizeof(buf));
+		websWrite(wp, "[");
+		while (fgets(buf, sizeof(buf), fp) != NULL)
+		{
+			websWrite(wp, "%s,", buf);
+		}
+		websWrite(wp, "{}]");
+		fclose(fp);
+	}
+	else {
+		websWrite(wp, "[]");
+	}
+
+	return retval;
+}
+
+static void
+ookla_check_history()
+{
+	int pid;
+	FILE *fp = NULL;
+	char buf[1024] = {0};
+
+	if ((fp = fopen(OOKLA_HISTORY, "r")) == NULL) return;
+
+	// append buffer into tmp file
+	while (fgets(buf, sizeof(buf), fp) != NULL) {
+		if (ookla_history_count > OOKLA_HISTORY_MAX) break;
+		ookla_history_count++;
+		f_write_string(OOKLA_HISTORY_T, buf, FW_APPEND, 0);
+	}
+
+	// copy tmp back into history
+	char *cmd[] = {"cp", "-f", OOKLA_HISTORY_T, OOKLA_HISTORY, NULL};
+	_eval(cmd, NULL, 0, &pid);
+
+	if (f_exists(OOKLA_HISTORY_T)) unlink(OOKLA_HISTORY_T);
+	if (fp) fclose(fp);
+}
+
+static void
+do_ookla_speedtest_write_history_cgi(char *url, FILE *stream)
+{
+	struct json_object *root = NULL;
+	char *speedTest_history = NULL;
+	FILE *fp = NULL;
+
+	do_json_decode(&root);
+	speedTest_history = get_cgi_json("speedTest_history", root);
+
+	OOKLA_DBG(" speedTest_history=%s\n", speedTest_history);
+
+	if (f_exists(OOKLA_HISTORY)) {
+		unlink(OOKLA_HISTORY);
+	}
+
+	if ((fp = fopen(OOKLA_HISTORY, "w")) != NULL) {
+		fputs(speedTest_history, fp);
+		fclose(fp);
+	}
+
+	ookla_check_history();
+	if (root != NULL) json_object_put(root);
+
+	nvram_set_int("ookla_state", OOKLA_STATE_IDLE);
+}
+
+static void
+set_ookla_speedtest_state_cgi(char *url, FILE *stream)
+{
+	struct json_object *root = NULL;
+	char *ookla_state = NULL;
+
+	do_json_decode(&root);
+	ookla_state = get_cgi_json("ookla_state", root);
+	OOKLA_DBG(" ookla_state = %s\n", ookla_state);
+
+	nvram_set("ookla_state", ookla_state);
+
+	/* kill old ookla process */
+	if(atoi(ookla_state) > 1 && pidof("ookla") > 0){
+		doSystem("killall -9 ookla");
+	}
+
+	if (root != NULL) json_object_put(root);
+}
+
+static void
+set_ookla_speedtest_start_time_cgi(char *url, FILE *stream)
+{
+	struct json_object *root = NULL;
+	char *ookla_start_time = NULL;
+
+	do_json_decode(&root);
+	ookla_start_time = get_cgi_json("ookla_start_time", root);
+	OOKLA_DBG(" ookla_start_time = %s\n", ookla_start_time);
+
+	nvram_set("ookla_start_time", ookla_start_time);
+
+	if (root != NULL) json_object_put(root);
+}
+#endif
+
 #ifdef RTCONFIG_TRAFFIC_LIMITER
 static int
 ej_traffic_limiter_wanStat(int eid, webs_t wp, int argc, char_t **argv)
@@ -24315,8 +24595,8 @@ ej_login_error_info(int eid, webs_t wp, int argc, char **argv)
 	json_object_object_add(item,"error_status", json_object_new_int(login_error_status));
 
 #ifdef RTCONFIG_CAPTCHA
-	/* error number */
-	json_object_object_add(item,"error_num", json_object_new_int(cur_login_ip_type? login_try_wan: login_try));
+	/* number of login fail */
+	json_object_object_add(item,"error_num", json_object_new_int(login_fail_num));
 #endif
 
 	/* url */
@@ -25579,6 +25859,11 @@ struct ej_handler ej_handlers[] = {
 	{ "bwdpi_maclist_db", ej_bwdpi_maclist_db},
 #else
 	{ "bwdpi_engine_status", ej_bwdpi_engine_status},
+#endif
+#if defined(RTCONFIG_OOKLA)
+	{ "ookla_speedtest_get_result", ej_ookla_speedtest_get_result},
+	{ "ookla_speedtest_get_servers", ej_ookla_speedtest_get_servers},
+	{ "ookla_speedtest_get_history", ej_ookla_speedtest_get_history},
 #endif
 #ifdef RTCONFIG_TRAFFIC_LIMITER
 	{ "traffic_limiter_wanStat", ej_traffic_limiter_wanStat},

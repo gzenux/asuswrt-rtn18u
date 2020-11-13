@@ -2930,6 +2930,12 @@ define RouterOptions
 		sed -i "/RTCONFIG_GN_WBL\>/d" $(1); \
 		echo "RTCONFIG_GN_WBL=y" >>$(1); \
 	fi; \
+	if [ "$(OOKLA)" = "y" ]; then \
+		if [ "$(BUILD_NAME)" != "RT-AX56U" ] && [ "$(BUILD_NAME)" != "RT-AX58U" ] ; then \
+			sed -i "/RTCONFIG_OOKLA\>/d" $(1); \
+			echo "RTCONFIG_OOKLA=y" >>$(1); \
+		fi; \
+	fi; \
 	if [ -n "$(CAPTCHA)" ]; then \
 		sed -i "/RTCONFIG_CAPTCHA/d" $(1); \
 		echo "RTCONFIG_CAPTCHA=y" >>$(1); \

@@ -495,6 +495,7 @@ extern void do_set_fw_path_cgi(char *url, FILE *stream);
 extern void amazon_wss_enable(char *wss_enable, char *do_rc);
 #endif
 #ifdef RTCONFIG_CAPTCHA
+extern unsigned int login_fail_num;
 extern int is_captcha_match(char *catpch);
 #endif
 #endif /* _httpd_h_ */
