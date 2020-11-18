@@ -10141,6 +10141,12 @@ static void QOS_CONTROL()
 #if defined(RTCONFIG_BWDPI)
 	start_dpi_engine_service();
 #endif
+#if defined(RTN18U)
+	// force to rebuild firewall to avoid some loopback issue
+	if (nvram_match("fw_nat_loopback", "2"))
+		start_firewall(wan_primary_ifunit(), 0);
+#endif
+
 	start_iQos();
 
 #ifdef RTCONFIG_LANTIQ
@@ -13197,6 +13203,14 @@ check_ddr_done:
 			QOS_CONTROL();
 		}
 		nvram_set("restart_qo", "0");
+
+#if defined(RTN18U)
+#if defined(RTCONFIG_BWDPI)
+		// force to rebuild firewall to avoid some loopback issue
+		if (nvram_match("fw_nat_loopback", "2"))
+			start_firewall(wan_primary_ifunit(), 0);
+#endif
+#endif
 	}
 #if defined(RTCONFIG_BWDPI)
 	else if (strcmp(script, "wrs") == 0)
@@ -13204,7 +13218,14 @@ check_ddr_done:
 		char dev_wan[16];
 
 		if(action & RC_SERVICE_STOP) stop_dpi_engine_service(0);
-		if(action & RC_SERVICE_START) start_dpi_engine_service();
+		if(action & RC_SERVICE_START) {
+			start_dpi_engine_service();
+#if defined(RTN18U)
+			// force to rebuild firewall to avoid some loopback issue
+			if (nvram_match("fw_nat_loopback", "2"))
+				start_firewall(wan_primary_ifunit(), 0);
+#endif
+		}
 
 		// add workaround to make IPoE protocol works
 		strlcpy(dev_wan, get_wan_ifname(wan_primary_ifunit()), sizeof(dev_wan));

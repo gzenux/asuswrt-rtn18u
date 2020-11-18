@@ -1841,7 +1841,14 @@ void nat_setting(char *wan_if, char *wan_ip, char *wanx_if, char *wanx_ip, char 
 #endif
 
 		/* masquerade lan to lan */
+#if defined(RTN18U)
+		if (nvram_match("fw_nat_loopback", "2"))
+			fprintf(fp, "-A POSTROUTING %s -m mark --mark 0x8000/0x8000 -j MASQUERADE\n" , p);
+		else if (nvram_match("fw_nat_loopback", "1"))
+#endif
+		{
 			fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, lan_if, lan_class, lan_class);
+		}
 
 #ifdef RTCONFIG_WIFI_SON
 		if (sw_mode() != SW_MODE_REPEATER && nvram_match("wifison_ready", "1")) {
@@ -2270,7 +2277,14 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 		}
 
 		// masquerade lan to lan
-		fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, lan_if, lan_class, lan_class);
+#if defined(RTN18U)
+		if (nvram_match("fw_nat_loopback", "2"))
+			fprintf(fp, "-A POSTROUTING %s -m mark --mark 0x8000/0x8000 -j MASQUERADE\n", p);
+		else if (nvram_match("fw_nat_loopback", "1"))
+#endif
+		{
+			fprintf(fp, "-A POSTROUTING %s -o %s -s %s -d %s -j MASQUERADE\n", p, lan_if, lan_class, lan_class);
+		}
 
 #ifdef RTCONFIG_WIFI_SON
 		if (sw_mode() != SW_MODE_REPEATER && nvram_match("wifison_ready", "1")) {
@@ -5613,6 +5627,13 @@ mangle_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	}
 #endif
 
+#if defined(RTN18U)
+/* For NAT loopback */
+	if (nvram_match("fw_nat_loopback", "2"))
+		eval("iptables", "-t", "mangle", "-A", "PREROUTING", "!", "-i", wan_if,
+		     "-d", wan_ip, "-j", "MARK", "--set-mark", "0x8000/0x8000");
+#endif
+
 /* Workaround for neighbour solicitation flood from Comcast */
 #ifdef RTCONFIG_IPV6
 	if (nvram_get_int("ipv6_ns_drop")) {
@@ -5865,6 +5886,22 @@ mangle_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 #endif /* RTCONFIG_IPV6 */
 #endif /* RTCONFIG_DNSFILTER */
 
+
+#if defined(RTN18U)
+	char tmp[32], prefix[sizeof("wanxXXX_")];
+/* For NAT loopback */
+	for(unit = WAN_UNIT_FIRST; unit < WAN_UNIT_MAX; ++unit){
+		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+		if(nvram_get_int(strcat_r(prefix, "state_t", tmp)) != WAN_STATE_CONNECTED)
+			continue;
+
+		wan_if = get_wan_ifname(unit);
+
+		if (nvram_match("fw_nat_loopback", "2"))
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "!", "-i", wan_if,
+			     "-d", nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)), "-j", "MARK", "--set-mark", "0x8000/0x8000");
+	}
+#endif
 
 /* Workaround for neighbour solicitation flood from Comcast */
 #ifdef RTCONFIG_IPV6
