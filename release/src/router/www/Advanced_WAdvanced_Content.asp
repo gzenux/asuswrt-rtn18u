@@ -757,6 +757,7 @@ function generate_country_selection(){
 
 }
 
+var tx_power_desc_current;
 function adjust_tx_power(){
 	var power_value_old = document.form.wl_TxPower.value;	//old nvram not exist now (value)
 	var power_value_new = document.form.wl_txpower.value;	//current nvram now (percentage)
@@ -785,36 +786,54 @@ function adjust_tx_power(){
 			document.form.wl_txpower.value = power_value_new;
 		}
 
+		tx_power_desc_current = '&nbsp;&nbsp;<span style="font-size:13px;">(Current: ';
+		if(wl_txpower_orig < 25){
+			tx_power_desc_current += power_table_desc[0];
+		}
+		else if(wl_txpower_orig < 50){
+			tx_power_desc_current += power_table_desc[1];
+		}
+		else if(wl_txpower_orig < 88){
+			tx_power_desc_current += power_table_desc[2];
+		}
+		else if(wl_txpower_orig < 100){
+			tx_power_desc_current += power_table_desc[3];
+		}
+		else{
+			tx_power_desc_current += power_table_desc[4];
+		}
+		tx_power_desc_current += ')</span>';
+
 		if(document.form.wl_txpower.value < 25){
 			document.getElementById('slider').children[0].style.width = "0%";
 			document.getElementById('slider').children[1].style.left =  "0%";
 			document.form.wl_txpower.value = 0;
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[0];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[0] + tx_power_desc_current;
 		}
 		else if(document.form.wl_txpower.value < 50){
 			document.getElementById('slider').children[0].style.width = "25%";
 			document.getElementById('slider').children[1].style.left =  "25%";
 			document.form.wl_txpower.value = 25;				
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[1];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[1] + tx_power_desc_current;
 		}
 		else if(document.form.wl_txpower.value < 88){
 			document.getElementById('slider').children[0].style.width = "50%";
 			document.getElementById('slider').children[1].style.left =  "50%";
 			document.form.wl_txpower.value = 50;				
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[2];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[2] + tx_power_desc_current;
 		}
 		else if(document.form.wl_txpower.value < 100){
 			document.getElementById('slider').children[0].style.width = "75%";
 			document.getElementById('slider').children[1].style.left =  "75%";
 			document.form.wl_txpower.value = 88;
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[3];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[3] + tx_power_desc_current;
 		}
 		else{
 			document.getElementById('slider').children[0].style.width = "100%";
 			document.getElementById('slider').children[1].style.left =  "100%";
 			document.form.wl_txpower.value = 100;
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[4];
-		}	
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[4] + tx_power_desc_current;
+		}
 	}
 }
 
@@ -1018,7 +1037,7 @@ function register_event(){
 			max: 5,
 			value:5,
 			slide:function(event, ui){
-				document.getElementById('tx_power_desc').innerHTML = power_table_desc[ui.value-1];
+				document.getElementById('tx_power_desc').innerHTML = power_table_desc[ui.value-1] + tx_power_desc_current;
 			},
 			stop:function(event, ui){
 				set_power(ui.value);	  
@@ -1957,11 +1976,10 @@ function checkWLReady(){
 									<tr>
 										<td style="border:0px;padding-left:0px;">
 											<div id="slider" style="width:80px;"></div>
-										</td>									
-										<td style="border:0px;width:60px;">
-											<div id="tx_power_desc" style="width:150px;font-size:14px;"></div>
-										</td>					
-
+										</td>
+										<td style="border:0px;">
+											<div id="tx_power_desc" style="width:400px;font-size:14px;"></div>
+										</td>
 									</tr>
 								</table>
 							</div>
