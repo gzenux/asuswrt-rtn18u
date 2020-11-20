@@ -942,7 +942,7 @@ static int start_tqos(void)
 	unsigned int rate;
 	unsigned int ceil;
 	unsigned int ibw, obw, bw;
-	unsigned int mtu;
+	int wan_mtu;
 	FILE *f;
 	int x;
 	int inuse;
@@ -953,6 +953,7 @@ static int start_tqos(void)
 	char *qsched;
 	int overhead = 0;
 	char overheadstr[sizeof("overhead 128 linklayer ethernet")];
+	char nvmtu[sizeof("wan0_mtu")];
 
 	// judge interface by get_wan_ifname
 	// add Qos iptable rules in mangle table,
@@ -980,7 +981,6 @@ static int start_tqos(void)
 	* the BW is set here for each class
 	*/
 
-	mtu = strtoul(nvram_safe_get("wan_mtu"), NULL, 10);
 	bw = obw;
 
 #ifdef RTCONFIG_BCMARM
@@ -1012,6 +1012,11 @@ static int start_tqos(void)
 
 	const char *wan_ifname = get_wan_ifname(wan_primary_ifunit());
 	const char *lan_ifname = nvram_safe_get("lan_ifname");
+
+	snprintf(nvmtu, sizeof (nvmtu), "wan%d_mtu", wan_primary_ifunit());
+	wan_mtu = nvram_get_int(nvmtu);
+	if (wan_mtu == 0)
+		wan_mtu = 1500;
 
 	/* Upload (WAN egress) */
 	fprintf(f,
@@ -1090,7 +1095,7 @@ static int start_tqos(void)
 			"\t$TQAUL parent 1:%d handle %d: $SCH\n"
 			"\t$TFAUL parent 1: prio %d protocol ip handle %d fw flowid 1:%d\n",
 				i, rate, ceil,
-				x, calc(bw, rate), s, burst_leaf, (i >= 6) ? 7 : (i + 1), mtu, overheadstr,
+				x, calc(bw, rate), s, burst_leaf, (i >= 6) ? 7 : (i + 1), wan_mtu, overheadstr,
 				x, x,
 				x, i + 1, x);
 	}
@@ -1191,7 +1196,7 @@ static int start_tqos(void)
 				"\t$TQADL parent 2:%d handle %d: $SCH\n"
 				"\t$TFADL parent 2: prio %d protocol ip handle %d fw flowid 2:%d\n",
 					i, rate,
-					x, calc(bw, rate), burst_leaf, (i >= 6) ? 7 : (i + 1), mtu, overheadstr,
+					x, calc(bw, rate), burst_leaf, (i >= 6) ? 7 : (i + 1), wan_mtu, overheadstr,
 					x, x,
 					x, i + 1, x);
 		}
@@ -1743,6 +1748,8 @@ static int start_GeForce_QoS(void)
 	char *qsched;
 	int overhead = 0;
 	char overheadstr[sizeof("overhead 128 linklayer ethernet")];
+	int wan_mtu;
+	char nvmtu[sizeof("wan0_mtu")];
 
 	_dprintf("[GeForce] start GeForceNow QoS ...\n");
 	ibw = strtoul(nvram_safe_get("qos_ibw"), NULL, 10);
@@ -1762,7 +1769,6 @@ static int start_GeForce_QoS(void)
 	if (ibw_re < 1024 && ibw_re != 0) ibw_re = 1024;
 	if (obw_re < 1024 && obw_re != 0) obw_re = 1024;
 
-	mtu = strtoul(nvram_safe_get("wan_mtu"), NULL, 10);
 	bw = obw;
 #ifdef RTCONFIG_BCMARM
 		switch(nvram_get_int("qos_sched")){
@@ -1790,6 +1796,11 @@ static int start_GeForce_QoS(void)
 			         overhead, nvram_get_int("qos_atm") ? "linklayer atm" : "linklayer ethernet");
 		else
 			strcpy(overheadstr, "");
+
+	snprintf(nvmtu, sizeof (nvmtu), "wan%d_mtu", wan_primary_ifunit());
+	wan_mtu = nvram_get_int(nvmtu);
+	if (wan_mtu == 0)
+		wan_mtu = 1500;
 
 	if ((f = fopen(qosfn, "w")) == NULL) return -2;
 	fprintf(f,
@@ -1849,11 +1860,11 @@ static int start_GeForce_QoS(void)
 		"\n"
 		, ibw,      overheadstr            // 1:
 		, obw,      overheadstr            // 2:
-		, ibw_re,   ibw, mtu, overheadstr  // 1:10
-		, 0.20*ibw, ibw, mtu, overheadstr  // 1:20
-		, 0.15*ibw, ibw, mtu, overheadstr  // 1:30
-		, 0.10*ibw, ibw, mtu, overheadstr  // 1:40
-		, 0.05*ibw, ibw, mtu, overheadstr  // 1:50
+		, ibw_re,   ibw, wan_mtu, overheadstr  // 1:10
+		, 0.20*ibw, ibw, wan_mtu, overheadstr  // 1:20
+		, 0.15*ibw, ibw, wan_mtu, overheadstr  // 1:30
+		, 0.10*ibw, ibw, wan_mtu, overheadstr  // 1:40
+		, 0.05*ibw, ibw, wan_mtu, overheadstr  // 1:50
 	);
 
 	/* fixed ports */
@@ -1902,11 +1913,11 @@ static int start_GeForce_QoS(void)
 		"$TQAU parent 2:50 handle 50: $SCH\n"
 		"$TFAU parent 2: prio 5 protocol ip handle 50 fw flowid 2:50\n"
 		"\n"
-		, obw_re  , obw, mtu, overheadstr   // 2:10
-		, 0.20*obw, obw, mtu, overheadstr   // 2:20
-		, 0.15*obw, obw, mtu, overheadstr   // 2:30
-		, 0.10*obw, obw, mtu, overheadstr   // 2:40
-		, 0.05*obw, obw, mtu, overheadstr   // 2:50
+		, obw_re  , obw, wan_mtu, overheadstr   // 2:10
+		, 0.20*obw, obw, wan_mtu, overheadstr   // 2:20
+		, 0.15*obw, obw, wan_mtu, overheadstr   // 2:30
+		, 0.10*obw, obw, wan_mtu, overheadstr   // 2:40
+		, 0.05*obw, obw, wan_mtu, overheadstr   // 2:50
 	);
 
 	/* fixed ports */
