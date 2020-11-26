@@ -314,6 +314,10 @@ void response_nvram_config(webs_t wp, char *config_name, json_object *res, json_
 extern int ej_get_iptvSettings(int eid, webs_t wp, int argc, char_t **argv);
 extern int config_iptv_vlan(char *isp);
 
+#if defined(RTN18U)
+extern int ej_get_txpwr(int eid, webs_t wp, int argc, char_t **argv);
+#endif
+
 #ifdef RTCONFIG_CAPTCHA
 extern void do_captcha_file(char *url, FILE *stream);
 #endif
@@ -25631,6 +25635,7 @@ struct ej_handler ej_handlers[] = {
 	{ "cpu_usage", ej_cpu_usage},
 #if defined(RTN18U)
 	{ "temperature_status", ej_temperature_status},
+	{ "get_txpwr", ej_get_txpwr},
 #endif
 	{ "cpu_core_num", ej_cpu_core_num},
 #if defined(RTCONFIG_REALTEK) || defined(RTCONFIG_WIRELESSWAN)

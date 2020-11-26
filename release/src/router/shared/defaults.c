@@ -551,6 +551,13 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_expire", "0", CKN_STR64, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wl_mbss", "", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wl_txpower", "100", CKN_STR4, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+#if defined(RTN18U)
+	{ "txpwr_mod", "0", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* 0: Asus(Factory), 1: Custom Mode, 2: Debug Mode */
+	{ "txpwr_ccode", "", CKN_STR2, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* default to 0:ccode value */
+	{ "txpwr_regrev", "", CKN_STR3, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* default to 0:regrev value */
+	{ "txpwr_min", "", CKN_STR6, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* default to the minimal valid value */
+	{ "txpwr_max", "", CKN_STR6, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* default value converted from 0:maxp2ga0 */
+#endif
 
 	/* Total number of clients of a guest network.
 	 * 1 ~ maxsta:	1 ~ maxsta

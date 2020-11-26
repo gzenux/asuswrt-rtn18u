@@ -2494,11 +2494,17 @@ void init_wl(void)
 			break;
 	}
 #endif
+#if !defined(RTN18U)
 	check_wl_country();
+#endif
 #if defined(RTAC3200) || defined(RTAC68U) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER) || defined(DSL_AC68U)
 	wl_disband5grp();
 #endif
+#if defined(RTN18U)
+	set_wltxpower_rtn18u();
+#else
 	set_wltxpower();
+#endif
 
 #ifdef RTCONFIG_DPSTA
 	eval("insmod", "dpsta");
@@ -2613,7 +2619,9 @@ void init_wl_compact(void)
 			break;
 	}
 #endif
+#if !defined(RTN18U)
 	check_wl_country();
+#endif
 #ifndef RTCONFIG_BRCM_USBAP
 	if ((model == MODEL_DSLAC68U) ||
 		(model == MODEL_RTAC1200G) ||
@@ -2636,7 +2644,11 @@ void init_wl_compact(void)
 #if defined(RTAC3200) || defined(RTAC68U) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER) || defined(DSL_AC68U)
 		wl_disband5grp();
 #endif
+#if defined(RTN18U)
+		set_wltxpower_rtn18u();
+#else
 		set_wltxpower();
+#endif
 #ifdef RTCONFIG_DHDAP
 		load_wl();
 #else

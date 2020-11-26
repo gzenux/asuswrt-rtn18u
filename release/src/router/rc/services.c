@@ -12084,7 +12084,6 @@ check_ddr_done:
 		case MODEL_RTN12HP_B1:
 		case MODEL_APN12HP:
 		case MODEL_RTN66U:
-		case MODEL_RTN18U:
 		case MODEL_RTAC5300:
 		case MODEL_GTAC5300:
 		case MODEL_RTAC3100:
@@ -12092,6 +12091,11 @@ check_ddr_done:
 		case MODEL_RTAC86U:
 			set_wltxpower();
 			break;
+#if defined(RTN18U)
+		case MODEL_RTN18U:
+			set_wltxpower_rtn18u();
+			break;
+#endif
 		default:
 			dbG("\n\tDon't do this!\n\n");
 			break;
