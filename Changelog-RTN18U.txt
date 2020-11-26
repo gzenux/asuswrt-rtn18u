@@ -1,12 +1,15 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.19-alpha2
+384.19-beta1
   Changelog for RT-N18U:
   - NEW: Add the speedtest feature powered by Ookla.
          (backported from asuswrt-merlin GPL 386_40577)
   - NEW: Add the login captcha option to WebUI.
          (backported from asuswrt-merlin GPL 386_40577)
+  - NEW: Re-add Merlin NAT loopback feature.
+         (no longer supported by asuswrt-merlin)
+  - NEW: Implement advanced wireless TX power adjustment feature.
   - UPDATED: WebUI language translation and the help description.
              (backported from asuswrt-merlin GPL 386_40577)
   - CHANGED: Enabled EXT4FS option to support utilities for ext4
@@ -34,6 +37,9 @@ Asuswrt-Merlin for RT-N18U Release Note
   - UPDATED: zlib to 1.2.11.
   - UPDATED: lz4 to 1.9.2.
   - UPDATED: e2fsprogs to 1.45.6.
+  - UPDATED: dropbear to 2020.81.
+  - UPDATED: Switched userspace ipset from 6.32 to 7.6 (to match
+             with upstream)
   - CHANGED: The old legacy cipher setting is now only available
              when running with static key authentication.
   - CHANGED: Tweaks to the OpenVPN webui layout
@@ -46,6 +52,8 @@ Asuswrt-Merlin for RT-N18U Release Note
              applied for clients set to auto-start with WAN.
   - CHANGED: Increased number of available mount points for addon
              webpages to 20.
+  - CHANGED: Multiple routes can now be defined per client on the
+             OpenVPN client-specific configuration.
   - REMOVED: Option to disable NCP.  The NCP cipher list is
              now used both for NCP and non-NCP endpoints.
 
