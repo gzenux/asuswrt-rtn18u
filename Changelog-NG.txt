@@ -2,23 +2,27 @@ Asuswrt-Merlin 386/NG Changelog
 ===============================
 
 386.1 (xx-xx-xxxx)
-  Switched to the new 386 codebase.  Models are going to
-  gradually be re-added to this new code base.
-  386 introduces AiMesh 2.0, finalizes the move to
-  OpenSSL 1.1.1 firmware-wide, adds a new speedtest
-  (powered by Ookla).  For more details, please refer
+  Switched to the new 386 codebase.  386 introduces
+  AiMesh 2.0, finalizes the move to OpenSSL 1.1.1
+  firmware-wide, adds a new speedtest (powered
+  by Ookla).  For more details, please refer
   to Asus's own release notes.
 
   - NOTE: For developers, note that firmware code is
           once again back on the master branch, with
           both mainline and ax being reunified again.
 
+  - NEW: Added support for the RT-AX86U.
+  - NEW: Added support for the GT-AC2900, with a few restrictions:
+         - Non-ROG UI is used
+         - VPN Fusion is not supported
+         - A few other ROG-specific features are not supported
   - NEW: Added stub and stub-v2 compression options to OpenVPN
          clients.  Not added to server, since compression is
          considered deprecated, and will be removed most likely
          in OpenVPN 2.6, for security reasons.
   - NEW: Added tls-crypt-v2 support to OpenVPN clients.
-  - UPDATED: Merged GPL 386_40577 (beta GPL from Asus).
+  - UPDATED: Merged GPL 386_40996 (beta GPL from Asus).
   - UPDATED: Openssl to 1.1.1h.
   - UPDATED: Updated to OpenVPN 2.5.0.  Note that OpenVPN
              2.4.0 or newer is now required by the exported
@@ -28,6 +32,9 @@ Asuswrt-Merlin 386/NG Changelog
   - UPDATED: zlib to 1.2.11.
   - UPDATED: lz4 to 1.9.2.
   - UPDATED: e2fsprogs to 1.45.6.
+  - UPDATED: dropbear to 2020.81.
+  - UPDATED: Switched userspace ipset from 6.32 to 7.6 (to match
+             with upstream)
   - CHANGED: firmware update checks are no longer using the
              server address stored in nvram, for security
              purposes.  Devs who were using that nvram
@@ -45,6 +52,8 @@ Asuswrt-Merlin 386/NG Changelog
              applied for clients set to auto-start with WAN.
   - CHANGED: Increased number of available mount points for addon
              webpages to 20.
+  - CHANGED: Multiple routes can now be defined per client on the
+             OpenVPN client-specific configuration.
   - FIXED: DHCP could fail to renew its lease with some ISPs when
            Trend Micro engine was enabled (workaround provided
            by Asus)
@@ -53,6 +62,7 @@ Asuswrt-Merlin 386/NG Changelog
   - REMOVED: fq_codel support for Adaptive QoS.  Due to a change
              in how Trend Micro configures QoS, it is no longer
              possible to intercept these to inject fq_codel.
+  - REMOVED: Support for the Cloudcheck mobile app.
 
 
 384.19 (14-Aug-2020)
