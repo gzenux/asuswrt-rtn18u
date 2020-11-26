@@ -2530,7 +2530,7 @@ ipset-7.6/Makefile: ipset-7.6/configure
 		--with-kmod=no --with-kbuild=$(LINUXDIR)
 
 ipset-7.6: libmnl-1.0.4 ipset-7.6/Makefile
-	$(MAKE) -C $@ && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C $@ && $(MAKE) $@-stage
 
 ipset-7.6-install:
 	install -D ipset-7.6/src/ipset $(INSTALLDIR)/ipset-7.6/usr/sbin/ipset
