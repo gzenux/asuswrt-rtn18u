@@ -3,7 +3,7 @@ Asuswrt-Merlin for RT-N18U Release Note
 
 386.1-alpha3
   Changelog for RT-N18U:
-  - MERGED: GPL 386_40577 from asuswrt-merlin (master).
+  - MERGED: GPL 386_40996 from asuswrt-merlin (master).
   - NEW: Added speedtest feature powered by Ookla.
   - CHANGED: Enabled the following options on this model:
              1. EXT4FS to support utilities for ext4 filesystem
@@ -27,7 +27,7 @@ Asuswrt-Merlin for RT-N18U Release Note
          considered deprecated, and will be removed most likely
          in OpenVPN 2.6, for security reasons.
   - NEW: Added tls-crypt-v2 support to OpenVPN clients.
-  - UPDATED: Merged GPL 386_40577 (beta GPL from Asus).
+  - UPDATED: Merged GPL 386_40996 (beta GPL from Asus).
   - UPDATED: Openssl to 1.1.1h.
   - UPDATED: Updated to OpenVPN 2.5.0.  Note that OpenVPN
              2.4.0 or newer is now required by the exported
@@ -37,6 +37,9 @@ Asuswrt-Merlin for RT-N18U Release Note
   - UPDATED: zlib to 1.2.11.
   - UPDATED: lz4 to 1.9.2.
   - UPDATED: e2fsprogs to 1.45.6.
+  - UPDATED: dropbear to 2020.81.
+  - UPDATED: Switched userspace ipset from 6.32 to 7.6 (to match
+             with upstream)
   - CHANGED: The old legacy cipher setting is now only available
              when running with static key authentication.
   - CHANGED: Tweaks to the OpenVPN webui layout
@@ -49,6 +52,8 @@ Asuswrt-Merlin for RT-N18U Release Note
              applied for clients set to auto-start with WAN.
   - CHANGED: Increased number of available mount points for addon
              webpages to 20.
+  - CHANGED: Multiple routes can now be defined per client on the
+             OpenVPN client-specific configuration.
   - REMOVED: Option to disable NCP.  The NCP cipher list is
              now used both for NCP and non-NCP endpoints.
 
