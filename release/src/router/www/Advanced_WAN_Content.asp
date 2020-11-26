@@ -530,7 +530,8 @@ function validForm(){
 
         if((document.form.wan_proto.value == "dhcp")
 		|| (document.form.wan_proto.value == "static")){
-			if(!validator.numberRange(document.form.wan_mtu, 576, 9000))
+			if(document.form.wan_mtu.value != "" &&
+			   !validator.numberRange(document.form.wan_mtu, 576, 9000))
 				return false;
 	}
 
@@ -1128,7 +1129,7 @@ function apply_dot_server_preset(i){
 </script>
 </head>
 
-<body onload="initial();" onunLoad="return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();" class="bg">
 <script>
 	if(sw_mode == 3){
 		alert("<#page_not_support_mode_hint#>");

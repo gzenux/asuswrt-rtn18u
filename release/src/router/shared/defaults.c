@@ -1480,6 +1480,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_clientid_type", "0", CKN_STR_DEFAULT, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	/* 0: MAC 1: Node-specific RFC4361 */
 	{ "wan_clientid", "", CKN_STR128, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "wan_vendorid", "", CKN_STR128, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
+	{ "wan_mtu", "1500", CKN_STR5, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 
 #if defined(RTCONFIG_SWITCH_RTL8370M_PHY_QCA8033_X2) || \
     defined(RTCONFIG_SWITCH_RTL8370MB_PHY_QCA8033_X2)
@@ -3325,7 +3326,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "dhcpd_querylog", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "dhcpd_dns_router", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },
 	{ "dhcpd_send_wpad", "1", CKN_STR1, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	// Send empty WPAD
-	{ "wan_mtu", "1500", CKN_STR4, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },		// WAN MTU (non-PPP based)
 	{ "ddns_refresh_x", "21", CKN_STR3, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },	// Forced refresh period (in days)
 	{ "ddns_ipcheck", "0", CKN_STR3, CKN_TYPE_DEFAULT, CKN_ACC_LEVEL_DEFAULT, CKN_ENC_DEFAULT, 0 },		// 0 = from interface, 1 = detected by inadyn
 #if defined(RTN18U)

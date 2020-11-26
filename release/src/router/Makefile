@@ -1269,7 +1269,7 @@ endif
 ifeq ($(RTCONFIG_BCMARM),y)
 obj-y += libnfnetlink-1.0.1
 obj-y += libmnl-1.0.4
-obj-y += ipset-6
+obj-y += ipset-7.6
 endif
 obj-$(RTCONFIG_NFS) += nfs-utils-1.3.4
 obj-$(RTCONFIG_NFS) += portmap
@@ -2443,7 +2443,7 @@ libnfnetlink-1.0.1-clean:
 	-@$(MAKE) -C  libnfnetlink-1.0.1 clean
 
 libmnl-1.0.4: libmnl-1.0.4/Makefile
-	$(MAKE) $(PARALLEL_BUILD) -C libmnl-1.0.4
+	$(MAKE) $(PARALLEL_BUILD) -C $@ && $(MAKE) $@-stage
 
 libmnl-1.0.4/Makefile:
 	(cd libmnl-1.0.4 && autoreconf -i -f)
@@ -2516,6 +2516,34 @@ libnetfilter_cttimeout-1.0.0-install:
 
 libnetfilter_cttimeout-1.0.0-clean:
 	-@$(MAKE) -C libnetfilter_cttimeout-1.0.0 clean
+
+ipset-7.6/configure:
+	cd ipset-7.6 && ./autogen.sh
+
+ipset-7.6/Makefile: ipset-7.6/configure
+	cd ipset-7.6 && \
+	libmnl_CFLAGS="-I$(STAGEDIR)/usr/include" \
+	libmnl_LIBS="-L$(STAGEDIR)/usr/lib -lmnl" \
+	CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+	LDFLAGS="-Wl,--gc-sections" \
+	$(CONFIGURE) --prefix=/usr --disable-rpath \
+		--with-kmod=no --with-kbuild=$(LINUXDIR)
+
+ipset-7.6: libmnl-1.0.4 ipset-7.6/Makefile
+	$(MAKE) -C $@ && $(MAKE) $@-stage
+
+ipset-7.6-install:
+	install -D ipset-7.6/src/ipset $(INSTALLDIR)/ipset-7.6/usr/sbin/ipset
+	install -D ipset-7.6/lib/.libs/libipset.so.13.1.0 $(INSTALLDIR)/ipset-7.6/usr/lib/libipset.so.13.1.0
+	cd $(INSTALLDIR)/ipset-7.6/usr/lib/ && \
+		ln -sf libipset.so.13.1.0 libipset.so.13 && \
+		ln -sf libipset.so.13.1.0 libipset.so
+	$(STRIP) $(INSTALLDIR)/ipset-7.6/usr/sbin/ipset
+	$(STRIP) $(INSTALLDIR)/ipset-7.6/usr/lib/*.so*
+
+ipset-7.6-clean:
+	[ ! -f ipset-7.6/Makefile ] || $(MAKE) -C ipset-7.6 distclean
+	@rm -f ipset-7.6/Makefile
 
 www-install:
 ifeq ($(HND_ROUTER),y)
