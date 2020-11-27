@@ -3070,12 +3070,18 @@ void init_wl(void)
 			break;
 	}
 #endif
+#if !defined(RTN18U)
 	check_wl_country();
+#endif
 #if defined(RTAC3200) || defined(RTAC68U) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER) || defined(DSL_AC68U)
 	wl_disband5grp();
 #endif
 #if !(defined(RTCONFIG_HND_ROUTER_AX_675X) || defined(RTAX92U) || defined(GTAX11000) || defined(GTAXE11000))
+#if defined(RTN18U)
+	set_wltxpower_rtn18u();
+#else
 	set_wltxpower();
+#endif
 #endif
 #ifdef RTCONFIG_BRCM_HOSTAPD
 	eval("insmod", "cfg80211");
@@ -3208,13 +3214,19 @@ void init_wl_compact(void)
 			break;
 	}
 #endif
+#if !defined(RTN18U)
 	check_wl_country();
+#endif
 #ifndef RTCONFIG_BRCM_USBAP
 #if defined(RTAC3200) || defined(RTAC68U) || defined(RTCONFIG_BCM_7114) || defined(HND_ROUTER) || defined(DSL_AC68U)
 	wl_disband5grp();
 #endif
 #if !(defined(RTCONFIG_HND_ROUTER_AX_675X) || defined(RTAX92U) || defined(GTAX11000) || defined(GTAXE11000))
+#if defined(RTN18U)
+	set_wltxpower_rtn18u();
+#else
 	set_wltxpower();
+#endif
 #endif
 #ifdef RTCONFIG_DHDAP
 	load_wl();

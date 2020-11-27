@@ -4,11 +4,31 @@ Asuswrt-Merlin for RT-N18U Release Note
 386.1-alpha3
   Changelog for RT-N18U:
   - MERGED: GPL 386_40996 from asuswrt-merlin (master).
-  - NEW: Added speedtest feature powered by Ookla.
   - CHANGED: Enabled the following options on this model:
-             1. EXT4FS to support utilities for ext4 filesystem
-             2. WL_SCHED_V3 and PC_SCHED_V3 to enable newer
+             1. WL_SCHED_V3 and PC_SCHED_V3 to enable newer
                 scheduler format for wireless and parental control
+  - REMOVED: CPU/Wireless temperature shown in home page.
+             (incompatible with newer GPL 386)
+             To check the temperature information, use Tools_Sysinfo
+             page instead.
+
+  Changelog from Asuswrt-Merlin:
+  - UPDATED: Merged GPL 386_40996 (beta GPL from Asus).
+
+
+384.19-beta1
+  Changelog for RT-N18U:
+  - NEW: Add the speedtest feature powered by Ookla.
+         (backported from asuswrt-merlin GPL 386_40577)
+  - NEW: Add the login captcha option to WebUI.
+         (backported from asuswrt-merlin GPL 386_40577)
+  - NEW: Re-add Merlin NAT loopback feature.
+         (no longer supported by asuswrt-merlin)
+  - NEW: Implement advanced wireless TX power adjustment feature.
+  - UPDATED: WebUI language translation and the help description.
+             (backported from asuswrt-merlin GPL 386_40577)
+  - CHANGED: Enabled EXT4FS option to support utilities for ext4
+             filesystem.
   - CHANGED: Decoupled the LED control behavior between WPS button
              and 'disable LEDs' option (stealth mode).
   - CHANGED: firmware update checks are no longer using the
@@ -16,10 +36,6 @@ Asuswrt-Merlin for RT-N18U Release Note
              purposes. (follow asuswrt-merlin's change)
   - FIXED: The traffic unit shows empty option in TrafficMonitor
            pages when the browser cookie is empty.
-  - REMOVED: CPU/Wireless temperature shown in home page.
-             (incompatible with newer GPL 386)
-             To check the temperature information, use Tools_Sysinfo
-             page instead.
 
   Changelog from Asuswrt-Merlin:
   - NEW: Added stub and stub-v2 compression options to OpenVPN
@@ -27,7 +43,6 @@ Asuswrt-Merlin for RT-N18U Release Note
          considered deprecated, and will be removed most likely
          in OpenVPN 2.6, for security reasons.
   - NEW: Added tls-crypt-v2 support to OpenVPN clients.
-  - UPDATED: Merged GPL 386_40996 (beta GPL from Asus).
   - UPDATED: Openssl to 1.1.1h.
   - UPDATED: Updated to OpenVPN 2.5.0.  Note that OpenVPN
              2.4.0 or newer is now required by the exported

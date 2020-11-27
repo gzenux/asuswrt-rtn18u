@@ -1547,6 +1547,10 @@ misc_defaults(int restore_defaults)
 		case MODEL_RTN18U:
 			if (After(get_blver(nvram_safe_get("bl_version")), get_blver("2.0.0.5")))
 				nvram_set("reboot_time", "140");// default is 70 sec
+
+#if defined(RTN18U)
+			check_txpwr_nvram();
+#endif
 			break;
 		case MODEL_DSLAC68U:
 			nvram_set("reboot_time", "170");	// default is 70 sec

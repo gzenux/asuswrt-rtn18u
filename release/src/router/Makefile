@@ -2853,7 +2853,7 @@ ipset-7.6/Makefile: ipset-7.6/configure
 		--with-kmod=no --with-kbuild=$(LINUXDIR)
 
 ipset-7.6: libmnl-1.0.4 ipset-7.6/Makefile
-	$(MAKE) -C $@ && $(MAKE) $@-stage
+	$(MAKE) $(PARALLEL_BUILD) -C $@ && $(MAKE) $@-stage
 
 ipset-7.6-install:
 	install -D ipset-7.6/src/ipset $(INSTALLDIR)/ipset-7.6/usr/sbin/ipset
@@ -5774,7 +5774,7 @@ lzo-install:
 	cd $(INSTALLDIR)/lzo/usr/lib && ln -sf liblzo2.so.2 liblzo2.so
 
 lz4:
-	$(MAKE) -C $@ $(PARALLEL_BUILD)
+	$(MAKE) $(PARALLEL_BUILD) -C $@
 
 lz4-install:
 	install -D lz4/lib/liblz4.so.1.9.2 $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.9.2

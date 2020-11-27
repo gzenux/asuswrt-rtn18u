@@ -808,6 +808,7 @@ function generate_country_selection(){
 
 }
 
+var tx_power_desc_current;
 function adjust_tx_power(){
 	var power_value_old = document.form.wl_TxPower.value;	//old nvram not exist now (value)
 	var power_value_new = document.form.wl_txpower.value;	//current nvram now (percentage)
@@ -817,6 +818,11 @@ function adjust_tx_power(){
 		document.getElementById("wl_txPower_field").style.display = "none";
 	}
 	else{
+		if(based_modelid == "RT-N18U"){
+			document.getElementById('wl_txpwr_mod_field').style.display = "";
+			handle_txpwr_mod(document.form.txpwr_mod.value);
+		}
+
 		if(power_value_old != ""){
 			translated_value = parseInt(power_value_old/80*100);
 			if(translated_value >=100){
@@ -836,36 +842,59 @@ function adjust_tx_power(){
 			document.form.wl_txpower.value = power_value_new;
 		}
 
+		tx_power_desc_current = '&nbsp;&nbsp;<span style="font-size:13px;">(Current: ';
+		if(wl_txpower_orig < 25){
+			tx_power_desc_current += power_table_desc[0];
+		}
+		else if(wl_txpower_orig < 50){
+			tx_power_desc_current += power_table_desc[1];
+		}
+		else if(wl_txpower_orig < 88){
+			tx_power_desc_current += power_table_desc[2];
+		}
+		else if(wl_txpower_orig < 100){
+			tx_power_desc_current += power_table_desc[3];
+		}
+		else{
+			tx_power_desc_current += power_table_desc[4];
+		}
+		if(based_modelid == "RT-N18U"){
+			var tx_gain = '<% get_txpwr(0); %>';
+			if(tx_gain != '')
+				tx_power_desc_current += ' / ' + parseFloat(tx_gain) + ' dBm';
+		}
+		tx_power_desc_current += ')</span>';
+
 		if(document.form.wl_txpower.value < 25){
 			document.getElementById('slider').children[0].style.width = "0%";
 			document.getElementById('slider').children[1].style.left =  "0%";
 			document.form.wl_txpower.value = 0;
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[0];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[0] + tx_power_desc_current;
 		}
 		else if(document.form.wl_txpower.value < 50){
 			document.getElementById('slider').children[0].style.width = "25%";
 			document.getElementById('slider').children[1].style.left =  "25%";
 			document.form.wl_txpower.value = 25;				
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[1];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[1] + tx_power_desc_current;
 		}
 		else if(document.form.wl_txpower.value < 88){
 			document.getElementById('slider').children[0].style.width = "50%";
 			document.getElementById('slider').children[1].style.left =  "50%";
 			document.form.wl_txpower.value = 50;				
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[2];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[2] + tx_power_desc_current;
 		}
 		else if(document.form.wl_txpower.value < 100){
 			document.getElementById('slider').children[0].style.width = "75%";
 			document.getElementById('slider').children[1].style.left =  "75%";
 			document.form.wl_txpower.value = 88;
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[3];
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[3] + tx_power_desc_current;
 		}
 		else{
 			document.getElementById('slider').children[0].style.width = "100%";
 			document.getElementById('slider').children[1].style.left =  "100%";
 			document.form.wl_txpower.value = 100;
-			document.getElementById("tx_power_desc").innerHTML = power_table_desc[4];
-		}	
+			document.getElementById("tx_power_desc").innerHTML = power_table_desc[4] + tx_power_desc_current;
+		}
 	}
 }
 
@@ -999,6 +1028,25 @@ function validForm(){
 		}
 	}
 
+	if(based_modelid == "RT-N18U"){
+		if(document.form.txpwr_mod.value == 1){
+			if(!validator.isEmpty(document.form.txpwr_ccode)
+					|| !validator.isEmpty(document.form.txpwr_regrev)
+					|| !validator.isEmpty(document.form.txpwr_min)
+					|| !validator.isEmpty(document.form.txpwr_max)){
+				return false;
+			}
+			else{
+				document.form.txpwr_min.value = Math.round(document.form.txpwr_min.value * 4) / 4;
+				document.form.txpwr_max.value = Math.round(document.form.txpwr_max.value * 4) / 4;
+				if(parseFloat(document.form.txpwr_min.value) > parseFloat(document.form.txpwr_max.value)){
+					alert("Invalid value for TX Power Max/Min!");
+					return false;
+				}
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -1065,7 +1113,7 @@ function register_event(){
 			max: 5,
 			value:5,
 			slide:function(event, ui){
-				document.getElementById('tx_power_desc').innerHTML = power_table_desc[ui.value-1];
+				document.getElementById('tx_power_desc').innerHTML = power_table_desc[ui.value-1] + tx_power_desc_current;
 			},
 			stop:function(event, ui){
 				set_power(ui.value);	  
@@ -1580,6 +1628,11 @@ function handle_beamforming(value){
 	}
 }
 
+function handle_txpwr_mod(value){
+	document.getElementById("wl_txpwr_mod_warn").style.display = (value != 0) ? "" : "none";
+	document.getElementById("wl_txpwr_mod_custom_field").style.display = (value == 1) ? "" : "none";
+}
+
 function checkWLReady(){
 	$.ajax({
 	    url: '/ajax_wl_ready.asp',
@@ -2002,6 +2055,28 @@ function checkWLReady(){
 							</select>
 						</td>
 					</tr>
+					<!-- RT-N18U -->
+					<tr id="wl_txpwr_mod_field" style="display:none">
+						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(39, 2);">TX power modification mode</a></th>
+						<td>
+							<select name="txpwr_mod" class="input_option" onchange="handle_txpwr_mod(this.value)">
+								<option value="0" <% nvram_match("txpwr_mod", "0","selected"); %>>Asus (Default)</option>
+								<option value="1" <% nvram_match("txpwr_mod", "1","selected"); %>>Custom</option>
+								<option value="2" <% nvram_match("txpwr_mod", "2","selected"); %>>Debug</option>
+							</select>
+							<span id="wl_txpwr_mod_warn" style="display:none">You choose non-factory way to adjust TX power, use this at your own risk!</span>
+							<div id="wl_txpwr_mod_custom_field">
+								CCode/Regrev:
+								<input type="text" maxlength="2" name="txpwr_ccode" class="input_3_table" value="<% nvram_get("txpwr_ccode"); %>" onKeyPress="return validator.isString(this,event)" autocorrect="off" autocapitalize="off">
+								/
+								<input type="text" maxlength="3" name="txpwr_regrev" class="input_3_table" value="<% nvram_get("txpwr_regrev"); %>" onKeyPress="return validator.isNumber(this,event)" autocorrect="off" autocapitalize="off">
+								&nbsp;&nbsp;Min(dBm):
+								<input type="text" maxlength="6" name="txpwr_min" class="input_6_table" value="<% nvram_get("txpwr_min"); %>" onKeyPress="return validator.isNumberFloat(this,event)" autocorrect="off" autocapitalize="off">
+								&nbsp;&nbsp;Max(dBm):
+								<input type="text" maxlength="6" name="txpwr_max" class="input_6_table" value="<% nvram_get("txpwr_max"); %>" onKeyPress="return validator.isNumberFloat(this,event)" autocorrect="off" autocapitalize="off">
+							</div>
+						</td>
+					</tr>
 					<tr id="wl_txPower_field">
 						<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 16);"><#WLANConfig11b_TxPower_itemname#></a></th>
 						<td>
@@ -2010,11 +2085,10 @@ function checkWLReady(){
 									<tr>
 										<td style="border:0px;padding-left:0px;">
 											<div id="slider" style="width:80px;"></div>
-										</td>									
-										<td style="border:0px;width:60px;">
-											<div id="tx_power_desc" style="width:150px;font-size:14px;"></div>
-										</td>					
-
+										</td>
+										<td style="border:0px;">
+											<div id="tx_power_desc" style="width:400px;font-size:14px;"></div>
+										</td>
 									</tr>
 								</table>
 							</div>

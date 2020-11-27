@@ -813,6 +813,10 @@ extern void wlconf_pre();
 extern void init_wl_compact(void);
 extern void check_afterburner(void);
 extern int wl_get_band(char* wlif);
+#if defined(RTN18U)
+extern void check_txpwr_nvram();
+extern int set_wltxpower_rtn18u();
+#endif
 #ifdef RTCONFIG_BCMWL6
 extern void led_bh_prep(int post);
 extern int wl_check_chanspec();

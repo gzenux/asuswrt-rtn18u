@@ -334,6 +334,10 @@ extern int config_iptv_vlan(char *isp);
 extern void replace_productid(char *GET_PID_STR, char *RP_PID_STR, int len);
 #endif
 
+#if defined(RTN18U)
+extern int ej_get_txpwr(int eid, webs_t wp, int argc, char_t **argv);
+#endif
+
 #ifdef RTCONFIG_CAPTCHA
 extern void do_captcha_file(char *url, FILE *stream);
 #endif
@@ -28381,6 +28385,9 @@ struct ej_handler ej_handlers[] = {
 	{ "shown_language_css", ej_shown_language_css},
 	{ "memory_usage", ej_memory_usage},
 	{ "cpu_usage", ej_cpu_usage},
+#if defined(RTN18U)
+	{ "get_txpwr", ej_get_txpwr},
+#endif
 	{ "cpu_core_num", ej_cpu_core_num},
 #if defined(RTCONFIG_REALTEK) || defined(RTCONFIG_WIRELESSWAN)
 	/* MUST: Need to clarify how does the RP-AC87's ej_SiteSurvey */

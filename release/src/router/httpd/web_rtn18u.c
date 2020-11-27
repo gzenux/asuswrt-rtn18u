@@ -3,6 +3,7 @@
 #include <httpd.h>
 #include <json.h>
 #include <bcmnvram.h>
+#include <shared.h>
 
 #ifdef RTCONFIG_CAPTCHA
 extern const int gifsize;
@@ -397,6 +398,35 @@ int config_iptv_vlan(char *isp)
 	nvram_set("switch_wan0tagid", isp_profile->switch_wan0tagid); nvram_set("switch_wan0prio", isp_profile->switch_wan0prio);
 	nvram_set("switch_wan1tagid", isp_profile->switch_wan1tagid); nvram_set("switch_wan1prio", isp_profile->switch_wan1prio);
 	nvram_set("switch_wan2tagid", isp_profile->switch_wan2tagid); nvram_set("switch_wan2prio", isp_profile->switch_wan2prio);
+	return 0;
+}
+
+int ej_get_txpwr(int eid, webs_t wp, int argc, char_t **argv)
+{
+	FILE *fp = NULL;
+	int i, unit = 0;
+	char cmd[64] = {0}, out[64] = {0};
+
+	if (ejArgs(argc, argv, "%d", &unit) < 1)
+		unit = 0;
+
+	if (!nvram_match(wl_nvname("radio", unit, 0), "1"))
+		return 0;
+
+	sprintf(cmd, "wl -i %s txpwr_target_max | awk '{print $7}'", nvram_safe_get(wl_nvname("ifname", unit, 0)));
+	if ((fp = popen(cmd, "r")) != NULL) {
+		while (!feof(fp)) {
+			if (fgets(out, sizeof(out), fp)) {
+				if ((i = strlen(out)) > 0) {
+					if (out[i-1] == '\n')
+						out[i-1] = '\0';
+					websWrite(wp, out);
+				}
+			}
+		}
+		pclose(fp);
+	}
+
 	return 0;
 }
 

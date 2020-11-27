@@ -394,6 +394,12 @@ helpcontent[34] = new Array("",
 							"<#Feedback_case_No_desc#>"
 							);
 
+//RT-N18U customization
+helpcontent[39] = new Array("",
+							"The NAT loopback allows you to access a forwarded port from within your LAN, through your WAN IP/hostname.<br>Switch to Merlin if you are having issues with the default Asus method.",
+							"The power modification allows you to adjust TX power in three different modes:<ul><li>[Asus]<br />Use the original method (closed source) to adjust the power.</li><li>[Custom]<br />This mode allows you to customize the region and the power range.</li><li>[Debug]<br />The debug mode allows maximum power range and all channels, use this only for testing purposes.</li></ul><br><b>CAUTION:<br />&nbsp;&nbsp;It's highly recommended NOT to change this option since adjusting TX power in a non-factory modification way may violate your local regulatory and might also overheat this device. Use this feature at your own risk!</b>"
+							);
+
 helpcontent[50] = new Array("",
 				"<#IPConnection_LocalIP_itemdesc#> or fixed Interface (Device) ID starting with ::<br/>A fixed Interface ID is commonly an EUI-64 address.",
 				"On ARM routers, Asus regularly flushes caches, which can hurt performance while preserving a maximum amount of available RAM.",
