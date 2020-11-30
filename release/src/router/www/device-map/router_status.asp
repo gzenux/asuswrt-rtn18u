@@ -463,7 +463,7 @@ function generate_cpu_field(){
 }
 
 function generate_temperature_field(){
-	if (cookie.get("CoreTmpUnit") != 0) {
+	if (cookie.get("CoreTmpUnit") == 1) {
 		tmp_unit = "&deg;F";
 		$("#tmp_unit").prop("checked", true);
 		$("#tmp_top").html("230&nbsp;"+tmp_unit);
