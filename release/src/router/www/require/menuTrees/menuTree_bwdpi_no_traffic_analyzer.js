@@ -123,6 +123,14 @@ define(function(){
 				] 
 			},
 			{
+				menuName: "腾讯网游加速器",
+				index: "menu_TencentAcceleration",
+				tab: [
+					{url: "GameBoost_Tencent.asp", tabName: "Tencent Game Acceleration"},
+					{url: "NULL", tabName: "__INHERIT__"}
+				]
+			},
+			{
 				menuName: "<#Menu_usb_application#>",
 				index: "menu_APP", 
 				tab: [
@@ -346,6 +354,9 @@ define(function(){
 				if(!wtfast_support) {
 					retArray.push("menu_GameBoost");
 				}
+
+				if(!tencent_qmacc_support)
+					retArray.push("menu_TencentAcceleration");
 
 				if(!uu_support){
 					retArray.push("menu_UU");
@@ -591,6 +602,9 @@ define(function(){
 				if(!wtfast_support){
 					retArray.push("GameBoost.asp");
 				}
+
+				if(!tencent_qmacc_support)
+					retArray.push("GameBoost_Tencent.asp");
 
 				if(!alexa_support){
 					retArray.push("Advanced_Smart_Home_Alexa.asp");

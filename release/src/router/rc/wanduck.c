@@ -1837,6 +1837,9 @@ _dprintf("# wanduck(%d): if_wan_phyconnected: x_Setting=%d, link_modem=%d, sim_s
 				nvram_set_int(wired_link_nvram, CONNED);
 
 				record_wan_state_nvram(wan_unit, -1, -1, WAN_AUXSTATE_NONE);
+
+				if(nvram_get_int(strcat_r(prefix, "dhcpenable_x", tmp)) == 0 && !found_default_route(wan_unit))
+					add_multi_routes(0);
 			}
 			else{
 //_dprintf("# wanduck(%d): set %s=%d.\n", wan_unit, wired_link_nvram, DISCONN);
@@ -1881,10 +1884,13 @@ _dprintf("# wanduck(%d): if_wan_phyconnected: x_Setting=%d, link_modem=%d, sim_s
 #ifdef RTCONFIG_DSL_BCM
 	if (get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_DSL) {
 		static int first_up = 1;
-		if (first_up && link_changed[wan_unit] && link_wan[wan_unit]) {
+		if (link_changed[wan_unit] && link_wan[wan_unit]) {
 			_dprintf("\n=====\nwan[%d] down->up\n=====\n", wan_unit);
-			handle_wan_line(wan_unit, 0);
-			first_up = 0;
+			dsl_wan_config(2);
+			if (first_up) {
+				handle_wan_line(wan_unit, 0);
+				first_up = 0;
+			}
 		}
 	}
 #endif
@@ -2162,11 +2168,6 @@ _dprintf("nat_rule: start_nat_rules 3.\n");
 
 		_dprintf("\n# wanduck(%d): Try to restart_wan_if.\n", wan_unit);
 		snprintf(cmd, sizeof(cmd), "restart_wan_if %d", wan_unit);
-#ifdef RTCONFIG_DSL_BCM
-		if(get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_DSL) {
-			snprintf(cmd, sizeof(cmd), "restart_dslwan_if %d", wan_unit);
-		}
-#endif
 		notify_rc_and_wait(cmd);
 #ifdef RTCONFIG_MULTICAST_IPTV
 		if (nvram_get_int("switch_stb_x") > 6) {
@@ -3269,6 +3270,8 @@ _dprintf("wanduck(%d)(first detect start): state %d, state_old %d, changed %d, w
 #endif
 		{
 #ifdef RTCONFIG_REDIRECT_DNAME
+			if (nvram_invmatch("redirect_dname", "0")) {
+
 			if(cross_state == DISCONN){
 				int evalRet;
 				_dprintf("\n# AP mode: Enable direct rule(DISCONN)\n");
@@ -3322,6 +3325,7 @@ _dprintf("wanduck(%d)(first detect start): state %d, state_old %d, changed %d, w
 				// nat_rules = NAT_STATE_NORMAL;
 			}
 
+			}
 #endif
 
 #ifdef RTCONFIG_RESTRICT_GUI
@@ -4370,7 +4374,8 @@ _dprintf("nat_rule: stop_nat_rules 6.\n");
 
 #ifndef RTCONFIG_LANTIQ
 #ifdef RTCONFIG_REDIRECT_DNAME
-					eval("ebtables", "-t", "broute", "-A", "BROUTING", "-p", "ipv4", "--ip-proto", "udp", "--ip-dport", "53", "-j", "redirect", "--redirect-target", "DROP");
+					if (nvram_invmatch("redirect_dname", "0"))
+						eval("ebtables", "-t", "broute", "-A", "BROUTING", "-p", "ipv4", "--ip-proto", "udp", "--ip-dport", "53", "-j", "redirect", "--redirect-target", "DROP");
 #endif
 #endif
 
@@ -4413,6 +4418,8 @@ _dprintf("nat_rule: start_nat_rules 6.\n");
 #endif
 		{
 #ifdef RTCONFIG_REDIRECT_DNAME
+			if (nvram_invmatch("redirect_dname", "0")) {
+
 			if (conn_changed_state[current_wan_unit] == C2D) {
 				int evalRet;
 				_dprintf("\n# AP mode: Enable direct rule(C2D)\n");
@@ -4451,6 +4458,8 @@ _dprintf("nat_rule: start_nat_rules 6.\n");
 				evalRet = eval("iptables-restore", NAT_RULES);
 				rule_apply_checking("wanduck", __LINE__, NAT_RULES, evalRet);
 				// nat_rules = NAT_STATE_NORMAL;
+			}
+
 			}
 #else
 			; // do nothing.
@@ -4691,11 +4700,6 @@ _dprintf("nat_rule: stop_nat_rules 7.\n");
 			else if(conn_state[other_wan_unit] == PHY_RECONN){
 				_dprintf("\n# wanduck(fail-back): Try to prepare the backup line.\n");
 				snprintf(cmd, sizeof(cmd), "restart_wan_if %d", other_wan_unit);
-#ifdef RTCONFIG_DSL_BCM
-				if(get_dualwan_by_unit(wan_unit) == WANS_DUALWAN_IF_DSL) {
-					snprintf(cmd, sizeof(cmd), "restart_dslwan_if %d", other_wan_unit);
-				}
-#endif
 				notify_rc(cmd);
 			}
 		}

@@ -860,6 +860,7 @@ DIAG_OBJS += conn_diag-sql.o
 endif
 
 ifeq ($(RTAX82U),y)
+LDFLAGS += -lm
 OBJS += ledg.o
 OBJS += ledbtn.o
 endif
@@ -1342,6 +1343,7 @@ endif
 
 ifeq ($(RTCONFIG_EXTPHY_BCM84880),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc extphy_bit_op
+	@cd $(INSTALLDIR)/sbin && ln -sf rc get_ext_phy_id
 endif
 
 ifeq ($(RTAX82U)$(DSL_AX82U),y)
@@ -1355,6 +1357,7 @@ endif
 
 ifeq ($(RTCONFIG_QCA_PLC2),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc restart_plc
+	@cd $(INSTALLDIR)/sbin && ln -sf rc detect_plc
 endif
 
 clean:
