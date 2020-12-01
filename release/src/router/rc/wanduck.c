@@ -1839,7 +1839,11 @@ _dprintf("# wanduck(%d): if_wan_phyconnected: x_Setting=%d, link_modem=%d, sim_s
 				record_wan_state_nvram(wan_unit, -1, -1, WAN_AUXSTATE_NONE);
 
 				if(nvram_get_int(strcat_r(prefix, "dhcpenable_x", tmp)) == 0 && !found_default_route(wan_unit))
+#if defined(RTN18U)	// Kludge
+					add_multi_routes();
+#else
 					add_multi_routes(0);
+#endif
 			}
 			else{
 //_dprintf("# wanduck(%d): set %s=%d.\n", wan_unit, wired_link_nvram, DISCONN);
