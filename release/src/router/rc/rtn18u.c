@@ -1,5 +1,4 @@
 #include <rc.h>
-#include <wlutils.h>
 
 int LanWanLedCtrl(void)
 {
@@ -37,13 +36,9 @@ void setAllLedNormal(void)
  *   The nominal target power (dBm) for CCK packets is –1.5 dBm from maxp2ga0 (converted in dBm units).
  *
  * RT-N18U maxp2ga0 setting:
- * [ASUS factory mode]
- * maxp2ga0: 58 ~ 106 qdbm
- * nominal target power: 13 ~ 25 dBm
- *
  * [Custom mode]
- * maxp2ga0: 58 ~ 106 qdbm (default)
- * nominal target power: 13 ~ 25 dBm (default)
+ * maxp2ga0: 30 ~ nvram(0:maxp2ga0) qdbm (default)
+ * nominal target power: 6 ~ nvram(txpwr_max) dBm (default)
  *
  * [Debug mode]
  * maxp2ga0: 30 ~ 120 qdbm
@@ -54,11 +49,9 @@ void setAllLedNormal(void)
 #define TXPWR_THRESHOLD_3	75
 #define TXPWR_THRESHOLD_4	100
 
-static int maxp2ga[3][5] = {
-	/* [Asus] */
-	{58, 70, 82, 94, 106},
+static int maxp2ga[2][5] = {
 	/* [Custom] */
-	{58, 70, 82, 94, 106},
+	{0, 0, 0, 0, 0},
 	/* [Debug] */
 	{30, 52, 75, 98, 120}
 };
@@ -87,6 +80,7 @@ int set_wltxpower_rtn18u()
 	double dbm;
 	char tmp[32], prefix[]="wlXXXXXXX_";
 	char tmp2[32], prefix2[]="X:";
+	int mode, threshold;
 	int txpower = 100, txpwr_mod = nvram_get_int("txpwr_mod");
 	int commit_needed = 0;
 
@@ -112,6 +106,7 @@ int set_wltxpower_rtn18u()
 		set_wltxpower();
 		return 0;
 	}
+	mode = txpwr_mod - 1;
 
 	/* Update custom parameters */
 	if (txpwr_mod == 1) {
@@ -128,7 +123,7 @@ int set_wltxpower_rtn18u()
 			nvram_set("txpwr_min", "28.5");
 			commit_needed++;
 		}
-		maxp2ga[txpwr_mod][0] = (int)(dbm * 4 + 6);
+		maxp2ga[mode][0] = (int)(dbm * 4 + 6);
 
 		/* txpwr_max */
 		dbm = atof(nvram_safe_get("txpwr_max"));
@@ -141,11 +136,11 @@ int set_wltxpower_rtn18u()
 			nvram_set("txpwr_max", "28.5");
 			commit_needed++;
 		}
-		maxp2ga[txpwr_mod][4] = (int)(dbm * 4 + 6);
+		maxp2ga[mode][4] = (int)(dbm * 4 + 6);
 
-		maxp2ga[txpwr_mod][2] = (maxp2ga[txpwr_mod][0] + maxp2ga[txpwr_mod][4]) / 2;
-		maxp2ga[txpwr_mod][1] = (maxp2ga[txpwr_mod][0] + maxp2ga[txpwr_mod][2]) / 2;
-		maxp2ga[txpwr_mod][3] = (maxp2ga[txpwr_mod][2] + maxp2ga[txpwr_mod][4]) / 2;
+		maxp2ga[mode][2] = (maxp2ga[mode][0] + maxp2ga[mode][4]) / 2;
+		maxp2ga[mode][1] = (maxp2ga[mode][0] + maxp2ga[mode][2]) / 2;
+		maxp2ga[mode][3] = (maxp2ga[mode][2] + maxp2ga[mode][4]) / 2;
 	}
 
 	i = 0;
@@ -180,25 +175,25 @@ int set_wltxpower_rtn18u()
 
 		/* Apply TX power settings */
 		txpower = nvram_get_int(wl_nvname("txpower", unit, 0));
-		unit = 0;	/* txpower = 0% of UI slider */
+		threshold = 0;	/* txpower = 0% of UI slider */
 		if (txpower >= TXPWR_THRESHOLD_1) {
-			unit++;	/* txpower = 25% of UI slider */
+			threshold++;	/* txpower = 25% of UI slider */
 			if (txpower >= TXPWR_THRESHOLD_2) {
-				unit++;	/* txpower = 50% of UI slider */
+				threshold++;	/* txpower = 50% of UI slider */
 				if (txpower >= TXPWR_THRESHOLD_3) {
-					unit++;	/* txpower = 75% of UI slider */
+					threshold++;	/* txpower = 75% of UI slider */
 					if (txpower >= TXPWR_THRESHOLD_4) {
-						unit++;	/* txpower = 100% of UI slider */
+						threshold++;	/* txpower = 100% of UI slider */
 					}
 				}
 			}
 		}
-		sprintf(tmp, "%d", maxp2ga[txpwr_mod][unit]);
+		sprintf(tmp, "%d", maxp2ga[mode][threshold]);
 		if (!nvram_match(strcat_r(prefix2, "maxp2ga0", tmp2), tmp)) {
 			nvram_set(strcat_r(prefix2, "maxp2ga0", tmp2), tmp);
 			nvram_set(strcat_r(prefix2, "maxp2ga1", tmp2), tmp);
 			nvram_set(strcat_r(prefix2, "maxp2ga2", tmp2), tmp);
-			if (unit) {
+			if (threshold) {
 				nvram_set(strcat_r(prefix2, "mcsbw202gpo", tmp2), "0xA8642000");
 				nvram_set(strcat_r(prefix2, "mcsbw402gpo", tmp2), "0xA8642000");
 			} else {
