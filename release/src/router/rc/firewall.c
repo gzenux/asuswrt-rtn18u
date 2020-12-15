@@ -4130,7 +4130,7 @@ TRACE_PT("write porttrigger\n");
 
 	// Allow from LAN
 	if (nvram_get_int("fw_enable_x"))
-		fprintf(fp, "-A FORWARD -i %s -j %s\n", lan_if, "ACCEPT");
+		fprintf(fp, "-A FORWARD -i %s -j %s\n", lan_if, logaccept);
 
 	/* Enable Virtual Servers
 	 * Accepts all DNATed connection, including VSERVER, UPNP, BATTLEIPs, etc
@@ -5386,7 +5386,7 @@ TRACE_PT("write porttrigger\n");
 
 	// Allow from LAN
 	if (nvram_get_int("fw_enable_x"))
-		fprintf(fp, "-A FORWARD -i %s -j %s\n", lan_if, "ACCEPT");
+		fprintf(fp, "-A FORWARD -i %s -j %s\n", lan_if, logaccept);
 
 	/* Enable Virtual Servers
 	 * Accepts all DNATed connection, including VSERVER, UPNP, BATTLEIPs, etc
