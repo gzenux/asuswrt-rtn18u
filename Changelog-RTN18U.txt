@@ -1,7 +1,7 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-384.19-beta1
+384.19-beta2
   Changelog for RT-N18U:
   - NEW: Add the speedtest feature powered by Ookla.
          (backported from asuswrt-merlin GPL 386_40577)
@@ -19,6 +19,8 @@ Asuswrt-Merlin for RT-N18U Release Note
   - CHANGED: firmware update checks are no longer using the
              server address stored in nvram, for security
              purposes. (follow asuswrt-merlin's change)
+  - CHANGED: Set default temperature unit to °C in home status page
+             when the browser cookie is empty.
   - FIXED: The traffic unit shows empty option in TrafficMonitor
            pages when the browser cookie is empty.
 
@@ -28,16 +30,21 @@ Asuswrt-Merlin for RT-N18U Release Note
          considered deprecated, and will be removed most likely
          in OpenVPN 2.6, for security reasons.
   - NEW: Added tls-crypt-v2 support to OpenVPN clients.
-  - UPDATED: Openssl to 1.1.1h.
+  - NEW: Added option to select an OpenVPN client when
+         running Oookla Speedtest.
+  - UPDATED: Openssl to 1.1.1i.
   - UPDATED: Updated to OpenVPN 2.5.0.  Note that OpenVPN
              2.4.0 or newer is now required by the exported
-             client config file.
+             client config file.  You can still manually
+             configure an older client to connect with your
+             router.
   - UPDATED: nano to 5.2.
   - UPDATED: curl to 7.72.0.
   - UPDATED: zlib to 1.2.11.
   - UPDATED: lz4 to 1.9.2.
   - UPDATED: e2fsprogs to 1.45.6.
   - UPDATED: dropbear to 2020.81.
+  - UPDATED: miniupnpd to 2.2 (git snapshot from 20201129)
   - UPDATED: Switched userspace ipset from 6.32 to 7.6 (to match
              with upstream)
   - CHANGED: The old legacy cipher setting is now only available
@@ -54,6 +61,11 @@ Asuswrt-Merlin for RT-N18U Release Note
              webpages to 20.
   - CHANGED: Multiple routes can now be defined per client on the
              OpenVPN client-specific configuration.
+  - CHANGED: When logging allowed connections is enabled, also log
+             outbound LAN connections (reverts to the behaviour from
+             a few years ago)
+  - FIXED: OpenVPN client remote IP wasn't updated on client
+           stop/restart.
   - REMOVED: Option to disable NCP.  The NCP cipher list is
              now used both for NCP and non-NCP endpoints.
 
