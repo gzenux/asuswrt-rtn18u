@@ -7,6 +7,7 @@ Asuswrt-Merlin for RT-N18U Release Note
   - CHANGED: Enabled the following options on this model:
              1. WL_SCHED_V3 and PC_SCHED_V3 to enable newer
                 scheduler format for wireless and parental control
+  - CHANGED: Revised firmware update process.
   - REMOVED: CPU/Wireless temperature shown in home page.
              (incompatible with newer GPL 386)
              To check the temperature information, use Tools_Sysinfo
