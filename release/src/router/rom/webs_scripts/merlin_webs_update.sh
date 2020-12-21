@@ -9,10 +9,12 @@ nvram set webs_state_flag=0   # 0: Don't do upgrade  1: New firmeware available 
 nvram set webs_state_error=0  # 1: wget fail  2: Not enough memory space  3: FW check/RSA check fail
 nvram set webs_state_url=""
 nvram set webs_state_info=""
+nvram set webs_state_info_am=""
 nvram set webs_state_info_beta=""
 webs_state_flag=0
 webs_state_error=0
 webs_state_info=""
+webs_state_info_am=""
 webs_state_info_beta=""
 
 #openssl support rsa check
@@ -90,6 +92,7 @@ if [ "$?" != "0" ]; then
 	# nvram set webs_state_flag=0
 	nvram set webs_state_error=1
 	# nvram set webs_state_info=""
+	# nvram set webs_state_info_am=""
 	# nvram set webs_state_info_beta=""
 	nvram set webs_state_update=1
 	exit
@@ -100,6 +103,7 @@ else
 	if [ "$fullver" == "" ] || [ "$fullver" == "$productid" ]; then
 		# no latest available
 		webs_state_info=""
+		webs_state_info_am=""
 	else
 		firmver=$(echo $fullver | cut -d. -f1)
 		buildno=$(echo $fullver | cut -d. -f2)
@@ -107,7 +111,8 @@ else
 		extendno=$(echo $extendno | sed s/#.*//;)
 		lextendno=$(echo $extendno | sed s/-g.*//;)
 		lextendno=$(echo $lextendno | sed "s/^[0-9]$/10&/;")
-		webs_state_info=${firmver}_${buildno}_${extendno}
+		webs_state_info=3004_${firmver}_${buildno}_${extendno}
+		webs_state_info_am=${firmver}_${buildno}_${extendno}
 	fi
 
 	# parse beta information
@@ -131,16 +136,17 @@ else
 fi
 
 echo "---- Have ${current_firm}.${current_buildno}_${current_extendno} ----" >> $log_file
-if [ "$webs_state_info" == "" ] && [ "$webs_state_info_beta" == "" ]; then
+if [ "$webs_state_info_am" == "" ] && [ "$webs_state_info_beta" == "" ]; then
 	echo "---- No any firmware update available! ----" >> $log_file
 	# nvram set webs_state_flag=0
 	# nvram set webs_state_error=0
 	# nvram set webs_state_info=""
+	# nvram set webs_state_info_am=""
 	# nvram set webs_state_info_beta=""
 	nvram set webs_state_update=1
 	exit
 else
-	if [ "$webs_state_info" != "" ]; then
+	if [ "$webs_state_info_am" != "" ]; then
 		echo "---- Stable available ${firmver}.${buildno}_${extendno} ----" >> $log_file
 	else
 		echo "---- No stable release available ----" >> $log_file
@@ -156,7 +162,7 @@ else
 	fi
 fi
 
-if [ "$webs_state_info" != "" ] && [ "$firmver" != "" ] && [ "$buildno" != "" ] && [ "$lextendno" != "" ]; then
+if [ "$webs_state_info_am" != "" ] && [ "$firmver" != "" ] && [ "$buildno" != "" ] && [ "$lextendno" != "" ]; then
 	last_webs_state_info=$(nvram get webs_last_info)
 	if [ "$current_firm" -lt "$firmver" ]; then
 		echo "---- firmver: $firmver ----" >> $log_file
@@ -200,7 +206,7 @@ fi
 
 # download stable release note
 if [ "$webs_state_flag" == "1" ]; then
-	releasenote_file0=${webs_state_info}_note.txt
+	releasenote_file0=${webs_state_info_am}_note.txt
 	releasenote_path0="/tmp/release_note0.txt"
 	if [ "$fwup_tc" != "" ]; then
 		echo "---- [test] download stable release note from $fwsite/$releasenote_file0 ----" >> $log_file
@@ -211,10 +217,12 @@ if [ "$webs_state_flag" == "1" ]; then
 	fi
 	if [ "$?" != "0" ]; then
 		webs_state_info=""
+		webs_state_info_am=""
 		echo "---- download stable release note failed ----" >> $log_file
 	fi
 else
 	webs_state_info=""
+	webs_state_info_am=""
 	echo "---- Skip download stable release note ----" >> $log_file
 fi
 
@@ -255,18 +263,18 @@ else
 fi
 
 if [ "$firmware_path" == "1" ]; then
-	if [ "$webs_state_info" == "" ] && [ "$webs_state_info_beta" == "" ]; then
+	if [ "$webs_state_info_am" == "" ] && [ "$webs_state_info_beta" == "" ]; then
 		if [ "$webs_state_flag" == "1" ] || [ "$get_beta_release" == "1" ]; then
 			# release note download fail
 			webs_state_error=1
 		fi
 		webs_state_flag=0
-	elif [ "$webs_state_info" == "" ]; then
+	elif [ "$webs_state_info_am" == "" ]; then
 		if [ "$webs_state_flag" != "1" ]; then
 			webs_state_flag=1	# New firmeware available
 		fi
 	fi
-elif [ "$webs_state_info" == "" ]; then
+elif [ "$webs_state_info_am" == "" ]; then
 	if [ "$webs_state_flag" == "1" ]; then
 		# stable release note download fail
 		webs_state_flag=0
@@ -279,11 +287,13 @@ echo "---- firmware_path        = $firmware_path" >> $log_file
 echo "---- webs_state_flag      = $webs_state_flag" >> $log_file
 echo "---- webs_state_error     = $webs_state_error" >> $log_file
 echo "---- webs_state_info      = $webs_state_info" >> $log_file
+echo "---- webs_state_info_am   = $webs_state_info_am" >> $log_file
 echo "---- webs_state_info_beta = $webs_state_info_beta" >> $log_file
 
 # set nvram back
 nvram set webs_state_flag="$webs_state_flag"
 nvram set webs_state_error="$webs_state_error"
 nvram set webs_state_info="$webs_state_info"
+nvram set webs_state_info_am="$webs_state_info_am"
 nvram set webs_state_info_beta="$webs_state_info_beta"
 nvram set webs_state_update=1

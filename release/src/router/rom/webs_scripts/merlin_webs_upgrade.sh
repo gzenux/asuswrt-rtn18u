@@ -19,7 +19,7 @@ firmware_path=$(nvram get firmware_path)
 
 # determine the firmware source (i.e stable or beta release channel)
 get_beta_release=0
-webs_state_info=$(nvram get webs_state_info)
+webs_state_info=$(nvram get webs_state_info_am)
 webs_state_info_beta=$(nvram get webs_state_info_beta)
 if [ "$firmware_path" == "1" ] && [ "$webs_state_info_beta" != "" ]; then
 	if [ "$webs_state_info" != "" ]; then
