@@ -4,7 +4,8 @@ wget_options="-q -t 2 -T 30"
 
 fwsite="https://gzenux.github.io/asuswrt-rtn18u"
 
-nvram set webs_state_update=0 # INITIALIZING
+# INITIALIZING
+nvram set webs_state_update=0 # 0: webs_state update is in progress  1: webs_state update done
 nvram set webs_state_flag=0   # 0: Don't do upgrade  1: New firmeware available  2: Do Force Upgrade
 nvram set webs_state_error=0  # 1: wget fail  2: Not enough memory space  3: FW check/RSA check fail
 nvram set webs_state_url=""
@@ -17,21 +18,11 @@ webs_state_info=""
 webs_state_info_am=""
 webs_state_info_beta=""
 
-#openssl support rsa check
-IS_SUPPORT_NOTIFICATION_CENTER=$(nvram get rc_support|grep -i nt_center)
-if [ "$IS_SUPPORT_NOTIFICATION_CENTER" != "" ]; then
-. /tmp/nc/event.conf
-fi
-
 # current firmware information
 current_firm=$(nvram get buildno | cut -d. -f1)
 current_buildno=$(nvram get buildno | cut -d. -f2)
 current_extendno=$(nvram get extendno)
-#if echo $current_extendno | grep -q -E "(beta|alpha)"; then
-#	current_firm_is_beta=1
-#else
-#	current_firm_is_beta=0
-#fi
+
 # Overload extendno: alpha is 11-19, beta is 51-59, release is 100-109.
 current_extendno=$(echo $current_extendno | sed s/-g.*//;)
 current_extendno=$(echo $current_extendno | sed "s/^[0-9]$/10&/;")
@@ -79,35 +70,32 @@ esac
 productid=$(nvram get productid)
 model="${productid}#"
 log_file=/tmp/webs_update.log
+manifest=/tmp/wlan_update.txt
 if [ "$fwup_tc" != "" ]; then
 	tcase_manifest="${model}${tcase_stable}${tcase_beta}"
 	echo "---- update test, case #$fwup_tc, wlan_update.txt=\"${tcase_manifest}\" ----" > $log_file
-	echo "$tcase_manifest" > /tmp/wlan_update.txt
+	echo "$tcase_manifest" > $manifest
 else
 	echo "---- update real normal ----" > $log_file
-	/usr/sbin/wget $wget_options $fwsite/manifest.txt -O /tmp/wlan_update.txt
+	/usr/sbin/wget $wget_options $fwsite/manifest.txt -O $manifest
 fi
 
 if [ "$?" != "0" ]; then
-	# nvram set webs_state_flag=0
 	nvram set webs_state_error=1
-	# nvram set webs_state_info=""
-	# nvram set webs_state_info_am=""
-	# nvram set webs_state_info_beta=""
 	nvram set webs_state_update=1
 	exit
 else
-	# parse latest information
-	fullver=$(grep -m1 $model /tmp/wlan_update.txt | sed s/.*#FW//;)
+	# parse stable release information
+	fullver=$(grep -m1 $model $manifest | sed s/.*#FW//;)
 	fullver=$(echo $fullver | sed s/#.*//;)
 	if [ "$fullver" == "" ] || [ "$fullver" == "$productid" ]; then
-		# no latest available
+		# no stable release available
 		webs_state_info=""
 		webs_state_info_am=""
 	else
 		firmver=$(echo $fullver | cut -d. -f1)
 		buildno=$(echo $fullver | cut -d. -f2)
-		extendno=$(grep -m1 $model /tmp/wlan_update.txt | sed s/.*#EXT//;)
+		extendno=$(grep -m1 $model $manifest | sed s/.*#EXT//;)
 		extendno=$(echo $extendno | sed s/#.*//;)
 		lextendno=$(echo $extendno | sed s/-g.*//;)
 		lextendno=$(echo $lextendno | sed "s/^[0-9]$/10&/;")
@@ -115,16 +103,16 @@ else
 		webs_state_info_am=${firmver}_${buildno}_${extendno}
 	fi
 
-	# parse beta information
-	fullver_beta=$(grep -m1 $model /tmp/wlan_update.txt | sed s/.*#BETAFW//;)
+	# parse beta release information
+	fullver_beta=$(grep -m1 $model $manifest | sed s/.*#BETAFW//;)
 	fullver_beta=$(echo $fullver_beta | sed s/#.*//;)
 	if [ "$fullver_beta" == "" ] || [ "$fullver_beta" == "$productid" ] || [ "$firmware_path" != "1" ]; then
-		# no beta available or get stable only
+		# no beta release available or skip beta release checking
 		webs_state_info_beta=""
 	else
 		firmver_beta=$(echo $fullver_beta | cut -d. -f1)
 		buildno_beta=$(echo $fullver_beta | cut -d. -f2)
-		extendno_beta=$(grep -m1 $model /tmp/wlan_update.txt | sed s/.*#BETAEXT//;)
+		extendno_beta=$(grep -m1 $model $manifest | sed s/.*#BETAEXT//;)
 		extendno_beta=$(echo $extendno_beta | sed s/#.*//;)
 		lextendno_beta=$(echo $extendno_beta | sed s/-g.*//;)
 		lextendno_beta=$(echo $lextendno_beta | sed s/^alpha/1/;)
@@ -138,11 +126,6 @@ fi
 echo "---- Have ${current_firm}.${current_buildno}_${current_extendno} ----" >> $log_file
 if [ "$webs_state_info_am" == "" ] && [ "$webs_state_info_beta" == "" ]; then
 	echo "---- No any firmware update available! ----" >> $log_file
-	# nvram set webs_state_flag=0
-	# nvram set webs_state_error=0
-	# nvram set webs_state_info=""
-	# nvram set webs_state_info_am=""
-	# nvram set webs_state_info_beta=""
 	nvram set webs_state_update=1
 	exit
 else
@@ -152,7 +135,7 @@ else
 		echo "---- No stable release available ----" >> $log_file
 	fi
 	if [ "$webs_state_info_beta" != "" ]; then
-		echo "---- Beta available ${firmver_beta}.${buildno_beta}_${extendno_beta}----" >> $log_file
+		echo "---- Beta available ${firmver_beta}.${buildno_beta}_${extendno_beta} ----" >> $log_file
 	else
 		if [ "$firmware_path" == "1" ]; then
 			echo "---- No beta release available ----" >> $log_file
@@ -162,50 +145,26 @@ else
 	fi
 fi
 
+# download stable release note
+get_release_note=0
 if [ "$webs_state_info_am" != "" ] && [ "$firmver" != "" ] && [ "$buildno" != "" ] && [ "$lextendno" != "" ]; then
-	last_webs_state_info=$(nvram get webs_last_info)
 	if [ "$current_firm" -lt "$firmver" ]; then
 		echo "---- firmver: $firmver ----" >> $log_file
-		webs_state_flag=1	# New firmeware available
-		if [ "$IS_SUPPORT_NOTIFICATION_CENTER" != "" ]; then
-			if [ "$last_webs_state_info" != "$webs_state_info" ]; then
-				#if [ "$current_firm_is_beta" != 1 ]; then
-					Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "{\"fw_ver\":\"$webs_state_info\"}"    #Send Event to Notification Center
-					nvram set webs_last_info="$webs_state_info"
-				#fi
-			fi
-		fi
+		get_release_note=1
 	elif [ "$current_firm" -eq "$firmver" ]; then
 		if [ "$current_buildno" -lt "$buildno" ]; then
 				echo "---- buildno: $buildno ----" >> $log_file
-				webs_state_flag=1	# New firmeware available
-				if [ "$IS_SUPPORT_NOTIFICATION_CENTER" != "" ]; then
-					if [ "$last_webs_state_info" != "$webs_state_info" ]; then
-						#if [ "$current_firm_is_beta" != 1 ]; then
-							Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "{\"fw_ver\":\"$webs_state_info\"}"    #Send Event to Notification Center
-							nvram set webs_last_info="$webs_state_info"
-						#fi
-					fi
-				fi
+				get_release_note=1
 		elif [ "$current_buildno" -eq "$buildno" ]; then
 			if [ "$current_extendno" -lt "$lextendno" ]; then
 				echo "---- lextendno: $lextendno ----" >> $log_file
-				webs_state_flag=1	# New firmeware available
-				if [ "$IS_SUPPORT_NOTIFICATION_CENTER" != "" ]; then
-					if [ "$last_webs_state_info" != "$webs_state_info" ]; then
-						#if [ "$current_firm_is_beta" != 1 ]; then
-							Notify_Event2NC "$SYS_FW_NWE_VERSION_AVAILABLE_EVENT" "{\"fw_ver\":\"$webs_state_info\"}"    #Send Event to Notification Center
-							nvram set webs_last_info="$webs_state_info"
-						#fi
-					fi
-				fi
+				get_release_note=1
 			fi
 		fi
 	fi
 fi
 
-# download stable release note
-if [ "$webs_state_flag" == "1" ]; then
+if [ "$get_release_note" == "1" ]; then
 	releasenote_file0=${webs_state_info_am}_note.txt
 	releasenote_path0="/tmp/release_note0.txt"
 	if [ "$fwup_tc" != "" ]; then
@@ -216,6 +175,7 @@ if [ "$webs_state_flag" == "1" ]; then
 		/usr/sbin/wget $wget_options $fwsite/$releasenote_file0 -O $releasenote_path0
 	fi
 	if [ "$?" != "0" ]; then
+		webs_state_error=1
 		webs_state_info=""
 		webs_state_info_am=""
 		echo "---- download stable release note failed ----" >> $log_file
@@ -226,24 +186,24 @@ else
 	echo "---- Skip download stable release note ----" >> $log_file
 fi
 
-# checking for whether downloading beta release note
-get_beta_release=0
-if [ "$firmware_path" == "1" ] && [ "$webs_state_info_beta" != "" ] && [ "$firmver_beta" != "" ] && [ "$buildno_beta" != "" ] && [ "$lextendno_beta" != "" ]; then
+# download beta release note
+get_release_note=0
+if [ "$webs_state_info_beta" != "" ] && [ "$firmver_beta" != "" ] && [ "$buildno_beta" != "" ] && [ "$lextendno_beta" != "" ]; then
 	if [ "$current_firm" -lt "$firmver_beta" ]; then
-		get_beta_release=1
+		get_release_note=1
 	elif [ "$current_firm" -eq "$firmver_beta" ]; then
 		if [ "$current_buildno" -lt "$buildno_beta" ]; then
-			get_beta_release=1
+			get_release_note=1
 		elif [ "$current_buildno" -eq "$buildno_beta" ]; then
 			if [ "$current_extendno" -lt "$lextendno_beta" ]; then
-				get_beta_release=1
+				get_release_note=1
 			fi
 		fi
 	fi
 fi
 
 # download beta release note
-if [ "$get_beta_release" == "1" ]; then
+if [ "$get_release_note" == "1" ]; then
 	releasenote_file1=${webs_state_info_beta}_note.txt
 	releasenote_path1="/tmp/release_note1.txt"
 	if [ "$fwup_tc" != "" ]; then
@@ -254,6 +214,7 @@ if [ "$get_beta_release" == "1" ]; then
 		/usr/sbin/wget $wget_options $fwsite/$releasenote_file1 -O $releasenote_path1
 	fi
 	if [ "$?" != "0" ]; then
+		webs_state_error=1
 		webs_state_info_beta=""
 		echo "---- download beta release note failed ----" >> $log_file
 	fi
@@ -262,24 +223,11 @@ else
 	echo "---- Skip download beta release note ----" >> $log_file
 fi
 
-if [ "$firmware_path" == "1" ]; then
-	if [ "$webs_state_info_am" == "" ] && [ "$webs_state_info_beta" == "" ]; then
-		if [ "$webs_state_flag" == "1" ] || [ "$get_beta_release" == "1" ]; then
-			# release note download fail
-			webs_state_error=1
-		fi
-		webs_state_flag=0
-	elif [ "$webs_state_info_am" == "" ]; then
-		if [ "$webs_state_flag" != "1" ]; then
-			webs_state_flag=1	# New firmeware available
-		fi
-	fi
-elif [ "$webs_state_info_am" == "" ]; then
-	if [ "$webs_state_flag" == "1" ]; then
-		# stable release note download fail
-		webs_state_flag=0
-		webs_state_error=1
-	fi
+if [ "$webs_state_info_am" == "" ] && [ "$webs_state_info_beta" == "" ]; then
+	webs_state_flag=0	# Don't do upgrade
+else
+	webs_state_flag=1	# New firmeware available
+	webs_state_error=0
 fi
 
 echo "---- Result summary:" >> $log_file

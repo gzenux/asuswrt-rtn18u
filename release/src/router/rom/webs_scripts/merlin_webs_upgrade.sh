@@ -4,9 +4,12 @@ wget_options="-t 2 -T 30"
 
 fwsite="https://gzenux.github.io/asuswrt-rtn18u"
 
-nvram set webs_state_upgrade=0 # INITIALIZING
-nvram set webs_state_error=0
+# INITIALIZING
+nvram set webs_state_upgrade=0 # 0: webs_state upgrade is in progress  1: webs_state upgrade done
+nvram set webs_state_error=0   # 1: wget fail  2: Not enough memory space  3: FW check/RSA check fail
+webs_state_error=0
 
+fwget_log=/tmp/fwget_log
 log_file=/tmp/webs_upgrade.log
 echo "---- webs_upgrade start ----" > $log_file
 
@@ -89,24 +92,24 @@ firmware_path="/tmp/linux.trx"
 echo 3 > /proc/sys/vm/drop_caches
 if [ "$fwup_tc" != "" ]; then
 	echo "---- wget fw test, url = ${fwsite}/${relpath}/${firmware_file} ----" >> $log_file
-	percent=0; echo "" > /tmp/fwget_log
-	while [ $percent -lt 101 ];do echo "${percent}% " >> /tmp/fwget_log; percent=$((percent+=4)); sleep 1; done
+	percent=0; echo "" > $fwget_log
+	while [ $percent -lt 101 ]; do echo "${percent}% " >> $fwget_log; percent=$((percent+=4)); sleep 1; done
 	echo "---- wget fw test done ----" >> $log_file
 	# always download failure in test mode
 	nvram set webs_state_error=1
 	nvram set webs_state_upgrade=1
-	rm /tmp/fwget_log
+	rm $fwget_log
 	exit
 else
 	echo "---- wget fw Real, url = ${fwsite}/${relpath}/${firmware_file} ----" >> $log_file
-	wget $wget_options --output-file=/tmp/fwget_log ${fwsite}/${relpath}/${firmware_file} -O $firmware_path
+	wget $wget_options --output-file=${fwget_log} ${fwsite}/${relpath}/${firmware_file} -O $firmware_path
 fi
 
-if [ "$?" != "0" ]; then	#download failure
-	nvram set webs_state_error=1
+if [ "$?" != "0" ]; then
+	# download failure
+	webs_state_error=1
 else
-	nvram set webs_state_upgrade=2
-	echo "---- mv trx OK ----" >> $log_file
+	echo "---- fw get OK ----" >> $log_file
 	nvram set firmware_check=0
 	firmware_check $firmware_path
 	sleep 1
@@ -116,8 +119,10 @@ else
 		rc rc_service restart_upgrade
 	else
 		echo "---- fw check error ----" >> $log_file
-		nvram set webs_state_error=3	# wrong fw
+		webs_state_error=3	# wrong fw
 	fi
 fi
 
+# set nvram back
+nvram set webs_state_error="$webs_state_error"
 nvram set webs_state_upgrade=1
