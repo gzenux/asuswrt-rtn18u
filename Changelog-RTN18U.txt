@@ -1,12 +1,12 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.1-alpha3
+386.1-beta1
   Changelog for RT-N18U:
-  - MERGED: GPL 386_40996 from asuswrt-merlin (master).
-  - CHANGED: Enabled the following options on this model:
-             1. WL_SCHED_V3 and PC_SCHED_V3 to enable newer
-                scheduler format for wireless and parental control
+  - MERGED: GPL 386_41350 from asuswrt-merlin (master).
+  - CHANGED: Enabled the following options:
+             - WL_SCHED_V3 and PC_SCHED_V3 to use the newer schedule
+               format for wireless and parental control features.
   - CHANGED: Revised firmware update process.
   - REMOVED: CPU/Wireless temperature shown in home page.
              (incompatible with newer GPL 386)
@@ -14,7 +14,7 @@ Asuswrt-Merlin for RT-N18U Release Note
              page instead.
 
   Changelog from Asuswrt-Merlin:
-  - UPDATED: Merged GPL 386_40996 (beta GPL from Asus).
+  - UPDATED: Merged GPL 386_41350 (beta GPL from Asus).
 
 
 384.19
