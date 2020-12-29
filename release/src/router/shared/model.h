@@ -140,6 +140,7 @@ enum {
 #if !defined(RTN18U)	// Kludge
 	MODEL_RTACRH18,
 	MODEL_PLAX56XP4,
+	MODEL_CTAX56_XD4,
 #endif
 	MODEL_MAX
 #if defined(RTN18U)	// Kludge

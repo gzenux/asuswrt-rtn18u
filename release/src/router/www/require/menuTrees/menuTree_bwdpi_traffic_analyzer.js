@@ -884,6 +884,10 @@ define(function(){
 					retArray.push("AdaptiveQoS_InternetSpeed.asp");
 				}
 
+				if (odmpid == "DSL-AX5400") {
+					retArray.push("Advanced_ADSL_Content.asp");
+				}
+
 				return retArray;
 			}
 		}
