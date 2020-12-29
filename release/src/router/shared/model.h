@@ -106,11 +106,7 @@ enum {
 	MODEL_RTAD7200,
 	MODEL_GTAXY16000,
 	MODEL_GTAX6000N,
-#if defined(RTN18U)	// Kludge
-	MODEL_GTAX6000S,
-#else
 	MODEL_RTAX89U,
-#endif
 	MODEL_RTAC1200V2,
 	MODEL_RTN19,
 	MODEL_TUFAC1750,
@@ -121,7 +117,9 @@ enum {
 	MODEL_RTAX56_XD4,
 	MODEL_RTAX58U,
 	MODEL_RTAX56U,
+#if !defined(RTN18U)	// Kludge
 	MODEL_RPAX56,
+#endif
 	MODEL_SHAC1300,
 	MODEL_RPAC92,
 #if defined(RTN18U)	// Kludge
@@ -145,7 +143,8 @@ enum {
 	MODEL_MAX
 #if defined(RTN18U)	// Kludge
 	,
-	MODEL_RTAX89U,
+	MODEL_RPAX56,
+	MODEL_CTAX56_XD4,
 #endif
 };
 
