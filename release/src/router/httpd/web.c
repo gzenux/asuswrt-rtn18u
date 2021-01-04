@@ -1945,6 +1945,7 @@ static int ej_get_basic_clientlist_count(int eid, webs_t wp, int argc, char_t **
 	return 0;
 }
 
+
 /* Report sys up time */
 static int
 ej_uptime(int eid, webs_t wp, int argc, char_t **argv)
@@ -19440,7 +19441,8 @@ struct mime_handler mime_handlers[] = {
 	{ "js/jquery.js", "text/javascript", cache_object, NULL, do_file, NULL },
 	{ "js/ouiDB.js", "text/javascript", cache_object, NULL, do_file, NULL },
 	{ "js/chart.min.js", "text/javascript", cache_object, NULL, do_file, NULL },
-	{ "require/require.min.js", "text/javascript", no_cache_IE7, NULL, do_file, NULL },
+	{ "require/require.min.js", "text/javascript", cache_object, NULL, do_file, NULL },
+	{ "calendar/jquery-ui.js", "text/javascript", cache_object, NULL, do_file, NULL },
 	{ "httpd_check.xml", "text/xml", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
 	{ "repage.json", "application/json", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
 	{ "chdom.json", "application/json", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
@@ -27388,7 +27390,6 @@ ej_httpd_cert_info(int eid, webs_t wp, int argc, char **argv)
 #endif
 	{
 		snprintf(cert_path, sizeof(cert_path), "%s", HTTPD_CERT);
-//		strcpy(cert_path, UPLOAD_CERT);
 	}
 
 	fp = fopen(cert_path, "r");
