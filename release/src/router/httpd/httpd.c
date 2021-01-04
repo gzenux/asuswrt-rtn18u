@@ -2092,18 +2092,6 @@ int main(int argc, char **argv)
 	if (nvram_get_int("HTTPD_DBG") > 0)
 		eval("touch", HTTPD_DEBUG);
 
-	/* set initial TZ to avoid mem leaks
-	 * it suppose to be convert after applying
-	 * time_zone_x_mapping(); */
-	setenv("TZ", nvram_safe_get_x("", "time_zone_x"), 1);
-
-#ifdef RTCONFIG_LETSENCRYPT
-	nvram_unset("le_restart_httpd");
-#endif
-
-	if (nvram_get_int("HTTPD_DBG") > 0)
-		eval("touch", HTTPD_DEBUG);
-
 #if defined(RTCONFIG_SW_HW_AUTH)
 	//if(!httpd_sw_hw_check()) return 0;
 #endif

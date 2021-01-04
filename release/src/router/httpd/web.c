@@ -2559,9 +2559,6 @@ ej_vpn_crt_server(int eid, webs_t wp, int argc, char **argv) {
 		//vpn_crt_server_crt
 		_get_vpn_crt_value(eid, wp, OVPN_TYPE_SERVER, OVPN_SERVER_CERT, idx);
 
-		//vpn_crt_server_extra
-		_get_vpn_crt_value(eid, wp, OVPN_TYPE_SERVER, OVPN_SERVER_EXTRA, idx);
-
 		//vpn_crt_server_key
 		_get_vpn_crt_value(eid, wp, OVPN_TYPE_SERVER, OVPN_SERVER_KEY, idx);
 
@@ -2573,6 +2570,9 @@ ej_vpn_crt_server(int eid, webs_t wp, int argc, char **argv) {
 
 		//vpn_crt_server_static
 		_get_vpn_crt_value(eid, wp, OVPN_TYPE_SERVER, OVPN_SERVER_STATIC, idx);
+
+		//vpn_crt_server_extra
+		_get_vpn_crt_value(eid, wp, OVPN_TYPE_SERVER, OVPN_SERVER_EXTRA, idx);
 
 	}
 	return 0;
@@ -2589,9 +2589,6 @@ ej_vpn_crt_client(int eid, webs_t wp, int argc, char **argv) {
 		//vpn_crt_client_crt
 		_get_vpn_crt_value(eid, wp, OVPN_TYPE_CLIENT, OVPN_CLIENT_CERT, idx);
 
-		//vpn_crt_client_extra
-		_get_vpn_crt_value(eid, wp, OVPN_TYPE_CLIENT, OVPN_CLIENT_EXTRA, idx);
-
 		//vpn_crt_client_key
 		_get_vpn_crt_value(eid, wp, OVPN_TYPE_CLIENT, OVPN_CLIENT_KEY, idx);
 
@@ -2600,6 +2597,9 @@ ej_vpn_crt_client(int eid, webs_t wp, int argc, char **argv) {
 
 		//vpn_crt_client_crl
 		_get_vpn_crt_value(eid, wp, OVPN_TYPE_CLIENT, OVPN_CLIENT_CRL, idx);
+
+		//vpn_crt_client_extra
+		_get_vpn_crt_value(eid, wp, OVPN_TYPE_CLIENT, OVPN_CLIENT_EXTRA, idx);
 
 	}
 	return 0;
@@ -19008,7 +19008,7 @@ delete_client_in_sta_binding_list(char *del_maclist, char *in_group_list, char *
 	char word[4096]={0}, *word_next=NULL;
 	char del_mac[512]={0}, *del_mac_next=NULL;
 	char list[4096]={0}, list_buf[4096]={0}, *list_next=NULL;
-	char group_word_buf[4096]={0}, group_word[4096]={0}, *group_word_next=NULL;
+	char group_word[4096]={0}, *group_word_next=NULL;
 
 	foreach_60(word, in_group_list, word_next){
 		memset(list_buf, 0, sizeof(list_buf));
@@ -19052,8 +19052,8 @@ wl_maclist_x=<mac1<mac2<...
 static int
 delete_client_in_list(char *del_maclist, char *in_list, char *out_list, int out_len){
 
-	int ret=0, mac_idx=0;
-	char word_buf[4096]={0}, word[4096]={0}, *word_next=NULL;
+	int ret=0;
+	char word[4096]={0}, *word_next=NULL;
 
 	foreach_60(word, in_list, word_next){
 		if (strcasestr(del_maclist, word)) {
@@ -19286,7 +19286,7 @@ do_del_client_data_cgi(char *url, FILE *stream) {
 	nvram_commit();
 
 #ifdef RTCONFIG_CFGSYNC
-	if (nvram_match("x_Setting", "1") && pids("cfg_server") && check_if_file_exist(CFG_SERVER_PID))
+	if (is_cfg_server_ready())
 	{
 		char cfg_ver[9] = {0};
 
