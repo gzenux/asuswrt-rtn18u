@@ -4373,7 +4373,6 @@ int init_nvram(void)
 		add_rc_support("manual_stb");
 		add_rc_support("11AC");
 		add_rc_support("app");
-		add_rc_support("gameMode");
 		//add_rc_support("pwrctrl");
 		// the following values is model dep. so move it from default.c to here
 		nvram_set("wl0_HT_TxStream", "4");
@@ -12362,13 +12361,6 @@ int init_nvram(void)
 	add_rc_support("utf8_ssid");
 #endif
 
-#ifdef RTCONFIG_FRS_FEEDBACK
-	add_rc_support("frs_feedback");
-#ifdef RTCONFIG_DBLOG
-	add_rc_support("dblog");
-#endif /* RTCONFIG_DBLOG */
-#endif
-
 #ifdef RTCONFIG_USB
 #ifdef RTAC68U
 	if (!hw_usb_cap())
@@ -12376,10 +12368,6 @@ int init_nvram(void)
 #endif
 #ifdef RTCONFIG_USB_PRINTER
 	add_rc_support("printer");
-#endif
-
-#ifdef RTCONFIG_PUSH_EMAIL
-	add_rc_support("email");
 #endif
 
 #ifdef RTCONFIG_USB_MODEM
