@@ -489,8 +489,8 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/chipinfo.o $(HND_SRC)/bcmdrivers/broadcom/char/chipinfo/impl1/chipinfo$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/cmdlist.o $(HND_SRC)/bcmdrivers/broadcom/char/cmdlist/impl1/cmdlist$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/nciTMSkmod.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciTMSkmod$(PRBM_EXT).o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/nciLservices.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciLservices$(PRBM_EXT).o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/prebuilt/nciexLinuxETH.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciexLinuxETH$(PRBM_EXT).o ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/nciLservices.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciLservices$(PRBM_EXT).o ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/nciexLinuxETH.o $(HND_SRC)/bcmdrivers/broadcom/char/tms/impl1/nciexLinuxETH$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/pktflow.o $(HND_SRC)/bcmdrivers/broadcom/char/pktflow/impl1/pktflow$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/pwrmngtd.o $(HND_SRC)/bcmdrivers/broadcom/char/pwrmngt/impl1/pwrmngtd$(PRBM_EXT).o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bdmf.o $(HND_SRC)/rdp/projects/WL4908/target/bdmf/bdmf$(PRBM_EXT).o ; \
