@@ -3675,6 +3675,8 @@ void btn_check(void)
 				eval("wl", "-i", "eth6", "ledbh", "7", "7");
 #elif defined(RTAX68U)
 				eval("wl", "-i", "eth5", "ledbh", "7", "7");
+#elif defined(RTAC68U_V4)
+				eval("wl", "-i", "eth6", "ledbh", "10", "7");
 #elif defined(RTAX56U)
 				eval("wl", "-i", "eth5", "ledbh", "0", "25");
 #elif defined(RPAX56)
@@ -3714,6 +3716,8 @@ void btn_check(void)
 				eval("wl", "-i", "eth7", "ledbh", "15", "7");
 #elif defined(RTAX68U)
 				eval("wl", "-i", "eth6", "ledbh", "7", "7");
+#elif defined(RTAC68U_V4)
+				eval("wl", "-i", "eth5", "ledbh", "10", "7");
 #elif defined(RTAX56U)
 				eval("wl", "-i", "eth6", "ledbh", "0", "25");
 #elif defined(RPAX56)
@@ -9218,7 +9222,7 @@ void auto_firmware_check_merlin()
 	struct tm local;
 	static int rand_hr, rand_min;
 
-#if defined(RTAX58U) || defined(RTAX56U)
+#if 0		//defined(RTAX58U) || defined(RTAX56U)
 	if (!strncmp(nvram_safe_get("territory_code"), "CX", 2))
 		return;
 #endif
