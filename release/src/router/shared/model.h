@@ -146,6 +146,7 @@ enum {
 	,
 	MODEL_RPAX56,
 	MODEL_CTAX56_XD4,
+	MODEL_RTAC68U_V4,
 #endif
 };
 
