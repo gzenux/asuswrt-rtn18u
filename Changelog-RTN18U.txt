@@ -1,9 +1,9 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.1-beta1
+386.1-beta2
   Changelog for RT-N18U:
-  - MERGED: GPL 386_41350 from asuswrt-merlin (master).
+  - MERGED: GPL 386_41535 from asuswrt-merlin (master).
   - CHANGED: Enabled the following options:
              - WL_SCHED_V3 and PC_SCHED_V3 to use the newer schedule
                format for wireless and parental control features.
@@ -14,7 +14,9 @@ Asuswrt-Merlin for RT-N18U Release Note
              page instead.
 
   Changelog from Asuswrt-Merlin:
-  - UPDATED: Merged GPL 386_41350 (beta GPL from Asus).
+  - UPDATED: Merged GPL 386_41535
+  - REMOVED: Option to select sfq as a queue scheduler for t.QoS
+             or Bandwidth Limiter, and always use fq_codel.
 
 
 384.19
