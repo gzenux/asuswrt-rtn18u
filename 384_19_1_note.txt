@@ -1,0 +1,77 @@
+384.19_1
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - UPDATED: dnsmasq to 2.84 (themiron)
+
+
+384.19
+  Changelog for RT-N18U:
+  - NEW: Add the speedtest feature powered by Ookla.
+         (backported from asuswrt-merlin GPL 386_40577)
+  - NEW: Add the login captcha option to WebUI.
+         (backported from asuswrt-merlin GPL 386_40577)
+  - NEW: Re-add Merlin NAT loopback feature.
+         (no longer supported by asuswrt-merlin)
+  - NEW: Implement advanced wireless TX power adjustment feature.
+  - UPDATED: WebUI language translation and the help description.
+             (backported from asuswrt-merlin GPL 386_41350)
+  - CHANGED: Enabled EXT4FS option to support utilities for ext4
+             filesystem.
+  - CHANGED: Decoupled the LED control behavior between WPS button
+             and 'disable LEDs' option (stealth mode).
+  - CHANGED: firmware update checks are no longer using the
+             server address stored in nvram, for security
+             purposes. (follow asuswrt-merlin's change)
+  - CHANGED: Set default temperature unit to °C in home status page
+             when the browser cookie is empty.
+  - FIXED: The traffic unit shows empty option in TrafficMonitor
+           pages when the browser cookie is empty.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Added stub and stub-v2 compression options to OpenVPN
+         clients.  Not added to server, since compression is
+         considered deprecated, and will be removed most likely
+         in OpenVPN 2.6, for security reasons.
+  - NEW: Added tls-crypt-v2 support to OpenVPN clients.
+  - NEW: Added option to select an OpenVPN client when
+         running Oookla Speedtest.
+  - UPDATED: Openssl to 1.1.1i.
+  - UPDATED: Updated to OpenVPN 2.5.0.  Note that OpenVPN
+             2.4.0 or newer is now required by the exported
+             client config file.  You can still manually
+             configure an older client to connect with your
+             router.
+  - UPDATED: nano to 5.2.
+  - UPDATED: curl to 7.72.0.
+  - UPDATED: zlib to 1.2.11.
+  - UPDATED: lz4 to 1.9.2.
+  - UPDATED: e2fsprogs to 1.45.6.
+  - UPDATED: dropbear to 2020.81.
+  - UPDATED: miniupnpd to 2.2 (git snapshot from 20201129)
+  - UPDATED: Switched userspace ipset from 6.32 to 7.6 (to match
+             with upstream)
+  - CHANGED: The old legacy cipher setting is now only available
+             when running with static key authentication.
+  - CHANGED: Tweaks to the OpenVPN webui layout
+  - CHANGED: OpenVPN clients will now NAT all outbound traffic,
+             regardless of the source subnet.
+  - CHANGED: Reworked the display of DNSPrivacy presets
+  - CHANGED: Added AdGuard (ad blocking) and CIRA Canadian Shield
+             (non US-based service) to the DNSPrivacy presets.
+  - CHANGED: At boot time, OpenVPN killswitch will only be
+             applied for clients set to auto-start with WAN.
+  - CHANGED: Increased number of available mount points for addon
+             webpages to 20.
+  - CHANGED: Multiple routes can now be defined per client on the
+             OpenVPN client-specific configuration.
+  - CHANGED: When logging allowed connections is enabled, also log
+             outbound LAN connections (reverts to the behaviour from
+             a few years ago)
+  - FIXED: OpenVPN client remote IP wasn't updated on client
+           stop/restart.
+  - FIXED: Couldn't force generating a new SSL certificate for the
+           webui.
+  - REMOVED: Option to disable NCP.  The NCP cipher list is
+             now used both for NCP and non-NCP endpoints.
