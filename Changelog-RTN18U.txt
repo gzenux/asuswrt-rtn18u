@@ -19,6 +19,14 @@ Asuswrt-Merlin for RT-N18U Release Note
              or Bandwidth Limiter, and always use fq_codel.
 
 
+384.19_1
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - UPDATED: dnsmasq to 2.84 (themiron)
+
+
 384.19
   Changelog for RT-N18U:
   - NEW: Add the speedtest feature powered by Ookla.
