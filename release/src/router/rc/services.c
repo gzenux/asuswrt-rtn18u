@@ -1264,6 +1264,10 @@ void start_dnsmasq(void)
 				    value);
 		}
 #endif
+#ifdef RTCONFIG_DSL
+		fprintf(fp, "192.168.121.70 ntp01.mvp.tivibu.com.tr\n");
+		fprintf(fp, "192.168.121.71 ntp02.mvp.tivibu.com.tr\n");
+#endif
 
 #ifdef RTCONFIG_IPV6
 		if (ipv6_enabled()) {
@@ -6878,7 +6882,7 @@ static void _get_ble_name(char* name, size_t len)
 	strlcat(name, tmp, len);
 
 	/* Bundle flag */
-#if defined(RTAX95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
+#if defined(RTAX95Q) || defined(RTAXE95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
 	amas_bdl_val = strtol(cfe_nvram_safe_get_raw("amas_bdl"), NULL, 10);
 	if (amas_bdl_val == 0)
 		amas_bdl_val = 1; /* single pack case */
@@ -6919,6 +6923,7 @@ static void _write_bluetoothd_conf()
 
 	switch (model) {
 		case MODEL_RTAX95Q:
+		case MODEL_RTAXE95Q:
 		case MODEL_RTAX56_XD4:
 		case MODEL_RTAX58U:
 			dualmode = 1;
@@ -6951,7 +6956,7 @@ void ble_rename_ssid(void)
 	char hci_ssid[32] = {0};
 	char *ble_rename_argv[] = {"hciconfig", hci_inf, "name", hci_ssid, NULL};
 	char *ble_ifdownup_argv[] = {"hciconfig", hci_inf, "down", "up", NULL};
-#if defined(RTAX95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
+#if defined(RTAX95Q) || defined(RTAXE95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
 	char *ble_leadv_argv[] = {"hciconfig", hci_inf, "leadv", "0", NULL};
 #endif
 
@@ -6972,7 +6977,7 @@ void ble_rename_ssid(void)
 
 	_eval(ble_rename_argv, NULL, 0, NULL);
 	_eval(ble_ifdownup_argv, NULL, 0, NULL);
-#if defined(RTAX95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
+#if defined(RTAX95Q) || defined(RTAXE95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
 	_eval(ble_leadv_argv, NULL, 0, NULL);
 #endif
 }
@@ -7015,7 +7020,7 @@ void start_bluetooth_service(void)
 		sleep(2);	// wait a minute for device ready
 #endif
 
-#if !defined(BLUECAVE) && !defined(RTAX95Q) && !defined(RTAX56_XD4) && !defined(RTAX82_XD6)
+#if !defined(BLUECAVE) && !defined(RTAX95Q) && !defined(RTAXE95Q) && !defined(RTAX56_XD4) && !defined(RTAX82_XD6)
 	while (!check_bluetooth_device(str_inf)) {
 		sleep(1);
 		_dprintf("Failed to get HCI Device! Retry after 1 sec!\n");
@@ -7027,7 +7032,7 @@ void start_bluetooth_service(void)
 #endif
 	if (pids("bluetoothd")) killall_tk("bluetoothd");
 
-#if defined(RTAX95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
+#if defined(RTAX95Q) || defined(RTAXE95Q) || defined(RTAX56_XD4) || defined(RTAX82_XD6)
 	nvram_set("ble_init", "1");
 	system("hciconfig hci0 up");
 	doSystem("btconfig wba %s", get_label_mac());
@@ -7108,6 +7113,8 @@ void stop_bluetooth_service(void)
 #if defined(RTCONFIG_LP5523)
 		lp55xx_leds_proc(LP55XX_ALL_BREATH_LEDS, LP55XX_ACT_BREATH_UP_00);
 #endif
+		nvram_unset("bt_turn_off_service");
+		nvram_unset("bt_turn_off");
 #if defined(RTCONFIG_AMAS) && defined(RTCONFIG_PRELINK)
 		nvram_unset("ble_dut_con");
 		nvram_unset("ble_rename_ssid");
@@ -7116,7 +7123,7 @@ void stop_bluetooth_service(void)
 		killall_tk("bluetoothd");
 		system("hciconfig hci0 reset down");
 #if defined(RTCONFIG_QCA) && defined(RTCONFIG_BT_CONN_UART)
-		sleep(2);
+		sleep(1);
 		killall_tk("hciattach");
 #endif
 		logmessage("bluetoothd", "daemon is stoped");
@@ -10271,6 +10278,9 @@ int start_wanduck(void)
 	if(sw_mode() == SW_MODE_AP && nvram_get_int("modem_bridge"))
 		return 0;
 #endif
+#ifdef RTCONFIG_DSL ///TODO
+	nvram_set("freeze_duck", "0");
+#endif
 
 	return _eval(argv, NULL, 0, &pid);
 }
@@ -10460,7 +10470,7 @@ start_sw_devled(void)
 	char *sw_devled_argv[] = {"sw_devled", NULL};
 	pid_t whpid;
 
-#if defined(RTAX95Q) || defined(RTAX56_XD4) || defined(CTAX56_XD4)
+#if defined(RTAX95Q) || defined(RTAXE95Q) || defined(RTAX56_XD4) || defined(CTAX56_XD4)
 	return 1;
 #endif
 
