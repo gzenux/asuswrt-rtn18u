@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2020 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2021 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -132,8 +132,6 @@ int main (int argc, char **argv)
       /* one char flag per possible RR in answer section (may get extended). */
       daemon->rr_status_sz = 64;
       daemon->rr_status = safe_malloc(sizeof(*daemon->rr_status) * daemon->rr_status_sz);
-
-      crypto_init();
     }
 #endif
 
@@ -392,8 +390,11 @@ int main (int argc, char **argv)
   if (daemon->port != 0)
     {
       cache_init();
-
       blockdata_init();
+#if defined(HAVE_DNSSEC) || defined(HAVE_CRYPTOHASH)
+      crypto_init();
+#endif
+      hash_questions_init();
     }
 
 #ifdef HAVE_INOTIFY
