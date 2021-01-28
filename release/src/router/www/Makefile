@@ -459,7 +459,8 @@ ifneq ($(RTCONFIG_BWDPI)$(RTCONFIG_BWDPI_DEP),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/recount_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/add.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/add_hover.svg
-	rm -rf $(INSTALLDIR)/www/images/New_ui/arrow_right.svg
+# used by state.js
+#	rm -rf $(INSTALLDIR)/www/images/New_ui/arrow_right.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/arrow_down.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/disable.svg
 	rm -rf $(INSTALLDIR)/www/images/save.svg
