@@ -1060,8 +1060,8 @@ endif
 
 ifeq ($(BUILD_NAME),$(filter $(BUILD_NAME), TUF-AX3000))
 	cp -rf $(INSTALLDIR)/www/css/TUF/* $(INSTALLDIR)/www/css/
-	rm -rf $(INSTALLDIR)/www/css/TUF
 endif
+	rm -rf $(INSTALLDIR)/www/css/TUF
 
 	# remove unused files
 	rm -rf $(INSTALLDIR)/www/Main_AdmStatus_Content.asp
