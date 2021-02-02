@@ -440,19 +440,19 @@ legend {
 }
 #radio_1{
 	background: url(../images/survey/radio_status.png);
-	background-position: -0px -83px; width: 28px; height: 20px;
+	background-position: -0px -84px; width: 28px; height: 21px;
 }
 #radio_2{
 	background: url(../images/survey/radio_status.png);
-	background-position: -0px -103px; width: 28px; height: 20px;
+	background-position: -0px -105px; width: 28px; height: 21px;
 }	
 #radio_3{
 	background: url(../images/survey/radio_status.png);
-	background-position: -0px -125px; width: 28px; height: 20px;
+	background-position: -0px -126px; width: 28px; height: 21px;
 }	
 #radio_4{
 	background: url(../images/survey/radio_status.png);
-	background-position: -0px -147px; width: 28px; height: 20px;
+	background-position: -0px -147px; width: 28px; height: 21px;
 }
 
 .cfg_val{
