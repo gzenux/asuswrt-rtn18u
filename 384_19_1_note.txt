@@ -3,7 +3,10 @@
   - No Updates Available.
 
   Changelog from Asuswrt-Merlin:
-  - UPDATED: dnsmasq to 2.84 (themiron)
+  - UPDATED: dnsmasq to 2.84, resolving CVE-2020-25681,
+             CVE-2020-25682, CVE-2020-25683, CVE-2020-25687,
+             CVE-2020-25684, CVE-2020-25685 and
+             CVE-2020-25686 aka DNSpooq  (themiron)
 
 
 384.19
@@ -23,7 +26,7 @@
              and 'disable LEDs' option (stealth mode).
   - CHANGED: firmware update checks are no longer using the
              server address stored in nvram, for security
-             purposes. (follow asuswrt-merlin's change)
+             reasons. (follow asuswrt-merlin's change)
   - CHANGED: Set default temperature unit to °C in home status page
              when the browser cookie is empty.
   - FIXED: The traffic unit shows empty option in TrafficMonitor
@@ -52,8 +55,8 @@
   - UPDATED: miniupnpd to 2.2 (git snapshot from 20201129)
   - UPDATED: Switched userspace ipset from 6.32 to 7.6 (to match
              with upstream)
-  - CHANGED: The old legacy cipher setting is now only available
-             when running with static key authentication.
+  - CHANGED: The old legacy cipher setting in OpenVPN is now only
+             available when running with static key authentication.
   - CHANGED: Tweaks to the OpenVPN webui layout
   - CHANGED: OpenVPN clients will now NAT all outbound traffic,
              regardless of the source subnet.
