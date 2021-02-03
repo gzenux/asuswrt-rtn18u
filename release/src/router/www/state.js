@@ -427,6 +427,10 @@ function isSupport(_ptn){
 	var ui_support = [<% get_ui_support(); %>][0];
 	if (based_modelid == "RT-AX56U" || based_modelid == "RT-AX58U") // Kludge
 		ui_support["ookla"] = 1;
+	if (based_modelid == "RT-N18U"){ // Kludge
+		ui_support["mssid_count"] = ui_support["mssid"];
+		ui_support["MaxRule_parentctrl"] = 16;
+	}
 	return (ui_support[_ptn]) ? ui_support[_ptn] : 0;
 }
 
@@ -480,7 +484,7 @@ var telnetd_support = isSupport("telnetd");
 var ssh_support = isSupport("ssh");
 var snmp_support = isSupport("snmp");
 var multissid_support = isSupport("mssid");
-var multissid_count = (based_modelid == "RT-N18U") ? multissid_support : isSupport("mssid_count");
+var multissid_count = isSupport("mssid_count");
 var no5gmssid_support = isSupport("no5gmssid");
 var wifi_hw_sw_support = isSupport("wifi_hw_sw");
 var wifi_tog_btn_support = isSupport("wifi_tog_btn");
@@ -633,7 +637,7 @@ var mbo_support = (function(){
 var nt_center_support = isSupport("nt_center");
 var dblog_support = isSupport("dblog");
 var wan_bonding_support = isSupport("wanbonding");
-var MaxRule_parentctrl = (based_modelid == "RT-N18U") ? 16 : isSupport("MaxRule_parentctrl");
+var MaxRule_parentctrl = isSupport("MaxRule_parentctrl");
 var MaxRule_bwdpi_wrs = isSupport("MaxRule_bwdpi_wrs");
 // return enum bs_port_id
 function wanAggr_p2_num(wanports_bond){
