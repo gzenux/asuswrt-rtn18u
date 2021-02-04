@@ -16,7 +16,6 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
-<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script>
 option_netstat = new Array("<#sockets_all#>","<#sockets_TCP#>","<#sockets_UDP#>","<#sockets_RAW#>","<#sockets_UNIX#>","<#sockets_listening#>","<#Display_routingtable#>");

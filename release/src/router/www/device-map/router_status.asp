@@ -11,8 +11,6 @@
 	<link rel="stylesheet" href="../NM_style.css" type="text/css">
 	<link rel="stylesheet" href="../form_style.css" type="text/css">
 	<link rel="stylesheet" href="../css/networkMap.css" type="text/css">
-	<script src="../js/jquery.js" type="text/javascript"></script>
-	<script src="../js/httpApi.js" type="text/javascript"></script>
 	<script src="../state.js" type="text/javascript"></script>
 	<script src="../js/device.js" type="text/javascript"></script>
 	<script src="../calendar/jquery-ui.js"  type="text/javascript"></script>

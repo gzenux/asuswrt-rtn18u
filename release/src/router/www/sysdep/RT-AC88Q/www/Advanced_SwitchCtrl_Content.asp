@@ -18,7 +18,6 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
 <script type="text/javascript" src="/validator.js"></script>
-<script type="text/javascript" src="/js/jquery.js"></script>
 <style type="text/css">
 .lan_trunk_icon {
 	height: 60px;

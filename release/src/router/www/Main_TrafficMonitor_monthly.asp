@@ -19,8 +19,6 @@
 <script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="/tmhist.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
-<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
-<script language="JavaScript" type="text/javascript" src="/js/httpApi.js"></script>
 
 <script type='text/javascript'>
 var nvram = httpApi.nvramGet(["wan_ifname", "lan_ifname", "rstats_enable", "http_id", "cstats_enable"])

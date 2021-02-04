@@ -16,8 +16,6 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/validator.js"></script>
-<script type="text/javascript" src="/js/jquery.js"></script>
-<script type="text/javascript" src="/js/httpApi.js"></script>
 <script>
 var firewall_enable = '<% nvram_get("fw_enable_x"); %>';
 var wItem = new Array(new Array("", "", "TCP"),

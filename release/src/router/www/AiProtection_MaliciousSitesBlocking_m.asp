@@ -9,7 +9,6 @@
 	<link rel="stylesheet" href="form_style.css">
 	<link rel="stylesheet" href="/css/adaptive_mobile.css">
 
-	<script src="/js/jquery.js"></script>
 	<script src="/state.js"></script>
 	<script src="/popup.js"></script>
 	<script src="/general.js"></script>
@@ -18,7 +17,6 @@
 	<script src="/form.js"></script>
 	<script src="/client_function.js"></script>
 	<script src="/js/Chart.js"></script>
-	<script src="/js/httpApi.js"></script>
 	<script src="/validator.js"></script>
 
 <style>

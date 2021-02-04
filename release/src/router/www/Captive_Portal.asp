@@ -18,12 +18,10 @@
 <script type="text/javascript" src="popup.js"></script>
 <script type="text/javascript" src="help.js"></script>
 <script type="text/javascript" src="validator.js"></script>
-<script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="form.js"></script>
 <script type="text/javascript" src="disk_functions.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/Captive_Portal_template.js"></script>
-<script type="text/javascript" src="/js/httpApi.js"></script>
 <script>
 var disk_flag = true;
 var splash_image_base64 = "";

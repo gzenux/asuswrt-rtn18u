@@ -14,7 +14,6 @@
 	<script src="/help.js"></script>
 	<script src="/popup.js"></script>
 	<script src="/validator.js"></script>
-	<script src="/js/jquery.js"></script>
 	<script src="/calendar/jquery-ui.js"></script> 
 <style>
 .ui-slider {

@@ -16,7 +16,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
-<script type="text/JavaScript" src="/jquery.js"></script>
 <script>
 <% wanlink(); %>
 var $j = jQuery.noConflict();

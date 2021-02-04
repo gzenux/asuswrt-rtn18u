@@ -18,13 +18,11 @@
 <script type="text/javascript" src="popup.js"></script>
 <script type="text/javascript" src="help.js"></script>
 <script type="text/javascript" src="validator.js"></script>
-<script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="calendar/jquery-ui.js"></script>
 <script type="text/javascript" src="form.js"></script>
 <script type="text/javascript" src="switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="jscolor/jscolor.js"></script>
 <script type="text/javascript" src="Captive_Portal_Advanced_template.js"></script>
-<script type="text/javascript" src="/js/httpApi.js"></script>
 <script>
 // disable auto log out
 AUTOLOGOUT_MAX_MINUTE = 0;

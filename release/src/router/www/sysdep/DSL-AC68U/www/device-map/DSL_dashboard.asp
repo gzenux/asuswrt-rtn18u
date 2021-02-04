@@ -13,7 +13,6 @@
 <link rel="stylesheet" type="text/css" href="/form_style.css">
 <link rel="stylesheet" type="text/css" href="/index_style.css">
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
-<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <style type="text/css">
 .title{
 	font-size:16px;

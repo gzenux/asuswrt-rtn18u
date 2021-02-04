@@ -1,6 +1,8 @@
 document.write('<script type="text/javascript" src="/require/require.min.js"></script>');
 document.write('<script type="text/javascript" src="/js/merlin.js"></script>');
 document.write('<script type="text/javascript" src="/js/support_site.js"></script>');
+document.write('<script type="text/javascript" src="/js/jquery.js"></script>');
+document.write('<script type="text/javascript" src="/js/httpApi.js"></script>');
 document.write('<script type="text/javascript" src="/notification.js"></script>');
 document.write('<link rel="stylesheet" type="text/css" href="/notification.css"></link>');
 document.write('<link rel="stylesheet" type="text/css" href="/css/merlin.css"></link>');

@@ -9,12 +9,10 @@
 	<link rel="stylesheet" href="form_style.css">
 	<link rel="stylesheet" href="/css/adaptive_mobile.css">
 
-	<script src="/js/httpApi.js"></script>
 	<script src="/state.js"></script>
 	<script src="/popup.js"></script>
 	<script src="/general.js"></script>
 	<script src="/help.js"></script>
-	<script src="/js/jquery.js"></script>
 	<script src="/disk_functions.js"></script>
 	<script src="/form.js"></script>
 	<script src="/client_function.js"></script>

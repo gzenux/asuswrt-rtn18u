@@ -16,7 +16,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
 <style>
 .tdVLANRuleList_Block{
 	word-break:break-all;

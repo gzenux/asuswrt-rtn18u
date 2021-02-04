@@ -11,8 +11,6 @@
 	<link rel="stylesheet" href="../form_style.css">
 	<link rel="stylesheet" href="../NM_style.css">
 	<link rel="stylesheet" href="../css/networkMap.css">
-	<script src="../js/jquery.js"></script>
-	<script src="../js/httpApi.js"></script>
 	<script src="../state.js"></script>
 	<script src="../js/device.js"></script>
 </head>

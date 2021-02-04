@@ -12,7 +12,6 @@
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <link rel="stylesheet" type="text/css" href="usp_style.css">
 <link rel="stylesheet" type="text/css" href="css/icon.css">
-<script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/calendar/jquery-ui.js"></script>
 <script type="text/javascript" src="/chart.js"></script>
 <script type="text/javascript" src="/state.js"></script>
