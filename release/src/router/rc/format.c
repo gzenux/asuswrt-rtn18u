@@ -139,6 +139,7 @@ void adjust_merlin_config(void)
 		nvram_unset("wan1_dhcpc_options");
 	}
 
+#ifdef RTCONFIG_SSH
 /* Migrate to Asus's new tri-state sshd_enable to our dual nvram setup */
 	if (nvram_match("sshd_enable", "1")) {
 		if (nvram_match("sshd_wan", "0"))
@@ -146,6 +147,7 @@ void adjust_merlin_config(void)
 		// else stay WAN+LAN
 		nvram_unset("sshd_wan");
 	}
+#endif
 
 /* Adjust automatic reboot count on failed radio - reduce from 3 to 1 reboot */
 	if (nvram_match("dev_fail_reboot", "3")) {
@@ -273,6 +275,19 @@ void adjust_merlin_config(void)
 #ifdef RTCONFIG_MERLINUPDATE
 	if(!nvram_is_empty("firmware_server")) {
 		nvram_unset("firmware_server");
+	}
+#endif
+
+#ifdef RTCONFIG_SSH
+/* Migrate SSH keys from nvram (386.1) */
+	if (!d_exists("/jffs/.ssh")) {
+		mkdir("/jffs/.ssh", 0700);
+		if (nvram_get_file("sshd_hostkey", "/jffs/.ssh/dropbear_rsa_host_key", 2048))
+			nvram_unset("sshd_hostkey");
+		if (nvram_get_file("sshd_dsskey", "/jffs/.ssh/dropbear_dss_host_key", 2048))
+			nvram_unset("sshd_dsskey");
+		if (nvram_get_file("sshd_ecdsakey", "/jffs/.ssh/dropbear_ecdsa_host_key", 2048))
+			nvram_unset("sshd_ecdsakey");
 	}
 #endif
 }

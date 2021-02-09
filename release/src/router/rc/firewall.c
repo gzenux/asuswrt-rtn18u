@@ -2297,7 +2297,6 @@ void nat_setting2(char *lan_if, char *lan_ip, char *logaccept, char *logdrop)	//
 #else
 				fprintf(fp, "-A POSTROUTING %s -o %s ! -s %s -j MASQUERADE\n", p, wanx_if, wanx_ip);
 #endif
-
 		}
 
 		// masquerade lan to lan
@@ -5240,7 +5239,6 @@ TRACE_PT("writing Parental Control\n");
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
 	if (nvram_get_int("jumbo_frame_enable"))
 		goto clamp_mss;
-
 #if defined(RTCONFIG_PPTPD) || defined(RTCONFIG_ACCEL_PPTPD)
 	if (nvram_get_int("pptpd_enable"))
 		goto clamp_mss;
@@ -5328,8 +5326,6 @@ TRACE_PT("writing Parental Control\n");
 #endif
 // ~ oleg patch
 		/* Filter out invalid WAN->WAN connections */
-
-
 		fprintf(fp, "-A FORWARD -o %s ! -i %s -j %s\n", wan_if, lan_if, "other2wan");
 #ifdef RTCONFIG_IPV6
 		 if (ipv6_enabled() && *wan6face) {
