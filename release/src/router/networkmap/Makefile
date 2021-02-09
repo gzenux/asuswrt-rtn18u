@@ -161,14 +161,7 @@ endif
 endif
 endif
 	install -d $(INSTALLDIR)/usr/networkmap
-	#cp -f networkmap.oui.js $(INSTALLDIR)/usr/networkmap/networkmap.oui.js
-	[ -f $(TOP)/www/js/ouiDB.js ] && \
-	cd $(INSTALLDIR)/usr/networkmap && \
-	echo "{" > networkmap.oui.js && \
-	sed -e '/(.*{/d' -e '/}.*).*;/d' -e '/^"timestamp"/d' $(TOP)/www/js/ouiDB.js | \
-	  sort -n | \
-	    sed -e 's/"$$/",/' -e '$$s/,$$//' >> networkmap.oui.js && \
-	echo "}" >> networkmap.oui.js
+	cp -f $(TOP)/www/js/ouiDB.json $(INSTALLDIR)/usr/networkmap/networkmap.oui.js
 
 clean:
 ifneq ($(AC2900),y)
