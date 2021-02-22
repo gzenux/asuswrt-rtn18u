@@ -6,7 +6,14 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
   Changelog from Asuswrt-Merlin:
-  - No Updates Available.
+  - CHANGED: Use local OUI database instead of remote one hosted
+             on Asus's server (allows queries to work even when
+             accessing webui over https)
+  - CHANGED: If dropbear cannot create keys in /jffs then
+             create temporary ones in /etc so SSH can work even
+             without a working JFFS partition.
+  - FIXED: OUI lookups on site survey page not working
+           (for non-HND models)
 
 
 386.1_1
