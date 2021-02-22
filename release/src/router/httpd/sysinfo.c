@@ -611,7 +611,7 @@ unsigned int get_phy_temperature(int radio)
 	} else if (radio == 5) {
 		wl_radio = "wl1_radio";
 		interface = nvram_safe_get("wl1_ifname");
-#if defined(RTAC3200) || defined(RTAC5300) || defined(GTAC5300)
+#if defined(RTAC3200) || defined(RTAC5300) || defined(GTAC5300) || defined(GTAX11000)
 	} else if (radio == 52) {
 		wl_radio = "wl2_radio";
 		interface = nvram_safe_get("wl2_ifname");

@@ -178,6 +178,11 @@ void start_cron(void);
 void start_wlcscan(void);
 void stop_wlcscan(void);
 
+#ifdef HND_ROUTER
+void start_jitterentropy(void);
+void stop_jitterentropy(void);
+#endif
+
 
 #ifndef MS_MOVE
 #define MS_MOVE		8192
@@ -9351,6 +9356,9 @@ start_aura_rgb_sw(void)
 int
 start_services(void)
 {
+#ifdef HND_ROUTER
+	start_jitterentropy();
+#endif
 #if defined(RTAX82U) || defined(DSL_AX82U) || defined(GSAX3000) || defined(GSAX5400)
 	start_ledg();
 	start_ledbtn();
@@ -9380,9 +9388,6 @@ start_services(void)
 #endif
 #ifdef RTCONFIG_TELNETD
 	start_telnetd();
-#endif
-#ifdef RTCONFIG_SSH
-	start_sshd();
 #endif
 #ifdef CONFIG_BCMWL5
 	start_eapd();
@@ -9731,6 +9736,9 @@ start_services(void)
 #if defined(RTCONFIG_QCA_PLC_UTILS) || defined(RTCONFIG_QCA_PLC2)
 	start_detect_plc();
 #endif
+#ifdef RTCONFIG_SSH
+	start_sshd();
+#endif
 
 	run_custom_script("services-start", 0, NULL, NULL);
 
@@ -10014,6 +10022,9 @@ stop_services(void)
 #endif
 #if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
 	stop_envrams();
+#endif
+#ifdef HND_ROUTER
+	stop_jitterentropy();
 #endif
 }
 
@@ -17388,6 +17399,13 @@ void setup_leds()
 		eval("et", "robowr", "0", "0x1a", "0x01ff");
 #endif
 
+#if defined(GTAX11000) || defined(GTAXE11000)
+#ifdef RTCONFIG_EXTPHY_BCM84880
+		eval("ethctl", "phy", "ext", EXTPHY_ADDR_STR, "0x7fff0", "0x1");
+		eval("ethctl", "phy", "ext", EXTPHY_ADDR_STR, "0x1a832", "0x6");
+#endif
+#endif
+
 #if defined(RTCONFIG_LANWAN_LED) || defined(RTCONFIG_LAN4WAN_LED)
 		LanWanLedCtrl();
 #endif
@@ -17407,7 +17425,7 @@ void setup_leds()
 			eval("wl", "-i", "eth2", "ledbh", "10", "7");
 #elif defined(RTCONFIG_BCM_7114) || defined(RTAC86U)
 			eval("wl", "ledbh", "9", "7");
-#elif defined(RTAX88U)
+#elif defined(RTAX88U) || defined(GTAX11000)
 			eval("wl", "-i", "eth6", "ledbh", "15", "7");
 #elif defined(RTAX58U) || defined(RTAX56U)
 			eval("wl", "-i", "eth5", "ledbh", "0", "25");
@@ -17432,7 +17450,7 @@ void setup_leds()
 #elif defined(RTAC87U)
 			qcsapi_wifi_run_script("router_command.sh", "wifi_led_on");
 			qcsapi_led_set(1, 1);
-#elif defined(RTAX88U) || defined(RTAX86U)
+#elif defined(RTAX88U) || defined(RTAX86U) || defined(GTAX11000)
 			eval("wl", "-i", "eth7", "ledbh", "15", "7");
 #elif defined(RTAX58U)
 			eval("wl", "-i", "eth6", "ledbh", "15", "7");
@@ -17441,12 +17459,14 @@ void setup_leds()
 #endif
 		}
 
-#if defined(RTAC3200) || defined(RTAC5300)
+#if defined(RTAC3200) || defined(RTAC5300) || defined(GTAX11000)
 		if (nvram_match("wl2_radio", "1")) {
 #if defined(RTAC3200)
 			eval("wl", "-i", "eth3", "ledbh", "10", "7");
 #elif defined(RTAC5300)
 			eval("wl", "-i", "eth3", "ledbh", "9", "7");
+#elif defined(GTAX11000)
+			eval("wl", "-i", "eth8", "ledbh", "15", "7");
 #endif
 		}
 #endif
@@ -19436,3 +19456,21 @@ void PS_pod_main(void)
 	return;
 }
 #endif
+
+#ifdef HND_ROUTER
+void start_jitterentropy()
+{
+	pid_t pid;
+	char *cmd_argv[] = { "/usr/sbin/jitterentropy-rngd",
+	                     "-p", "/var/run/jitterentropy-rngd.pid",
+	                     NULL};
+
+        _eval(cmd_argv, NULL, 0, &pid);
+}
+
+void stop_jitterentropy()
+{
+	kill_pidfile_tk("/var/run/jitterentropy-rngd.pid");
+}
+#endif
+
