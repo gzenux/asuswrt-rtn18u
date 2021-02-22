@@ -9,6 +9,23 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
 
+386.1_1
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - UPDATED: inadyn to 2.8.1.
+  - UPDATED: nano to 5.5.
+  - UPDATED: Openssl to 1.1.1j.
+  - FIXED: IPv6 ending with "::" were considered invalid on the
+           webui (was breaking the Prefix field on the 6in4 tunnel
+           page for instance).
+  - FIXED: Erasing the JFFS partition would often require a second
+           reboot since the operation failed when encountering
+           a bad block.  These are now properly skipped.
+  - FIXED: ATM checkbox could not be enabled on QOS page.
+
+
 386.1
   Changelog for RT-N18U:
   - MERGED: GPL 386_41700 from asuswrt-merlin (master).
