@@ -22,6 +22,9 @@ var core_num = '<%cpu_core_num();%>';
 var array_size = 46;
 var cpu_usage_array = new Array();
 var ram_usage_array = new Array();
+var tmp_unit;
+var tmp_item = {"cpu":{"title":"CPU", "color":"#00F000", "index":-1, "warn1":79, "warn2":89}, "w2g":{"title":"2.4 GHz", "color":"#FF44FF", "index":-1, "warn1":59, "warn2":69}};
+var tmp_status_array = new Array();
 
 var last_rx = 0;
 var last_tx = 0;
@@ -62,6 +65,7 @@ $(document).ready(function(){
 	initiailzeParameter();
 	genCPUElement();
 	genRAMElement();
+	genTempElement();
 	genNETelement();
 	get_ethernet_ports();
 	detect_CPU_RAM();
@@ -196,6 +200,11 @@ function genElement(){
 	}
 }
 
+function changeTempUnit(num){
+	cookie.set("CoreTmpUnit", num, 365);
+	refreshpage();
+}
+
 function register_event(){
 	$(function() {
 		$( "#slider" ).slider({
@@ -241,6 +250,16 @@ function initiailzeParameter(){
 
 	for(i=0;i<array_size;i++){
 		ram_usage_array[i] = 101;
+	}
+
+	i = 0;
+	for(var name in tmp_item){
+		tmp_status_array[i] = new Array();
+		for(j=0;j<array_size;j++){
+			tmp_status_array[i][j] = 101;
+		}
+		// tmp_status_array[] index mapping
+		tmp_item[name].index = i++;
 	}
 }
 
@@ -338,6 +357,7 @@ function detect_CPU_RAM(){
 			makeRequest.start('/cpu_ram_status.asp', function(xhr){				
 				render_CPU(cpuInfo);
 				render_RAM(memInfo.total, memInfo.free, memInfo.used);
+				render_Temperature(tmpInfo, $("#tmp_unit").prop("checked"));
 				setTimeout("detect_CPU_RAM();", 2000);
 			}, function(){});
 		});
@@ -396,8 +416,39 @@ function detect_CPU_RAM(){
 //					document.getElementById('ram_graph').setAttribute('points', pt);
 				}		
 
+				var render_Temperature = function(tmp_info, unit){
+					var i;
+					var pt;
+					var tmp_val;
+
+					for(var name in tmp_info){
+						if(tmp_info[name].enabled){
+							pt = "";
+							i = tmp_item[name].index;
+							tmp_status_array[i].push(110-tmp_info[name].value);
+							tmp_status_array[i].splice(0,1);
+							for(j=0;j<array_size;j++){
+								pt += j*6 +","+ tmp_status_array[i][j] + " ";
+							}
+							document.getElementById('tmp_'+name+'_graph').setAttribute('points', pt);
+
+							tmp_val = (unit?Math.round(tmp_info[name].value*1.8+32):tmp_info[name].value) + "&nbsp;" + tmp_unit;
+							if(tmp_info[name].value > tmp_item[name].warn2)
+								tmp_val = '<b style="color:#BB2124;">'+tmp_val+'</b>'
+							else if(tmp_info[name].value > tmp_item[name].warn1)
+								tmp_val = '<span style="color:#FFCC00;">'+tmp_val+'</span>'
+						}
+						else{
+							tmp_val = '<i style="color:#FFCC00;">disabled</i>';
+						}
+						$('#tmp_info_'+name).html(tmp_val);
+					}
+				}
+
+
 				render_CPU(cpuInfo);
 				render_RAM(memInfo);
+				render_Temperature(tmpInfo, $("#tmp_unit").prop("checked"));
 				setTimeout("detect_CPU_RAM();", 2000);
 			}
 		});
@@ -501,6 +552,83 @@ function genRAMElement(){
 	code += '</svg>';
 */
 	$('#ram_field').html(code);
+}
+
+function genTempElement(){
+	var name;
+	var code = '<div class="division-block">Temperature</div>';
+	code += '<div>';
+	code += '<div class="display-flex flex-a-center info-block ram-content">';
+	for(name in tmp_item){
+		code += '<div style="width: '+(tmp_item[name].index==0?90:110)+'px;">';
+		code += '<svg id="legend_svg_'+name+'"><polyline /></svg>'+tmp_item[name].title+'<br><span id="tmp_info_'+name+'"></span>';
+		code += '</div>';
+	}
+	code += '<div style="width: 60px;"><input id="tmp_unit" type="checkbox" onclick="changeTempUnit((this.checked == true)?1:0)">&nbsp;&deg;F</div>';
+	code += '</div>';
+	code += '</div>';
+	code += '<svg class="svg-block" width="100%" height="100px">';
+	code += '<g>';
+	code += '<line stroke-width="1" stroke-opacity="1" stroke="rgb(255,255,255)" x1="0" y1="0%" x2="100%" y2="0%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.2" stroke="rgb(255,255,255)" x1="0" y1="25%" x2="100%" y2="25%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.2" stroke="rgb(255,255,255)" x1="0" y1="50%" x2="100%" y2="50%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.2" stroke="rgb(255,255,255)" x1="0" y1="75%" x2="100%" y2="75%" />';
+	code += '<line stroke-width="1" stroke-opacity="1" stroke="rgb(255,255,255)" x1="0" y1="100%" x2="100%" y2="100%" />';
+	code += '</g>';
+	code += '<g>';
+	code += '<text id="tmp_bottom" font-family="Verdana" fill="#FFFFFF" font-size="8" x="0" y="98%"></text>';
+	code += '<text id="tmp_half" font-family="Verdana" fill="#FFFFFF" font-size="8" x="0" y="55%"></text>';
+	code += '<text id="tmp_top" font-family="Verdana" fill="#FFFFFF" font-size="8" x="0" y="11%"></text>';
+	code += '</g>';
+	code += '<line stroke-width="1" stroke-opacity="1" stroke="rgb(0,0,121)" x1="0" y1="0%" x2="0" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="11%" y1="0%" x2="11%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="22%" y1="0%" x2="22%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="33%" y1="0%" x2="33%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="44%" y1="0%" x2="44%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="55%" y1="0%" x2="55%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="66%" y1="0%" x2="66%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="77%" y1="0%" x2="77%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="0.3" stroke="rgb(40,255,40)" x1="88%" y1="0%" x2="88%" y2="100%" />';
+	code += '<line stroke-width="1" stroke-opacity="1" stroke="rgb(0,0,121)" x1="100%" y1="0%" x2="100%" y2="100%" />';
+	for(name in tmp_item){
+		code += '<polyline id="tmp_'+ name + '_graph" class="svg-line" points=""></polyline>';
+	}
+	code += '</svg>';
+	$('#tmp_field').html(code);
+
+	if(cookie.get("CoreTmpUnit") == 1){
+		tmp_unit = "&deg;F";
+		$("#tmp_unit").prop("checked", true);
+		$("#tmp_top").html("230&nbsp;"+tmp_unit);
+		$("#tmp_half").html("140&nbsp;"+tmp_unit);
+		$("#tmp_bottom").html("50&nbsp;"+tmp_unit);
+	}
+	else{
+		tmp_unit = "&deg;C";
+		$("#tmp_unit").prop("checked", false);
+		$("#tmp_top").html("110&nbsp;"+tmp_unit);
+		$("#tmp_half").html("60&nbsp;"+tmp_unit);
+		$("#tmp_bottom").html("10&nbsp;"+tmp_unit);
+	}
+
+	for(name in tmp_item){
+		var color = tmp_item[name].color;
+		var legend_id = "#legend_svg_"+name;
+		var legend_line = legend_id+" polyline";
+
+		// draw legend line
+		$(legend_id).width("32px");
+		$(legend_id).height("10px");
+		$(legend_id).css("vertical-align", "middle");
+		$(legend_id).css("margin", "auto 1em auto auto");
+		$(legend_line).css("fill", "none");
+		$(legend_line).css("stroke", color);
+		$(legend_line).css("stroke-width", "3");
+		$(legend_line).attr("points", "0,5 32,5");
+
+		// set line color
+		$("#tmp_"+name+"_graph").css("stroke", color);
+	}
 }
 
 function genNETelement() {
@@ -623,6 +751,7 @@ function switchTab(id){
 	<div id="net_field" class="unit-block"></div>
 	<div id="cpu_field" class="unit-block"></div>
 	<div id="ram_field" class="unit-block"></div>
+	<div id="tmp_field" class="unit-block"></div>
 	<div id="phy_ports" class="unit-block"></div>
 	<div id="led_field" class="unit-block" style="display:none"></div>
 	<div id='hw_information_field' class="unit-block"></div>

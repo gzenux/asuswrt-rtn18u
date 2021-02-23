@@ -29083,6 +29083,7 @@ struct ej_handler ej_handlers[] = {
 	{ "memory_usage", ej_memory_usage},
 	{ "cpu_usage", ej_cpu_usage},
 #if defined(RTN18U)
+	{ "temperature_status", ej_temperature_status},
 	{ "get_txpwr", ej_get_txpwr},
 #endif
 	{ "cpu_core_num", ej_cpu_core_num},
