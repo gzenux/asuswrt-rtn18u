@@ -3,7 +3,8 @@ Asuswrt-Merlin for RT-N18U Release Note
 
 386.2-alpha1
   Changelog for RT-N18U:
-  - No Updates Available.
+  - NEW: Reimplemented the temperature graph in home page.
+         This feature was removed by 386.1 but now add it back.
 
   Changelog from Asuswrt-Merlin:
   - CHANGED: Use local OUI database instead of remote one hosted
