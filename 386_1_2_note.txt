@@ -1,0 +1,45 @@
+386.1_2
+  Changelog for RT-N18U:
+  - FIXED: Wireless authentication problem caused by bad merging.
+
+  Changelog from Asuswrt-Merlin:
+  - CHANGED: Use local OUI database instead of remote one hosted
+             on Asus's server (allows queries to work even when
+             accessing webui over https)
+  - FIXED: OUI lookups on site survey page not working
+           (for non-HND models)
+
+
+386.1_1
+  Changelog for RT-N18U:
+  - No Updates Available.
+
+  Changelog from Asuswrt-Merlin:
+  - UPDATED: inadyn to 2.8.1.
+  - UPDATED: nano to 5.5.
+  - UPDATED: Openssl to 1.1.1j.
+  - FIXED: IPv6 ending with "::" were considered invalid on the
+           webui (was breaking the Prefix field on the 6in4 tunnel
+           page for instance).
+  - FIXED: Erasing the JFFS partition would often require a second
+           reboot since the operation failed when encountering
+           a bad block.  These are now properly skipped.
+  - FIXED: ATM checkbox could not be enabled on QOS page.
+
+
+386.1
+  Changelog for RT-N18U:
+  - MERGED: GPL 386_41700 from asuswrt-merlin (master).
+  - CHANGED: Enabled WL_SCHED_V3 option to use the new scheduler
+             format for wireless scheduler feature.
+  - CHANGED: Revised firmware update process.
+  - FIXED: Some broken webui pages caused by merged GPL 386_41700.
+  - REMOVED: CPU/Wireless temperature shown in home page.
+             (incompatible with GPL 386)
+             To check the temperature information, use Tools_Sysinfo
+             page instead.
+
+  Changelog from Asuswrt-Merlin:
+  - UPDATED: Merged GPL 386_41700
+  - REMOVED: Option to select sfq as a queue scheduler for t.QoS
+             or Bandwidth Limiter, and always use fq_codel.
