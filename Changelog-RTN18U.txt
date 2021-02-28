@@ -1,6 +1,18 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
+386.1_2
+  Changelog for RT-N18U:
+  - FIXED: Wireless authentication problem caused by bad merging.
+
+  Changelog from Asuswrt-Merlin:
+  - CHANGED: Use local OUI database instead of remote one hosted
+             on Asus's server (allows queries to work even when
+             accessing webui over https)
+  - FIXED: OUI lookups on site survey page not working
+           (for non-HND models)
+
+
 386.1_1
   Changelog for RT-N18U:
   - No Updates Available.
