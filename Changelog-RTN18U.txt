@@ -7,12 +7,19 @@ Asuswrt-Merlin for RT-N18U Release Note
          This feature was removed by 386.1 but now add it back.
 
   Changelog from Asuswrt-Merlin:
-  - CHANGED: Use local OUI database instead of remote one hosted
-             on Asus's server (allows queries to work even when
-             accessing webui over https)
   - CHANGED: If dropbear cannot create keys in /jffs then
              create temporary ones in /etc so SSH can work even
              without a working JFFS partition.
+
+
+386.1_2
+  Changelog for RT-N18U:
+  - FIXED: Wireless authentication problem caused by bad merging.
+
+  Changelog from Asuswrt-Merlin:
+  - CHANGED: Use local OUI database instead of remote one hosted
+             on Asus's server (allows queries to work even when
+             accessing webui over https)
   - FIXED: OUI lookups on site survey page not working
            (for non-HND models)
 
