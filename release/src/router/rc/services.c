@@ -191,7 +191,7 @@ void stop_jitterentropy(void);
 #define MNT_DETACH	0x00000002
 #endif
 
-#ifdef BCMDBG
+#if defined(BCMDBG) || defined(RTCONFIG_QCA)
 #include <assert.h>
 #else
 #define assert(a)
@@ -907,7 +907,7 @@ void get_dhcp_pool(char **dhcp_start, char **dhcp_end, char *buffer)
                 || mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
-                || (dpsta_mode() && nvram_get_int("re_mode") == 0)
+                || ((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0)
 #endif
                 ) && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED) {
 		if(nvram_match("lan_proto", "static")) {
@@ -1231,7 +1231,7 @@ void start_dnsmasq(void)
 		|| mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
-		|| (dpsta_mode() && nvram_get_int("re_mode") == 0)
+		|| ((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0)
 #endif
 		) && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED && !nvram_match("lan_proto", "static"))
 		lan_ipaddr = nvram_default_get("lan_ipaddr");
@@ -1268,10 +1268,6 @@ void start_dnsmasq(void)
 				    value, nvram_safe_get("lan_domain"),
 				    value);
 		}
-#endif
-#ifdef RTCONFIG_DSL
-		fprintf(fp, "192.168.121.70 ntp01.mvp.tivibu.com.tr\n");
-		fprintf(fp, "192.168.121.71 ntp02.mvp.tivibu.com.tr\n");
 #endif
 
 #ifdef RTCONFIG_IPV6
@@ -1361,7 +1357,7 @@ void start_dnsmasq(void)
 #endif
 		)
 #ifdef RTCONFIG_DPSTA
-		&& !(dpsta_mode() && nvram_get_int("re_mode") == 0)
+		&& !((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0)
 #endif
 	) {
 #ifdef RTCONFIG_WIFI_SON
@@ -1477,7 +1473,7 @@ void start_dnsmasq(void)
 			|| mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
-			|| (dpsta_mode() && nvram_get_int("re_mode") == 0)
+			|| ((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0)
 #endif
 		    ) && nvram_get_int("wlc_state") != WLC_STATE_CONNECTED)
 	) {
@@ -1506,7 +1502,7 @@ void start_dnsmasq(void)
 				|| mediabridge_mode()
 #endif
 #ifdef RTCONFIG_DPSTA
-				|| (dpsta_mode() && nvram_get_int("re_mode") == 0)
+				|| ((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0)
 #endif
 			)
 		)
@@ -2395,7 +2391,7 @@ int no_need_to_start_wps(void)
 #else
 	if ((sw_mode() != SW_MODE_ROUTER) &&
 #ifdef RTCONFIG_DPSTA
-                !(dpsta_mode() && nvram_get_int("re_mode") == 0) &&
+                !((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0) &&
 #endif
 		(sw_mode() != SW_MODE_AP))
 		return 1;
@@ -4542,7 +4538,7 @@ mcpd_conf(void)
 
 			/* Start MCPD proxy in AP mode for media router build */
 #ifdef RPAX56
-			if((nvram_match("pxy_wlc", "1") || (dpsta_mode() || psta_exist() || psr_exist())) && *nvram_safe_get(pxy_ifnv))
+			if((nvram_match("pxy_wlc", "1") || (dpsta_mode() || rp_mode() || psta_exist() || psr_exist())) && *nvram_safe_get(pxy_ifnv))
 				proxy_ifname = nvram_safe_get(pxy_ifnv);
 			else
 #endif
@@ -13392,6 +13388,7 @@ check_ddr_done:
 #if defined(RTCONFIG_SAMBASRV) && defined(RTCONFIG_FTP)
 			start_dnsmasq();	// this includes stop_dnsmasq
 			setup_passwd();
+			set_hostname();
 			start_samba();
 			start_ftpd();
 #endif
@@ -14478,6 +14475,9 @@ check_ddr_done:
 			start_default_filter(lan_unit);
 #ifdef RTCONFIG_PARENTALCTRL
 			start_pc_block();
+#ifdef RTCONFIG_CONNTRACK
+			killall("pctime", SIGUSR1); // ask pctime to reload parental control rules.
+#endif
 #endif
 			start_firewall(wan_unit, lan_unit);
 		}
@@ -14591,7 +14591,7 @@ check_ddr_done:
 	{
 		if (is_router_mode()
 #ifdef RTCONFIG_DPSTA
-			|| (dpsta_mode() && nvram_get_int("re_mode") == 0)
+			|| ((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0)
 #ifdef RPAX56
 			|| (nvram_match("x_Setting", "0") && nvram_get_int("re_mode") == 0)
 #endif
@@ -16071,39 +16071,10 @@ void start_amas_lanctrl(void)
 	char *amas_lanctrl_argv[] = {"amas_lanctrl", NULL};
 	pid_t pid;
 
-	if (!(getAmasSupportMode() & AMAS_RE)) {
-		_dprintf("not support RE, don't start_amas_lanctrl\n");
+	if (!(getAmasSupportMode() & (AMAS_CAP | AMAS_RE))) {
+		_dprintf("not support CAP or RE, don't start_amas_lanctrl\n");
 		return;
 	}
-
-#ifdef RTCONFIG_FRONTHAUL_DWB
-	char ifname[16] = {};
-	char *next = NULL;
-	int SUMband = 0;
-	foreach(ifname, nvram_safe_get("wl_ifnames"), next) {
-		SUMband++;
-	}
-	if (nvram_get_int("re_mode") != 1) {
-		int dwb_mode = nvram_get_int("dwb_mode");
-		if (SUMband == 2) { // Dual band CAP and Dual band Router
-			_dprintf("Dual band AMAS mode, do not start_amas_lanctrl.\n");
-			return;
-		}
-		else if (SUMband == 3 && (dwb_mode == 0 || dwb_mode == 2)) { // Triband Router
-			_dprintf("Not AMAS mode, do not start_amas_lanctrl.\n");
-			return;
-		}
-	}
-#else
-	if (nvram_get_int("re_mode") != 1)
-	{
-#if !defined(RTCONFIG_VIF_ONBOARDING)
-		_dprintf("Not AMAS RE mode, do not start_amas_lanctrl.\n");
-		return;
-
-#endif
-	}
-#endif
 
 	if(getpid()!=1) {
 		notify_rc("start_amas_lanctrl");
@@ -16299,7 +16270,7 @@ void start_amas_lldpd(void)
 #endif
 
 #if defined(RTCONFIG_AMAS) && defined(RTCONFIG_DPSTA)
-	if (dpsta_mode() && !nvram_get_int("re_mode") && nvram_get_int("x_Setting"))
+	if ((dpsta_mode()||rp_mode()) && !nvram_get_int("re_mode") && nvram_get_int("x_Setting"))
 		return;
 #endif
 
@@ -17431,6 +17402,8 @@ void setup_leds()
 			eval("wl", "-i", "eth5", "ledbh", "0", "25");
 #elif defined(RTAX86U)
 			eval("wl", "-i", "eth6", "ledbh", "7", "7");
+#elif defined(RTAX68U)
+			eval("wl", "-i", "eth5", "ledbh", "7", "7");
 #elif defined(GTAC2900)
 			eval("wl", "ledbh", "9", "1");
 #endif
@@ -17452,6 +17425,8 @@ void setup_leds()
 			qcsapi_led_set(1, 1);
 #elif defined(RTAX88U) || defined(RTAX86U) || defined(GTAX11000)
 			eval("wl", "-i", "eth7", "ledbh", "15", "7");
+#elif defined(RTAX68U)
+			eval("wl", "-i", "eth6", "ledbh", "7", "7");
 #elif defined(RTAX58U)
 			eval("wl", "-i", "eth6", "ledbh", "15", "7");
 #elif defined(RTAX56U)

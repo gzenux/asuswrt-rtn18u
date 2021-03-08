@@ -23,14 +23,6 @@
 <script>
 var wollist_array = decodeURIComponent('<% nvram_char_to_ascii("", "wollist"); %>').replace(/>/g, "&#62").replace(/</g, "&#60");
 var manually_wol_list_array = new Array();
-Object.prototype.getKey = function(value) {
-	for(var key in this) {
-		if(this[key] == value) {
-			return key;
-		}
-	}
-	return null;
-};
 function initial(){
 	show_menu();
 	//	https://www.asus.com/support/FAQ/1011268

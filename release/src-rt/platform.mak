@@ -7,7 +7,7 @@ export LINUXDIR := $(SRCBASE)/linux/linux-2.6
 endif
 export BUILD := $(shell (gcc -dumpmachine))
 
-ifeq ($(RTCONFIG_BCMARM),y)
+ifeq ($(ARM),y)
 
 ifeq ($(HND_ROUTER),y)
 export PRIVATE_EXTRACFLAGS := $(BRCM_COMMON_CFLAGS) -DHND_ROUTER -DLINUX26 -DLINUX_2_6_36 -DCONFIG_BCMWL5
@@ -445,6 +445,7 @@ define platformKernelConfig
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/dhd/linux/$(PREBUILT)/ ; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/shared/bcmwifi/include/ ; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/linux/$(PREBUILT)/ ; \
+				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/components/avs/src/ ; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/emf/linux/$(PREBUILT)/ ; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/igs/linux/$(PREBUILT)/ ; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/hnd/linux/$(PREBUILT)/ ; \
@@ -504,6 +505,7 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/igs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/igs/linux/$(PREBUILT)/igs.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl_apsta.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl.o ; \
+				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/avs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/components/avs/src/avs.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmwifi_rates.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/shared/bcmwifi/include/bcmwifi_rates.h ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wlc_types.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/sys/ ; \
 			fi; \

@@ -19,6 +19,24 @@
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
+<style>
+.sort_border{
+	position: relative;
+	cursor: pointer;
+}
+.sort_border:before{
+	content: "";
+	position: absolute;
+	width: 100%;
+	left: 0;
+	border-top: 1px solid #FC0;
+	top: 0;
+}
+.sort_border.decrease:before{
+	bottom: 0;
+	top: initial;
+}
+</style>
 <script>
 $(function () {
 	if(amesh_support && (isSwMode("rt") || isSwMode("ap")) && ameshRouter_support) {
@@ -73,6 +91,7 @@ var backup_name = "";
 var sortfield, sortdir;
 var sorted_array = Array();
 
+var manually_dhcp_sort_type = 0;//0:increase, 1:decrease
 function initial(){
 	show_menu();
 	//id="faq" href="https://www.asus.com/US/support/FAQ/1036677"
@@ -323,7 +342,6 @@ function showdhcp_staticlist(){
 		var clientName, deviceType, deviceVender;
 
 		for(var i = 0; i < sorted_array.length; i++){
-//		Object.keys(manually_dhcp_list_array).forEach(function(key) {
 			var key = sorted_array[i].ip;
 			var clientMac = manually_dhcp_list_array[key]["mac"].toUpperCase();
 			var clientDNS = manually_dhcp_list_array[key]["dns"];
@@ -779,6 +797,19 @@ function parse_vpnc_dev_policy_list(_oriNvram) {
 		}
 	}
 	return parseArray;
+}
+function sortClientIP(){
+	manually_dhcp_sort_type
+	if($(".sort_border").hasClass("decrease")){
+		$(".sort_border").removeClass("decrease");
+		manually_dhcp_sort_type = 0;
+	}
+	else{
+		$(".sort_border").addClass("decrease");
+		manually_dhcp_sort_type = 1;
+	}
+
+	showdhcp_staticlist();
 }
 </script>
 </head>
