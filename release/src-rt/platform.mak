@@ -442,6 +442,13 @@ define platformKernelConfig
 		elif [ "$(HND_ROUTER)" = "y" ]; then \
 			echo "hnd_router platform work" ; \
 			if [ -d $(TOP_PLATFORM)/hnd_extra/$(PREBUILT) ]; then \
+				if [ "$(HND_ROUTER_AX)" = "y" ]; then \
+					mkdir -p $(HND_SRC)/router-sysdep/hnd/$(PREBUILT)/ ;\
+					mkdir -p $(HND_SRC)/router-sysdep/hnd_dhd/$(PREBUILT)/ ; \
+					mkdir -p $(HND_SRC)/router-sysdep/hnd_emf/$(PREBUILT)/ ; \
+					mkdir -p $(HND_SRC)/router-sysdep/hnd_igs/$(PREBUILT)/ ; \
+					mkdir -p $(HND_SRC)/router-sysdep/hnd_wl/$(PREBUILT)/ ; \
+				fi; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/dhd/linux/$(PREBUILT)/ ; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/shared/bcmwifi/include/ ; \
 				mkdir -p $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/linux/$(PREBUILT)/ ; \
@@ -455,7 +462,7 @@ define platformKernelConfig
 				mkdir -p $(HND_SRC)/rdp/projects/WL4908/target/bdmf ; \
 				mkdir -p $(HND_SRC)/rdp/projects/WL4908/target/rdpa ; \
 				mkdir -p $(HND_SRC)/rdp/projects/WL4908/target/rdpa_gpl ; \
-				(cd rdp/projects/WL4908/target/bdmf; rm -f Makefile; ln -sf ../../../../drivers/bdmf/Makefile Makefile); \
+        			(cd rdp/projects/WL4908/target/bdmf; rm -f Makefile; ln -sf ../../../../drivers/bdmf/Makefile Makefile); \
 				(cd rdp/projects/WL4908/target/rdpa_gpl; rm -rf include; ln -sf ../../../../../rdp/drivers/rdpa_gpl/include include); \
 				(cd rdp/projects/WL4908/target/bdmf; rm -rf framework; ln -sf ../../../../../rdp/drivers/bdmf/framework framework); \
 				(cd rdp/projects/WL4908/target/bdmf; rm -rf system; ln -sf ../../../../../rdp/drivers/bdmf/system system); \
@@ -499,12 +506,20 @@ define platformKernelConfig
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/rdpa_gpl.o $(HND_SRC)/rdp/projects/WL4908/target/rdpa_gpl/rdpa_gpl$(PRBM_EXT).o ; \
 				cp $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/linux/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/linux/$(PREBUILT)/wl_apsta.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/exe/$(PREBUILT)/ ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/hnd.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/hnd/linux/$(PREBUILT)/hnd.o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/dhd.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/dhd/src/dhd/linux/$(PREBUILT)/dhd.o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/emf.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/emf/linux/$(PREBUILT)/emf.o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/igs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/igs/linux/$(PREBUILT)/igs.o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl_apsta.o ; \
-				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl.o ; \
+				if [ "$(HND_ROUTER_AX)" = "y" ]; then \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/hnd.o $(HND_SRC)/router-sysdep/hnd/$(PREBUILT)/hnd.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/dhd.o $(HND_SRC)/router-sysdep/hnd_dhd/$(PREBUILT)/dhd.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/emf.o $(HND_SRC)/router-sysdep/hnd_emf/$(PREBUILT)/emf.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/igs.o $(HND_SRC)/router-sysdep/hnd_igs/$(PREBUILT)/igs.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/router-sysdep/hnd_wl/$(PREBUILT)/wl_apsta.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/router-sysdep/hnd_wl/$(PREBUILT)/wl.o ; \
+				fi; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/hnd.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/hnd/linux/$(PREBUILT)/hnd.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/dhd.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/dhd/src/dhd/linux/$(PREBUILT)/dhd.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/emf.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/emf/linux/$(PREBUILT)/emf.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/igs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/igs/linux/$(PREBUILT)/igs.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl_apsta.o ; \
+					cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wl.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/impl51/main/src/wl/linux/$(PREBUILT)/wl.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/avs.o $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/components/avs/src/avs.o ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/bcmwifi_rates.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/dhd/src/shared/bcmwifi/include/bcmwifi_rates.h ; \
 				cp $(TOP_PLATFORM)/hnd_extra/$(PREBUILT)/wlc_types.h $(HND_SRC)/bcmdrivers/broadcom/net/wl/bcm9$(BCM_CHIP)/main/src/wl/sys/ ; \
