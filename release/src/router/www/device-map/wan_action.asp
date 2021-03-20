@@ -3,8 +3,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<link rel="shortcut icon" href="images/favicon.png">
-<link rel="icon" href="images/favicon.png">
+<link rel="shortcut icon" href="../images/favicon.png">
+<link rel="icon" href="../images/favicon.png">
 <script>
 var action = '<% get_parameter("wanaction"); %>';
 var restart_time;

@@ -4,8 +4,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<link rel="shortcut icon" href="images/favicon.png">
-<link rel="icon" href="images/favicon.png">
+<link rel="shortcut icon" href="../images/favicon.png">
+<link rel="icon" href="../images/favicon.png">
 <title></title>
 <link href="../form_style.css" rel="stylesheet" type="text/css" />
 <link href="../NM_style.css" rel="stylesheet" type="text/css" />

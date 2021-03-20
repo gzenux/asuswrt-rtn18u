@@ -5,8 +5,8 @@
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <meta name="format-detection" content="telephone=no,email=no,address=no">
-<link rel="shortcut icon" href="images/favicon.png">
-<link rel="icon" href="images/favicon.png">
+<link rel="shortcut icon" href="../images/favicon.png">
+<link rel="icon" href="../images/favicon.png">
 <title></title>
 <link rel="stylesheet" type="text/css" href="/NM_style.css">
 <link rel="stylesheet" type="text/css" href="/form_style.css">

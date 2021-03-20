@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" CONTENT="no-cache">
 	<meta http-equiv="Expires" CONTENT="-1">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="shortcut icon" href="images/favicon.png">
+	<link rel="shortcut icon" href="../images/favicon.png">
 	<title><#menu1#> - Light Effect</title><!-- untranslated -->
 	<link rel="stylesheet" href="../form_style.css">
 	<link rel="stylesheet" href="../NM_style.css">
