@@ -161,7 +161,7 @@ endif
 endif
 endif
 	install -d $(INSTALLDIR)/usr/networkmap
-	cp -f $(TOP)/www/js/ouiDB.json $(INSTALLDIR)/usr/networkmap/networkmap.oui.js
+	cp -f $(TOP)/www/ajax/ouiDB.json $(INSTALLDIR)/usr/networkmap/networkmap.oui.js
 
 clean:
 ifneq ($(AC2900),y)
