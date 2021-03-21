@@ -1,15 +1,22 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.2-alpha1
+386.2-beta1
   Changelog for RT-N18U:
   - NEW: Reimplemented the temperature graph in home page.
          This feature was removed by 386.1 but now add it back.
 
   Changelog from Asuswrt-Merlin:
+  - UPDATED: Merged GPL 386_42095.
+  - UPDATED: OpenVPN to 2.5.1.
+  - UPDATED: root certificate bundle to March 9th 2021.
   - CHANGED: If dropbear cannot create keys in /jffs then
              create temporary ones in /etc so SSH can work even
              without a working JFFS partition.
+  - FIXED: DST not getting applied to some timezones (snauton)
+  - FIXED: Traditional QoS was broken in 386.1 (dave14305)
+  - REMOVED: SSH Brute Force Protection option (already handled
+             by Asuswrt's protect service daemon)
 
 
 386.1_2
