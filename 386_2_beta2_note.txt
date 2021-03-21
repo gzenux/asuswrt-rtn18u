@@ -1,0 +1,25 @@
+386.2-beta2
+  Changelog for RT-N18U:
+  - NEW: Reimplemented the temperature graph in home page.
+         This feature was removed by 386.1 but now add it back.
+
+  Changelog from Asuswrt-Merlin:
+  - NOTE: due to changes in how custom device icons are handled,
+          first time you boot with 386.2 you need to either
+          shift-reload the main index page, or clear your
+          browser cache.
+
+  - UPDATED: Merged GPL 386_42095.
+  - UPDATED: OpenVPN to 2.5.1.
+  - UPDATED: root certificate bundle to March 9th 2021.
+  - CHANGED: qos-start "init" user script now runs in blocking
+             mode to ensure it's able to complete any changes
+             it may apply to qos configs before these
+             configs get applied.
+  - CHANGED: If dropbear cannot create keys in /jffs then
+             create temporary ones in /etc so SSH can work even
+             without a working JFFS partition.
+  - FIXED: DST not getting applied to some timezones (snauton)
+  - FIXED: Traditional QoS was broken in 386.1 (dave14305)
+  - REMOVED: SSH Brute Force Protection option (already handled
+             by Asuswrt's protect service daemon)
