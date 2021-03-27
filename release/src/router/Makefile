@@ -873,7 +873,6 @@ obj-$(RTCONFIG_LETSENCRYPT) += socat
 #obj-$(RTCONFIG_SYSSTATE) += sysstate
 obj-y += sysstate
 
-obj-$(RTCONFIG_LIBASC) += zlib
 obj-$(RTCONFIG_LIBASC) += libasc
 
 obj-$(RTCONFIG_AHS) += openssl
@@ -1169,7 +1168,7 @@ obj-$(NEED_SAMBA3) += $(if $(RTCONFIG_SAMBA36X),samba-3.6.x,samba3)
 endif
 else
 ifeq ($(RTCONFIG_QCA),y)
-obj-$(NEED_SAMBA3) += $(if $(RTCONFIG_SAMBA36X),samba-3.6.x_opwrt,samba3)
+obj-$(NEED_SAMBA3) += $(if $(RTCONFIG_SAMBA36X),samba-3.6.x,samba3)
 else
 obj-$(NEED_SAMBA3) += samba3
 endif
@@ -2932,9 +2931,9 @@ endif
 #      no-ec no-ecdh no-ecdsa no-err no-hw no-jpake no-threads \
 #      no-zlib no-engine no-engines no-sse2 no-perlasm \
 #      no-dtls1 no-store no-psk no-md2 no-mdc2 no-ts
-OPENSSL_CIPHERS := no-rc4 no-ssl2 no-gost no-heartbeats no-err no-unit-test
+OPENSSL_CIPHERS := no-ssl2 no-gost no-heartbeats no-err no-unit-test
 ifeq ($(RTCONFIG_OPENVPN),y)
-OPENSSL_CIPHERS += enable-rc5 no-ssl3
+OPENSSL_CIPHERS += enable-rc5
 endif
 
 ifeq ($(HND_ROUTER),y)
@@ -2970,7 +2969,7 @@ openssl-1.1/Makefile:
 	./Configure $(HOSTCONFIG) --prefix=/usr --openssldir=/etc/ssl --cross-compile-prefix=' ' \
 	$(if $(filter y,$(RTCONFIG_SFP) $(RTCONFIG_4M_SFP) $(RTCONFIG_8M_SFP)),-Os,-O2) \
 	-ffunction-sections -fdata-sections -Wl,--gc-sections \
-	shared $(OPENSSL_CIPHERS) no-async --api=1.0.0 \
+	shared $(OPENSSL_CIPHERS) no-err no-async --api=1.0.0 \
 	no-aria no-sm2 no-sm3 no-sm4 \
 	$(if $(filter 4908,$(BCM_CHIP)),,-DOPENSSL_PREFER_CHACHA_OVER_GCM)
 	@$(MAKE) -C openssl-1.1 depend
@@ -5370,32 +5369,6 @@ libasc-install:
 	echo "install libasc"
 	$(MAKE) -C libasc install
 
-ahs: libasc json-c
-	@$(SEP)
-	echo "build ahs"
-	$(MAKE) -C ahs
-
-ahs-clean:
-	echo "clean ahs"
-	$(MAKE) -C ahs clean
-
-ahs-install:
-	echo "install ahs"
-	$(MAKE) -C ahs install
-
-libasc: openssl curl
-	@$(SEP)
-	echo "build libasc"
-	$(MAKE) -C libasc
-
-libasc-clean:
-	echo "clean libasc"
-	$(MAKE) -C libasc clean
-
-libasc-install:
-	echo "install libasc"
-	$(MAKE) -C libasc install
-
 qsr10g_image:
 aqr107_image:
 
@@ -6340,8 +6313,8 @@ curl/Makefile: curl/configure
 		--enable-http --enable-ftp --enable-file \
 		--disable-ldap --disable-ldaps --disable-rtsp \
 		--disable-proxy --disable-dict --disable-telnet \
-		--disable-tftp --disable-pop3 --disable-imap \
-		--disable-smb --disable-gopher \
+		--disable-tftp  \
+		--disable-gopher \
 		--disable-manual --disable-libcurl-option $(if $(RTCONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--disable-threaded-resolver --disable-ntlm-wb \
 		--disable-doh --disable-netrc --disable-dnsshuffle \
