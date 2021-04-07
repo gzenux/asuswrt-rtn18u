@@ -1,7 +1,7 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.2-beta2
+386.2-beta3
   Changelog for RT-N18U:
   - NEW: Reimplemented the temperature graph in home page.
          This feature was removed by 386.1 but now add it back.
@@ -13,6 +13,7 @@ Asuswrt-Merlin for RT-N18U Release Note
           browser cache.
 
   - UPDATED: Merged GPL 386_42095.
+  - UPDATED: Openssl to 1.1.1k.
   - UPDATED: OpenVPN to 2.5.1.
   - UPDATED: root certificate bundle to March 9th 2021.
   - CHANGED: qos-start "init" user script now runs in blocking
@@ -24,6 +25,9 @@ Asuswrt-Merlin for RT-N18U Release Note
              without a working JFFS partition.
   - FIXED: DST not getting applied to some timezones (snauton)
   - FIXED: Traditional QoS was broken in 386.1 (dave14305)
+  - FIXED: Userspace conntrack tool was no longer working
+  - FIXED: webui incorrectly complaining about mismatched timezone
+           between browser and webui for some timezones (dave14305)
   - REMOVED: SSH Brute Force Protection option (already handled
              by Asuswrt's protect service daemon)
 
