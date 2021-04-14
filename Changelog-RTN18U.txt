@@ -1,7 +1,7 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.2-beta3
+386.2
   Changelog for RT-N18U:
   - NEW: Reimplemented the temperature graph in home page.
          This feature was removed by 386.1 but now add it back.
@@ -23,11 +23,20 @@ Asuswrt-Merlin for RT-N18U Release Note
   - CHANGED: If dropbear cannot create keys in /jffs then
              create temporary ones in /etc so SSH can work even
              without a working JFFS partition.
+  - CHANGED: Enabling DOS protection will now also rate limit
+             ICMPV6 echo (type 128) packets, like with IPv4.
   - FIXED: DST not getting applied to some timezones (snauton)
   - FIXED: Traditional QoS was broken in 386.1 (dave14305)
   - FIXED: Userspace conntrack tool was no longer working
   - FIXED: webui incorrectly complaining about mismatched timezone
            between browser and webui for some timezones (dave14305)
+  - FIXED: IPv6 pings were blocked if sent below the rate limit
+           instead of above (issue introduced in 42095)
+  - FIXED: Field that accepted a float value would reject
+           values equal to the allowed minimum (for example
+           the QoS bandwidth limits)
+  - FIXED: QoS Bandwidth settings were hidden on
+           non-HND models when accessing the QoS page.
   - REMOVED: SSH Brute Force Protection option (already handled
              by Asuswrt's protect service daemon)
 
