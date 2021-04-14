@@ -117,10 +117,7 @@ if(cfg_sync_support){
 	var cfg_upgrade = '<% nvram_get("cfg_upgrade"); %>';
 }
 
-var download_srv = 'https://gzenux.github.io/asuswrt-rtn18u';
-download_url = download_srv + "/" + based_modelid;
-download_url_alpha = download_srv + "/alpha";
-download_url_beta = download_url + "/beta";
+var download_url = 'https://gzenux.github.io/asuswrt-rtn18u';
 
 if(pipefw_support || urlfw_support){
 	var hndwr_status = '<% nvram_get("hndwr"); %>';
@@ -473,13 +470,7 @@ function do_show_confirm(){
 		if(update_path == 1) {
 			// beta path
 			var right_btn_callback = function(){
-				if (webs_state_info_beta.indexOf("alpha") != -1) {
-					window.open(download_url_alpha);
-				} else if (webs_state_info_beta.indexOf("beta") != -1) {
-					window.open(download_url_beta);
-				} else {
-					window.open(download_url);
-				}
+				window.open(download_url);
 			};
 
 			// confirm dialog overwritten
