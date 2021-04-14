@@ -78,7 +78,7 @@
 #ifdef RTCONFIG_IPV6
 char wan6face[IFNAMSIZ + 1];
 // RFC-4890, sec. 4.3.1
-const int allowed_icmpv6[] = { 1, 2, 3, 4, 128, 129 };
+const int allowed_icmpv6[] = { 1, 2, 3, 4, /*128,*/ 129 };
 // RFC-4890, sec. 4.4.1
 const int allowed_local_icmpv6[] =
 	{ 130, 131, 132, 133, 134, 135, 136,
@@ -3279,6 +3279,8 @@ filter_setting(int wan_unit, char *lan_if, char *lan_ip, char *logaccept, char *
 		    ":PControls - [0:0]\n"
 #endif
 		    ":NSFW - [0:0]\n"
+		    ":ICMP_V6 - [0:0]\n"
+		    ":ICMP_V6_LOCAL - [0:0]\n"
 		    ":logaccept - [0:0]\n"
 		    ":logdrop - [0:0]\n",
 		nvram_match("ipv6_fw_enable", "1") ? "DROP" : "ACCEPT");
@@ -4015,10 +4017,13 @@ TRACE_PT("writing Parental Control\n");
 		fprintf(fp_ipv6, "-A FORWARD -p ipv6-nonxt -m length --length 40 -j ACCEPT\n");
 
 		// ICMPv6 rules
-		fprintf(fp_ipv6, "-A FORWARD -p ipv6-icmp --icmpv6-type %i -m limit --limit 1/s -j %s\n", 128, logdrop);
+		fprintf(fp_ipv6, "-A FORWARD -p ipv6-icmp -j ICMP_V6\n");
+		fprintf(fp_ipv6, "-A ICMP_V6 -p ipv6-icmp --icmpv6-type 128 %s -j %s\n",
+		                  (nvram_get_int("fw_dos_x") ? "-m limit --limit 1/s" : ""), logaccept);
 		for (i = 0; i < sizeof(allowed_icmpv6)/sizeof(int); ++i) {
-			fprintf(fp_ipv6, "-A FORWARD -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_icmpv6[i], logaccept);
+			fprintf(fp_ipv6, "-A ICMP_V6 -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_icmpv6[i], logaccept);
 		}
+		fprintf(fp_ipv6, "-A ICMP_V6 -j %s\n", logdrop);
 	}
 #endif
 
@@ -4052,12 +4057,12 @@ TRACE_PT("writing Parental Control\n");
 		}
 
 		// ICMPv6 rules
-		for (n = 0; n < sizeof(allowed_icmpv6)/sizeof(int); n++) {
-			fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_icmpv6[n], logaccept);
-		}
+		fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp -j ICMP_V6_LOCAL\n");
+		fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp -j ICMP_V6\n");
 		for (n = 0; n < sizeof(allowed_local_icmpv6)/sizeof(int); n++) {
-			fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_local_icmpv6[n], logaccept);
+			fprintf(fp_ipv6, "-A ICMP_V6_LOCAL -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_local_icmpv6[n], logaccept);
 		}
+		fprintf(fp_ipv6, "-A ICMP_V6_LOCAL -j RETURN\n"); // let the ICMP_V6 chain handle dropping leftover traffic
 
 		// default policy: DROP
 		// if logging
@@ -5355,10 +5360,13 @@ TRACE_PT("writing Parental Control\n");
 		fprintf(fp_ipv6, "-A FORWARD -p ipv6-nonxt -m length --length 40 -j ACCEPT\n");
 
 		// ICMPv6 rules
-		fprintf(fp_ipv6, "-A FORWARD -p ipv6-icmp --icmpv6-type %i -m limit --limit 1/s -j %s\n", 128, logdrop);
+		fprintf(fp_ipv6, "-A FORWARD -p ipv6-icmp -j ICMP_V6\n");
+		fprintf(fp_ipv6, "-A ICMP_V6 -p ipv6-icmp --icmpv6-type 128 %s -j %s\n",
+		                  (nvram_get_int("fw_dos_x") ? "-m limit --limit 1/s" : ""), logaccept);
 		for (i = 0; i < sizeof(allowed_icmpv6)/sizeof(int); ++i) {
-			fprintf(fp_ipv6, "-A FORWARD -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_icmpv6[i], logaccept);
+			fprintf(fp_ipv6, "-A ICMP_V6 -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_icmpv6[i], logaccept);
 		}
+		fprintf(fp_ipv6, "-A ICMP_V6 -j %s\n", logdrop);
 	}
 #endif
 
@@ -5392,12 +5400,12 @@ TRACE_PT("writing Parental Control\n");
 		}
 
 		// ICMPv6 rules
-		for (n = 0; n < sizeof(allowed_icmpv6)/sizeof(int); n++) {
-			fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_icmpv6[n], logaccept);
-		}
+		fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp -j ICMP_V6_LOCAL\n");
+		fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp -j ICMP_V6\n");
 		for (n = 0; n < sizeof(allowed_local_icmpv6)/sizeof(int); n++) {
-			fprintf(fp_ipv6, "-A INPUT -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_local_icmpv6[n], logaccept);
+			fprintf(fp_ipv6, "-A ICMP_V6_LOCAL -p ipv6-icmp --icmpv6-type %i -j %s\n", allowed_local_icmpv6[n], logaccept);
 		}
+		fprintf(fp_ipv6, "-A ICMP_V6_LOCAL -j RETURN\n"); // let the ICMP_V6 chain handle dropping leftover traffic
 
 		// default policy: DROP
 		// if logging

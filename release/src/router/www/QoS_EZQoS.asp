@@ -522,7 +522,6 @@ function initial(){
 		document.getElementById('cake_type_link').style.display = "";
 	} else {
 		$('#cake_desc').hide();
-		$('#bandwidth_setting_tr').hide();
 	}
 }
 

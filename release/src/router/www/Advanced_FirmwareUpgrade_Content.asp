@@ -280,7 +280,6 @@ function initial(){
 			startDownloading();
 		}
 	}
-
 	if(no_update_support){	//no live update
 		document.getElementById("update_div").style.display = "none";
 		document.getElementById("fw_tr").style.display = "none";
@@ -1085,14 +1084,14 @@ function show_amas_fw_result() {
 					$("#amas_" + mac_id + "").children().find(".checkFWResult").html(ck_fw_result);
 					if(newfwver != "") {
 						if (check_is_merlin_fw(fwver)) {
-							ck_fw_result = newfwver.replace("3.0.0.4.","");
+							ck_fw_result = newfwver.replace("3.0.0.4.","").replace("_",".").replace("_0","");
 						} else {
 							ck_fw_result = newfwver;
 							$("#amas_update").css("display", "");
 						}
 						$("#amas_" + mac_id + "").children().find(".checkFWResult").addClass("aimesh_fw_release_note");
 						$("#amas_" + mac_id + "").children().find(".checkFWResult").html(ck_fw_result);
-						$("#amas_" + mac_id + "").children().find(".checkFWResult").click({"isMerlin" : check_is_merlin_fw(newfwver), "model_name": model_name, "newfwver": newfwver}, show_fw_release_note);
+						$("#amas_" + mac_id + "").children().find(".checkFWResult").click({"isMerlin" : check_is_merlin_fw(fwver), "model_name": model_name, "newfwver": newfwver}, show_fw_release_note);
 					}
 					if(online == "1")
 						$("#amas_" + mac_id + "").children("#checkNewFW").css("display", "");
@@ -1106,17 +1105,21 @@ function show_fw_release_note(event) {
 		$(".confirm_block").remove();
 
 	document.amas_release_note.model.value = event.data.model_name;
-	if (event.data.isMerlin)
+	if (event.data.isMerlin) {
 		document.amas_release_note.version.value = event.data.newfwver.replace("3.0.0.4.","");
-	else
+		siteurl = download_url;
+	} else {
 		document.amas_release_note.version.value = event.data.newfwver;
+		siteurl = "";
+	}
+
 	document.amas_release_note.submit();
 	confirm_asus({
 		title: "New Firmware Available",
 		contentA: "<#exist_new#><br>",
 		contentC: "<br><#ADSL_FW_note#> " + note_text,
-		left_button: "",
-		left_button_callback: {},
+		left_button: (event.data.isMerlin ? "Visit download site" : ""),
+		left_button_callback: function(){window.open(siteurl);},
 		left_button_args: {},
 		right_button: "<#CTL_close#>",
 		right_button_callback: function(){confirm_cancel();},
