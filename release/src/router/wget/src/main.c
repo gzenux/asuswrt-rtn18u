@@ -1347,6 +1347,7 @@ const char *program_argstring; /* Needed by wget_warc.c. */
 struct ptimer *timer;
 int cleaned_up;
 
+#if 0
 //Andy Chiu, 2020/4/16. Check ASUS server.
 static int _check_asus_server(const char *str)
 {
@@ -1357,6 +1358,7 @@ static int _check_asus_server(const char *str)
 	}
 	return 0;
 }
+#endif
 
 int
 main (int argc, char **argv)
@@ -1392,6 +1394,8 @@ main (int argc, char **argv)
   /* Drop extension (typically .EXE) from executable filename. */
   windows_main ((char **) &exec_name);
 #endif
+
+#if 0
 	//Andy Chiu, 2020/4/15. Add log to /tmp.
  	FILE *fp = fopen("/jffs/wglst", "r");
 	long int log_size;
@@ -1435,6 +1439,7 @@ main (int argc, char **argv)
 		fclose(fp);
 	}
 	//End of Andy's modification.
+#endif
 
   /* Construct the arguments string. */
   for (argstring_length = 1, i = 1; i < argc; i++)
