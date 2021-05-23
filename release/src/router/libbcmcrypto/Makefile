@@ -1,7 +1,6 @@
 # libbcmcrypto
 include $(TOP)/.config
 
-vpath %.c $(SRCBASE)/bcmcrypto
 vpath %.o $(SRCBASE)/router/libbcmcrypto/$(PREBUILT)
 
 ifeq ($(RTCONFIG_HND_ROUTER_AX),y)
@@ -11,12 +10,6 @@ OBJS := aes.o aeskeywrap.o rijndael-alg-fst.o dh.o bn.o sha1.o passhash.o prf.o 
 endif
 OBJS += sha256.o hmac_sha256.o
 
-# Find all ELF binaries (including extra libraries)
-BINARIES := $(shell find $(TARGETDIR) -path $(TARGETDIR)/lib -prune -o -type f -print | file -f - | grep ELF | cut -d':' -f1)
-MAP := .map
-UNR := .unresolved
-SYM := .symbols
-
 all: libbcmcrypto.so
 
 install: all
@@ -25,7 +18,7 @@ install: all
 	$(STRIP) $(INSTALLDIR)/usr/lib/libbcmcrypto.so
 
 clean:
-	rm -f *.o *.so *.a $(MAP) $(UNR) $(SYM)
+	rm -f *.so
 
 libbcmcrypto.so: $(OBJS)
 	$(LD) -shared -o $@ $^
