@@ -10,20 +10,21 @@ sqlite_dir=$cur_dir/../sqlite
 sqlite_inc=$sqlite_dir
 sqlite_lib=$sqlite_dir/.libs
 user=`echo $HOME`								### /home/XXXXX
+openssl=openssl_asuswrt
 echo $cur_dir
 
 PCRE_VER=8.31
 
 ####	Set compiler variable ####
 export CFLAGS="-I$cur_dir/../pcre-$PCRE_VER -I$uclib_inc -I$srcbase_dir/include -I$srcbase_dir/shared/bcmwifi/include -I$cur_dir/../sqlite -I$cur_dir/../curl-7.21.7/include -I$router_sysdep_dir/nvram${BCMEX}${EX7} -I$router_dir/shared -I$router_dir/libdisk -I$router_dir/libpasswd -DHAVE_OPENSSL_SSL_H=1 -DHAVE_LIBSSL=1 -DEMBEDDED_EANBLE=1"
-export LIBS="-L$uclib -L$router_dir/shared -lshared -L$router_sysdep_dir/nvram${BCMEX}${EX7} -lnvram -L$router_sysdep_dir/wlcsm${EXHND} -lwlcsm -L$router_dir/libdisk -ldisk -L$router_dir/libpasswd -lpasswd -lpthread  -L$router_dir/openssl -lcrypto -lssl -L$router_dir/curl-7.21.7/lib/.libs -lcurl -L$router_dir/libxml2/.libs -lxml2 -lpthread -dl"
+export LIBS="-L$uclib -L$router_dir/shared -lshared -L$router_sysdep_dir/nvram${BCMEX}${EX7} -lnvram -L$router_sysdep_dir/wlcsm${EXHND} -lwlcsm -L$router_dir/libdisk -ldisk -L$router_dir/libpasswd -lpasswd -lpthread  -L$router_dir/$openssl -lcrypto -lssl -L$router_dir/curl-7.21.7/lib/.libs -lcurl -L$router_dir/libxml2/.libs -lxml2 -lpthread -dl"
 
 NVRAM_ENCRYPT=`cat ../.config |grep "RTCONFIG_NVRAM_ENCRYPT=y"`
 if [ -n "$NVRAM_ENCRYPT" ]; then
         CFLAGS+=" -DNVRAM_ENCRYPT_ENABLE=1"
 fi
 
-export LDFLAGS="-L$uclib -ldl -L$cur_dir/../pcre-$PCRE_VER/.libs -lpcre -L$cur_dir/../libxml2/.libs -lxml2 -lm -L$router_dir/openssl -L$cur_dir/../curl-7.21.7/lib/.libs"
+export LDFLAGS="-L$uclib -ldl -L$cur_dir/../pcre-$PCRE_VER/.libs -lpcre -L$cur_dir/../libxml2/.libs -lxml2 -lm -L$router_dir/$openssl -L$cur_dir/../curl-7.21.7/lib/.libs"
 export XML_CFLAGS="-I$cur_dir/../libxml2/include"
 export XML_LIBS="-L$cur_dir/../libxml2/.libs -lxml2 -lm"
 export SQLITE_CFLAGS="-I$cur_dir/../sqlite"
@@ -32,17 +33,17 @@ export CURL_CFLAGS="-I$cur_dir/../curl-7.21.7/include"
 export CURL_LIBS="-L$cur_dir/../curl-7.21.7/lib/.libs -lcurl"
 export PCRE_LIB="-L$cur_dir/../pcre-$PCRE_VER/.libs -lpcre"
 export PCRECONFIG="$cur_dir/../pcre-$PCRE_VER/pcre-config"
-export SSL_LIB="-L$router_dir/openssl -lcrypto -lssl"
-#export SSL_LIB="-L$router_dir/openssl -lcrypto -lssl -L$router_dir/shared -lshared -L$router_dir/nvram -lnvram"
+export SSL_LIB="-L$router_dir/$openssl -lcrypto -lssl"
+#export SSL_LIB="-L$router_dir/$openssl -lcrypto -lssl -L$router_dir/shared -lshared -L$router_dir/nvram -lnvram"
 #export SSL_LIB="-L$router_dir/shared -lshared"
 #export SHARED_LIBS="-L$router_dir/shared -lshared"
 
 $CONFIGURE --prefix=/usr \
 --with-pcre PCRECONFIG="$cur_dir/../pcre-$PCRE_VER/pcre-config" \
 --with-smbdav-props \
---with-openssl=$router_dir/openssl \
---with-openssl-includes=$router_dir/openssl/include/openssl \
---with-openssl-libs=$router_dir/openssl/ \
+--with-openssl=$router_dir/$openssl \
+--with-openssl-includes=$router_dir/$openssl/include/openssl \
+--with-openssl-libs=$router_dir/$openssl/ \
 --with-smbdav-locks=yes \
 --with-libsmbclient=$cur_dir/../samba-3.5.8/source3 \
 --without-zlib \

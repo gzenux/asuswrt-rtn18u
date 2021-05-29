@@ -5985,7 +5985,7 @@ else
 endif
 	@touch $@
 
-lighttpd-1.4.39: shared nvram$(BCMEX)$(EX7) libpasswd libdisk samba-3.5.8 pcre-8.31 libxml2 sqlite libexif openssl curl $(if $(RTCONFIG_PERMISSION_MANAGEMENT),PMS_DBapis) lighttpd-1.4.39/stamp-h1
+lighttpd-1.4.39: shared nvram$(BCMEX)$(EX7) libpasswd libdisk samba-3.5.8 pcre-8.31 libxml2 sqlite libexif curl $(if $(RTCONFIG_PERMISSION_MANAGEMENT),PMS_DBapis) lighttpd-1.4.39/stamp-h1
 	$(MAKE) -C lighttpd-1.4.39 $(PARALLEL_BUILD)
 
 lighttpd-1.4.39-install:
@@ -6331,20 +6331,19 @@ curl/Makefile: curl/configure
 		--disable-threaded-resolver --disable-ntlm-wb \
 		--disable-doh --disable-netrc --disable-dnsshuffle \
 		--without-zlib \
-		$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),--with-ssl=$(TOP)/openssl --with-ca-fallback,--without-ssl) \
+		$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),--with-ssl=$(TOP)/openssl_asuswrt --with-ca-fallback,--without-ssl) \
 		$(if $(RTCONFIG_MBEDTLS),--with-mbedtls=$(STAGEDIR)/usr,--without-mbedtls) \
 		$(if $(RTCONFIG_WOLFSSL),--with-wolfssl=$(STAGEDIR)/usr,--without-wolfssl) \
 		--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt \
 		CFLAGS="-Os -Wall -ffunction-sections -fdata-sections" \
-		CPPFLAGS="-I$(STAGEDIR)/usr/include" \
-		LDFLAGS="-Wl,--gc-sections $(LDFLAGS) -L$(STAGEDIR)/usr/lib \
-		$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-L$(TOP)/openssl,)" \
-		LIBS="-ldl $(if $(RTCONFIG_OPENSSL11),-lpthread,) \
+		CPPFLAGS="$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-I$(TOP)/openssl_asuswrt/include,) -I$(STAGEDIR)/usr/include" \
+		LDFLAGS="-Wl,--gc-sections $(LDFLAGS) $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-L$(TOP)/openssl_asuswrt,) -L$(STAGEDIR)/usr/lib" \
+		LIBS="-ldl $(if $(findstring openssl-1.1,$(OPENSSL_ASUSWRT)),-lpthread,) \
 			   $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-lcrypto -lssl,) \
 			   $(if $(RTCONFIG_MBEDTLS),-lmbedcrypto -lmbedx509 -lmbedtls,) \
 			   $(if $(RTCONFIG_WOLFSSL),-lwolfssl,)"
 
-curl: $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),openssl,) $(if $(RTCONFIG_MBEDTLS),mbedtls,) $(if $(RTCONFIG_WOLFSSL),wolfssl,) curl/Makefile
+curl: $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),openssl_asuswrt,) $(if $(RTCONFIG_MBEDTLS),mbedtls,) $(if $(RTCONFIG_WOLFSSL),wolfssl,) curl/Makefile
 	@$(SEP)
 # temporary curl-7.21.7 path compatibility
 	[ "$(notdir $(realpath curl-7.21.7))" = "$@" ] || (rm -f curl-7.21.7 && ln -s $@ curl-7.21.7)
@@ -6439,7 +6438,7 @@ asuswebstorage-clean:
 	rm -rf asuswebstorage/stamp-h1
 
 #google_client
-google_client/stamp-h1:
+google_client/stamp-h1: curl
 	touch $@
 
 google_client: google_client/stamp-h1
