@@ -624,9 +624,13 @@ else
 $(error OpenSSL is not defined)
 endif
 
-# kludge to add openssl-1.0 for RT-N18U due to its prebuilt binary dependency
-ifneq ($(RTCONFIG_OPENSSL10),y)
-obj-$(RTN18U) += openssl-1.0
+# kludge to add required openssl version for AsusWRT prebuilt components
+OPENSSL_ASUSWRT := $(OPENSSL)
+ifneq ($(RTN18U),)
+OPENSSL_ASUSWRT := openssl-1.0
+endif
+ifneq ($(OPENSSL_ASUSWRT),$(OPENSSL))
+obj-y += $(OPENSSL_ASUSWRT)
 endif
 
 obj-$(RTCONFIG_LIBASUSLOG) += libasuslog
@@ -2961,6 +2965,16 @@ endif
 
 openssl-stage:
 	@$(MAKE) $(OPENSSL)-stage
+
+# openssl version for AsusWRT prebuilt components
+openssl_asuswrt:
+	@$(SEP)
+	[ "$(notdir $(realpath $@))" = "$(OPENSSL_ASUSWRT)" ] || (rm -f $@ && ln -s $(OPENSSL_ASUSWRT) $@)
+	$(MAKE) $(OPENSSL_ASUSWRT)
+
+openssl_asuswrt-clean:
+	@$(MAKE) $(OPENSSL_ASUSWRT)-clean
+	rm -f openssl_asuswrt
 
 openssl-1.1/Makefile:
 	cd openssl-1.1 && \
