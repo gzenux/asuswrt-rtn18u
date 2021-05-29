@@ -520,8 +520,6 @@ umem_log_header_t *umem_slab_log;
 extern thread_t _thr_self(void);
 #if defined(__MACH__) || defined(__FreeBSD__)
 # define CPUHINT()	((int)(_thr_self()))
-#elif !(defined(__GLIBC__) || defined(__UCLIBC__))
-# define CPUHINT()	((int)(_thr_self()))
 #endif
 
 #ifndef CPUHINT

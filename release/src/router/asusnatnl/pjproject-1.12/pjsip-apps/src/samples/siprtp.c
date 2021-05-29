@@ -1136,7 +1136,7 @@ static void boost_priority(void)
 	return;
     }
 
-#if PJ_ANDROID==1 || !(defined(__GLIBC__) || defined(__UCLIBC__))
+#if PJ_ANDROID==1
 	tp.sched_priority = max_prio;
 #else
     tp.__sched_priority = max_prio;
@@ -1148,7 +1148,7 @@ static void boost_priority(void)
 		    PJ_RETURN_OS_ERROR(rc));
     }
 
-#if !defined(PJ_ANDROID) && (defined(__GLIBC__) || defined(__UCLIBC__))
+#if !defined(PJ_ANDROID)
     PJ_LOG(4, (THIS_FILE, "New process policy=%d, priority=%d",
 	      policy, tp.__sched_priority));
 #endif
@@ -1162,7 +1162,7 @@ static void boost_priority(void)
 	return;
     }
 
-#if !defined(PJ_ANDROID) && (defined(__GLIBC__) || defined(__UCLIBC__))
+#if !defined(PJ_ANDROID)
     PJ_LOG(4, (THIS_FILE, "Old thread policy=%d, priority=%d",
 	      policy, tp.__sched_priority));
 
@@ -1170,7 +1170,7 @@ static void boost_priority(void)
 
     policy = POLICY;
 
-#if PJ_ANDROID==1 || !(defined(__GLIBC__) || defined(__UCLIBC__))
+#if PJ_ANDROID==1
     tp.sched_priority = max_prio;
 #else
     tp.__sched_priority = max_prio;
@@ -1183,7 +1183,7 @@ static void boost_priority(void)
 	return;
     }
 
-#if !defined(PJ_ANDROID) && (defined(__GLIBC__) || defined(__UCLIBC__))
+#if !defined(PJ_ANDROID)
     PJ_LOG(4, (THIS_FILE, "New thread policy=%d, priority=%d",
 	      policy, tp.__sched_priority));
 #endif

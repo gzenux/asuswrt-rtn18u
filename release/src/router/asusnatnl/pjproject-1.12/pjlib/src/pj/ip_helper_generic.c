@@ -547,11 +547,13 @@ PJ_DEF(pj_status_t) pj_all_physical_addresses(char *local_mac, pj_uint32_t *loca
 		PJ_LOG(4, (THIS_FILE, " pj_all_physical_addresses() tmp_mac %s", tmp_mac));
 		if (mac_addrs_len == 0)
 		{
-			mac_addrs_len += sprintf(mac_addrs, "%s", tmp_mac);
+			sprintf(mac_addrs, "%s", tmp_mac);
+			mac_addrs_len += 17;
 		}
 		else
 		{
-			mac_addrs_len += sprintf(mac_addrs+mac_addrs_len, ",%s", tmp_mac);
+			sprintf(mac_addrs, "%s,%s", mac_addrs, tmp_mac);
+			mac_addrs_len += 18;
 		}
 	}
 	pj_sock_close(sock);
@@ -788,11 +790,13 @@ PJ_DEF(pj_status_t) pj_all_physical_addresses(char *local_mac, pj_uint32_t *loca
             PJ_LOG(4, (THIS_FILE, " pj_all_physical_addresses() tmp_mac %s", tmp_mac));
             if (mac_addrs_len == 0)
             {
-                mac_addrs_len += sprintf(mac_addrs, "%s", tmp_mac);
+                sprintf(mac_addrs, "%s", tmp_mac);
+                mac_addrs_len += 17;
             }
             else
             {
-                mac_addrs_len += sprintf(mac_addrs+mac_addrs_len, ",%s", tmp_mac);
+                sprintf(mac_addrs, "%s,%s", mac_addrs, tmp_mac);
+                mac_addrs_len += 18;
             }
         }
 	}

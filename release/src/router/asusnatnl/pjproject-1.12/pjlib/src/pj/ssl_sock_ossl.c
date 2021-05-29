@@ -49,9 +49,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#define ASN1_STRING_get0_data(x) ASN1_STRING_data(x)
-#endif
+
 
 #ifdef _MSC_VER
 # if defined(PJ_WIN32_UWP)
@@ -340,22 +338,12 @@ static pj_status_t init_openssl(void)
 	STACK_OF(SSL_CIPHER) *sk_cipher;
 	unsigned i, n;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-	meth = (SSL_METHOD*)TLS_server_method();
-	if (!meth)
-	    meth = (SSL_METHOD*)SSLv23_server_method();
-#else
 	meth = (SSL_METHOD*)SSLv23_server_method();
-#endif
-#ifndef OPENSSL_NO_TLS1_METHOD
 	if (!meth)
 	    meth = (SSL_METHOD*)TLSv1_server_method();
-#endif
-#ifndef OPENSSL_NO_SSL3_METHOD
 	if (!meth)
 	    meth = (SSL_METHOD*)SSLv3_server_method();
-#endif
-#if !defined(OPENSSL_NO_SSL2) && OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifndef OPENSSL_NO_SSL2
 	if (!meth)
 	    meth = (SSL_METHOD*)SSLv2_server_method();
 #endif
@@ -372,10 +360,10 @@ static pj_status_t init_openssl(void)
 	    n = PJ_ARRAY_SIZE(openssl_ciphers);
 
 	for (i = 0; i < n; ++i) {
-	    const SSL_CIPHER *c;
-	    c = sk_SSL_CIPHER_value(sk_cipher, i);
+	    SSL_CIPHER *c;
+	    c = sk_SSL_CIPHER_value(sk_cipher,i);
 	    openssl_ciphers[i].id = (pj_ssl_cipher)
-				 (pj_uint32_t)SSL_CIPHER_get_id(c) & 0x00FFFFFF;
+				 (pj_uint32_t)c->id & 0x00FFFFFF;
 	    openssl_ciphers[i].name = SSL_CIPHER_get_name(c);
 	}
 
@@ -531,25 +519,14 @@ static pj_status_t create_ssl(pj_ssl_sock_t *ssock)
 
     /* Determine SSL method to use */
     switch (ssock->param.proto) {
-    case PJ_SSL_SOCK_PROTO_DEFAULT:
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-	ssl_method = (SSL_METHOD*)TLS_method();
-	break;
-#endif
-    case PJ_SSL_SOCK_PROTO_SSL23:
+	case PJ_SSL_SOCK_PROTO_DEFAULT:
+	case PJ_SSL_SOCK_PROTO_SSL23:
 	ssl_method = (SSL_METHOD*)SSLv23_method();
 	break;
-#ifndef OPENSSL_NO_TLS1_METHOD
     case PJ_SSL_SOCK_PROTO_TLS1:
 	ssl_method = (SSL_METHOD*)TLSv1_method();
 	break;
-#endif
-#ifndef OPENSSL_NO_SSL3_METHOD
-    case PJ_SSL_SOCK_PROTO_SSL3:
-	ssl_method = (SSL_METHOD*)SSLv3_method();
-	break;
-#endif
-#if !defined(OPENSSL_NO_SSL2) && OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifndef OPENSSL_NO_SSL2
     case PJ_SSL_SOCK_PROTO_SSL2:
 	ssl_method = (SSL_METHOD*)SSLv2_method();
 	break;
@@ -723,10 +700,10 @@ static pj_status_t set_cipher_list(pj_ssl_sock_t *ssock)
     sk_cipher = SSL_get_ciphers(ssock->ossl_ssl);
     for (i = 0; i < ssock->param.ciphers_num; ++i) {
 	for (j = 0; j < sk_SSL_CIPHER_num(sk_cipher); ++j) {
-	    const SSL_CIPHER *c;
+	    SSL_CIPHER *c;
 	    c = sk_SSL_CIPHER_value(sk_cipher, j);
 	    if (ssock->param.ciphers[i] == (pj_ssl_cipher)
-					   ((pj_uint32_t)SSL_CIPHER_get_id(c) & 0x00FFFFFF))
+					   ((pj_uint32_t)c->id & 0x00FFFFFF))
 	    {
 		const char *c_name;
 
@@ -858,8 +835,8 @@ static void get_cert_info(pj_pool_t *pool, pj_ssl_cert_info *ci, X509 *x)
     X509_NAME_oneline(X509_get_issuer_name(x), buf, sizeof(buf));
 
     /* Get serial no */
-    p = (pj_uint8_t*) ASN1_STRING_get0_data(X509_get_serialNumber(x));
-    len = ASN1_STRING_length(X509_get_serialNumber(x));
+    p = (pj_uint8_t*) M_ASN1_STRING_data(X509_get_serialNumber(x));
+    len = M_ASN1_STRING_length(X509_get_serialNumber(x));
     if (len > sizeof(ci->serial_no)) 
 	len = sizeof(ci->serial_no);
     pj_memcpy(serial_no + sizeof(ci->serial_no) - len, p, len);
@@ -2003,13 +1980,8 @@ PJ_DEF(pj_status_t) pj_ssl_sock_create (pj_pool_t *pool,
 			   sizeof(pj_ioqueue_op_key_t));
 
     /* Create secure socket mutex */
-#if defined(ROUTER) && !(defined(__GLIBC__) || defined(__UCLIBC__))
-    status = pj_lock_create_simple_mutex(pool, pool->obj_name,
-					    &ssock->write_mutex);
-#else
     status = pj_lock_create_recursive_mutex(pool, pool->obj_name,
-                        &ssock->write_mutex);
-#endif
+					    &ssock->write_mutex);
     if (status != PJ_SUCCESS)
 	return status;
 
@@ -2113,7 +2085,7 @@ PJ_DEF(pj_status_t) pj_ssl_sock_get_info (pj_ssl_sock_t *ssock,
 
 	/* Current cipher */
 	cipher = SSL_get_current_cipher(ssock->ossl_ssl);
-	info->cipher = (SSL_CIPHER_get_id(cipher) & 0x00FFFFFF);
+	info->cipher = (cipher->id & 0x00FFFFFF);
 
 	/* Remote address */
 	pj_sockaddr_cp(&info->remote_addr, &ssock->rem_addr);

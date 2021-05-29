@@ -20,7 +20,6 @@
 #include <pjnath.h>
 #include <pjlib-util.h>
 #include <pjlib.h>
-#include <unistd.h>
 
 
 #define THIS_FILE	"client_main.c"
