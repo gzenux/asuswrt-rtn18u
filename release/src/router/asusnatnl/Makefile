@@ -8,8 +8,15 @@ CONFIGURE=configure-router-mips
 ARCH=MIPS
 endif
 
+ifneq ($(wildcard natnl/$(PREBUILD)/libasusnatnl.so),)
+all:
+	@cp -f natnl/$(PREBUILD)/libasusnatnl.so natnl/libasusnatnl.so
+
+clean:
+	@rm -f natnl/libasusnatnl.so
+else
 all: pjproject-1.12/stamp-h1-$(ARCH)
-	$(MAKE) -C pjproject-1.12 UCLIBC_NG=$(UCLIBC_NG)
+	$(MAKE) -C pjproject-1.12
 	$(MAKE) -C udt os=LINUX arch=$(ARCH)
 	$(MAKE) -C natnl linux-lib router=yes RTCONFIG_SW_HW_AUTH=$(RTCONFIG_SW_HW_AUTH)
 #	$(MAKE) -C natnl/msvc_prjs/asusnatnl_test
@@ -24,3 +31,4 @@ pjproject-1.12/stamp-h1-%:
 	cd pjproject-1.12 && AR="$(AR) -r -v" \
 	./$(CONFIGURE)
 	@touch $@
+endif

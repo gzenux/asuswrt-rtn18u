@@ -9,6 +9,28 @@ Asuswrt-Merlin for RT-N18U Release Note
   - No Updates Available.
 
 
+386.2_2
+  Changelog for RT-N18U:
+  - FIXED: CPU spike problem caused by mismatching openssl library
+           version between libcurl and some AsusWRT prebuilt
+           components. This bugfix is a workaround solution by
+           downgrading the linking ssl version for curl.
+  - CHANGED: Roll back the following prebuilt binaries to the latest
+             upstream commit that are using downgraded ssl version:
+               - asuswebstorage
+               - dropbox_client
+               - ftpclient
+               - lighttpd-1.4.39 prebuilt modules
+  - CHANGED: Revert asusnatnl and wb packages to GPL 382_52288 due
+             to the CPU spike problem.
+  - REMOVED: jitterentropy-rngd feature. It's an optional feature
+             introduced by recent upstream Asuswrt-Merlin.
+             We removed it to reduce CPU load.
+
+  Changelog from Asuswrt-Merlin:
+  - No Updates Available.
+
+
 386.2_1
   Changelog for RT-N18U:
   - NOTE: The upstream Asuswrt-Merlin source tree has been rebased.

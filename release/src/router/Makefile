@@ -624,9 +624,13 @@ else
 $(error OpenSSL is not defined)
 endif
 
-# kludge to add openssl-1.0 for RT-N18U due to its prebuilt binary dependency
-ifneq ($(RTCONFIG_OPENSSL10),y)
-obj-$(RTN18U) += openssl-1.0
+# kludge to add required openssl version for AsusWRT prebuilt components
+OPENSSL_ASUSWRT := $(OPENSSL)
+ifneq ($(RTN18U),)
+OPENSSL_ASUSWRT := openssl-1.0
+endif
+ifneq ($(OPENSSL_ASUSWRT),$(OPENSSL))
+obj-y += $(OPENSSL_ASUSWRT)
 endif
 
 obj-$(RTCONFIG_LIBASUSLOG) += libasuslog
@@ -1472,7 +1476,7 @@ obj-$(RTCONFIG_DNSSEC) += $(if $(RTCONFIG_DNSSEC_OPENSSL),openssl,) $(if $(RTCON
 obj-$(RTCONFIG_SAMBA36X) += libiconv-1.14
 obj-$(RTCONFIG_TELENET) += lanauth
 obj-y += wsdd2
-obj-y += jitterentropy-rngd
+obj-$(RTCONFIG_JITTERENTROPY_RNGD) += jitterentropy-rngd
 #obj-y += faketc
 
 ifneq ($(HND_ROUTER),y)
@@ -2961,6 +2965,16 @@ endif
 
 openssl-stage:
 	@$(MAKE) $(OPENSSL)-stage
+
+# openssl version for AsusWRT prebuilt components
+openssl_asuswrt:
+	@$(SEP)
+	[ "$(notdir $(realpath $@))" = "$(OPENSSL_ASUSWRT)" ] || (rm -f $@ && ln -s $(OPENSSL_ASUSWRT) $@)
+	$(MAKE) $(OPENSSL_ASUSWRT)
+
+openssl_asuswrt-clean:
+	@$(MAKE) $(OPENSSL_ASUSWRT)-clean
+	rm -f openssl_asuswrt
 
 openssl-1.1/Makefile:
 	cd openssl-1.1 && \
@@ -5971,7 +5985,7 @@ else
 endif
 	@touch $@
 
-lighttpd-1.4.39: shared nvram$(BCMEX)$(EX7) libpasswd libdisk samba-3.5.8 pcre-8.31 libxml2 sqlite libexif openssl curl $(if $(RTCONFIG_PERMISSION_MANAGEMENT),PMS_DBapis) lighttpd-1.4.39/stamp-h1
+lighttpd-1.4.39: shared nvram$(BCMEX)$(EX7) libpasswd libdisk samba-3.5.8 pcre-8.31 libxml2 sqlite libexif curl $(if $(RTCONFIG_PERMISSION_MANAGEMENT),PMS_DBapis) lighttpd-1.4.39/stamp-h1
 	$(MAKE) -C lighttpd-1.4.39 $(PARALLEL_BUILD)
 
 lighttpd-1.4.39-install:
@@ -6317,20 +6331,19 @@ curl/Makefile: curl/configure
 		--disable-threaded-resolver --disable-ntlm-wb \
 		--disable-doh --disable-netrc --disable-dnsshuffle \
 		--without-zlib \
-		$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),--with-ssl=$(TOP)/openssl --with-ca-fallback,--without-ssl) \
+		$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),--with-ssl=$(TOP)/openssl_asuswrt --with-ca-fallback,--without-ssl) \
 		$(if $(RTCONFIG_MBEDTLS),--with-mbedtls=$(STAGEDIR)/usr,--without-mbedtls) \
 		$(if $(RTCONFIG_WOLFSSL),--with-wolfssl=$(STAGEDIR)/usr,--without-wolfssl) \
 		--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt \
 		CFLAGS="-Os -Wall -ffunction-sections -fdata-sections" \
-		CPPFLAGS="-I$(STAGEDIR)/usr/include" \
-		LDFLAGS="-Wl,--gc-sections $(LDFLAGS) -L$(STAGEDIR)/usr/lib \
-		$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-L$(TOP)/openssl,)" \
-		LIBS="-ldl $(if $(RTCONFIG_OPENSSL11),-lpthread,) \
+		CPPFLAGS="$(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-I$(TOP)/openssl_asuswrt/include,) -I$(STAGEDIR)/usr/include" \
+		LDFLAGS="-Wl,--gc-sections $(LDFLAGS) $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-L$(TOP)/openssl_asuswrt,) -L$(STAGEDIR)/usr/lib" \
+		LIBS="-ldl $(if $(findstring openssl-1.1,$(OPENSSL_ASUSWRT)),-lpthread,) \
 			   $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),-lcrypto -lssl,) \
 			   $(if $(RTCONFIG_MBEDTLS),-lmbedcrypto -lmbedx509 -lmbedtls,) \
 			   $(if $(RTCONFIG_WOLFSSL),-lwolfssl,)"
 
-curl: $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),openssl,) $(if $(RTCONFIG_MBEDTLS),mbedtls,) $(if $(RTCONFIG_WOLFSSL),wolfssl,) curl/Makefile
+curl: $(if $(RTCONFIG_OPENSSL11)$(RTCONFIG_OPENSSL10),openssl_asuswrt,) $(if $(RTCONFIG_MBEDTLS),mbedtls,) $(if $(RTCONFIG_WOLFSSL),wolfssl,) curl/Makefile
 	@$(SEP)
 # temporary curl-7.21.7 path compatibility
 	[ "$(notdir $(realpath curl-7.21.7))" = "$@" ] || (rm -f curl-7.21.7 && ln -s $@ curl-7.21.7)
@@ -6425,7 +6438,7 @@ asuswebstorage-clean:
 	rm -rf asuswebstorage/stamp-h1
 
 #google_client
-google_client/stamp-h1:
+google_client/stamp-h1: curl
 	touch $@
 
 google_client: google_client/stamp-h1
