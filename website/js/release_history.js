@@ -1,5 +1,6 @@
 // All stable releases
 var RelVers = [
+"386.2_2",
 "386.2_1",
 "386.2_0",
 "386.1_2*",

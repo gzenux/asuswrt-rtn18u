@@ -1,0 +1,79 @@
+386.2_2
+  Changelog for RT-N18U:
+  - FIXED: CPU spike problem caused by mismatching openssl library
+           version between libcurl and some AsusWRT prebuilt
+           components. This bugfix is a workaround solution by
+           downgrading the linking ssl version for curl.
+  - CHANGED: Roll back the following prebuilt binaries to the latest
+             upstream commit that are using downgraded ssl version:
+               - asuswebstorage
+               - dropbox_client
+               - ftpclient
+               - lighttpd-1.4.39 prebuilt modules
+  - CHANGED: Revert asusnatnl and wb packages to GPL 382_52288 due
+             to the CPU spike problem.
+  - REMOVED: jitterentropy-rngd feature. It's an optional feature
+             introduced by recent upstream Asuswrt-Merlin.
+             We removed it to reduce CPU load.
+
+  Changelog from Asuswrt-Merlin:
+  - No Updates Available.
+
+
+386.2_1
+  Changelog for RT-N18U:
+  - NOTE: The upstream Asuswrt-Merlin source tree has been rebased.
+          The 386.2_4 and the rebased 386.2_4 are merged by this
+          release.
+  - CHANGED: Used prebuilt wlconf (from GPL 382_52288) instead of
+             compiling form source code due to the rebase changes.
+  - CHANGED: Do not create /jffs/wglst file in wget command.
+
+  Changelog from Asuswrt-Merlin:
+  - NEW: Added jitterentropy-rngd to non-HND models, in addition
+         to HND models.
+  - UPDATED: OpenVPN to 2.5.2.
+  - UPDATED: jitterentropy-rngd to 1.2.2 (library 3.0.3)
+  - FIXED: OpenVPN server would flip into an error state (being
+           shown as "initializing" on the webui) whenever an
+           inbound client failed to connect to it.
+
+
+386.2
+  Changelog for RT-N18U:
+  - NEW: Reimplemented the temperature graph in home page.
+         This feature was removed by 386.1 but now add it back.
+
+  Changelog from Asuswrt-Merlin:
+  - NOTE: due to changes in how custom device icons are handled,
+          first time you boot with 386.2 you need to either
+          shift-reload the main index page, or clear your
+          browser cache.
+
+  - UPDATED: Merged GPL 386_42095.
+  - UPDATED: Openssl to 1.1.1k.
+  - UPDATED: OpenVPN to 2.5.1.
+  - UPDATED: root certificate bundle to March 9th 2021.
+  - CHANGED: qos-start "init" user script now runs in blocking
+             mode to ensure it's able to complete any changes
+             it may apply to qos configs before these
+             configs get applied.
+  - CHANGED: If dropbear cannot create keys in /jffs then
+             create temporary ones in /etc so SSH can work even
+             without a working JFFS partition.
+  - CHANGED: Enabling DOS protection will now also rate limit
+             ICMPV6 echo (type 128) packets, like with IPv4.
+  - FIXED: DST not getting applied to some timezones (snauton)
+  - FIXED: Traditional QoS was broken in 386.1 (dave14305)
+  - FIXED: Userspace conntrack tool was no longer working
+  - FIXED: webui incorrectly complaining about mismatched timezone
+           between browser and webui for some timezones (dave14305)
+  - FIXED: IPv6 pings were blocked if sent below the rate limit
+           instead of above (issue introduced in 42095)
+  - FIXED: Field that accepted a float value would reject
+           values equal to the allowed minimum (for example
+           the QoS bandwidth limits)
+  - FIXED: QoS Bandwidth settings were hidden on
+           non-HND models when accessing the QoS page.
+  - REMOVED: SSH Brute Force Protection option (already handled
+             by Asuswrt's protect service daemon)
