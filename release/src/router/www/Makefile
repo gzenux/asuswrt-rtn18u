@@ -610,9 +610,9 @@ ifneq ($(RTCONFIG_SCHED_V2),y)
 	rm -rf $(INSTALLDIR)/www/images/New_ui/delete_hover.svg
 endif
 endif
-	rm -rf $(INSTALLDIR)/www/images/New_ui/disable_hover.svg
-	rm -rf $(INSTALLDIR)/www/images/New_ui/enable.svg
-	rm -rf $(INSTALLDIR)/www/images/New_ui/enable_hover.svg
+#	rm -rf $(INSTALLDIR)/www/images/New_ui/disable_hover.svg
+#	rm -rf $(INSTALLDIR)/www/images/New_ui/enable.svg
+#	rm -rf $(INSTALLDIR)/www/images/New_ui/enable_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/logout.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/logout_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/upgrade.svg
