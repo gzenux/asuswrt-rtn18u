@@ -460,7 +460,8 @@ ifneq ($(RTCONFIG_BWDPI)$(RTCONFIG_BWDPI_DEP),y)
 # used by state.js
 #	rm -rf $(INSTALLDIR)/www/images/New_ui/arrow_right.svg
 	rm -rf $(INSTALLDIR)/www/images/New_ui/arrow_down.svg
-	rm -rf $(INSTALLDIR)/www/images/New_ui/disable.svg
+# used by Advanced_VPNDirector.asp
+#	rm -rf $(INSTALLDIR)/www/images/New_ui/disable.svg
 	rm -rf $(INSTALLDIR)/www/images/save.svg
 	rm -rf $(INSTALLDIR)/www/images/save_hover.svg
 	rm -rf $(INSTALLDIR)/www/images/save_active.svg
