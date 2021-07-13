@@ -1,7 +1,7 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.3-beta1
+386.3-beta2
   Changelog for RT-N18U:
   - No Updates Available.
 
@@ -43,6 +43,10 @@ Asuswrt-Merlin for RT-N18U Release Note
 
   - CHANGED: Reworked OpenVPN's DNS Exclusive mode implementation
              and interaction with dnsmasq.
+  - CHANGED: Moved OpenVPN Custom settings content to JFFS, and
+             increased max storage length from around 350 chars
+             to 4095 chars.
+
   - UPDATED: chart.js to 2.9.4.
   - UPDATED: tor to 0.4.5.8.
   - UPDATED: root certificate bundle to June 5th 2021.
@@ -61,6 +65,10 @@ Asuswrt-Merlin for RT-N18U Release Note
            routed through an OpenVPN tunnel.
   - FIXED: Clients connected to Guest Network 1 would bypass
            DNSFilter rules.
+  - FIXED: Missing error report on OpenVPN client connection
+           failure
+  - FIXED: profile.add getting used even if JFFS scripting
+           was disabled (dave14305)
 
 
 386.2_2
