@@ -1,9 +1,15 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
-386.3-beta2
+386.3
   Changelog for RT-N18U:
-  - No Updates Available.
+  - CHANGED: Disable firmware check by default since this project
+             does not update frequently. You still can enable
+             the firmware periodic check manually after the factory
+             default reset.
+
+  - FIXED: Cannot set traffic history save frequency to every 1 week
+           from webui.
 
   Changelog from Asuswrt-Merlin:
   - NOTE: First time you boot into this version, you need to
@@ -46,7 +52,14 @@ Asuswrt-Merlin for RT-N18U Release Note
   - CHANGED: Moved OpenVPN Custom settings content to JFFS, and
              increased max storage length from around 350 chars
              to 4095 chars.
-
+  - CHANGED: Moved the "Redirect Internet traffic" setting on
+             the OpenVPN Client page to the Network Settings
+             section to increase its visibility, as too many
+             users are forgetting to configure it.
+  - CHANGED: Display "Internet traffic not redirected" instead
+             of "Public IP Unknown" on the OpenVPN Client
+             status display when Redirect Internet traffic
+             is set to "No".
   - UPDATED: chart.js to 2.9.4.
   - UPDATED: tor to 0.4.5.8.
   - UPDATED: root certificate bundle to June 5th 2021.
@@ -69,6 +82,20 @@ Asuswrt-Merlin for RT-N18U Release Note
            failure
   - FIXED: profile.add getting used even if JFFS scripting
            was disabled (dave14305)
+  - FIXED: Freedns authentication errors would not
+           properly be reported as errors.
+  - FIXED: Only the first OpenVPN client would be used if
+           you had multiple clients connected and the first
+           one had a Redirect Internet set to "No".  Now,
+           setting this to "No" means that client's routing
+           table will no longer get a default gateway
+           configured, allowing traffic to be processed
+           by other RPDB tables if there wasn't a matching
+           route within that client's table.
+  - FIXED: IPV6-compatible DNSFilter servers weren't
+           properly configured in dnsmasq.
+  - FIXED: DNSFilter client rules may get corrupted after a
+           reboot.
 
 
 386.2_2
