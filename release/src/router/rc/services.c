@@ -178,10 +178,8 @@ void start_cron(void);
 void start_wlcscan(void);
 void stop_wlcscan(void);
 
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
 void start_jitterentropy(void);
 void stop_jitterentropy(void);
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
 
 #ifndef MS_MOVE
 #define MS_MOVE		8192
@@ -9351,9 +9349,7 @@ start_aura_rgb_sw(void)
 int
 start_services(void)
 {
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
 	start_jitterentropy();
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
 #if defined(RTAX82U) || defined(DSL_AX82U) || defined(GSAX3000) || defined(GSAX5400)
 	start_ledg();
 	start_ledbtn();
@@ -10018,12 +10014,9 @@ stop_services(void)
 #if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
 	stop_envrams();
 #endif
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
 	stop_jitterentropy();
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
 }
 
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
 void start_jitterentropy()
 {
 	pid_t pid;
@@ -10039,7 +10032,6 @@ void stop_jitterentropy()
 	char *cmd_argv[] = { "killall", "jitterentropy-rngd", NULL};
 	_eval(cmd_argv, NULL, 0, &pid);
 }
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
 
 #ifdef RTCONFIG_QCA
 int stop_wifi_service(void)

@@ -1476,7 +1476,7 @@ obj-$(RTCONFIG_DNSSEC) += $(if $(RTCONFIG_DNSSEC_OPENSSL),openssl,) $(if $(RTCON
 obj-$(RTCONFIG_SAMBA36X) += libiconv-1.14
 obj-$(RTCONFIG_TELENET) += lanauth
 obj-y += wsdd2
-obj-$(RTCONFIG_JITTERENTROPY_RNGD) += jitterentropy-rngd
+obj-y += jitterentropy-rngd
 #obj-y += faketc
 
 ifneq ($(HND_ROUTER),y)
