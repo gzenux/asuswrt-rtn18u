@@ -888,7 +888,7 @@ var httpApi ={
 	},
 
 	"getISPProfile": function(isp){
-		var isp_profiles = httpApi.hookGet("get_iptvSettings").isp_profiles;
+		var isp_profiles = get_iptvSettings().isp_profiles;
 		var specified_profile = [];
 
 		$.each(isp_profiles, function(i, isp_profile) {

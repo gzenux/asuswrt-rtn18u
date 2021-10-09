@@ -598,7 +598,7 @@ var Get_Component_WirelessInput = function(wlArray){
 
 var Get_Component_ISPSelect = function(){
 	var isp_select = $("<select>").attr({"name": "switch_wantag", "id": "switch_wantag"});
-	var isp_profiles = httpApi.hookGet("get_iptvSettings").isp_profiles;
+	var isp_profiles = get_iptvSettings().isp_profiles;
 	var original_switch_wantag = httpApi.nvramGet(["switch_wantag"]).switch_wantag;
 	var text = "";
 	var selected = false;

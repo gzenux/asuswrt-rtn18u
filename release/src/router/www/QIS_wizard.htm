@@ -80,6 +80,7 @@
 </style>
 <script type="text/JavaScript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
+<script type="text/javaScript" src="/js/iptv_setting.js"></script>
 <script>
 var isFirst = ('<% nvram_get("x_Setting"); %>' == '1') ? false : true;
 var header_info = [<% get_header_info(); %>][0];
@@ -174,7 +175,7 @@ else
 var cur_wan_unit = 0;
 var hadModem = function(){return hadPlugged("modem")};
 
-var iptv_profiles = [<% get_iptvSettings();%>][0];
+var iptv_profiles = [get_iptvSettings()][0];
 var isp_profiles = iptv_profiles.isp_profiles;
 var original_switch_wantag = '<% nvram_get("switch_wantag"); %>';
 var original_switch_wan0tagid = '<%nvram_get("switch_wan0tagid"); %>';

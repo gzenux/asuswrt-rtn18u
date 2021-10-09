@@ -329,8 +329,10 @@ extern void unescape(char *s);
 
 void response_nvram_config(webs_t wp, char *config_name, json_object *res, json_object *root);
 
+#if 0 /* moved to webui side */
 extern int ej_get_iptvSettings(int eid, webs_t wp, int argc, char_t **argv);
 extern int config_iptv_vlan(char *isp);
+#endif
 
 #ifdef RTCONFIG_ODMPID
 extern void replace_productid(char *GET_PID_STR, char *RP_PID_STR, int len);
@@ -4048,9 +4050,11 @@ int validate_apply(webs_t wp, json_object *root) {
 					HTTPD_SEND_NT_EVENT(GENERAL_TOGGLE_STATES_UPDATE, "wps");
 				}
 #endif
+#if 0 /* moved to webui side */
 				if(!strcmp(name, "switch_wantag") && strcmp(value, "manual")){
 					config_iptv_vlan(value);
 				}
+#endif
 
 				if(!strcmp(name, "TM_EULA") && !strncmp(value, "1", 1)){
 					time_t now;
@@ -29632,7 +29636,9 @@ struct ej_handler ej_handlers[] = {
 #ifdef RTCONFIG_CONNDIAG
 	{ "get_diag_db", ej_get_diag_db},
 #endif
+#if 0 /* moved to webui side */
 	{ "get_iptvSettings", ej_get_iptvSettings },
+#endif
 #ifdef RTCONFIG_DNSPRIVACY
 	{ "get_dnsprivacy_presets", ej_get_dnsprivacy_presets },
 #endif

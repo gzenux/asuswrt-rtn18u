@@ -17,6 +17,7 @@
 <script type="text/javascript" src="popup.js"></script>
 <script type="text/javascript" src="help.js"></script>
 <script type="text/javascript" src="validator.js"></script>
+<script type="text/javaScript" src="/js/iptv_setting.js"></script>
 <script type="text/javascript" src="switcherplugin/jquery.iphone-switch.js"></script>
 
 <style>
@@ -56,7 +57,7 @@ var orig_mr_enable = '<% nvram_get("mr_enable_x"); %>';
 var orig_emf_enable = '<% nvram_get("emf_enable"); %>';
 var orig_wan_vpndhcp = '<% nvram_get("wan_vpndhcp"); %>';
 var orig_ttl_inc_enable = '<% nvram_get("ttl_inc_enable"); %>';
-var iptv_profiles = [<% get_iptvSettings();%>][0];
+var iptv_profiles = [get_iptvSettings()][0];
 var isp_profiles = iptv_profiles.isp_profiles;
 var orig_wnaports_bond = '<% nvram_get("wanports_bond"); %>';
 
@@ -464,6 +465,21 @@ function turn_off_lacp_if_conflicts(){
 	}
 }
 
+function config_iptv_vlan(){
+	var isp = document.form.switch_wantag.value;
+	if(isp != "manual"){
+		var isp_settings = get_isp_settings(isp);
+		if(isp != "none")
+			document.form.switch_stb_x.value = isp_settings.switch_stb_x;
+		document.form.switch_wan0tagid.value = isp_settings.switch_wan0tagid;
+		document.form.switch_wan0prio.value = isp_settings.switch_wan0prio;
+		document.form.switch_wan1tagid.value = isp_settings.switch_wan1tagid;
+		document.form.switch_wan1prio.value = isp_settings.switch_wan1prio;
+		document.form.switch_wan2tagid.value = isp_settings.switch_wan2tagid;
+		document.form.switch_wan2prio.value = isp_settings.switch_wan2prio;
+	}
+}
+
 function applyRule(){
 	if(!dsl_support){
 		if( (original_switch_stb_x != document.form.switch_stb_x0.value)
@@ -540,6 +556,7 @@ function applyRule(){
 		}
 
 		turn_off_lacp_if_conflicts();
+		config_iptv_vlan();
 		showLoading();
 		document.form.submit();
 	}
