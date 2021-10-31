@@ -5616,7 +5616,7 @@ void start_upnp(void)
 				if (is_nat_enabled() && nvram_match("vts_enable_x", "1")) {
 					nvp = nv = strdup(nvram_safe_get("vts_rulelist"));
 					while (nv && (b = strsep(&nvp, "<")) != NULL) {
-						char *portv, *portp, *c;
+						char *portv, *portp, *c, *cptr;
 
 						if ((cnt = vstrsep(b, ">", &desc, &port, &dstip, &lport, &proto, &srcip)) < 5)
 							continue;
@@ -5626,6 +5626,12 @@ void start_upnp(void)
 						// Handle port1,port2,port3 format
 						portp = portv = strdup(port);
 						while (portv && (c = strsep(&portp, ",")) != NULL) {
+							cptr = c;
+							while (*cptr) {
+							if (*cptr == ':')
+								*cptr = '-';
+								cptr++;
+							}
 							if (strcmp(proto, "TCP") == 0 || strcmp(proto, "BOTH") == 0)
 								fprintf(f, "deny %s 0.0.0.0/0 0-65535\n", c);
 							if (strcmp(proto, "UDP") == 0 || strcmp(proto, "BOTH") == 0)
