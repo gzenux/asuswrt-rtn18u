@@ -6520,8 +6520,15 @@ void dnsmasq_check()
 		return;
 
 	if (!is_routing_enabled()
-#ifdef RTCONFIG_WIRELESSREPEATER
-		&& sw_mode() != SW_MODE_REPEATER
+		&& (repeater_mode()
+#if defined(RTCONFIG_BCMWL6) && defined(RTCONFIG_PROXYSTA)
+		|| psr_mode() || mediabridge_mode()
+#elif defined(RTCONFIG_REALTEK) || defined(RTCONFIG_QCA)
+		|| mediabridge_mode()
+#endif
+		)
+#ifdef RTCONFIG_DPSTA
+		&& !((dpsta_mode()||rp_mode()) && nvram_get_int("re_mode") == 0)
 #endif
 	)
 		return;
