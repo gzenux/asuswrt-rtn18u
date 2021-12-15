@@ -33,6 +33,15 @@ void setAllLedNormal(void)
 
 void config_mssid_isolate(char *ifname, int vif)
 {
+	int unit;
+	char prefix[sizeof("wlX_XXX")];
+	char nv_ifname[IFNAMSIZ] = {0};
+
+	if (osifname_to_nvifname(ifname, nv_ifname, sizeof(nv_ifname)) || (get_ifname_unit(nv_ifname, &unit, NULL) < 0))
+		return;
+
+	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
+	eval("wl", "-i", ifname, "ap_isolate", nvram_pf_get_int(prefix, "ap_isolate")?"1":"0");
 }
 
 inline
