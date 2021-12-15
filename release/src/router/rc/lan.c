@@ -5176,7 +5176,7 @@ void lanaccess_mssid(const char *limited_ifname, int mode)
 #endif
 	{
 #ifdef RTCONFIG_BCMARM
-		if (!is_router_mode())
+		if (is_router_mode())
 #endif
 		{
 			eval("ebtables", mode ? "-A" : "-D", "FORWARD", "-i", (char*)limited_ifname, "-j", "DROP"); //ebtables FORWARD: "for frames being forwarded by the bridge"
@@ -5208,7 +5208,9 @@ void lanaccess_mssid(const char *limited_ifname, int mode)
 	else
 		eval("ebtables", "-t", "broute", mode ? "-A" : "-D", "BROUTING", "-i", (char*)limited_ifname, "-p", "ipv4", "--ip-proto", "icmp", "--ip-dst", nvram_safe_get("lan_ipaddr"), "-j", "ACCEPT");
 #else  	/* RTCONFIG_AMAS_WGN */
+#ifndef RTN18U
 	eval("ebtables", "-t", "broute", mode ? "-A" : "-D", "BROUTING", "-i", (char*)limited_ifname, "-p", "ipv4", "--ip-proto", "icmp", "--ip-dst", nvram_safe_get("lan_ipaddr"), "-j", "ACCEPT");
+#endif	/* RTN18U */
 #endif	/* RTCONFIG_AMAS_WGN */
 	eval("ebtables", "-t", "broute", mode ? "-A" : "-D", "BROUTING", "-i", (char*)limited_ifname, "-p", "ipv4", "--ip-proto", "icmp", "--ip-dst", lan_subnet, "-j", "DROP");
 #ifdef RTCONFIG_FBWIFI
