@@ -419,7 +419,7 @@ function gen_gntable_tr(unit, gn_array, slicesb){
 						htmlcode += '<tfoot><tr><td align="center" class="gninfo_table_bottom"><div id="showqrdiv' + unit + subunit + '"><span style="color:#FFCC00;cursor:pointer;text-decoration:underline" onclick="show_qr_code(\'' + unit + subunit + '\');">Show QR code</span></div>';
 						htmlcode += '</td></tr>';
 
-						htmlcode += '<tr><td align="center"><input type="button" class="button_gen" value="<#btn_remove#>" onclick="close_guest_unit('+ unit +','+ subunit +');"></td></tr></tfoot>';
+						htmlcode += '<tr><td align="center"><input type="button" class="button_gen" value="<#btn_disable#>" onclick="close_guest_unit('+ unit +','+ subunit +');"></td></tr></tfoot>';
 					}
 					else {
 						if(captive_portal_used_wl_array["wl" + unit_subunit] != "Facebook Wi-Fi")

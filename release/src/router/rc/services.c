@@ -178,10 +178,14 @@ void start_cron(void);
 void start_wlcscan(void);
 void stop_wlcscan(void);
 
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
+#if 0
 void start_jitterentropy(void);
 void stop_jitterentropy(void);
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
+#else
+void start_haveged(void);
+void stop_haveged(void);
+#endif
+
 
 #ifndef MS_MOVE
 #define MS_MOVE		8192
@@ -1842,6 +1846,7 @@ void start_dnsmasq(void)
 	) {
 
 		fprintf(fp, "address=/use-application-dns.net/\n");
+		fprintf(fp, "address=/_dns.resolver.arpa/\n");
 	}
 
 	/* Protect against VU#598349 */
@@ -1853,6 +1858,8 @@ void start_dnsmasq(void)
 #if defined(RTCONFIG_AMAS)
 	fprintf(fp, "script-arp\n");
 #endif
+
+	fprintf(fp, "edns-packet-max=1280\n");
 
 	/* close fp move to the last */
 	append_custom_config("dnsmasq.conf",fp);
@@ -3877,6 +3884,7 @@ stop_ddns(void)
 	if (nvram_match("ddns_tunbkrnet", "1")) {
 		int evalRet = eval("iptables-restore", "/tmp/filter_rules");
 		rule_apply_checking("services", __LINE__, "/tmp/filter_rules", evalRet);
+		run_custom_script("firewall-start", 0, get_wan_ifname(wan_primary_ifunit()), NULL);
 		nvram_unset("ddns_tunbkrnet");
 	}
 #ifdef RTCONFIG_OPENVPN
@@ -5612,7 +5620,7 @@ void start_upnp(void)
 				if (is_nat_enabled() && nvram_match("vts_enable_x", "1")) {
 					nvp = nv = strdup(nvram_safe_get("vts_rulelist"));
 					while (nv && (b = strsep(&nvp, "<")) != NULL) {
-						char *portv, *portp, *c;
+						char *portv, *portp, *c, *cptr;
 
 						if ((cnt = vstrsep(b, ">", &desc, &port, &dstip, &lport, &proto, &srcip)) < 5)
 							continue;
@@ -5622,6 +5630,12 @@ void start_upnp(void)
 						// Handle port1,port2,port3 format
 						portp = portv = strdup(port);
 						while (portv && (c = strsep(&portp, ",")) != NULL) {
+							cptr = c;
+							while (*cptr) {
+							if (*cptr == ':')
+								*cptr = '-';
+								cptr++;
+							}
 							if (strcmp(proto, "TCP") == 0 || strcmp(proto, "BOTH") == 0)
 								fprintf(f, "deny %s 0.0.0.0/0 0-65535\n", c);
 							if (strcmp(proto, "UDP") == 0 || strcmp(proto, "BOTH") == 0)
@@ -5734,6 +5748,13 @@ void start_upnp(void)
 					   (max_lifetime > 0 ? max_lifetime : 86400));
 
 				fprintf(f, "\ndeny 0-65535 0.0.0.0/0 0-65535\n");
+
+				/* Provide real IP when in dual NAT situation */
+#ifdef RTCONFIG_GETREALIP
+				if (nvram_get_int(strcat_r(prefix, "realip_state", tmp)) == 2) {
+					fprintf(f, "ext_ip=%s\n", nvram_safe_get(strcat_r(prefix, "realip_ip", tmp)));
+				}
+#endif
 
 				fappend(f, "/etc/upnp/config.custom");
 				append_custom_config("upnp", f);
@@ -9351,9 +9372,11 @@ start_aura_rgb_sw(void)
 int
 start_services(void)
 {
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
+#if 0
 	start_jitterentropy();
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
+#else
+	start_haveged();
+#endif
 #if defined(RTAX82U) || defined(DSL_AX82U) || defined(GSAX3000) || defined(GSAX5400)
 	start_ledg();
 	start_ledbtn();
@@ -10018,12 +10041,14 @@ stop_services(void)
 #if defined(RTCONFIG_CFEZ) && defined(RTCONFIG_BCMARM)
 	stop_envrams();
 #endif
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
+#if 0
 	stop_jitterentropy();
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
+#else
+	stop_haveged();
+#endif
 }
 
-#ifdef RTCONFIG_JITTERENTROPY_RNGD
+#if 0
 void start_jitterentropy()
 {
 	pid_t pid;
@@ -10039,7 +10064,28 @@ void stop_jitterentropy()
 	char *cmd_argv[] = { "killall", "jitterentropy-rngd", NULL};
 	_eval(cmd_argv, NULL, 0, &pid);
 }
-#endif /* RTCONFIG_JITTERENTROPY_RNGD */
+#else
+void start_haveged()
+{
+	pid_t pid;
+	char *cmd_argv[] = { "/usr/sbin/haveged",
+	                     "-r", "0",
+	                     "-w", "1024",
+#if 1	// All supported models use 32 KB so far
+	                     "-d", "32",
+	                     "-i", "32",
+#endif
+	                     NULL };
+
+	_eval(cmd_argv, NULL, 0, &pid);
+}
+
+void stop_haveged()
+{
+	if (pids("haveged"))
+		killall_tk("haveged");
+}
+#endif
 
 #ifdef RTCONFIG_QCA
 int stop_wifi_service(void)
