@@ -1,6 +1,16 @@
 Asuswrt-Merlin for RT-N18U Release Note
 ===================================================================
 
+386.3_2
+  Changelog for RT-N18U:
+  - FIXED: No log rotation in system.
+  - FIXED: Broken log level filter for the remote log in rsyslog.
+  - FIXED: Wrong log level setting in rsyslog configuration.
+
+  Changelog from Asuswrt-Merlin:
+  - No Updates Available.
+
+
 386.3_1
   Changelog for RT-N18U:
   - CHANGED: Moved IPTV profile settings back to webui instead of
