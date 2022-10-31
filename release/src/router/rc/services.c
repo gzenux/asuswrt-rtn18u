@@ -4243,7 +4243,7 @@ void write_rsyslogd_conf(){
 		snprintf(logipaddr, sizeof(logipaddr), "%s%s%s", ptr,
 				(atoi(logport) > 0)?":":"",
 				(atoi(logport) > 0)?logport:"");
-		fprintf(fp, "*.*\t%s%s\n", (nvram_match("log_tcp", "1") ? "@@" : "@"), logipaddr);
+		fprintf(fp, "&\t%s%s\n", (nvram_match("log_tcp", "1") ? "@@" : "@"), logipaddr);
 	}
 
 	if (fp)
