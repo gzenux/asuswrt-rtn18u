@@ -4230,10 +4230,13 @@ void write_rsyslogd_conf(){
 	fprintf(fp, "$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat\n");
 
 	if((logsize = nvram_get_int("log_size")) > 0)
-		fprintf(fp, "$MaxMessageSize\t%d\n", logsize);
+		logsize <<= 10; // size in bytes
+	else
+		logsize = 0; // no log rotation
+	fprintf(fp, "$outchannel log_rotation,%s,%d,rsyslog_rotate\n", get_syslog_fname(0), logsize);
 
 	loglevel = (nvram_get_int("log_level") - 1);
-	fprintf(fp, "*.%s\t%s\n", get_loglevel_string(loglevel), get_syslog_fname(0));
+	fprintf(fp, "*.%s\t:omfile:$log_rotation\n", get_loglevel_string(loglevel));
 
 	snprintf(logport, sizeof(logport), "%s", nvram_safe_get("log_port"));
 	if((ptr = nvram_get("log_ipaddr")) != NULL && *ptr){
@@ -4270,6 +4273,17 @@ stop_syslogd(void)
 		killall_tk("rsyslogd");
 		backup_syslog_file();
 	}
+}
+
+int rsyslog_rotate_main(int argc, char *argv[])
+{
+	char path1[PATH_MAX], path2[PATH_MAX];
+
+	strlcpy(path1, get_syslog_fname(0), sizeof(path1));
+	strlcpy(path2, get_syslog_fname(1), sizeof(path2));
+
+	eval("mv", "-f", path1, path2);
+	return 0;
 }
 #else /* RTCONFIG_RSYSLOGD */
 

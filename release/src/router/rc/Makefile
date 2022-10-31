@@ -1366,6 +1366,10 @@ ifeq ($(RTCONFIG_QCA_PLC2),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc detect_plc
 endif
 
+ifeq ($(RTCONFIG_RSYSLOGD),y)
+	@cd $(INSTALLDIR)/sbin && ln -sf rc rsyslog_rotate
+endif
+
 clean:
 	rm -f rc *.o .*.depend *.prep libconn_diag.so
 ifeq ($(RTCONFIG_BRCM_HOSTAPD),y)

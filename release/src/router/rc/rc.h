@@ -2286,6 +2286,9 @@ extern char *pwdec_dsl(char *input);
 #ifdef RTCONFIG_ISP_CUSTOMIZE
 extern int package_verify_main(int argc, char *argv[]);
 #endif
+#ifdef RTCONFIG_RSYSLOGD
+extern int rsyslog_rotate_main(int argc, char *argv[]);
+#endif
 extern int service_main(int argc, char *argv[]);
 #ifdef RTCONFIG_DSL
 extern void stop_spectrum(void);

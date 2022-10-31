@@ -1477,6 +1477,9 @@ static const applets_t applets[] = {
 	{ "restart_plc",		restart_plc_main				},
 	{ "detect_plc",			detect_plc_main					},
 #endif
+#ifdef RTCONFIG_RSYSLOGD
+	{ "rsyslog_rotate",	rsyslog_rotate_main	},
+#endif
 	{NULL, NULL}
 };
 
