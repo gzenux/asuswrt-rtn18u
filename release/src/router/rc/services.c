@@ -4205,7 +4205,7 @@ char *get_loglevel_string(int loglevel){
 	else if(loglevel == LOG_DEBUG)
 		return "debug";
 	else
-		return "none";
+		return "*";
 }
 
 void write_rsyslogd_conf(){
@@ -4235,7 +4235,7 @@ void write_rsyslogd_conf(){
 		logsize = 0; // no log rotation
 	fprintf(fp, "$outchannel log_rotation,%s,%d,rsyslog_rotate\n", get_syslog_fname(0), logsize);
 
-	loglevel = (nvram_get_int("log_level") - 1);
+	loglevel = nvram_get_int("log_level");
 	fprintf(fp, "*.%s\t:omfile:$log_rotation\n", get_loglevel_string(loglevel));
 
 	snprintf(logport, sizeof(logport), "%s", nvram_safe_get("log_port"));
