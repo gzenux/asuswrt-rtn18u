@@ -75,6 +75,10 @@
 #include <sys/statfs.h>
 #endif
 
+#ifdef RTCONFIG_TCODE
+extern int noasusddns(void);
+#endif
+
 #define SHELL "/bin/sh"
 #define LOGIN "/bin/login"
 
@@ -13668,8 +13672,16 @@ int init_nvram2(void)
 		reset_button_state();
 #endif
 
+	/* 2024/12/25 stop asuscomm.cn service. reset values of ddns_enable_x and ddns_hostname_x if WWW.ASUS.COM.CN is used. */
+	if(!strcmp(nvram_safe_get("ddns_server_x"), "WWW.ASUS.COM.CN") || ( noasusddns() && !strcmp(nvram_safe_get("ddns_server_x"), "WWW.ASUS.COM"))){
+		nvram_set("ddns_enable_x", "0");
+		nvram_set("ddns_hostname_x", "");
+		nvram_set("ddns_server_x", "");
+		nvram_commit();
+	}
+
 	return 0;
-}
+}// end of init_nvram2
 
 #if defined(RTCONFIG_SOC_IPQ40XX)
 int init_nvram3(void)

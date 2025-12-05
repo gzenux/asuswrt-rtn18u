@@ -96,6 +96,10 @@ function init(){
 	if(ddns_enable_x == "1" && ddns_server_x == "WWW.ASUS.COM"){
 		ASUS_EULA.check('asus');
 	}
+
+    if(isSupport("noasusddns")){
+        $("#ddns_server_x option[value='WWW.ASUS.COM']").remove();
+    }
 }
 
 function update_ddns_wan_unit_option(){
@@ -120,7 +124,7 @@ function show_warning_message(){
 			else
 				setTimeout("get_real_ip();", 3000);
 		}
-		else if(realip_state != "2"){
+		/*else if(realip_state != "2"){
 			if(cur_wan_ipaddr == "0.0.0.0" || validator.isPrivateIP(cur_wan_ipaddr))
 				showhide("wan_ip_hide2", 1);
 			else
@@ -131,10 +135,10 @@ function show_warning_message(){
 				showhide("wan_ip_hide2", 1);
 			else
 				showhide("wan_ip_hide2", 0);
-		}
+		}*/
 	}
-	else if(cur_wan_ipaddr == "0.0.0.0" || validator.isPrivateIP(cur_wan_ipaddr))
-		showhide("wan_ip_hide2", 1);
+	/*else if(cur_wan_ipaddr == "0.0.0.0" || validator.isPrivateIP(cur_wan_ipaddr))
+		showhide("wan_ip_hide2", 1);*/
 }
 
 function get_real_ip(){
@@ -318,73 +322,79 @@ function applyRule(){
 
 function validForm(){
 	if(document.form.ddns_enable_x[0].checked){		//ddns enable
-		if(document.form.ddns_server_x.selectedIndex == 0){		//WWW.ASUS.COM	
-			if(document.form.DDNSName.value == ""){
-				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
-				document.form.DDNSName.focus();
-				document.form.DDNSName.select();
-				return false;
-			}else{
-				if(!validate_ddns_hostname(document.form.DDNSName)){
+		if(document.form.ddns_server_x.value === ""){
+			alert(`<#LANHostConfig_x_DDNS_alarm_server#>`);
+			return false;
+		}
+		else{
+			if(document.form.ddns_server_x.value.indexOf("WWW.ASUS.COM") != -1){		//WWW.ASUS.COM
+				if(document.form.DDNSName.value == ""){
+					alert(`<#LANHostConfig_x_DDNS_alarm_14#>`);
 					document.form.DDNSName.focus();
 					document.form.DDNSName.select();
 					return false;
-				}
+				}else{
+					if(!validate_ddns_hostname(document.form.DDNSName)){
+						document.form.DDNSName.focus();
+						document.form.DDNSName.select();
+						return false;
+					}
 
-				if(letsencrypt_support){
-					if( document.form.le_enable[0].checked == true && document.form.letsEncryptTerm_check.checked != true){
-						if(!confirm("Disagree the term of service of Let's Encrypt will change the certificate method to \"None\". Are you sure?")){
-							document.form.letsEncryptTerm_check.focus();
-							return false;
-						}
-						else{
-							document.form.le_enable[2].checked = true;
+					if(letsencrypt_support){
+						if( document.form.le_enable[0].checked == true && document.form.letsEncryptTerm_check.checked != true){
+							if(!confirm("Disagree the term of service of Let's Encrypt will change the certificate method to \"None\". Are you sure?")){
+								document.form.letsEncryptTerm_check.focus();
+								return false;
+							}
+							else{
+								document.form.le_enable[2].checked = true;
+							}
 						}
 					}
+
+					return true;
+				}
+			}else{
+				if(!validator.numberRange(document.form.ddns_refresh_x, 0, 365))
+					return false;
+
+				if(document.form.ddns_server_x.value != "WWW.ORAY.COM" && document.form.ddns_hostname_x.value == ""){
+					alert(`<#LANHostConfig_x_DDNS_alarm_14#>`);
+					document.form.ddns_hostname_x.focus();
+					document.form.ddns_hostname_x.select();
+					return false;
+				}else if(!validator.string(document.form.ddns_hostname_x)){
+					return false;
+				}
+
+				if(document.form.ddns_server_x.value != "CUSTOM"){             // Not CUSTOM
+					if(document.form.ddns_username_x.value == ""){
+						alert("<#QKSet_account_nameblank#>");
+						document.form.ddns_username_x.focus();
+						document.form.ddns_username_x.select();
+						return false;
+					}else if(!validator.string(document.form.ddns_username_x)){
+						return false;
+					}
+					if(document.form.ddns_passwd_x.value == ""){
+						alert("<#File_Pop_content_alert_desc6#>");
+						document.form.ddns_passwd_x.focus();
+						document.form.ddns_passwd_x.select();
+						return false;
+					}else if(!validator.string(document.form.ddns_passwd_x)){
+						return false;
+					}
+				}
+
+				if(document.form.ddns_regular_period.value < 30){
+					alert("<#period_time_validation#> : 30");
+					document.form.ddns_regular_period.focus();
+					document.form.ddns_regular_period.select();
+					return false;
 				}
 
 				return true;
 			}
-		}else{
-			if(!validator.numberRange(document.form.ddns_refresh_x, 0, 365))
-				return false;
-
-			if(document.form.ddns_server_x.value != "WWW.ORAY.COM" && document.form.ddns_hostname_x.value == ""){
-				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
-				document.form.ddns_hostname_x.focus();
-				document.form.ddns_hostname_x.select();
-				return false;
-			}else if(!validator.string(document.form.ddns_hostname_x)){
-				return false;
-			}
-
-			if(document.form.ddns_server_x.value != "CUSTOM"){             // Not CUSTOM
-				if(document.form.ddns_username_x.value == ""){
-					alert("<#QKSet_account_nameblank#>");
-					document.form.ddns_username_x.focus();
-					document.form.ddns_username_x.select();
-					return false;
-				}else if(!validator.string(document.form.ddns_username_x)){
-					return false;
-				}
-				if(document.form.ddns_passwd_x.value == ""){
-					alert("<#File_Pop_content_alert_desc6#>");
-					document.form.ddns_passwd_x.focus();
-					document.form.ddns_passwd_x.select();
-					return false;
-				}else if(!validator.string(document.form.ddns_passwd_x)){
-					return false;
-				}
-			}
-			
-			if(document.form.ddns_regular_period.value < 30){
-				alert("<#period_time_validation#> : 30");
-				document.form.ddns_regular_period.focus();
-				document.form.ddns_regular_period.select();
-				return false;
-			}
-		
-			return true;
 		}
 	}
 	else if (document.form.le_enable[0].checked == true) {
@@ -482,6 +492,7 @@ function change_ddns_setting(v){
 			document.getElementById("ddns_hostname_info_tr").style.display = "none";
 			document.getElementById("ddns_hostname_tr").style.display="";
 			document.form.ddns_hostname_x.parentNode.style.display = "none";
+			document.form.ddns_hostname_x.parentNode.parentNode.parentNode.style.display = "";
 			document.form.DDNSName.parentNode.style.display = "";
 			var ddns_hostname_title = ddns_hostname_x_t.substring(0, ddns_hostname_x_t.indexOf('.asuscomm.com'));
 			if(ddns_hostname_x_t != '' && ddns_hostname_title)
@@ -542,9 +553,25 @@ function change_ddns_setting(v){
 		showhide("check_ddns_field", 0);
 		inputCtrl(document.form.ddns_regular_period, 0);
 	}
+	else if(v === ""){
+		document.getElementById("ddns_hostname_info_tr").style.display = "none";
+		document.getElementById("ddns_hostname_tr").style.display = "none";
+		inputCtrl(document.form.ddns_username_x, 0);
+		inputCtrl(document.form.ddns_passwd_x, 0);
+		document.form.ddns_wildcard_x[0].disabled= 1;
+		document.form.ddns_wildcard_x[1].disabled= 1;
+		showhide("wildcard_field",0);
+		document.form.ddns_regular_check.value = 0;
+		showhide("check_ddns_field", 0);
+		inputCtrl(document.form.ddns_regular_period, 0);
+		document.getElementById("ddns_result_tr").style.display = "none";
+		showhide("link", 0);
+		showhide("linkToHome", 0);
+	}
 	else{
 			document.getElementById("ddns_hostname_info_tr").style.display = "none";
 			document.getElementById("ddns_hostname_tr").style.display="";
+			document.form.ddns_hostname_x.parentNode.parentNode.parentNode.style.display = "";
 			document.form.ddns_hostname_x.parentNode.style.display = "";
 			document.form.DDNSName.parentNode.style.display = "none";
 			inputCtrl(document.form.ddns_username_x, 1);
@@ -846,7 +873,6 @@ function check_unregister_result(){
 		  		<div class="formfonttitle"><#menu5_3#> - <#menu5_3_6#></div>
 		  		<div style="margin:10px 0 10px 5px;" class="splitLine"></div>
 		 		<div class="formfontdesc"><#LANHostConfig_x_DDNSEnable_sectiondesc#></div>
-		 		<div class="formfontdesc" style="margin-top:-8px;"><#NSlookup_help#></div>
 				<div class="formfontdesc" id="wan_ip_hide2" style="color:#FFCC00; display:none;">The wireless router currently uses a private WAN IP address.<p>This router may be in the multiple-NAT environment.  While using an External check might allow DDNS to reflect the correct IP address, this might still interfere with remote access services.</div>
 				<div class="formfontdesc" id="wan_ip_hide3" style="color:#FFCC00; display:none;"><#LANHostConfig_x_DDNSEnable_sectiondesc3#></div>
 				<div class="formfontdesc" id="lb_note" style="color:#FFCC00; display:none;"><#lb_note_ddns#></div>
@@ -893,7 +919,8 @@ function check_unregister_result(){
 			<tr>
 				<th><#LANHostConfig_x_DDNSServer_itemname#></th>
 				<td>
-					<select name="ddns_server_x"class="input_option" onchange="change_ddns_setting(this.value); change_cert_method();">
+					<select id="ddns_server_x" name="ddns_server_x"class="input_option" onchange="change_ddns_setting(this.value); change_cert_method();">
+						<option value="" selected><#Select_menu_default#></option>
 						<option value="WWW.ASUS.COM" <% nvram_match("ddns_server_x", "WWW.ASUS.COM","selected"); %>>WWW.ASUS.COM</option>
 						<option value="DOMAINS.GOOGLE.COM" <% nvram_match("ddns_server_x", "DOMAINS.GOOGLE.COM","selected"); %>>DOMAINS.GOOGLE.COM</option>
 						<option value="WWW.DYNDNS.ORG" <% nvram_match("ddns_server_x", "WWW.DYNDNS.ORG","selected"); %>>WWW.DYNDNS.ORG</option>

@@ -329,9 +329,12 @@ function change_common_radio(o, s, v, r){
 				}
 				else
 					document.form.ddns_hostname_x.parentNode.parentNode.parentNode.style.display = "";
-				inputCtrl(document.form.ddns_username_x, 1);
-				inputCtrl(document.form.ddns_passwd_x, 1);
-				showhide("wildcard_field",1);
+
+				if(document.form.ddns_server_x.value !== ""){
+					inputCtrl(document.form.ddns_username_x, 1);
+					inputCtrl(document.form.ddns_passwd_x, 1);
+					showhide("wildcard_field",1);
+				}
 			}
 
 //			if(letsencrypt_support)
@@ -362,6 +365,7 @@ function change_common_radio(o, s, v, r){
 			showhide("ddns_ipcheck_tr", 0);
 
 			document.getElementById("ddns_status_tr").style.display = "none";
+			document.getElementById("ddns_hostname_tr").style.display = "none";
 			document.getElementById("ddns_result_tr").style.display = "none";
 //			if(letsencrypt_support)
 //				show_cert_settings(0);

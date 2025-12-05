@@ -66,7 +66,8 @@ function isPrivateIP(ip){
 	    location_host.indexOf("127") == 0 ||
 	    location_host.indexOf("10") == 0 ||
 	    location_host.indexOf("www.asusnetwork.net") == 0 ||
-	    location_host.indexOf("router.asus.com") == 0 ){
+	    location_host.indexOf("router.asus.com") == 0 ||
+	    location_host.indexOf("www.asusrouter.com") == 0 ){
 		return 1;
 	}
 	
@@ -144,15 +145,47 @@ function isBrowser(testBrowser){
 	return 0;
 }
 
-function getUrlVars(){
-	var vars = [], hash;
-  	var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-  	for(var i = 0; i < hashes.length; i++){
-  		hash = hashes[i].split('=');
-    	vars.push(hash[0]);
-    	vars[hash[0]] = encodeSafeString(hash[1]);
-  	}
-  	return vars;
+function encodeSafeString(input){
+    input = input.replace(/&/g, '&amp;');
+    input = input.replace(/<script/g, '<script&lt;');
+    input = input.replace(/script>/g, 'script&gt;');
+    input = input.replace(/%0A/g, '');
+    input = input.replace(/%0D/g, '');
+    return input;
+}
+
+function sanitizeInput(input) {
+    //- Remove or replace common XSS attack characters
+	// < and >
+	// ;
+	// =
+	// '
+	// "
+    return input.replace(/[<>;='"]/g, '');
+}
+
+function isValidKey(key) {
+    // Only letters, numbers and underscores allowed
+    var regex = /^[a-zA-Z0-9_]+$/;
+    return regex.test(key);
+}
+
+function getUrlVars() {
+	var query = window.location.href.slice(window.location.href.indexOf('?') + 1);
+	var hashes = query.split('&');
+	var vars = {};
+
+	for (var i = 0; i < hashes.length; i++) {
+		var hash = hashes[i].split('=');
+		var key = sanitizeInput(decodeURIComponent(hash[0]));
+		var value = sanitizeInput(decodeURIComponent(hash[1] || ''));
+
+		if (isValidKey(key)) {
+			vars[key] = encodeSafeString(value);
+		}
+	}
+
+	return vars;
 }
 
 function parseXml(xml) {
@@ -240,15 +273,6 @@ function myencodeURI(iurl){
 	}
 	
 	return myurl;
-}
-
-function encodeSafeString(input){
-    input = input.replace(/&/g, '&amp;');
-    input = input.replace(/<script/g, '<script&lt;');
-	input = input.replace(/script>/g, 'script&gt;');
-	input = input.replace(/%0A/g, '');
-	input = input.replace(/%0D/g, '');
-    return input;
 }
 
 function isIE(){

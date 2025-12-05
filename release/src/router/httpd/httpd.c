@@ -448,8 +448,10 @@ page_default_redirect(int fromapp_flag, char* url)
 {
 	char inviteCode[256]={0};
 
-	if(check_xss_blacklist(url, 1))
+	if(check_xss_blacklist(url, 1)){
 		strncpy(login_url, indexpage, sizeof(login_url));
+		url = indexpage;
+	}
 	else
 		strncpy(login_url, url, sizeof(login_url));
 
