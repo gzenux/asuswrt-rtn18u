@@ -32,7 +32,9 @@
 
 #if EMBEDDED_EANBLE
 #ifndef APP_IPKG
+#ifdef RTCONFIG_USB
 #include "disk_share.h"
+#endif
 #endif
 #endif
 
@@ -68,7 +70,7 @@ extern const char *get_filename_ext(const char *filename);
 extern void md5String(const char* input1, const char* input2, char** out);
 extern int smbc_parse_mnt_path(const char* physical_path, const char* mnt_path, int mnt_path_len, char** usbdisk_path, char** usbdisk_share_folder);
 extern int smbc_get_usbdisk_permission(const char* user_name, const char* usbdisk_rel_sub_path, const char* usbdisk_sub_share_folder);
-extern char *replace_str(char *st, char *orig, char *repl, char* buff);
+extern char *replace_str(char *st, char *orig, char *repl, char* buff, size_t buff_size);
 extern int check_skip_folder_name(char* foldername);
 extern int createDirectory(const char * path);
 extern int in_the_same_folder(buffer *src, buffer *dst);
@@ -77,6 +79,7 @@ extern int generate_sharelink(server* srv, connection *con, const char* filename
 extern void save_sharelink_list();
 extern void stop_arpping_process();
 extern int is_string_encode_as_integer( const char *s );
+extern int is_valid_string( const char* data );
 extern int string_starts_with( const char *a, const char *b );
 extern int file_exist(const char *filepath);
 extern void md5sum(char* output, int counter, ...);
@@ -765,45 +768,67 @@ static int get_thumb_image(char* path, plugin_data *p, char **out){
 		return 0;
 	}
 	
+	if(path==NULL){
+		return 0;
+	}
+
 #if EMBEDDED_EANBLE
 	char* thumb_dir = (char *)malloc(PATH_MAX);
-	if(!thumb_dir) return 0;
+	if(!thumb_dir) {
+		return 0;
+	}
 
 	if (buffer_is_empty(p->minidlna_db_dir))
 		get_minidlna_db_path(p);
 	
-	strcpy(thumb_dir, p->minidlna_db_dir->ptr);
+	strncpy(thumb_dir, p->minidlna_db_dir->ptr, PATH_MAX-15);
 	strcat(thumb_dir, "/art_cache/tmp");
 	
+	if(strlen(path)>PATH_MAX-strlen(thumb_dir)-4){
+		free(thumb_dir);
+		return 0;
+	}
+
 	char* filename = NULL;	
 	extract_filename(path, &filename);
-	const char *dot = strrchr(filename, '.');
-	int len = dot - filename;
 	
+	int filename_len = strlen(filename);
+	const char *dot = strrchr(filename, '.');
+	int idx = dot - filename;
+	if (idx<=0) idx = filename_len;
+
 	char* filepath = NULL;
 	extract_filepath(path, &filepath);
 					
 	strcat(thumb_dir, filepath);
-	strncat(thumb_dir, filename, len);
+	strncat(thumb_dir, filename, idx);
 	strcat(thumb_dir, ".jpg");
 	
 	free(filename);
 	free(filepath);
 #else
 	char* db_dir = "/var/lib/minidlna/";
-	char* thumb_dir = (char *)malloc(PATH_MAX);
+	char* thumb_dir = (char *)malloc(1024);
 	
 	if(!thumb_dir){
 		return 0;
-	}	
-	strcpy(thumb_dir, db_dir);
+	}
+
+	strncpy(thumb_dir, db_dir, 1014);
 	strcat(thumb_dir, "art_cache");
+		
+	if(strlen(path)>1024-strlen(thumb_dir)-4){
+		free(thumb_dir);
+		return 0;
+	}
 	
 	char* filename = NULL;	
 	extract_filename(path, &filename);
+
+	int filename_len = strlen(filename);
 	const char *dot = strrchr(filename, '.');
 	int idx = dot - filename;
-	//Cdbg(DBE,"dot = %s, index=%d", dot, index);
+	if (idx<=0) idx = filename_len;
 	
 	char* filepath = NULL;
 	extract_filepath(path, &filepath);
@@ -836,6 +861,9 @@ static int get_thumb_image(char* path, plugin_data *p, char **out){
 			int len = fread( buffer_x, fileLen, sizeof(unsigned char), fp );
 
 			if(len>0){
+
+				buffer_x[len] = '\0';
+
 				char* tmp = (char *)ldb_base64_encode(buffer_x, fileLen);			
 				uint32 olen = strlen(tmp) + 1;
 				*out = (char*)malloc(olen);
@@ -851,7 +879,7 @@ static int get_thumb_image(char* path, plugin_data *p, char **out){
 		}
 	}
 	
-	free(thumb_dir);	
+	free(thumb_dir);
 	return result;
 }
 
@@ -874,7 +902,12 @@ static int get_album_cover_image(sqlite3 *sql_minidlna, sqlite_int64 plAlbumArt,
 		//Cdbg(DBE, "get_album_cover_image, album cover path=%s", result2[1]);
 
 		char* album_cover_file = result2[1];
-									
+
+		if(!string_starts_with(album_cover_file, "/mnt") || strstr(album_cover_file, "../")){
+			sqlite3_free_table(result2);
+			return 0;
+		}
+		
 		FILE* fp = fopen(album_cover_file, "rb");
 		
 		if(fp!=NULL){
@@ -898,6 +931,9 @@ static int get_album_cover_image(sqlite3 *sql_minidlna, sqlite_int64 plAlbumArt,
 			len = fread( buffer_x, fileLen, sizeof(unsigned char), fp );
 
 			if(len>0){
+
+				buffer_x[len] = '\0';
+				
 				char* tmp = (char *)ldb_base64_encode(buffer_x, fileLen);			
 				uint32 olen = strlen(tmp) + 1;
 				*out = (char*)malloc(olen);
@@ -1939,7 +1975,7 @@ static int webdav_has_lock(server *srv, connection *con, plugin_data *p, buffer 
 }
 
 //- 20111209 Sungmin add
-static const char* change_webdav_file_path(server *srv, connection *con, const char* source, const char* out)
+static const char* change_webdav_file_path(server *srv, connection *con, const char* source, const char* out, size_t out_size)
 {
 	UNUSED(con);
 	
@@ -1961,7 +1997,7 @@ static const char* change_webdav_file_path(server *srv, connection *con, const c
 
 			data_string *ds = (data_string *)alias->data[j];			
 			if( strncmp(source, ds->key->ptr, ds->key->used-1) == 0 ){
-				char* buff = (char *)replace_str(source, ds->key->ptr, ds->value->ptr, out);
+				char* buff = (char *)replace_str(source, ds->key->ptr, ds->value->ptr, out, out_size);
 				array_free(alias);
 				return buff;
 			}
@@ -1971,6 +2007,27 @@ static const char* change_webdav_file_path(server *srv, connection *con, const c
 	}
 
 	return source;
+}
+
+static int count_path_files(const char* file_path) {
+	char command[128];
+	char result[128];  
+	FILE *fp;
+	
+	snprintf(command, sizeof(command), "ls %s | wc -l", file_path);
+	
+	if ((fp = popen(command, "r")) == NULL) {
+		Cdbg(DBE, "fail to do count command=%s, result=%s", command, result); 
+		return 0; 
+	}  
+	
+	fgets(result, sizeof result, fp); 
+
+	pclose(fp);  
+
+	Cdbg(DBE, "count command=%s, result=%s", command, result);
+
+	return atoi(result); 
 }
 
 URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
@@ -1984,7 +2041,8 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 	buffer *prop_404;
 	webdav_properties *req_props;
 	stat_cache_entry *sce = NULL;
-
+	char* referrer = NULL;
+	
 	UNUSED(srv);
 
 	if (!p->conf.enabled) return HANDLER_GO_ON;
@@ -2005,8 +2063,26 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 			return HANDLER_FINISHED;
 		}
 	}
+
+	if(string_starts_with(con->url.path->ptr, "/smb") && con->request.http_method!=HTTP_METHOD_GET){
+		con->http_status = 403;
+		return HANDLER_FINISHED;
+	}
 #endif
 
+
+	data_string *ds_referrer = (data_string *)array_get_element(con->request.headers, "Referer");
+	if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Referer"))) {
+		referrer = ds->value->ptr;
+	}
+
+	if (referrer!=NULL) {
+		if (NULL == strstr(referrer, con->request.http_host->ptr)) {
+			Cdbg(DBE, "403 error, referrer=%s, con->request.http_host=%s", referrer, con->request.http_host->ptr);
+			con->http_status = 403;
+			return HANDLER_FINISHED;
+		}
+	}
 
 	Cdbg(DBE, "http_method=[%d][%s], depth=[%d], con->url->path=[%s]", 
 		con->request.http_method, get_http_method_name(con->request.http_method), 
@@ -2014,12 +2090,10 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 	
 	switch (con->request.http_method) {
 	case HTTP_METHOD_PROPFIND:	
-
 		/* they want to know the properties of the directory */
 		req_props = NULL;
 
 		/* is there a content-body ? */
-
 		switch (stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
 		case HANDLER_ERROR:
 			if (errno == ENOENT) {
@@ -2123,6 +2197,56 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 #endif
 		con->http_status = 207;
 
+		buffer* start = buffer_init_string("");
+		buffer* end = buffer_init_string("");
+
+		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Start"))) {
+			start = ds->value;
+		}
+
+		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "End"))) {
+			end = ds->value;
+		}
+
+		//- start : Avoid SQL injection!
+		if (!buffer_is_empty(start) && 
+		    !is_string_encode_as_integer(start->ptr) &&
+		    atoi(start->ptr) < 0) {
+			Cdbg(DBE, "The paramter start is invalid!");
+			con->http_status = 207;
+			con->file_finished = 1;
+			return HANDLER_FINISHED;
+		}
+
+		//- end : Avoid SQL injection!
+		if (!buffer_is_empty(end) && 
+		    !is_string_encode_as_integer(end->ptr) &&
+		    atoi(end->ptr) < 0) {
+
+			Cdbg(DBE, "The paramter end is invalid!");
+			con->http_status = 207;
+			con->file_finished = 1;
+			return HANDLER_FINISHED;
+		}
+
+		int enable_query_segment = 0;
+		int query_start = -1;
+		int query_end = -1;
+		int query_index = 0;
+
+		if(!buffer_is_equal_string(start, "", 0) && !buffer_is_equal_string(end, "", 0)){
+			query_start = atoi(start->ptr);
+			query_end = atoi(end->ptr);
+			
+			if (query_start!=0 && query_end!=0 && query_start>=query_end) {
+				con->http_status = 207;
+				con->file_finished = 1;
+				return HANDLER_FINISHED;
+			}
+
+			enable_query_segment = 1;
+		}
+
 		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/xml; charset=\"utf-8\""));
 
 		b = buffer_init();
@@ -2205,6 +2329,12 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 
 		buffer_append_string_len(b, CONST_STR_LEN("\" isusb=\"1"));
 	
+		int qcount = count_path_files(con->physical.path->ptr);
+		char tmp_qcount[10];
+		snprintf(tmp_qcount, sizeof(tmp_qcount), "%d", qcount);
+		buffer_append_string_len(b, CONST_STR_LEN("\" qcount=\""));	
+		buffer_append_string(b, tmp_qcount);
+
 		buffer_append_string_len(b,CONST_STR_LEN("\">\n"));
 
 		/* allprop */
@@ -2254,13 +2384,17 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 
 			break;
 		case 1:
-			if (NULL != (dir = opendir(con->physical.path->ptr))) {
+			
+ 			if (NULL != (dir = opendir(con->physical.path->ptr))) {
+				
 				struct dirent *de;
 				physical d;
 				physical *dst = &(con->physical);
 
 				d.path = buffer_init();
 				d.rel_path = buffer_init();
+
+				Cdbg(DBE, "enable_query_segment=%d, query_start=%d, query_end=%d", enable_query_segment, query_start, query_end);
 
 				while(NULL != (de = readdir(dir))) {
 					if (de->d_name[0] == '.' && de->d_name[1] == '.' && de->d_name[2] == '\0') {
@@ -2275,6 +2409,15 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 					
 					if ( check_skip_folder_name(de->d_name) == 1 ) {
 						continue;
+					}
+
+					if ( enable_query_segment==1 && query_index < query_start) {
+						query_index++;
+						continue;
+					}
+
+					if ( enable_query_segment==1 && query_index > query_end) {
+						break;
 					}
 
 					buffer_copy_buffer(d.path, dst->path);
@@ -2327,9 +2470,10 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 					if(con->share_link_shortpath->used){
 						char buff[4096];
 						replace_str(&d.rel_path->ptr[0], 
-							                    (char*)con->share_link_realpath->ptr, 
-							                    (char*)con->share_link_shortpath->ptr, 
-							        buff);
+							        (char*)con->share_link_realpath->ptr, 
+							        (char*)con->share_link_shortpath->ptr, 
+							        buff,
+									4096);
 						
 						buffer_append_string(b, "/");
 						buffer_append_string_encoded(b, buff, strlen(buff), ENCODING_REL_URI);
@@ -2367,6 +2511,8 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 					}
 
 					buffer_append_string_len(b,CONST_STR_LEN("</D:response>\n"));
+
+					query_index++;
 				}
 				closedir(dir);
 				buffer_free(d.path);
@@ -2839,7 +2985,7 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 			char* a;
 			if (NULL != ( a = strstr(p->uri.path->ptr, con->share_link_shortpath->ptr))){
 				char buff[4096];
-				replace_str(a, con->share_link_shortpath->ptr, con->share_link_realpath->ptr, buff);
+				replace_str(a, con->share_link_shortpath->ptr, con->share_link_realpath->ptr, buff, 4096);
 				buffer_copy_string( p->uri.path, buff );
 			}
 			else{
@@ -2851,7 +2997,7 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 		//- 20111209 Sungmin add
 		char buff[4096];
 		memset(buff, 0, sizeof(buff));
-		buffer_copy_string(p->uri.path, change_webdav_file_path(srv, con, p->uri.path->ptr, buff));
+		buffer_copy_string(p->uri.path, change_webdav_file_path(srv, con, p->uri.path->ptr, buff, 4096));
 		
 		/* we now have a URI which is clean. transform it into a physical path */
 		buffer_copy_buffer(p->physical.doc_root, con->physical.doc_root);
@@ -2872,6 +3018,11 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 			buffer_append_string_buffer(p->physical.path, p->physical.rel_path);
 		}
 
+		if(!string_starts_with(p->physical.path->ptr, "/mnt") ){
+			con->http_status = 403;
+			return HANDLER_FINISHED;
+		}
+		
 		/* let's see if the source is a directory
 		 * if yes, we fail with 501 */
 
@@ -3545,7 +3696,7 @@ propmatch_cleanup:
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "FILENAME"))) {
 			buffer_filename = ds->value;
 
-			if (buffer_filename->used> 255) {
+			if (buffer_filename->used> 512) {
 				con->http_status = 400;
 				return HANDLER_FINISHED;
 			}
@@ -3582,9 +3733,13 @@ propmatch_cleanup:
 			return HANDLER_FINISHED;
 		}
 		
-		char auth[100]="\0";		
+		char auth[100]="\0";	
 		if(con->aidisk_username->used && con->aidisk_passwd->used) {
-			snprintf(auth, sizeof(auth), "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
+			#if NVRAM_ENCRYPT_ENABLE
+				snprintf(auth, sizeof(auth), "%s:%s", con->aidisk_username->ptr, nvram_get_http_passwd());
+			#else	
+				snprintf(auth, sizeof(auth), "%s:%s", con->aidisk_username->ptr, con->aidisk_passwd->ptr);
+			#endif
 		} else {
 			con->http_status = 400;
 			return HANDLER_FINISHED;
@@ -4281,6 +4436,10 @@ propmatch_cleanup:
 
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Keyword"))) {
 			keyword = ds->value;
+
+			if(!buffer_is_empty(keyword)){			
+				buffer_urldecode_path(keyword);
+			}
 		}
 
 		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Orderby"))) {
@@ -4367,24 +4526,13 @@ propmatch_cleanup:
 
 		//- keyword : Avoid SQL injection!
 		if (!buffer_is_empty(keyword) && 
-		    (strstr(keyword->ptr, "'")!=NULL ||
-			keyword->used > 200)) {
+			(is_valid_string(keyword->ptr)!=0 || keyword->used > 200)) {
 
 			Cdbg(DBE, "The paramter keyword is invalid!");
 			con->http_status = 207;
 			con->file_finished = 1;
 			return HANDLER_FINISHED;
 		}
-
-		//- Check paramter
-		// if( (keyword!=NULL && keyword->used > 200 ) ||
-		// 	(parentid!=NULL && parentid->used > 20 ) ){
-			
-		// 	Cdbg(DBE, "NULL value 'sql_minidlna'!");
-		// 	con->http_status = 207;
-		// 	con->file_finished = 1;
-		// 	return HANDLER_FINISHED;
-		// }
 
 		get_minidlna_db_path(p);
 		
@@ -4435,12 +4583,11 @@ propmatch_cleanup:
 		}
 	
 		if(!buffer_is_empty(keyword)){			
-			buffer_urldecode_path(keyword);
-
+			
 			if(strstr(keyword->ptr, "*")||strstr(keyword->ptr, "?")){
 				char buff[200];
-				replace_str(keyword->ptr, "*", "%", buff);
-				replace_str(buff, "?", "_", buff);
+				replace_str(keyword->ptr, "*", "%", buff, 200);
+				replace_str(buff, "?", "_", buff, 200);
 				sprintf(sql_query, "%s and ( PATH LIKE '%s' or TITLE LIKE '%s' )", sql_query, buff, buff);
 			}
 			else
@@ -4667,9 +4814,9 @@ propmatch_cleanup:
 			
 			char buff[4096];
 			#if EMBEDDED_EANBLE
-			replace_str(&plpath[0], "tmp/mnt", usbdisk_name, buff);
+			replace_str(&plpath[0], "tmp/mnt", usbdisk_name, buff, 4096);
 			#else
-			replace_str(&plpath[0], "mnt", usbdisk_name, buff);
+			replace_str(&plpath[0], "mnt", usbdisk_name, buff, 4096);
 			#endif
 
 			//Cdbg(DBE, "tmp=%s, con->url.path=%s", tmp, con->url.path->ptr);
@@ -5172,12 +5319,12 @@ propmatch_cleanup:
 					#ifdef APP_IPKG
 					free(a);
 					#endif
-					replace_str(&filepath[0], "tmp/mnt", usbdisk_name, buff);
+					replace_str(&filepath[0], "tmp/mnt", usbdisk_name, buff, 4096);
 					#else
 					usbdisk_name = (char*)malloc(8);
 					memset(usbdisk_name,'\0', 8);
 					strcpy(usbdisk_name, "usbdisk");
-					replace_str(&filepath[0], "mnt", usbdisk_name, buff);
+					replace_str(&filepath[0], "mnt", usbdisk_name, buff, 4096);
 					#endif
 
 					buffer* buffer_filepath = buffer_init();
@@ -5521,6 +5668,7 @@ propmatch_cleanup:
 		return HANDLER_FINISHED;
 	}
 
+#if ENABLE_METHOD_UPLOAD
 	case HTTP_METHOD_UPLOADTOFACEBOOK:{
 		Cdbg(1, "do HTTP_METHOD_UPLOADTOFACEBOOK");
 
@@ -6459,7 +6607,8 @@ propmatch_cleanup:
 		con->file_finished = 1;
 		return HANDLER_FINISHED;
 	}
-	
+#endif /* end ENABLE_METHOD_UPLOAD */
+
 	default:
 		break;
 	}

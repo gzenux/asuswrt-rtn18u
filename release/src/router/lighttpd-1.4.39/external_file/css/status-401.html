@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
 <link rel="apple-touch-icon" href="/smb/css/appicon.png">
 <link rel="apple-touch-startup-image" href="/smb/css/startup.png">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>AiCloud</title>
 <style>
 html{
@@ -121,7 +121,7 @@ $("document").ready(function() {
 	
 	$('label#username').text(m.getString('title_username2'));
 	$('label#password').text(m.getString('title_password2'));
-	$('label#captcha').text(m.getString('title_captcha'));
+	// $('label#captcha').text(m.getString('title_captcha'));
 	
 	this_url = $("input.urlInfo").attr("value");
 	
@@ -151,9 +151,8 @@ $("document").ready(function() {
 		return;
 	}
 	
-	$(".captcha").css("display","none");	
-	
-	generateCaptcha();
+	// $(".captcha").css("display","none");
+	// generateCaptcha();
 	
 	adjustUI();
 	
@@ -163,6 +162,17 @@ $("document").ready(function() {
 	
 	$("input#username").focus();
 });
+
+function sanitize(input) {
+    //- Use replacement methods to remove or encode potentially malicious characters
+    return input
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#x27;")
+        .replace(/\//g, "&#x2F;");
+}
 
 function generateCaptcha(){
 	
@@ -181,14 +191,14 @@ function generateCaptcha(){
 		success: function(xml){		
 				
 			var data = parseXml(xml);
-			var captcha_enable = $(data).find('enable').text();
+			var captcha_enable = sanitize($(data).find('enable').text());
 			if(captcha_enable==1){
-				var image_data1 = $(data).find('img1').text();
-				var image_data1 = $(data).find('img1').text();
-				var image_data2 = $(data).find('img2').text();
-				var image_data3 = $(data).find('img3').text();
-				var image_data4 = $(data).find('img4').text();
-				g_captcha = $(data).find('code').text();
+				var image_data1 = sanitize($(data).find('img1').text());
+				var image_data1 = sanitize($(data).find('img1').text());
+				var image_data2 = sanitize($(data).find('img2').text());
+				var image_data3 = sanitize($(data).find('img3').text());
+				var image_data4 = sanitize($(data).find('img4').text());
+				g_captcha = sanitize($(data).find('code').text());
 				
 				var captcha_pattern = "";
 				$("#captcha_pattern").empty();
@@ -215,7 +225,7 @@ function adjustUI(){
 }
 
 function doOK(e) {
-	var captcha = $('input#captcha').val();
+	var captcha = "";//$('input#captcha').val();
 	var user = "";
 	var pass = "";
 	var auth = "";
@@ -355,7 +365,7 @@ function onKeyHandler(e){
 									<tr height="5px"></tr>
 									<tr>
 					          			<td>
-					          				<input id="username" name="username" type="text" maxlength="20" autocapitalize="off">
+					          				<input id="username" name="username" type="text" maxlength="32" autocapitalize="off">
 					          			</td>
 					          		</tr>
 					          		<tr style="height:10px"></tr>
@@ -367,10 +377,11 @@ function onKeyHandler(e){
 					          		<tr height="5px"></tr>
 					          		<tr> 
 					            		<td>
-					            			<input id="password" name="password" type="password" maxlength="16" onkeydown="return onKeyHandler(event)">
+					            			<input id="password" name="password" type="password" maxlength="32" onkeydown="return onKeyHandler(event)">
 					            		</td>
 					          		</tr>
-					           		<tr style="height:10px"></tr>
+									<tr style="height:10px"></tr>
+									<!--
 					          		<tr class="captcha" style="display:none">
 										<td>
 											<font color="white" size="4">
@@ -385,12 +396,13 @@ function onKeyHandler(e){
 					          			</td>
 					          		</tr>
 					          		<tr class="captcha" height="5px" style="display:none"></tr>
-					          		<tr class="captcha" style="display:none">
+					          		 <tr class="captcha" style="display:none">
 					          			<td>
 					          				<div id="captcha_pattern" class="unselectable" name="captcha_pattern" style="width:220px;height:40px;float:left" onclick="generateCaptcha()"></div>
 					          			</td>
-					          		</tr>
-					          		<tr style="height:10px"></tr>
+					          		</tr> 
+									<tr style="height:10px"></tr>
+									-->
 					          		<tr> 
 					          			<td colspan="2" align="center"><div id="ok" onClick="doOK();"></div></td>
 					        		</tr>

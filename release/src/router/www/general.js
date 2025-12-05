@@ -320,6 +320,7 @@ function change_ddns_setting(v){
 				document.getElementById("ddns_hostname_info_tr").style.display = "none";
 				document.getElementById("ddns_hostname_tr").style.display="";
 				document.form.ddns_hostname_x.parentNode.style.display = "none";
+				document.form.ddns_hostname_x.parentNode.parentNode.parentNode.style.display = "";
 				document.form.DDNSName.parentNode.style.display = "";
 				var ddns_hostname_title = hostname_x.substring(0, hostname_x.indexOf('.asuscomm.com'));
 				if(hostname_x != '' && ddns_hostname_title)
@@ -351,9 +352,25 @@ function change_ddns_setting(v){
 			showhide("check_ddns_field", 0);
 			inputCtrl(document.form.ddns_regular_period, 0);
 		}
+		else if(v === ""){
+			document.getElementById("ddns_hostname_info_tr").style.display = "none";
+			document.getElementById("ddns_hostname_tr").style.display = "none";
+			inputCtrl(document.form.ddns_username_x, 0);
+			inputCtrl(document.form.ddns_passwd_x, 0);
+			document.form.ddns_wildcard_x[0].disabled= 1;
+			document.form.ddns_wildcard_x[1].disabled= 1;
+			showhide("wildcard_field",0);
+			document.form.ddns_regular_check.value = 0;
+			showhide("check_ddns_field", 0);
+			inputCtrl(document.form.ddns_regular_period, 0);
+			document.getElementById("ddns_result_tr").style.display = "none";
+			showhide("link", 0);
+			showhide("linkToHome", 0);
+		}
 		else{
 				document.getElementById("ddns_hostname_info_tr").style.display = "none";
 				document.getElementById("ddns_hostname_tr").style.display="";
+				document.form.ddns_hostname_x.parentNode.parentNode.parentNode.style.display = "";
 				document.form.ddns_hostname_x.parentNode.style.display = "";
 				document.form.DDNSName.parentNode.style.display = "none";
 				inputCtrl(document.form.ddns_username_x, 1);
@@ -412,9 +429,12 @@ function change_common_radio(o, s, v, r){
 				}
 				else
 					document.form.ddns_hostname_x.parentNode.parentNode.parentNode.style.display = "";
-				inputCtrl(document.form.ddns_username_x, 1);
-				inputCtrl(document.form.ddns_passwd_x, 1);
-				showhide("wildcard_field",1);
+
+				if(document.form.ddns_server_x.value !== ""){
+					inputCtrl(document.form.ddns_username_x, 1);
+					inputCtrl(document.form.ddns_passwd_x, 1);
+					showhide("wildcard_field",1);
+				}
 			}
 
 			if(letsencrypt_support)
@@ -439,6 +459,7 @@ function change_common_radio(o, s, v, r){
 			document.form.ddns_regular_check.value = 0;
 			showhide("check_ddns_field", 0);
 			inputCtrl(document.form.ddns_regular_period, 0);
+			document.getElementById("ddns_hostname_tr").style.display = "none";
 			document.getElementById("ddns_result_tr").style.display = "none";
 			if(letsencrypt_support)
 				show_cert_settings(0);

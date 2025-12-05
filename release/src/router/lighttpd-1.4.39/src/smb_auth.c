@@ -34,7 +34,9 @@ typedef li_MD5_CTX MD5_CTX;
 #include "shared.h"	// check_if_file_exist() in shared/shared.h
 #include "nvram_control.h"
 #ifndef APP_IPKG
+#ifdef RTCONFIG_USB
 #include "disk_share.h"
+#endif
 #endif
 #endif
 
@@ -49,7 +51,7 @@ extern int pids(char *appname);
 int get_aicloud_permission(const char *const account, const char *const mount_path, const char *const folder, const int is_group);
 int prefix_is(char* source, char* prefix);
 int char_to_ascii_safe(const char *output, const char *input, int outsize);
-int change_port_rule_on_iptable(int toOpen, char* port_number);
+int change_port_rule_on_iptable(int toOpen, int port_number);
 
 #define DBE 0
 #define LIGHTTPD_ARPPING_PID_FILE_PATH	"/tmp/lighttpd/lighttpd-arpping.pid"
@@ -1265,22 +1267,23 @@ char* get_mac_address(const char* iface, char* mac){
 	return mac;
 }
 
-char *replace_str(char *st, char *orig, char *repl, char* buff) {  
+char *replace_str(char *st, char *orig, char *repl, char* buff, size_t buff_size) {  
 	char *ch;
 	if (!(ch = strstr(st, orig)))
 		return st;
+	if(ch-st >= buff_size) return st; // check buffer size before copy
 	strncpy(buff, st, ch-st);  
 	buff[ch-st] = 0;
+	if(strlen(repl) + strlen(ch+strlen(orig)) >= buff_size) return st; // check buffer size before sprintf
 	sprintf(buff+(ch-st), "%s%s", repl, ch+strlen(orig));  
 
 	return buff;
 }
 
-//- �P�_�}�l���Ȧ�m 
 int startposizition( char *str, int start )  
 {  
-	int i=0;            //-�Ω�p��
-    int posizition=0;   //- ��^��m
+	int i=0;
+    int posizition=0;
     int tempposi=start;    
     while(str[tempposi]<0)  
     {  
@@ -1295,11 +1298,10 @@ int startposizition( char *str, int start )
     return posizition;  
 } 
 
-//- �P�_���ݨ��Ȧ�m
 int endposizition( char *str, int end )  
 {  
-	int i=0;            //-�Ω�p��
-	int posizition=0;   //- ��^��m
+	int i=0;
+	int posizition=0;
 	int tempposi=end; 
 	while(str[tempposi]<0)  
 	{ 
@@ -1569,7 +1571,7 @@ int smbc_wrapper_parse_path(connection* con, char *pWorkgroup, char *pServer, ch
 		//- Jerry add: replace '\\' to '/'
 		do{
 			char buff[4096];
-			strcpy( pPath, replace_str(&pPath[0],"\\","/", (char *)&buff[0]) );
+			strcpy( pPath, replace_str(&pPath[0],"\\","/", (char *)&buff[0], 4096));
 		}while(strstr(pPath,"\\")!=NULL);
 	}
 	
@@ -1589,7 +1591,7 @@ int smbc_wrapper_parse_path2(connection* con, char *pWorkgroup, char *pServer, c
 		memset(buff, '\0', len);
 		
 		do{	
-			strcpy( pPath, replace_str(&pPath[0],"\\","/", buff) );
+			strcpy( pPath, replace_str(&pPath[0],"\\","/", buff, len));
 		}while(strstr(pPath,"\\")!=NULL);
 		
 		free(buff);
@@ -1835,7 +1837,7 @@ account_type smbc_get_account_type(const char* user_name){
 
 	account_type var_type;
 	
-	if(is_acc_account_existed(user_name)==1 || strncmp(user_name, "guest", 5)==0){
+	if(is_acc_account_existed(user_name)==1 || strcmp(user_name, "guest")==0){
 		var_type = T_ACCOUNT_SAMBA;
 	}
 	else if(is_aicloud_account_existed(user_name)==1){
@@ -1873,14 +1875,16 @@ int smbc_get_usbdisk_permission(const char* user_name, const char* usbdisk_rel_s
 		int st_samba_mode = nvram_get_st_samba_mode();
 		
 		if( (st_samba_mode==1) ||
-		    (user_name!=NULL && strncmp(user_name, "guest", 5)==0))
+		    (user_name!=NULL && strcmp(user_name, "guest")==0))
 			permission = 3;
 		else{
+#ifdef RTCONFIG_USB
 			permission = get_permission( user_name,
 									     usbdisk_rel_sub_path,
 									     usbdisk_sub_share_folder,
 									     "cifs",
 									     0);
+#endif
 		}
 		
 		Cdbg(DBE, "usbdisk_rel_sub_path=%s, usbdisk_sub_share_folder=%s, permission=%d, user_name=%s", 
@@ -1891,7 +1895,6 @@ int smbc_get_usbdisk_permission(const char* user_name, const char* usbdisk_rel_s
 	else if(var_type == T_ACCOUNT_AICLOUD){
 
 #if EMBEDDED_EANBLE
-	
 		permission = get_aicloud_permission( user_name,
 											 usbdisk_rel_sub_path,
 											 usbdisk_sub_share_folder,
@@ -1975,16 +1978,27 @@ int smbc_parser_basic_authentication(server *srv, connection* con, char** userna
 
 			if (basic_msg->used>1024){
 				buffer_free(basic_msg);
-                                free(user);
-                                free(pass);
-                                return 0;
+				free(user);
+				free(pass);
+				return 0;
 			}
 
 			char *s, bmsg[1024] = {0};
-
+			size_t bmsg_size = sizeof(bmsg);
+			
 			//fetech the username and password from credential
-			memcpy(bmsg, basic_msg->ptr, basic_msg->used);
+			size_t len = basic_msg->used > bmsg_size ? bmsg_size : basic_msg->used;
+			memcpy(bmsg, basic_msg->ptr, len);
+			bmsg[len] = '\0';
+
 			s = strchr(bmsg, ':');
+			if (s == NULL) {
+				buffer_free(basic_msg);
+				free(user);
+				free(pass);
+				return 0;
+			}
+
 			bmsg[s-bmsg] = '\0';
 
 			buffer_copy_string(user, bmsg);
@@ -2017,6 +2031,33 @@ int is_string_encode_as_integer( const char *s ){
     if( *s == '-' || *s == '+' ) s++;
     while( isdigit(*s) ) s++;
     return *s == 0;
+}
+
+int is_valid_string( const char* data ){
+
+    if (data != NULL) {
+        if (strstr((char*)data, "\"") != NULL) {
+            return -1;
+        }
+
+        if (strstr((char*)data, "$") != NULL) {
+            return -1;
+        }
+    
+        if (strstr((char*)data, "`") != NULL) {
+            return -1;
+        }  
+
+        if (strstr((char*)data, ";") != NULL) {
+            return -1;
+        } 
+
+        if (strstr((char*)data, "'") != NULL) {
+            return -1;
+    	}
+    }
+
+    return 0;
 }
 
 int string_starts_with( const char *a, const char *b ){
@@ -2067,7 +2108,8 @@ int generate_sharelink( server* srv,
 		char* tmp = replace_str(buffer_real_url->ptr,
                                         usbdisk_path,
                                         usbdisk_rel_path,
-                                        (char *)&buff[0]);
+                                        (char *)&buff[0],
+										2048);
 		buffer_copy_string(buffer_real_url, tmp);
 	}
 
@@ -2082,14 +2124,15 @@ int generate_sharelink( server* srv,
 			
 			//- check file is exist.
 			buffer* buffer_file_path = buffer_init();
-                        buffer_copy_buffer(buffer_file_path, buffer_real_url);
-                        buffer_append_string(buffer_file_path, "/");
-                        buffer_append_string(buffer_file_path, pch);
-                        buffer_urldecode_path(buffer_file_path);
+            buffer_copy_buffer(buffer_file_path, buffer_real_url);
+            buffer_append_string(buffer_file_path, "/");
+            buffer_append_string(buffer_file_path, pch);
+            buffer_urldecode_path(buffer_file_path);
 
 			if(con->mode == SMB_BASIC || con->mode == SMB_NTLM){
 				struct stat st;
-				if (-1 == smbc_wrapper_stat(con, buffer_file_path->ptr, &st)) {
+				// if (-1 == smbc_wrapper_stat(con, buffer_file_path->ptr, &st)) {
+				if (-1 == smbc_wrapper_stat(con, con->url.path->ptr, &st)) {
 					buffer_free(buffer_real_url);
 					buffer_free(buffer_file_path);
 
@@ -3431,6 +3474,9 @@ int get_aicloud_var_file_name(const char *const account, const char *const path,
 }
 
 int initial_aicloud_var_file(const char *const account, const char *const mount_path) {
+
+#ifdef RTCONFIG_USB
+
 	FILE *fp;
 	char *var_file;
 	int result, i;
@@ -3446,7 +3492,6 @@ int initial_aicloud_var_file(const char *const account, const char *const mount_
 	// 1. get the folder number and folder_list
 	//result = get_folder_list(mount_path, &sh_num, &folder_list);
 	result = get_all_folder(mount_path, &sh_num, &folder_list);
-
 	// 2. get the var file
 	if(get_aicloud_var_file_name(account, mount_path, &var_file)){
 		Cdbg(DBE, "Can't malloc \"var_file\".");
@@ -3479,12 +3524,17 @@ int initial_aicloud_var_file(const char *const account, const char *const mount_
 	free(var_file);
 
 	return 0;
+#else
+	return -1;
+#endif
 }
 
 int get_aicloud_permission(const char *const account,
 								const char *const mount_path,
 								const char *const folder,
 								const int is_group) {
+#ifdef RTCONFIG_USB
+
 	char *var_file, *var_info;
 	char *target, *follow_info;
 	int len, result;
@@ -3499,7 +3549,7 @@ int get_aicloud_permission(const char *const account,
 	}
 
 	Cdbg(DBE, "var_file: %s.", var_file);
-	
+
 	// 2. check the file integrity.
 	if(!check_file_integrity(var_file)){
 		Cdbg(DBE, "Fail to check the file: %s.", var_file);
@@ -3580,17 +3630,22 @@ retry_get_permission:
 	}
 	
 	return result;
+#else
+	return -1;
+#endif
 }
 
 int set_aicloud_permission(const char *const account,
 						  const char *const mount_path,
 						  const char *const folder,
 						  const int flag) {
+#ifdef RTCONFIG_USB
+
 	FILE *fp;
 	char *var_file, *var_info;
 	char *target, *follow_info;
 	int len;
-	
+
 	if (flag < 0 || flag > 3) {
 		Cdbg(DBE, "correct Rights is 0, 1, 2, 3.");
 		return -1;
@@ -3608,7 +3663,6 @@ int set_aicloud_permission(const char *const account,
 			return -1;
 		}
 	}
-	
 	
 	// 2. check the file integrity.
 	if(!check_file_integrity(var_file)){
@@ -3712,6 +3766,9 @@ int set_aicloud_permission(const char *const account,
 	free(var_info);
 	
 	return 0;
+#else
+	return -1;
+#endif
 }
 
 #endif
@@ -4264,9 +4321,9 @@ int write_im_resp_to_shm(char *resp_msg)
 int open_close_streaming_port(server* srv, int toOpen){
 		
 #if EMBEDDED_EANBLE
-	char* port_number = nvram_get_webdav_http_port();
+	int port_number = atoi(nvram_get_webdav_http_port());
 #else
-	char* port_number = "8082";
+	int port_number = 8082;
 #endif
 
 	if(toOpen == srv->is_streaming_port_opend) 
@@ -4287,9 +4344,9 @@ int open_close_network_access_port(server* srv, int toOpen){
 #if IM_MESSGAE_EANBLE
 
 #if EMBEDDED_EANBLE
-	char* port_number = nvram_get_webdav_https_port();
+	int port_number = atoi(nvram_get_webdav_https_port());
 #else
-	char* port_number = "443";
+	int port_number = 443;
 #endif
 	
 	if(toOpen == srv->is_network_access_port_opend) 
@@ -4309,7 +4366,7 @@ int open_close_network_access_port(server* srv, int toOpen){
 	return 1;
 }
 
-int change_port_rule_on_iptable(int toOpen, char* port_number){
+int change_port_rule_on_iptable(int toOpen, int port_number){
 	char cmd[BUFSIZ]="\0";
 	int rc = -1;
 	
@@ -4340,65 +4397,65 @@ int change_port_rule_on_iptable(int toOpen, char* port_number){
         //- open streaming port
 
         //- delete rules in VSERVER CHAIN
-        sprintf(cmd, "%siptables -t nat -D VSERVER -i erouter0 -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, port_number, lan_ip, port_number);
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i erouter0 -p tcp --dport %s -j DNAT --to-destination %s:%d", actual_s_system, port_number, lan_ip, port_number);
         rc = system(cmd);
-        sprintf(cmd, "%siptables -t nat -D VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip,port_number);
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %s -j DNAT --to-destination %s:%d", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip,port_number);
         rc = system(cmd);
 
         //- delete accept rule       
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j ACCEPT", actual_s_system, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %d -j ACCEPT", actual_s_system, lan_ip, port_number);
         rc = system(cmd);
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %d -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
         rc = system(cmd);
 		
         //- delete drop rule
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j DROP", actual_s_system, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %d -j DROP", actual_s_system, lan_ip, port_number);
         rc = system(cmd);
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %d -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
         rc = system(cmd);
 
          //- add rules in VSERVER CHAIN
-        sprintf(cmd, "%siptables -t nat -I VSERVER -i erouter0 -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, port_number, lan_ip, port_number);
+        sprintf(cmd, "%siptables -t nat -I VSERVER -i erouter0 -p tcp --dport %d -j DNAT --to-destination %s:%d", actual_s_system, port_number, lan_ip, port_number);
         rc = system(cmd);
-        sprintf(cmd, "%siptables -t nat -I VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip, port_number);
+        sprintf(cmd, "%siptables -t nat -I VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %d -j DNAT --to-destination %s:%d", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip, port_number);
         rc = system(cmd);
 
         //- add accept rule        
-        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j ACCEPT", actual_s_system, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %d -j ACCEPT", actual_s_system, lan_ip, port_number);
         rc = system(cmd);
-        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %d -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
         rc = system(cmd);
     }
     else if(toOpen==0){
         //- close streaming port
 
         //- check rule is existed?
-        //sprintf(cmd, "iptables -C INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+        //sprintf(cmd, "iptables -C INPUT -p tcp -m tcp --dport %d -j DROP", port_number);
         //Cdbg(DBE, "%s", cmd);
 
         //- delete rules in VSERVER CHAIN
-        sprintf(cmd, "%siptables -t nat -D VSERVER -i erouter0 -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, port_number, lan_ip, port_number);
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i erouter0 -p tcp --dport %d -j DNAT --to-destination %s:%d", actual_s_system, port_number, lan_ip, port_number);
         rc = system(cmd);
-        sprintf(cmd, "%siptables -t nat -D VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %s -j DNAT --to-destination %s:%s", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip, port_number);
+        sprintf(cmd, "%siptables -t nat -D VSERVER -i rndbr1 -s %s -d %s -p tcp --dport %d -j DNAT --to-destination %s:%d", actual_s_system, lan_ip_s_tmp, lan_ip_s, port_number, lan_ip, port_number);
         rc = system(cmd);
 
         //- delete accept rule
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j ACCEPT", actual_s_system, lan_ip, port_number);     
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %d -j ACCEPT", actual_s_system, lan_ip, port_number);     
         rc = system(cmd);
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);     
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %d -j ACCEPT", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);     
         rc = system(cmd);
 
         //- delete drop rule      
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j DROP", actual_s_system, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %d -j DROP", actual_s_system, lan_ip, port_number);
         rc = system(cmd);
-        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);       
+        snprintf(cmd, sizeof(cmd), "%siptables -D BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %d -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);       
         rc = system(cmd);
 
         //- add drop rule        
-        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %s -j DROP", actual_s_system, lan_ip, port_number);       
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i erouter0 -o rndbr1 -p tcp -d %s --dport %d -j DROP", actual_s_system, lan_ip, port_number);       
         rc = system(cmd);
 		
-        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %s -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
+        snprintf(cmd, sizeof(cmd), "%siptables -I BASE_FORWARD_CHAIN -i rndbr1 -s %s -d %s -p tcp --dport %d -j DROP", actual_s_system, lan_ip_s_tmp, lan_ip, port_number);
         rc = system(cmd);
     }
 	
@@ -4412,15 +4469,15 @@ int change_port_rule_on_iptable(int toOpen, char* port_number){
 		//- open streaming port
 
 		//- delete accept rule
-		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j ACCEPT", port_number);
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %d -j ACCEPT", port_number);
 		rc = system(cmd);
 
 		//- delete drop rule
-		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %d -j DROP", port_number);
 		rc = system(cmd);
 
 		//- add accept rule
-		snprintf(cmd, sizeof(cmd), "iptables -I INPUT 1 -p tcp -m tcp --dport %s -j ACCEPT", port_number);
+		snprintf(cmd, sizeof(cmd), "iptables -I INPUT 1 -p tcp -m tcp --dport %d -j ACCEPT", port_number);
 		rc = system(cmd);
 		Cdbg(1, "toOpen=1, cmd=%s, rc=%d", cmd, rc);
 	}
@@ -4428,21 +4485,21 @@ int change_port_rule_on_iptable(int toOpen, char* port_number){
 		//- close streaming port
 		
 		//- check rule is existed?
-		//sprintf(cmd, "iptables -C INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+		//sprintf(cmd, "iptables -C INPUT -p tcp -m tcp --dport %d -j DROP", port_number);
 		//Cdbg(DBE, "%s", cmd);
 
 		//- delete accept rule
-		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j ACCEPT", port_number);
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %d -j ACCEPT", port_number);
 		rc = system(cmd);
 		Cdbg(1, "cmd=%s, rc=%d", cmd, rc);
 		
 		//- delete drop rule
-		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %s -j DROP", port_number);
+		snprintf(cmd, sizeof(cmd), "iptables -D INPUT -p tcp -m tcp --dport %d -j DROP", port_number);
 		rc = system(cmd);
 		Cdbg(1, "cmd=%s, rc=%d", cmd, rc);
 		
 		//- add drop rule
-		snprintf(cmd, sizeof(cmd), "iptables -I INPUT 1 -p tcp -m tcp --dport %s -j DROP", port_number);
+		snprintf(cmd, sizeof(cmd), "iptables -I INPUT 1 -p tcp -m tcp --dport %d -j DROP", port_number);
 		rc = system(cmd);
 		Cdbg(1, "toOpen=0, cmd=%s, rc=%d", cmd, rc);
 	}

@@ -12031,10 +12031,6 @@ retry_wps_enr:
 		if (action & RC_SERVICE_START) start_tr();
 	}
 #endif
-	else if (strcmp(script, "sh") == 0) {
-		_dprintf("%s: shell: %s\n", __FUNCTION__, cmd[1]);
-		if(cmd[1]) system(cmd[1]);
-	}
 	else if (strcmp(script, "app") == 0) {
 #if defined(RTCONFIG_APP_PREINSTALLED) || defined(RTCONFIG_APP_NETINSTALLED)
 		if(action & RC_SERVICE_STOP)

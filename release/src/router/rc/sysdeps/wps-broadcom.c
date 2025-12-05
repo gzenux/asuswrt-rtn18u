@@ -173,7 +173,7 @@ start_wps_method(void)
 	if (nvram_match("wps_version2", "enabled") && strlen(nvram_safe_get("wps_autho_sta_mac")))
 		len += sprintf(buf + len, "wps_autho_sta_mac=\"%s\" ", nvram_safe_get("wps_autho_sta_mac"));
 
-	if (strlen(wps_sta_pin))
+	if (strlen(wps_sta_pin) && strcmp(wps_sta_pin, "00000000") && (wl_wpsPincheck(wps_sta_pin) == 0))
 		len += sprintf(buf + len, "wps_sta_pin=\"%s\" ", wps_sta_pin);
 	else
 		len += sprintf(buf + len, "wps_sta_pin=\"00000000\" ");
