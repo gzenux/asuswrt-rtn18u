@@ -7624,10 +7624,6 @@ int init_nvram(void)
 		if (nvram_match("bl_version", "1.0.0.0"))
 			add_rc_support("led_2g");
 
-#ifdef RTCONFIG_CAPTCHA
-		add_rc_support("captcha");	// kludge to support captcha feature
-#endif
-
 		break;
 #endif
 
